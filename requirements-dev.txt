@@ -1,0 +1,12 @@
+numpy
+scipy
+matplotlib
+ipython
+pytest
+pytest-runner
+Sphinx
+sphinx-rtd-theme
+sphinx-gallery
+numpydoc
+nbsphinx
+image
