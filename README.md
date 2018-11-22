@@ -23,7 +23,7 @@ Here is simple example showing how a dense first-order first derivative operator
 applied and inverted using numpy/scipy commands:
 ```python
 nx = 7
-x  = np.arange(nx)
+x = np.arange(nx) - (nx-1)/2
 
 D = np.diag(0.5*np.ones(nx-1),k=1) - np.diag(0.5*np.ones(nx-1),-1)
 D[0] = D[-1] = 0 # take away edge effects
@@ -54,7 +54,6 @@ letting the user focus on the formulation of equations of the forward problem to
 ## Project structure
 This repository is organized as follows:
 * **lops**:       python library containing various linear operators and auxiliary routines
-* **notebooks**:  set of notebooks showcasing linear operators and some use cases
 * **pytests**:    set of pytests
 * **testdata**:   sample datasets used in pytests and documentation
 * **docs**:       sphinx documentation

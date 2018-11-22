@@ -54,6 +54,7 @@ class SecondDerivative(LinearOperator):
                 self.reshape = True
         self.shape = (self.N, self.N)
         self.dtype = np.dtype(dtype)
+        self.explicit = True
 
     def _matvec(self, x):
         if not self.reshape:

@@ -80,6 +80,17 @@ class Marchenko():
     dtype : :obj:`bool`, optional
         Type of elements in input array.
 
+     Attributes
+    ----------
+    ns : :obj:`int`
+        Number of samples along source axis
+    nr : :obj:`int`
+        Number of samples along receiver axis
+    shape : :obj:`tuple`
+        Operator shape
+    explicit : :obj:`bool`
+        Operator contains a matrix that can be solved explicitly (True) or not (False)
+
     Raises
     ------
     TypeError
@@ -148,6 +159,7 @@ class Marchenko():
         self.toff = toff
         self.nsmooth = nsmooth
         self.dtype = dtype
+        self.explicit = False
 
         # Infer dimensions of R
         if R1 is None:

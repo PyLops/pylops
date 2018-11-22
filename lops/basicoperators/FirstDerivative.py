@@ -54,6 +54,7 @@ class FirstDerivative(LinearOperator):
                 self.reshape = True
         self.shape = (self.N, self.N)
         self.dtype = np.dtype(dtype)
+        self.explicit = False
 
     def _matvec(self, x):
         """ Apply forward first order derivative (y=A*x)

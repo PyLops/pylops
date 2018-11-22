@@ -83,6 +83,7 @@ class BlockDiag(LinearOperator):
         self.mmops = np.insert(np.cumsum(mops), 0, 0)
         self.shape = (self.nops, self.mops)
         self.dtype = np.dtype(dtype)
+        self.explicit = False
 
     def _matvec(self, x):
         y = np.zeros(self.nops, dtype=self.dtype)

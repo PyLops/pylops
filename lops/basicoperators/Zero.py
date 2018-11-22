@@ -43,6 +43,7 @@ class Zero(LinearOperator):
         M = N if M is None else M
         self.shape = (N, M)
         self.dtype = np.dtype(dtype)
+        self.explicit = False
 
     def _matvec(self, x):
         return np.zeros(self.shape[0], dtype=self.dtype)
