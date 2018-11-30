@@ -72,7 +72,7 @@ to ensure that all the dependencies are installed via the ``Conda`` package mana
 Execute the following in your terminal:
 
 ```
-git clone git@bitbucket.org:mravasi/pylops.git
+git clone https://github.com/Statoil/pylops
 ```
 
 ### 2a. Installation for users (Your own environment)

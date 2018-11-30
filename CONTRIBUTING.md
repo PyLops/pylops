@@ -7,7 +7,7 @@ Contributions are welcome and greatly appreciated!
 
 ### Report Bugs
 
-Report bugs at https://bitbucket.org/mravasi/pylops/src/issues.
+Report bugs at https://github.com/Statoil/pylops/issues
 
 If you are playing with the PyLops library and find a bug, please
 reporting it including:
@@ -19,7 +19,7 @@ reporting it including:
 ### Propose New Operators or Features
 
 The best way to send feedback is to open an issue at
-https://bitbucket.org/mravasi/pylops/src/master/issues
+https://github.com/Statoil/pylops/issues
 with tag *enhancement*.
 
 If you are proposing a new operator or a new feature:
@@ -47,7 +47,7 @@ Ready to contribute?
 
 2. Clone your fork locally:
     ```
-    git clone git@bitbucket.org:your_name_here/pylops.git
+    git clone https://github.com:your_name_here/pylops.git
     ```
 
 3. Follow the installation instructions for *developers* that you find
