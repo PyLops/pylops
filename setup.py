@@ -41,10 +41,10 @@ setup(
     ],
     author='mrava',
     author_email='mrava@equinor.com',
-    install_requires=['numpy', 'scipy', 'matplotlib'],
+    install_requires=['numpy', 'scipy', 'matplotlib', 'setuptools_scm'],
     packages=find_packages(exclude=['pytests']),
     use_scm_version=True,
-    setup_requires=['pytest-runner', 'setuptools_scm'],
+    setup_requires=['pytest-runner'],
     test_suite='pytests',
     tests_require=['pytest'],
     zip_safe=True)
