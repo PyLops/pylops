@@ -16,6 +16,9 @@ db.sqlite3
 build
 dist
 
+# setuptools_scm generated  #
+lops/version.py
+
 # Others #
 pylops.egg-info/
 TODO

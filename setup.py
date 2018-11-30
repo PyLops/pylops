@@ -4,6 +4,9 @@ from setuptools import find_packages
 from setuptools_scm import get_version
 
 
+def src(pth):
+    return os.path.join(os.path.dirname(__file__), pth)
+
 # Project description
 descr = """
         Python library implementing some of the most common linear operators
@@ -13,15 +16,17 @@ descr = """
 # Utility function to read the README file.
 def read(file_name):
     """print README file"""
-    return open(os.path.join(os.path.dirname(__file__), file_name)).read()
+    return open(src(file_name)).read()
 
 
 # Setup
 setup(
     name='pylops',
-    version=get_version(root='.', relative_to=__file__),
+    version=get_version(root='.',
+                        relative_to=__file__,
+                        write_to=src('lops/version.py')),
     description=descr,
-    long_description=open('README.md').read(),
+    long_description=open(src('README.md')).read(),
     keywords=['algebra',
               'inverse problems',
               'large-scale optimization'],
