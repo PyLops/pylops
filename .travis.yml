@@ -1,6 +1,12 @@
-language: python3
+language: python
+
+python:
+  - "3.6"
+
+os:
+  - linux
 
 script:
-  - pip install -r requirements-dev.txt
-  - pip install .
-  - python setup.py test
+  - python3 -m pip install -r requirements-dev.txt
+  - python3 -m pip install .
+  - python3 setup.py test
