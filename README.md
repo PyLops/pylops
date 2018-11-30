@@ -1,5 +1,7 @@
 ![PyLops](docs/source/_static/pylops_b.png)
 
+[![Build Status](https://travis-ci.org/Statoil/pylops.svg?branch=master)](https://travis-ci.org/Statoil/pylops)
+
 ## Objective
 This Python library is inspired by the MATLAB [Spot – A Linear-Operator Toolbox](http://www.cs.ubc.ca/labs/scl/spot/) project.
 
