@@ -1,5 +1,5 @@
-language: python
+language: python3
 
 script:
-  - pip install --user .
+  - pip install .
   - python setup.py test
