@@ -58,7 +58,7 @@ This repository is organized as follows:
 * **testdata**:   sample datasets used in pytests and documentation
 * **docs**:       sphinx documentation
 * **examples**:   set of python script examples for each linear operator to be embedded in documentation using sphinx-gallery
-* **tutorials**:  set of python script tutorial to be embedded in documentation using sphinx-gallery
+* **tutorials**:  set of python script tutorials to be embedded in documentation using sphinx-gallery
 
 ## Getting started
 

@@ -25,3 +25,9 @@ from .optimization.leastsquares import PreconditionedInversion
 from .utils.seismicevents import makeaxis, linear2d, parabolic2d
 from .utils.tapers import hanningtaper, cosinetaper, taper2d, taper3d
 from .utils.wavelets import ricker, gaussian
+
+
+try:
+    from .version import version as __version__
+except ImportError:
+    __version__ = '0.0.0'

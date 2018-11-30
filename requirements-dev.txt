@@ -4,6 +4,8 @@ matplotlib
 ipython
 pytest
 pytest-runner
+setuptools_scm
+
 Sphinx
 sphinx-rtd-theme
 sphinx-gallery

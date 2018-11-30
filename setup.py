@@ -1,6 +1,7 @@
 import os
 from distutils.core import setup
 from setuptools import find_packages
+from setuptools_scm import get_version
 
 
 # Project description
@@ -18,7 +19,7 @@ def read(file_name):
 # Setup
 setup(
     name='pylops',
-    version='1.0.0',
+    version=get_version(root='.', relative_to=__file__),
     description=descr,
     long_description=open('README.md').read(),
     keywords=['algebra',
@@ -33,7 +34,8 @@ setup(
     author_email='mrava@equinor.com',
     install_requires=['numpy', 'scipy', 'matplotlib'],
     packages=find_packages(exclude=['pytests']),
-    setup_requires=['pytest-runner'],
+    use_scm_version=True,
+    setup_requires=['pytest-runner', 'setuptools_scm'],
     test_suite='pytests',
     tests_require=['pytest'],
     zip_safe=True)

@@ -12,6 +12,7 @@ dependencies:
   - numpydoc
   - pip:
     - pytest-runner
+    - setuptools_scm
     - sphinx-rtd-theme
     - sphinx-gallery
     - nbsphinx

@@ -12,6 +12,10 @@ Thumbs.db
 static/*
 db.sqlite3
 
+# Build #
+build
+dist
+
 # Others #
 pylops.egg-info/
 TODO
