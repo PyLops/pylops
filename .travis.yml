@@ -1,5 +1,6 @@
 language: python3
 
 script:
+  - pip install -r requirements-dev.txt
   - pip install .
   - python setup.py test
