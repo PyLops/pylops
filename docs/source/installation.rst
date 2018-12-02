@@ -13,9 +13,9 @@ Step-by-step installation for users
 
 Simply type the following command in your terminal:
 
-```
-pip install pylops
-```
+.. code-block:: bash
+
+   >> pip install pylops
 
 Alternatively, you can clone the repository
 

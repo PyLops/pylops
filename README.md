@@ -25,6 +25,9 @@ Such solvers only require the computation of forward and adjoint matrix-vector p
 Here is simple example showing how a dense first-order first derivative operator can be created,
 applied and inverted using numpy/scipy commands:
 ```python
+import numpy as np
+from scipy.linalg import lstsq
+
 nx = 7
 x = np.arange(nx) - (nx-1)/2
 
@@ -36,17 +39,20 @@ y = np.dot(D,x)
 # x = D'y
 xadj = np.dot(D.T,y)
 # xinv = D^-1 y
-xinv = scipy.linalg.lstsq(D, y)
+xinv = lstsq(D, y)[0]
 ```
 and similarly using PyLops commands:
 ```python
+from lops import FirstDerivative
+
 Dlop = FirstDerivative(nx, dtype='float64')
+
 # y = Dx
 y = Dlop*x
 # x = D'y
 xadj = Dlop.H*y
 # xinv = D^-1 y
-xinv = D / y
+xinv = Dlop / y
 ```
 
 Note how this second approach does not require creating a dense matrix, reducing both the memory load and the computational cost of

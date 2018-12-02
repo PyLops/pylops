@@ -23,30 +23,36 @@ applied and inverted using numpy/scipy commands:
 
 .. code-block:: python
 
+   import numpy as np
+   from scipy.linalg import lstsq
+
    nx = 7
    x = np.arange(nx) - (nx-1)/2
 
-   D = np.diag(0.5*np.ones(nx-1), k=1) - np.diag(0.5*np.ones(nx-1), k=-1)
+   D = np.diag(0.5*np.ones(nx-1),k=1) - np.diag(0.5*np.ones(nx-1),-1)
    D[0] = D[-1] = 0 # take away edge effects
 
    # y = Dx
-   y = np.dot(D, x)
+   y = np.dot(D,x)
    # x = D'y
-   xadj = np.dot(D.T, y)
+   xadj = np.dot(D.T,y)
    # xinv = D^-1 y
-   xinv = scipy.linalg.lstsq(D, y)
+   xinv = lstsq(D, y)[0]
 
 and similarly using PyLops commands:
 
 .. code-block:: python
 
+   from lops import FirstDerivative
+
    Dlop = FirstDerivative(nx, dtype='float64')
+
    # y = Dx
    y = Dlop*x
    # x = D'y
    xadj = Dlop.H*y
    # xinv = D^-1 y
-   xinv = D / y
+   xinv = Dlop / y
 
 Note how this second approach does not require creating a dense matrix, reducing both the memory load and the computational cost of
 applying a derivative to an input vector :math:`\mathbf{x}`. Moreover, the code becomes even more compact and espressive than in the previous case
