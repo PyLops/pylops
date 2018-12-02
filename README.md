@@ -35,7 +35,7 @@ y = np.dot(D,x)
 # x = D'y
 xadj = np.dot(D.T,y)
 # xinv = D^-1 y
-xinv = scipy.linalg.lstsq(D, y]
+xinv = scipy.linalg.lstsq(D, y)
 ```
 and similarly using PyLops commands:
 ```python

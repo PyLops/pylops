@@ -1,32 +1,22 @@
 import os
 from distutils.core import setup
 from setuptools import find_packages
-from setuptools_scm import get_version
-
 
 def src(pth):
     return os.path.join(os.path.dirname(__file__), pth)
 
 # Project description
 descr = """
-        Python library implementing some of the most common linear operators
-        without requiring to explicitly create a dense (or sparse) matrix.
+        Python library implementing linear operators to allow solving large-scale optimization
+        problems without requiring to explicitly create a dense (or sparse) matrix.
         """
-
-# Utility function to read the README file.
-def read(file_name):
-    """print README file"""
-    return open(src(file_name)).read()
-
 
 # Setup
 setup(
     name='pylops',
-    version=get_version(root='.',
-                        relative_to=__file__,
-                        write_to=src('lops/version.py')),
     description=descr,
     long_description=open(src('README.md')).read(),
+    long_description_content_type='text/markdown',
     keywords=['algebra',
               'inverse problems',
               'large-scale optimization'],
@@ -41,10 +31,12 @@ setup(
     ],
     author='mrava',
     author_email='mrava@equinor.com',
-    install_requires=['numpy', 'scipy', 'matplotlib', 'setuptools_scm'],
+    install_requires=['numpy', 'scipy', 'matplotlib'],
     packages=find_packages(exclude=['pytests']),
-    use_scm_version=True,
-    setup_requires=['pytest-runner'],
+    use_scm_version=dict(root = '.',
+                         relative_to = __file__,
+                         write_to = src('lops/version.py')),
+    setup_requires=['pytest-runner', 'setuptools_scm'],
     test_suite='pytests',
     tests_require=['pytest'],
     zip_safe=True)
