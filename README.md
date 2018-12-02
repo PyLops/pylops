@@ -64,39 +64,34 @@ This repository is organized as follows:
 
 ## Getting started
 
-We advise using the [Anaconda Python distribution](https://www.anaconda.com/download)
-to ensure that all the dependencies are installed via the ``Conda`` package manager.
+You need **Python 3.6.4 or greater**.
 
-### 1. Clone the repository
+If you want to simply use PyLops within your Python codes,
+type the following command in your terminal:
+
+```
+pip install pylops
+```
+
+## Contributing
+
+*Feel like contributing to the project? Adding new operators or tutorial?*
+
+We advise using the [Anaconda Python distribution](https://www.anaconda.com/download)
+to ensure that all the dependencies are installed via the ``Conda`` package manager. Follow
+the following instructions and read carefully the [CONTRIBUTING](CONTRIBUTING.md) file before getting started.
+
+### 1. Fork and clone the repository
 
 Execute the following in your terminal:
 
 ```
-git clone https://github.com/Statoil/pylops
+git clone https://github.com:your_name_here/pylops.git
 ```
 
-### 2a. Installation for users (Your own environment)
-
-The first time you clone the repository run the following command:
-```
-make install
-```
-to install the dependencies of PyLops and the PyLops library in your own active environment.
-
-### 2b. Installation for users (New Conda environment)
-The first time you clone the repository, create a new envionment and install the PyLops library
-by running the following command:
-```
-make install_conda
-```
-Remember to always activate the conda environment every time you open a new *bash* shell by typing:
-```
-source activate pylops
-```
-
-### 3. Installation environment for developers (New Conda environment)
-To ensure that further development of PyLops is performed within the same enviroment (i.e., same dependencies) as
-that defined by ``requirements.txt`` and ``environment.yml`` files, we suggest to work off a new Conda enviroment.
+### 2. Install PyLops in a new Conda environment
+To ensure that further development of PyLops is performed within the same environment (i.e., same dependencies) as
+that defined by ``requirements-dev.txt`` or ``environment-dev.yml`` files, we suggest to work off a new Conda enviroment.
 
 The first time you clone the repository run the following command:
 ```
@@ -108,8 +103,7 @@ make tests
 ```
 Make sure no tests fail, this guarantees that the installation has been successfull.
 
-Again, if using Conda environment, remember to always activate the conda environment every time you open
-a new terminal by typing:
+Remember to always activate the conda environment every time you open a new terminal by typing:
 ```
 source activate lops
 ```

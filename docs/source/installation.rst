@@ -11,37 +11,29 @@ to ensure that all the dependencies are installed via the ``Conda`` package mana
 Step-by-step installation for users
 -----------------------------------
 
-Clone the repository by executing the following in your terminal:
+Simply type the following command in your terminal:
+
+```
+pip install pylops
+```
+
+Alternatively, you can clone the repository
 
 .. code-block:: bash
 
    >> git clone git@github.com:Statoil/pylops.git
 
-Alternatively, you can download the zip file of the repository at the top of the main page.
-
-The first time you clone the repository run the following command:
-
-.. code-block:: bash
-
-   >> make install
-
-to install the dependencies of PyLops and the PyLops library in your own active environemnt.
-
-If you prefer to build a new Conda enviroment just for PyLops, run the following command:
-
-.. code-block:: bash
-
-   >> make install_conda
-
-Remember to always activate the conda environment every time you open a new *bash* shell by typing:
-
-.. code-block:: bash
-
-   >> source activate lops
+or download the zip file of the repository (green button in the top right corner of the main github repo page).
 
 
 Step-by-step installation for developers
 ----------------------------------------
+Fork and clone the repository by executing the following in your terminal:
+
+.. code-block:: bash
+
+   >> git clone git@github.com:your_name_here/pylops.git
+
 The first time you clone the repository run the following command:
 
 .. code-block:: bash

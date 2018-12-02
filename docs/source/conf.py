@@ -5,11 +5,11 @@ import datetime
 import sphinx_rtd_theme
 import sphinx_gallery
 from sphinx_gallery.sorting import FileNameSortKey
+from pkg_resources import get_distribution
+
 
 # Sphinx needs to be able to import the package to use autodoc and get the version number
 sys.path.insert(0, os.path.abspath('../../lops'))
-
-full_version='1.0.0'
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -84,10 +84,11 @@ master_doc = 'index'
 year = datetime.date.today().year
 project = 'PyLops'
 copyright = '2018-{}, Matteo Ravasi'.format(year)
-if len(full_version.split('+')) > 1 or full_version == 'unknown':
+
+# Version
+version = get_distribution('pylops').version
+if len(version.split('+')) > 1 or version == 'unknown':
     version = 'dev'
-else:
-    version = full_version
 
 # These enable substitutions using |variable| in the rst files
 rst_epilog = """
