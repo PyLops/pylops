@@ -116,7 +116,7 @@ source activate lops
 ```
 
 ## Documentation
-The official documentation of PyLops is available at *COMING SOON*.
+The official documentation of PyLops is available [here](https://pylops.readthedocs.io/).
 
 Visit this page to get started learning about different operators and their applications as well as how to
 create new operators yourself and make it to the ``Contributors`` list.
