@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 
 import lops
 
+plt.close('all')
+
 ###############################################################################
 # Let's start by looking at a simple first-order centered derivative and how could implement it
 # naively by creating a dense matrix. Note that we will not apply the derivative where the

@@ -11,6 +11,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import lops
+
+plt.close('all')
+
 ###############################################################################
 # To start let's consider the simplest problem, *least-square inversion without regularization*.
 # By expressing the forward problem in a matrix form :math:`\mathbf{y}= \mathbf{A} \mathbf{x}`,

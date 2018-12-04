@@ -20,6 +20,8 @@ import lops
 
 from lops.utils.wavelets import ricker
 
+plt.close('all')
+
 ###############################################################################
 # We will start by creating a zero signal of lenght :math:`nt` and we will place a
 # unitary spike at its center. We also create our filter to be applied by means of

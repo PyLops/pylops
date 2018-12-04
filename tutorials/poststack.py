@@ -29,6 +29,8 @@ from scipy.signal import filtfilt
 import lops
 from lops.utils.wavelets import ricker
 
+plt.close('all')
+
 ###############################################################################
 # Let's start with a 1d example. A synthetic profile of acoustic impedance
 # is created and data is modelled using both the dense and linear operator version

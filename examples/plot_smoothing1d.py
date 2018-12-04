@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 
 import lops
 
+plt.close('all')
+
 ###############################################################################
 # Define the input parameters: number of samples of input signal (``N``) and
 # lenght of the smoothing filter regression coefficients (:math:`n_{smooth}`).

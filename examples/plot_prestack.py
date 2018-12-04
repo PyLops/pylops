@@ -11,6 +11,8 @@ from scipy.signal import filtfilt
 import lops
 from lops.utils.wavelets import ricker
 
+plt.close('all')
+
 ###############################################################################
 # Let's start by creating the input elastic property profiles and wavelet
 nt0 = 501

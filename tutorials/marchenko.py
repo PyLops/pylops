@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 
 from scipy.signal import convolve
 from lops.waveeqprocessing import Marchenko
+
+plt.close('all')
+
 ###############################################################################
 # Let's start by defining some input parameters and loading the test data
 

@@ -25,6 +25,8 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as pltgs
 
 import lops
+
+plt.close('all')
 # sphinx_gallery_thumbnail_number = 2
 
 ###############################################################################

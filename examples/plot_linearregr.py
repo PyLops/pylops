@@ -29,6 +29,8 @@ import matplotlib.pyplot as plt
 
 import lops
 
+plt.close('all')
+
 ###############################################################################
 # Define the input parameters: number of samples along the t-axis (``N``),
 # linear regression coefficients (``x``), and standard deviation of noise

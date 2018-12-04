@@ -19,6 +19,8 @@ import matplotlib.gridspec as pltgs
 import lops
 from lops.utils import dottest
 
+plt.close('all')
+
 ###############################################################################
 # Let's start with something very simple. We will make a :py:class:`lops.MatrixMult`
 # operator and verify that its implementation passes the dot-test.

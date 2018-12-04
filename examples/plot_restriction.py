@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 
 import lops
 
+plt.close('all')
+
 ###############################################################################
 # Let's create a signal of size :math:`nt` and sampling :math:`dt` that is composed
 # of three sinusoids at frequencies :math:`freqs`.

@@ -14,6 +14,8 @@ import matplotlib.gridspec as pltgs
 
 import lops
 
+plt.close('all')
+
 ###############################################################################
 # Let's define a diagonal operator :math:`\mathbf{d}` with increasing numbers from
 # ``0`` to ``N`` and a unitary model :math:`\mathbf{x}`.

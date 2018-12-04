@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 
 import lops
 
+plt.close('all')
+
 ###############################################################################
 # Let's start by applying the one dimensional FFT to a one dimensional sinusoidal
 # signal :math:`d(t)=sin(2 \pi f_0t)` using a time axis of lenght :math:`nt`

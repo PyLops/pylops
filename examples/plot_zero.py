@@ -11,6 +11,8 @@ import matplotlib.gridspec as pltgs
 
 import lops
 
+plt.close('all')
+
 ###############################################################################
 # Let's define an zero operator :math:`\mathbf{0}` with same number of elements for data
 # :math:`N` and model :math:`M`.

@@ -10,6 +10,8 @@ import matplotlib.gridspec as pltgs
 
 import lops
 
+plt.close('all')
+
 ###############################################################################
 # Let's define an identity operator :math:`\mathbf{I}` with same number of elements for data
 # :math:`N` and model :math:`M`.

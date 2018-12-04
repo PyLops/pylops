@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 
 import lops
 
+plt.close('all')
+
 ###############################################################################
 # Let's start by defining two second derivatives :py:class:`lops.SecondDerivative`
 # that we will be using in this example.

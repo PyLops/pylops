@@ -16,6 +16,8 @@ from lops.utils.tapers import taper3d
 from lops.utils.wavelets import ricker
 from lops.utils.seismicevents import makeaxis, hyperbolic2d
 
+plt.close('all')
+
 ###############################################################################
 # Let's start by creating a set of hyperbolic events to be used as our MDC kernel
 

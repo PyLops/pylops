@@ -30,6 +30,8 @@ from scipy import misc
 
 import lops
 
+plt.close('all')
+
 ###############################################################################
 # To start we import a 2d image and define our restriction operator to irregularly and randomly
 # sample the image for 30% of the entire grid

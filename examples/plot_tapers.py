@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 
 import lops
 
+plt.close('all')
+
 ############################################
 # Let's first define the time and space axes
 par = {'ox':-200, 'dx':2, 'nx':201,

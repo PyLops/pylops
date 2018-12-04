@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 
 import lops
 
+plt.close('all')
+
 ############################################
 # Let's first define the time and space axes as well as some auxiliary input
 # parameters that we will use to create a Ricker wavelet
