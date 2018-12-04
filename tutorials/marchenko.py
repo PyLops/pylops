@@ -183,5 +183,5 @@ ax3.set_ylim(1.2, 0)
 
 ##############################################################################
 # Note that Marchenko redatuming can also be applied simultaneously to multiple subsurface points.
-# Use :py:funct:`lops.waveeqprocessing.Marchenko.apply_multiplepoints` instead of
-# :py:funct:`lops.waveeqprocessing.Marchenko.apply_onepoint`
+# Use :py:func:`lops.waveeqprocessing.Marchenko.apply_multiplepoints` instead of
+# :py:func:`lops.waveeqprocessing.Marchenko.apply_onepoint`
