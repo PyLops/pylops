@@ -1,7 +1,9 @@
-![PyLops](docs/source/_static/pylops_b.png)
+![PyLops](https://github.com/Statoil/pylops/blob/master/docs/source/_static/pylops_b.png)
 
 [![Build Status](https://travis-ci.org/Statoil/pylops.svg?branch=master)](https://travis-ci.org/Statoil/pylops)
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=latest)](https://pylops.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
+[![OS-support](https://img.shields.io/badge/OS-linux,osx-850A8B.svg)](https://github.com/Statoil/pylops)
 
 ## Objective
 This Python library is inspired by the MATLAB [Spot – A Linear-Operator Toolbox](http://www.cs.ubc.ca/labs/scl/spot/) project.
@@ -90,7 +92,7 @@ the following instructions and read carefully the [CONTRIBUTING](CONTRIBUTING.md
 
 ### 1. Fork and clone the repository
 
-Execute the following in your terminal:
+Execute the following command in your terminal:
 
 ```
 git clone https://github.com:your_name_here/pylops.git
