@@ -126,5 +126,6 @@ that can be tailored to our needs, and as contribution to the free software comm
 
    Implementing new operators  <adding.rst>
    Contributing      <contributing.rst>
+   Changelog <changelog.rst>
    Credits           <credits.rst>
 
