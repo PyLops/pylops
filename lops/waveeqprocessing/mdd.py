@@ -160,7 +160,7 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         MDC operator has both negative and positive time (``True``)
         or only positive (``False``)
     causality_precond : :obj:`bool`, optional
-        Type of elements in input array.
+        Apply causality mask (``True``) or not (``False``)
     adjoint : :obj:`bool`, optional
         Compute and return adjoint(s)
     psf : :obj:`bool`, optional
@@ -174,13 +174,13 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
 
     Returns
     ----------
-    minv: :obj:`numpy.ndarray`
+    minv : :obj:`numpy.ndarray`
         Inverted model.
-    madj: :obj:`numpy.ndarray`
+    madj : :obj:`numpy.ndarray`
         Adjoint model.
-    psfinv: :obj:`numpy.ndarray`
+    psfinv : :obj:`numpy.ndarray`
         Inverted psf.
-    psfadj: :obj:`numpy.ndarray`
+    psfadj : :obj:`numpy.ndarray`
         Adjoint psf.
 
     See Also
@@ -202,7 +202,7 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
     or, equivalently, by means of its normal equation
 
     .. math::
-        \mathbf{m}= (\mathbf{D}^H\mathbf{D})^{-1} \mathbf{D}^H\mathbf{d}$$
+        \mathbf{m}= (\mathbf{D}^H\mathbf{D})^{-1} \mathbf{D}^H\mathbf{d}
 
     where :math:`\mathbf{D}^H\mathbf{D}` is the PSF.
 

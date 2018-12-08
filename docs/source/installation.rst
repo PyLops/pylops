@@ -21,10 +21,14 @@ Alternatively, you can clone the repository
 
 .. code-block:: bash
 
-   >> git clone git@github.com:Statoil/pylops.git
+   >> git clone https://github.com/Statoil/pylops.git
 
-or download the zip file of the repository (green button in the top right corner of the main github repo page).
+or download the zip file of the repository (green button in the top right corner of the main github repo page) and
+install PyLops from terminal using the command:
 
+.. code-block:: bash
+
+   >> make install
 
 Step-by-step installation for developers
 ----------------------------------------
@@ -32,7 +36,7 @@ Fork and clone the repository by executing the following in your terminal:
 
 .. code-block:: bash
 
-   >> git clone git@github.com:your_name_here/pylops.git
+   >> git clone https://github.com/your_name_here/pylops.git
 
 The first time you clone the repository run the following command:
 
@@ -54,7 +58,7 @@ To ensure that everything has been setup correctly, run tests:
 
 Make sure no tests fail, this guarantees that the installation has been successfull.
 
-Again, if using Conda environment, remember to always activate the conda environment every time you open
+If using Conda environment, always remember to activate the conda environment every time you open
 a new *bash* shell by typing:
 
 .. code-block:: bash

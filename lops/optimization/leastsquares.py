@@ -51,14 +51,14 @@ def NormalEquationsInversion(Op, Regs, data, dataregs=None, epsI=0,
     -----
     Solve the following normal equations for a system of regularized equations
     given the operator :math:`\mathbf{Op}`, a list of regularization terms
-    :math:`Regs`, the data :math:`\mathbf{d}` and regularization damping
-    factors :math:`\epsilon I` and :math:`\epsilon \mathbf{R}_i`:
+    :math:`\mathbf{R_i}`, the data :math:`\mathbf{d}` and regularization damping
+    factors :math:`\epsilon_I` and :math:`\epsilon_{{R}_i}`:
 
     .. math::
         ( \mathbf{Op}^T\mathbf{Op} + \sum_i \epsilon_{{R}_i}^2
         \mathbf{R}_i^T \mathbf{R}_i + \epsilon_I^2 \mathbf{I} )  \mathbf{x}
-        = \mathbf{Op}^T \mathbf{y} +  \sum_i \epsilon_{{R}_i}^2 \
-        mathbf{R}_i^T \mathbf{d}_{R_i}
+        = \mathbf{Op}^T \mathbf{y} +  \sum_i \epsilon_{{R}_i}^2
+        \mathbf{R}_i^T \mathbf{d}_{R_i}
 
     """
     if dataregs is None:
@@ -119,8 +119,8 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
     Notes
     -----
     Create a regularized operator by augumenting the problem operator
-    :math:`Op` by a set of regularization terms :math:`Regs` and their
-    damping factors and :math:`\epsilon R_i`:
+    :math:`\mathbf{Op}`, by a set of regularization terms :math:`\mathbf{R_i}` and their
+    damping factors and :math:`\epsilon_{{R}_i}`:
 
     .. math::
         \begin{bmatrix}
@@ -191,9 +191,9 @@ def RegularizedInversion(Op, Regs, data, dataregs=None, epsRs=None,
     Notes
     -----
     Solve the following system of regularized equations given the operator
-    :math:`\mathbf{Op}`, a list of regularization terms :math:`\mathbf{Regs}`,
+    :math:`\mathbf{Op}`, a list of regularization terms :math:`\mathbf{R_i}`,
     the data :math:`\mathbf{d}` and regularization damping factors
-    :math:`\epsilon I` and :math:`\epsilon R_i`
+    :math:`\epsilon_I`: and :math:`\epsilon_{{R}_i}`:
 
     .. math::
         \begin{bmatrix}

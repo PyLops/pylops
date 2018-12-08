@@ -62,12 +62,12 @@ letting the user focus on the formulation of equations of the forward problem to
 Terminology
 -----------
 A common *terminology* is used within the entire documentation of PyLops. Every linear operator and its application to
-a model will be defined as **forward model (or operation)** while its
+a model will be referred to as **forward model (or operation)**
 
 .. math::
     \mathbf{y} =  \mathbf{A} \mathbf{x}
 
-while its application to a data is defined as as **adjoint modelling (or operation)** while its
+while its application to a data is referred to as **adjoint modelling (or operation)**
 
 .. math::
     \mathbf{x} = \mathbf{A}^H \mathbf{y}
@@ -109,6 +109,7 @@ that can be tailored to our needs, and as contribution to the free software comm
 
    installation.rst
    tutorials/index.rst
+   FAQ <faq.rst>
 
 .. toctree::
    :maxdepth: 2

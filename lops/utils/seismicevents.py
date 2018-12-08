@@ -117,7 +117,7 @@ def linear2d(x, t, v, t0, theta, amp, wav):
 
 
 def parabolic2d(x, t, t0, px, pxx, amp, wav):
-    """Parabolic 2D events
+    r"""Parabolic 2D events
 
     Create 2d parabolic events given intercept time,
     slowness, curvature, and amplitude of each event
