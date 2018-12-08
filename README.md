@@ -95,7 +95,7 @@ the following instructions and read carefully the [CONTRIBUTING](CONTRIBUTING.md
 Execute the following command in your terminal:
 
 ```
-git clone https://github.com:your_name_here/pylops.git
+git clone https://github.com/your_name_here/pylops.git
 ```
 
 ### 2. Install PyLops in a new Conda environment
