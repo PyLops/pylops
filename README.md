@@ -144,4 +144,5 @@ operators that can be tailored to our needs, and as contribution to the free sof
 
 
 ## Contributors
-* Matteo Ravasi, Equinor
+* Matteo Ravasi, mrava87
+* Carlos da Costa, cako
