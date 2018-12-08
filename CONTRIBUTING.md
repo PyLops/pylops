@@ -47,7 +47,7 @@ Ready to contribute?
 
 2. Clone your fork locally:
     ```
-    git clone https://github.com:your_name_here/pylops.git
+    git clone https://github.com/your_name_here/pylops.git
     ```
 
 3. Follow the installation instructions for *developers* that you find

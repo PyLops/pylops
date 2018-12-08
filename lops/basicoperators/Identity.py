@@ -48,13 +48,13 @@ class Identity(LinearOperator):
         \mathbf{x} = \mathbf{I} \mathbf{y} = \mathbf{y}
 
     For :math:`M > N`, the *Identity* operator takes the first :math:`M` elements of the
-    model $\mathbf{x}$ into the data $\mathbf{y}$ in forward mode
+    model :math:`\mathbf{x}` into the data :math:`\mathbf{y}` in forward mode
 
     .. math::
 
         y_i = x_i  \quad \forall i=1,2,...,N
 
-    and all the elements of the data $\mathbf{y}$ into the first :math:`M` elements of
+    and all the elements of the data :math:`\mathbf{y}` into the first :math:`M` elements of
     model in adjoint mode (other elements are ``O``):
 
     .. math::

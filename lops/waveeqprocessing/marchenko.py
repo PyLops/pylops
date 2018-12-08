@@ -80,7 +80,7 @@ class Marchenko():
     dtype : :obj:`bool`, optional
         Type of elements in input array.
 
-     Attributes
+    Attributes
     ----------
     ns : :obj:`int`
         Number of samples along source axis
@@ -195,7 +195,7 @@ class Marchenko():
 
     def apply_onepoint(self, trav, G0=None, nfft=None, rtm=False, greens=False,
                        dottest=False, fast=True, **kwargs_lsqr):
-        """Marchenko redatuming for one point
+        r"""Marchenko redatuming for one point
 
         Solve the Marchenko redatuming inverse problem for a single point given its
         direct arrival traveltime curve (``trav``) and waveform (``G0``).
@@ -316,7 +316,7 @@ class Marchenko():
 
     def apply_multiplepoints(self, trav, G0=None, nfft=None, rtm=False, greens=False,
                              dottest=False, **kwargs_lsqr):
-        """Marchenko redatuming for multiple points
+        r"""Marchenko redatuming for multiple points
 
         Solve the Marchenko redatuming inverse problem for multiple points given
         their direct arrival traveltime curves (``trav``) and waveforms (``G0``).

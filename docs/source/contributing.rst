@@ -58,7 +58,7 @@ Ready to contribute?
 
 .. code-block:: bash
 
-   >>  git clone https://github.com:your_name_here/pylops.git
+   >>  git clone https://github.com/your_name_here/pylops.git
 
 3. Follow the installation instructions for *developers* that you find in :ref:`installation` page.
    Ensure that you are able to *pass all the tests before moving forward*.

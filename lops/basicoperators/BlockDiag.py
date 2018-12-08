@@ -23,8 +23,8 @@ class BlockDiag(LinearOperator):
 
     Notes
     -----
-    An horizontal stack of N linear operators is created such as its application
-    in forward mode leads to
+    A block-diagonal operator composed of N linear operators is created such
+    as its application in forward mode leads to
 
     .. math::
         \begin{bmatrix}

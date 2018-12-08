@@ -25,7 +25,7 @@ nx = 10
 D = np.diag(0.5*np.ones(nx-1), k=1) - np.diag(0.5*np.ones(nx-1), -1)
 D[0] = D[-1] = 0
 
-fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+fig, ax = plt.subplots(1, 1, figsize=(6, 4))
 im = plt.imshow(D, cmap='rainbow', vmin=-0.5, vmax=0.5)
 ax.set_title('First derivative', size=20, fontweight='bold')
 ax.set_xticks(np.arange(nx-1)+0.5)
@@ -33,7 +33,7 @@ ax.set_yticks(np.arange(nx-1)+0.5)
 ax.grid(linewidth=3, color='white')
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
-fig.colorbar(im, ax=ax, ticks=[-0.5, 0.5], pad=0.3, shrink=0.7)
+fig.colorbar(im, ax=ax, ticks=[-0.5, 0.5], shrink=0.7)
 
 ###############################################################################
 # We now create a signal filled with zero and a single one at its center and apply
@@ -68,7 +68,7 @@ axs[1].set_title('Adjoint', size=20, fontweight='bold')
 # Let's move onto applying the same first derivative to a 2d array in the first direction
 nx, ny = 11, 21
 A = np.zeros((nx, ny))
-A[int(nx/2), int(ny/2)] = 1
+A[nx//2, ny//2] = 1.
 
 D1op = lops.FirstDerivative(nx*ny, dims=(nx, ny), dir=0, dtype='float64')
 B = np.reshape(D1op*np.ndarray.flatten(A), (nx, ny))
@@ -79,20 +79,20 @@ im = axs[0].imshow(A, interpolation='nearest', cmap='rainbow')
 axs[0].axis('tight')
 axs[0].set_title('x')
 plt.colorbar(im, ax=axs[0])
-im = ax.imshow(B, interpolation='nearest', cmap='rainbow')
+im = axs[1].imshow(B, interpolation='nearest', cmap='rainbow')
 axs[1].axis('tight')
 axs[1].set_title('y')
-plt.colorbar(im, ax=axs[0])
+plt.colorbar(im, ax=axs[1])
 fig.tight_layout()
 
 #############################################
 # We can now do the same for the second derivative
 
-A = np.zeros((11, 21))
-A[5, 10] = 1
+A = np.zeros((nx, ny ))
+A[nx//2, ny//2] = 1.
 
-D1op = lops.SecondDerivative(nx*ny, dims=(nx, ny), dir=0, dtype='float64')
-B = np.reshape(D1op*np.ndarray.flatten(A), (nx, ny))
+D2op = lops.SecondDerivative(nx*ny, dims=(nx, ny), dir=0, dtype='float64')
+B = np.reshape(D2op*np.ndarray.flatten(A), (nx, ny))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('Second Derivative in 1st direction', fontsize=12, fontweight='bold')
@@ -112,7 +112,7 @@ B = np.reshape(D2op*np.ndarray.flatten(A), (nx, ny))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('Second Derivative in 2nd direction', fontsize=12, fontweight='bold')
-im = axs[1].imshow(A, interpolation='nearest', cmap='rainbow')
+im = axs[0].imshow(A, interpolation='nearest', cmap='rainbow')
 axs[0].axis('tight')
 axs[0].set_title('x')
 plt.colorbar(im, ax=axs[0])

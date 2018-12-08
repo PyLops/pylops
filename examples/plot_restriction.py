@@ -17,8 +17,8 @@ import lops
 plt.close('all')
 
 ###############################################################################
-# Let's create a signal of size :math:`nt` and sampling :math:`dt` that is composed
-# of three sinusoids at frequencies :math:`freqs`.
+# Let's create a signal of size ``nt`` and sampling ``dt`` that is composed
+# of three sinusoids at frequencies ``freqs``.
 
 nt = 200
 dt = 0.004
@@ -52,8 +52,7 @@ ymask = Rop.mask(x)
 # Visualize data
 fig = plt.figure(figsize=(15, 5))
 plt.plot(t, x, 'k', lw=3)
-plt.plot(t, x, '.k', ms=30, label='original')
-plt.plot(t[iava], y, '.r', ms=15, label='available samples')
-plt.plot(t, ymask, '.g', ms=5, label='all samples')
+plt.plot(t, x, '.k', ms=20, label='all samples')
+plt.plot(t, ymask, '.g', ms=15, label='available samples')
 plt.legend()
 plt.title('Data restriction')

@@ -117,7 +117,7 @@ html_context = {
     'menu_links_name': 'Getting help and contributing',
     'menu_links': [
         ('<i class="fa fa-github fa-fw"></i> Source Code', 'https://github.com/Statoil/pylops'),
-        ('<i class="fa fa-users fa-fw"></i> Contributing', 'https://github.com/Statoil/pylops/src/master/CONTRIBUTING.md'),
+        ('<i class="fa fa-users fa-fw"></i> Contributing', 'https://github.com/Statoil/pylops/blob/master/CONTRIBUTING.md'),
     ],
     # Custom variables to enable "Improve this page"" and "Download notebook"
     # links

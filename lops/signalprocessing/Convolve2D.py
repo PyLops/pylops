@@ -38,12 +38,12 @@ class Convolve2D(LinearOperator):
     :math:`d(t,x)` and a compact filter kernel :math:`h(t,x)` in forward model:
 
     .. math::
-        y(t,x) = \int_{-\inf}^{\inf}\int_{-\inf}^{\inf} h(t-\tau,x-\chi) d(\tau,\chi) d\tau d\chi $$
+        y(t,x) = \int_{-\inf}^{\inf}\int_{-\inf}^{\inf} h(t-\tau,x-\chi) d(\tau,\chi) d\tau d\chi
 
     This operation can be discretized as follows
 
     .. math::
-        y[i,n] = \sum_{j=-\inf}^{\inf} \sum_{m=-\inf}^{\inf} h[i-j,n-m] d[j,m] $$
+        y[i,n] = \sum_{j=-\inf}^{\inf} \sum_{m=-\inf}^{\inf} h[i-j,n-m] d[j,m]
 
 
     as well as performed in the frequency domain.
@@ -60,7 +60,7 @@ class Convolve2D(LinearOperator):
     In time domain:
 
     .. math::
-        y(t,x) = \int_{-\inf}^{\inf}\int_{-\inf}^{\inf} h(t+\tau,x+\chi) d(\tau,\chi) d\tau d\chi $$
+        y(t,x) = \int_{-\inf}^{\inf}\int_{-\inf}^{\inf} h(t+\tau,x+\chi) d(\tau,\chi) d\tau d\chi
 
     or in frequency domain:
 
