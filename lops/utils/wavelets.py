@@ -1,10 +1,10 @@
 import warnings
 import numpy as np
-import matplotlib.pyplot as plt
 
 from scipy.signal.windows import gaussian
 
-def ricker(t, f0=10, plotflag=False):
+
+def ricker(t, f0=10):
     r"""Ricker wavelet
 
     Create a Ricker wavelet given time axis ``t`` and central frequency ``f_0``
@@ -15,8 +15,6 @@ def ricker(t, f0=10, plotflag=False):
         Time axis (positive part including zero sample)
     f0 : :obj:`float`, optional
         Central frequency
-    plotflag : :obj:`bool`, optional
-        Quickplot
 
     Returns
     -------
@@ -38,16 +36,10 @@ def ricker(t, f0=10, plotflag=False):
     t = np.concatenate((np.flipud(-t[1:]), t), axis=0)
     wcenter = np.argmax(np.abs(w))
 
-    if plotflag:
-        plt.figure(figsize=(7, 2))
-        plt.plot(t, w, 'k', lw=2)
-        plt.title('Ricker wavelet')
-        plt.xlabel('t')
-
     return w, t, wcenter
 
 
-def gaussian(t, std=1, plotflag=False):
+def gaussian(t, std=1):
     r"""Ricker wavelet
 
     Create a Gaussian wavelet given time axis ``t`` and standard deviation ``std``
@@ -59,8 +51,6 @@ def gaussian(t, std=1, plotflag=False):
         Time axis (positive part including zero sample)
     std : :obj:`float`, optional
         Standard deviation of gaussian
-    plotflag : :obj:`bool`, optional
-        Quickplot
 
     Returns
     -------
@@ -79,11 +69,5 @@ def gaussian(t, std=1, plotflag=False):
     w = gaussian(len(t)*2-1, std=std)
     t = np.concatenate((np.flipud(-t[1:]), t), axis=0)
     wcenter = np.argmax(np.abs(w))
-
-    if plotflag:
-        plt.figure(figsize=(7, 2))
-        plt.plot(t, w, 'k', lw=2)
-        plt.title('Gaussian wavelet')
-        plt.xlabel('t')
 
     return w, t, wcenter

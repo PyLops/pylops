@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def hanningtaper(nmask, ntap):
@@ -59,7 +58,7 @@ def cosinetaper(nmask, square=False):
     return tpr_1d
 
 
-def taper2d(nt, nmask, ntap, tapertype='hanning', plotflag=False):
+def taper2d(nt, nmask, ntap, tapertype='hanning'):
     r"""2D taper
 
     Create 2d mask of size :math:`[n_{mask} \times n_t]`
@@ -75,8 +74,6 @@ def taper2d(nt, nmask, ntap, tapertype='hanning', plotflag=False):
         Number of samples of tapering at edges of first dimension
     tapertype : :obj:`int`
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
-    plotflag : :obj:`bool`
-        Quickplot
 
     Returns
     -------
@@ -97,16 +94,10 @@ def taper2d(nt, nmask, ntap, tapertype='hanning', plotflag=False):
 
     # replicate taper to second dimension
     tpr_2d = np.tile(tpr_1d[:, np.newaxis], (1, nt))
-
-    if plotflag:
-        plt.figure(figsize=(7, 3))
-        plt.plot(tpr_1d, 'k', lw=2)
-        plt.title('Taper')
-
     return tpr_2d
 
 
-def taper3d(nt, nmask, ntap, tapertype='hanning', plotflag=False):
+def taper3d(nt, nmask, ntap, tapertype='hanning'):
     r"""2D taper
 
     Create 2d mask of size :math:`[n_{mask}[0] \times n_{mask}[1] \times n_t]`
@@ -123,8 +114,6 @@ def taper3d(nt, nmask, ntap, tapertype='hanning', plotflag=False):
     tapertype : :obj:`int`
         Type of taper (``hanning``, ``cosine``,
         ``cosinesquare`` or ``None``)
-    plotflag : :obj:`bool`
-        Quickplot
 
     Returns
     -------
@@ -154,12 +143,5 @@ def taper3d(nt, nmask, ntap, tapertype='hanning', plotflag=False):
 
     # replicate taper to third dimension
     tpr_3d = np.tile(tpr_yx[:, :, np.newaxis], (1, nt))
-
-    if plotflag:
-        plt.figure(figsize=(7, 3))
-        plt.imshow(tpr_3d[:, :, int(nt/2)], 'jet')
-        plt.title('Taper in y-x slice')
-        plt.xlabel('x')
-        plt.ylabel('y')
 
     return tpr_3d

@@ -5,7 +5,6 @@ This example shows how to create some basic tapers in 1d, 2d, and 3d
 using the :py:mod:`lops.utils.tapers` module.
 """
 import matplotlib.pyplot as plt
-
 import lops
 
 plt.close('all')
@@ -34,8 +33,18 @@ plt.legend()
 ############################################
 # Similarly we can create 2d and 3d tapers with any of the tapers above
 tap2d = lops.utils.tapers.taper2d(par['nt'], par['nx'],
-                                  par['ntapx'], plotflag='True')
+                                  par['ntapx'])
+
+plt.figure(figsize=(7, 3))
+plt.plot(tap2d[:, par['nt']//2], 'k', lw=2)
+plt.title('Taper')
 
 tap3d = lops.utils.tapers.taper3d(par['nt'], (par['ny'], par['nx']),
-                                  (par['ntapy'], par['ntapx']),
-                                  plotflag='True')
+                                  (par['ntapy'], par['ntapx']))
+
+plt.figure(figsize=(7, 3))
+plt.imshow(tap3d[:, :, par['nt']//2], 'jet')
+plt.title('Taper in y-x slice')
+plt.xlabel('x')
+plt.ylabel('y')
+

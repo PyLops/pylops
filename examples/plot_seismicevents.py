@@ -25,8 +25,7 @@ t, t2, x, y = lops.utils.seismicevents.makeaxis(par)
 
 # Create wavelet
 wav = lops.utils.wavelets.ricker(np.arange(41)*par['dt'],
-                                 f0=par['f0'],
-                                 plotflag=False)[0]
+                                 f0=par['f0'])[0]
 
 ############################################
 # We want to create a 2d data with a number of crossing linear events using the

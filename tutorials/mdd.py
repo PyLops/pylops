@@ -34,14 +34,13 @@ amp_G = [1., 0.6, 0.5]
 
 # Taper
 tap = taper3d(par['nt'], [par['ny'], par['nx']],
-              (5, 5), tapertype='hanning',
-              plotflag=False)
+              (5, 5), tapertype='hanning')
 
 # Create axis
 t, t2, x, y = makeaxis(par)
 
 # Create wavelet
-wav = ricker(t[:41], f0=par['f0'], plotflag=False)[0]
+wav = ricker(t[:41], f0=par['f0'])[0]
 
 # Generate model
 m, mwav = hyperbolic2d(x, t, t0_m, vrms_m, amp_m, wav)

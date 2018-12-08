@@ -31,7 +31,7 @@ setup(
     ],
     author='mrava',
     author_email='mrava@equinor.com',
-    install_requires=['numpy', 'scipy', 'matplotlib'],
+    install_requires=['numpy', 'scipy'],
     packages=find_packages(exclude=['pytests']),
     use_scm_version=dict(root = '.',
                          relative_to = __file__,
