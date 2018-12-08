@@ -1,19 +1,39 @@
+PIP := $(shell command -v pip3 2> /dev/null || command which pip 2> /dev/null)
+PYTHON := $(shell command -v python3 2> /dev/null || command which python 2> /dev/null)
+
 .PHONY: install dev-install install_conda dev-install_conda tests doc docupdate
 
+pipcheck:
+ifndef PIP
+	$(error "Ensure pip or pip3 are in your PATH")
+endif
+	@echo Using pip: $(PIP)
+
+pythoncheck:
+ifndef PYTHON
+	$(error "Ensure python or python3 are in your PATH")
+endif
+	@echo Using python: $(PYTHON)
+
 install:
-	pip install -r requirements.txt && pip install .
+	make pipcheck
+	$(PIP) install -r requirements.txt && $(PIP) install .
 
 dev-install:
-	pip install -r requirements-dev.txt && pip install -e .
+	make pipcheck
+	$(PIP) install -r requirements-dev.txt && $(PIP) install -e .
 
 install_conda:
-	conda env create -f environment.yml && source activate lops && pip install .
+	make pipcheck
+	conda env create -f environment.yml && source activate lops && $(PIP) install .
 
 dev-install_conda:
-	conda env create -f environment-dev.yml && source activate lops && pip install -e .
+	make pipcheck
+	conda env create -f environment-dev.yml && source activate lops && $(PIP) install -e .
 
 tests:
-	python setup.py test
+	make pythoncheck
+	$(PYTHON) setup.py test
 
 doc:
 	cd docs  && rm -rf source/api/generated && rm -rf source/gallery &&\
