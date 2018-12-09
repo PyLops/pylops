@@ -18,7 +18,7 @@ dist
 pylops.egg-info/
 
 # setuptools_scm generated  #
-lops/version.py
+pylops/version.py
 
 # Development #
 notebooks
