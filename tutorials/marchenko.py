@@ -1,7 +1,7 @@
 """
 Marchenko redatuming by inversion
 =================================
-This example shows how to set-up and run the :py:class:`lops.waveeqprocessing.Marchenko`
+This example shows how to set-up and run the :py:class:`pylops.waveeqprocessing.Marchenko`
 inversion using synthetic data.
 
 """
@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.signal import convolve
-from lops.waveeqprocessing import Marchenko
+from pylops.waveeqprocessing import Marchenko
 
 plt.close('all')
 
@@ -116,7 +116,7 @@ axs[1].set_ylim(1.5, 0)
 
 
 ##############################################################################
-# Let's now create an object of the :py:class:`lops.waveeqprocessing.Marchenko`
+# Let's now create an object of the :py:class:`pylops.waveeqprocessing.Marchenko`
 # class and apply redatuming for a single subsurface point ``vs``.
 
 # direct arrival window
@@ -183,5 +183,5 @@ ax3.set_ylim(1.2, 0)
 
 ##############################################################################
 # Note that Marchenko redatuming can also be applied simultaneously to multiple subsurface points.
-# Use :py:func:`lops.waveeqprocessing.Marchenko.apply_multiplepoints` instead of
-# :py:func:`lops.waveeqprocessing.Marchenko.apply_onepoint`
+# Use :py:func:`pylops.waveeqprocessing.Marchenko.apply_multiplepoints` instead of
+# :py:func:`pylops.waveeqprocessing.Marchenko.apply_onepoint`

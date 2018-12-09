@@ -2,8 +2,8 @@
 Operators concatenation
 =======================
 
-This example shows how to use stacking operators such as :py:class:`lops.VStack`,
-:py:class:`lops.HStack`, and  :py:class:`lops.BlockDiag`.
+This example shows how to use stacking operators such as :py:class:`pylops.VStack`,
+:py:class:`pylops.HStack`, and  :py:class:`pylops.BlockDiag`.
 
 These operators allow for different combinations of multiple linear operators in
 a single operator. Such functionalities are used within PyLops as the basis for
@@ -13,15 +13,15 @@ of optimization problems with regularization or preceonditioning.
 import numpy as np
 import matplotlib.pyplot as plt
 
-import lops
+import pylops
 
 plt.close('all')
 
 ###############################################################################
-# Let's start by defining two second derivatives :py:class:`lops.SecondDerivative`
+# Let's start by defining two second derivatives :py:class:`pylops.SecondDerivative`
 # that we will be using in this example.
-D2hop = lops.SecondDerivative(11*21, dims=[11, 21], dir=1, dtype='float32')
-D2vop = lops.SecondDerivative(11*21, dims=[11, 21], dir=0, dtype='float32')
+D2hop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=1, dtype='float32')
+D2vop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=0, dtype='float32')
 
 ###############################################################################
 # Chaining of operators represents the simplest concatenation that
@@ -67,7 +67,7 @@ plt.tight_layout()
 Nv, Nh = 11, 21
 X = np.zeros((Nv, Nh))
 X[int(Nv/2), int(Nh/2)] = 1
-Dstack = lops.VStack([D2vop, D2hop])
+Dstack = pylops.VStack([D2vop, D2hop])
 
 Y = np.reshape(Dstack * X.flatten(), (Nv * 2, Nh))
 
@@ -100,7 +100,7 @@ X[int(Nv/2), int(Nh/2)] = 1
 X[int(Nv/2) + Nv, int(Nh/2)] = 1
 X[int(Nv/2) + 2*Nv, int(Nh/2)] = 1
 
-Hstackop = lops.HStack([D2vop, 0.5*D2vop, -1*D2hop])
+Hstackop = pylops.HStack([D2vop, 0.5 * D2vop, -1 * D2hop])
 Y = np.reshape(Hstackop*X.flatten(), (Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
@@ -139,7 +139,7 @@ X[int(Nv/2), int(Nh/2)] = 1
 X[int(Nv/2) + Nv, int(Nh/2)] = 1
 X[int(Nv/2) + 2*Nv, int(Nh/2)] = 1
 
-Block = lops.BlockDiag([D2vop, 0.5*D2vop, -1*D2hop])
+Block = pylops.BlockDiag([D2vop, 0.5 * D2vop, -1 * D2hop])
 Y = np.reshape(Block*np.ndarray.flatten(X), (11*3, 21))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))

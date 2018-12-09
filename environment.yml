@@ -1,8 +1,7 @@
-name: lops
+name: pylops
 channels:
   - defaults
 dependencies:
-  - python=3.6.4
+  - python>=3.6.4
   - numpy
   - scipy
-  - matplotlib

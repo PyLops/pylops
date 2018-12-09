@@ -2,7 +2,7 @@ r"""
 1D Smoothing
 ============
 
-This example shows how to use the :py:class:`lops.Smoothing1D` operator
+This example shows how to use the :py:class:`pylops.Smoothing1D` operator
 to smooth an input signal along a given axis.
 
 Derivative (or roughening) operators are generally used *regularization*
@@ -16,7 +16,7 @@ and each elements is equal to :math:`1/n_{smooth}`.
 import numpy as np
 import matplotlib.pyplot as plt
 
-import lops
+import pylops
 
 plt.close('all')
 
@@ -29,7 +29,7 @@ nsmooth = 7
 x = np.zeros(N)
 x[int(N/2)] = 1
 
-Sop = lops.Smoothing1D(nsmooth=nsmooth, dims=[N], dtype='float32')
+Sop = pylops.Smoothing1D(nsmooth=nsmooth, dims=[N], dtype='float32')
 
 y = Sop*x
 xadj = Sop.H*y
@@ -46,7 +46,7 @@ ax.legend()
 N = 120
 nsmooth = 13
 x = np.random.normal(0, 1, N)
-Sop = lops.Smoothing1D(nsmooth=13, dims=(N), dtype='float32')
+Sop = pylops.Smoothing1D(nsmooth=13, dims=(N), dtype='float32')
 
 y = Sop*x
 xest = Sop/y
@@ -65,7 +65,7 @@ ax.legend()
 A = np.zeros((11, 21))
 A[5, 10] = 1
 
-Sop = lops.Smoothing1D(nsmooth=5, dims=(11, 21), dir=0, dtype='float64')
+Sop = pylops.Smoothing1D(nsmooth=5, dims=(11, 21), dir=0, dtype='float64')
 B = np.reshape(Sop*np.ndarray.flatten(A), (11, 21))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))

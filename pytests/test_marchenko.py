@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 from scipy.signal import convolve
-from lops.waveeqprocessing.marchenko import Marchenko
+from pylops.waveeqprocessing.marchenko import Marchenko
 
 # Test data
 inputfile = 'testdata/marchenko/input.npz'

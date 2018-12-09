@@ -1,14 +1,14 @@
 """
 Fourier Transform
 =================
-This example shows how to use the :py:class:`lops.signalprocessing.FFT` and
-:py:class:`lops.signalprocessing.FFT2D` operators to apply the Fourier Transform
+This example shows how to use the :py:class:`pylops.signalprocessing.FFT` and
+:py:class:`pylops.signalprocessing.FFT2D` operators to apply the Fourier Transform
 to the model and the inverse Fourier Transform to the data.
 """
 import numpy as np
 import matplotlib.pyplot as plt
 
-import lops
+import pylops
 
 plt.close('all')
 
@@ -23,7 +23,7 @@ f0 = 10
 nfft = 2**10
 d = np.sin(2*np.pi*f0*t)
 
-FFTop = lops.signalprocessing.FFT(dims=nt, nfft=nfft, sampling=dt)
+FFTop = pylops.signalprocessing.FFT(dims=nt, nfft=nfft, sampling=dt)
 D = FFTop*d
 
 # Adjoint = inverse for FFT
@@ -49,7 +49,7 @@ f0 = 10
 nfft = 2**10
 d = np.outer(np.sin(2*np.pi*f0*t), np.arange(nx)+1)
 
-FFTop = lops.signalprocessing.FFT(dims=(nt, nx), dir=0, nfft=nfft, sampling=dt)
+FFTop = pylops.signalprocessing.FFT(dims=(nt, nx), dir=0, nfft=nfft, sampling=dt)
 D = FFTop*d.flatten()
 
 # Adjoint = inverse for FFT
@@ -82,7 +82,7 @@ f0 = 10
 nfft = 2**10
 d = np.outer(np.sin(2*np.pi*f0*t), np.arange(nx)+1)
 
-FFTop = lops.signalprocessing.FFT2D(dims=(nt, nx), nffts=(nfft, nfft), sampling=(dt, dx))
+FFTop = pylops.signalprocessing.FFT2D(dims=(nt, nx), nffts=(nfft, nfft), sampling=(dt, dx))
 D = FFTop*d.flatten()
 
 dinv = FFTop.H*D

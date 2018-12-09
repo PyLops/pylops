@@ -1,7 +1,7 @@
 r"""
 Diagonal
 ========
-This example shows how to use the :py:class:`lops.Diagonal` operator
+This example shows how to use the :py:class:`pylops.Diagonal` operator
 to perform *Element-wise multiplication* between the input vector and a vector :math:`\mathbf{d}`.
 
 In other words, the operator acts as a  diagonal operator :math:`\mathbf{D}` whose elements along
@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as pltgs
 
-import lops
+import pylops
 
 plt.close('all')
 
@@ -23,7 +23,7 @@ N = 10
 d = np.arange(N)
 x = np.ones(10)
 
-Dop = lops.Diagonal(d)
+Dop = pylops.Diagonal(d)
 
 y = Dop*x
 y1 = Dop.H*x
@@ -67,7 +67,7 @@ fig.colorbar(im, ax=ax, ticks=[0, N], pad=0.3, shrink=0.7)
 nx, ny = 3, 5
 x = np.ones((nx, ny))
 d = np.ones(nx*ny).reshape(nx, ny)
-Dop = lops.Diagonal(d)
+Dop = pylops.Diagonal(d)
 
 y = Dop*x.flatten()
 y1 = Dop.H*x.flatten()

@@ -1,14 +1,14 @@
 """
 Synthetic seismic
 =================
-This example shows how to use the :py:mod:`lops.utils.seismicevents` module
+This example shows how to use the :py:mod:`pylops.utils.seismicevents` module
 to quickly create synthetic seismic data to be used for toy examples and tests.
 
 """
 import numpy as np
 import matplotlib.pyplot as plt
 
-import lops
+import pylops
 
 plt.close('all')
 
@@ -21,37 +21,36 @@ par = {'ox':-200, 'dx':2, 'nx':201,
        'f0': 20, 'nfmax': 210}
 
 # Create axis
-t, t2, x, y = lops.utils.seismicevents.makeaxis(par)
+t, t2, x, y = pylops.utils.seismicevents.makeaxis(par)
 
 # Create wavelet
-wav = lops.utils.wavelets.ricker(np.arange(41)*par['dt'],
-                                 f0=par['f0'],
-                                 plotflag=False)[0]
+wav = pylops.utils.wavelets.ricker(np.arange(41) * par['dt'],
+                                   f0=par['f0'])[0]
 
 ############################################
 # We want to create a 2d data with a number of crossing linear events using the
-# :py:func:`lops.utils.seismicevents.linear2d` routine.
+# :py:func:`pylops.utils.seismicevents.linear2d` routine.
 v = 1500
 t0 = [0.2, 0.7, 1.6]
 theta = [40, 0, -60]
 amp = [1., 0.6, -2.]
 
-mlin, mlinwav = lops.utils.seismicevents.linear2d(x, t, v, t0, theta, amp, wav)
+mlin, mlinwav = pylops.utils.seismicevents.linear2d(x, t, v, t0, theta, amp, wav)
 
 ############################################
 # We can also create a 2d data with a number of crossing parabolic events using the
-# :py:func:`lops.utils.seismicevents.parabolic2d` routine.
+# :py:func:`pylops.utils.seismicevents.parabolic2d` routine.
 px = [0, 0, 0]
 pxx = [1e-5, 5e-6, 1e-6]
 
-mpar, mparwav = lops.utils.seismicevents.parabolic2d(x, t, t0, px, pxx, amp, wav)
+mpar, mparwav = pylops.utils.seismicevents.parabolic2d(x, t, t0, px, pxx, amp, wav)
 
 ############################################
 # And similarly we can create a 2d data with a number of crossing hyperbolic
-# events using the :py:func:`lops.utils.seismicevents.hyperbolic2d` routine.
+# events using the :py:func:`pylops.utils.seismicevents.hyperbolic2d` routine.
 vrms = [500, 700, 1700]
 
-mhyp, mhypwav = lops.utils.seismicevents.hyperbolic2d(x, t, t0, vrms, amp, wav)
+mhyp, mhypwav = pylops.utils.seismicevents.hyperbolic2d(x, t, t0, vrms, amp, wav)
 
 ############################################
 # We can now visualize the different events
@@ -80,8 +79,8 @@ plt.tight_layout()
 phi = [20, 0, -10]
 
 mlin, mlinwav = \
-    lops.utils.seismicevents.linear3d(x, y, t, v, t0,
-                                      theta, phi, amp, wav)
+    pylops.utils.seismicevents.linear3d(x, y, t, v, t0,
+                                        theta, phi, amp, wav)
 
 fig, axs = plt.subplots(1, 2, figsize=(7, 5), sharey=True)
 fig.suptitle('Linear events in 3d', fontsize=12,
@@ -97,7 +96,7 @@ axs[1].imshow(mlinwav[:, par['nx']//2].T, aspect='auto',
 axs[1].set_xlabel(r'$y(m)$')
 
 mhyp, mhypwav = \
-    lops.utils.seismicevents.hyperbolic3d(x, y, t, t0, vrms, vrms, amp, wav)
+    pylops.utils.seismicevents.hyperbolic3d(x, y, t, t0, vrms, vrms, amp, wav)
 
 fig, axs = plt.subplots(1, 2, figsize=(7, 5), sharey=True)
 fig.suptitle('Hyperbolic events in 3d', fontsize=12,

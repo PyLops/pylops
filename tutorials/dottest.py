@@ -5,7 +5,7 @@ One of the most important aspect of writing a *Linear operator* is to be able
 to verify that the code implemented in *forward mode* and the code implemented
 in *adjoint mode* are effectively adjoint to each other. If this is the case,
 your Linear operator will successfully pass the so-called **dot-test**.
-Refer to the *Notes* section of :py:func:`lops.utils.dottest`)
+Refer to the *Notes* section of :py:func:`pylops.utils.dottest`)
 for a more detailed description.
 
 In this example, I will show you how to use the dot-test for a variety of
@@ -16,19 +16,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as pltgs
 
-import lops
-from lops.utils import dottest
+import pylops
+from pylops.utils import dottest
 
 plt.close('all')
 
 ###############################################################################
-# Let's start with something very simple. We will make a :py:class:`lops.MatrixMult`
+# Let's start with something very simple. We will make a :py:class:`pylops.MatrixMult`
 # operator and verify that its implementation passes the dot-test.
 # For this time, we will do this step-by-step, replicating what happens in the
-# :py:func:`lops.utils.dottest` routine.
+# :py:func:`pylops.utils.dottest` routine.
 N, M = 5, 3
 Mat = np.arange(N*M).reshape(N, M)
-Op = lops.MatrixMult(Mat)
+Op = pylops.MatrixMult(Mat)
 
 v = np.random.randn(N)
 u = np.random.randn(M)
@@ -102,7 +102,7 @@ ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 
 ###############################################################################
-# From now on, we can simply use the :py:func:`lops.utils.dottest` implementation
+# From now on, we can simply use the :py:func:`pylops.utils.dottest` implementation
 # of the dot-test and pass the operator we would like to validate,
 # its size in the model and data spaces and optionally the tolerance we will be
 # accepting for the dot-test to be considered succesfull. Finally we need to
@@ -112,13 +112,13 @@ ax.yaxis.set_ticklabels([])
 # ``verb`` parameters to ``True``.
 N = 10
 d = np.arange(N)
-Dop = lops.Diagonal(d)
+Dop = pylops.Diagonal(d)
 
 dottest(Dop, N, N, tol=1e-6, complexflag=0, verb=True)
 
 ###############################################################################
-# We move now to a more complicated operator, the :py:func:`lops.signalprocessing.FFT`
-# operator. We use once again the :py:func:`lops.utils.dottest` to verify its implementation
+# We move now to a more complicated operator, the :py:func:`pylops.signalprocessing.FFT`
+# operator. We use once again the :py:func:`pylops.utils.dottest` to verify its implementation
 # and since we are dealing with a transform that can be applied to both real and complex
 # array, we try different combinations using the ``complexflag`` input.
 
@@ -126,6 +126,6 @@ dt = 0.005
 nt = 100
 nfft = 2**10
 
-FFTop = lops.signalprocessing.FFT(dims=(nt,), nfft=nfft, sampling=dt)
+FFTop = pylops.signalprocessing.FFT(dims=(nt,), nfft=nfft, sampling=dt)
 dottest(FFTop, nfft, nt, complexflag=2, verb=True)
 dottest(FFTop, nfft, nt, complexflag=3, verb=True)

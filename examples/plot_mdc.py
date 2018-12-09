@@ -1,7 +1,7 @@
 """
 Multi-Dimensional Convolution
 =============================
-This example shows how to use the :py:class:`lops.waveeqprocessing.MDC` operator
+This example shows how to use the :py:class:`pylops.waveeqprocessing.MDC` operator
 to convolve a 3D kernel with an input seismic data. The resulting data is
 a blurred version of the input data and the problem of removing such blurring
 is reffered to as *Multi-dimensional Deconvolution (MDD)* and its implementation
@@ -10,11 +10,11 @@ is discussed in more details in the **MDD** tutorial.
 import numpy as np
 import matplotlib.pyplot as plt
 
-import lops
+import pylops
 
-from lops.utils.tapers import taper3d
-from lops.utils.wavelets import ricker
-from lops.utils.seismicevents import makeaxis, hyperbolic2d
+from pylops.utils.tapers import taper3d
+from pylops.utils.wavelets import ricker
+from pylops.utils.seismicevents import makeaxis, hyperbolic2d
 
 plt.close('all')
 
@@ -37,13 +37,13 @@ amp_G = (1., 0.6, 0.5)
 
 # Taper
 tap = taper3d(par['nt'], (par['ny'], par['nx']),
-              (5, 5), tapertype='hanning', plotflag=False)
+              (5, 5), tapertype='hanning')
 
 # Create axis
 t, t2, x, y = makeaxis(par)
 
 # Create wavelet
-wav = ricker(t[:41], f0=par['f0'], plotflag=False)[0]
+wav = ricker(t[:41], f0=par['f0'])[0]
 
 # Generate model
 m, mwav = hyperbolic2d(x, t, t0_m, vrms_m, amp_m, wav)
@@ -65,8 +65,8 @@ Gwav2 = np.concatenate((np.zeros((par['ny'], par['nx'], par['nt']-1)), Gwav), ax
 Gwav_fft = np.fft.rfft(Gwav2, 2*par['nt']-1, axis=-1)
 Gwav_fft = Gwav_fft[..., :par['nfmax']]
 
-MDCop = lops.waveeqprocessing.MDC(Gwav_fft, nt=2*par['nt']-1, nv=1,
-                                  dt=0.004, dr=1., dtype='float32')
+MDCop = pylops.waveeqprocessing.MDC(Gwav_fft, nt=2 * par['nt'] - 1, nv=1,
+                                    dt=0.004, dr=1., dtype='float32')
 
 # Create data
 d = MDCop*m.flatten()

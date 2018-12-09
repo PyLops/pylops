@@ -63,4 +63,4 @@ a new *bash* shell by typing:
 
 .. code-block:: bash
 
-   >> source activate lops
+   >> source activate pylops

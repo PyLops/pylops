@@ -2,14 +2,14 @@ r"""
 Pre-stack modelling
 ===================
 This example shows how to create pre-stack angle gathers using
-the :py:class:`lops.avo.prestack.PrestackLinearModelling` operator.
+the :py:class:`pylops.avo.prestack.PrestackLinearModelling` operator.
 """
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import filtfilt
 
-import lops
-from lops.utils.wavelets import ricker
+import pylops
+from pylops.utils.wavelets import ricker
 
 plt.close('all')
 
@@ -65,11 +65,11 @@ axs[2].grid()
 
 # constant vsvp
 PPop_const = \
-    lops.avo.prestack.PrestackLinearModelling(wav, theta, vsvp=vsvp, nt0=nt0, linearization='akirich')
+    pylops.avo.prestack.PrestackLinearModelling(wav, theta, vsvp=vsvp, nt0=nt0, linearization='akirich')
 
 # constant vsvp
 PPop_variant = \
-    lops.avo.prestack.PrestackLinearModelling(wav, theta, vsvp=vsvp_z, linearization='akirich')
+    pylops.avo.prestack.PrestackLinearModelling(wav, theta, vsvp=vsvp_z, linearization='akirich')
 
 ###############################################################################
 # Let's apply those operators to the elastic model and create some synthetic data

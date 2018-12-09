@@ -45,7 +45,7 @@ xinv = lstsq(D, y)[0]
 ```
 and similarly using PyLops commands:
 ```python
-from lops import FirstDerivative
+from pylops import FirstDerivative
 
 Dlop = FirstDerivative(nx, dtype='float64')
 
@@ -64,7 +64,7 @@ letting the user focus on the formulation of equations of the forward problem to
 
 ## Project structure
 This repository is organized as follows:
-* **lops**:       python library containing various linear operators and auxiliary routines
+* **pylops**:       python library containing various linear operators and auxiliary routines
 * **pytests**:    set of pytests
 * **testdata**:   sample datasets used in pytests and documentation
 * **docs**:       sphinx documentation
@@ -81,6 +81,15 @@ type the following command in your terminal:
 ```
 pip install pylops
 ```
+
+Open a python terminal and type:
+
+```
+import pylops
+```
+
+If you do not see any error, you should be good to go, enjoy!
+
 
 ## Contributing
 
@@ -114,7 +123,7 @@ Make sure no tests fail, this guarantees that the installation has been successf
 
 Remember to always activate the conda environment every time you open a new terminal by typing:
 ```
-source activate lops
+source activate pylops
 ```
 
 ## Documentation

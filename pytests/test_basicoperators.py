@@ -4,8 +4,8 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from scipy.sparse.linalg import lsqr
 
-from lops.utils import dottest
-from lops.basicoperators import LinearRegression, MatrixMult, Diagonal, Identity, Zero, Restriction
+from pylops.utils import dottest
+from pylops.basicoperators import LinearRegression, MatrixMult, Diagonal, Identity, Zero, Restriction
 
 par1 = {'ny': 101, 'nx': 101, 'imag': 0, 'dtype':'float32'}  # square real
 par2 = {'ny': 301, 'nx': 201, 'imag': 0, 'dtype':'float32'}  # overdetermined real

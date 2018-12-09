@@ -25,11 +25,11 @@ dev-install:
 
 install_conda:
 	make pipcheck
-	conda env create -f environment.yml && source activate lops && $(PIP) install .
+	conda env create -f environment.yml && source activate pylops && pip install .
 
 dev-install_conda:
 	make pipcheck
-	conda env create -f environment-dev.yml && source activate lops && $(PIP) install -e .
+	conda env create -f environment-dev.yml && source activate pylops && pip install -e .
 
 tests:
 	make pythoncheck

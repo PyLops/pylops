@@ -4,8 +4,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from lops.basicoperators import MatrixMult, Smoothing1D
-from lops.optimization.leastsquares import NormalEquationsInversion, \
+from pylops.basicoperators import MatrixMult, Smoothing1D
+from pylops.optimization.leastsquares import NormalEquationsInversion, \
     RegularizedInversion, PreconditionedInversion
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0,

@@ -2,14 +2,14 @@
 Zero
 ====
 
-This example shows how to use the :py:class:`lops.basicoperators.Zero` operator.
+This example shows how to use the :py:class:`pylops.basicoperators.Zero` operator.
 This operators simply zeroes the data in forward mode and the model in adjoint mode.
 """
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as pltgs
 
-import lops
+import pylops
 
 plt.close('all')
 
@@ -19,7 +19,7 @@ plt.close('all')
 
 N, M = 5, 5
 x = np.arange(M)
-Zop = lops.basicoperators.Zero(M, dtype='int')
+Zop = pylops.basicoperators.Zero(M, dtype='int')
 
 y = Zop*x
 xadj = Zop.H*y
@@ -60,7 +60,7 @@ fig.colorbar(im, ax=ax, ticks=[0], pad=0.3, shrink=0.7)
 # Similarly we can consider the case with data bigger than model
 N, M = 10, 5
 x = np.arange(M)
-Zop = lops.Zero(N, M, dtype='int')
+Zop = pylops.Zero(N, M, dtype='int')
 
 y = Zop*x
 xadj = Zop.H*y
@@ -74,7 +74,7 @@ print('0\'*y = %s' % xadj)
 # and model bigger than data
 N, M = 5, 10
 x = np.arange(M)
-Zop = lops.Zero(N, M, dtype='int')
+Zop = pylops.Zero(N, M, dtype='int')
 
 y = Zop*x
 xadj = Zop.H*y

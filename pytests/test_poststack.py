@@ -3,9 +3,9 @@ import pytest
 import numpy as np
 from scipy.signal import filtfilt
 
-from lops.utils import dottest
-from lops.utils.wavelets import ricker
-from lops.avo.poststack import PoststackLinearModelling, PoststackInversion
+from pylops.utils import dottest
+from pylops.utils.wavelets import ricker
+from pylops.avo.poststack import PoststackLinearModelling, PoststackInversion
 
 np.random.seed(10)
 
