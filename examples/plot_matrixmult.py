@@ -2,7 +2,7 @@ r"""
 Matrix Multiplication
 =====================
 
-This example shows how to use the :py:class:`lops.MatrixMult` operator
+This example shows how to use the :py:class:`pylops.MatrixMult` operator
 to perform *Matrix inversion* of the following linear system.
 
 .. math::
@@ -24,7 +24,7 @@ from scipy.sparse.linalg import lsqr
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as pltgs
 
-import lops
+import pylops
 
 plt.close('all')
 # sphinx_gallery_thumbnail_number = 2
@@ -38,7 +38,7 @@ A = np.random.normal(0, 1, (N, M))
 x = np.ones(M)
 
 #a = 1
-Aop = lops.MatrixMult(A, dtype='float64')
+Aop = pylops.MatrixMult(A, dtype='float64')
 
 ###############################################################################
 # We can now apply the forward operator to create the data vector :math:`\mathbf{y}`
@@ -127,7 +127,7 @@ N, M = 200, 50
 A = np.random.normal(0, 1, (N, M))
 x = np.ones(M)
 
-Aop = lops.MatrixMult(A, dtype='float64')
+Aop = pylops.MatrixMult(A, dtype='float64')
 y = Aop*x
 yn = y + np.random.normal(0, 0.3, N)
 
@@ -161,7 +161,7 @@ plt.legend()
 A = np.array([[1., 2.], [4., 5.]])
 x = np.array([[1., 1.], [2., 2.], [3., 3.]]).flatten()
 
-Aop = lops.MatrixMult(A, dims=(3), dtype='float64')
+Aop = pylops.MatrixMult(A, dims=(3), dtype='float64')
 y = Aop*x
 
 

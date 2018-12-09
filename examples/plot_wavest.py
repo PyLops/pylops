@@ -1,7 +1,7 @@
 r"""
 Wavelet estimation
 ==================
-This example shows how to use the :py:class:`lops.avo.prestack.PrestackWaveletModelling` to
+This example shows how to use the :py:class:`pylops.avo.prestack.PrestackWaveletModelling` to
 estimate a wavelet from pre-stack seismic data. This problem can be written in mathematical
 form as:
 
@@ -15,8 +15,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import filtfilt
 
-import lops
-from lops.utils.wavelets import ricker
+import pylops
+from pylops.utils.wavelets import ricker
 
 plt.close('all')
 
@@ -72,11 +72,11 @@ axs[2].grid()
 
 # Create operators
 Wavesop = \
-    lops.avo.prestack.PrestackWaveletModelling(m, theta, nwav=ntwav, wavc=wavc,
-                                               vsvp=vsvp, linearization='akirich')
+    pylops.avo.prestack.PrestackWaveletModelling(m, theta, nwav=ntwav, wavc=wavc,
+                                                 vsvp=vsvp, linearization='akirich')
 Wavesop_phase = \
-    lops.avo.prestack.PrestackWaveletModelling(m, theta, nwav=ntwav, wavc=wavc,
-                                               vsvp=vsvp, linearization='akirich')
+    pylops.avo.prestack.PrestackWaveletModelling(m, theta, nwav=ntwav, wavc=wavc,
+                                                 vsvp=vsvp, linearization='akirich')
 
 
 ###############################################################################
@@ -114,13 +114,13 @@ wav_phase_est = Wavesop_phase / d_phase.T.flatten()
 wavn_est = Wavesop / dn.T.flatten()
 
 # Create regularization operator
-D2op = lops.SecondDerivative(ntwav, dtype='float64')
+D2op = pylops.SecondDerivative(ntwav, dtype='float64')
 
 # Invert for interpolated signal
 wavn_reg_est, istop, itn, r1norm, r2norm = \
-    lops.optimization.leastsquares.RegularizedInversion(Wavesop, [D2op], dn.T.flatten(),
-                                                        epsRs=[np.sqrt(0.1)], returninfo=True,
-                                                        **dict(damp=np.sqrt(1e-4),
+    pylops.optimization.leastsquares.RegularizedInversion(Wavesop, [D2op], dn.T.flatten(),
+                                                          epsRs=[np.sqrt(0.1)], returninfo=True,
+                                                          **dict(damp=np.sqrt(1e-4),
                                                                iter_lim=200, show=0))
 
 ###############################################################################

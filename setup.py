@@ -35,7 +35,7 @@ setup(
     packages=find_packages(exclude=['pytests']),
     use_scm_version=dict(root = '.',
                          relative_to = __file__,
-                         write_to = src('lops/version.py')),
+                         write_to = src('pylops/version.py')),
     setup_requires=['pytest-runner', 'setuptools_scm'],
     test_suite='pytests',
     tests_require=['pytest'],

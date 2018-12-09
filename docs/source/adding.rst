@@ -5,7 +5,7 @@ Implementing new operators
 Users are welcome to create new operators and add them to the PyLops library.
 
 In this tutorial, we will go through the key steps in the definition of an operator, using the
-:py:class:`lops.Diagonal` as an example. This is a very simple operator that applies a diagonal matrix to the model
+:py:class:`pylops.Diagonal` as an example. This is a very simple operator that applies a diagonal matrix to the model
 in forward mode and to the data in adjoint mode.
 
 
@@ -16,12 +16,12 @@ Note that as the operator will be a class, we need to follow the UpperCaseCamelC
 and for the filename.
 
 Once you have create the file, we will start by importing the modules that will be needed by the operator.
-While this varies from operator to operator, you will always need to import the :py:class:`lops.LinearOperator` class,
+While this varies from operator to operator, you will always need to import the :py:class:`pylops.LinearOperator` class,
 which will be used as *parent* class for any of our operators:
 
 .. code-block:: python
 
-   from lops import LinearOperator
+   from pylops import LinearOperator
 
 This class is a child of the
 :py:class:`scipy.sparse.linalg.LinearOperator` class itself which implements the same methods of its parent class
@@ -46,7 +46,7 @@ called ``shape`` with a tuple containing the dimensions of the operator in the d
 called ``dtype`` with the data type object (:obj:`np.dtype`) of the model and data, and the third
 called ``explicit`` with a boolean (``True`` or ``False``) identifying if the operator can be inverted by a direct
 solver or requires an iterative solver. This member is ``True`` if the operator has also a member ``A`` that contains
-the matrix to be inverted like for example in the :py:class:`lops.MatrixMult` operator, and it will be ``False`` otherwise.
+the matrix to be inverted like for example in the :py:class:`pylops.MatrixMult` operator, and it will be ``False`` otherwise.
 In this case we have another member called ``d`` which is equal to the input vector containing the diagonal elements
 of the matrix we want to multiply to the model and data.
 
@@ -96,7 +96,7 @@ the following *equality* within a numerical tolerance:
     (\mathbf{A}*\mathbf{u})^H*\mathbf{v} = \mathbf{u}^H*(\mathbf{A}^H*\mathbf{v})
 
 
-The method :py:func:`lops.utils.dottest` implements such a test for you, all you need to do is create a new test
+The method :py:func:`pylops.utils.dottest` implements such a test for you, all you need to do is create a new test
 within an existing ``test_*.py`` file in the ``pytests`` folder (or in a new file).
 
 Generally a test file will start with a number of dictionaries containing different parameters we would like to
@@ -109,7 +109,7 @@ the definition of the test
     @pytest.mark.parametrize("par", [(par1),(par2)])
     def test_Diagonal(par):
 
-At this point we can first of all create the operator and run the :py:func:`lops.utils.dottest` preceded by the
+At this point we can first of all create the operator and run the :py:func:`pylops.utils.dottest` preceded by the
 ``assert`` command. Moreover, the forward and adjoint methods should tested towards expected outputs or even
 better, when the operator allows it (i.e., operator is invertible), a small inversion should be run and the inverted
 model tested towards the input model.
@@ -145,8 +145,8 @@ Before submitting your new operator for review, use the following **checklist** 
 adheres to the guidelines of PyLops:
 
 - you have created a new file containing a single class (or a function when the new operator is a simple combination of
-  existing operators - see :py:class:`lops.Laplacian` for an example of such operator) and added to a new or existing
-  directory within the ``lops`` package.
+  existing operators - see :py:class:`pylops.Laplacian` for an example of such operator) and added to a new or existing
+  directory within the ``pylops`` package.
 
 - the new class contains at least ``__init__``, ``_matvec`` and ``_matvec`` methods.
 
@@ -154,9 +154,9 @@ adheres to the guidelines of PyLops:
   at least the input ``Parameters`` and with a ``Notes`` section providing a mathematical explanation of the operator
 
 - a new test has been added to an existing ``test_*.py`` file within the ``pytests`` folder. The test should verify
-  that the new operator passes the :py:func:`lops.utils.dottest`. Moreover it is advisable to create a small toy
+  that the new operator passes the :py:func:`pylops.utils.dottest`. Moreover it is advisable to create a small toy
   example where the operator is applied in forward mode and the resulting data is inverted using ``\`` from
-  :py:class:`lops.LinearOperator`.
+  :py:class:`pylops.LinearOperator`.
 
 - the new operator is used within at least one *example* (in ``examples`` directory) or one *tutorial*
   (in ``tutorials`` directory).

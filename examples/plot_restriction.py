@@ -2,7 +2,7 @@
 Restriction
 ===========
 
-This example shows how to use the :py:class:`lops.Restriction` operator
+This example shows how to use the :py:class:`pylops.Restriction` operator
 to perform *Sampling* of a certain input vector at locations ``iava``.
 
 
@@ -12,7 +12,7 @@ sampled 1d or 2d signals onto a regular grid.
 import numpy as np
 import matplotlib.pyplot as plt
 
-import lops
+import pylops
 
 plt.close('all')
 
@@ -44,7 +44,7 @@ iava = np.sort(np.random.permutation(np.arange(nt))[:ntsub])
 # We then create the restriction operator and display the original signal as well
 # as the subsampled signal.
 
-Rop = lops.Restriction(nt, iava, dtype='float64')
+Rop = pylops.Restriction(nt, iava, dtype='float64')
 
 y = Rop*x
 ymask = Rop.mask(x)

@@ -3,8 +3,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from lops.utils import dottest
-from lops.basicoperators import FirstDerivative, SecondDerivative, Laplacian
+from pylops.utils import dottest
+from pylops.basicoperators import FirstDerivative, SecondDerivative, Laplacian
 
 par1 = {'nz': 10, 'ny': 30, 'nx': 40,
         'dz': 1., 'dy': 1., 'dx': 1.} # even with unitary sampling

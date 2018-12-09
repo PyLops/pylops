@@ -7,8 +7,8 @@ the data may be recorded at irregular locations and it is often required to *reg
 into a regular grid.
 
 In this tutorial, an example of 2d interpolation of an image is carried out using a combination
-of PyLops operators (:py:class:`lops.Restriction` and
-:py:class:`lops.Laplacian`) and the :py:mod:`lops.optimization` module.
+of PyLops operators (:py:class:`pylops.Restriction` and
+:py:class:`pylops.Laplacian`) and the :py:mod:`pylops.optimization` module.
 
 Mathematically speaking, if we want to interpolate a signal using the theory of inverse problems,
 we can define the following forward problem:
@@ -28,7 +28,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import misc
 
-import lops
+import pylops
 
 plt.close('all')
 
@@ -46,8 +46,8 @@ Nsub2d = int(np.round(N*perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(N))[:Nsub2d])
 
 # Create operators and data
-Rop = lops.Restriction(N, iava, dtype='float64')
-D2op = lops.Laplacian((Nz, Nx), weights=(1, 1), dtype='float64')
+Rop = pylops.Restriction(N, iava, dtype='float64')
+D2op = pylops.Laplacian((Nz, Nx), weights=(1, 1), dtype='float64')
 
 x = im.flatten()
 y = Rop.matvec(x)
@@ -58,17 +58,17 @@ y1 = Rop.mask(x)
 # to estimate our original image in the regular grid.
 
 xcg_reg_lop = \
-    lops.optimization.leastsquares.NormalEquationsInversion(Rop, [D2op], y,
-                                                            epsRs=[np.sqrt(0.1)],
-                                                            returninfo=False,
-                                                            **dict(maxiter=200))
+    pylops.optimization.leastsquares.NormalEquationsInversion(Rop, [D2op], y,
+                                                              epsRs=[np.sqrt(0.1)],
+                                                              returninfo=False,
+                                                              **dict(maxiter=200))
 
 # Invert for interpolated signal, lsqrt
 xlsqr_reg_lop, istop, itn, r1norm, r2norm = \
-    lops.optimization.leastsquares.RegularizedInversion(Rop, [D2op], y,
-                                                        epsRs=[np.sqrt(0.1)],
-                                                        returninfo=True,
-                                                        **dict(damp=0, iter_lim=200, show=0))
+    pylops.optimization.leastsquares.RegularizedInversion(Rop, [D2op], y,
+                                                          epsRs=[np.sqrt(0.1)],
+                                                          returninfo=True,
+                                                          **dict(damp=0, iter_lim=200, show=0))
 
 # Reshape estimated images
 im_sampled = y1.reshape((Nz, Nx))

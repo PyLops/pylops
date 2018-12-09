@@ -2,8 +2,8 @@
 Derivatives
 ===========
 This example shows how to use the suite of derivative operators, namely
-:py:class:`lops.FirstDerivative`, :py:class:`lops.SecondDerivative`
-and :py:class:`lops.Laplacian`.
+:py:class:`pylops.FirstDerivative`, :py:class:`pylops.SecondDerivative`
+and :py:class:`pylops.Laplacian`.
 
 The derivative operators are very useful when the model to be inverted for is expect to be
 smooth in one or more directions. As shown in the *Optimization* tutorial, these operators
@@ -12,7 +12,7 @@ will be used as part of the regularization term to obtain a smooth solution.
 import numpy as np
 import matplotlib.pyplot as plt
 
-import lops
+import pylops
 
 plt.close('all')
 
@@ -45,10 +45,10 @@ y_dir = np.dot(D, x)
 xadj_dir = np.dot(D.T, y_dir)
 
 ###############################################################################
-# Let's now do the same using the :py:class:`lops.FirstDerivative` operator and compare its
+# Let's now do the same using the :py:class:`pylops.FirstDerivative` operator and compare its
 # outputs after applying the forward and adjoint operators to those from the dense matrix.
 
-D1op = lops.FirstDerivative(nx, dtype='float32')
+D1op = pylops.FirstDerivative(nx, dtype='float32')
 
 y_lop = D1op*x
 xadj_lop = D1op.H*y_lop
@@ -70,7 +70,7 @@ nx, ny = 11, 21
 A = np.zeros((nx, ny))
 A[nx//2, ny//2] = 1.
 
-D1op = lops.FirstDerivative(nx*ny, dims=(nx, ny), dir=0, dtype='float64')
+D1op = pylops.FirstDerivative(nx * ny, dims=(nx, ny), dir=0, dtype='float64')
 B = np.reshape(D1op*np.ndarray.flatten(A), (nx, ny))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
@@ -91,7 +91,7 @@ fig.tight_layout()
 A = np.zeros((nx, ny ))
 A[nx//2, ny//2] = 1.
 
-D2op = lops.SecondDerivative(nx*ny, dims=(nx, ny), dir=0, dtype='float64')
+D2op = pylops.SecondDerivative(nx * ny, dims=(nx, ny), dir=0, dtype='float64')
 B = np.reshape(D2op*np.ndarray.flatten(A), (nx, ny))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
@@ -107,7 +107,7 @@ plt.colorbar(im, ax=axs[1])
 
 #############################################
 # We can also apply the second derivative to the second direction of our data (``dir=1``)
-D2op = lops.SecondDerivative(nx*ny, dims=(nx, ny), dir=1, dtype='float64')
+D2op = pylops.SecondDerivative(nx * ny, dims=(nx, ny), dir=1, dtype='float64')
 B = np.reshape(D2op*np.ndarray.flatten(A), (nx, ny))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
@@ -127,10 +127,10 @@ plt.colorbar(im, ax=axs[1])
 # version of it (by adding more weight to the derivative along one direction)
 
 # symmetrical
-L2symop = lops.Laplacian(dims=(nx, ny), weights=(1, 1), dtype='float64')
+L2symop = pylops.Laplacian(dims=(nx, ny), weights=(1, 1), dtype='float64')
 
 # asymmetrical
-L2asymop = lops.Laplacian(dims=(nx, ny), weights=(3, 1), dtype='float64')
+L2asymop = pylops.Laplacian(dims=(nx, ny), weights=(3, 1), dtype='float64')
 
 Bsym = np.reshape(L2symop*np.ndarray.flatten(A), (nx, ny))
 Basym = np.reshape(L2asymop*np.ndarray.flatten(A), (nx, ny))

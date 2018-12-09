@@ -2,7 +2,7 @@ r"""
 Linear Regression
 =================
 
-This example shows how to use the :py:class:`lops.LinearRegression` operator
+This example shows how to use the :py:class:`pylops.LinearRegression` operator
 to perform *Linear regression analysis*.
 
 In short, linear regression is the problem of finding the best fitting coefficients,
@@ -21,13 +21,13 @@ our solution can be obtained by solving the following optimization problem:
     .. math::
         J= ||\mathbf{y} - \mathbf{A} \mathbf{x}||_2
 
-See documentation of :py:class:`lops.LinearRegression` for more detailed definition of
+See documentation of :py:class:`pylops.LinearRegression` for more detailed definition of
 the forward problem.
 """
 import numpy as np
 import matplotlib.pyplot as plt
 
-import lops
+import pylops
 
 plt.close('all')
 
@@ -40,9 +40,9 @@ x = np.array([1., 2.])
 sigma = 2
 
 ###############################################################################
-# Let's create the time axis and initialize the :py:class:`lops.LinearRegression` operator
+# Let's create the time axis and initialize the :py:class:`pylops.LinearRegression` operator
 t = np.arange(N)
-LRop = lops.LinearRegression(t, dtype='float64')
+LRop = pylops.LinearRegression(t, dtype='float64')
 
 ###############################################################################
 # We can then apply the operator in forward mode to compute our data points along
@@ -53,7 +53,7 @@ yn = y + np.random.normal(0, sigma, N)
 
 ###############################################################################
 # We are now ready to solve our problem. As we are using an operator from the
-# :py:class:`lops.LinearOperator` family, we can simply use ``/``, which in this case will
+# :py:class:`pylops.LinearOperator` family, we can simply use ``/``, which in this case will
 # solve the system by means of an iterative solver (i.e., :py:func:`scipy.sparse.linalg.lsqr`).
 xest = LRop / y
 xnest = LRop / yn

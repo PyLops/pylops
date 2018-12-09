@@ -4,7 +4,7 @@ Post-stack inversion
 Estimating subsurface properties from band-limited seismic data represents an important
 task for geophysical subsurface characterization.
 
-In this tutorial, the :py:class:`lops.avo.poststack.PoststackLinearModelling` operator
+In this tutorial, the :py:class:`pylops.avo.poststack.PoststackLinearModelling` operator
 is used for modelling of both 1d and 2d synthetic post-stack seismic data from a profile
 or 2d model of the subsurface acoustic impedence.
 
@@ -18,7 +18,7 @@ domain seismic wavelet. In compact form:
     \mathbf{d}= \mathbf{W} \mathbf{AI}
 
 Subsequently the acoustic impedance model is estimated via the
-:py:class:`lops.avo.poststack.PoststackInversion` module. A two-steps inversion strategy is
+:py:class:`pylops.avo.poststack.PoststackInversion` module. A two-steps inversion strategy is
 finally presented to deal with the case of noisy data.
 
 """
@@ -26,15 +26,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import filtfilt
 
-import lops
-from lops.utils.wavelets import ricker
+import pylops
+from pylops.utils.wavelets import ricker
 
 plt.close('all')
 
 ###############################################################################
 # Let's start with a 1d example. A synthetic profile of acoustic impedance
 # is created and data is modelled using both the dense and linear operator version
-# of :py:class:`lops.avo.poststack.PoststackLinearModelling` operator.
+# of :py:class:`pylops.avo.poststack.PoststackLinearModelling` operator.
 
 # model
 nt0 = 501
@@ -55,10 +55,10 @@ ntwav = 41
 wav, twav, wavc = ricker(t0[:ntwav//2+1], 20)
 
 # dense operator
-PPop_dense = lops.avo.poststack.PoststackLinearModelling(wav, nt0=nt0, explicit=True)
+PPop_dense = pylops.avo.poststack.PoststackLinearModelling(wav, nt0=nt0, explicit=True)
 
 # lop operator
-PPop = lops.avo.poststack.PoststackLinearModelling(wav, nt0=nt0)
+PPop = pylops.avo.poststack.PoststackLinearModelling(wav, nt0=nt0)
 
 # data
 d_dense = PPop_dense*m.flatten()
@@ -73,17 +73,17 @@ dn_dense = d_dense + np.random.normal(0, 2e-2, d_dense.shape)
 
 # solve dense
 minv_dense = \
-    lops.avo.poststack.PoststackInversion(d, wav, m0=mback, explicit=True,
-                                          simultaneous=False)[0]
+    pylops.avo.poststack.PoststackInversion(d, wav, m0=mback, explicit=True,
+                                            simultaneous=False)[0]
 
 # solve lop
 minv = \
-    lops.avo.poststack.PoststackInversion(d_dense, wav, m0=mback, explicit=False,
-                                          simultaneous=False)[0]
+    pylops.avo.poststack.PoststackInversion(d_dense, wav, m0=mback, explicit=False,
+                                            simultaneous=False)[0]
 
 mn = \
-    lops.avo.poststack.PoststackInversion(dn_dense, wav, m0=mback, explicit=True,
-                                          epsR=1e0, **dict(damp=1e-1))[0]
+    pylops.avo.poststack.PoststackInversion(dn_dense, wav, m0=mback, explicit=True,
+                                            epsR=1e0, **dict(damp=1e-1))[0]
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 7))
 axs[0].plot(d, t0, 'k', lw=4, label='Lop')
@@ -125,11 +125,11 @@ mback = filtfilt(np.ones(nsmoothx)/float(nsmoothx), 1, mback, axis=1)
 
 # dense operator
 PPop_dense = \
-    lops.avo.poststack.PoststackLinearModelling(wav, nt0=nz,
-                                                ndims=nx, explicit=True)
+    pylops.avo.poststack.PoststackLinearModelling(wav, nt0=nz,
+                                                  ndims=nx, explicit=True)
 
 # lop operator
-PPop = lops.avo.poststack.PoststackLinearModelling(wav, nt0=nz, ndims=nx)
+PPop = pylops.avo.poststack.PoststackLinearModelling(wav, nt0=nz, ndims=nx)
 
 # data
 d = (PPop_dense * m.flatten()).reshape(nz, nx)
@@ -157,24 +157,24 @@ dn = d + n
 
 # inversion with noise-free data
 minv_dense = \
-    lops.avo.poststack.PoststackInversion(d, wav, m0=mback,
-                                          explicit=True,
-                                          simultaneous=False)[0]
+    pylops.avo.poststack.PoststackInversion(d, wav, m0=mback,
+                                            explicit=True,
+                                            simultaneous=False)[0]
 
 # inversion with noisy free data
 minv_dense_noisy = \
-    lops.avo.poststack.PoststackInversion(dn, wav, m0=mback,
-                                          explicit=True, epsI=4e-2,
-                                          simultaneous=False)[0]
+    pylops.avo.poststack.PoststackInversion(dn, wav, m0=mback,
+                                            explicit=True, epsI=4e-2,
+                                            simultaneous=False)[0]
 
 minv_dense_reg = \
-    lops.avo.poststack.PoststackInversion(dn, wav, m0=minv_dense_noisy,
-                                          explicit=True, epsR=5e1,
-                                          **dict(damp=np.sqrt(1e-4), iter_lim=80))[0]
+    pylops.avo.poststack.PoststackInversion(dn, wav, m0=minv_dense_noisy,
+                                            explicit=True, epsR=5e1,
+                                            **dict(damp=np.sqrt(1e-4), iter_lim=80))[0]
 minv_lop_reg = \
-    lops.avo.poststack.PoststackInversion(dn, wav, m0=minv_dense_noisy,
-                                          explicit=False, epsR=5e1,
-                                          **dict(damp=np.sqrt(1e-4), iter_lim=80))[0]
+    pylops.avo.poststack.PoststackInversion(dn, wav, m0=minv_dense_noisy,
+                                            explicit=False, epsR=5e1,
+                                            **dict(damp=np.sqrt(1e-4), iter_lim=80))[0]
 
 # sphinx_gallery_thumbnail_number = 2
 fig, axs = plt.subplots(2, 4, figsize=(15, 9))

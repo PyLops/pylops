@@ -7,9 +7,9 @@ PyLops API
 Linear Operators
 ----------------
 
-.. automodule:: lops
+.. automodule:: pylops
 
-.. currentmodule:: lops
+.. currentmodule:: pylops
 
 .. autosummary::
    :toctree: generated/
@@ -20,7 +20,7 @@ Linear Operators
 Basic operators
 ~~~~~~~~~~~~~~~
 
-.. currentmodule:: lops
+.. currentmodule:: pylops
 
 .. autosummary::
    :toctree: generated/
@@ -52,7 +52,7 @@ Smoothing and derivatives
 Signal processing
 ~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: lops.signalprocessing
+.. currentmodule:: pylops.signalprocessing
 
 .. autosummary::
    :toctree: generated/
@@ -66,7 +66,7 @@ Signal processing
 Wave-Equation processing
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: lops.waveeqprocessing
+.. currentmodule:: pylops.waveeqprocessing
 
 .. autosummary::
    :toctree: generated/
@@ -79,7 +79,7 @@ Wave-Equation processing
 Geophysicical subsurface characterization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: lops.avo
+.. currentmodule:: pylops.avo
 
 .. autosummary::
    :toctree: generated/
@@ -94,7 +94,7 @@ Geophysicical subsurface characterization
 Solvers
 -------
 
-.. currentmodule:: lops.optimization
+.. currentmodule:: pylops.optimization
 
 .. autosummary::
    :toctree: generated/

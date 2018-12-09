@@ -5,8 +5,8 @@ from numpy.testing import assert_array_almost_equal
 from scipy.sparse.linalg import lsqr
 from scipy.signal import triang
 
-from lops.utils import dottest
-from lops.signalprocessing import Convolve1D, Convolve2D
+from pylops.utils import dottest
+from pylops.signalprocessing import Convolve1D, Convolve2D
 
 # filters
 nfilt = (5, 7)

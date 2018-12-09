@@ -9,7 +9,7 @@ from pkg_resources import get_distribution
 
 
 # Sphinx needs to be able to import the package to use autodoc and get the version number
-sys.path.insert(0, os.path.abspath('../../lops'))
+sys.path.insert(0, os.path.abspath('../../pylops'))
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -63,9 +63,9 @@ sphinx_gallery_conf = {
     # directory where function granular galleries are stored
     'backreferences_dir': 'api/generated/backreferences',
     # Modules for which function level galleries are created.
-    'doc_module': 'lops',
+    'doc_module': 'pylops',
     # Insert links to documentation of objects in the examples
-    'reference_url': {'lops': None}
+    'reference_url': {'pylops': None}
 }
 
 # Always show the source code that generates a plot

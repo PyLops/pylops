@@ -4,8 +4,8 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from scipy.sparse.linalg import lsqr
 
-from lops.utils import dottest
-from lops.signalprocessing import FFT, FFT2D
+from pylops.utils import dottest
+from pylops.signalprocessing import FFT, FFT2D
 
 par1 = {'nt': 101, 'nx': 31, 'nfft': 101}  # nfft=nt
 par2 = {'nt': 101, 'nx': 31, 'nfft': 1024} # nfft>nt

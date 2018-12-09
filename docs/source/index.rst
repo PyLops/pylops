@@ -43,7 +43,7 @@ and similarly using PyLops commands:
 
 .. code-block:: python
 
-   from lops import FirstDerivative
+   from pylops import FirstDerivative
 
    Dlop = FirstDerivative(nx, dtype='float64')
 

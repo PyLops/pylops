@@ -13,7 +13,7 @@ Shared
 Dot-test
 ~~~~~~~~
 
-.. currentmodule:: lops.utils
+.. currentmodule:: pylops.utils
 
 .. autosummary::
    :toctree: generated/
@@ -26,7 +26,7 @@ Others
 Synthetics
 ~~~~~~~~~~
 
-.. currentmodule:: lops.utils
+.. currentmodule:: pylops.utils
 
 .. autosummary::
    :toctree: generated/
@@ -42,7 +42,7 @@ Synthetics
 Signal-processing
 ~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: lops.utils
+.. currentmodule:: pylops.utils
 
 .. autosummary::
    :toctree: generated/
@@ -53,7 +53,7 @@ Signal-processing
 Tapers
 ~~~~~~
 
-.. currentmodule:: lops.utils
+.. currentmodule:: pylops.utils
 
 .. autosummary::
    :toctree: generated/
@@ -65,7 +65,7 @@ Tapers
 Wavelets
 ~~~~~~~~
 
-.. currentmodule:: lops.utils
+.. currentmodule:: pylops.utils
 
 .. autosummary::
    :toctree: generated/
@@ -77,7 +77,7 @@ Wavelets
 Geophysicical Reservoir characterization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: lops.avo
+.. currentmodule:: pylops.avo
 
 .. autosummary::
    :toctree: generated/

@@ -4,8 +4,8 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from scipy.sparse.linalg import lsqr
 
-from lops.utils import dottest
-from lops.basicoperators import Smoothing1D, Smoothing2D
+from pylops.utils import dottest
+from pylops.basicoperators import Smoothing1D, Smoothing2D
 
 par1 = {'nz': 10, 'ny': 30, 'nx': 20, 'dir':0} # even, first direction
 par2 = {'nz': 11, 'ny': 51, 'nx': 31, 'dir':0} # odd, first direction

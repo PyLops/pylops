@@ -3,10 +3,10 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from lops.utils import dottest
-from lops.utils.wavelets import ricker
-from lops.utils.seismicevents import makeaxis, linear2d, linear3d
-from lops.waveeqprocessing.mdd import MDC, MDD
+from pylops.utils import dottest
+from pylops.utils.wavelets import ricker
+from pylops.utils.seismicevents import makeaxis, linear2d, linear3d
+from pylops.waveeqprocessing.mdd import MDC, MDD
 
 PAR = {'ox': 0, 'dx': 2, 'nx': 10,
        'oy': 0, 'dy': 2, 'ny': 20,
