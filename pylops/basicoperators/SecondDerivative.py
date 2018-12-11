@@ -13,7 +13,7 @@ class SecondDerivative(LinearOperator):
         Number of samples in model.
     dims : :obj:`list`
         Number of samples for each dimension
-        (``None`` if only one direction is available)
+        (``None`` if only one dimension is available)
     dir : :obj:`int`, optional
         Direction along which smoothing is applied.
     sampling : :obj:`float`, optional
@@ -54,7 +54,7 @@ class SecondDerivative(LinearOperator):
                 self.reshape = True
         self.shape = (self.N, self.N)
         self.dtype = np.dtype(dtype)
-        self.explicit = True
+        self.explicit = False
 
     def _matvec(self, x):
         if not self.reshape:

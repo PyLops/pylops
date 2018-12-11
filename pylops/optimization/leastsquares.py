@@ -21,15 +21,16 @@ def NormalEquationsInversion(Op, Regs, data, dataregs=None, epsI=0,
         Regularization operators
     data : :obj:`numpy.ndarray`
         Data
-    dataregs : :obj:`list`
+    dataregs : :obj:`list`, optional
         Regularization data
     espI : :obj:`float`
-        Tikhonov damping
+        Tikhonov damping, optional
     epsRs : :obj:`list`
-         Regularization dampings
-    x0 : :obj:`numpy.ndarray`
+         Regularization dampings (must have the same number of elements
+         as ``Regs``)
+    x0 : :obj:`numpy.ndarray`, optional
         Initial guess
-    returninfo : :obj:`bool`
+    returninfo : :obj:`bool`, optional
         Return info of CG solver
     **kwargs_cg
         Arbitrary keyword arguments for :py:func:`scipy.sparse.linalg.cg` solver
@@ -102,9 +103,9 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
-    Regs : :obj:`list`
+    Regs : :obj:`tuple` or :obj:`list`
         Regularization operators
-    epsRs : :obj:`tuple` or :obj:`list`
+    epsRs : :obj:`tuple` or :obj:`list`, optional
          Regularization dampings
 
     Returns
@@ -151,13 +152,13 @@ def RegularizedInversion(Op, Regs, data, dataregs=None, epsRs=None,
         Regularization operators
     data : :obj:`numpy.ndarray`
         Data
-    dataregs : :obj:`list`
+    dataregs : :obj:`list`, optional
         Regularization data
-    epsRs : :obj:`list`
+    epsRs : :obj:`list`, optional
          Regularization dampings
-    x0 : :obj:`numpy.ndarray`
+    x0 : :obj:`numpy.ndarray`, optional
         Initial guess
-    returninfo : :obj:`bool`
+    returninfo : :obj:`bool`, optional
         Return info of LSQR solver
     **kwargs_lsqr
         Arbitrary keyword arguments for
