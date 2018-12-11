@@ -106,7 +106,7 @@ axs[1].set_title('Inverse causal integration')
 # Let's conclude with a 2d example where again the integration/derivative will
 # be performed along the first axis
 
-nt, nx = 81, 41
+nt, nx = 41, 11
 dt = .3
 ot = 0
 t = np.arange(nt)*dt+ot
