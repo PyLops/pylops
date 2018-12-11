@@ -29,7 +29,7 @@ def test_LinearRegression(par):
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_MatrixMult(par):
-    """Dot-test and inversion for test_MatrixMult operator
+    """Dot-test and inversion for MatrixMult operator
     """
     np.random.seed(10)
     G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype('float32') + \

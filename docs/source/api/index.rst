@@ -34,6 +34,7 @@ Basic operators
     VStack
     HStack
     BlockDiag
+    CausalIntegration
 
 
 Smoothing and derivatives

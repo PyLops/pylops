@@ -114,7 +114,7 @@ html_theme_options = {
     'display_version': True,
 }
 html_context = {
-    'menu_links_name': 'Getting help and contributing',
+    'menu_links_name': 'Repository',
     'menu_links': [
         ('<i class="fa fa-github fa-fw"></i> Source Code', 'https://github.com/Statoil/pylops'),
         ('<i class="fa fa-users fa-fw"></i> Contributing', 'https://github.com/Statoil/pylops/blob/master/CONTRIBUTING.md'),

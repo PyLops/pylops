@@ -9,6 +9,7 @@ from .basicoperators import VStack
 from .basicoperators import HStack
 from .basicoperators import BlockDiag
 
+from .basicoperators import CausalIntegration
 from .basicoperators import FirstDerivative
 from .basicoperators import SecondDerivative
 from .basicoperators import Laplacian

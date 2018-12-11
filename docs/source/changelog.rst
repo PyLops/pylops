@@ -3,6 +3,13 @@
 Changelog
 =========
 
+Version 1.1.0
+-------------
+
+*Released on: 13/12/2018*
+
+* Added :py:class:`pylops.CausalIntegration` operator
+
 Version 1.0.1
 -------------
 

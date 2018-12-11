@@ -10,6 +10,7 @@ from .Restriction import Restriction
 from .Smoothing1D import Smoothing1D
 from .Smoothing2D import Smoothing2D
 
+from .CausalIntegration import CausalIntegration
 from .FirstDerivative import FirstDerivative
 from .SecondDerivative import SecondDerivative
 from .Laplacian import Laplacian

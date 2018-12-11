@@ -77,6 +77,9 @@ where :math:`\mathbf{A}` is called *operator*, :math:`\mathbf{x}` is called *mod
 Ultimately, solving an inverse problems accounts to removing the effect of :math:`\mathbf{A}` from the
 data :math:`\mathbf{y}` to retrieve the model :math:`\mathbf{x}`.
 
+For a more detailed description of the concepts of linear operators, adjoints
+and inverse problems in general, you can head over to one of Jon Claerbout's books
+such as `Basic Earth Imaging <http://sepwww.stanford.edu/sep/prof/bei11.2010.pdf>`_.
 
 
 Implementation
