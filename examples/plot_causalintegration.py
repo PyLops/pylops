@@ -126,7 +126,7 @@ xder = xder.reshape(nt, nx)
 
 # Regularized derivative
 Rop = pylops.Laplacian(dims=(nt, nx))
-xreg = pylops.RegularizedInversion(Cop, [Rop], yn.flatten(), epsRs=[1e-1],
+xreg = pylops.RegularizedInversion(Cop, [Rop], yn.flatten(), epsRs=[1e0],
                                    **dict(iter_lim=100, atol=1e-5))
 xreg = xreg.reshape(nt, nx)
 

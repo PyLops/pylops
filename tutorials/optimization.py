@@ -184,7 +184,7 @@ xreg = pylops.optimization.leastsquares.RegularizedInversion(Rop, [D2op], y,
 #       J= ||\mathbf{y} - \mathbf{R} \mathbf{P} \mathbf{p}||_2
 #
 # where :math:`\mathbf{P}` is the precondioned operator, :math:`\mathbf{p}` is the projected model
-# in the preconditioned space, and :math:`\mathbf{x}=\mathbf{P}\mathbf{p}`is the model in
+# in the preconditioned space, and :math:`\mathbf{x}=\mathbf{P}\mathbf{p}` is the model in
 # the original model space we want to solve for. Note that a preconditioned problem converges
 # much faster to its solution than its corresponding regularized problem. This can be done
 # using the routine :py:func:`pylops.optimization.leastsquares.PreconditionedInversion`.
