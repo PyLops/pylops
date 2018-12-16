@@ -116,7 +116,7 @@ ax.yaxis.set_ticklabels([])
 
 plt.figure(figsize=(8, 3))
 plt.plot(Aop.eigs(), 'k', lw=2)
-plt.title('Eigenvalues', size=20, fontweight='bold')
+plt.title('Eigenvalues', size=16, fontweight='bold')
 plt.xlabel('#eigenvalue')
 plt.xlabel('intensity')
 plt.tight_layout()
@@ -138,7 +138,7 @@ plt.figure(figsize=(8, 3))
 plt.plot(x, 'k', lw=2, label='True')
 plt.plot(xest, '--r', lw=2, label='Noise-free')
 plt.plot(xnest, '--g', lw=2, label='Noisy')
-plt.title('Matrix inversion', size=20, fontweight='bold')
+plt.title('Matrix inversion', size=16, fontweight='bold')
 plt.legend()
 
 ###############################################################################

@@ -35,6 +35,7 @@ Basic operators
     HStack
     BlockDiag
     CausalIntegration
+    Flip
 
 
 Smoothing and derivatives

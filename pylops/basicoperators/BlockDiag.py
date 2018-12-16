@@ -3,7 +3,7 @@ from pylops import LinearOperator
 
 
 class BlockDiag(LinearOperator):
-    r"""Block-diagonal operator
+    r"""Block-diagonal operator.
 
     Create a block-diagonal operator from N linear operators.
 

@@ -61,7 +61,7 @@ Gwav2 = np.concatenate((np.zeros((par['ny'], par['nx'], par['nt']-1)), Gwav), ax
 Gwav_fft = np.fft.rfft(Gwav2, 2*par['nt']-1, axis=-1)
 Gwav_fft = Gwav_fft[..., :par['nfmax']]
 
-MDCop = pylops.waveeqprocessing.MDC(Gwav_fft, nt=2 * par['nt'] - 1, nv=1,
+MDCop = pylops.waveeqprocessing.MDC(Gwav_fft, nt=2 * par['nt']-1, nv=1,
                                     dt=0.004, dr=1., dtype='float32')
 
 # Create data
@@ -70,28 +70,32 @@ d = d.reshape(par['ny'], 2*par['nt']-1)
 
 ###############################################################################
 # Let's display what we have so far: operator, input model, and data
-fig, axs = plt.subplots(1, 2, figsize=(9, 6))
+fig, axs = plt.subplots(1, 2, figsize=(8, 6))
 axs[0].imshow(Gwav2[int(par['ny']/2)].T, aspect='auto',
               interpolation='nearest', cmap='gray',
+              vmin=-np.abs(Gwav2.max()), vmax=np.abs(Gwav2.max()),
               extent=(x.min(), x.max(), t2.max(), t2.min()))
 axs[0].set_title('G - inline view', fontsize=15)
 axs[0].set_xlabel(r'$x_R$')
 axs[1].set_ylabel(r'$t$')
 axs[1].imshow(Gwav2[:, int(par['nx']/2)].T, aspect='auto',
               interpolation='nearest', cmap='gray',
+              vmin=-np.abs(Gwav2.max()), vmax=np.abs(Gwav2.max()),
               extent=(y.min(), y.max(), t2.max(), t2.min()))
 axs[1].set_title('G - inline view', fontsize=15)
 axs[1].set_xlabel(r'$x_S$')
 axs[1].set_ylabel(r'$t$')
 fig.tight_layout()
 
-fig, axs = plt.subplots(1, 2, figsize=(9, 6))
+fig, axs = plt.subplots(1, 2, figsize=(8, 6))
 axs[0].imshow(mwav.T, aspect='auto', interpolation='nearest', cmap='gray',
+              vmin=-np.abs(mwav.max()), vmax=np.abs(mwav.max()),
               extent=(x.min(), x.max(), t2.max(), t2.min()))
 axs[0].set_title(r'$m$', fontsize=15)
 axs[0].set_xlabel(r'$x_R$')
 axs[1].set_ylabel(r'$t$')
 axs[1].imshow(d.T, aspect='auto', interpolation='nearest', cmap='gray',
+              vmin=-np.abs(d.max()), vmax=np.abs(d.max()),
               extent=(x.min(), x.max(), t2.max(), t2.min()))
 axs[1].set_title(r'$d$', fontsize=15)
 axs[1].set_xlabel(r'$x_S$')
@@ -109,16 +113,18 @@ minv, madj, psfinv, psfadj = \
                                 dtype='complex64', dottest=False,
                                 **dict(damp=1e-4, iter_lim=50, show=0))
 
-fig = plt.figure(figsize=(10, 6))
+fig = plt.figure(figsize=(8, 6))
 ax1 = plt.subplot2grid((1, 5), (0, 0), colspan=2)
 ax2 = plt.subplot2grid((1, 5), (0, 2), colspan=2)
 ax3 = plt.subplot2grid((1, 5), (0, 4))
 ax1.imshow(madj.T, aspect='auto', interpolation='nearest', cmap='gray',
+           vmin=-np.abs(madj.max()), vmax=np.abs(madj.max()),
            extent=(x.min(), x.max(), t2.max(), t2.min()))
 ax1.set_title('Adjoint m', fontsize=15)
 ax1.set_xlabel(r'$x_V$')
 axs[1].set_ylabel(r'$t$')
 ax2.imshow(minv.T, aspect='auto', interpolation='nearest', cmap='gray',
+           vmin=-np.abs(minv.max()), vmax=np.abs(minv.max()),
            extent=(x.min(), x.max(), t2.max(), t2.min()))
 ax2.set_title('Inverted m', fontsize=15)
 ax2.set_xlabel(r'$x_V$')
@@ -128,13 +134,15 @@ ax3.plot(minv[int(par['nx']/2)]/np.abs(minv[int(par['nx']/2)]).max(), t2, '--k',
 ax3.set_ylim([t2[-1], t2[0]])
 fig.tight_layout()
 
-fig, axs = plt.subplots(1, 2, figsize=(9, 6))
+fig, axs = plt.subplots(1, 2, figsize=(8, 6))
 axs[0].imshow(psfinv[int(par['nx']/2)].T, aspect='auto', interpolation='nearest',
+              vmin=-np.abs(psfinv.max()), vmax=np.abs(psfinv.max()),
               cmap='gray', extent=(x.min(), x.max(), t2.max(), t2.min()))
 axs[0].set_title('Inverted psf - inline view', fontsize=15)
 axs[0].set_xlabel(r'$x_V$')
 axs[1].set_ylabel(r'$t$')
 axs[1].imshow(psfinv[:, int(par['nx']/2)].T, aspect='auto', interpolation='nearest',
+              vmin=-np.abs(psfinv.max()), vmax=np.abs(psfinv.max()),
               cmap='gray', extent=(y.min(), y.max(), t2.max(), t2.min()))
 axs[1].set_title('Inverted psf - xline view', fontsize=15)
 axs[1].set_xlabel(r'$x_V$')
@@ -153,16 +161,19 @@ minvprec = pylops.waveeqprocessing.MDD(Gwav, d[:, par['nt'] - 1:],
                                        causality_precond=True, dtype='complex64',
                                        dottest=False, **dict(damp=1e-4, iter_lim=50, show=0))
 
-fig = plt.figure(figsize=(10, 6))
+# sphinx_gallery_thumbnail_number = 5
+fig = plt.figure(figsize=(8, 6))
 ax1 = plt.subplot2grid((1, 5), (0, 0), colspan=2)
 ax2 = plt.subplot2grid((1, 5), (0, 2), colspan=2)
 ax3 = plt.subplot2grid((1, 5), (0, 4))
 ax1.imshow(madj.T, aspect='auto', interpolation='nearest', cmap='gray',
+           vmin=-np.abs(madj.max()), vmax=np.abs(madj.max()),
            extent=(x.min(), x.max(), t2.max(), t2.min()))
 ax1.set_title('Adjoint m', fontsize=15)
 ax1.set_xlabel(r'$x_V$')
 axs[1].set_ylabel(r'$t$')
 ax2.imshow(minvprec.T, aspect='auto', interpolation='nearest', cmap='gray',
+           vmin=-np.abs(minvprec.max()), vmax=np.abs(minvprec.max()),
            extent=(x.min(), x.max(), t2.max(), t2.min()))
 ax2.set_title('Inverted m', fontsize=15)
 ax2.set_xlabel(r'$x_V$')

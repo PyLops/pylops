@@ -34,7 +34,8 @@ from scipy.linalg import lstsq
 nx = 7
 x = np.arange(nx) - (nx-1)/2
 
-D = np.diag(0.5*np.ones(nx-1),k=1) - np.diag(0.5*np.ones(nx-1),-1)
+D = np.diag(0.5*np.ones(nx-1), k=1) - \
+    np.diag(0.5*np.ones(nx-1), k=-1)
 D[0] = D[-1] = 0 # take away edge effects
 
 # y = Dx

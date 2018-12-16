@@ -4,6 +4,7 @@ from .basicoperators import MatrixMult
 from .basicoperators import Identity
 from .basicoperators import Zero
 from .basicoperators import Diagonal
+from .basicoperators import Flip
 
 from .basicoperators import VStack
 from .basicoperators import HStack

@@ -38,7 +38,8 @@ D2op = D2vop*D2hop
 Y = np.reshape(D2op*X.flatten(), (Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Chain', fontsize=14, fontweight='bold')
+fig.suptitle('Chain', fontsize=14,
+             fontweight='bold', y=0.95)
 im = axs[0].imshow(X, interpolation='nearest')
 axs[0].axis('tight')
 axs[0].set_title(r'$x$')
@@ -48,6 +49,7 @@ axs[1].axis('tight')
 axs[1].set_title(r'$y=(D_x+D_y) x$')
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
+plt.subplots_adjust(top=0.8)
 
 ###############################################################################
 # We now want to *vertically stack* three operators
@@ -72,7 +74,8 @@ Dstack = pylops.VStack([D2vop, D2hop])
 Y = np.reshape(Dstack * X.flatten(), (Nv * 2, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Vertical stacking', fontsize=14, fontweight='bold')
+fig.suptitle('Vertical stacking', fontsize=14,
+             fontweight='bold', y=0.95)
 im = axs[0].imshow(X, interpolation='nearest')
 axs[0].axis('tight')
 axs[0].set_title(r'$x$')
@@ -82,6 +85,7 @@ axs[1].axis('tight')
 axs[1].set_title(r'$y$')
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
+plt.subplots_adjust(top=0.8)
 
 ###############################################################################
 # Similarly we can now *horizontally stack* three operators
@@ -104,7 +108,8 @@ Hstackop = pylops.HStack([D2vop, 0.5 * D2vop, -1 * D2hop])
 Y = np.reshape(Hstackop*X.flatten(), (Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Horizontal stacking', fontsize=14, fontweight='bold')
+fig.suptitle('Horizontal stacking', fontsize=14,
+             fontweight='bold', y=0.95)
 im = axs[0].imshow(X, interpolation='nearest')
 axs[0].axis('tight')
 axs[0].set_title(r'$x$')
@@ -114,6 +119,7 @@ axs[1].axis('tight')
 axs[1].set_title(r'$y$')
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
+plt.subplots_adjust(top=0.8)
 
 ###############################################################################
 # Finally we can use the *block-diagonal operator* to apply three operators
@@ -143,7 +149,8 @@ Block = pylops.BlockDiag([D2vop, 0.5 * D2vop, -1 * D2hop])
 Y = np.reshape(Block*np.ndarray.flatten(X), (11*3, 21))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Block-diagonal', fontsize=14, fontweight='bold')
+fig.suptitle('Block-diagonal', fontsize=14,
+             fontweight='bold', y=0.95)
 im = axs[0].imshow(X, interpolation='nearest')
 axs[0].axis('tight')
 axs[0].set_title(r'$x$')
@@ -153,3 +160,4 @@ axs[1].axis('tight')
 axs[1].set_title(r'$y$')
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
+plt.subplots_adjust(top=0.8)

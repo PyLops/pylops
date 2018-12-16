@@ -36,8 +36,8 @@ After that we define our new object:
 
 followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html/>`_
 (starting with ``r"""`` and ending with ``"""``) containing the documentation of the operator. Such docstring should
-contain at least a short description of the operator, a section ``Parameters`` with a detailed description of the
-input parameters and a section ``Notes`` section providing a mathematical explanation of the operator. Take a look at
+contain at least a short description of the operator, a ``Parameters`` section with a detailed description of the
+input parameters and a ``Notes`` section providing a mathematical explanation of the operator. Take a look at
 some of the core operators of PyLops to get a feeling of the level of details of the mathematical explanation.
 
 We then need to create the ``__init__`` where the input parameters are passed and saved as members of our class.

@@ -26,8 +26,7 @@ with :math:`M>>N`.
 """
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import misc
-
+import imageio
 import pylops
 
 plt.close('all')
@@ -35,7 +34,7 @@ plt.close('all')
 ###############################################################################
 # To start we import a 2d image and define our restriction operator to irregularly and randomly
 # sample the image for 30% of the entire grid
-im = np.asarray(misc.imread('../testdata/python.png'))[:, :, 0]
+im = np.asarray(imageio.imread('../testdata/python.png'))[:, :, 0]
 Nz, Nx = im.shape
 N = Nz * Nx
 
@@ -68,7 +67,9 @@ xlsqr_reg_lop, istop, itn, r1norm, r2norm = \
     pylops.optimization.leastsquares.RegularizedInversion(Rop, [D2op], y,
                                                           epsRs=[np.sqrt(0.1)],
                                                           returninfo=True,
-                                                          **dict(damp=0, iter_lim=200, show=0))
+                                                          **dict(damp=0,
+                                                                 iter_lim=200,
+                                                                 show=0))
 
 # Reshape estimated images
 im_sampled = y1.reshape((Nz, Nx))
@@ -78,8 +79,9 @@ im_rec_lap_lsqr = xlsqr_reg_lop.reshape((Nz, Nx))
 ###############################################################################
 # Finally we visualize the original image, the reconstructed images and their error
 
-fig, axs = plt.subplots(1, 4, figsize=(16, 4))
-fig.suptitle('Data reconstruction - normal eqs', fontsize=14, fontweight='bold')
+fig, axs = plt.subplots(1, 4, figsize=(12, 4))
+fig.suptitle('Data reconstruction - normal eqs', fontsize=14,
+             fontweight='bold', y=0.95)
 axs[0].imshow(im, cmap='viridis', vmin=0, vmax=250)
 axs[0].axis('tight')
 axs[0].set_title('Original')
@@ -92,9 +94,12 @@ axs[2].set_title('2D Regularization')
 axs[3].imshow(im - im_rec_lap_cg, cmap='gray', vmin=-80, vmax=80)
 axs[3].axis('tight')
 axs[3].set_title('2D Regularization Error')
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)
 
-fig, axs = plt.subplots(1, 4, figsize=(16, 4))
-fig.suptitle('Data reconstruction - regularized eqs', fontsize=14, fontweight='bold')
+fig, axs = plt.subplots(1, 4, figsize=(12, 4))
+fig.suptitle('Data reconstruction - regularized eqs', fontsize=14,
+             fontweight='bold', y=0.95)
 axs[0].imshow(im, cmap='viridis', vmin=0, vmax=250)
 axs[0].axis('tight')
 axs[0].set_title('Original')
@@ -107,3 +112,5 @@ axs[2].set_title('2D Regularization')
 axs[3].imshow(im - im_rec_lap_lsqr, cmap='gray', vmin=-80, vmax=80)
 axs[3].axis('tight')
 axs[3].set_title('2D Regularization Error')
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)
