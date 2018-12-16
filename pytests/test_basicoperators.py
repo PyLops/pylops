@@ -1,11 +1,12 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 from scipy.sparse.linalg import lsqr
 
 from pylops.utils import dottest
-from pylops.basicoperators import LinearRegression, MatrixMult, Diagonal, Identity, Zero, Restriction
+from pylops.basicoperators import LinearRegression, MatrixMult, \
+    Diagonal, Identity, Zero, Restriction, Flip
 
 par1 = {'ny': 101, 'nx': 101, 'imag': 0, 'dtype':'float32'}  # square real
 par2 = {'ny': 301, 'nx': 201, 'imag': 0, 'dtype':'float32'}  # overdetermined real
@@ -125,3 +126,59 @@ def test_Restriction(par):
 
     assert_array_almost_equal(y, y1[iava])
     assert_array_almost_equal(x[iava], x1[iava])
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_Flip1D(par):
+    """Dot-test, forward and adjoint for Flip operator on 1d signal
+    """
+    x = np.arange(par['ny'])
+
+    Fop = Flip(par['ny'], dtype=par['dtype'])
+    assert dottest(Fop, par['ny'], par['ny'])
+
+    y = Fop * x
+    xadj = Fop.H * y
+    assert_array_equal(x, xadj)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_Flip2D(par):
+    """Dot-test, forward and adjoint for Flip operator on 2d signal
+    """
+    x = {}
+    x['0'] = np.outer(np.arange(par['ny']), np.ones(par['nx']))
+    x['1'] = np.outer(np.ones(par['ny']), np.arange(par['nx']))
+
+    for dir in [0,1]:
+        Fop = Flip(par['ny']*par['nx'], dims=(par['ny'], par['nx']), dir=dir)
+        assert dottest(Fop, par['ny']*par['nx'], par['ny']*par['nx'])
+
+        y = Fop * x[str(dir)].flatten()
+        xadj = Fop.H * y.flatten()
+        xadj = xadj.reshape(par['ny'], par['nx'])
+        assert_array_equal(x[str(dir)], xadj)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_Flip3D(par):
+    """Dot-test, forward and adjoint for Flip operator on 3d signal
+    """
+    x = {}
+    x['0'] = np.outer(np.arange(par['ny']),
+                 np.ones(par['nx']))[:, :, np.newaxis] * np.ones(par['nx'])
+    x['1'] = np.outer(np.ones(par['ny']),
+                  np.arange(par['nx']))[:, :, np.newaxis] * np.ones(par['nx'])
+    x['2'] = np.outer(np.ones(par['ny']),
+                  np.ones(par['nx']))[:, :, np.newaxis] * np.arange(par['nx'])
+
+    for dir in [0, 1, 2]:
+        Fop = Flip(par['ny']*par['nx']*par['nx'],
+                   dims=(par['ny'], par['nx'], par['nx']), dir=dir)
+        assert dottest(Fop, par['ny']*par['nx']*par['nx'],
+                       par['ny']*par['nx']*par['nx'])
+
+        y = Fop * x[str(dir)].flatten()
+        xadj = Fop.H * y.flatten()
+        xadj = xadj.reshape(par['ny'], par['nx'], par['nx'])
+        assert_array_equal(x[str(dir)], xadj)
