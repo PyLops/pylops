@@ -36,6 +36,7 @@ Basic operators
     BlockDiag
     CausalIntegration
     Flip
+    Symmetrize
 
 
 Smoothing and derivatives

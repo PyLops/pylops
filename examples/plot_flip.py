@@ -24,7 +24,6 @@ x = np.arange(nt)
 # signal. We can also apply the adjoint to the flipped signal and we can
 # see how for this operator the adjoint is effectively equivalent to
 # the inverse.
-
 Fop = pylops.Flip(nt)
 y = Fop*x
 xadj = Fop.H*y
@@ -39,7 +38,6 @@ plt.legend()
 ###############################################################################
 # Let's now repeat the same exercise on a two dimensional signal. We will
 # first flip the model along the first axis and then along the second axis
-
 nt, nx = 10, 5
 x = np.outer(np.arange(nt), np.ones(nx))
 Fop = pylops.Flip(nt*nx, dims=(nt, nx), dir=0)

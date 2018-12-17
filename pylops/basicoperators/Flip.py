@@ -34,10 +34,9 @@ class Flip(LinearOperator):
     this is equivalent to:
 
     .. math::
-        y[i] = x[N-i] \quad \forall i=0,1,2,...,N
+        y[i] = x[N-i] \quad \forall i=0,1,2,...,N-1
 
     where :math:`N` is the lenght of the input model.
-
 
     """
     def __init__(self, N, dims=None, dir=0, dtype='float32'):
