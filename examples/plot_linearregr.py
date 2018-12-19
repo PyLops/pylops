@@ -74,7 +74,7 @@ plt.scatter(t, yn, c='g', s=50)
 plt.annotate(r'$noise-free: x_0$ = %.2f, $x_1$ = %.2f' % (xest[0], xest[1]),
              xy=(8, 16), xytext=(13, 11), fontsize=8,
              arrowprops=dict(facecolor='red', shrink=0.05))
-plt.annotate(r'$noisy: x_0$ = %.2f, $x_1$ = %.2f' % (xest[0], xest[1]),
+plt.annotate(r'$noisy: x_0$ = %.2f, $x_1$ = %.2f' % (xnest[0], xnest[1]),
              xy=(5, 10), xytext=(10, 5), fontsize=8,
              arrowprops=dict(facecolor='green', shrink=0.05))
 plt.legend()
