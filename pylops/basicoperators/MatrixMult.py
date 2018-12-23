@@ -27,7 +27,7 @@ class MatrixMult(LinearOperator):
         Operator contains a matrix that can be solved explicitly (``True``) or not (``False``)
 
     """
-    def __init__(self, A, dims=None, dtype='float32'):
+    def __init__(self, A, dims=None, dtype=None):
         self.A = A
         if dims is None:
             self.reshape = False
@@ -40,7 +40,10 @@ class MatrixMult(LinearOperator):
             self.shape = (A.shape[0]*np.prod(self.dims),
                           A.shape[1]*np.prod(self.dims))
             self.explicit = False
-        self.dtype = np.dtype(dtype)
+        if dtype is None:
+            self.dtype = A.dtype
+        else:
+            self.dtype = np.dtype(dtype)
 
 
     def _matvec(self, x):

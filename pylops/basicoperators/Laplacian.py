@@ -2,7 +2,7 @@ import numpy as np
 from pylops.basicoperators import SecondDerivative
 
 
-def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1), dtype='float32'):
+def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1), dtype='float64'):
     r"""Laplacian.
 
     Apply second-order centered laplacian operator to a multi-dimensional array

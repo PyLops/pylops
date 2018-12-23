@@ -26,7 +26,7 @@ class Restriction(LinearOperator):
         Operator contains a matrix that can be solved explicitly (``True``) or not (``False``)
 
     """
-    def __init__(self, N, iava, dtype='float32'):
+    def __init__(self, N, iava, dtype='float64'):
         self.N = N
         self.iava = iava
         self.shape = (len(iava), N)

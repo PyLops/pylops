@@ -61,14 +61,17 @@ class LinearRegression(LinearOperator):
         \end{bmatrix}
 
     """
-    def __init__(self, taxis, dtype='float32'):
+    def __init__(self, taxis, dtype=None):
         if not isinstance(taxis, np.ndarray):
             logging.error('t must be numpy.ndarray...')
             raise TypeError('t must be numpy.ndarray...')
         else:
             self.taxis = taxis
         self.shape = (len(self.taxis), 2)
-        self.dtype = np.dtype(dtype)
+        if dtype is None:
+            self.dtype = self.taxis.dtype
+        else:
+            self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
