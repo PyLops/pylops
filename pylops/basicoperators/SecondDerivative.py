@@ -26,14 +26,16 @@ class SecondDerivative(LinearOperator):
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or not (``False``)
+        Operator contains a matrix that can be solved explicitly (``True``) or
+        not (``False``)
 
     Notes
     -----
-    The SecondDerivative operator applies a second derivative to any chosen direction of a
-    multi-dimensional array.
+    The SecondDerivative operator applies a second derivative to any chosen
+    direction of a multi-dimensional array.
 
-    For simplicity, given a one dimensional array, the second-order centered first derivative is:
+    For simplicity, given a one dimensional array, the second-order centered
+    first derivative is:
 
     .. math::
         y[i] = (x[i+1] - 2x[i] + x[i-1]) / dx
@@ -61,50 +63,49 @@ class SecondDerivative(LinearOperator):
             y = np.zeros(self.N)
             y[1:-1] = (x[2:]-2*x[1:-1]+x[0:-2])/self.sampling
             # dealing with edges
-            #y[0] = (x[1]-2*x[0])/self.sampling
-            #y[-1] = (x[-2]-2*x[-1])/self.sampling
+            # y[0] = (x[1]-2*x[0])/self.sampling
+            # y[-1] = (x[-2]-2*x[-1])/self.sampling
         else:
             x = np.reshape(x, (self.dims))
             y = np.zeros((self.dims))
-            if self.dir > 0:  # need to bring the dimension to derive to first dimension
+            if self.dir > 0:  # need to bring the dim. to derive to first dim.
                 x = np.swapaxes(x, self.dir, 0)
                 y = np.swapaxes(y, self.dir, 0)
             y[1:-1] = (x[2:]-2*x[1:-1]+x[0:-2])/self.sampling
             # dealing with edges
-            #y[0] = (x[1]-2*x[0])/self.sampling
-            #y[-1] = (x[-2]-2*x[-1])/self.sampling
+            # y[0] = (x[1]-2*x[0])/self.sampling
+            # y[-1] = (x[-2]-2*x[-1])/self.sampling
             if self.dir > 0:
                 y = np.swapaxes(y, 0, self.dir)
-            y = np.ndarray.flatten(y)
+            y = y.ravel()
         return y
 
     def _rmatvec(self, x):
         if not self.reshape:
             y = np.zeros(self.N)
-            y[0:-2] = y[0:-2] + (x[1:-1])/self.sampling
-            y[1:-1] = y[1:-1] - (2*x[1:-1])/self.sampling
-            y[2:] = y[2:]   + (x[1:-1])/self.sampling
+            y[0:-2] += (x[1:-1])/self.sampling
+            y[1:-1] -= (2*x[1:-1])/self.sampling
+            y[2:] += (x[1:-1])/self.sampling
             # dealing with edges
-            #y[0] = y[0]  - (2*x[0])/self.sampling
-            #y[1] = y[1]  + (x[0])/self.sampling
-            #y[-1] = y[-1] - (2*x[-1])/self.sampling
-            #y[-2] = y[-2] + (x[-1])/self.sampling
+            # y[0] = y[0]  - (2*x[0])/self.sampling
+            # y[1] = y[1]  + (x[0])/self.sampling
+            # y[-1] = y[-1] - (2*x[-1])/self.sampling
+            # y[-2] = y[-2] + (x[-1])/self.sampling
         else:
             x = np.reshape(x, self.dims)
             y = np.zeros((self.dims))
-            if self.dir > 0:  # need to bring the dimension to derive to first dimension
+            if self.dir > 0:  # need to bring the dim. to derive to first dim.
                 x = np.swapaxes(x, self.dir, 0)
                 y = np.swapaxes(y, self.dir, 0)
-            y[0:-2] = y[0:-2] + (x[1:-1])/self.sampling
-            y[1:-1] = y[1:-1] - (2*x[1:-1])/self.sampling
-            y[2:] = y[2:, :] + (x[1:-1])/self.sampling
+            y[0:-2] += (x[1:-1])/self.sampling
+            y[1:-1] -= (2*x[1:-1])/self.sampling
+            y[2:] += (x[1:-1])/self.sampling
             # dealing with edges
-            #y[0] = y[0]  - (2*x[0])/self.sampling
-            #y[1] = y[1]  + (x[0])/self.sampling
-            #y[-1] = y[-1] - (2*x[-1])/self.sampling
-            #y[-2] = y[-2] + (x[-1])/self.sampling
+            # y[0] = y[0]  - (2*x[0])/self.sampling
+            # y[1] = y[1]  + (x[0])/self.sampling
+            # y[-1] = y[-1] - (2*x[-1])/self.sampling
+            # y[-2] = y[-2] + (x[-1])/self.sampling
             if self.dir > 0:
                 y = np.swapaxes(y, 0, self.dir)
-            y = np.ndarray.flatten(y)
+            y = y.ravel()
         return y
-
