@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/Statoil/pylops.svg?branch=master)](https://travis-ci.org/Statoil/pylops)
 [![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=latest)](https://pylops.readthedocs.io/en/latest/?badge=latest)
-[![Slack Status](https://slack.pylops.com/badge.svg)](https://pylops.com)
+[![Slack Status](https://img.shields.io/badge/chat-slack>-green.svg)](https://pylops.slack.com)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Statoil/pylops&amp;utm_campaign=Badge_Grade)
 [![OS-support](https://img.shields.io/badge/OS-linux,osx-850A8B.svg)](https://github.com/Statoil/pylops)
 
