@@ -8,6 +8,7 @@ from pylops.utils import dottest
 from pylops.utils.wavelets import ricker
 from pylops.avo.prestack import PrestackLinearModelling, PrestackWaveletModelling
 
+np.random.seed(10)
 
 # Create medium parameters for multiple contrasts
 nt0 = 201

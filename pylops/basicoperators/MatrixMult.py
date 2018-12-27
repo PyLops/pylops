@@ -1,4 +1,4 @@
-#from __future__ import division
+# from __future__ import division
 import numpy as np
 from pylops import LinearOperator
 
@@ -36,7 +36,8 @@ class MatrixMult(LinearOperator):
             self.shape = A.shape
             self.explicit = True
         else:
-            if isinstance(dims, int): dims = (dims, )
+            if isinstance(dims, int):
+                dims = (dims, )
             self.reshape = True
             self.dims = np.array(dims, dtype=np.int)
             self.shape = (A.shape[0]*np.prod(self.dims),
@@ -44,22 +45,25 @@ class MatrixMult(LinearOperator):
             self.explicit = False
         self.dtype = np.dtype(dtype)
 
-
     def _matvec(self, x):
         if self.reshape:
-            x = np.reshape(x, np.insert([np.prod(self.dims)], 0, self.A.shape[1]))
+            x = np.reshape(x, np.insert([np.prod(self.dims)], 0,
+                           self.A.shape[1]))
         y = np.dot(self.A, x)
         if self.reshape:
-            y = np.ndarray.flatten(y)
-        return y
+            return y.ravel()
+        else:
+            return y
 
     def _rmatvec(self, x):
         if self.reshape:
-            x = np.reshape(x, np.insert([np.prod(self.dims)], 0, self.A.shape[0]))
+            x = np.reshape(x, np.insert([np.prod(self.dims)], 0,
+                           self.A.shape[0]))
         y = np.dot(np.conj(self.A.T), x)
         if self.reshape:
-            y = np.ndarray.flatten(y)
-        return y
+            return y.ravel()
+        else:
+            return y
 
     def eigs(self):
         r"""Return eigenvalues of matrix :math:`\mathbf{A}`.

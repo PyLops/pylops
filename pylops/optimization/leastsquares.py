@@ -1,30 +1,34 @@
 import numpy as np
 from scipy.sparse.linalg import cg, lsqr
 
-from pylops.basicoperators import MatrixMult
+from pylops.basicoperators import Diagonal
 from pylops.basicoperators import VStack
 
 
-def NormalEquationsInversion(Op, Regs, data, dataregs=None, epsI=0,
-                             epsRs=None, x0=None,
+def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
+                             epsI=0, epsRs=None, x0=None,
                              returninfo=False, **kwargs_cg):
     r"""Inversion of normal equations.
 
-    Solve the regularized normal equations for a system of equations given the operator ``Op`` and a
-    list of regularization terms ``Regs``.
+    Solve the regularized normal equations for a system of equations
+    given the operator ``Op``, a data weighting operator ``Weight`` and
+    a list of regularization terms ``Regs``
 
     Parameters
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
     Regs : :obj:`list`
-        Regularization operators
+        Regularization operators (``None`` to avoid adding regularization)
     data : :obj:`numpy.ndarray`
         Data
+    Weight : :obj:`pylops.LinearOperator`, optional
+        Weight operator
     dataregs : :obj:`list`, optional
-        Regularization data
-    espI : :obj:`float`
-        Tikhonov damping, optional
+        Regularization data (must have the same number of elements
+        as ``Regs``)
+    espI : :obj:`float`, optional
+        Tikhonov damping
     epsRs : :obj:`list`
          Regularization dampings (must have the same number of elements
          as ``Regs``)
@@ -33,7 +37,8 @@ def NormalEquationsInversion(Op, Regs, data, dataregs=None, epsI=0,
     returninfo : :obj:`bool`, optional
         Return info of CG solver
     **kwargs_cg
-        Arbitrary keyword arguments for :py:func:`scipy.sparse.linalg.cg` solver
+        Arbitrary keyword arguments for
+        :py:func:`scipy.sparse.linalg.cg` solver
 
     Returns
     -------
@@ -48,34 +53,50 @@ def NormalEquationsInversion(Op, Regs, data, dataregs=None, epsI=0,
 
         ``<0``: illegal input or breakdown
 
+    See Also
+    --------
+    RegularizedInversion: Regularized inversion
+    PreconditionedInversion: Preconditioned inversion
+
     Notes
     -----
     Solve the following normal equations for a system of regularized equations
-    given the operator :math:`\mathbf{Op}`, a list of regularization terms
-    :math:`\mathbf{R_i}`, the data :math:`\mathbf{d}` and regularization damping
-    factors :math:`\epsilon_I` and :math:`\epsilon_{{R}_i}`:
+    given the operator :math:`\mathbf{Op}`, a data weighting operator
+    :math:`\mathbf{W}`, a list of regularization terms :math:`\mathbf{R_i}`,
+    the data :math:`\mathbf{d}` and regularization damping factors
+    :math:`\epsilon_I` and :math:`\epsilon_{{R}_i}`:
 
     .. math::
-        ( \mathbf{Op}^T\mathbf{Op} + \sum_i \epsilon_{{R}_i}^2
-        \mathbf{R}_i^T \mathbf{R}_i + \epsilon_I^2 \mathbf{I} )  \mathbf{x}
-        = \mathbf{Op}^T \mathbf{y} +  \sum_i \epsilon_{{R}_i}^2
+        ( \mathbf{Op}^T \mathbf{W} \mathbf{Op} +
+        \sum_i \epsilon_{{R}_i}^2 \mathbf{R}_i^T \mathbf{R}_i +
+        \epsilon_I^2 \mathbf{I} )  \mathbf{x}
+        = \mathbf{Op}^T \mathbf{W} \mathbf{d} +  \sum_i \epsilon_{{R}_i}^2
         \mathbf{R}_i^T \mathbf{d}_{R_i}
 
     """
-    if dataregs is None:
+    # create dataregs and epsRs if not provided
+    if dataregs is None and Regs is not None:
         dataregs = [np.zeros(Op.shape[1])]*len(Regs)
 
-    if epsRs is None:
+    if epsRs is None and Regs is not None:
         epsRs = [1] * len(Regs)
 
     # Normal equations
-    y_normal = Op.H * data
+    if Weight is not None:
+        y_normal = Op.H * Weight * data
+    else:
+        y_normal = Op.H * data
+    if Weight is not None:
+        Op_normal = Op.H * Weight * Op
+    else:
+        Op_normal = Op.H * Op
+
+    # Add regularization terms
     if Regs is not None:
         for epsR, Reg, datareg in zip(epsRs, Regs, dataregs):
             y_normal += epsR ** 2 * Reg.H * datareg
-    Op_normal = Op.H * Op
     if epsI > 0:
-        Op_normal += epsI ** 2 * MatrixMult(np.eye(Op.shape[1]))
+        Op_normal += epsI ** 2 * Diagonal(np.ones(Op.shape[1]))
     if Regs is not None:
         for epsR, Reg in zip(epsRs, Regs):
             Op_normal += epsR ** 2 * Reg.H * Reg
@@ -137,21 +158,24 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
     return OpReg
 
 
-def RegularizedInversion(Op, Regs, data, dataregs=None, epsRs=None,
+def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
                          x0=None, returninfo=False, **kwargs_lsqr):
     r"""Regularized inversion.
 
-    Solve a system of regularized equations given the operator ``Op``
-    and a list of regularization terms ``Regs``.
+    Solve a system of regularized equations given the operator ``Op``,
+    a data weighting operator ``Weight``, and a list of regularization
+    terms ``Regs``.
 
     Parameters
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
     Regs : :obj:`list`
-        Regularization operators
+        Regularization operators (``None`` to avoid adding regularization)
     data : :obj:`numpy.ndarray`
         Data
+    Weight : :obj:`pylops.LinearOperator`, optional
+        Weight operator
     dataregs : :obj:`list`, optional
         Regularization data
     epsRs : :obj:`list`, optional
@@ -187,42 +211,60 @@ def RegularizedInversion(Op, Regs, data, dataregs=None, epsRs=None,
     See Also
     --------
     RegularizedOperator: Regularized operator
+    NormalEquationsInversion: Normal equations inversion
     PreconditionedInversion: Preconditioned inversion
 
     Notes
     -----
     Solve the following system of regularized equations given the operator
-    :math:`\mathbf{Op}`, a list of regularization terms :math:`\mathbf{R_i}`,
+    :math:`\mathbf{Op}`, a data weighting operator :math:`\mathbf{W}^{1/2}`,
+    a list of regularization terms :math:`\mathbf{R_i}`,
     the data :math:`\mathbf{d}` and regularization damping factors
     :math:`\epsilon_I`: and :math:`\epsilon_{{R}_i}`:
 
     .. math::
         \begin{bmatrix}
-            \mathbf{Op}    \\
+            \mathbf{W}^{1/2} \mathbf{Op}    \\
             \epsilon_{R_1} \mathbf{R}_1 \\
             ...   \\
             \epsilon_{R_N} \mathbf{R}_N
         \end{bmatrix} \mathbf{x} =
         \begin{bmatrix}
-            \mathbf{d}    \\
+            \mathbf{W}^{1/2} \mathbf{d}    \\
             \epsilon_{R_1} \mathbf{d}_{R_1} \\
             ...   \\
             \epsilon_{R_N} \mathbf{d}_{R_N} \\
         \end{bmatrix}
 
+    Note that the ``Weight`` provided here is equivalent to the
+    square-root of the weight in
+    :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion`.
+
     """
     # regularized operator
-    if dataregs is None:
+    if Regs is None and Weight is None:
+        raise ValueError('Regs and Weight are None, simply use lsqr')
+    if dataregs is None and Regs is not None:
         dataregs = [np.zeros(Op.shape[1])] * len(Regs)
 
-    if epsRs is None:
+    if epsRs is None and Regs is not None:
         epsRs = [1] * len(Regs)
 
     # operator
-    RegOp = RegularizedOperator(Op, Regs, epsRs=epsRs)
+    if Weight is not None:
+        if Regs is None:
+            RegOp = Weight * Op
+        else:
+            RegOp = RegularizedOperator(Weight * Op, Regs, epsRs=epsRs)
+    else:
+        RegOp = RegularizedOperator(Op, Regs, epsRs=epsRs)
 
     # augumented data
-    datatot = data.copy()
+    if Weight is not None:
+        datatot = Weight*data.copy()
+    else:
+        datatot = data.copy()
+
     if Regs is not None:
         for epsR, datareg in zip(epsRs, dataregs):
             datatot = np.hstack((datatot, epsR*datareg))
@@ -286,6 +328,7 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_lsq
     See Also
     --------
     RegularizedInversion: Regularized inversion
+    NormalEquationsInversion: Normal equations inversion
 
     Notes
     -----

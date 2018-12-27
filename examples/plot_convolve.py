@@ -23,10 +23,11 @@ from pylops.utils.wavelets import ricker
 plt.close('all')
 
 ###############################################################################
-# We will start by creating a zero signal of lenght :math:`nt` and we will place a
-# unitary spike at its center. We also create our filter to be applied by means of
-# :py:class:`pylops.signalprocessing.Convolve1D` operator. Following the seismic example
-# mentioned above, the filter is a `Ricker wavelet <http://subsurfwiki.org/wiki/Ricker_wavelet>`_
+# We will start by creating a zero signal of lenght :math:`nt` and we will
+# place a unitary spike at its center. We also create our filter to be
+# applied by means of :py:class:`pylops.signalprocessing.Convolve1D` operator.
+# Following the seismic example mentioned above, the filter is a
+# `Ricker wavelet <http://subsurfwiki.org/wiki/Ricker_wavelet>`_
 # with dominant frequency :math:`f_0 = 30 Hz`.
 nt = 1001
 dt = 0.004

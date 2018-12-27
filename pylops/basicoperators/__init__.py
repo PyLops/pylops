@@ -1,3 +1,4 @@
+from .Regression import Regression
 from .LinearRegression import LinearRegression
 from .MatrixMult import MatrixMult
 from .Diagonal import Diagonal

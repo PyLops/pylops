@@ -3,9 +3,9 @@
 [![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
 [![Build Status](https://travis-ci.org/Statoil/pylops.svg?branch=master)](https://travis-ci.org/Statoil/pylops)
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=latest)](https://pylops.readthedocs.io/en/latest/?badge=latest)
-[![Slack Status](https://img.shields.io/badge/chat-slack-green.svg)](https://pylops.slack.com)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Statoil/pylops&amp;utm_campaign=Badge_Grade)
 [![OS-support](https://img.shields.io/badge/OS-linux,osx-850A8B.svg)](https://github.com/Statoil/pylops)
+[![Slack Status](https://img.shields.io/badge/chat-slack-green.svg)](https://pylops.slack.com)
 
 ## Objective
 This Python library is inspired by the MATLAB [Spot – A Linear-Operator Toolbox](http://www.cs.ubc.ca/labs/scl/spot/) project.
@@ -26,7 +26,7 @@ on a vector or another matrix.
 Luckily, many iterative methods (e.g. cg, lsqr) do not need to know the individual entries of a matrix to solve a linear system.
 Such solvers only require the computation of forward and adjoint matrix-vector products as done for any of the PyLops operators.
 
-Here is simple example showing how a dense first-order first derivative operator can be created,
+Here is a simple example showing how a dense first-order first derivative operator can be created,
 applied and inverted using numpy/scipy commands:
 ```python
 import numpy as np

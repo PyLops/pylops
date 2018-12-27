@@ -149,6 +149,7 @@ dn = d + n
 #   .. math::
 #        J = ||\Delta \mathbf{d} - \mathbf{W} \Delta \mathbf{AI}||_2 +
 #        \epsilon_\nabla ^2 ||\nabla \mathbf{AI}||_2
+#
 #   where :math:`\Delta \mathbf{d}=\mathbf{d}-\mathbf{W}\mathbf{AI_0}` is the residual data
 #
 # * multi-trace regularized inversion with iterative solver and linear operator using the result

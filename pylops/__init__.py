@@ -1,4 +1,5 @@
 from .LinearOperator import LinearOperator
+from .basicoperators import Regression
 from .basicoperators import LinearRegression
 from .basicoperators import MatrixMult
 from .basicoperators import Identity
@@ -24,6 +25,7 @@ from .avo.prestack import PrestackWaveletModelling, PrestackLinearModelling
 
 from .optimization.leastsquares import NormalEquationsInversion, RegularizedInversion
 from .optimization.leastsquares import PreconditionedInversion
+from .optimization.sparsity import IRLS
 
 from .utils.seismicevents import makeaxis, linear2d, parabolic2d
 from .utils.tapers import hanningtaper, cosinetaper, taper2d, taper3d

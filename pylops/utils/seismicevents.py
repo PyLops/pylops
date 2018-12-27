@@ -89,6 +89,7 @@ def linear2d(x, t, v, t0, theta, amp, wav):
 
     .. math::
         t_i(x) = t_{0,i} + p_{x,i} x
+
     where :math:`p_{x,i}=sin( \theta_i)/v`
 
     """
@@ -287,6 +288,7 @@ def linear3d(x, y, t, v, t0, theta, phi, amp, wav):
 
     .. math::
         t_i(x, y) = t_{0,i} + p_{x,i} x + p_{y,i} y
+
     where :math:`p_{x,i}=sin( \theta_i)cos( \phi_i)/v`
     and :math:`p_{x,i}=sin( \theta_i)sin( \phi_i)/v`.
 

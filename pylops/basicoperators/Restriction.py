@@ -3,6 +3,7 @@ import numpy.ma as np_ma
 
 from pylops import LinearOperator
 
+
 class Restriction(LinearOperator):
     """Restriction (or sampling) operator.
 

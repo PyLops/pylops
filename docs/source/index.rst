@@ -18,7 +18,7 @@ on a vector or another matrix.
 Luckily, many iterative methods (e.g. cg, lsqr) do not need to know the individual entries of a matrix to solve a linear system.
 Such solvers only require the computation of forward and adjoint matrix-vector products as done for any of the PyLops operators.
 
-Here is simple example showing how a dense first-order first derivative operator can be created,
+Here is a simple example showing how a dense first-order first derivative operator can be created,
 applied and inverted using numpy/scipy commands:
 
 .. code-block:: python
