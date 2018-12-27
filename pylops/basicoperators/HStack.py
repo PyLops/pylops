@@ -19,12 +19,13 @@ class HStack(LinearOperator):
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or not (``False``)
+        Operator contains a matrix that can be solved explicitly (``True``) or
+        not (``False``)
 
     Notes
     -----
-    An horizontal stack of N linear operators is created such as its application
-    in forward mode leads to
+    An horizontal stack of N linear operators is created such as its
+    application in forward mode leads to
 
     .. math::
         \begin{bmatrix}
@@ -78,7 +79,7 @@ class HStack(LinearOperator):
     def _matvec(self, x):
         y = np.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            y = y + oper.matvec(x[self.mmops[iop]:self.mmops[iop + 1]])
+            y += oper.matvec(x[self.mmops[iop]:self.mmops[iop + 1]])
         return y
 
     def _rmatvec(self, x):

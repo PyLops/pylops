@@ -19,12 +19,13 @@ class VStack(LinearOperator):
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or not (``False``)
+        Operator contains a matrix that can be solved explicitly (``True``) or
+        not (``False``)
 
     Notes
     -----
-    A vertical stack of N linear operators is created such as its application in
-    forward mode leads to
+    A vertical stack of N linear operators is created such as its application
+    in forward mode leads to
 
     .. math::
         \begin{bmatrix}
@@ -84,5 +85,5 @@ class VStack(LinearOperator):
     def _rmatvec(self, x):
         y = np.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            y = y + oper.rmatvec(x[self.nnops[iop]:self.nnops[iop + 1]])
+            y += oper.rmatvec(x[self.nnops[iop]:self.nnops[iop + 1]])
         return y

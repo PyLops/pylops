@@ -5,10 +5,11 @@ from pylops import LinearOperator
 class Identity(LinearOperator):
     r"""Identity operator.
 
-    Simply move model to data in forward model and viceversa in adjoint mode if :math:`M = N`.
-    If :math:`M > N` removes last :math:`M - N` elements from model in forward and pads with
-    :math:`0` in adjoint. If :math:`N > M` removes last :math:`N - M` elements from data in adjoint
-    and pads with :math:`0` in forward.
+    Simply move model to data in forward model and viceversa in adjoint mode if
+    :math:`M = N`. If :math:`M > N` removes last :math:`M - N` elements from
+    model in forward and pads with :math:`0` in adjoint. If :math:`N > M`
+    removes last :math:`N - M` elements from data in adjoint and pads with
+    :math:`0` in forward.
 
     Parameters
     ----------
@@ -24,12 +25,14 @@ class Identity(LinearOperator):
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or not (``False``)
+        Operator contains a matrix that can be solved explicitly (``True``) or
+        not (``False``)
 
     Notes
     -----
-    For :math:`M = N`, an *Identity* operator simply moves the model :math:`\mathbf{x}` to the
-    data :math:`\mathbf{y}` in forward mode and viceversa in adjoint mode:
+    For :math:`M = N`, an *Identity* operator simply moves the model
+    :math:`\mathbf{x}` to the data :math:`\mathbf{y}` in forward mode and
+    viceversa in adjoint mode:
 
     .. math::
 
@@ -47,15 +50,16 @@ class Identity(LinearOperator):
 
         \mathbf{x} = \mathbf{I} \mathbf{y} = \mathbf{y}
 
-    For :math:`M > N`, the *Identity* operator takes the first :math:`M` elements of the
-    model :math:`\mathbf{x}` into the data :math:`\mathbf{y}` in forward mode
+    For :math:`M > N`, the *Identity* operator takes the first :math:`M`
+    elements of the model :math:`\mathbf{x}` into the data :math:`\mathbf{y}`
+    in forward mode
 
     .. math::
 
         y_i = x_i  \quad \forall i=1,2,...,N
 
-    and all the elements of the data :math:`\mathbf{y}` into the first :math:`M` elements of
-    model in adjoint mode (other elements are ``O``):
+    and all the elements of the data :math:`\mathbf{y}` into the first
+    :math:`M` elements of model in adjoint mode (other elements are ``O``):
 
     .. math::
 

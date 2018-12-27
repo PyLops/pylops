@@ -8,8 +8,9 @@ from scipy.sparse.linalg import lsqr
 class LinearOperator(spLinearOperator):
     """Common interface for performing matrix-vector products.
 
-    This class is a wrapper of the :py:class:`scipy.sparse.linalg.LinearOperator` class,
-    which contains additional overloading to standard operators such as ``__div__``.
+    This class is a wrapper of the
+    :py:class:`scipy.sparse.linalg.LinearOperator` class, which contains
+    additional overloading to standard operators such as ``__div__``.
 
     """
     def __init__(self, explicit=False):
@@ -38,7 +39,10 @@ class LinearOperator(spLinearOperator):
 
     def __truediv__(self, y):
         if self.explicit is True:
-            xest = solve(self.A, y) if self.A.shape[0] == self.A.shape[1] else lstsq(self.A, y)[0]
+            if self.A.shape[0] == self.A.shape[1]:
+                xest = solve(self.A, y)
+            else:
+                xest = lstsq(self.A, y)[0]
         else:
             xest = lsqr(self, y)[0]
 

@@ -5,8 +5,9 @@ from pylops import LinearOperator
 class Diagonal(LinearOperator):
     r"""Diagonal operator.
 
-    Applies element-wise multiplication of the input vector with a vector :math:`\mathbf{d}`
-    of the same size both in forward and adjoint mode (self-adjoint operator).
+    Applies element-wise multiplication of the input vector with a vector
+    :math:`\mathbf{d}` of the same size both in forward and adjoint mode
+    (self-adjoint operator).
 
     Parameters
     ----------
@@ -20,20 +21,23 @@ class Diagonal(LinearOperator):
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or not (``False``)
+        Operator contains a matrix that can be solved explicitly (``True``) or
+        not (``False``)
 
     Notes
     -----
-    Element-wise multiplication between the model :math:`\mathbf{x}` and/or data :math:`\mathbf{y}`
-    vectors and the array :math:`\mathbf{d}` can be expressed as
+    Element-wise multiplication between the model :math:`\mathbf{x}` and/or
+    data :math:`\mathbf{y}` vectors and the array :math:`\mathbf{d}` can be
+    expressed as
 
     .. math::
 
         y_i = d_i x_i  \quad \forall i=1,2,...,N
 
-    This is equivalent to a matrix-vector multiplication with a matrix containing the vector
-    :math:`\mathbf{d}` along its main diagonal. As the adjoint of a diagonal matrix is the
-    diagonal matrix itself, the Diagonal is self.adjoint.
+    This is equivalent to a matrix-vector multiplication with a matrix
+    containing the vector :math:`\mathbf{d}` along its main diagonal. As the
+    adjoint of a diagonal matrix is the diagonal matrix itself, the Diagonal is
+    self.adjoint.
 
     """
     def __init__(self, diag, dtype=None):

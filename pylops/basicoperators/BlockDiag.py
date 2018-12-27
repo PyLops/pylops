@@ -19,7 +19,8 @@ class BlockDiag(LinearOperator):
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or not (``False``)
+        Operator contains a matrix that can be solved explicitly (``True``) or
+        not (``False``)
 
     Notes
     -----
@@ -28,10 +29,10 @@ class BlockDiag(LinearOperator):
 
     .. math::
         \begin{bmatrix}
-            \mathbf{L_1}  \quad \mathbf{0}       \quad  ... \quad  \mathbf{0}  \\
-            \mathbf{0}    \quad \mathbf{L_2}     \quad  ... \quad  \mathbf{0}  \\
-            ...           \quad ...              \quad  ... \quad  ...         \\
-            \mathbf{0}    \quad \mathbf{0}       \quad  ... \quad  \mathbf{L_N}
+            \mathbf{L_1}  \quad \mathbf{0}     \quad  ... \quad  \mathbf{0}  \\
+            \mathbf{0}    \quad \mathbf{L_2}   \quad  ... \quad  \mathbf{0}  \\
+            ...           \quad ...            \quad  ... \quad  ...         \\
+            \mathbf{0}    \quad \mathbf{0}     \quad  ... \quad  \mathbf{L_N}
         \end{bmatrix}
         \begin{bmatrix}
             \mathbf{x}_{1}  \\
@@ -50,10 +51,10 @@ class BlockDiag(LinearOperator):
 
     .. math::
         \begin{bmatrix}
-            \mathbf{L_1}^H  \quad \mathbf{0}       \quad  ... \quad  \mathbf{0}  \\
-            \mathbf{0}    \quad \mathbf{L_2}^H     \quad  ... \quad  \mathbf{0}  \\
-            ...           \quad ...                \quad  ... \quad  ...         \\
-            \mathbf{0}    \quad \mathbf{0}         \quad  ... \quad  \mathbf{L_N}^H
+            \mathbf{L_1}^H  \quad \mathbf{0}    \quad ... \quad  \mathbf{0}  \\
+            \mathbf{0}    \quad \mathbf{L_2}^H  \quad ... \quad  \mathbf{0}  \\
+            ...           \quad ...             \quad ... \quad  ...         \\
+            \mathbf{0}    \quad \mathbf{0}      \quad ... \quad  \mathbf{L_N}^H
         \end{bmatrix}
         \begin{bmatrix}
             \mathbf{y}_{1}  \\

@@ -95,11 +95,11 @@ class CausalIntegration(LinearOperator):
         if self.dir > -1:
             x = np.swapaxes(x, self.dir, -1)
         y = self.sampling * np.cumsum(x, axis=-1)
-        y = y - self.sampling * x / 2. if self.halfcurrent else y
+        if self.halfcurrent:
+            y -= self.sampling * x / 2.
         if self.dir > -1:
             y = np.swapaxes(y, -1, self.dir)
-        y = np.ndarray.flatten(y)
-        return y
+        return y.ravel()
 
     def _rmatvec(self, x):
         if self.reshape:
@@ -108,12 +108,11 @@ class CausalIntegration(LinearOperator):
             x = np.swapaxes(x, self.dir, -1)
         xflip = np.flip(x, axis=-1)
         if self.halfcurrent:
-            y= self.sampling * (np.cumsum(xflip, axis=-1)- xflip/2.)
+            y = self.sampling * (np.cumsum(xflip, axis=-1) - xflip/2.)
         else:
-            y= self.sampling * np.cumsum(xflip, axis=-1)
+            y = self.sampling * np.cumsum(xflip, axis=-1)
         y = np.flip(y, axis=-1)
 
         if self.dir > -1:
             y = np.swapaxes(y, -1, self.dir)
-        y = np.ndarray.flatten(y)
-        return y
+        return y.ravel()
