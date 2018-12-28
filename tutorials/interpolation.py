@@ -26,7 +26,8 @@ with :math:`M>>N`.
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import imageio
+from scipy import misc
+
 import pylops
 
 plt.close('all')
@@ -34,7 +35,7 @@ plt.close('all')
 ###############################################################################
 # To start we import a 2d image and define our restriction operator to irregularly and randomly
 # sample the image for 30% of the entire grid
-im = np.asarray(imageio.imread('../testdata/python.png'))[:, :, 0]
+im = np.asarray(misc.imread('../testdata/python.png'))[:, :, 0]
 Nz, Nx = im.shape
 N = Nz * Nx
 
