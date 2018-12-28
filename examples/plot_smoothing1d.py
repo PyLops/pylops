@@ -69,6 +69,8 @@ Sop = pylops.Smoothing1D(nsmooth=5, dims=(11, 21), dir=0, dtype='float64')
 B = np.reshape(Sop*np.ndarray.flatten(A), (11, 21))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+fig.suptitle('Smoothing in 1st direction for 2d data', fontsize=14,
+             fontweight='bold', y=0.95)
 im = axs[0].imshow(A, interpolation='nearest', vmin=0, vmax=1)
 axs[0].axis('tight')
 axs[0].set_title('Model')
@@ -78,3 +80,4 @@ axs[1].axis('tight')
 axs[1].set_title('Data')
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
+plt.subplots_adjust(top=0.8)

@@ -19,6 +19,7 @@ class Convolve1D(LinearOperator):
         Index of the center of the compact filter
     dims : :obj:`tuple`
         Number of samples for each dimension
+        (``None`` if only one dimension is available)
     dir : :obj:`int`, optional
         Direction along which convolution is applied
     dtype : :obj:`str`, optional
@@ -29,7 +30,8 @@ class Convolve1D(LinearOperator):
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (True) or not (False)
+        Operator contains a matrix that can be solved
+        explicitly (True) or not (False)
 
     Notes
     -----

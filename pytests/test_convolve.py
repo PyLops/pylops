@@ -70,7 +70,7 @@ def test_Convolve1D(par):
 @pytest.mark.parametrize("par", [(par1_2d), (par2_2d), (par3_2d),
                                  (par4_2d), (par5_2d), (par6_2d)])
 def test_Convolve2D(par):
-    """Dot-test and inversion for convolve2D operator
+    """Dot-test and inversion for Convolve2D operator
     """
     # 2D on 2D
     if par['dir'] == 2:

@@ -5,6 +5,10 @@ Contributing
 
 Contributions are welcome and greatly appreciated!
 
+The best way to get in touch with the core developers and mantainers is to
+join the `PyLops slack channel <https://pylops.slack.com/>`_ as well as
+open new *Issues* directly from the `github repo <https://github.com/Statoil/pylops>`_.
+
 
 Types of Contributions
 ----------------------
@@ -23,8 +27,7 @@ If you are playing with the PyLops library and find a bug, please report it incl
 Propose New Operators or Features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The best way to send feedback is to open an issue at https://github.com/Statoil/pylops/issues.
-with tag *enhancement*.
+Open an issue at https://github.com/Statoil/pylops/issues with tag *enhancement*.
 
 If you are proposing a new operator or a new feature:
 

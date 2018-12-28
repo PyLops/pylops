@@ -25,16 +25,19 @@ Basic operators
 .. autosummary::
    :toctree: generated/
 
-    LinearRegression
     MatrixMult
     Identity
     Zero
     Diagonal
     Restriction
+    Regression
+    LinearRegression
+    CausalIntegration
+    Flip
+    Symmetrize
     VStack
     HStack
     BlockDiag
-    CausalIntegration
 
 
 Smoothing and derivatives
@@ -103,4 +106,4 @@ Solvers
     leastsquares.NormalEquationsInversion
     leastsquares.RegularizedInversion
     leastsquares.PreconditionedInversion
-
+    sparsity.IRLS

@@ -70,23 +70,26 @@ def linear2d(x, t, v, t0, theta, amp, wav):
     theta : :obj:`tuple` or :obj:`float`
         angle (in degrees) of each linear event
     amp : :obj:`tuple` or :obj:`float`
-        amplitude of each linear event of size :math:`[n_x \times n_t]`
+        amplitude of each linear event
     wav : :obj:`numpy.ndarray`
-        wavelet to be applied to data of size :math:`[n_x \times n_t]`
+        wavelet to be applied to data
 
     Returns
     -------
     d : :obj:`numpy.ndarray`
-        data without wavelet
+        data without wavelet  of size
+        :math:`[n_x \times n_t]`
     dwav : :obj:`numpy.ndarray`
-        data with wavelet
+        data with wavelet  of size
+        :math:`[n_x \times n_t]`
 
     Notes
     -----
     Each event is created using the following relation:
 
     .. math::
-        t_i(x) = t_0 + p_{x,i} x
+        t_i(x) = t_{0,i} + p_{x,i} x
+
     where :math:`p_{x,i}=sin( \theta_i)/v`
 
     """
@@ -153,7 +156,7 @@ def parabolic2d(x, t, t0, px, pxx, amp, wav):
     Each event is created using the following relation:
 
     .. math::
-        t_i(x) = t_0 + p_{x,i} x + p_{xx,i} x^2
+        t_i(x) = t_{0,i} + p_{x,i} x + p_{xx,i} x^2
 
     """
     if isinstance(t0, (float, int)): t0 = (t0,)
@@ -215,7 +218,7 @@ def hyperbolic2d(x, t, t0, vrms, amp, wav):
     Each event is created using the following relation:
 
     .. math::
-        t_i(x) = \sqrt{t_0^2 + x^2 / v_{rms,i}^2}
+        t_i(x) = \sqrt{t_{0,i}^2 + x^2 / v_{rms,i}^2}
 
     """
     if isinstance(t0, (float, int)): t0 = (t0,)
@@ -284,7 +287,8 @@ def linear3d(x, y, t, v, t0, theta, phi, amp, wav):
     Each event is created using the following relation:
 
     .. math::
-        t_i(x, y) = t_0 + p_{x,i} x + p_{y,i} y
+        t_i(x, y) = t_{0,i} + p_{x,i} x + p_{y,i} y
+
     where :math:`p_{x,i}=sin( \theta_i)cos( \phi_i)/v`
     and :math:`p_{x,i}=sin( \theta_i)sin( \phi_i)/v`.
 
@@ -356,7 +360,7 @@ def hyperbolic3d(x, y, t, t0, vrms_x, vrms_y, amp, wav):
     Each event is created using the following relation:
 
     .. math::
-        t_i(x, y) = \sqrt{t_0^2 + x^2 / v_{rms_x, i}^2 + y^2 / v_{rms_y, i}^2}
+        t_i(x, y) = \sqrt{t_{0,i}^2 + x^2 / v_{rms_x, i}^2 + y^2 / v_{rms_y, i}^2}
 
     """
     if isinstance(t0, (float, int)): t0 = (t0,)

@@ -12,6 +12,7 @@ import pylops
 from pylops.utils.wavelets import ricker
 
 plt.close('all')
+np.random.seed(0)
 
 ###############################################################################
 # Let's start by creating the input elastic property profiles and wavelet
@@ -24,7 +25,8 @@ thetamin, thetamax = 0, 40
 theta = np.linspace(thetamin, thetamax, ntheta)
 
 # Elastic property profiles
-vp = 1200 + np.arange(nt0) + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 80, nt0))
+vp = 1200 + np.arange(nt0) + filtfilt(np.ones(5)/5., 1,
+                                      np.random.normal(0, 80, nt0))
 vs = 600 + vp/2 + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 20, nt0))
 rho = 1000 + vp + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 30, nt0))
 vp[201:] += 500
@@ -65,33 +67,52 @@ axs[2].grid()
 
 # constant vsvp
 PPop_const = \
-    pylops.avo.prestack.PrestackLinearModelling(wav, theta, vsvp=vsvp, nt0=nt0, linearization='akirich')
+    pylops.avo.prestack.PrestackLinearModelling(wav, theta, vsvp=vsvp, nt0=nt0,
+                                                linearization='akirich')
 
-# constant vsvp
+# depth-variant vsvp
 PPop_variant = \
-    pylops.avo.prestack.PrestackLinearModelling(wav, theta, vsvp=vsvp_z, linearization='akirich')
+    pylops.avo.prestack.PrestackLinearModelling(wav, theta, vsvp=vsvp_z,
+                                                linearization='akirich')
 
 ###############################################################################
-# Let's apply those operators to the elastic model and create some synthetic data
+# Let's apply those operators to the elastic model and create some
+# synthetic data
 dPP_const = PPop_const *m.flatten()
-dPP_const = dPP_const.reshape(nt0,ntheta)
+dPP_const = dPP_const.reshape(nt0, ntheta)
 
 dPP_variant = PPop_variant *m.flatten()
-dPP_variant = dPP_variant.reshape(nt0,ntheta)
+dPP_variant = dPP_variant.reshape(nt0, ntheta)
 
 ###############################################################################
 # Finally we visualize the two datasets
 
 # sphinx_gallery_thumbnail_number = 2
-fig, axs = plt.subplots(1, 2, figsize=(9, 7), sharey=True)
-axs[0].imshow(dPP_const, cmap='gray', extent=(theta[0], theta[-1], t0[-1], t0[0]),
-              vmin=-0.1, vmax=0.1)
-axs[0].axis('tight')
-axs[0].set_xlabel(r'$\Theta$')
-axs[0].set_ylabel(r'$t(s)$')
-axs[0].set_title(r'Data with constant $VP/VS$', fontsize=10)
-axs[1].imshow(dPP_variant, cmap='gray', extent=(theta[0], theta[-1], t0[-1], t0[0]),
-              vmin=-0.1, vmax=0.1)
-axs[1].axis('tight')
-axs[1].set_title(r'Data with depth=variant $VP/VS$', fontsize=10)
-axs[1].set_xlabel(r'$\Theta$')
+fig = plt.figure(figsize=(8, 7))
+ax1 = plt.subplot2grid((3, 2), (0, 0), rowspan=2)
+ax2 = plt.subplot2grid((3, 2), (0, 1), rowspan=2)
+ax3 = plt.subplot2grid((3, 2), (2, 0))
+ax4 = plt.subplot2grid((3, 2), (2, 1))
+ax1.imshow(dPP_const, cmap='gray',
+           extent=(theta[0], theta[-1], t0[-1], t0[0]),
+           vmin=-0.1, vmax=0.1)
+ax1.set_xlabel(r'$\Theta$')
+ax1.set_ylabel(r'$t(s)$')
+ax1.set_title(r'Data with constant $VP/VS$', fontsize=10)
+ax1.axis('tight')
+ax2.imshow(dPP_variant, cmap='gray',
+           extent=(theta[0], theta[-1], t0[-1], t0[0]),
+           vmin=-0.1, vmax=0.1)
+ax2.set_title(r'Data with depth-variant $VP/VS$', fontsize=10)
+ax2.set_xlabel(r'$\Theta$')
+ax2.axis('tight')
+ax3.plot(dPP_const[nt0//4], 'k', lw=2)
+ax3.plot(dPP_variant[nt0//4], '--r', lw=2)
+ax3.set_title('AVO curve at it=%d' %(nt0//2), fontsize=10)
+ax3.set_xlabel(r'$\Theta$')
+ax4.plot(dPP_const[nt0//2], 'k', lw=2, label=r'constant $VP/VS$')
+ax4.plot(dPP_variant[nt0//2], '--r', lw=2, label=r'variable $VP/VS$')
+ax4.set_title('AVO curve at it=%d' %(nt0//2), fontsize=10)
+ax4.set_xlabel(r'$\Theta$')
+ax4.legend()
+plt.tight_layout()

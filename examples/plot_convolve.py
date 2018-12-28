@@ -23,10 +23,11 @@ from pylops.utils.wavelets import ricker
 plt.close('all')
 
 ###############################################################################
-# We will start by creating a zero signal of lenght :math:`nt` and we will place a
-# unitary spike at its center. We also create our filter to be applied by means of
-# :py:class:`pylops.signalprocessing.Convolve1D` operator. Following the seismic example
-# mentioned above, the filter is a `Ricker wavelet <http://subsurfwiki.org/wiki/Ricker_wavelet>`_
+# We will start by creating a zero signal of lenght :math:`nt` and we will
+# place a unitary spike at its center. We also create our filter to be
+# applied by means of :py:class:`pylops.signalprocessing.Convolve1D` operator.
+# Following the seismic example mentioned above, the filter is a
+# `Ricker wavelet <http://subsurfwiki.org/wiki/Ricker_wavelet>`_
 # with dominant frequency :math:`f_0 = 30 Hz`.
 nt = 1001
 dt = 0.004
@@ -88,7 +89,8 @@ y = y.reshape(nt, nx)
 xinv = xinv.reshape(nt, nx)
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 3))
-fig.suptitle('Convolve in 1st direction of 2d data', fontsize=14, fontweight='bold')
+fig.suptitle('Convolve in 1st direction of 2d data', fontsize=14,
+             fontweight='bold', y=0.95)
 axs[0].imshow(x, cmap='gray', vmin=-1, vmax=1)
 axs[1].imshow(y, cmap='gray', vmin=-1, vmax=1)
 axs[2].imshow(xinv, cmap='gray', vmin=-1, vmax=1)
@@ -98,9 +100,12 @@ axs[1].set_title('y')
 axs[1].axis('tight')
 axs[2].set_title('xlsqr')
 axs[2].axis('tight')
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Convolve in 1st direction of 2d data', fontsize=14, fontweight='bold')
+fig.suptitle('Convolve in 1st direction of 2d data', fontsize=14,
+             fontweight='bold', y=0.95)
 ax[0].plot(x[int(nt/2), :], 'k', lw=2, label=r'$x$')
 ax[0].plot(y[int(nt/2), :], 'r', lw=2, label=r'$y=Ax$')
 ax[0].plot(xinv[int(nt/2), :], '--g', lw=2, label=r'$x_{ext}$')
@@ -111,3 +116,5 @@ ax[0].legend()
 ax[0].set_xlim(30, 50)
 ax[1].legend()
 ax[1].set_xlim(10, 40)
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)

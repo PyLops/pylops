@@ -7,9 +7,9 @@ from pylops import LinearOperator
 class Restriction(LinearOperator):
     """Restriction (or sampling) operator.
 
-    Extract subset of values from input vector at locations ``iava`` in forward
-    mode and places those values at locations ``iava`` in an otherwise zero
-    vector in adjoint mode.
+    Extract subset of values from input vector at locations ``iava``
+    in forward mode and places those values at locations ``iava``
+    in an otherwise zero vector in adjoint mode.
 
     Parameters
     ----------
@@ -25,8 +25,8 @@ class Restriction(LinearOperator):
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator contains a matrix that can be solved
+        explicitly (``True``) or not (``False``)
 
     """
     def __init__(self, N, iava, dtype='float32'):

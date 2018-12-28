@@ -2,7 +2,7 @@ import logging
 import numpy as np
 
 from numpy import tan, sin, cos
-from scipy.sparse.linalg import LinearOperator
+from pylops import LinearOperator
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -405,7 +405,7 @@ class AVOLinearModelling(LinearOperator):
     -----
     The AVO linearized operator performs a linear combination of three
     (or two) elastic parameters arranged in input vector :math:`\mathbf{m}`
-    of size :math:`nt0 \times N` to create the so-called seismic reflectivity:
+    of size :math:`n_{t0} \times N` to create the so-called seismic reflectivity:
 
     .. math::
         r(t, \theta) = \sum_{i=1}^N G_i(t, \theta) m_i(t) \qquad \forall \quad t, \theta

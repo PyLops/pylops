@@ -62,11 +62,11 @@ fig.colorbar(im, ax=ax, ticks=[0, N], pad=0.3, shrink=0.7)
 
 
 ###############################################################################
-# Similarly we can consider the input model as composed of two or more dimensions.
-# In this case the diagonal operator is applied to every dimension.
+# Similarly we can consider the input model as composed of two or more
+# dimensions. In this case the diagonal operator is applied to every dimension.
 nx, ny = 3, 5
 x = np.ones((nx, ny))
-d = np.ones(nx*ny).reshape(nx, ny)
+d = np.arange(nx*ny).reshape(nx, ny)
 Dop = pylops.Diagonal(d)
 
 y = Dop*x.flatten()

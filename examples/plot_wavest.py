@@ -107,8 +107,8 @@ axs[2].set_xlabel(r'$\Theta$')
 
 ###############################################################################
 # We can invert the data. First we will consider noise-free data, subsequently
-# we will add some noise and add a regularization terms in the inversion process to obtain
-# a well-behaved wavelet also under noise conditions.
+# we will add some noise and add a regularization terms in the inversion
+# process to obtain a well-behaved wavelet also under noise conditions.
 wav_est = Wavesop / d.T.flatten()
 wav_phase_est = Wavesop_phase / d_phase.T.flatten()
 wavn_est = Wavesop / dn.T.flatten()
@@ -121,10 +121,11 @@ wavn_reg_est, istop, itn, r1norm, r2norm = \
     pylops.optimization.leastsquares.RegularizedInversion(Wavesop, [D2op], dn.T.flatten(),
                                                           epsRs=[np.sqrt(0.1)], returninfo=True,
                                                           **dict(damp=np.sqrt(1e-4),
-                                                               iter_lim=200, show=0))
+                                                                 iter_lim=200, show=0))
 
 ###############################################################################
-# Finally, we visualize the retrieved wavelets and compare with the true wavelet.
+# As expected, the regularization helps to retrieve a smooth wavelet
+# even under noisy conditions.
 
 # sphinx_gallery_thumbnail_number = 3
 fig, axs = plt.subplots(2, 1, sharex=True, figsize=(8, 6))
@@ -142,3 +143,42 @@ axs[1].set_title('Wavelet with phase')
 axs[1].grid()
 axs[1].legend(loc='upper right')
 axs[1].axis('tight')
+
+###############################################################################
+# Finally we repeat the same exercise, but this time we use a *preconditioner*.
+# Initially, our preconditioner is a :py:class:`pylops.Symmetrize` operator
+# to ensure that our estimated wavelet is zero-phase. After we chain
+# the :py:class:`pylops.Symmetrize` and the :py:class:`pylops.Smoothing1D`
+# operators to also guarantee a smooth wavelet.
+
+# Create symmetrize operator
+Sop = pylops.Symmetrize((ntwav+1)//2)
+
+# Create smoothing operator
+Smop = pylops.Smoothing1D(5, dims=((ntwav+1)//2,), dtype='float64')
+
+# Invert for interpolated signal
+wavn_prec_est = \
+    pylops.optimization.leastsquares.PreconditionedInversion(Wavesop, Sop,
+                                                             dn.T.flatten(),
+                                                             returninfo=False,
+                                                             **dict(damp=np.sqrt(1e-4),
+                                                                    iter_lim=200,
+                                                                    show=0))
+
+wavn_smooth_est = \
+    pylops.optimization.leastsquares.PreconditionedInversion(Wavesop, Sop*Smop,
+                                                             dn.T.flatten(),
+                                                             returninfo=False,
+                                                             **dict(damp=np.sqrt(1e-4),
+                                                                    iter_lim=200,
+                                                                    show=0))
+
+fig, ax = plt.subplots(1, 1, sharex=True, figsize=(8, 3))
+ax.plot(wav, 'k', lw=6, label='True')
+ax.plot(wav_est, '--r', lw=4, label='Estimated (noise-free)')
+ax.plot(wavn_prec_est, '--g', lw=4, label='Estimated (noisy symmetric)')
+ax.plot(wavn_smooth_est, '--m', lw=4, label='Estimated (noisy smoothed)')
+ax.set_title('Zero-phase wavelet')
+ax.grid()
+ax.legend(loc='upper right')

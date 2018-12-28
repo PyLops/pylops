@@ -180,8 +180,56 @@ ax3.plot(Gsub[:, nr//2]/Gsub.max(), t, 'r', lw=5)
 ax3.plot(g_inv_tot[nr//2, nt-1:]/g_inv_tot.max(), t, 'k', lw=3)
 ax3.set_ylim(1.2, 0)
 
-
 ##############################################################################
-# Note that Marchenko redatuming can also be applied simultaneously to multiple subsurface points.
-# Use :py:func:`pylops.waveeqprocessing.Marchenko.apply_multiplepoints` instead of
-# :py:func:`pylops.waveeqprocessing.Marchenko.apply_onepoint`
+# Note that Marchenko redatuming can also be applied simultaneously to multiple
+# subsurface points. We will now consider 3 subsurface points at depth 1060 m
+# and retrieve their up and down-going Green's functions.
+nvs = 3
+vs = [np.arange(nvs)*500 + 1000,
+      np.ones(nvs)*1060]
+
+plt.figure(figsize=(10, 5))
+plt.imshow(rho, cmap='gray', extent=(x[0], x[-1], z[-1], z[0]))
+plt.scatter(s[0, 5::10], s[1, 5::10], marker='*', s=150, c='r', edgecolors='k')
+plt.scatter(r[0, ::10], r[1, ::10], marker='v', s=150, c='b', edgecolors='k')
+plt.scatter(vs[0], vs[1], marker='.', s=250, c='m', edgecolors='k')
+plt.axis('tight')
+plt.xlabel('x [m]')
+plt.ylabel('y [m]')
+plt.title('Model and Geometry')
+plt.xlim(x[0], x[-1])
+
+# direct arrival window - traveltime
+directVS = np.sqrt((vs[0]-r[0][:, np.newaxis])**2+(vs[1]-r[1][:, np.newaxis])**2)/vel
+directVS_off = directVS - toff
+
+MarchenkoWM = Marchenko(R, dt=dt, dr=dr, nfmax=nfmax, wav=wav,
+                        toff=toff, nsmooth=nsmooth)
+
+F1_inv_minus, F1_inv_plus, P0_minus, G_inv_minus, G_inv_plus = \
+    MarchenkoWM.apply_multiplepoints(directVS, nfft=2**11, rtm=True, greens=True,
+                                     dottest=False, **dict(iter_lim=niter, show=False))
+
+
+fig, axs = plt.subplots(3, 1, sharey=True, figsize=(10, 20))
+axs[0].imshow(np.swapaxes(P0_minus, 0, 1).reshape(nr*nvs, 2*nt-1).T,
+              cmap='gray', vmin=-5e-1, vmax=5e-1,
+              extent=(0, nr*nvs, t[-1], -t[-1]))
+axs[0].set_title(r'$p_0^-$')
+axs[0].set_ylabel(r'$t$')
+axs[0].axis('tight')
+axs[0].set_ylim(2, 0)
+axs[1].imshow(np.swapaxes(G_inv_minus, 0, 1).reshape(nr*nvs, 2*nt-1).T,
+              cmap='gray', vmin=-5e-1, vmax=5e-1,
+              extent=(0, nr*nvs, t[-1], -t[-1]))
+axs[1].set_title(r'$g^-$')
+axs[1].set_ylabel(r'$t$')
+axs[1].axis('tight')
+axs[1].set_ylim(2, 0)
+axs[2].imshow(np.swapaxes(G_inv_plus, 0, 1).reshape(nr*nvs, 2*nt-1).T,
+              cmap='gray', vmin=-5e-1, vmax=5e-1,
+              extent=(0, nr*nvs, t[-1], -t[-1]))
+axs[2].set_title(r'$g^+$')
+axs[2].set_ylabel(r'$t$')
+axs[2].axis('tight')
+axs[2].set_ylim(2, 0)

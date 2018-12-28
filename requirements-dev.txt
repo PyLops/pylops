@@ -11,3 +11,4 @@ sphinx-gallery
 numpydoc
 nbsphinx
 image
+imageio

@@ -264,11 +264,13 @@ class Marchenko():
                       HStack([-1 * R1op, Iop])])
 
         if dottest:
-            assert Dottest(Gop, 2 * self.nr * self.nt2,
-                           2 * self.nr * self.nt2, verb=True)
+            Dottest(Gop, 2 * self.nr * self.nt2,
+                    2 * self.nr * self.nt2,
+                    raiseerror=True, verb=True)
         if dottest:
-            assert Dottest(Mop, 2 * self.nr * self.nt2,
-                           2 * self.nr * self.nt2, verb=True)
+            Dottest(Mop, 2 * self.nr * self.nt2,
+                    2 * self.nr * self.nt2,
+                    raiseerror=True, verb=True)
 
         # Create input focusing function
         if G0 is None:
@@ -382,11 +384,13 @@ class Marchenko():
                       HStack([-1 * R1op, Iop])])
 
         if dottest:
-            assert Dottest(Gop, 2 * self.nr * nvs * self.nt2,
-                           2 * self.nr * nvs * self.nt2, verb=True)
+            Dottest(Gop, 2 * self.nr * nvs * self.nt2,
+                    2 * self.nr * nvs * self.nt2,
+                    raiseerror=True, verb=True)
         if dottest:
-            assert Dottest(Mop, 2 * self.nr * nvs * self.nt2,
-                           2 * self.nr * nvs * self.nt2, verb=True)
+            Dottest(Mop, 2 * self.nr * nvs * self.nt2,
+                    2 * self.nr * nvs * self.nt2,
+                    raiseerror=True, verb=True)
 
         # Create input focusing function
         if G0 is None:

@@ -1,7 +1,7 @@
 import warnings
 import numpy as np
 
-from scipy.signal.windows import gaussian
+from scipy.signal.windows import gaussian as spgauss
 
 
 def ricker(t, f0=10):
@@ -66,7 +66,7 @@ def gaussian(t, std=1):
         t = t[:-1]
         warnings.warn('one sample removed from time axis...')
 
-    w = gaussian(len(t)*2-1, std=std)
+    w = spgauss(len(t)*2-1, std=std)
     t = np.concatenate((np.flipud(-t[1:]), t), axis=0)
     wcenter = np.argmax(np.abs(w))
 

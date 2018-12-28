@@ -59,13 +59,6 @@ class FirstDerivative(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
-        """ Apply forward first order derivative (y=A*x)
-
-        :param np.ndarray x: vector
-
-        :return: A*x
-        :rtype np.ndarray
-        """
         if not self.reshape:
             y = np.zeros(self.N, self.dtype)
             y[1:-1] = (0.5*x[2:]-0.5*x[0:-2])/self.sampling
@@ -82,13 +75,6 @@ class FirstDerivative(LinearOperator):
         return y
 
     def _rmatvec(self, x):
-        """ Apply adjoint first order derivative (x=A'*y)
-
-        :param np.ndarray x: vector
-
-        :return: A'*x
-        :rtype np.ndarray
-        """
         if not self.reshape:
             y = np.zeros(self.N, self.dtype)
             y[0:-2] -= (0.5*x[1:-1])/self.sampling

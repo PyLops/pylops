@@ -1,9 +1,11 @@
 ![PyLops](https://github.com/Statoil/pylops/blob/master/docs/source/_static/pylops_b.png)
 
+[![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
 [![Build Status](https://travis-ci.org/Statoil/pylops.svg?branch=master)](https://travis-ci.org/Statoil/pylops)
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=latest)](https://pylops.readthedocs.io/en/latest/?badge=latest)
-[![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Statoil/pylops&amp;utm_campaign=Badge_Grade)
 [![OS-support](https://img.shields.io/badge/OS-linux,osx-850A8B.svg)](https://github.com/Statoil/pylops)
+[![Slack Status](https://img.shields.io/badge/chat-slack-green.svg)](https://pylops.slack.com)
 
 ## Objective
 This Python library is inspired by the MATLAB [Spot – A Linear-Operator Toolbox](http://www.cs.ubc.ca/labs/scl/spot/) project.
@@ -24,7 +26,7 @@ on a vector or another matrix.
 Luckily, many iterative methods (e.g. cg, lsqr) do not need to know the individual entries of a matrix to solve a linear system.
 Such solvers only require the computation of forward and adjoint matrix-vector products as done for any of the PyLops operators.
 
-Here is simple example showing how a dense first-order first derivative operator can be created,
+Here is a simple example showing how a dense first-order first derivative operator can be created,
 applied and inverted using numpy/scipy commands:
 ```python
 import numpy as np
@@ -33,7 +35,8 @@ from scipy.linalg import lstsq
 nx = 7
 x = np.arange(nx) - (nx-1)/2
 
-D = np.diag(0.5*np.ones(nx-1),k=1) - np.diag(0.5*np.ones(nx-1),-1)
+D = np.diag(0.5*np.ones(nx-1), k=1) - \
+    np.diag(0.5*np.ones(nx-1), k=-1)
 D[0] = D[-1] = 0 # take away edge effects
 
 # y = Dx
@@ -155,3 +158,4 @@ operators that can be tailored to our needs, and as contribution to the free sof
 ## Contributors
 * Matteo Ravasi, mrava87
 * Carlos da Costa, cako
+* Dieter Werthmüller, prisae
