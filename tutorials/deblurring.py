@@ -15,12 +15,14 @@ of the point-spread function.
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import imageio
+from scipy import misc
+
 import pylops
 
 ###############################################################################
 # Let's start by importing a 2d image and defining the blurring operator
-im = np.asarray(imageio.imread('../testdata/python.png'))[::5, ::5, 0]
+im = np.asarray(misc.imread('../testdata/python.png'))[::5, ::5, 0]
+
 Nz, Nx = im.shape
 
 # Blurring guassian operator

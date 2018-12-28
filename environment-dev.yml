@@ -17,5 +17,3 @@ dependencies:
     - sphinx-gallery
     - nbsphinx
     - image
-    - Pillow
-    - imageio
