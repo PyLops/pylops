@@ -10,7 +10,6 @@ dependencies:
   - pytest
   - Sphinx
   - numpydoc
-  - imageio
   - pip:
     - pytest-runner
     - setuptools_scm
@@ -18,3 +17,5 @@ dependencies:
     - sphinx-gallery
     - nbsphinx
     - image
+    - pillow
+    - imageio
