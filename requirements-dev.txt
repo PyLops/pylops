@@ -10,6 +10,6 @@ sphinx-rtd-theme
 sphinx-gallery
 numpydoc
 nbsphinx
-pillow
+Pillow
 image
 imageio
