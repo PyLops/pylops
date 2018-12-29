@@ -4,9 +4,8 @@ import os
 import datetime
 import sphinx_rtd_theme
 import sphinx_gallery
-from sphinx_gallery.sorting import FileNameSortKey
+from sphinx_gallery.sorting import ExampleTitleSortKey
 from pkg_resources import get_distribution
-
 
 # Sphinx needs to be able to import the package to use autodoc and get the version number
 sys.path.insert(0, os.path.abspath('../../pylops'))
@@ -59,7 +58,7 @@ sphinx_gallery_conf = {
     # Remove the "Download all examples" button from the top level gallery
     'download_all_examples': False,
     # Sort gallery example by file name instead of number of lines (default)
-    'within_subsection_order': FileNameSortKey,
+    'within_subsection_order': ExampleTitleSortKey,
     # directory where function granular galleries are stored
     'backreferences_dir': 'api/generated/backreferences',
     # Modules for which function level galleries are created.

@@ -19,6 +19,7 @@ import pylops
 from pylops.utils.wavelets import ricker
 
 plt.close('all')
+np.random.seed(0)
 
 ###############################################################################
 # Let's start by creating the input elastic property profiles and wavelet

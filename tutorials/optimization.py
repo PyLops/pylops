@@ -1,6 +1,6 @@
 """
-Optimization
-============
+3. Optimization
+===============
 This tutorial will guide you through the :py:mod:`pylops.optimization` module and
 discuss various options for solving systems of linear equations constructed by
 means of PyLops linear operators

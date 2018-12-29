@@ -1,6 +1,6 @@
 """
-The Dot-Test
-============
+2. The Dot-Test
+===============
 One of the most important aspect of writing a *Linear operator* is to be able
 to verify that the code implemented in *forward mode* and the code implemented
 in *adjoint mode* are effectively adjoint to each other. If this is the case,

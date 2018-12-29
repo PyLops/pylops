@@ -1,6 +1,6 @@
 r"""
-2D Interpolation
-================
+4. 2D Interpolation
+===================
 In the mathematical field of numerical analysis, interpolation is the problem of constructing new data
 points within the range of a discrete set of known data points. In signal and image processing,
 the data may be recorded at irregular locations and it is often required to *regularize* the data

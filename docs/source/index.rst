@@ -113,7 +113,7 @@ that can be tailored to our needs, and as contribution to the free software comm
 
    installation.rst
    tutorials/index.rst
-   FAQ <faq.rst>
+   FAQs <faq.rst>
 
 .. toctree::
    :maxdepth: 2

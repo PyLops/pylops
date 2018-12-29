@@ -121,7 +121,8 @@ def test_Zero(par):
 def test_Diagonal(par):
     """Dot-test and inversion for Diagonal operator
     """
-    d = np.arange(par['nx']) + 1.
+    d = np.arange(par['nx']) + 1. +\
+        par['imag'] * (np.arange(par['nx']) + 1.)
 
     Dop = Diagonal(d, dtype=par['dtype'])
     assert dottest(Dop, par['nx'], par['nx'],
