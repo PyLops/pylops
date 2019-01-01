@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import pylops
 
 plt.close('all')
+np.random.seed(4)
 
 ###############################################################################
 # To start let's consider the simplest problem, *least-square inversion without regularization*.
@@ -52,7 +53,6 @@ plt.close('all')
 # with :math:`M>>N`.
 
 # Signal creation
-np.random.seed(seed=4)
 freqs = (5., 3., 8.)
 amps = (1., 1., 1.)
 N = 200

@@ -57,6 +57,7 @@ n = 10
 d = np.arange(n) + 1.
 x = np.ones(n)
 Dop = pylops.Diagonal(d)
+DopH = Dop.H
 """
 
 # _matvec
@@ -101,9 +102,11 @@ plt.axis('tight')
 #
 # Once again, after timing these 3 different executions we can see
 # see how using ``_rmatvec`` (or ``rmatvec``) will result in the faster
-# computation while ``.H*`` is very unefficient and slow. Not surprisingly,
-# all the linear solvers in scipy actually implement ``matvec`` and
-# ``rmatvec`` when dealing with linear operators.
+# computation while ``.H*`` is very unefficient and slow. Note that if the
+# adjoint has to be applied multiple times it is at least advised to create
+# the adjoint operator by applying ``.H`` only once upfront.
+# Not surprisingly, the linear solvers in scipy as well as in PyLops
+# actually use ``matvec`` and ``rmatvec`` when dealing with linear operators.
 
 # _rmatvec
 cmd1 = 'Dop._rmatvec(x)'
@@ -111,8 +114,11 @@ cmd1 = 'Dop._rmatvec(x)'
 # rmatvec
 cmd2 = 'Dop.rmatvec(x)'
 
+# .H* (pre-computed H)
+cmd3 = 'DopH*x'
+
 # .H*
-cmd3 = 'Dop.H*x'
+cmd4 = 'Dop.H*x'
 
 # timing
 t1 = 1.e3 * np.array(timeit.repeat(cmd1, setup=cmd_setup,
@@ -121,11 +127,14 @@ t2 = 1.e3 * np.array(timeit.repeat(cmd2, setup=cmd_setup,
                                    number=500, repeat=5))
 t3 = 1.e3 * np.array(timeit.repeat(cmd3, setup=cmd_setup,
                                    number=500, repeat=5))
+t4 = 1.e3 * np.array(timeit.repeat(cmd4, setup=cmd_setup,
+                                   number=500, repeat=5))
 
 plt.figure(figsize=(7, 2))
 plt.plot(t1, 'k', label=' _rmatvec')
 plt.plot(t2, 'r', label='rmatvec')
-plt.plot(t3, 'g', label='.*H')
+plt.plot(t3, 'g', label='.H* (pre-computed H)')
+plt.plot(t4, 'b', label='.H*')
 plt.legend()
 plt.axis('tight')
 
@@ -159,7 +168,7 @@ print(Dop-0.5*Dop)
 #**
 print(Dop**3)
 
-#**
+#* and /
 y = Dop*x
 print(Dop/y)
 

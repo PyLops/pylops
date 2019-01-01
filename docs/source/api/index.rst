@@ -37,6 +37,7 @@ Basic operators
     Symmetrize
     VStack
     HStack
+    Block
     BlockDiag
 
 

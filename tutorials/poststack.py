@@ -30,6 +30,7 @@ import pylops
 from pylops.utils.wavelets import ricker
 
 plt.close('all')
+np.random.seed(0)
 
 ###############################################################################
 # Let's start with a 1d example. A synthetic profile of acoustic impedance
