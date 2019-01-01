@@ -74,7 +74,7 @@ class Convolve2D(LinearOperator):
         y(t, x) = \mathscr{F}^{-1} (H(f, k_x)^* * X(f, k_x))
 
     """
-    def __init__(self, N, h, dims, offset=(0, 0), nodir=None, dtype=None):
+    def __init__(self, N, h, dims, offset=(0, 0), nodir=None, dtype='float64'):
         self.offset = np.array(offset, dtype=np.int)
         self.h = np.array(h)
         self.nodir = nodir

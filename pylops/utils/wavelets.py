@@ -40,10 +40,11 @@ def ricker(t, f0=10):
 
 
 def gaussian(t, std=1):
-    r"""Ricker wavelet
+    r"""Gaussian wavelet
 
-    Create a Gaussian wavelet given time axis ``t`` and standard deviation ``std``
-    using :py:func:`scipy.signal.gaussian`.
+    Create a Gaussian wavelet given time axis ``t``
+    and standard deviation ``std`` using
+    :py:func:`scipy.signal.windows.gaussian`.
 
     Parameters
     ----------

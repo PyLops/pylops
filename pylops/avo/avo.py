@@ -185,7 +185,8 @@ def approx_zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     Approximate calculation of PP reflection from the Zoeppritz
     scattering matrix for a set of incident angles [1]_.
 
-    .. [1] Dvorkin et al. Seismic Reflections of Rock Properties. Cambridge. 2014.
+    .. [1] Dvorkin et al. Seismic Reflections of Rock Properties.
+       Cambridge. 2014.
 
     Parameters
     ----------
@@ -245,8 +246,10 @@ def approx_zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
 
     D = E*F + G*H*p**2
 
-    rpp = (1 / D) * (F * (b * (np.cos(theta1) / vp1) - c * (np.cos(theta0) / vp0)) \
-                     - H * p ** 2 * (a + d * (np.cos(theta1) / vp1) * (np.cos(phi0) / vs0)))
+    rpp = (1 / D) * (F * (b * (np.cos(theta1) / vp1) - c *
+                          (np.cos(theta0) / vp0)) -
+                     H * p ** 2 * (a + d * (np.cos(theta1) / vp1) *
+                                   (np.cos(phi0) / vs0)))
 
     return rpp
 
@@ -286,7 +289,8 @@ def akirichards(theta, vsvp, n=1):
 
     .. math::
         R(\theta) = G_1(\theta) \frac{\Delta V_P}{\bar{V_P}} + G_2(\theta)
-        \frac{\Delta V_S}{\bar{V_S}} + G_3(\theta) \frac{\Delta \rho}{\bar{\rho}}
+        \frac{\Delta V_S}{\bar{V_S}} + G_3(\theta)
+        \frac{\Delta \rho}{\bar{\rho}}
 
     where :math:`G_1(\theta) = \frac{1}{2 cos^2 \theta}`,
     :math:`G_2(\theta) = -4 (V_S/V_P)^2 sin^2 \theta`,
@@ -405,15 +409,18 @@ class AVOLinearModelling(LinearOperator):
     -----
     The AVO linearized operator performs a linear combination of three
     (or two) elastic parameters arranged in input vector :math:`\mathbf{m}`
-    of size :math:`n_{t0} \times N` to create the so-called seismic reflectivity:
+    of size :math:`n_{t0} \times N` to create the so-called seismic
+    reflectivity:
 
     .. math::
-        r(t, \theta) = \sum_{i=1}^N G_i(t, \theta) m_i(t) \qquad \forall \quad t, \theta
+        r(t, \theta) = \sum_{i=1}^N G_i(t, \theta) m_i(t) \qquad
+        \forall \quad t, \theta
 
     where :math:`N=2/3`.
 
     """
-    def __init__(self, theta, vsvp=0.5, nt0=1, linearization='akirich', dtype='float32'):
+    def __init__(self, theta, vsvp=0.5, nt0=1,
+                 linearization='akirich', dtype='float64'):
         self.nt0 = nt0 if not isinstance(vsvp, np.ndarray) else len(vsvp)
         self.ntheta = len(theta)
 
@@ -423,8 +430,10 @@ class AVOLinearModelling(LinearOperator):
         elif linearization == 'fatti':
             Gs = fatti(theta, vsvp, n=self.nt0)
         else:
-            logging.error('%s is an available linearization...' % linearization)
-            raise NotImplementedError('%s is not an available linearization...' % linearization)
+            logging.error('%s is an available '
+                          'linearization...' % linearization)
+            raise NotImplementedError('%s is not an available '
+                                      'linearization...' % linearization)
 
         self.G = np.concatenate([gs.T[:, np.newaxis] for gs in Gs], axis=1)
         self.npars = len(Gs)
@@ -434,9 +443,11 @@ class AVOLinearModelling(LinearOperator):
 
     def _matvec(self, x):
         x = x.reshape(self.nt0, self.npars)
-        y = np.sum(self.G * np.tile(x[:, :, np.newaxis], [1, 1, self.ntheta]), axis=1)
+        y = np.sum(self.G * np.tile(x[:, :, np.newaxis],
+                                    [1, 1, self.ntheta]), axis=1)
         return y
 
     def _rmatvec(self, x):
         x = x.reshape(self.nt0, self.ntheta)
-        return np.sum(self.G * np.tile(x[:, np.newaxis], [1, self.npars, 1]), axis=2)
+        return np.sum(self.G * np.tile(x[:, np.newaxis],
+                                       [1, self.npars, 1]), axis=2)

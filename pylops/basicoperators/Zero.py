@@ -41,7 +41,7 @@ class Zero(LinearOperator):
        \mathbf{0} \mathbf{y} = \mathbf{0}_M
 
     """
-    def __init__(self, N, M=None, dtype=None):
+    def __init__(self, N, M=None, dtype='float64'):
         M = N if M is None else M
         self.shape = (N, M)
         self.dtype = np.dtype(dtype)

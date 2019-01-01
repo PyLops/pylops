@@ -11,7 +11,8 @@ from pylops.avo.avo import AVOLinearModelling, akirichards, fatti
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
-def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, linearization='akirich', explicit=False):
+def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1,
+                            linearization='akirich', explicit=False):
     r"""Pre-stack linearized seismic modelling operator.
 
     Create operator to be applied to elastic property profiles
@@ -51,7 +52,8 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, linearization='akirich'
     Pre-stack seismic modelling is the process of constructing seismic
     pre-stack data from three (or two) profiles of elastic parameters in time
     (or depth) domain arranged in an input vector :math:`\mathbf{m}` of size
-    :math:`nt0 \times N`. This can be easily achieved using the following forward model:
+    :math:`nt0 \times N`. This can be easily achieved using the following
+    forward model:
 
     .. math::
         d(t, \theta) = w(t) * \sum_{i=1}^N G_i(t, \theta) m_i(t)
@@ -62,7 +64,8 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, linearization='akirich'
         \mathbf{d}= \mathbf{G} \mathbf{m}
 
     On the other hand, pre-stack inversion aims at recovering the different
-    profiles of elastic properties from the band-limited seismic pre-stack data.
+    profiles of elastic properties from the band-limited seismic
+    pre-stack data.
 
     """
     # create vsvp profile
@@ -83,12 +86,15 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, linearization='akirich'
         elif linearization == 'fatti':
             G1, G2, G3 = fatti(theta, vsvp, n=nt0)
         else:
-            logging.error('%s is an available linearization...' % linearization)
-            raise NotImplementedError('%s is not an available linearization...' %linearization)
+            logging.error('%s is an available linearization...'
+                          % linearization)
+            raise NotImplementedError('%s is not an available linearization...'
+                                      %linearization)
 
         G = [np.hstack((np.diag(G1[itheta] * np.ones(nt0)),
                         np.diag(G2[itheta] * np.ones(nt0)),
-                        np.diag(G3[itheta] * np.ones(nt0)))) for itheta in range(ntheta)]
+                        np.diag(G3[itheta] * np.ones(nt0))))
+             for itheta in range(ntheta)]
         G = np.vstack(G).reshape(ntheta * nt0, 3 * nt0)
 
         # Create wavelet operator
@@ -102,18 +108,21 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, linearization='akirich'
 
     else:
         # Create wavelet operator
-        Cop = Convolve1D(nt0 * ntheta, h=wav, offset=len(wav) // 2, dims=[nt0, ntheta], dir=0)
+        Cop = Convolve1D(nt0 * ntheta, h=wav, offset=len(wav) // 2,
+                         dims=[nt0, ntheta], dir=0)
 
         # create AVO operator
         AVOop = AVOLinearModelling(theta, vsvp, linearization=linearization)
 
         # Create derivative operator
-        Dop = FirstDerivative(nt0 * AVOop.npars, dims=[nt0, AVOop.npars], dir=0, sampling=1.)
+        Dop = FirstDerivative(nt0 * AVOop.npars, dims=[nt0, AVOop.npars],
+                              dir=0, sampling=1.)
 
         return Cop*AVOop*Dop
 
 
-def PrestackWaveletModelling(m, theta, nwav, wavc=None, vsvp=0.5, linearization='akirich'):
+def PrestackWaveletModelling(m, theta, nwav, wavc=None,
+                             vsvp=0.5, linearization='akirich'):
     r"""Pre-stack linearized seismic modelling operator for wavelet.
 
     Create operator to be applied to a wavelet for generation of
@@ -176,7 +185,8 @@ def PrestackWaveletModelling(m, theta, nwav, wavc=None, vsvp=0.5, linearization=
     ntheta = len(theta)
 
     # Create derivative operator
-    D = np.diag(0.5 * np.ones(nt0 - 1), k=1) - np.diag(0.5 * np.ones(nt0 - 1), -1)
+    D = np.diag(0.5 * np.ones(nt0 - 1), k=1) - \
+        np.diag(0.5 * np.ones(nt0 - 1), -1)
     D[0] = D[-1] = 0
     D = block_diag(*([D] * 3))
 
@@ -186,12 +196,15 @@ def PrestackWaveletModelling(m, theta, nwav, wavc=None, vsvp=0.5, linearization=
     elif linearization == 'fatti':
         G1, G2, G3 = fatti(theta, vsvp, n=nt0)
     else:
-        logging.error('%s is an available linearization...' % linearization)
-        raise NotImplementedError('%s is not an available linearization...' % linearization)
+        logging.error('%s is an available linearization...'
+                      % linearization)
+        raise NotImplementedError('%s is not an available linearization...'
+                                  % linearization)
 
     G = [np.hstack((np.diag(G1[itheta] * np.ones(nt0)),
                     np.diag(G2[itheta] * np.ones(nt0)),
-                    np.diag(G3[itheta] * np.ones(nt0)))) for itheta in range(ntheta)]
+                    np.diag(G3[itheta] * np.ones(nt0))))
+         for itheta in range(ntheta)]
     G = np.vstack(G).reshape(ntheta * nt0, 3 * nt0)
 
     # Create infinite-reflectivity data

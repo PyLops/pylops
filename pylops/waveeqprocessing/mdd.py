@@ -47,7 +47,8 @@ class MDC(LinearOperator):
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (True) or not (False)
+        Operator contains a matrix that can be solved explicitly
+        (True) or not (False)
 
     See Also
     --------
@@ -55,28 +56,32 @@ class MDC(LinearOperator):
 
     Notes
     -----
-    The so-called multi-dimensional convolution (MDC) is a chained operator [1]_.
-    It is composed of a forward Fourier transform, a multi-dimensional
-    integration, and an inverse Fourier transform:
+    The so-called multi-dimensional convolution (MDC) is a chained
+    operator [1]_. It is composed of a forward Fourier transform,
+    a multi-dimensional integration, and an inverse Fourier transform:
 
     .. math::
         y(s,v,f) = \int_S R(s,r,f) x(r,v,f) dr
 
-    This operation can be discretized and performed by means of a linear operator
+    This operation can be discretized and performed by means of a
+    linear operator
 
     .. math::
         \mathbf{D}= \mathbf{F}^H  \mathbf{R} \mathbf{F}
 
-    where :math:`\mathbf{F}` is the Fourier transform applied along the time axis
-    and :math:`\mathbf{R}` is the multi-dimensional convolution kernel.
+    where :math:`\mathbf{F}` is the Fourier transform applied along
+    the time axis and :math:`\mathbf{R}` is the multi-dimensional
+    convolution kernel.
 
     .. [1] Wapenaar, K., van der Neut, J., Ruigrok, E., Draganov, D., Hunziker,
        J., Slob, E., Thorbecke, J., and Snieder, R., "Seismic interferometry
-       by crosscorrelation and by multi-dimensional deconvolution: a systematic comparison",
-       Geophyscial Journal International, vol. 185, pp. 1335-1364. 2011.
+       by crosscorrelation and by multi-dimensional deconvolution: a
+       systematic comparison", Geophyscial Journal International, vol. 185,
+       pp. 1335-1364. 2011.
 
     """
-    def __init__(self, G, nt, nv, dt=1., dr=1., twosided=True, fast=False, dtype='float32'):
+    def __init__(self, G, nt, nv, dt=1., dr=1.,
+                 twosided=True, fast=False, dtype='float64'):
         if twosided and nt % 2 == 0:
             raise ValueError('nt must be odd number')
         self.G = G
@@ -104,7 +109,8 @@ class MDC(LinearOperator):
             y = self.dr * self.dt * np.sqrt(self.nt) * \
                 np.sum(self.G * np.tile(x, [self.ns, 1, 1]), axis=1)
         else:
-            y = np.squeeze(np.zeros((self.ns, self.nv, x.shape[-1]), dtype=np.complex128))
+            y = np.squeeze(np.zeros((self.ns, self.nv, x.shape[-1]),
+                                    dtype=np.complex128))
             for it in range(self.nfmax):
                 y[..., it] = self.dr * self.dt * np.sqrt(self.nt) * \
                              np.dot(self.G[:, :, it], x[..., it])
@@ -120,9 +126,11 @@ class MDC(LinearOperator):
 
         if self.nv == 1 and self.fast:
             y = self.dr * self.dt * np.sqrt(self.nt) * \
-                np.sum(np.conj(self.G) * np.tile(x[:, np.newaxis, :], [1, self.nr, 1]), axis=0)
+                np.sum(np.conj(self.G) * np.tile(x[:, np.newaxis, :],
+                                                 [1, self.nr, 1]), axis=0)
         else:
-            y = np.squeeze(np.zeros((self.nr, self.nv, x.shape[-1]), dtype=np.complex128))
+            y = np.squeeze(np.zeros((self.nr, self.nv, x.shape[-1]),
+                                    dtype=np.complex128))
             for it in range(self.nfmax):
                 y[..., it] = self.dr * self.dt * np.sqrt(self.nt) * \
                             np.dot(np.conj(self.G[:, :, it].T), x[..., it])
@@ -136,12 +144,12 @@ class MDC(LinearOperator):
 
 def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         twosided=True, causality_precond=False, adjoint=False,
-        psf=False, dtype='complex64',
+        psf=False, dtype='float64',
         dottest=False, **kwargs_lsqr):
     r"""Multi-dimensional deconvolution.
 
-    Solve multi-dimensional deconvolution problem using :py:func:`scipy.sparse.linalg.lsqr`
-    iterative solver.
+    Solve multi-dimensional deconvolution problem using
+    :py:func:`scipy.sparse.linalg.lsqr` iterative solver.
 
     Parameters
     ----------
@@ -170,7 +178,8 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
     dottest : :obj:`bool`, optional
         Apply dot-test
     **kwargs_lsqr
-        Arbitrary keyword arguments for :py:func:`scipy.sparse.linalg.lsqr` solver
+        Arbitrary keyword arguments for
+        :py:func:`scipy.sparse.linalg.lsqr` solver
 
     Returns
     ----------
@@ -192,9 +201,9 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
     Multi-dimensional deconvolution (MDD) is a mathematical ill-solved problem,
     well-known in the image processing and geophysical community [1]_.
 
-    MDD aims at removing the effects of a Multi-dimensional Convolution (MDC) kernel
-    or the so-called blurring operator or point-spread function (PSF) from a given data.
-    It can be written as
+    MDD aims at removing the effects of a Multi-dimensional Convolution
+    (MDC) kernel or the so-called blurring operator or point-spread
+    function (PSF) from a given data. It can be written as
 
     .. math::
         \mathbf{d}= \mathbf{D} \mathbf{m}
@@ -206,10 +215,11 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
 
     where :math:`\mathbf{D}^H\mathbf{D}` is the PSF.
 
-    .. [1] Wapenaar, K., van der Neut, J., Ruigrok, E., Draganov, D., Hunziker, J.,
-       Slob, E., Thorbecke, J., and Snieder, R., "Seismic interferometry by crosscorrelation
-       and by multi-dimensional deconvolution: a systematic comparison",
-       Geophyscial Journal International, vol. 185, pp. 1335-1364. 2011.
+    .. [1] Wapenaar, K., van der Neut, J., Ruigrok, E., Draganov, D., Hunziker,
+       J., Slob, E., Thorbecke, J., and Snieder, R., "Seismic interferometry
+       by crosscorrelation and by multi-dimensional deconvolution: a
+       systematic comparison", Geophyscial Journal International, vol. 185,
+       pp. 1335-1364. 2011.
 
     """
     ns, nr, nt = G.shape
@@ -228,15 +238,18 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
     # Add negative part to data and model
     if twosided:
         G = np.concatenate((np.zeros((ns, nr, nt - 1)), G), axis=-1)
-        d = np.concatenate((np.squeeze(np.zeros((ns, nv, nt - 1))), d), axis=-1)
+        d = np.concatenate((np.squeeze(np.zeros((ns, nv, nt - 1))), d),
+                           axis=-1)
 
     # Define MDC linear operator
     Gfft = np.fft.rfft(G, nt2, axis=-1)
     Gfft = Gfft[..., :nfmax]
 
-    MDCop = MDC(Gfft, nt2, nv=nv, dt=dt, dr=dr, twosided=twosided, dtype=dtype)
+    MDCop = MDC(Gfft, nt2, nv=nv, dt=dt, dr=dr,
+                twosided=twosided, dtype=dtype)
     if psf:
-        PSFop = MDC(Gfft, nt2, nv=nr, dt=dt, dr=dr, twosided=twosided, dtype=dtype)
+        PSFop = MDC(Gfft, nt2, nv=nr, dt=dt, dr=dr,
+                    twosided=twosided, dtype=dtype)
     if dottest:
         Dottest(MDCop, nt2*ns*nv, nt2*nr*nv, verb=True)
         if psf:
@@ -255,7 +268,8 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         P = np.ones((nr, nv, nt2))
         P[:, :, :nt - 1] = 0
         Pop = Diagonal(P)
-        minv = PreconditionedInversion(MDCop, Pop, d.flatten(), returninfo=False, **kwargs_lsqr)
+        minv = PreconditionedInversion(MDCop, Pop, d.flatten(),
+                                       returninfo=False, **kwargs_lsqr)
     else:
         minv = lsqr(MDCop, d.flatten(), **kwargs_lsqr)[0]
     minv = np.squeeze(minv.reshape(nr, nv, nt2))

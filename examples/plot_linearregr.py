@@ -81,6 +81,20 @@ plt.scatter(t, yn, c='g', s=70)
 plt.legend()
 
 ###############################################################################
+# Once that we have estimated the best fitting coefficients :math:`\mathbf{x}`
+# we can now use them to compute the *y values* for a different set of values
+# along the *t-axis*.
+t1 = np.linspace(-N, N, 2*N, dtype='float64')
+y1 = LRop.apply(t1, xest)
+
+plt.figure(figsize=(5, 7))
+plt.plot(t, y, 'k', label='Original axis')
+plt.plot(t1, y1, 'r', label='New axis')
+plt.scatter(t, y, c='k', s=70)
+plt.scatter(t1, y1, c='r', s=40)
+plt.legend()
+
+###############################################################################
 # We consider now the case where some of the observations have large errors.
 # Such elements are generally referred to as *outliers* and can affect the
 # quality of the least-squares solution if not treated with care. In this

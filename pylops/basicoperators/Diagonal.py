@@ -40,7 +40,7 @@ class Diagonal(LinearOperator):
     self.adjoint.
 
     """
-    def __init__(self, diag, dtype=None):
+    def __init__(self, diag, dtype='float64'):
         self.diag = diag.flatten()
         self.complex = True if np.iscomplexobj(self.diag) else False
         self.shape = (len(self.diag), len(self.diag))

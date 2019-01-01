@@ -39,7 +39,7 @@ class Flip(LinearOperator):
     where :math:`N` is the lenght of the input model.
 
     """
-    def __init__(self, N, dims=None, dir=0, dtype='float32'):
+    def __init__(self, N, dims=None, dir=0, dtype='float64'):
         self.N = N
         self.dir = dir
         if dims is None:
