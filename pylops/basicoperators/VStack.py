@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.sparse.linalg.interface import _get_dtype
 from pylops import LinearOperator
 
 
@@ -73,7 +74,10 @@ class VStack(LinearOperator):
         self.mops = ops[0].shape[1]
         self.nnops = np.insert(np.cumsum(nops), 0, 0)
         self.shape = (self.nops, self.mops)
-        self.dtype = np.dtype(dtype)
+        if dtype is None:
+            self.dtype = _get_dtype(ops)
+        else:
+            self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):

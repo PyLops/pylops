@@ -71,7 +71,7 @@ class Regression(LinearOperator):
         \end{bmatrix}
 
     """
-    def __init__(self, taxis, order, dtype='float32'):
+    def __init__(self, taxis, order, dtype='float64'):
         if not isinstance(taxis, np.ndarray):
             logging.error('t must be numpy.ndarray...')
             raise TypeError('t must be numpy.ndarray...')
@@ -91,3 +91,26 @@ class Regression(LinearOperator):
     def _rmatvec(self, x):
         return np.vstack([np.dot(self.taxis**i, x)
                           for i in range(self.order+1)])
+
+    def apply(self, t, x):
+        """Return values along y-axis given certain ``t`` location(s) along
+        t-axis and regression coefficients ``x``
+
+        Parameters
+        ----------
+        taxis : :obj:`numpy.ndarray`
+            Elements along the t-axis.
+        x : :obj:`numpy.ndarray`
+            Regression coefficients
+        dtype : :obj:`str`, optional
+        Returns
+        ----------
+        y : :obj:`numpy.ndarray`
+            Values along y-axis
+
+        """
+        torig = self.taxis.copy()
+        self.taxis = t
+        y = self._matvec(x)
+        self.taxis = torig
+        return y

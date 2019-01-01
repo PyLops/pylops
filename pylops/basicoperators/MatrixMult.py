@@ -29,7 +29,7 @@ class MatrixMult(LinearOperator):
         (``True``) or not (``False``)
 
     """
-    def __init__(self, A, dims=None, dtype='float32'):
+    def __init__(self, A, dims=None, dtype='float64'):
         self.A = A
         if dims is None:
             self.reshape = False
@@ -64,17 +64,6 @@ class MatrixMult(LinearOperator):
             return y.ravel()
         else:
             return y
-
-    def eigs(self):
-        r"""Return eigenvalues of matrix :math:`\mathbf{A}`.
-
-        Returns
-        ----------
-        eigenvalues : :obj:`numpy.ndarray`
-            Matrix eigenvalues.
-
-        """
-        return -np.sort(-np.sqrt(np.linalg.eigvals(np.dot(self.A.T, self.A))))
 
     def inv(self):
         r"""Return the inverse of :math:`\mathbf{A}`.

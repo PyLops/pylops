@@ -71,7 +71,7 @@ class CausalIntegration(LinearOperator):
 
     """
     def __init__(self, N, dims=None, dir=-1, sampling=1,
-                 halfcurrent=True, dtype='float32'):
+                 halfcurrent=True, dtype='float64'):
         self.N = N
         self.dir = dir
         self.sampling = sampling

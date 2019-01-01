@@ -18,4 +18,5 @@ from .Laplacian import Laplacian
 
 from .VStack import VStack
 from .HStack import HStack
+from .Block import Block
 from .BlockDiag import BlockDiag

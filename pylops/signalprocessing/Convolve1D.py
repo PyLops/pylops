@@ -68,7 +68,7 @@ class Convolve1D(LinearOperator):
         y(t) = \mathscr{F}^{-1} (H(f)^* * X(f))
 
     """
-    def __init__(self, N, h, offset=0, dims=None, dir=0, dtype=None):
+    def __init__(self, N, h, offset=0, dims=None, dir=0, dtype='float64'):
         self.offset = int(offset)
         self.h = h
         self.dir = dir

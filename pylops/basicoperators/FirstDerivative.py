@@ -41,7 +41,7 @@ class FirstDerivative(LinearOperator):
         y[i] = (0.5x[i+1] - 0.5x[i-1]) / dx
 
     """
-    def __init__(self, N, dims=None, dir=0, sampling=1., dtype='float32'):
+    def __init__(self, N, dims=None, dir=0, sampling=1., dtype='float64'):
         self.N = N
         self.dir = dir
         self.sampling = sampling

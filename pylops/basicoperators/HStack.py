@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.sparse.linalg.interface import _get_dtype
 from pylops import LinearOperator
 
 
@@ -64,7 +65,7 @@ class HStack(LinearOperator):
         \end{bmatrix}
 
     """
-    def __init__(self, ops, dtype=None):
+    def __init__(self, ops, dtype='float64'):
         self.ops = ops
         mops = np.zeros(len(ops), dtype=np.int)
         for iop, op in enumerate(ops):
@@ -73,7 +74,10 @@ class HStack(LinearOperator):
         self.nops = ops[0].shape[0]
         self.mmops = np.insert(np.cumsum(mops), 0, 0)
         self.shape = (self.nops, self.mops)
-        self.dtype = np.dtype(dtype)
+        if dtype is None:
+            self.dtype = _get_dtype(ops)
+        else:
+            self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):

@@ -1,8 +1,8 @@
 """
-Marchenko redatuming by inversion
-=================================
-This example shows how to set-up and run the :py:class:`pylops.waveeqprocessing.Marchenko`
-inversion using synthetic data.
+8. Marchenko redatuming by inversion
+====================================
+This example shows how to set-up and run the
+:py:class:`pylops.waveeqprocessing.Marchenko` inversion using synthetic data.
 
 """
 # pylint: disable=C0103
@@ -116,8 +116,9 @@ axs[1].set_ylim(1.5, 0)
 
 
 ##############################################################################
-# Let's now create an object of the :py:class:`pylops.waveeqprocessing.Marchenko`
-# class and apply redatuming for a single subsurface point ``vs``.
+# Let's now create an object of the
+# :py:class:`pylops.waveeqprocessing.Marchenko` class and apply redatuming
+# for a single subsurface point ``vs``.
 
 # direct arrival window
 trav = np.sqrt((vs[0]-r[0])**2+(vs[1]-r[1])**2)/vel
@@ -132,7 +133,8 @@ g_inv_tot = g_inv_minus + g_inv_plus
 
 
 ##############################################################################
-# We can now compare the result of Marchenko redatuming via LSQR with standard redatuming
+# We can now compare the result of Marchenko redatuming via LSQR
+# with standard redatuming
 
 # sphinx_gallery_thumbnail_number = 5
 fig, axs = plt.subplots(1, 3, sharey=True, figsize=(16, 9))
@@ -181,6 +183,8 @@ ax3.plot(g_inv_tot[nr//2, nt-1:]/g_inv_tot.max(), t, 'k', lw=3)
 ax3.set_ylim(1.2, 0)
 
 ##############################################################################
-# Note that Marchenko redatuming can also be applied simultaneously to multiple subsurface points.
-# Use :py:func:`pylops.waveeqprocessing.Marchenko.apply_multiplepoints` instead of
-# :py:func:`pylops.waveeqprocessing.Marchenko.apply_onepoint`
+# Note that Marchenko redatuming can also be applied simultaneously
+# to multiple subsurface points. Use
+# :py:func:`pylops.waveeqprocessing.Marchenko.apply_multiplepoints` instead of
+# :py:func:`pylops.waveeqprocessing.Marchenko.apply_onepoint`.
+

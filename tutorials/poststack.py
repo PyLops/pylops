@@ -1,6 +1,6 @@
 r"""
-Post-stack inversion
-====================
+6. Post-stack inversion
+=======================
 Estimating subsurface properties from band-limited seismic data represents an important
 task for geophysical subsurface characterization.
 
@@ -30,6 +30,7 @@ import pylops
 from pylops.utils.wavelets import ricker
 
 plt.close('all')
+np.random.seed(0)
 
 ###############################################################################
 # Let's start with a 1d example. A synthetic profile of acoustic impedance

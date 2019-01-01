@@ -10,6 +10,7 @@ from .basicoperators import Symmetrize
 
 from .basicoperators import VStack
 from .basicoperators import HStack
+from .basicoperators import Block
 from .basicoperators import BlockDiag
 
 from .basicoperators import CausalIntegration

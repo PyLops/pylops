@@ -68,7 +68,8 @@ class FFT(LinearOperator):
     pass the dot-test.
 
     """
-    def __init__(self, dims, dir=0, nfft=None, sampling=1., real=False, dtype='complex64'):
+    def __init__(self, dims, dir=0, nfft=None, sampling=1.,
+                 real=False, dtype='complex128'):
         if isinstance(dims, int):
             dims = (dims,)
         if dir > len(dims)-1:
@@ -89,7 +90,8 @@ class FFT(LinearOperator):
             self.dims_fft = self.dims.copy()
             self.dims_fft[self.dir] = self.nfft
             self.reshape = True
-        self.shape = (int(np.prod(dims)*(self.nfft//2 + 1 if self.real else self.nfft)/self.dims[dir]),
+        self.shape = (int(np.prod(dims)*(self.nfft//2 + 1 if self.real
+                                         else self.nfft)/self.dims[dir]),
                       int(np.prod(dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
@@ -102,12 +104,15 @@ class FFT(LinearOperator):
                 y = np.sqrt(1./self.nfft)*np.fft.fft(x, n=self.nfft, axis=-1)
         else:
             x = np.reshape(x, self.dims)
-            if self.dir < len(self.dims)-1: # need to bring the dimension to transform to last dimension
+            # bring dim. to transform to last dim.
+            if self.dir < len(self.dims)-1:
                 x = np.swapaxes(x, self.dir, -1)
             if self.real:
-                y = np.sqrt(1. / self.nfft) * np.fft.rfft(x, n=self.nfft, axis=-1)
+                y = np.sqrt(1. / self.nfft) * np.fft.rfft(x, n=self.nfft,
+                                                          axis=-1)
             else:
-                y = np.sqrt(1. / self.nfft) * np.fft.fft(x, n=self.nfft, axis=-1)
+                y = np.sqrt(1. / self.nfft) * np.fft.fft(x, n=self.nfft,
+                                                         axis=-1)
             if self.dir < len(self.dims)-1:
                 y = np.swapaxes(y, -1, self.dir)
             y = np.ndarray.flatten(y)
@@ -123,7 +128,8 @@ class FFT(LinearOperator):
                 y = y[:self.dims[self.dir]]
         else:
             x = np.reshape(x, self.dims_fft)
-            if self.dir < len(self.dims)-1: # need to bring the dimension to transform to last dimension
+            # bring dim. to transform to last dim.
+            if self.dir < len(self.dims)-1:
                 x = np.swapaxes(x, self.dir, -1)
             if self.real:
                 y = np.sqrt(self.nfft) * np.fft.irfft(x, n=self.nfft, axis=-1)

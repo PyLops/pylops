@@ -54,7 +54,7 @@ class Symmetrize(LinearOperator):
 
     apart from the central sample where :math:`x[0] = y[N]`.
     """
-    def __init__(self, N, dims=None, dir=0, dtype='float32'):
+    def __init__(self, N, dims=None, dir=0, dtype='float64'):
         self.N = N
         self.dir = dir
         if dims is None:

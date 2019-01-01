@@ -1,6 +1,6 @@
 r"""
-Image deblurring
-================
+4. Image deblurring
+===================
 *Deblurring* is the process of removing blurring effects from images, caused for
 example by defocus aberration or motion blur.
 
@@ -70,21 +70,36 @@ imdeblurreg = imdeblurreg.reshape((Nz, Nx))
 # Finally we visualize the original, blurred, and recovered images.
 
 # sphinx_gallery_thumbnail_number = 2
-fig, axs = plt.subplots(1, 4, figsize=(12, 4))
-fig.suptitle('Deblurring', fontsize=14,
-             fontweight='bold', y=0.95)
-axs[0].imshow(im, cmap='viridis', vmin=0, vmax=250)
-axs[0].axis('tight')
-axs[0].set_title('Original')
-axs[1].imshow(imblur, cmap='viridis', vmin=0, vmax=250)
-axs[1].axis('tight')
-axs[1].set_title('Blurred')
-axs[2].imshow(imdeblur, cmap='viridis', vmin=0, vmax=250)
-axs[2].axis('tight')
-axs[2].set_title('Deblurred')
-axs[3].imshow(imdeblurreg, cmap='viridis', vmin=0, vmax=250)
-axs[3].axis('tight')
-axs[3].set_title('Regularized deblurred')
+fig = plt.figure(figsize=(8, 5))
+fig.suptitle('Deblurring', fontsize=14, fontweight='bold', y=0.95)
+ax1 = plt.subplot2grid((5, 4), (0, 0), rowspan=3)
+ax2 = plt.subplot2grid((5, 4), (0, 1), rowspan=3)
+ax3 = plt.subplot2grid((5, 4), (0, 2), rowspan=3)
+ax4 = plt.subplot2grid((5, 4), (0, 3), rowspan=3)
+ax5 = plt.subplot2grid((5, 4), (3, 0), rowspan=2, colspan=2)
+ax6 = plt.subplot2grid((5, 4), (3, 2), rowspan=2, colspan=2)
+ax1.imshow(im, cmap='viridis', vmin=0, vmax=250)
+ax1.axis('tight')
+ax1.set_title('Original')
+ax2.imshow(imblur, cmap='viridis', vmin=0, vmax=250)
+ax2.axis('tight')
+ax2.set_title('Blurred')
+ax3.imshow(imdeblur, cmap='viridis', vmin=0, vmax=250)
+ax3.axis('tight')
+ax3.set_title('Deblurred')
+ax4.imshow(imdeblurreg, cmap='viridis', vmin=0, vmax=250)
+ax4.axis('tight')
+ax4.set_title('Regularized deblurred')
+ax5.plot(im[Nz//2], 'k')
+ax5.plot(imblur[Nz//2], '--r')
+ax5.plot(imdeblur[Nz//2], '--b')
+ax5.plot(imdeblurreg[Nz//2], '--g')
+ax5.set_title('Horizontal section')
+ax6.plot(im[:, Nx//2], 'k', label='Original')
+ax6.plot(imblur[:, Nx//2], '--r', label='Blurred')
+ax6.plot(imdeblur[:, Nx//2], '--b', label='Deblurred')
+ax6.plot(imdeblurreg[:, Nx//2], '--g', label='Regularized deblurred')
+ax6.set_title('Vertical section')
+ax6.legend(loc=5, fontsize='small')
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
-

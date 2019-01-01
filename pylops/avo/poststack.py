@@ -104,9 +104,11 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     Parameters
     ----------
     data : :obj:`np.ndarray`
-        Band-limited seismic post-stack data of size :math:`[n_{t0} \times n_x]`
+        Band-limited seismic post-stack data of size
+        :math:`[n_{t0} \times n_x]`
     wav : :obj:`np.ndarray`
-        Wavelet in time domain (must had odd number of elements and centered to zero)
+        Wavelet in time domain (must had odd number of elements
+        and centered to zero)
     m0 : :obj:`np.ndarray`, optional
         Background model of size :math:`[n_{t0} \times n_x]`
     explicit : :obj:`bool`, optional
@@ -116,7 +118,8 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     simultaneous : :obj:`bool`, optional
         Simultaneously invert entire data (``True``) or invert
         trace-by-trace (``False``) when using ``explicit`` operator
-        (note that the entire data is always inverted when working with linear operator)
+        (note that the entire data is always inverted when working
+        with linear operator)
     epsI : :obj:`float`, optional
         Damping factor for Tikhonov regularization term
     epsR : :obj:`float`, optional
@@ -139,24 +142,30 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
 
     Notes
     -----
-    The cost function and solver used in the seismic post-stack inversion module depends on the choice of
-    ``explicit``, ``simultaneous``, ``epsI``, and ``epsR`` parameters:
+    The cost function and solver used in the seismic post-stack inversion
+    module depends on the choice of ``explicit``, ``simultaneous``, ``epsI``,
+    and ``epsR`` parameters:
 
-    * ``explicit=True``, ``epsI=None`` and ``epsR=None``: the explicit solver :py:func:`scipy.linalg.lstsq`
-      is used if ``simultaneous=False`` (or the iterative solver :py:func:`scipy.sparse.linalg.lsqr`
-      is used if ``simultaneous=True``)
-    * ``explicit=True`` with ``epsI`` and ``epsR=None``: the regularized normal equations
-      :math:`\mathbf{W}^T\mathbf{d} =  (\mathbf{W}^T \mathbf{W} + \epsilon_I^2 \mathbf{I}) \mathbf{AI}`
-      are instead fed into the :py:func:`scipy.linalg.lstsq` solver if ``simultaneous=False``
-      (or the iterative solver :py:func:`scipy.sparse.linalg.lsqr` if ``simultaneous=True``)
-    * ``explicit=False`` and ``epsR=None``: the iterative solver :py:func:`scipy.sparse.linalg.lsqr` is used
+    * ``explicit=True``, ``epsI=None`` and ``epsR=None``: the explicit
+      solver :py:func:`scipy.linalg.lstsq` is used if ``simultaneous=False``
+      (or the iterative solver :py:func:`scipy.sparse.linalg.lsqr` is used
+      if ``simultaneous=True``)
+    * ``explicit=True`` with ``epsI`` and ``epsR=None``: the regularized
+      normal equations :math:`\mathbf{W}^T\mathbf{d} = (\mathbf{W}^T
+      \mathbf{W} + \epsilon_I^2 \mathbf{I}) \mathbf{AI}` are instead fed
+      into the :py:func:`scipy.linalg.lstsq` solver if ``simultaneous=False``
+      (or the iterative solver :py:func:`scipy.sparse.linalg.lsqr`
+      if ``simultaneous=True``)
+    * ``explicit=False`` and ``epsR=None``: the iterative solver
+      :py:func:`scipy.sparse.linalg.lsqr` is used
     * ``explicit=False`` with ``epsR``: the iterative solver
       :py:func:`pylops.optimization.leastsquares.RegularizedInversion` is used
 
-    Note that the convergence of iterative solvers such as :py:func:`scipy.sparse.linalg.lsqr`
-    can be very slow for this type of operator. It is suggested to take a two steps
-    approach with first a trace-by-trace inversion using the explicit operator,
-    followed by a regularized global inversion using the outcome of the previous
+    Note that the convergence of iterative solvers such as
+    :py:func:`scipy.sparse.linalg.lsqr` can be very slow for this type of
+    operator. It is suggested to take a two steps approach with first a
+    trace-by-trace inversion using the explicit operator, followed by a
+    regularized global inversion using the outcome of the previous
     inversion as initial guess.
     """
     if data.ndim == 1:
@@ -181,19 +190,22 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
         raise ValueError('data and m0 must have same shape')
 
     # create operator
-    PPop = PoststackLinearModelling(wav, nt0=nt0, ndims=nspat, explicit=explicit)
+    PPop = PoststackLinearModelling(wav, nt0=nt0,
+                                    ndims=nspat, explicit=explicit)
     if dottest:
-        assert Dottest(PPop, nt0*nother, nt0*nother, verb=True)
+        Dottest(PPop, nt0*nother, nt0*nother, raiseerror=True, verb=True)
 
     # create and remove background data from original data
-    datar = data.flatten() if m0 is None else data.flatten() - PPop * m0.flatten()
+    datar = data.flatten() if m0 is None else \
+        data.flatten() - PPop * m0.flatten()
     # invert model
     if epsR is None:
         # inversion without spatial regularization
         if explicit:
             if epsI is None and not simultaneous:
                 # solve unregularized equations indipendently trace-by-trace
-                minv = lstsq(PPop.A, datar.reshape(nt0, nother).squeeze(), **kwargs_solver)[0]
+                minv = lstsq(PPop.A, datar.reshape(nt0, nother).squeeze(),
+                             **kwargs_solver)[0]
             elif epsI is None and simultaneous:
                 # solve unregularized equations simultaneously
                 minv = lsqr(PPop, datar, **kwargs_solver)[0]
@@ -202,14 +214,15 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
                 PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0)
                 datar = np.dot(PPop.A.T, datar.reshape(nt0, nother))
                 if not simultaneous:
-                    # solve regularized normal equations indipendently trace-by-trace
-                    minv = lstsq(PP, datar.reshape(nt0, nother), **kwargs_solver)[0]
+                    # solve regularized normal eqs. trace-by-trace
+                    minv = lstsq(PP, datar.reshape(nt0, nother),
+                                 **kwargs_solver)[0]
                 else:
                     # solve regularized normal equations simultaneously
                     PPop_reg = MatrixMult(PP, dims=nother)
                     minv = lsqr(PPop_reg, datar.flatten(), **kwargs_solver)[0]
             else:
-                # create regularized normal equations and solve them simultaneously
+                # create regularized normal eqs. and solve them simultaneously
                 PP = np.dot(PPop.A, PPop.A) + epsI * np.eye(nt0)
                 datar = PPop.A.T * datar.reshape(nt0, nother)
                 PPop_reg = MatrixMult(PP, dims=nother)
@@ -226,8 +239,9 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
         else:
             Regop = Laplacian((nt0, nx, ny), dirs=(1, 2), dtype=PPop.dtype)
 
-        minv = RegularizedInversion(PPop, [Regop], data.flatten(), x0=m0.flatten(),
-                                    epsRs=[epsR], returninfo=False,
+        minv = RegularizedInversion(PPop, [Regop], data.flatten(),
+                                    x0=m0.flatten(), epsRs=[epsR],
+                                    returninfo=False,
                                     **kwargs_solver)
 
     if dims == 1:

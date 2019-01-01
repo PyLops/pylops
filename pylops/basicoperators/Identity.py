@@ -68,7 +68,7 @@ class Identity(LinearOperator):
         x_i = 0 \quad \forall i=M+1,...,N
 
     """
-    def __init__(self, N, M=None, dtype=None):
+    def __init__(self, N, M=None, dtype='float64'):
         M = N if M is None else M
         self.shape = (N, M)
         self.dtype = np.dtype(dtype)

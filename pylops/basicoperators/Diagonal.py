@@ -40,8 +40,9 @@ class Diagonal(LinearOperator):
     self.adjoint.
 
     """
-    def __init__(self, diag, dtype=None):
+    def __init__(self, diag, dtype='float64'):
         self.diag = diag.flatten()
+        self.complex = True if np.iscomplexobj(self.diag) else False
         self.shape = (len(self.diag), len(self.diag))
         self.dtype = np.dtype(dtype)
         self.explicit = False
@@ -50,7 +51,10 @@ class Diagonal(LinearOperator):
         return self.diag*x
 
     def _rmatvec(self, x):
-        return self.diag*x
+        if self.complex:
+            return np.conj(self.diag) * x
+        else:
+            return self.diag*x
 
     def matrix(self):
         """Return diagonal matrix as dense :obj:`numpy.ndarray`

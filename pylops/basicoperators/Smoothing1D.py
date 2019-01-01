@@ -2,7 +2,7 @@ import numpy as np
 from pylops.signalprocessing import Convolve1D
 
 
-def Smoothing1D(nsmooth, dims, dir=0, dtype='float32'):
+def Smoothing1D(nsmooth, dims, dir=0, dtype='float64'):
     r"""1D Smoothing.
 
     Apply smoothing to model (and data) along a specific direction of a

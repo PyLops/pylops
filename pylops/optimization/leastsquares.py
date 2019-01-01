@@ -74,6 +74,9 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
         \mathbf{R}_i^T \mathbf{d}_{R_i}
 
     """
+    # store adjoint
+    OpH = Op.H
+
     # create dataregs and epsRs if not provided
     if dataregs is None and Regs is not None:
         dataregs = [np.zeros(Op.shape[1])]*len(Regs)
@@ -83,23 +86,23 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
 
     # Normal equations
     if Weight is not None:
-        y_normal = Op.H * Weight * data
+        y_normal = OpH * Weight * data
     else:
-        y_normal = Op.H * data
+        y_normal = OpH * data
     if Weight is not None:
-        Op_normal = Op.H * Weight * Op
+        Op_normal = OpH * Weight * Op
     else:
-        Op_normal = Op.H * Op
+        Op_normal = OpH * Op
 
     # Add regularization terms
-    if Regs is not None:
-        for epsR, Reg, datareg in zip(epsRs, Regs, dataregs):
-            y_normal += epsR ** 2 * Reg.H * datareg
     if epsI > 0:
         Op_normal += epsI ** 2 * Diagonal(np.ones(Op.shape[1]))
+
     if Regs is not None:
-        for epsR, Reg in zip(epsRs, Regs):
-            Op_normal += epsR ** 2 * Reg.H * Reg
+        for epsR, Reg, datareg in zip(epsRs, Regs, dataregs):
+            RegH = Reg.H
+            y_normal += epsR ** 2 * RegH * datareg
+            Op_normal += epsR ** 2 * RegH * Reg
 
     # CG solver
     if x0 is not None:

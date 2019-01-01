@@ -29,7 +29,7 @@ class Restriction(LinearOperator):
         explicitly (``True``) or not (``False``)
 
     """
-    def __init__(self, N, iava, dtype='float32'):
+    def __init__(self, N, iava, dtype='float64'):
         self.N = N
         self.iava = iava
         self.shape = (len(iava), N)

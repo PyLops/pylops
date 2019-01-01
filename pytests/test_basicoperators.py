@@ -22,7 +22,7 @@ par3 = {'ny': 11, 'nx': 21, 'imag': 0,
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_Regression(par):
-    """Dot-test and inversion for Regression operator
+    """Dot-test, inversion and apply for Regression operator
     """
     order = 4
     t = np.arange(par['ny'], dtype=np.float32)
@@ -32,6 +32,10 @@ def test_Regression(par):
     x = np.array([1., 2., 0. , 3., -1.], dtype=np.float32)
     xlsqr = lsqr(LRop, LRop*x, damp=1e-10, iter_lim=300, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
+
+    y = LRop * x
+    y1 = LRop.apply(t, x)
+    assert_array_almost_equal(y, y1, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
@@ -45,6 +49,10 @@ def test_LinearRegression(par):
     x = np.array([1., 2.], dtype=np.float32)
     xlsqr = lsqr(LRop, LRop*x, damp=1e-10, iter_lim=300, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
+
+    y = LRop * x
+    y1 = LRop.apply(t, x)
+    assert_array_almost_equal(y, y1, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
@@ -121,7 +129,8 @@ def test_Zero(par):
 def test_Diagonal(par):
     """Dot-test and inversion for Diagonal operator
     """
-    d = np.arange(par['nx']) + 1.
+    d = np.arange(par['nx']) + 1. +\
+        par['imag'] * (np.arange(par['nx']) + 1.)
 
     Dop = Diagonal(d, dtype=par['dtype'])
     assert dottest(Dop, par['nx'], par['nx'],
