@@ -193,7 +193,7 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     PPop = PoststackLinearModelling(wav, nt0=nt0,
                                     ndims=nspat, explicit=explicit)
     if dottest:
-        assert Dottest(PPop, nt0*nother, nt0*nother, verb=True)
+        Dottest(PPop, nt0*nother, nt0*nother, raiseerror=True, verb=True)
 
     # create and remove background data from original data
     datar = data.flatten() if m0 is None else \

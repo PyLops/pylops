@@ -143,8 +143,8 @@ plt.axis('tight')
 # and ``rmatvec`` unless PyLops linear operators are used for
 # teaching purposes.
 #
-# Finally we will go through some other *special methods* that are implemented
-# in :py:class:`scipy.sparse.linalg.LinearOperator` (and
+# Finally we go through some other *methods* and *special methods* that
+# are implemented in :py:class:`scipy.sparse.linalg.LinearOperator` (and
 # :py:class:`pylops.LinearOperator`):
 #
 # * ``Op1+Op2``: maps the special method ``__add__`` and
@@ -155,8 +155,10 @@ plt.axis('tight')
 #   performs summation between two operators
 # * ``Op1**N``: maps the special method ``__pow__`` and
 #   performs exponentiation of an operator
-# * ``Op/y``: maps the special method ``__truediv__`` and
+# * ``Op/y`` (and ``Op.div(y)``): maps the special method ``__truediv__`` and
 #   performs inversion of an operator
+# * ``Op.eigs()``: estimates the eigenvalues of the operator
+# * ``Op.cond()``: estimates the condition number of the operator
 
 # +
 print(Dop+Dop)
@@ -165,12 +167,18 @@ print(Dop+Dop)
 print(-Dop)
 print(Dop-0.5*Dop)
 
-#**
+# **
 print(Dop**3)
 
 #* and /
 y = Dop*x
 print(Dop/y)
+
+# eigs
+print(Dop.eigs(neigs=3))
+
+# cond
+print(Dop.cond())
 
 ###############################################################################
 # This first tutorial is completed. You have seen the basic operations that

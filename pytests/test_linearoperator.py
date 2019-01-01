@@ -15,16 +15,18 @@ par1j = {'ny': 11, 'nx': 11,
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
 def test_eigs(par):
-    """Eigenvalues estimate with ARPACK
+    """Eigenvalues estimate with ARPACK and condition number
     """
     # explicit=True
     diag = np.arange(par['nx'], 0, -1) +\
            par['imag'] * np.arange(par['nx'], 0, -1)
-    print(diag)
     Op = MatrixMult(np.vstack((np.diag(diag),
                                np.zeros((par['ny'] - par['nx'], par['nx'])))))
     eigs = Op.eigs()
     assert_array_almost_equal(diag[:eigs.size], eigs, decimal=3)
+
+    cond = Op.cond()
+    assert_array_almost_equal(np.real(cond), par['nx'], decimal=3)
 
     #  explicit=False
     Op = Diagonal(diag, dtype=par['dtype'])
@@ -32,3 +34,6 @@ def test_eigs(par):
         Op = VStack([Op, Zero(par['ny'] - par['nx'], par['nx'])])
     eigs = Op.eigs()
     assert_array_almost_equal(diag[:eigs.size], eigs, decimal=3)
+
+    cond = Op.cond()
+    assert_array_almost_equal(np.real(cond), par['nx'], decimal=3)

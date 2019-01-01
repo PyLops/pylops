@@ -52,10 +52,10 @@ class LinearOperator(spLinearOperator):
         return xest
 
     def eigs(self, neigs=None, **kwargs_eig):
-        r"""Most significant eigenvalues of :math:`\mathbf{A}`.
+        r"""Most significant eigenvalues of linear operator.
 
         Return an estimate of the most significant eigenvalues
-        of :math:`\mathbf{A}`. If the operator has rectangular
+        of the linear operator. If the operator has rectangular
         shape (``shape[0]!=shape[1]``), eigenvalues are first
         computed for the square operator :math:`\mathbf{A^H}\mathbf{A}`
         and the square-root values are returned.
@@ -71,7 +71,6 @@ class LinearOperator(spLinearOperator):
             Arbitrary keyword arguments for
             :func:`scipy.sparse.linalg.eigs` or
             :func:`scipy.sparse.linalg.eigsh`
-
 
         Returns
         -------
@@ -117,3 +116,49 @@ class LinearOperator(spLinearOperator):
                                               k=neigs, **kwargs_eig)[0])
 
         return -np.sort(-eigenvalues)
+
+    def cond(self, **kwargs_eig):
+        r"""Condition number of linear operator.
+
+        Return an estimate of the condition number of the linear operator as
+        the ratio of the largest and lowest estimated eigenvalues.
+
+        Parameters
+        ----------
+        neigs : :obj:`int`
+            Number of eigenvalues to compute (if ``None``, return all). Note
+            that for ``explicit=False``, only :math:`N-1` eigenvalues can be
+            computed where :math:`N` is the size of the operator in the
+            model space
+        **kwargs_eig
+            Arbitrary keyword arguments for
+            :func:`scipy.sparse.linalg.eigs` or
+            :func:`scipy.sparse.linalg.eigsh`
+
+        Returns
+        -------
+        eigenvalues : :obj:`numpy.ndarray`
+            Operator eigenvalues.
+
+        Notes
+        -----
+        The condition number of a matrix provides an indication of the rate
+        at which the solution of the inversion of the linear operator :math:`A`
+        will change with respect to a change in the data :math:`y`.
+        Thus, if the condition number is large, even a small error in :math:`y`
+        may cause a large error in :math:`x`. On the other hand, if the
+        condition number is small then the error in :math:`x` is not much
+        bigger than the error in :math:`y`. A problem with a low condition
+        number is said to be *well-conditioned*, while a problem with a high
+        condition number is said to be *ill-conditioned*.
+
+        The condition number of a matrix (or linear operator) can be estimated
+        as the ratio of the largest and lowest estimated eigenvalues:
+
+        .. math::
+            k= \frac{\lambda_{max}}{\lambda_{max}}
+
+        """
+        cond = np.asscalar(self.eigs(neigs=1, which='LM'))/ \
+               np.asscalar(self.eigs(neigs=1, which='SM'))
+        return cond
