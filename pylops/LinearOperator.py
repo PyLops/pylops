@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 from scipy.linalg import solve, lstsq
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
-from scipy.sparse.linalg import lsqr
+from scipy.sparse.linalg import spsolve, lsqr
 from scipy.linalg import eigvals
 from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
@@ -42,13 +42,15 @@ class LinearOperator(spLinearOperator):
 
     def __truediv__(self, y):
         if self.explicit is True:
-            if self.A.shape[0] == self.A.shape[1]:
-                xest = solve(self.A, y)
+            if isinstance(self.A, np.ndarray):
+                if self.A.shape[0] == self.A.shape[1]:
+                    xest = solve(self.A, y)
+                else:
+                    xest = lstsq(self.A, y)[0]
             else:
-                xest = lstsq(self.A, y)[0]
+                xest = spsolve(self.A, y)
         else:
             xest = lsqr(self, y)[0]
-
         return xest
 
     def eigs(self, neigs=None, **kwargs_eig):
@@ -92,7 +94,7 @@ class LinearOperator(spLinearOperator):
         .. [1] http://www.caam.rice.edu/software/ARPACK/
 
         """
-        if self.explicit:
+        if self.explicit and isinstance(self.A, np.ndarray):
             if self.shape[0] == self.shape[1]:
                 if neigs is None or neigs == self.shape[1]:
                     eigenvalues = eigvals(self.A)
@@ -114,7 +116,6 @@ class LinearOperator(spLinearOperator):
             else:
                 eigenvalues = np.sqrt(sp_eigs(self.H * self,
                                               k=neigs, **kwargs_eig)[0])
-
         return -np.sort(-eigenvalues)
 
     def cond(self, **kwargs_eig):
@@ -142,9 +143,16 @@ class LinearOperator(spLinearOperator):
 
         Notes
         -----
-        The condition number of a matrix provides an indication of the rate
-        at which the solution of the inversion of the linear operator :math:`A`
-        will change with respect to a change in the data :math:`y`.
+        The condition number of a matrix (or linear operator) can be estimated
+        as the ratio of the largest and lowest estimated eigenvalues:
+
+        .. math::
+            k= \frac{\lambda_{max}}{\lambda_{min}}
+
+        The condition number provides an indication of the rate at which the
+        solution of the inversion of the linear operator :math:`A` will
+        change with respect to a change in the data :math:`y`.
+
         Thus, if the condition number is large, even a small error in :math:`y`
         may cause a large error in :math:`x`. On the other hand, if the
         condition number is small then the error in :math:`x` is not much
@@ -152,13 +160,7 @@ class LinearOperator(spLinearOperator):
         number is said to be *well-conditioned*, while a problem with a high
         condition number is said to be *ill-conditioned*.
 
-        The condition number of a matrix (or linear operator) can be estimated
-        as the ratio of the largest and lowest estimated eigenvalues:
-
-        .. math::
-            k= \frac{\lambda_{max}}{\lambda_{max}}
-
         """
-        cond = np.asscalar(self.eigs(neigs=1, which='LM'))/ \
-               np.asscalar(self.eigs(neigs=1, which='SM'))
+        cond = np.asscalar(self.eigs(neigs=1, which='LM', **kwargs_eig))/ \
+               np.asscalar(self.eigs(neigs=1, which='SM', **kwargs_eig))
         return cond

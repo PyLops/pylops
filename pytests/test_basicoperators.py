@@ -2,6 +2,7 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
+from scipy.sparse import rand
 from scipy.sparse.linalg import lsqr
 
 from pylops.utils import dottest
@@ -74,7 +75,25 @@ def test_MatrixMult(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
-def test_MatrixMult_diagonal(par):
+def test_MatrixMult_sparse(par):
+    """Dot-test and inversion for test_MatrixMult operator using sparse
+    matrix
+    """
+    np.random.seed(10)
+    G = rand(par['ny'], par['nx'], density=0.75).astype('float32') + \
+        par['imag'] * rand(par['ny'], par['nx'], density=0.75).astype('float32')
+
+    Gop = MatrixMult(G, dtype=par['dtype'])
+    assert dottest(Gop, par['ny'], par['nx'],
+                   complexflag=0 if par['imag'] == 1 else 3)
+
+    x = np.ones(par['nx']) + par['imag'] * np.ones(par['nx'])
+    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, show=0)[0]
+    assert_array_almost_equal(x, xlsqr, decimal=4)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_MatrixMult_repeated(par):
     """Dot-test and inversion for test_MatrixMult operator repeated
     along another dimension
     """
