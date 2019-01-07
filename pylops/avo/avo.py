@@ -386,6 +386,9 @@ class AVOLinearModelling(LinearOperator):
         VS/VP ratio
     nt0 : :obj:`int`, optional
         number of samples (if ``vsvp`` is a scalar)
+    spatdims : :obj:`int` or :obj:`tuple`, optional
+        Number of samples along spatial axis (or axes)
+        (``None`` if only one dimension is available)
     linearization : :obj:`str`, optional
         choice of linearization, ``akirich``: Aki-Richards,
         ``fatti``: Fatti
@@ -413,16 +416,25 @@ class AVOLinearModelling(LinearOperator):
     reflectivity:
 
     .. math::
-        r(t, \theta) = \sum_{i=1}^N G_i(t, \theta) m_i(t) \qquad
+        r(t, \theta, x, y) = \sum_{i=1}^N G_i(t, \theta) m_i(t, x, y) \qquad
         \forall \quad t, \theta
 
-    where :math:`N=2/3`.
+    where :math:`N=2/3`. Note that the reflectivity can be in 1d, 2d or 3d
+    and ``spatdims`` contains the dimensions of the spatial axis (or axes)
+    :math:`x` and :math:`y`.
 
     """
-    def __init__(self, theta, vsvp=0.5, nt0=1,
+    def __init__(self, theta, vsvp=0.5, nt0=1, spatdims=None,
                  linearization='akirich', dtype='float64'):
         self.nt0 = nt0 if not isinstance(vsvp, np.ndarray) else len(vsvp)
         self.ntheta = len(theta)
+        if spatdims is None:
+            self.spatdims = ()
+            nspatdims = 1
+        else:
+            self.spatdims = spatdims if isinstance(spatdims, tuple) \
+                else (spatdims,)
+            nspatdims = np.prod(spatdims)
 
         # Compute AVO coefficients
         if linearization == 'akirich':
@@ -430,24 +442,33 @@ class AVOLinearModelling(LinearOperator):
         elif linearization == 'fatti':
             Gs = fatti(theta, vsvp, n=self.nt0)
         else:
-            logging.error('%s is an available '
-                          'linearization...' % linearization)
-            raise NotImplementedError('%s is not an available '
-                                      'linearization...' % linearization)
+            logging.error('%s not an available '
+                          'linearization...', linearization)
+            raise NotImplementedError('%s not an available linearization...'
+                                      % linearization)
 
         self.G = np.concatenate([gs.T[:, np.newaxis] for gs in Gs], axis=1)
+        # add dimensions to G to account for horizonal axes
+        for _ in range(len(self.spatdims)):
+            self.G = self.G[...,np.newaxis]
         self.npars = len(Gs)
-        self.shape = (self.nt0*self.ntheta, self.nt0*self.npars)
+        self.shape = (self.nt0*self.ntheta*nspatdims,
+                      self.nt0*self.npars*nspatdims)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
-        x = x.reshape(self.nt0, self.npars)
-        y = np.sum(self.G * np.tile(x[:, :, np.newaxis],
-                                    [1, 1, self.ntheta]), axis=1)
+        if self.spatdims is None:
+            x = x.reshape(self.nt0, self.npars)
+        else:
+            x = x.reshape((self.nt0, self.npars,) + self.spatdims)
+        y = np.sum(self.G * x[:, :, np.newaxis], axis=1)
         return y
 
     def _rmatvec(self, x):
-        x = x.reshape(self.nt0, self.ntheta)
-        return np.sum(self.G * np.tile(x[:, np.newaxis],
-                                       [1, self.npars, 1]), axis=2)
+        if self.spatdims is None:
+            x = x.reshape(self.nt0, self.ntheta)
+        else:
+            x = x.reshape((self.nt0, self.ntheta,) + self.spatdims)
+        y = np.sum(self.G * x[:, np.newaxis], axis=2)
+        return y

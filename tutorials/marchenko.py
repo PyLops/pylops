@@ -1,5 +1,5 @@
 """
-8. Marchenko redatuming by inversion
+9. Marchenko redatuming by inversion
 ====================================
 This example shows how to set-up and run the
 :py:class:`pylops.waveeqprocessing.Marchenko` inversion using synthetic data.

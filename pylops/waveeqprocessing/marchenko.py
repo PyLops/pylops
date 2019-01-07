@@ -183,7 +183,7 @@ class Marchenko():
         # Fix nfmax to be at maximum equal to half of the size of fft samples
         if self.nfmax is None or self.nfmax > np.ceil((self.nt2 + 1) / 2):
             self.nfmax = int(np.ceil((self.nt2+1)/2))
-            logging.warning('nfmax set equal to (nt+1)/2=%d' % self.nfmax)
+            logging.warning('nfmax set equal to (nt+1)/2=%d', self.nfmax)
 
         # Add negative time to reflection data and convert to frequency
         if R1 is None:
