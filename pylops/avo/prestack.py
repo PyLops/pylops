@@ -347,7 +347,8 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
     # swap axes for explicit operator
     if explicit:
         data = data.swapaxes(0, 1)
-        m0 = m0.swapaxes(0, 1)
+        if m0 is not None:
+            m0 = m0.swapaxes(0, 1)
 
     # invert model
     if epsR is None:
@@ -374,7 +375,7 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
                                  **kwargs_solver)[0]
                 else:
                     # solve regularized normal equations simultaneously
-                    PPop_reg = MatrixMult(PP, dims=ntheta*nspatprod)
+                    PPop_reg = MatrixMult(PP, dims=nspatprod)
                     minv = lsqr(PPop_reg, datar.flatten(), **kwargs_solver)[0]
             else:
                 # create regularized normal eqs. and solve them simultaneously
@@ -395,8 +396,8 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
         else:
             Regop = Laplacian((nt0, nm, nx, ny), dirs=(2, 3), dtype=PPop.dtype)
         minv = RegularizedInversion(PPop, [Regop], data.flatten(),
-                                    x0=m0.flatten(), epsRs=[epsR],
-                                    returninfo=False,
+                                    x0=m0.flatten() if m0 is not None else None,
+                                    epsRs=[epsR], returninfo=False,
                                     **kwargs_solver)
 
     # compute residual
@@ -405,7 +406,8 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
 
     # re-swap axes for explicit operator
     if explicit:
-        m0 = m0.swapaxes(0, 1)
+        if m0 is not None:
+            m0 = m0.swapaxes(0, 1)
 
     # reshape inverted model and residual data
     if dims == 1:

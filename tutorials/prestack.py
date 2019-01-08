@@ -223,7 +223,7 @@ plt.subplots_adjust(top=0.85)
 inputfile = '../testdata/avo/poststack_model.npz'
 
 model = np.load(inputfile)
-x, z, m = model['x'][::3]/1000., model['z']/1000., 1000*model['model'][:, ::3]
+x, z, m = model['x'][::6]/1000., model['z']/1000., 1000*model['model'][:, ::6]
 nx, nz = len(x), len(z)
 
 mvp = m.copy()
@@ -232,7 +232,7 @@ mrho = m/3+300
 m = np.log(np.stack((mvp, mvs, mrho), axis=1))
 
 # smooth model
-nsmoothz, nsmoothx = 60, 50
+nsmoothz, nsmoothx = 30, 25
 mback = filtfilt(np.ones(nsmoothz)/float(nsmoothz), 1, m, axis=0)
 mback = filtfilt(np.ones(nsmoothx)/float(nsmoothx), 1, mback, axis=2)
 
@@ -269,13 +269,6 @@ minv_dense_noisy = \
                                           explicit=True, epsI=5e-3,
                                           simultaneous=False)
 
-# spatially regularized dense inversion with noisy data
-minv_dense_reg = \
-    pylops.avo.prestack.PrestackInversion(dPPn, theta, wav,
-                                          m0=minv_dense_noisy,
-                                          explicit=True, epsR=5e-1,
-                                          **dict(damp=np.sqrt(1e-3),
-                                                 iter_lim=80))
 # spatially regularized lop inversion with noisy data
 minv_lop_reg = \
     pylops.avo.prestack.PrestackInversion(dPPn, theta, wav,
@@ -288,16 +281,18 @@ minv_lop_reg = \
 # Let's now visualize the inverted elastic parameters for the different
 # scenarios
 def plotmodel(axs, m, x, z, vmin, vmax,
-              params=('VP', 'VS', 'Rho'), title=None):
+              params=('VP', 'VS', 'Rho'),
+              cmap='gist_rainbow', title=None):
     """Quick visualization of model
     """
     for ip, param in enumerate(params):
-        axs[ip].imshow(m[:, ip], cmap='gist_rainbow',
+        axs[ip].imshow(m[:, ip],
                        extent=(x[0], x[-1], z[-1], z[0]),
-                       vmin=vmin, vmax=vmax)
+                       vmin=vmin, vmax=vmax, cmap=cmap)
         axs[ip].set_title('%s - %s' %(param, title))
         axs[ip].axis('tight')
-
+    plt.setp(axs[1].get_yticklabels(), visible=False)
+    plt.setp(axs[2].get_yticklabels(), visible=False)
 
 # data
 fig = plt.figure(figsize=(8, 9))
@@ -374,7 +369,7 @@ plt.setp(ax3.get_yticklabels(), visible=False)
 plt.setp(ax4.get_yticklabels(), visible=False)
 
 # inverted models
-fig, axs = plt.subplots(6, 3, figsize=(8, 15))
+fig, axs = plt.subplots(5, 3, figsize=(8, 15))
 fig.suptitle('Model', fontsize=12, fontweight='bold', y=0.95)
 plotmodel(axs[0], m, x, z, m.min(),
           m.max(), title='True')
@@ -384,9 +379,7 @@ plotmodel(axs[2], minv_dense, x, z,
           m.min(), m.max(), title='Dense')
 plotmodel(axs[3], minv_dense_noisy, x, z,
           m.min(), m.max(), title='Dense noisy')
-plotmodel(axs[4], minv_dense_reg, x, z,
-          m.min(), m.max(), title='Dense regularized')
-plotmodel(axs[5], minv_lop_reg, x, z,
+plotmodel(axs[4], minv_lop_reg, x, z,
           m.min(), m.max(), title='Lop regularized')
 plt.tight_layout()
 plt.subplots_adjust(top=0.92)
@@ -398,10 +391,30 @@ for ip, param in enumerate(['VP', 'VS', 'Rho']):
     axs[ip].plot(minv_dense[:, ip, nx//2], z, '--b', lw=2, label='Inv Dense')
     axs[ip].plot(minv_dense_noisy[:, ip, nx//2], z, '--m', lw=2,
                  label='Inv Dense noisy')
-    axs[ip].plot(minv_dense_reg[:, ip, nx//2], z, '--g', lw=2,
-                 label='Inv Dense regularized')
     axs[ip].plot(minv_lop_reg[:, ip, nx//2], z, '--y', lw=2,
                  label='Inv Lop regularized')
     axs[ip].set_title(param)
     axs[ip].invert_yaxis()
 axs[2].legend(loc=8, fontsize='small')
+
+###############################################################################
+# While the background model ``m0`` has been provided in all the examples so
+# far, it is worth showing that the module
+# :py:class:`pylops.avo.prestack.PrestackInversion` can also produce so-called
+# relative elastic parameters (i.e., variations from an average medium
+# property) when the background model ``m0`` is not available.
+
+dminv = \
+    pylops.avo.prestack.PrestackInversion(dPP, theta, wav, m0=None,
+                                          explicit=True,
+                                          simultaneous = False)
+
+fig, axs = plt.subplots(1, 3, figsize=(8, 3))
+plotmodel(axs, dminv, x, z, -dminv.max(), dminv.max(),
+          cmap='seismic', title='relative')
+
+fig, axs = plt.subplots(1, 3, figsize=(8, 7))
+for ip, param in enumerate(['VP', 'VS', 'Rho']):
+    axs[ip].plot(dminv[:, ip, nx//2], z, 'k', lw=2)
+    axs[ip].set_title(param)
+    axs[ip].invert_yaxis()
