@@ -48,7 +48,7 @@ m = np.stack((np.log(vp), np.log(vs), np.log(rho)), axis=1)
 
 ###############################################################################
 # We create now the operators to model the AVO responses for a set of
-# elastic profiles.
+# elastic profiles
 
 # constant vsvp
 PPop_const = \
@@ -63,8 +63,8 @@ PPop_variant = \
                                       dtype=np.float64)
 
 ###############################################################################
-# Let's now apply those operators to the elastic model and
-# create some synthetic data
+# We can then apply those operators to the elastic model and
+# create some synthetic reflection responses
 dPP_const = PPop_const *m.flatten()
 dPP_const = dPP_const.reshape(nt0, ntheta)
 
@@ -73,32 +73,34 @@ dPP_variant = dPP_variant.reshape(nt0, ntheta)
 
 
 ###############################################################################
-# We can now invert these data and estimate the underlying elastic profiles
+# Finally we invert these data and estimate the underlying elastic profiles
 
 # from constant vsvp
 mest = PPop_const / dPP_const.flatten()
 mest = mest.reshape(nt0, 3)
+
 # from depth-variant vsvp
 mest1 = PPop_const / dPP_const.flatten()
 mest1 = mest.reshape(nt0, 3)
 
-fig, axs = plt.subplots(1, 3, figsize=(13, 7), sharey=True)
+fig, axs = plt.subplots(1, 3, figsize=(9, 7), sharey=True)
 axs[0].plot(m[:, 0], t0, 'k', lw=6)
 axs[0].plot(mest[:, 0], t0, '--r', lw=4)
-axs[0].plot(mest[:, 0], t0, '-.g', lw=2)
+axs[0].plot(mest1[:, 0], t0, '-.g', lw=2)
 axs[0].set_title('Vp')
 axs[0].set_ylabel(r'$t(s)$')
 axs[0].invert_yaxis()
 axs[0].grid()
 axs[1].plot(m[:, 1], t0, 'k', lw=6)
 axs[1].plot(mest[:, 1], t0, '--r', lw=4)
-axs[1].plot(mest[:, 1], t0, '-.g', lw=2)
+axs[1].plot(mest1[:, 1], t0, '-.g', lw=2)
 axs[1].set_title('Vs')
 axs[1].invert_yaxis()
 axs[1].grid()
-axs[2].plot(m[:, 2], t0, 'k', lw=6)
-axs[2].plot(mest[:, 2], t0, '--r', lw=4)
-axs[2].plot(mest[:, 2], t0, '-.g', lw=2)
+axs[2].plot(m[:, 2], t0, 'k', lw=6, label='true')
+axs[2].plot(mest[:, 2], t0, '--r', lw=4, label='est (const vsvp)')
+axs[2].plot(mest1[:, 2], t0, '-.g', lw=2, label='est (variable vsvp)')
 axs[2].set_title('Rho')
 axs[2].invert_yaxis()
 axs[2].grid()
+axs[2].legend()

@@ -26,18 +26,16 @@ theta = np.linspace(thetamin, thetamax, ntheta)
 
 # Elastic property profiles
 vp = 1200 + np.arange(nt0) + filtfilt(np.ones(5)/5., 1,
-                                      np.random.normal(0, 80, nt0))
-vs = 600 + vp/2 + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 20, nt0))
-rho = 1000 + vp + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 30, nt0))
+                                      np.random.normal(0, 160, nt0))
+vs = 600 + vp/2 + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 100, nt0))
+rho = 1000 + vp + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 120, nt0))
 vp[201:] += 500
 vs[201:] += 200
 rho[201:] += 100
 
 # Wavelet
-ntwav = 41
-wavoff = 10
-wav, twav, wavc = ricker(t0[:ntwav//2+1], 20)
-wav_phase = np.hstack((wav[wavoff:], np.zeros(wavoff)))
+ntwav = 81
+wav, twav, wavc = ricker(t0[:ntwav//2+1], 5)
 
 # vs/vp profile
 vsvp = 0.5
@@ -88,31 +86,31 @@ dPP_variant = dPP_variant.reshape(nt0, ntheta)
 # Finally we visualize the two datasets
 
 # sphinx_gallery_thumbnail_number = 2
-fig = plt.figure(figsize=(8, 7))
+fig = plt.figure(figsize=(6, 7))
 ax1 = plt.subplot2grid((3, 2), (0, 0), rowspan=2)
 ax2 = plt.subplot2grid((3, 2), (0, 1), rowspan=2)
 ax3 = plt.subplot2grid((3, 2), (2, 0))
 ax4 = plt.subplot2grid((3, 2), (2, 1))
-ax1.imshow(dPP_const, cmap='gray',
+ax1.imshow(dPP_const, cmap='bwr',
            extent=(theta[0], theta[-1], t0[-1], t0[0]),
            vmin=-0.1, vmax=0.1)
 ax1.set_xlabel(r'$\Theta$')
 ax1.set_ylabel(r'$t(s)$')
 ax1.set_title(r'Data with constant $VP/VS$', fontsize=10)
 ax1.axis('tight')
-ax2.imshow(dPP_variant, cmap='gray',
+ax2.imshow(dPP_variant, cmap='bwr',
            extent=(theta[0], theta[-1], t0[-1], t0[0]),
            vmin=-0.1, vmax=0.1)
 ax2.set_title(r'Data with depth-variant $VP/VS$', fontsize=10)
 ax2.set_xlabel(r'$\Theta$')
 ax2.axis('tight')
-ax3.plot(dPP_const[nt0//4], 'k', lw=2)
-ax3.plot(dPP_variant[nt0//4], '--r', lw=2)
-ax3.set_title('AVO curve at it=%d' %(nt0//2), fontsize=10)
+ax3.plot(theta, dPP_const[nt0//4], 'k', lw=2)
+ax3.plot(theta, dPP_variant[nt0//4], '--r', lw=2)
+ax3.set_title('AVO curve at t=%.2f s' % t0[nt0//4], fontsize=10)
 ax3.set_xlabel(r'$\Theta$')
-ax4.plot(dPP_const[nt0//2], 'k', lw=2, label=r'constant $VP/VS$')
-ax4.plot(dPP_variant[nt0//2], '--r', lw=2, label=r'variable $VP/VS$')
-ax4.set_title('AVO curve at it=%d' %(nt0//2), fontsize=10)
+ax4.plot(theta, dPP_const[nt0//2], 'k', lw=2, label=r'constant $VP/VS$')
+ax4.plot(theta, dPP_variant[nt0//2], '--r', lw=2, label=r'variable $VP/VS$')
+ax4.set_title('AVO curve at t=%.2f s' % t0[nt0//2], fontsize=10)
 ax4.set_xlabel(r'$\Theta$')
 ax4.legend()
 plt.tight_layout()

@@ -1,5 +1,5 @@
-# from __future__ import division
 import numpy as np
+from scipy.sparse.linalg import inv
 from pylops import LinearOperator
 
 
@@ -11,7 +11,7 @@ class MatrixMult(LinearOperator):
 
     Parameters
     ----------
-    A : :obj:`numpy.ndarray`
+    A : :obj:`numpy.ndarray` or :obj:`scipy.sparse` matrix
         Matrix.
     dims : :obj:`tuple`, optional
         Number of samples for each other dimension of model
@@ -49,7 +49,7 @@ class MatrixMult(LinearOperator):
         if self.reshape:
             x = np.reshape(x, np.insert([np.prod(self.dims)], 0,
                            self.A.shape[1]))
-        y = np.dot(self.A, x)
+        y = self.A.dot(x)
         if self.reshape:
             return y.ravel()
         else:
@@ -59,7 +59,7 @@ class MatrixMult(LinearOperator):
         if self.reshape:
             x = np.reshape(x, np.insert([np.prod(self.dims)], 0,
                            self.A.shape[0]))
-        y = np.dot(np.conj(self.A.T), x)
+        y = self.A.conj().T.dot(x)
         if self.reshape:
             return y.ravel()
         else:
@@ -74,5 +74,9 @@ class MatrixMult(LinearOperator):
             Inverse matrix.
 
         """
-        Ainv = np.linalg.inv(self.A)
+        if isinstance(self.A, np.ndarray):
+            Ainv = np.linalg.inv(self.A)
+        else:
+            Ainv = inv(self.A)
+
         return Ainv

@@ -12,7 +12,7 @@ from pylops.optimization.leastsquares import RegularizedInversion
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
-def PoststackLinearModelling(wav, nt0, ndims=None, explicit=False):
+def PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False):
     r"""Post-stack linearized seismic modelling operator.
 
     Create operator to be applied to acoustic impedance profile
@@ -25,12 +25,13 @@ def PoststackLinearModelling(wav, nt0, ndims=None, explicit=False):
         and centered to zero)
     nt0 : :obj:`int`
         Number of samples along time axis
-    ndims : :obj:`int` or :obj:`tuple`
-        Number of samples along horizontal axws
+    spatdims : :obj:`int` or :obj:`tuple`, optional
+        Number of samples along spatial axis (or axes)
+        (``None`` if only one dimension is available)
     explicit : :obj:`bool`, optional
-        Create a chained linear operator (``False``, preffered for large data)
+        Create a chained linear operator (``False``, preferred for large data)
         or a ``MatrixMult`` linear operator with dense matrix (``True``,
-        preffered for small data)
+        preferred for small data)
 
     Returns
     -------
@@ -57,15 +58,17 @@ def PoststackLinearModelling(wav, nt0, ndims=None, explicit=False):
     the impedance profile from the band-limited seismic stack data.
 
     """
-    if ndims is None:
-        nspat = (1,)
-        ndims = (nt0, )
-    elif isinstance(ndims, int):
-        nspat = (ndims, )
-        ndims = (nt0, ndims)
+    # organize dimensions
+    if spatdims is None:
+        dims = (nt0, )
+        spatdims = None
+        #spatdims = (1, )
+    elif isinstance(spatdims, int):
+        dims = (nt0, spatdims)
+        spatdims = (spatdims,)
     else:
-        nspat = ndims
-        ndims = (nt0, ) + ndims
+        dims = (nt0, ) + spatdims
+
     if explicit:
         # Create derivative operator
         D = np.diag(0.5 * np.ones(nt0 - 1), k=1) - \
@@ -77,14 +80,14 @@ def PoststackLinearModelling(wav, nt0, ndims=None, explicit=False):
 
         # Combine operators
         M = np.dot(C, D)
-        return MatrixMult(M, dims=nspat)
+        return MatrixMult(M, dims=spatdims)
     else:
         # Create wavelet operator
-        Cop = Convolve1D(np.prod(np.array(ndims)), h=wav,
-                         offset=len(wav)//2, dir=0, dims=ndims)
+        Cop = Convolve1D(np.prod(np.array(dims)), h=wav,
+                         offset=len(wav)//2, dir=0, dims=dims)
 
         # Create derivative operator
-        Dop = FirstDerivative(np.prod(np.array(ndims)), dims=ndims,
+        Dop = FirstDerivative(np.prod(np.array(dims)), dims=dims,
                               dir=0, sampling=1.)
 
         return Cop*Dop
@@ -105,16 +108,16 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     ----------
     data : :obj:`np.ndarray`
         Band-limited seismic post-stack data of size
-        :math:`[n_{t0} \times n_x]`
+        :math:`[n_{t0} (\times n_x \times n_y)]`
     wav : :obj:`np.ndarray`
         Wavelet in time domain (must had odd number of elements
         and centered to zero)
     m0 : :obj:`np.ndarray`, optional
-        Background model of size :math:`[n_{t0} \times n_x]`
+        Background model of size :math:`[n_{t0} (\times n_x \times n_y)]`
     explicit : :obj:`bool`, optional
-        Create a chained linear operator (``False``, preffered for large data)
+        Create a chained linear operator (``False``, preferred for large data)
         or a ``MatrixMult`` linear operator with dense matrix
-        (``True``, preffered for small data)
+        (``True``, preferred for small data)
     simultaneous : :obj:`bool`, optional
         Simultaneously invert entire data (``True``) or invert
         trace-by-trace (``False``) when using ``explicit`` operator
@@ -135,10 +138,10 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     Returns
     -------
     minv : :obj:`np.ndarray`
-        Inverted model of size :math:`[n_{t0} \times n_x]`
-    dr : :obj:`np.ndarray`
+        Inverted model of size :math:`[n_{t0} (\times n_x \times n_y)]`
+    datar : :obj:`np.ndarray`
         Residual data (i.e., data - background data) of
-        size :math:`[n_{t0} \times n_x]`
+        size :math:`[n_{t0} (\times n_x \times n_y)]`
 
     Notes
     -----
@@ -168,22 +171,23 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     regularized global inversion using the outcome of the previous
     inversion as initial guess.
     """
+    # find out dimensions
     if data.ndim == 1:
         dims = 1
         nt0 = data.size
         nspat = None
-        nother = nx = 1
+        nspatprod = nx = 1
     elif data.ndim == 2:
         dims = 2
         nt0, nx = data.shape
         nspat = (nx, )
-        nother = nx
+        nspatprod = nx
     else:
         dims = 3
         nt0, nx, ny = data.shape
         nspat = (nx, ny)
-        nother = nx*ny
-        data = data.reshape(nt0, nother)
+        nspatprod = nx*ny
+        data = data.reshape(nt0, nspatprod)
 
     # check if background model and data have same shape
     if m0 is not None and data.shape != m0.shape:
@@ -191,9 +195,9 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
 
     # create operator
     PPop = PoststackLinearModelling(wav, nt0=nt0,
-                                    ndims=nspat, explicit=explicit)
+                                    spatdims=nspat, explicit=explicit)
     if dottest:
-        Dottest(PPop, nt0*nother, nt0*nother, raiseerror=True, verb=True)
+        Dottest(PPop, nt0*nspatprod, nt0*nspatprod, raiseerror=True, verb=True)
 
     # create and remove background data from original data
     datar = data.flatten() if m0 is None else \
@@ -204,7 +208,7 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
         if explicit:
             if epsI is None and not simultaneous:
                 # solve unregularized equations indipendently trace-by-trace
-                minv = lstsq(PPop.A, datar.reshape(nt0, nother).squeeze(),
+                minv = lstsq(PPop.A, datar.reshape(nt0, nspatprod).squeeze(),
                              **kwargs_solver)[0]
             elif epsI is None and simultaneous:
                 # solve unregularized equations simultaneously
@@ -212,20 +216,20 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
             elif epsI is not None:
                 # create regularized normal equations
                 PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0)
-                datar = np.dot(PPop.A.T, datar.reshape(nt0, nother))
+                datar = np.dot(PPop.A.T, datar.reshape(nt0, nspatprod))
                 if not simultaneous:
                     # solve regularized normal eqs. trace-by-trace
-                    minv = lstsq(PP, datar.reshape(nt0, nother),
+                    minv = lstsq(PP, datar,
                                  **kwargs_solver)[0]
                 else:
                     # solve regularized normal equations simultaneously
-                    PPop_reg = MatrixMult(PP, dims=nother)
+                    PPop_reg = MatrixMult(PP, dims=nspatprod)
                     minv = lsqr(PPop_reg, datar.flatten(), **kwargs_solver)[0]
             else:
                 # create regularized normal eqs. and solve them simultaneously
-                PP = np.dot(PPop.A, PPop.A) + epsI * np.eye(nt0)
-                datar = PPop.A.T * datar.reshape(nt0, nother)
-                PPop_reg = MatrixMult(PP, dims=nother)
+                PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0)
+                datar = PPop.A.T * datar.reshape(nt0, nspatprod)
+                PPop_reg = MatrixMult(PP, dims=nspatprod)
                 minv = lstsq(PPop_reg, datar.flatten(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
@@ -244,6 +248,10 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
                                     returninfo=False,
                                     **kwargs_solver)
 
+    # compute residual
+    datar = data.flatten() - PPop * minv.flatten()
+
+    # reshape inverted model and residual data
     if dims == 1:
         minv = minv.squeeze()
         datar = datar.squeeze()

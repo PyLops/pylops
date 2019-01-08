@@ -94,6 +94,7 @@ Geophysicical subsurface characterization
     poststack.PoststackInversion
     prestack.PrestackLinearModelling
     prestack.PrestackWaveletModelling
+    prestack.PrestackInversion
 
 
 Solvers
