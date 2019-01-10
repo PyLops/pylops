@@ -129,7 +129,8 @@ that can be tailored to our needs, and as contribution to the free software comm
    :caption: Getting involved:
 
    Implementing new operators  <adding.rst>
-   Contributing      <contributing.rst>
+   Contributing <contributing.rst>
    Changelog <changelog.rst>
-   Credits           <credits.rst>
+   Roadmap <roadmap.rst>
+   Credits <credits.rst>
 

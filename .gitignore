@@ -21,6 +21,7 @@ pylops.egg-info/
 pylops/version.py
 
 # Development #
+.ipynb_checkpoints/
 notebooks
 TODO
 

@@ -11,7 +11,7 @@ from scipy.sparse.linalg import eigsh as sp_eigsh
 class LinearOperator(spLinearOperator):
     """Common interface for performing matrix-vector products.
 
-    This class is a wrapper of the
+    This class is an overload of the
     :py:class:`scipy.sparse.linalg.LinearOperator` class, which contains
     additional overloading to standard operators such as ``__div__``.
 
@@ -126,11 +126,6 @@ class LinearOperator(spLinearOperator):
 
         Parameters
         ----------
-        neigs : :obj:`int`
-            Number of eigenvalues to compute (if ``None``, return all). Note
-            that for ``explicit=False``, only :math:`N-1` eigenvalues can be
-            computed where :math:`N` is the size of the operator in the
-            model space
         **kwargs_eig
             Arbitrary keyword arguments for
             :func:`scipy.sparse.linalg.eigs` or
