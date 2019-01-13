@@ -24,11 +24,9 @@ dev-install:
 	$(PIP) install -r requirements-dev.txt && $(PIP) install -e .
 
 install_conda:
-	make pipcheck
 	conda env create -f environment.yml && source activate pylops && pip install .
 
 dev-install_conda:
-	make pipcheck
 	conda env create -f environment-dev.yml && source activate pylops && pip install -e .
 
 tests:

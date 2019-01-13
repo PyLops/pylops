@@ -112,6 +112,7 @@ that can be tailored to our needs, and as contribution to the free software comm
    :caption: Getting started:
 
    installation.rst
+   performance.rst
    tutorials/index.rst
    FAQs <faq.rst>
 
