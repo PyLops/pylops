@@ -17,7 +17,6 @@ class LinearOperator(spLinearOperator):
 
     """
     def __init__(self, explicit=False):
-        super(LinearOperator, self).__init__()
         self.explicit = explicit
 
     def div(self, y):
