@@ -74,8 +74,8 @@ def test_FunctionOperator(par):
 
 @pytest.mark.parametrize("par", PARS)
 def test_FunctionOperator_NoAdjoint(par):
-    """Dot-test and inversion for FunctionOperator operator where the adjoint
-is not implemented.
+    """Forward and adjoint for FunctionOperator operator where the adjoint
+    is not implemented.
     """
     np.random.seed(10)
     G = np.matrix(np.random.normal(0, 1, (par['nr'], par['nc'])) +
@@ -97,27 +97,12 @@ is not implemented.
          np.ones(par['nr'])*par['imag']).astype(par['dtype'])
 
     F_x = Fop @ x
-    try:
-        Fop.H @ y
-    except NotImplementedError:
-        pass
-
     G_x = np.squeeze(np.asarray(G @ x))
     assert_array_equal(F_x, G_x)
 
-
-if __name__ == '__main__':
-    print("With adjoints")
-    for p in PARS:
-        try:
-            test_FunctionOperator(p)
-            print("{0: <60}PASSED".format(str(p)))
-        except AssertionError:
-            print("{0: <60}FAILED".format(str(p)))
-    print("\nWithout adjoints")
-    for p in PARS:
-        try:
-            test_FunctionOperator_NoAdjoint(p)
-            print("{0: <60}PASSED".format(str(p)))
-        except AssertionError:
-            print("{0: <60}FAILED".format(str(p)))
+    try:
+        FH_x = Fop.H @ y
+        GH_x = G.H @ y
+        assert_array_equal(FH_x, GH_x)
+    except NotImplementedError:
+        pass

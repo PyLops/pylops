@@ -8,10 +8,21 @@ class FunctionOperator(LinearOperator):
     Simple wrapper to functions for forward `f` and adjoint `fc`
     multiplication.
 
-    Functions :math:`f` and :math:`fc` respect
+    Functions :math:`f` and :math:`fc` are such that
     :math:`f:\mathbb{F}^n \to \mathbb{F}^m` and
     :math:`fc:\mathbb{F}^m \to \mathbb{F}^n` where :math:`\mathbb{F}` is
-    the appropriate underlying type.
+    the appropriate underlying type (e.g., \mathbb{R} for real or
+    \mathbb{C} for complex)
+
+    It can be called in the following ways:
+
+    ``FunctionOperator(f, n)``,
+	``FunctionOperator(f, nr, nc)``,
+	``FunctionOperator(f, fc, nc)``,
+    ``FunctionOperator(f, fc, nr, nc)``,
+
+
+    Both methods can be called with the `dtype` keyword argument.
 
     Parameters
     ----------
@@ -19,29 +30,17 @@ class FunctionOperator(LinearOperator):
         Function for forward multiplication.
     fc : :obj:`callable`, optional
         Function for adjoint multiplication.
-    nr : :obj:`int`
+    n : :obj:`int`, optional
         Number of "rows" (length of output vector).
-    nc : :obj:`int`, optional
+    m : :obj:`int`, optional
         Number of "columns" (length of input vector).
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
-    It can be called in the following ways:
-
-    FunctionOperator(f, n)
-    FunctionOperator(f, nr, nc)
-    FunctionOperator(f, fc, nc)
-    FunctionOperator(f, fc, nr, nc)
-
-    The first two methods will return `NotImplementedError` is the adjoint is
-    The first and third method assume the matrix (or matrices) are square.
-    called.
-    All methods can be called with the `dtype` keyword argument.
-
     Attributes
     ----------
     shape : :obj:`tuple`
-        Operator shape (nr, nc)
+        Operator shape (n, m)
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly (``True``) or
         not (``False``)
@@ -54,13 +53,12 @@ class FunctionOperator(LinearOperator):
     ...
     >>> A = FunctionOperator(forward, 2)
     >>> A
-    <11x11 FunctionOperator with dtype=float64>
+    <2x2 FunctionOperator with dtype=float64>
     >>> A.matvec(np.ones(2))
     array([2.,  3.])
     >>> A @ np.ones(2)
     array([2.,  3.])
     """
-
     def __init__(self, f, *args, **kwargs):
         try:
             self.dtype = kwargs['dtype']
@@ -72,12 +70,12 @@ class FunctionOperator(LinearOperator):
 
         self.f = f
 
-        # call is FunctionOperator(f, m)
+        # call is FunctionOperator(f, n)
         if len(args) == 1:
             self.shape = (args[0], args[0])
             self.fc = None
         elif len(args) == 2:
-            # call is FunctionOperator(f, m, n)
+            # call is FunctionOperator(f, n, m)
             if isinstance(args[0], Integral):
                 self.shape = (args[0], args[1])
                 self.fc = None
@@ -85,7 +83,7 @@ class FunctionOperator(LinearOperator):
             else:
                 self.fc = args[0]
                 self.shape = (args[1], args[1])
-        # call is FunctionOperator(f, fc, m, n)
+        # call is FunctionOperator(f, fc, n, m)
         elif len(args) == 3:
             self.fc = args[0]
             self.shape = args[1:3]

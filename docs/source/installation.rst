@@ -51,13 +51,13 @@ Alternatively, to access the latest source from github:
 
 .. code-block:: bash
 
-   >> pip install https://github.com/Statoil/pylops/archive/master.zip
+   >> pip install https://github.com/equinor/pylops/archive/master.zip
 
 or just clone the repository
 
 .. code-block:: bash
 
-   >> git clone https://github.com/Statoil/pylops.git
+   >> git clone https://github.com/equinor/pylops.git
 
 or download the zip file of the repository (green button in the top right corner of the main github repo page) and
 install PyLops from terminal using the command:
