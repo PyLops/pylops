@@ -1,4 +1,3 @@
-import numpy as np
 from numbers import Integral
 from pylops import LinearOperator
 
