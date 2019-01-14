@@ -24,12 +24,12 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False):
     raiseerror : :obj:`bool`, optional
         Raise error or simply return ``False`` when dottest fails
     verb : :obj:`bool`, optional
-        Verbosiry
+        Verbosity
 
     Raises
     ------
     ValueError
-        If dot-test is not verified within chosen tollerance.
+        If dot-test is not verified within chosen tolerance.
 
     Notes
     -----
