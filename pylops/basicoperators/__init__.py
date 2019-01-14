@@ -4,6 +4,7 @@ from .MatrixMult import MatrixMult
 from .Diagonal import Diagonal
 from .Zero import Zero
 from .Identity import Identity
+from .FunctionOperator import FunctionOperator
 from .Restriction import Restriction
 from .Flip import Flip
 from .Symmetrize import Symmetrize

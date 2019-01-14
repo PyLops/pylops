@@ -8,6 +8,8 @@ from .basicoperators import Diagonal
 from .basicoperators import Flip
 from .basicoperators import Symmetrize
 
+from .basicoperators import FunctionOperator
+
 from .basicoperators import VStack
 from .basicoperators import HStack
 from .basicoperators import Block
