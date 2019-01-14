@@ -90,7 +90,6 @@ class FunctionOperator(LinearOperator):
             self.fc = args[0]
             self.shape = args[1:3]
 
-    
     def _matvec(self, x):
         return self.f(x)
 
