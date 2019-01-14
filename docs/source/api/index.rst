@@ -7,6 +7,8 @@ PyLops API
 Linear Operators
 ----------------
 
+Templates
+~~~~~~~~~
 .. automodule:: pylops
 
 .. currentmodule:: pylops
@@ -15,7 +17,7 @@ Linear Operators
    :toctree: generated/
 
     LinearOperator
-
+    FunctionOperator
 
 Basic operators
 ~~~~~~~~~~~~~~~

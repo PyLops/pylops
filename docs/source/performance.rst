@@ -66,14 +66,14 @@ and run the following code in python:
 
    import os
    import numpy as np
-   from timeit import Timer
+   from timeit import timeit
 
    size = 4096
-   A, B = np.random.random((size, size)), np.random.random((size, size))
-
-   t = Timer(lambda: np.dot(A, B))
-   print('Time with %s threads: %f s' %(os.environ.get('OMP_NUM_THREADS'), t.timeit(number=4)))
-
+   A = np.random.random((size, size)),
+   B = np.random.random((size, size))
+   print('Time with %s threads: %f s' \
+         %(os.environ.get('OMP_NUM_THREADS'),
+           timeit(lambda: np.dot(A, B), number=4)))
 
 Subsequently set ``OMP_NUM_THREADS=2``, or any higher number of threads available
 in your hardware (multi-threaded):
@@ -82,11 +82,19 @@ in your hardware (multi-threaded):
 
    >> export OMP_NUM_THREADS=2
 
-and run the same python code. Both by looking at your processes (e.g. using ``top``) and by looking at the
+and run the same python code. By both looking at your processes (e.g. using ``top``) and at the
 python print statement you should see a speed-up in the second case.
 
+Alternatively, you could set the ``OMP_NUM_THREADS`` variable directly
+inside your script using ``os.environ['OMP_NUM_THREADS']=str(2)``.
+Moreover, note that when using ``Intel MKL`` you can alternatively set
+the ``MKL_NUM_THREADS`` instead of ``OMP_NUM_THREADS``: this could
+be useful if your code runs other parallel processes which you can
+control indipendently from the ``Intel MKL`` ones using ``OMP_NUM_THREADS``.
+
 .. note::
-    Always remember to set ``OMP_NUM_THREADS`` in your enviroment when using PyLops
+    Always remember to set ``OMP_NUM_THREADS`` (or ``MKL_NUM_THREADS``)
+    in your enviroment when using PyLops
 
 
 Optional dependencies

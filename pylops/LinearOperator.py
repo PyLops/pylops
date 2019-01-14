@@ -12,8 +12,21 @@ class LinearOperator(spLinearOperator):
     """Common interface for performing matrix-vector products.
 
     This class is an overload of the
-    :py:class:`scipy.sparse.linalg.LinearOperator` class, which contains
-    additional overloading to standard operators such as ``__div__``.
+    :py:class:`scipy.sparse.linalg.LinearOperator` class. It adds
+    functionalities by overloading standard operators such as ``__div__``
+    as well as creating convenience methods such as ``eigs`` and ``cond``.
+
+    .. note:: End users of PyLops should not use this class directly but simply
+      use operators that are already implemented. This class is meant for
+      developers and it has to be used as the parent class of any new operator
+      developed within PyLops. Find more details regarding implementation of
+      new operators at :ref:`addingoperator`.
+
+    Parameters
+    ----------
+    explicit : :obj:`bool`
+        Operator contains a matrix that can be solved explicitly
+        (``True``) or not (``False``)
 
     """
     def __init__(self, explicit=False):
