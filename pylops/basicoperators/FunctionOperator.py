@@ -9,20 +9,19 @@ class FunctionOperator(LinearOperator):
     multiplication.
 
     Functions :math:`f` and :math:`fc` are such that
-    :math:`f:\mathbb{F}^n \to \mathbb{F}^m` and
-    :math:`fc:\mathbb{F}^m \to \mathbb{F}^n` where :math:`\mathbb{F}` is
-    the appropriate underlying type (e.g., \mathbb{R} for real or
-    \mathbb{C} for complex)
+    :math:`f:\mathbb{F}^m \to \mathbb{F}^n` and
+    :math:`fc:\mathbb{F}^n \to \mathbb{F}^m` where :math:`\mathbb{F}` is
+    the appropriate underlying type (e.g., :math:`\mathbb{R}` for real or
+    :math:`\mathbb{C}` for complex)
 
-    It can be called in the following ways:
+    FunctionOperator can be called in the following ways:
+    ``FunctionOperator(f, n)``, ``FunctionOperator(f, n, m)``,
+    ``FunctionOperator(f, fc, n)``, and ``FunctionOperator(f, fc, n, m)``.
 
-    ``FunctionOperator(f, n)``,
-	``FunctionOperator(f, nr, nc)``,
-	``FunctionOperator(f, fc, nc)``,
-    ``FunctionOperator(f, fc, nr, nc)``,
-
-
-    Both methods can be called with the `dtype` keyword argument.
+    The first two methods can only be used for forward modelling and
+    will return `NotImplementedError` if the adjoint is called.
+    The first and third method assume the matrix (or matrices) to be square.
+    All methods can be called with the `dtype` keyword argument.
 
     Parameters
     ----------
@@ -31,16 +30,16 @@ class FunctionOperator(LinearOperator):
     fc : :obj:`callable`, optional
         Function for adjoint multiplication.
     n : :obj:`int`, optional
-        Number of "rows" (length of output vector).
+        Number of rows (length of data vector).
     m : :obj:`int`, optional
-        Number of "columns" (length of input vector).
+        Number of columns (length of model vector).
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
     Attributes
     ----------
     shape : :obj:`tuple`
-        Operator shape (n, m)
+        Operator shape :math:`[n \times m]`
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly (``True``) or
         not (``False``)

@@ -7,7 +7,7 @@ Contributions are welcome and greatly appreciated!
 
 ### Report Bugs
 
-Report bugs at https://github.com/Statoil/pylops/issues
+Report bugs at https://github.com/equinor/pylops/issues
 
 If you are playing with the PyLops library and find a bug, please
 reporting it including:
@@ -19,7 +19,7 @@ reporting it including:
 ### Propose New Operators or Features
 
 The best way to send feedback is to open an issue at
-https://github.com/Statoil/pylops/issues
+https://github.com/equinor/pylops/issues
 with tag *enhancement*.
 
 If you are proposing a new operator or a new feature:
@@ -63,7 +63,7 @@ Ensure that you are able to *pass all the tests before moving forward*.
 5. When you're done making changes, check that old and new tests pass
 succesfully:
     ```
-    python setup.py test
+    make tests
     ```
 
 6. Commit your changes and push your branch to GitLab::
