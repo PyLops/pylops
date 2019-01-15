@@ -73,10 +73,18 @@ while its application to a data is referred to as **adjoint modelling (or operat
 .. math::
     \mathbf{x} = \mathbf{A}^H \mathbf{y}
 
-where :math:`\mathbf{A}` is called *operator*, :math:`\mathbf{x}` is called *model* and :math:`\mathbf{y}` is called *data*.
+where :math:`\mathbf{x}` is called *model* and :math:`\mathbf{y}` is called *data*.
+The *operator* :math:`\mathbf{A}:\mathbb{F}^m \to \mathbb{F}^n` effectively maps a
+vector of size :math:`m` in the *model space* to a vector of size :math:`n`
+in the *data space*, conversely the * adjoint operator*
+:math:`\mathbf{A}^H:\mathbb{F}^n \to \mathbb{F}^m` maps a
+vector of size :math:`n` in the *data space* to a vector of size :math:`m`
+in the *model space*. As linear operators mimics the effect a matrix on a vector
+we can also loosely refer to :math:`m` as the number of *columns* and :math:`n` as the
+number of *rows* of the operator.
 
-Ultimately, solving an inverse problems accounts to removing the effect of :math:`\mathbf{A}` from the
-data :math:`\mathbf{y}` to retrieve the model :math:`\mathbf{x}`.
+Ultimately, solving an inverse problems accounts to removing the effect of
+:math:`\mathbf{A}` from the data :math:`\mathbf{y}` to retrieve the model :math:`\mathbf{x}`.
 
 For a more detailed description of the concepts of linear operators, adjoints
 and inverse problems in general, you can head over to one of Jon Claerbout's books
