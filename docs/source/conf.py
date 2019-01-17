@@ -34,6 +34,7 @@ intersphinx_mapping = {
     "sklearn": ("http://scikit-learn.org/stable/", None),
     "pandas": ("http://pandas.pydata.org/pandas-docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),
+    "pyfftw": ("https://pyfftw.readthedocs.io/en/latest/", None),
 }
 
 ## Generate autodoc stubs with summaries from code
@@ -82,7 +83,7 @@ master_doc = 'index'
 # General information about the project
 year = datetime.date.today().year
 project = 'PyLops'
-copyright = '2018-{}, Matteo Ravasi'.format(year)
+copyright = '{}, Matteo Ravasi'.format(year)
 
 # Version
 version = get_distribution('pylops').version

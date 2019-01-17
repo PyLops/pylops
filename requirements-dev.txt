@@ -1,5 +1,6 @@
 numpy
 scipy
+pyfftw
 matplotlib
 ipython
 pytest
