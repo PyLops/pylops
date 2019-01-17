@@ -1,10 +1,12 @@
 name: pylops
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - python>=3.6.4
   - numpy
   - scipy
+  - pyfftw
   - matplotlib
   - ipython
   - pytest

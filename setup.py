@@ -32,6 +32,7 @@ setup(
     author='mrava',
     author_email='mrava@equinor.com',
     install_requires=['numpy', 'scipy'],
+    extras_require={'FFTW': ['pyfftw']},
     packages=find_packages(exclude=['pytests']),
     use_scm_version=dict(root = '.',
                          relative_to = __file__,

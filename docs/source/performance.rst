@@ -108,4 +108,29 @@ a safe fallback to one of the required dependencies will be enforced.
 fft routines
 ~~~~~~~~~~~~
 
-*Coming soon*
+Two different *engines* are provided by the :py:class:`pylops.signalprocessing.FFT` operator for
+``fft`` and ``ifft`` routines in the forward and adjoint modes: ``engine='numpy'`` (default)
+and ``engine='fftw'``.
+
+The first engine comes as default as numpy is part of the dependencies
+of PyLops and automatically installed when PyLops is installed if not already available
+in your Python distribution.
+
+The second engine implements the well-known `FFTW <http://www.fftw.org>`_
+via the python wrapper :py:class:`pyfftw.FFTW`. This optimized fft tends to
+outperform the one from numpy in many cases, however it has not been inserted
+in the mandatory requirements of PyLops, meaning that when installing PyLops with
+``pip``, :py:class:`pyfftw.FFTW` will *not* be installed automatically.
+
+If interested to use ``FFTW`` backend, you will just need to manually install
+:py:class:`pyfftw.FFTW` with either ``pip``:
+
+.. code-block:: bash
+
+   >> pip install pyfftw
+
+or ``conda``:
+
+.. code-block:: bash
+
+   >> conda install -c conda-forge pyfftw

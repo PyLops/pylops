@@ -1,5 +1,4 @@
 import logging
-
 from pylops.basicoperators import Regression
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
