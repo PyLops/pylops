@@ -60,6 +60,12 @@ basicoperators
 * Deal with edges in ``FirstDerivative`` and ``SecondDerivative`` operator -
   `Issue #34 <https://github.com/Statoil/pylops/issues/34>`_.
 
+optimization
+~~~~~~~~~~~~
+
+* Sparse solvers -
+  `Issue #44 <https://github.com/Statoil/pylops/issues/44>`_.
+
 
 signalprocessing
 ~~~~~~~~~~~~~~~~
@@ -77,6 +83,9 @@ signalprocessing
 
 utils
 ~~~~~
+
+Nothing so far
+
 
 waveeqprocessing
 ~~~~~~~~~~~~~~~~

@@ -15,10 +15,10 @@ where :math:`AI(t)` is the acoustic impedance profile and :math:`w(t)` is
 the time domain seismic wavelet. In compact form:
 
 .. math::
-    \mathbf{d}= \mathbf{W} \mathbf{D} \mathbf{AI}
+    \mathbf{d}= \mathbf{W} \mathbf{D} \mathbf{ai}
 
 where :math:`\mathbf{W}` is a convolution operator, :math:`\mathbf{D}` is a
-first derivative operator, and :math:`\mathbf{AI}` is the input model.
+first derivative operator, and :math:`\mathbf{ai}` is the input model.
 Subsequently the acoustic impedance model is estimated via the
 :py:class:`pylops.avo.poststack.PoststackInversion` module. A two-steps
 inversion strategy is finally presented to deal with the case of noisy data.
@@ -164,8 +164,8 @@ dn = d + n
 #   using the result of trace-by-trace inversion as starting guess
 #
 #   .. math::
-#        J = ||\Delta \mathbf{d} - \mathbf{W} \Delta \mathbf{AI}||_2 +
-#        \epsilon_\nabla ^2 ||\nabla \mathbf{AI}||_2
+#        J = ||\Delta \mathbf{d} - \mathbf{W} \Delta \mathbf{ai}||_2 +
+#        \epsilon_\nabla ^2 ||\nabla \mathbf{ai}||_2
 #
 #   where :math:`\Delta \mathbf{d}=\mathbf{d}-\mathbf{W}\mathbf{AI_0}` is
 #   the residual data

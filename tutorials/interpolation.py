@@ -12,14 +12,16 @@ of PyLops operators (:py:class:`pylops.Restriction` and
 
 Mathematically speaking, if we want to interpolate a signal using the theory of inverse problems,
 we can define the following forward problem:
-   .. math::
-       \mathbf{y} = \mathbf{R} \mathbf{x}
+
+.. math::
+   \mathbf{y} = \mathbf{R} \mathbf{x}
 
 where the restriction operator :math:`\mathbf{R}` selects  :math:`M` elements from
 the regularly sampled signal :math:`\mathbf{x}` at random locations.
 The input and output signals are:
-    .. math::
-       \mathbf{y}= [y_1, y_2,...,y_N]^T, \qquad \mathbf{x}= [x_1, x_2,...,x_M]^T, \qquad
+
+.. math::
+   \mathbf{y}= [y_1, y_2,...,y_N]^T, \qquad \mathbf{x}= [x_1, x_2,...,x_M]^T, \qquad
 
 with :math:`M>>N`.
 
