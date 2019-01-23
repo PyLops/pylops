@@ -24,13 +24,28 @@ class LinearOperator(spLinearOperator):
 
     Parameters
     ----------
+    Op : :obj:`scipy.sparse.linalg.LinearOperator` or :obj:`scipy.sparse.linalg._ProductLinearOperator` or :obj:`scipy.sparse.linalg._SumLinearOperator`
+        Operator contains a matrix that can be solved explicitly
+        (``True``) or not (``False``)
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (``True``) or not (``False``)
 
     """
-    def __init__(self, explicit=False):
+    def __init__(self, Op=None, explicit=False):
         self.explicit = explicit
+        if Op is not None:
+            self.Op = Op
+            self.shape = self.Op.shape
+            self.dtype = self.Op.dtype
+
+    def _matvec(self, x):
+        if callable(self.Op._matvec):
+            return self.Op._matvec(x)
+
+    def _rmatvec(self, x):
+        if callable(self.Op._rmatvec):
+            return self.Op._rmatvec(x)
 
     def div(self, y):
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
@@ -65,7 +80,7 @@ class LinearOperator(spLinearOperator):
             xest = lsqr(self, y)[0]
         return xest
 
-    def eigs(self, neigs=None, **kwargs_eig):
+    def eigs(self, neigs=None, symmetric=False, **kwargs_eig):
         r"""Most significant eigenvalues of linear operator.
 
         Return an estimate of the most significant eigenvalues
@@ -81,6 +96,10 @@ class LinearOperator(spLinearOperator):
             that for ``explicit=False``, only :math:`N-1` eigenvalues can be
             computed where :math:`N` is the size of the operator in the
             model space
+        symmetric : :obj:`bool`, optional
+            Operator is symmetric (``True``) or not (``False``). User should
+            set this parameter to ``True`` only when it is guaranteed that the
+            operator is real-symmetric or complex-hermitian matrices
         **kwargs_eig
             Arbitrary keyword arguments for
             :func:`scipy.sparse.linalg.eigs` or
@@ -111,7 +130,12 @@ class LinearOperator(spLinearOperator):
                 if neigs is None or neigs == self.shape[1]:
                     eigenvalues = eigvals(self.A)
                 else:
-                    eigenvalues = sp_eigs(self.A, k=neigs, **kwargs_eig)[0]
+                    if symmetric:
+                        eigenvalues = sp_eigsh(self.A, k=neigs,
+                                               **kwargs_eig)[0]
+                    else:
+                        eigenvalues = sp_eigs(self.A, k=neigs, **kwargs_eig)[0]
+
             else:
                 if neigs is None or neigs == self.shape[1]:
                     eigenvalues = np.sqrt(eigvals(np.dot(np.conj(self.A.T),
@@ -124,7 +148,10 @@ class LinearOperator(spLinearOperator):
             if neigs is None or neigs >= self.shape[1]:
                 neigs = self.shape[1]-2
             if self.shape[0] == self.shape[1]:
-                eigenvalues = sp_eigs(self, k=neigs, **kwargs_eig)[0]
+                if symmetric:
+                    eigenvalues = sp_eigsh(self, k=neigs, **kwargs_eig)[0]
+                else:
+                    eigenvalues = sp_eigs(self, k=neigs, **kwargs_eig)[0]
             else:
                 eigenvalues = np.sqrt(sp_eigs(self.H * self,
                                               k=neigs, **kwargs_eig)[0])

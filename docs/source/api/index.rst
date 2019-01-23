@@ -102,6 +102,9 @@ Geophysicical subsurface characterization
 Solvers
 -------
 
+Least-squares
+~~~~~~~~~~~~~
+
 .. currentmodule:: pylops.optimization
 
 .. autosummary::
@@ -111,3 +114,15 @@ Solvers
     leastsquares.RegularizedInversion
     leastsquares.PreconditionedInversion
     sparsity.IRLS
+
+
+
+Sparsity
+~~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+    sparsity.IRLS
+    sparsity.ISTA
+    sparsity.FISTA

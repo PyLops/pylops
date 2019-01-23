@@ -27,7 +27,7 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
     dataregs : :obj:`list`, optional
         Regularization data (must have the same number of elements
         as ``Regs``)
-    espI : :obj:`float`, optional
+    epsI : :obj:`float`, optional
         Tikhonov damping
     epsRs : :obj:`list`
          Regularization dampings (must have the same number of elements
@@ -340,7 +340,7 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_lsq
     the data :math:`\mathbf{d}`
 
     .. math::
-        \mathbf{y} = \mathbf{Op} (\mathbf{P} \mathbf{p})
+        \mathbf{d} = \mathbf{Op} (\mathbf{P} \mathbf{p})
 
     where :math:`\mathbf{p}` is the solution in the preconditioned space
     and :math:`\mathbf{x} = \mathbf{P}\mathbf{p}` is the solution in the original space.

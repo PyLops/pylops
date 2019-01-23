@@ -5,7 +5,7 @@ from scipy.signal import filtfilt
 from scipy.sparse.linalg import lsqr
 from scipy.special import hankel2
 from pylops.utils import dottest as Dottest
-from pylops import Diagonal, Identity, VStack, HStack, BlockDiag
+from pylops import Diagonal, Identity, Block, BlockDiag
 from pylops.waveeqprocessing.mdd import MDC
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
@@ -270,13 +270,12 @@ class Marchenko():
                   twosided=True, fast=fast, dtype=self.dtype)
         R1op = MDC(self.R1twosided_fft, self.nt2, nv=1, dt=self.dt, dr=self.dr,
                    twosided=True, fast=fast, dtype=self.dtype)
-
         Wop = Diagonal(w.flatten())
         Iop = Identity(self.nr * (2*self.nt-1))
-        Mop = VStack([HStack([Iop, -1 * Wop * Rop]),
-                      HStack([-1 * Wop * R1op, Iop])]) * BlockDiag([Wop, Wop])
-        Gop = VStack([HStack([Iop, -1 * Rop]),
-                      HStack([-1 * R1op, Iop])])
+        Mop = Block([[Iop, -1 * Wop * Rop],
+                     [-1 * Wop * R1op, Iop]]) * BlockDiag([Wop, Wop])
+        Gop = Block([[Iop, -1 * Rop],
+                     [-1 * R1op, Iop]])
 
         if dottest:
             Dottest(Gop, 2 * self.nr * self.nt2,
@@ -405,10 +404,10 @@ class Marchenko():
                    dt=self.dt, dr=self.dr, twosided=True, dtype=self.dtype)
         Wop = Diagonal(w.flatten())
         Iop = Identity(self.nr * nvs * (2*self.nt-1))
-        Mop = VStack([HStack([Iop, -1 * Wop * Rop]),
-                      HStack([-1 * Wop * R1op, Iop])]) * BlockDiag([Wop, Wop])
-        Gop = VStack([HStack([Iop, -1 * Rop]),
-                      HStack([-1 * R1op, Iop])])
+        Mop = Block([[Iop, -1 * Wop * Rop],
+                     [-1 * Wop * R1op, Iop]]) * BlockDiag([Wop, Wop])
+        Gop = Block([[Iop, -1 * Rop],
+                     [-1 * R1op, Iop]])
 
         if dottest:
             Dottest(Gop, 2 * self.nr * nvs * self.nt2,

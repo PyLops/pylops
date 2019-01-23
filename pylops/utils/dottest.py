@@ -40,7 +40,7 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False):
     within a numerical tolerance:
 
     .. math::
-        (\mathbf{A}*\mathbf{u})^H*\mathbf{v} = \mathbf{u}^H*(\mathbf{A}^H*\mathbf{v})
+        (\mathbf{Op}*\mathbf{u})^H*\mathbf{v} = \mathbf{u}^H*(\mathbf{Op}^H*\mathbf{v})
 
     """
     if complexflag in (0, 2):
@@ -65,12 +65,15 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False):
 
     if complexflag == 0:
         if np.abs((yy-xx)/((yy+xx+1e-15)/2)) < tol:
-            if verb: print('Dot test passed, v^T(Lu)=%f - u^T(L^Tv)=%f' % (yy, xx))
+            if verb: print('Dot test passed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
+                           % (yy, xx))
             return True
         else:
             if raiseerror:
-                raise ValueError('Dot test failed, v^T(Lu)=%f - u^T(L^Tv)=%f' % (yy, xx))
-            if verb: print('Dot test failed, v^T(Lu)=%f - u^T(L^Tv)=%f' % (yy, xx))
+                raise ValueError('Dot test failed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
+                                 % (yy, xx))
+            if verb: print('Dot test failed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
+                           % (yy, xx))
             return False
     else:
         checkreal = np.abs((np.real(yy) - np.real(xx)) /
@@ -79,10 +82,13 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False):
                            ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
 
         if checkreal and checkimag:
-            if verb: print('Dot test passed, v^T(Lu)='+str(yy)+' - '+' u^T(L^Tv)='+str(xx))
+            if verb: print('Dot test passed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
+                           % (yy, xx))
             return True
         else:
             if raiseerror:
-                raise ValueError('Dot test failed, v^H(Lu)=%f - u^H(L^Hv)=%f' % (yy, xx))
-            if verb: print('Dot test failed, v^H(Lu)=%f - u^H(L^Hv)=%f' % (yy, xx))
+                raise ValueError('Dot test failed, v^H(Opu)=%f - u^H(Op^Hv)=%f'
+                                 % (yy, xx))
+            if verb: print('Dot test failed, v^H(Opu)=%f - u^H(Op^Hv)=%f'
+                           % (yy, xx))
             return False
