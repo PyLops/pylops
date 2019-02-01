@@ -37,7 +37,7 @@ class Diagonal(LinearOperator):
     This is equivalent to a matrix-vector multiplication with a matrix
     containing the vector :math:`\mathbf{d}` along its main diagonal. As the
     adjoint of a diagonal matrix is the diagonal matrix itself, the Diagonal is
-    self.adjoint.
+    self-adjoint.
 
     """
     def __init__(self, diag, dtype='float64'):

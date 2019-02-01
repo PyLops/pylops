@@ -5,10 +5,10 @@ from pylops import LinearOperator
 
 
 class Restriction(LinearOperator):
-    """Restriction (or sampling) operator.
+    r"""Restriction (or sampling) operator.
 
     Extract subset of values from input vector at locations ``iava``
-    in forward mode and places those values at locations ``iava``
+    in forward mode and place those values at locations ``iava``
     in an otherwise zero vector in adjoint mode.
 
     Parameters
@@ -28,11 +28,35 @@ class Restriction(LinearOperator):
         Operator contains a matrix that can be solved
         explicitly (``True``) or not (``False``)
 
+    Notes
+    -----
+    Extraction (or *sampling*) of a subset of :math:`N` values at locations
+    ``iava`` from an input (or model) vector :math:`\mathbf{x}` of size
+    :math:`M` can be expressed as:
+
+    .. math::
+
+        y_i = x_{l_i}  \quad \forall i=1,2,...,M
+
+    where :math:`\mathbf{L}=[l_1, l_2, l_M]` is a vector containing the indeces
+    of the original array at which samples are taken.
+
+    Conversely, in adjoint mode the available values in the data vector
+    :math:`\mathbf{y}` are placed at locations
+    :math:`\mathbf{L}=[l_1, l_2, l_M]` in the model vector:
+
+    .. math::
+
+        x_{l_i} = y_i  \quad \forall i=1,2,...,M
+
+    and :math:`x_{j}=0 j \neq l_i` (i.e., at all other locations in input
+    vector).
+
     """
-    def __init__(self, N, iava, dtype='float64'):
-        self.N = N
+    def __init__(self, M, iava, dtype='float64'):
+        self.M = M
         self.iava = iava
-        self.shape = (len(iava), N)
+        self.shape = (len(iava), M)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
@@ -40,7 +64,7 @@ class Restriction(LinearOperator):
         return x[self.iava]
 
     def _rmatvec(self, x):
-        y = np.zeros(self.N, dtype=self.dtype)
+        y = np.zeros(self.M, dtype=self.dtype)
         y[self.iava] = x
         return y
 
@@ -59,7 +83,7 @@ class Restriction(LinearOperator):
             Masked array.
 
         """
-        y = np_ma.array(np.zeros(self.N), mask=np.ones(self.N),
+        y = np_ma.array(np.zeros(self.M), mask=np.ones(self.M),
                         dtype=self.dtype)
         y.mask[self.iava] = False
         y[self.iava] = x[self.iava]
