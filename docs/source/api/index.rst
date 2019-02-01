@@ -1,10 +1,21 @@
 .. _api:
 
-
 PyLops API
 ==========
 
-Linear Operators
+The Application Programming Interface (API) of PyLops can be loosely seen
+as composed of a stack of three main layers:
+
+* *Linear operators*: building blocks for the setting up of inverse problems
+* *Solvers*: interfaces to a variety of solvers, providing an easy way to
+  augment an inverse problem with additional regularization and/or
+  preconditioning term
+* *Applications*: high-level interfaces allowing users to easily setup and solve
+  specific problems (while hiding the non-needed details - i.e., creation and
+  setup of linear operator and solver).
+
+
+Linear operators
 ----------------
 
 Templates
@@ -79,8 +90,6 @@ Wave-Equation processing
    :toctree: generated/
 
     MDC
-    MDD
-    Marchenko
 
 
 Geophysicical subsurface characterization
@@ -93,10 +102,8 @@ Geophysicical subsurface characterization
 
     avo.AVOLinearModelling
     poststack.PoststackLinearModelling
-    poststack.PoststackInversion
     prestack.PrestackLinearModelling
     prestack.PrestackWaveletModelling
-    prestack.PrestackInversion
 
 
 Solvers
@@ -116,7 +123,6 @@ Least-squares
     sparsity.IRLS
 
 
-
 Sparsity
 ~~~~~~~~
 
@@ -126,3 +132,31 @@ Sparsity
     sparsity.IRLS
     sparsity.ISTA
     sparsity.FISTA
+
+
+
+Applications
+------------
+
+Wave-Equation processing
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.waveeqprocessing
+
+.. autosummary::
+   :toctree: generated/
+
+    MDD
+    Marchenko
+
+
+Geophysicical subsurface characterization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.avo
+
+.. autosummary::
+   :toctree: generated/
+
+    poststack.PoststackInversion
+    prestack.PrestackInversion

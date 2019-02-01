@@ -3,11 +3,11 @@ Restriction
 ===========
 
 This example shows how to use the :py:class:`pylops.Restriction` operator
-to perform *Sampling* of a certain input vector at locations ``iava``.
+to sample a certain input vector at desired locations ``iava``.
 
-
-As explained in the **Optimization** tutorial, such operators can be used to interpolate irregularly
-sampled 1d or 2d signals onto a regular grid.
+As explained in the :ref:`sphx_glr_tutorials_solvers.py` tutorial, such
+operators can be used as forward model in an inverse problem aimed at
+interpolate irregularly sampled 1d or 2d signals onto a regular grid.
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -41,8 +41,8 @@ ntsub = int(np.round(nt*perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(nt))[:ntsub])
 
 ###############################################################################
-# We then create the restriction operator and display the original signal as well
-# as the subsampled signal.
+# We then create the restriction operator and display the original signal as
+# well as the subsampled signal.
 
 Rop = pylops.Restriction(nt, iava, dtype='float64')
 

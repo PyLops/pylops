@@ -13,7 +13,7 @@ class LinearOperator(spLinearOperator):
 
     This class is an overload of the
     :py:class:`scipy.sparse.linalg.LinearOperator` class. It adds
-    functionalities by overloading standard operators such as ``__div__``
+    functionalities by overloading standard operators such as ``__truediv__``
     as well as creating convenience methods such as ``eigs`` and ``cond``.
 
     .. note:: End users of PyLops should not use this class directly but simply

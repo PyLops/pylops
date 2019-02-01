@@ -34,3 +34,9 @@ docs/source/tutorials
 # Pylint #
 pylint_plot.py
 pylintrc
+
+# Coverage reports
+COVERAGE
+.coverage
+coverage.xml
+htmlcov/
