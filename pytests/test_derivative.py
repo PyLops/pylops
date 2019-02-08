@@ -101,10 +101,11 @@ def test_SecondDerivative(par):
     D2op = SecondDerivative(par['nx'], sampling=par['dx'], dtype='float32')
     assert dottest(D2op, par['nx'], par['nx'], tol=1e-3)
 
-    x = (par['dx']*np.arange(par['nx']))**3
-    yana = 6*par['dx']**2*np.arange(par['nx'])
-    y = D2op*x
-    assert_array_almost_equal(y[2:-2], yana[2:-2], decimal=1)
+    x = par['dx']*np.arange(par['nx'])
+    f = x**3
+    dfana = 6*x
+    df = D2op*f
+    assert_array_almost_equal(df[1:-1], dfana[1:-1], decimal=1)
 
     # 2d - derivative on 1st direction
     D2op = SecondDerivative(par['ny']*par['nx'],
@@ -112,11 +113,12 @@ def test_SecondDerivative(par):
                             dir=0, sampling=par['dy'], dtype='float32')
     assert dottest(D2op, par['ny']*par['nx'], par['ny']*par['nx'], tol=1e-3)
 
-    x = np.outer((par['dy']*np.arange(par['ny']))**3, np.ones(par['nx']))
-    yana = np.outer(6*par['dy']**2*np.arange(par['ny']), np.ones(par['nx']))
-    y = D2op*x.flatten()
-    y = y.reshape(par['ny'], par['nx'])
-    assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
+    x = np.outer(par['dy']*np.arange(par['ny']), np.ones(par['nx']))
+    f = x**3
+    dfana = 6*x
+    df = D2op*f.flatten()
+    df = df.reshape(par['ny'], par['nx'])
+    assert_array_almost_equal(df[1:-1,:], dfana[1:-1,:], decimal=1)
 
     # 2d - derivative on 2nd direction
     D2op = SecondDerivative(par['ny']*par['nx'],
@@ -125,11 +127,13 @@ def test_SecondDerivative(par):
     assert dottest(D2op, par['ny']*par['nx'],
                    par['ny'] * par['nx'], tol=1e-3)
 
-    x = np.outer((par['dy']*np.arange(par['ny']))**3, np.ones(par['nx']))
-    yana = np.zeros((par['ny'], par['nx']))
-    y = D2op * x.flatten()
-    y = y.reshape(par['ny'], par['nx'])
-    assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
+    x = np.outer(np.ones(par['ny']), par['dx']*np.arange(par['nx']))
+    f = x**3
+    dfana = 6*x
+    df = D2op*f.flatten()
+    df = df.reshape(par['ny'], par['nx'])
+    assert_array_almost_equal(df[:,1:-1], dfana[:,1:-1], decimal=1)
+
 
     # 3d - derivative on 1st direction
     D2op = SecondDerivative(par['nz'] * par['ny'] * par['nx'],
