@@ -1,6 +1,6 @@
 """
-9. Marchenko redatuming by inversion
-====================================
+09. Marchenko redatuming by inversion
+=====================================
 This example shows how to set-up and run the
 :py:class:`pylops.waveeqprocessing.Marchenko` inversion using synthetic data.
 
@@ -46,24 +46,22 @@ vs = inputdata['vs']
 rho = inputdata['rho']
 z, x = inputdata['z'], inputdata['x']
 
-
 # Reflection data and subsurface fields
-R = inputdata['R']
+R = inputdata['R'][:, :, :-100]
 R = np.swapaxes(R, 0, 1)
 
-Gsub = inputdata['Gsub']
-G0sub = inputdata['G0sub']
+Gsub = inputdata['Gsub'][:-100]
+G0sub = inputdata['G0sub'][:-100]
 wav = inputdata['wav']
 wav_c = np.argmax(wav)
 
-t = inputdata['t']
+t = inputdata['t'][:-100]
 ot, dt, nt = t[0], t[1]-t[0], len(t)
 
 Gsub = np.apply_along_axis(convolve, 0, Gsub, wav, mode='full')
 Gsub = Gsub[wav_c:][:nt]
 G0sub = np.apply_along_axis(convolve, 0, G0sub, wav, mode='full')
 G0sub = G0sub[wav_c:][:nt]
-
 
 plt.figure(figsize=(10, 5))
 plt.imshow(rho, cmap='gray', extent=(x[0], x[-1], z[-1], z[0]))
@@ -187,4 +185,3 @@ ax3.set_ylim(1.2, 0)
 # to multiple subsurface points. Use
 # :py:func:`pylops.waveeqprocessing.Marchenko.apply_multiplepoints` instead of
 # :py:func:`pylops.waveeqprocessing.Marchenko.apply_onepoint`.
-

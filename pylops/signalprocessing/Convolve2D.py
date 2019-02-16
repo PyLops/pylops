@@ -31,8 +31,8 @@ class Convolve2D(LinearOperator):
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly
-        (True) or not (False)
+        Operator contains a matrix that can be solved
+        explicitly (``True``) or not (``False``)
 
     Notes
     -----

@@ -1,6 +1,6 @@
 r"""
-3. Solvers
-==========
+03. Solvers
+===========
 This tutorial will guide you through the :py:mod:`pylops.optimization`
 module and show how to use various solvers that are included in the
 PyLops library.

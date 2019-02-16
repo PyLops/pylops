@@ -1,6 +1,6 @@
 r"""
-5. 2D Interpolation
-===================
+05. 2D Interpolation
+====================
 In the mathematical field of numerical analysis, interpolation is the problem of constructing new data
 points within the range of a discrete set of known data points. In signal and image processing,
 the data may be recorded at irregular locations and it is often required to *regularize* the data
@@ -81,7 +81,8 @@ im_rec_lap_cg = xcg_reg_lop.reshape((Nz, Nx))
 im_rec_lap_lsqr = xlsqr_reg_lop.reshape((Nz, Nx))
 
 ###############################################################################
-# Finally we visualize the original image, the reconstructed images and their error
+# Finally we visualize the original image, the reconstructed images and
+# their error
 
 fig, axs = plt.subplots(1, 4, figsize=(12, 4))
 fig.suptitle('Data reconstruction - normal eqs', fontsize=14,

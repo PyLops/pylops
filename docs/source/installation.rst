@@ -8,21 +8,21 @@ any environment and has a very limited number of dependencies. However,
 since *Python2* will retire soon, we have decided to only focus on a
 *Python3* implementation. If you are still using *Python2*, hurry up!
 
-For this reason you will need **Python 3.6.4 or greater** to get started.
+For this reason you will need **Python 3.5 or greater** to get started.
 
 
 Dependencies
 ------------
 
-Our dependencies are limited to:
+Our mandatory dependencies are limited to:
 
 * `numpy <http://www.numpy.org>`_
 * `scipy <http://www.scipy.org/scipylib/index.html>`_
 
-Nevertheless, we advise using the `Anaconda Python distribution <https://www.anaconda.com/download>`_
+We advise using the `Anaconda Python distribution <https://www.anaconda.com/download>`_
 to ensure that these dependencies are installed via the ``Conda`` package manager. This
 is not just a pure stylistic choice but comes with some *hidden* advantages, such as the linking to
-``Intel MKL`` library (i.e., a highly optimized ``BLAS library`` created by Intel).
+``Intel MKL`` library (i.e., a highly optimized BLAS library created by Intel).
 
 If you simply want to use PyLops for teaching purposes or for small-scale examples, this should not
 really affect you. However, if you are interested in getting better code performance,

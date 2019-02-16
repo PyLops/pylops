@@ -6,8 +6,9 @@ from pylops import LinearOperator
 class Convolve1D(LinearOperator):
     r"""1D convolution operator.
 
-    Apply one-dimensional convolution with a compact filter to model (and data) along a
-    specific direction of a multi-dimensional array depending on the choice of ``dir``.
+    Apply one-dimensional convolution with a compact filter to model (and data)
+    along a specific direction of a multi-dimensional array depending on the
+    choice of ``dir``.
 
     Parameters
     ----------
@@ -31,12 +32,12 @@ class Convolve1D(LinearOperator):
         Operator shape
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved
-        explicitly (True) or not (False)
+        explicitly (``True``) or not (``False``)
 
     Notes
     -----
-    The Convolve1D operator applies convolution between the input signal :math:`x(t)`
-    and a compact filter kernel :math:`h(t)` in forward model:
+    The Convolve1D operator applies convolution between the input signal
+    :math:`x(t)` and a compact filter kernel :math:`h(t)` in forward model:
 
     .. math::
         y(t) = \int_{-\inf}^{\inf} h(t-\tau) x(\tau) d\tau
@@ -51,11 +52,11 @@ class Convolve1D(LinearOperator):
     .. math::
         Y(f) = \mathscr{F} (h(t)) * \mathscr{F} (x(t))
 
-    Convolve1D operator uses :py:func:`scipy.signal.convolve` that automatically chooses
-    the best domain for the operation to be carried out.
+    Convolve1D operator uses :py:func:`scipy.signal.convolve` that
+    automatically chooses the best domain for the operation to be carried out.
 
-    As the adjoint of convolution is correlation, Convolve1D operator applies correlation
-    in the adjoint mode.
+    As the adjoint of convolution is correlation, Convolve1D operator applies
+    correlation in the adjoint mode.
 
     In time domain:
 
