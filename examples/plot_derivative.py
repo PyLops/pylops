@@ -66,7 +66,7 @@ axs[0].legend()
 axs[1].stem(np.arange(nx), xadj_dir, linefmt='k',
             markerfmt='ko', label='direct')
 axs[1].stem(np.arange(nx), xadj_lop, linefmt='--r',
-            markerfmt='ro',label='lop')
+            markerfmt='ro', label='lop')
 axs[1].set_title('Adjoint', size=20, fontweight='bold')
 axs[1].legend()
 plt.tight_layout()
@@ -102,7 +102,7 @@ plt.subplots_adjust(top=0.8)
 #############################################
 # We can now do the same for the second derivative
 
-A = np.zeros((nx, ny ))
+A = np.zeros((nx, ny))
 A[nx//2, ny//2] = 1.
 
 D2op = pylops.SecondDerivative(nx * ny, dims=(nx, ny), dir=0, dtype='float64')

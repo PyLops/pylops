@@ -7,7 +7,7 @@ from scipy.sparse.linalg import lsqr
 
 from pylops.utils import dottest
 from pylops.basicoperators import Regression, LinearRegression, MatrixMult, \
-    Diagonal, Identity, Zero, Flip, Symmetrize
+    Identity, Zero, Flip, Symmetrize
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0,
         'dtype':'float32'}  # square real
@@ -147,24 +147,6 @@ def test_Zero(par):
 
     assert_array_almost_equal(y, np.zeros(par['ny']))
     assert_array_almost_equal(x1, np.zeros(par['nx']))
-
-
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
-def test_Diagonal(par):
-    """Dot-test and inversion for Diagonal operator
-    """
-    np.random.seed(10)
-    d = np.arange(par['nx']) + 1. +\
-        par['imag'] * (np.arange(par['nx']) + 1.)
-
-    Dop = Diagonal(d, dtype=par['dtype'])
-    assert dottest(Dop, par['nx'], par['nx'],
-                   complexflag=0 if par['imag'] == 0 else 3)
-
-    x = np.ones(par['nx']) + par['imag']*np.ones(par['nx'])
-    xlsqr = lsqr(Dop, Dop * x, damp=1e-20, iter_lim=300, show=0)[0]
-
-    assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])

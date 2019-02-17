@@ -264,7 +264,6 @@ subax.plot(t, xreg, '--r', lw=3)
 subax.plot(t, xprec, '--g', lw=3)
 subax.set_xlim(0.05, 0.3)
 
-plt.show()
 
 ###############################################################################
 # Much better estimates! We have seen here how regularization and/or

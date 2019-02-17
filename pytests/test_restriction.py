@@ -14,6 +14,7 @@ par2 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 1j,
 # subsampling factor
 perc_subsampling = 0.4
 
+
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_Restriction_1dsignal(par):
     """Dot-test, forward and adjoint for Restriction operator for 1d signal

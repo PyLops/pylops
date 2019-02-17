@@ -63,14 +63,44 @@ fig.colorbar(im, ax=ax, ticks=[0, N], pad=0.3, shrink=0.7)
 
 ###############################################################################
 # Similarly we can consider the input model as composed of two or more
-# dimensions. In this case the diagonal operator is applied to every dimension.
+# dimensions. In this case the diagonal operator can be still applied to
+# each element or broadcasted along a specific direction. Let's start with the
+# simplest case where each element is multipled by a different value
 nx, ny = 3, 5
 x = np.ones((nx, ny))
+print('x =\n%s' % x)
+
 d = np.arange(nx*ny).reshape(nx, ny)
 Dop = pylops.Diagonal(d)
 
 y = Dop*x.flatten()
 y1 = Dop.H*x.flatten()
 
-print('y = D*x = %s' % y.reshape(nx, ny))
-print('xadj = D\'*x = %s ' % y1.reshape(nx, ny))
+print('y = D*x =\n%s' % y.reshape(nx, ny))
+print('xadj = D\'*x =\n%s ' % y1.reshape(nx, ny))
+
+###############################################################################
+# And we now broadcast
+nx, ny = 3, 5
+x = np.ones((nx, ny))
+print('x =\n%s' % x)
+
+# 1st dim
+d = np.arange(nx)
+Dop = pylops.Diagonal(d, dims=(nx, ny), dir=0)
+
+y = Dop*x.flatten()
+y1 = Dop.H*x.flatten()
+
+print('1st dim: y = D*x =\n%s' % y.reshape(nx, ny))
+print('1st dim: xadj = D\'*x =\n%s ' % y1.reshape(nx, ny))
+
+# 2nd dim
+d = np.arange(ny)
+Dop = pylops.Diagonal(d, dims=(nx, ny), dir=1)
+
+y = Dop*x.flatten()
+y1 = Dop.H*x.flatten()
+
+print('2nd dim: y = D*x =\n%s' % y.reshape(nx, ny))
+print('2nd dim: xadj = D\'*x =\n%s ' % y1.reshape(nx, ny))

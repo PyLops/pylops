@@ -79,6 +79,7 @@ Signal processing
     FFT2D
     Convolve1D
     Convolve2D
+    Interp
 
 
 Wave-Equation processing

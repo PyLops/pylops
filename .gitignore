@@ -40,3 +40,8 @@ COVERAGE
 .coverage
 coverage.xml
 htmlcov/
+
+# Airspeed velocity benchmarks
+.asv/
+asv.conf.json
+benchmarks/
