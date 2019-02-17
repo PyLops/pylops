@@ -7,7 +7,7 @@ from scipy.sparse.linalg import lsqr
 
 from pylops.utils import dottest
 from pylops.basicoperators import Regression, LinearRegression, MatrixMult, \
-    Diagonal, Identity, Zero, Restriction, Flip, Symmetrize
+    Identity, Zero, Flip, Symmetrize
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0,
         'dtype':'float32'}  # square real
@@ -20,11 +20,13 @@ par2j = {'ny': 21, 'nx': 11, 'imag': 1j,
 par3 = {'ny': 11, 'nx': 21, 'imag': 0,
         'dtype':'float32'}  # underdetermined real
 
+np.random.seed(10)
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_Regression(par):
     """Dot-test, inversion and apply for Regression operator
     """
+    np.random.seed(10)
     order = 4
     t = np.arange(par['ny'], dtype=np.float32)
     LRop = Regression(t, order=order, dtype=par['dtype'])
@@ -43,6 +45,7 @@ def test_Regression(par):
 def test_LinearRegression(par):
     """Dot-test and inversion for LinearRegression operator
     """
+    np.random.seed(10)
     t = np.arange(par['ny'], dtype=np.float32)
     LRop = LinearRegression(t, dtype=par['dtype'])
     assert dottest(LRop, par['ny'], 2)
@@ -115,6 +118,7 @@ def test_MatrixMult_repeated(par):
 def test_Identity(par):
     """Dot-test, forward and adjoint for Identity operator
     """
+    np.random.seed(10)
     Iop = Identity(par['ny'], par['nx'], dtype=par['dtype'])
     assert dottest(Iop, par['ny'], par['nx'],
                    complexflag=0 if par['imag'] == 0 else 3)
@@ -133,6 +137,7 @@ def test_Identity(par):
 def test_Zero(par):
     """Dot-test, forward and adjoint for Zero operator
     """
+    np.random.seed(10)
     Zop = Zero(par['ny'], par['nx'], dtype=par['dtype'])
     assert dottest(Zop, par['ny'], par['nx'])
 
@@ -145,49 +150,10 @@ def test_Zero(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
-def test_Diagonal(par):
-    """Dot-test and inversion for Diagonal operator
-    """
-    d = np.arange(par['nx']) + 1. +\
-        par['imag'] * (np.arange(par['nx']) + 1.)
-
-    Dop = Diagonal(d, dtype=par['dtype'])
-    assert dottest(Dop, par['nx'], par['nx'],
-                   complexflag=0 if par['imag'] == 0 else 3)
-
-    x = np.ones(par['nx']) + par['imag']*np.ones(par['nx'])
-    xlsqr = lsqr(Dop, Dop * x, damp=1e-20, iter_lim=300, show=0)[0]
-
-    assert_array_almost_equal(x, xlsqr, decimal=4)
-
-
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
-def test_Restriction(par):
-    """Dot-test, forward and adjoint for Restriction operator
-    """
-    # subsampling locations
-    np.random.seed(10)
-    perc_subsampling = 0.4
-    Nsub = int(np.round(par['nx'] * perc_subsampling))
-    iava = np.sort(np.random.permutation(np.arange(par['nx']))[:Nsub])
-
-    Rop = Restriction(par['nx'], iava, dtype=par['dtype'])
-    assert dottest(Rop, Nsub, par['nx'],
-                   complexflag=0 if par['imag'] == 0 else 3)
-
-    x = np.ones(par['nx']) + par['imag'] * np.ones(par['nx'])
-    y = Rop * x
-    x1 = Rop.H * y
-    y1 = Rop.mask(x)
-
-    assert_array_almost_equal(y, y1[iava])
-    assert_array_almost_equal(x[iava], x1[iava])
-
-
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_Flip1D(par):
     """Dot-test, forward and adjoint for Flip operator on 1d signal
     """
+    np.random.seed(10)
     x = np.arange(par['ny']) + par['imag'] * np.arange(par['ny'])
 
     Fop = Flip(par['ny'], dtype=par['dtype'])
@@ -202,6 +168,7 @@ def test_Flip1D(par):
 def test_Flip2D(par):
     """Dot-test, forward and adjoint for Flip operator on 2d signal
     """
+    np.random.seed(10)
     x = {}
     x['0'] = np.outer(np.arange(par['ny']), np.ones(par['nx'])) + \
              par['imag'] * np.outer(np.arange(par['ny']), np.ones(par['nx']))
@@ -223,6 +190,7 @@ def test_Flip2D(par):
 def test_Flip3D(par):
     """Dot-test, forward and adjoint for Flip operator on 3d signal
     """
+    np.random.seed(10)
     x = {}
     x['0'] = np.outer(np.arange(par['ny']),
                       np.ones(par['nx']))[:, :, np.newaxis] * \
@@ -261,10 +229,11 @@ def test_Flip3D(par):
 def test_Symmetrize1D(par):
     """Dot-test, forward and inverse for Symmetrize operator on 1d signal
     """
+    np.random.seed(10)
     x = np.arange(par['ny']) + par['imag'] * np.arange(par['ny'])
 
     Sop = Symmetrize(par['ny'], dtype=par['dtype'])
-    dottest(Sop, par['ny']*2-1, par['ny'])
+    dottest(Sop, par['ny']*2-1, par['ny'], verb=True)
 
     y = Sop * x
     xinv = Sop / y
@@ -275,6 +244,7 @@ def test_Symmetrize1D(par):
 def test_Symmetrize2D(par):
     """Dot-test, forward and inverse for Symmetrize operator on 2d signal
     """
+    np.random.seed(10)
     x = {}
     x['0'] = np.outer(np.arange(par['ny']), np.ones(par['nx'])) + \
              par['imag'] * np.outer(np.arange(par['ny']), np.ones(par['nx']))
@@ -296,6 +266,7 @@ def test_Symmetrize2D(par):
 def test_Symmetrize3D(par):
     """Dot-test, forward and adjoint for Symmetrize operator on 3d signal
     """
+    np.random.seed(10)
     x = {}
     x['0'] = np.outer(np.arange(par['ny']),
                       np.ones(par['nx']))[:, :, np.newaxis] * \

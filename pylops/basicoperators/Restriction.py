@@ -13,10 +13,15 @@ class Restriction(LinearOperator):
 
     Parameters
     ----------
-    N : :obj:`int`
+    M : :obj:`int`
         Number of samples in model.
     iava : :obj:`list` or :obj:`numpy.ndarray`
-        Indeces of available samples for data selection.
+        Integer indices of available samples for data selection.
+    dims : :obj:`list`
+        Number of samples for each dimension
+        (``None`` if only one dimension is available)
+    dir : :obj:`int`, optional
+        Direction along which restriction is applied.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -28,6 +33,10 @@ class Restriction(LinearOperator):
         Operator contains a matrix that can be solved
         explicitly (``True``) or not (``False``)
 
+    See Also
+    --------
+    LinearInterpolation : Linear interpolation operator-
+
     Notes
     -----
     Extraction (or *sampling*) of a subset of :math:`N` values at locations
@@ -38,12 +47,12 @@ class Restriction(LinearOperator):
 
         y_i = x_{l_i}  \quad \forall i=1,2,...,M
 
-    where :math:`\mathbf{L}=[l_1, l_2, l_M]` is a vector containing the indeces
+    where :math:`\mathbf{l}=[l_1, l_2,..., l_M]` is a vector containing the indeces
     of the original array at which samples are taken.
 
     Conversely, in adjoint mode the available values in the data vector
     :math:`\mathbf{y}` are placed at locations
-    :math:`\mathbf{L}=[l_1, l_2, l_M]` in the model vector:
+    :math:`\mathbf{l}=[l_1, l_2,..., l_M]` in the model vector:
 
     .. math::
 
@@ -53,19 +62,46 @@ class Restriction(LinearOperator):
     vector).
 
     """
-    def __init__(self, M, iava, dtype='float64'):
+    def __init__(self, M, iava, dims=None, dir=0, dtype='float64'):
         self.M = M
+        self.dir = dir
         self.iava = iava
-        self.shape = (len(iava), M)
+        if dims is None:
+            self.N = len(iava)
+            self.dims = (self.M, )
+            self.reshape = False
+        else:
+            if np.prod(dims) != self.M:
+                raise ValueError('product of dims must equal M!')
+            else:
+                self.dims = dims # model dimensions
+                self.dimsd = list(dims) # data dimensions
+                self.dimsd[self.dir] = len(iava)
+                self.iavareshape = [1] * self.dir + [len(self.iava)] + \
+                                   [1] * (len(self.dims) - self.dir - 1)
+                self.N = np.prod(self.dimsd)
+                self.reshape = True
+        self.shape = (self.N, self.M)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
-        return x[self.iava]
+        if not self.reshape:
+            y = x[self.iava]
+        else:
+            x = np.reshape(x, self.dims)
+            y = np.take(x, self.iava, axis=self.dir)
+        return y
 
     def _rmatvec(self, x):
-        y = np.zeros(self.M, dtype=self.dtype)
-        y[self.iava] = x
+        if not self.reshape:
+            y = np.zeros(self.dims, dtype=self.dtype)
+            y[self.iava] = x
+        else:
+            x = np.reshape(x, self.dimsd)
+            y = np.zeros(self.dims, dtype=self.dtype)
+            np.put_along_axis(y, np.reshape(self.iava, self.iavareshape),
+                              x, axis=self.dir)
         return y
 
     def mask(self, x):
@@ -75,7 +111,7 @@ class Restriction(LinearOperator):
         Parameters
         ----------
         x : :obj:`numpy.ndarray`
-            Input array.
+            Input array (can be either flattened or not)
 
         Returns
         ----------
@@ -83,8 +119,14 @@ class Restriction(LinearOperator):
             Masked array.
 
         """
-        y = np_ma.array(np.zeros(self.M), mask=np.ones(self.M),
+        y = np_ma.array(np.zeros(self.dims), mask=np.ones(self.dims),
                         dtype=self.dtype)
+        if self.reshape:
+            x = np.reshape(x, self.dims)
+            x = np.swapaxes(x, self.dir, 0)
+            y = np.swapaxes(y, self.dir, 0)
         y.mask[self.iava] = False
         y[self.iava] = x[self.iava]
+        if self.reshape:
+            y = np.swapaxes(y, 0, self.dir)
         return y

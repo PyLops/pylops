@@ -1,6 +1,6 @@
 r"""
-3. Solvers
-==========
+03. Solvers
+===========
 This tutorial will guide you through the :py:mod:`pylops.optimization`
 module and show how to use various solvers that are included in the
 PyLops library.
@@ -264,7 +264,6 @@ subax.plot(t, xreg, '--r', lw=3)
 subax.plot(t, xprec, '--g', lw=3)
 subax.set_xlim(0.05, 0.3)
 
-plt.show()
 
 ###############################################################################
 # Much better estimates! We have seen here how regularization and/or

@@ -1,6 +1,6 @@
 """
-1. The LinearOpeator
-====================
+01. The LinearOpeator
+=====================
 This first tutorials is aimed at easing the use of the PyLops
 library for both new users and developers.
 

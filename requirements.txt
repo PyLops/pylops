@@ -1,2 +1,2 @@
-numpy
+numpy>=1.15.0
 scipy
