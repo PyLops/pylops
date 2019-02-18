@@ -106,7 +106,7 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
 
     See Also
     --------
-    Restriction : Restriction operator
+    pylops.Restriction : Restriction operator
 
     Notes
     -----

@@ -35,7 +35,7 @@ class Restriction(LinearOperator):
 
     See Also
     --------
-    LinearInterpolation : Linear interpolation operator-
+    pylops.signalprocessing.Interp : Interpolation operator
 
     Notes
     -----
