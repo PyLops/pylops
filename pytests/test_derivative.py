@@ -111,6 +111,7 @@ def test_SecondDerivative(par):
     D2op = SecondDerivative(par['nx'], sampling=par['dx'], dtype='float32')
     assert dottest(D2op, par['nx'], par['nx'], tol=1e-3)
 
+    # polynomial f(x) = x^3, f''(x) = 6x
     f = x**3
     dfana = 6*x
     df = D2op*f
@@ -123,6 +124,7 @@ def test_SecondDerivative(par):
 
     assert dottest(D2op, par['ny']*par['nx'], par['ny']*par['nx'], tol=1e-3)
 
+    # polynomial f(x,y) = y^3, f_{yy}(x,y) = 6y
     f = yy**3
     dfana = 6*yy
     df = D2op * f.flatten()
@@ -137,6 +139,7 @@ def test_SecondDerivative(par):
     assert dottest(D2op, par['ny']*par['nx'],
                    par['ny'] * par['nx'], tol=1e-3)
 
+    # polynomial f(x,y) = x^3, f_{xx}(x,y) = 6x
     f = xx**3
     dfana = 6*xx
     df = D2op * f.flatten()
@@ -152,6 +155,7 @@ def test_SecondDerivative(par):
     assert dottest(D2op, par['nz'] * par['ny'] * par['nx'],
                    par['nz'] * par['ny'] * par['nx'], tol=1e-3)
 
+    # polynomial f(x,y,z) = y^3, f_{yy}(x,y,z) = 6y
     f = yyy**3
     dfana = 6*yyy
     df = D2op * f.flatten()
@@ -167,6 +171,7 @@ def test_SecondDerivative(par):
     assert dottest(D2op, par['nz'] * par['ny'] * par['nx'],
                    par['nz'] * par['ny'] * par['nx'], tol=1e-3)
 
+    # polynomial f(x,y,z) = x^3, f_{xx}(x,y,z) = 6x
     f = xxx**3
     dfana = 6*xxx
     df = D2op * f.flatten()
@@ -182,6 +187,7 @@ def test_SecondDerivative(par):
     assert dottest(D2op, par['nz'] * par['ny'] * par['nx'],
                    par['ny'] * par['nx'] * par['nz'], tol=1e-3)
 
+    # polynomial f(x,y,z) = z^3, f_{zz}(x,y,z) = 6z
     f = zzz**3
     dfana = 6*zzz
     df = D2op * f.flatten()
