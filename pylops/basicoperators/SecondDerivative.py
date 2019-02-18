@@ -38,7 +38,7 @@ class SecondDerivative(LinearOperator):
     first derivative is:
 
     .. math::
-        y[i] = (x[i+1] - 2x[i] + x[i-1]) / dx
+        y[i] = (x[i+1] - 2x[i] + x[i-1]) / dx^2
 
     """
     def __init__(self, N, dims=None, dir=0, sampling=1, dtype='float64'):
@@ -61,7 +61,7 @@ class SecondDerivative(LinearOperator):
     def _matvec(self, x):
         if not self.reshape:
             y = np.zeros(self.N)
-            y[1:-1] = (x[2:]-2*x[1:-1]+x[0:-2])/self.sampling
+            y[1:-1] = (x[2:]-2*x[1:-1]+x[0:-2])/self.sampling**2
             # dealing with edges
             # y[0] = (x[1]-2*x[0])/self.sampling
             # y[-1] = (x[-2]-2*x[-1])/self.sampling
@@ -71,7 +71,7 @@ class SecondDerivative(LinearOperator):
             if self.dir > 0:  # need to bring the dim. to derive to first dim.
                 x = np.swapaxes(x, self.dir, 0)
                 y = np.swapaxes(y, self.dir, 0)
-            y[1:-1] = (x[2:]-2*x[1:-1]+x[0:-2])/self.sampling
+            y[1:-1] = (x[2:]-2*x[1:-1]+x[0:-2])/self.sampling**2
             # dealing with edges
             # y[0] = (x[1]-2*x[0])/self.sampling
             # y[-1] = (x[-2]-2*x[-1])/self.sampling
@@ -83,9 +83,9 @@ class SecondDerivative(LinearOperator):
     def _rmatvec(self, x):
         if not self.reshape:
             y = np.zeros(self.N)
-            y[0:-2] += (x[1:-1])/self.sampling
-            y[1:-1] -= (2*x[1:-1])/self.sampling
-            y[2:] += (x[1:-1])/self.sampling
+            y[0:-2] += (x[1:-1])/self.sampling**2
+            y[1:-1] -= (2*x[1:-1])/self.sampling**2
+            y[2:] += (x[1:-1])/self.sampling**2
             # dealing with edges
             # y[0] = y[0]  - (2*x[0])/self.sampling
             # y[1] = y[1]  + (x[0])/self.sampling
@@ -97,9 +97,9 @@ class SecondDerivative(LinearOperator):
             if self.dir > 0:  # need to bring the dim. to derive to first dim.
                 x = np.swapaxes(x, self.dir, 0)
                 y = np.swapaxes(y, self.dir, 0)
-            y[0:-2] += (x[1:-1])/self.sampling
-            y[1:-1] -= (2*x[1:-1])/self.sampling
-            y[2:] += (x[1:-1])/self.sampling
+            y[0:-2] += (x[1:-1])/self.sampling**2
+            y[1:-1] -= (2*x[1:-1])/self.sampling**2
+            y[2:] += (x[1:-1])/self.sampling**2
             # dealing with edges
             # y[0] = y[0]  - (2*x[0])/self.sampling
             # y[1] = y[1]  + (x[0])/self.sampling

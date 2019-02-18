@@ -33,7 +33,7 @@ def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1),
     The Laplacian operator applies a second derivative along two directions of
     a multi-dimensional array.
 
-    For simplicity, given a two dimensional array, the laplacin is:
+    For simplicity, given a two dimensional array, the Laplacian is:
 
     .. math::
         y[i, j] = (x[i+1, j] + x[i-1, j] + x[i, j-1] +x[i, j+1] - 4x[i, j])

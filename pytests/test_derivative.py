@@ -95,84 +95,105 @@ def test_FirstDerivative(par):
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SecondDerivative(par):
-    """Dot-test and forward for  SecondDerivative operator
+    """Dot-test and forward for SecondDerivative operator
+        The test is based on the fact that the central stencil is exact for polynomials of
+        degree 3.
     """
+
+    x = par['dx']*np.arange(par['nx'])
+    y = par['dy']*np.arange(par['ny'])
+    z = par['dz']*np.arange(par['nz'])
+
+    xx,yy = np.meshgrid(x,y) # produces arrays of size (ny,nx)
+    xxx,yyy,zzz = np.meshgrid(x,y,z) # produces arrays of size (ny,nx,nz)
+
     # 1d
     D2op = SecondDerivative(par['nx'], sampling=par['dx'], dtype='float32')
     assert dottest(D2op, par['nx'], par['nx'], tol=1e-3)
 
-    x = (par['dx']*np.arange(par['nx']))**3
-    yana = 6*par['dx']**2*np.arange(par['nx'])
-    y = D2op*x
-    assert_array_almost_equal(y[2:-2], yana[2:-2], decimal=1)
+    # polynomial f(x) = x^3, f''(x) = 6x
+    f = x**3
+    dfana = 6*x
+    df = D2op*f
+    assert_array_almost_equal(df[1:-1], dfana[1:-1], decimal=1)
 
     # 2d - derivative on 1st direction
     D2op = SecondDerivative(par['ny']*par['nx'],
                             dims=(par['ny'], par['nx']),
                             dir=0, sampling=par['dy'], dtype='float32')
+
     assert dottest(D2op, par['ny']*par['nx'], par['ny']*par['nx'], tol=1e-3)
 
-    x = np.outer((par['dy']*np.arange(par['ny']))**3, np.ones(par['nx']))
-    yana = np.outer(6*par['dy']**2*np.arange(par['ny']), np.ones(par['nx']))
-    y = D2op*x.flatten()
-    y = y.reshape(par['ny'], par['nx'])
-    assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
+    # polynomial f(x,y) = y^3, f_{yy}(x,y) = 6y
+    f = yy**3
+    dfana = 6*yy
+    df = D2op * f.flatten()
+    df = df.reshape(par['ny'], par['nx'])
+    assert_array_almost_equal(df[1:-1,:], dfana[1:-1,:], decimal=1)
 
     # 2d - derivative on 2nd direction
     D2op = SecondDerivative(par['ny']*par['nx'],
                             dims=(par['ny'], par['nx']),
                             dir=1, sampling=par['dx'], dtype='float32')
+
     assert dottest(D2op, par['ny']*par['nx'],
                    par['ny'] * par['nx'], tol=1e-3)
 
-    x = np.outer((par['dy']*np.arange(par['ny']))**3, np.ones(par['nx']))
-    yana = np.zeros((par['ny'], par['nx']))
-    y = D2op * x.flatten()
-    y = y.reshape(par['ny'], par['nx'])
-    assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
+    # polynomial f(x,y) = x^3, f_{xx}(x,y) = 6x
+    f = xx**3
+    dfana = 6*xx
+    df = D2op * f.flatten()
+    df = df.reshape(par['ny'], par['nx'])
+    assert_array_almost_equal(df[:,1:-1], dfana[:,1:-1], decimal=1)
+
 
     # 3d - derivative on 1st direction
     D2op = SecondDerivative(par['nz'] * par['ny'] * par['nx'],
-                            dims=(par['nz'], par['ny'], par['nx']),
-                            dir=0, sampling=par['dz'], dtype='float32')
+                            dims=(par['ny'], par['nx'], par['nz']),
+                            dir=0, sampling=par['dy'], dtype='float32')
+
     assert dottest(D2op, par['nz'] * par['ny'] * par['nx'],
                    par['nz'] * par['ny'] * par['nx'], tol=1e-3)
 
-    x = np.outer((par['dz']*np.arange(par['nz']))**3,
-                 np.ones((par['ny'], par['nx']))).reshape(par['nz'], par['ny'], par['nx'])
-    yana = np.outer(6*par['dz']**2*np.arange(par['nz']),
-                    np.ones((par['ny'], par['nx']))).reshape(par['nz'], par['ny'], par['nx'])
-    y = D2op * x.flatten()
-    y = y.reshape(par['nz'], par['ny'], par['nx'])
-    assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
+    # polynomial f(x,y,z) = y^3, f_{yy}(x,y,z) = 6y
+    f = yyy**3
+    dfana = 6*yyy
+    df = D2op * f.flatten()
+    df = df.reshape(par['ny'], par['nx'], par['nz'])
+
+    assert_array_almost_equal(df[1:-1,:,:], dfana[1:-1,:,:], decimal=1)
 
     # 3d - derivative on 2nd direction
     D2op = SecondDerivative(par['nz'] * par['ny'] * par['nx'],
-                            dims=(par['nz'], par['ny'], par['nx']),
-                            dir=1, sampling=par['dy'], dtype='float32')
+                        dims=(par['ny'], par['nx'], par['nz']),
+                        dir=1, sampling=par['dx'], dtype='float32')
+
     assert dottest(D2op, par['nz'] * par['ny'] * par['nx'],
                    par['nz'] * par['ny'] * par['nx'], tol=1e-3)
 
-    x = np.outer((par['dz']*np.arange(par['nz']))**3,
-                 np.ones((par['ny'], par['nx']))).reshape(par['nz'], par['ny'], par['nx'])
-    yana = np.zeros((par['nz'], par['ny'], par['nx']))
-    y = D2op * x.flatten()
-    y = y.reshape(par['nz'], par['ny'], par['nx'])
-    assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
+    # polynomial f(x,y,z) = x^3, f_{xx}(x,y,z) = 6x
+    f = xxx**3
+    dfana = 6*xxx
+    df = D2op * f.flatten()
+    df = df.reshape(par['ny'], par['nx'], par['nz'])
+
+    assert_array_almost_equal(df[:,1:-1,:], dfana[:,1:-1,:], decimal=1)
 
     # 3d - derivative on 3rd direction
     D2op = SecondDerivative(par['nz'] * par['ny'] * par['nx'],
-                            dims=(par['nz'], par['ny'], par['nx']),
-                            dir=2, sampling=par['dx'], dtype='float32')
-    assert dottest(D2op, par['nz'] * par['ny'] * par['nx'],
-                   par['nz'] * par['ny'] * par['nx'], tol=1e-3)
+                        dims=(par['ny'], par['nx'], par['nz']),
+                        dir=2, sampling=par['dz'], dtype='float32')
 
-    x = np.outer((par['dz']*np.arange(par['nz']))**3,
-                 np.ones((par['ny'], par['nx']))).reshape(par['nz'], par['ny'], par['nx'])
-    yana = np.zeros((par['nz'], par['ny'], par['nx']))
-    y = D2op * x.flatten()
-    y = y.reshape(par['nz'], par['ny'], par['nx'])
-    assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
+    assert dottest(D2op, par['nz'] * par['ny'] * par['nx'],
+                   par['ny'] * par['nx'] * par['nz'], tol=1e-3)
+
+    # polynomial f(x,y,z) = z^3, f_{zz}(x,y,z) = 6z
+    f = zzz**3
+    dfana = 6*zzz
+    df = D2op * f.flatten()
+    df = df.reshape(par['ny'], par['nx'], par['nz'])
+
+    assert_array_almost_equal(df[:,:,1:-1], dfana[:,:,1:-1], decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
