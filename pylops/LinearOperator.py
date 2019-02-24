@@ -47,7 +47,7 @@ class LinearOperator(spLinearOperator):
         if callable(self.Op._rmatvec):
             return self.Op._rmatvec(x)
 
-    def div(self, y):
+    def div(self, y, niter=100):
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
 
         Overloading of operator ``/`` to improve expressivity of `Pylops`
@@ -57,6 +57,8 @@ class LinearOperator(spLinearOperator):
         ----------
         y : :obj:`np.ndarray`
             Data
+        niter : :obj:`int`, optional
+            Number of iterations (to be used only when ``explicit=False``)
 
         Returns
         -------
@@ -64,10 +66,10 @@ class LinearOperator(spLinearOperator):
             Estimated model
 
         """
-        xest = self.__truediv__(y)
+        xest = self.__truediv__(y, niter=niter)
         return xest
 
-    def __truediv__(self, y):
+    def __truediv__(self, y, niter=100):
         if self.explicit is True:
             if isinstance(self.A, np.ndarray):
                 if self.A.shape[0] == self.A.shape[1]:
@@ -77,7 +79,7 @@ class LinearOperator(spLinearOperator):
             else:
                 xest = spsolve(self.A, y)
         else:
-            xest = lsqr(self, y)[0]
+            xest = lsqr(self, y, iter_lim=niter)[0]
         return xest
 
     def eigs(self, neigs=None, symmetric=False, **kwargs_eig):

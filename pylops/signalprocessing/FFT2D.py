@@ -5,12 +5,13 @@ from pylops import LinearOperator
 class FFT2D(LinearOperator):
     r"""Two dimensional Fast-Fourier Transform.
 
-    Apply Fast-Fourier Transform (FFT) to any pairs of a multi-dimensional
-    array depending on the choice of ``dirs``. Note that the FFT operator
-    is a simple overload to the numpy :py:func:`numpy.fft.fft2` in forward
-    mode and to the numpy :py:func:`numpy.fft.ifft2` in adjoint mode,
-    however scaling is taken into account differently to guarantee that the
-    operator is passing the dot-test.
+    Apply two dimensional Fast-Fourier Transform (FFT) to any pair of axes of a
+    multi-dimensional array depending on the choice of ``dirs``.
+    Note that the FFT2D operator is a simple overload to the numpy
+    :py:func:`numpy.fft.fft2` in forward mode and to the numpy
+    :py:func:`numpy.fft.ifft2` in adjoint mode, however scaling is taken
+    into account differently to guarantee that the operator is passing the
+    dot-test.
 
     Parameters
     ----------

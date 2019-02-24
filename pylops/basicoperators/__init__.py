@@ -8,6 +8,7 @@ from .Identity import Identity
 from .Restriction import Restriction
 from .Flip import Flip
 from .Symmetrize import Symmetrize
+from .Spread import Spread
 
 from .Smoothing1D import Smoothing1D
 from .Smoothing2D import Smoothing2D

@@ -171,6 +171,11 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     regularized global inversion using the outcome of the previous
     inversion as initial guess.
     """
+    # check if background model and data have same shape
+    if m0 is not None and data.shape != m0.shape:
+        print(m0.shape, data.shape)
+        raise ValueError('data and m0 must have same shape')
+
     # find out dimensions
     if data.ndim == 1:
         dims = 1
@@ -188,10 +193,6 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
         nspat = (nx, ny)
         nspatprod = nx*ny
         data = data.reshape(nt0, nspatprod)
-
-    # check if background model and data have same shape
-    if m0 is not None and data.shape != m0.shape:
-        raise ValueError('data and m0 must have same shape')
 
     # create operator
     PPop = PoststackLinearModelling(wav, nt0=nt0,
