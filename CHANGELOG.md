@@ -1,3 +1,12 @@
+# 1.3.0
+* Added ``fftw`` engine to ``FFT`` operator
+* Added ``ISTA`` and ``FISTA`` sparse solvers
+* Added possibility to broadcast (handle multi-dimensional arrays)
+  to ``Diagonal`` and ``Restriction`` operators
+* Added possibility ``Interp`` operator
+* Added possibility ``Spread`` operator
+* Added possibility ``Radon2D`` operator
+
 # 1.2.0
 * Added ``eigs`` and ``cond`` methods to ``LinearOperator``
   to estimate eigenvalues and conditioning number using scipy wrapping of
