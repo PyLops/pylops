@@ -46,6 +46,7 @@ Basic operators
     Regression
     LinearRegression
     CausalIntegration
+    Spread
     Flip
     Symmetrize
     VStack
@@ -80,6 +81,7 @@ Signal processing
     Convolve1D
     Convolve2D
     Interp
+    Radon2D
 
 
 Wave-Equation processing

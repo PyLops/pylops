@@ -318,7 +318,7 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None,
         Tolerance. Stop iterations if difference between inverted model
         at subsequent iterations is smaller than ``tol``
     returninfo : :obj:`bool`, optional
-        Return info of CG solver
+        Return info of FISTA solver
 
     Returns
     -------

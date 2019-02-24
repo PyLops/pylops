@@ -11,7 +11,7 @@ class SecondDerivative(LinearOperator):
     ----------
     N : :obj:`int`
         Number of samples in model.
-    dims : :obj:`list`
+    dims : :obj:`tuple`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
     dir : :obj:`int`, optional
@@ -46,7 +46,7 @@ class SecondDerivative(LinearOperator):
         self.dir = dir
         self.sampling = sampling
         if dims is None:
-            self.dims = [self.N, 1]
+            self.dims = (self.N, )
             self.reshape = False
         else:
             if np.prod(dims) != self.N:

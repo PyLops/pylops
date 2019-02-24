@@ -7,7 +7,7 @@ from .basicoperators import Zero
 from .basicoperators import Diagonal
 from .basicoperators import Flip
 from .basicoperators import Symmetrize
-
+from .basicoperators import Spread
 from .basicoperators import FunctionOperator
 
 from .basicoperators import VStack

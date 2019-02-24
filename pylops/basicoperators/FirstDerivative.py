@@ -11,7 +11,7 @@ class FirstDerivative(LinearOperator):
     ----------
     N : :obj:`int`
         Number of samples in model.
-    dims : :obj:`list`, optional
+    dims : :obj:`tuple`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
     dir : :obj:`int`, optional

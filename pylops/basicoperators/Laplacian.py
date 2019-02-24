@@ -25,7 +25,7 @@ def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1),
 
     Returns
     -------
-    l2op : LinearOperator
+    l2op : :obj:`pylops.LinearOperator`
         Laplacian linear operator
 
     Notes

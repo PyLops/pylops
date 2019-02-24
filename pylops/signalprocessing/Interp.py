@@ -74,11 +74,6 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
       *linear interpolation* as those values are forced to be just before this
       element.
 
-    Raises
-    ------
-    ValueError
-        If the vector ``iava`` contains repeated values.
-
     Parameters
     ----------
     M : :obj:`int`
@@ -104,9 +99,16 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
          Corrected indices of locations of available samples
          (samples at ``M-1`` or beyond are forced to be at ``M-1-eps``)
 
+    Raises
+    ------
+    ValueError
+        If the vector ``iava`` contains repeated values.
+    NotImplementedError
+        If ``kind`` is not ``nearest`` or ``linear``
+
     See Also
     --------
-    Restriction : Restriction operator
+    pylops.Restriction : Restriction operator
 
     Notes
     -----
@@ -139,5 +141,5 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
     elif kind == 'linear':
         interpop, iava = _linearinterp(M, iava, dims=dims, dir=dir, dtype=dtype)
     else:
-        raise ValueError('kind is not correct...')
+        raise NotImplementedError('kind is not correct...')
     return interpop, iava
