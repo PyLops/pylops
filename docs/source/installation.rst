@@ -32,10 +32,19 @@ read carefully the :ref:`performance` page.
 Optional dependencies
 ---------------------
 
-So far PyLops has no optional dependencies. However we will soon start using libraries to
-improve the performance of some of our operators and add such libraries to the optional dependencies.
-Again, if you are after code performance, take a look at the *Optional dependencies* section in
-the :ref:`performance` page.
+PyLops's optional dependencies refer to those dependencies that we do not include
+in our ``requirements.txt`` and ``environment.yml`` files and thus are not strictly
+needed nor installed directly as part of a standar installation (see below for details)
+
+However, we sometimes implement additional back-ends (referred to as ``engine`` in the code)
+to some of our operators in order too improve their performance.
+To do so, we rely on third-party libraries. Those libraries are generally added to the
+list of our optional dependencies.
+If you are not after code performance, you may simply stick to the mandatory dependencies
+and pylops will ensure to always fallback to one of those for any linear operator.
+
+If you are instead after code performance, take a look at the *Optional dependencies* section
+in the :ref:`performance` page.
 
 
 Step-by-step installation for users

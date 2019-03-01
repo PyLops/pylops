@@ -8,23 +8,23 @@ from pylops.signalprocessing import Radon2D
 from pylops.optimization.sparsity import FISTA
 
 par1 = {'nt': 11, 'nhx': 21, 'ny': 10, 'npx':21, 'pxmax':1e-2,
-        'centeredh': True, 'kind': 'linear',
-        'interp':True, 'onthefly':True} # linear, centered, linear interp
+        'centeredh': True, 'kind': 'linear', 'interp':True,
+        'onthefly':True, 'engine':'numba'} # linear, centered, linear interp
 par2 = {'nt': 11, 'nhx': 21, 'ny': 10, 'npx':21, 'pxmax': 1e-2,
-        'centeredh': False, 'kind': 'linear',
-        'interp':False, 'onthefly':False}  # linear, uncentered, nn interp
+        'centeredh': False, 'kind': 'linear', 'interp':False,
+        'onthefly':False, 'engine':'numba'}  # linear, uncentered, nn interp
 par3 = {'nt': 11, 'nhx': 21, 'ny': 10, 'npx':21, 'pxmax': 8e-3,
-        'centeredh': True, 'kind': 'parabolic',
-        'interp':True, 'onthefly':True}  # parabolic, centered, linear interp
+        'centeredh': True, 'kind': 'parabolic', 'interp':True,
+        'onthefly':True, 'engine':'numpy'}  # parabolic, centered, linear interp
 par4 = {'nt': 11, 'nhx': 21, 'ny': 10, 'npx':21, 'pxmax': 8e-3,
-        'centeredh': False, 'kind': 'parabolic',
-        'interp':False, 'onthefly':False}  # parabolic, uncentered, nn interp
+        'centeredh': False, 'kind': 'parabolic', 'interp':False,
+        'onthefly':False, 'engine':'numba'}  # parabolic, uncentered, nn interp
 par5 = {'nt': 11, 'nhx': 21, 'ny': 10, 'npx':21, 'pxmax': 5e-2,
-        'centeredh': True, 'kind': 'hyperbolic',
-        'interp':True, 'onthefly':True}  # hyperbolic, centered, linear interp
+        'centeredh': True, 'kind': 'hyperbolic', 'interp':True,
+        'onthefly':True, 'engine':'numpy'}  # hyperbolic, centered, linear interp
 par6 = {'nt': 11, 'nhx': 21, 'ny': 10, 'npx':21, 'pxmax': 9e-2,
-        'centeredh': False, 'kind': 'hyperbolic',
-        'interp':False, 'onthefly':False}  # hyperbolic, uncentered, nn interp
+        'centeredh': False, 'kind': 'hyperbolic', 'interp':False,
+        'onthefly':False, 'engine':'numba'}  # hyperbolic, uncentered, nn interp
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3),
@@ -40,6 +40,7 @@ def test_Radon2D(par):
     x[2, par['nt']//2] = 1
     Rop = Radon2D(t, h, px, centeredh=par['centeredh'],
                   interp=par['interp'], kind=par['kind'],
+                  onthefly=par['onthefly'], engine=par['engine'],
                   dtype='float64')
     assert dottest(Rop, par['nhx']*par['nt'], par['npx']*par['nt'],
                        complexflag=0)

@@ -2,6 +2,7 @@ name: pylops
 channels:
   - defaults
   - conda-forge
+  - numba
 dependencies:
   - python>=3.6.4
   - numpy>=1.15.0
@@ -12,6 +13,8 @@ dependencies:
   - pytest
   - Sphinx
   - numpydoc
+  - numba
+  - icc_rt
   - pip:
     - pytest-runner
     - setuptools_scm

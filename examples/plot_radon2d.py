@@ -33,11 +33,14 @@ x[4, nt//2] = 1
 # them to the input model vector. We also apply the adjoint to the resulting
 # data vector.
 RLop = pylops.signalprocessing.Radon2D(t, h, px, centeredh=True,
-                                       kind='linear', interp='nearest')
+                                       kind='linear', interp=False,
+                                       engine='numba')
 RPop = pylops.signalprocessing.Radon2D(t, h, px, centeredh=True,
-                                       kind='parabolic', interp='nearest')
+                                       kind='parabolic', interp=False,
+                                       engine='numpy')
 RHop = pylops.signalprocessing.Radon2D(t, h, px, centeredh=True,
-                                       kind='hyperbolic', interp='nearest')
+                                       kind='hyperbolic', interp=False,
+                                       engine='numpy')
 
 # forward
 yL = RLop * x.flatten()

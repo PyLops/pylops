@@ -82,6 +82,7 @@ Signal processing
     Convolve2D
     Interp
     Radon2D
+    Sliding2D
 
 
 Wave-Equation processing

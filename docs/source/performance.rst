@@ -14,7 +14,7 @@ used by PyLops are efficiently installed (e.g., allow multithreading) in your sy
 Dependencies
 ------------
 
-PyLops heavily relies on the `numpy <http://www.numpy.org>`_ and
+PyLops relies on the `numpy <http://www.numpy.org>`_ and
 `scipy <http://www.scipy.org/scipylib/index.html>`_ libraries and being able to
 link these to the most performant `BLAS <https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms>`_
 will ensure optimal performance of PyLops when using only *required dependencies*.
@@ -105,6 +105,39 @@ other libraries that you may need to have in your system, we have decided to bui
 of PyLops in such a way that if an *optional* dependency is not present in your python environment,
 a safe fallback to one of the required dependencies will be enforced.
 
+numba
+~~~~~
+Although we always stive to write code for forward and adjoint operators that takes advantage of
+the perks of numpy and scipy (e.g., broadcasting, ufunc), in some case we may end up using for loops
+that may lead to poor performance. In those cases we may decide to implement alternative (optional)
+back-ends in `numba <http://numba.pydata.org>`_.
+
+In this case a user can simply switch from the native,
+always available implementation to the numba implementation by simply providing the following
+additional input parameter to the operator ``engine='numba'``. This is for example the case in the
+:py:class:`pylops.signalprocessing.Radon2D`.
+
+If interested to use ``numba`` backend, you will just need to manually install
+``numba`` with either pip:
+
+.. code-block:: bash
+
+   >> pip install numba
+
+or conda:
+
+.. code-block:: bash
+
+   >> conda install numba
+
+Finally, it is also advised to install the additional package
+`icc_rt <http://numba.pydata.org/numba-doc/latest/user/performance-tips.html?highlight=icc_rt>`_.
+
+.. code-block:: bash
+
+   >> conda install -c numba icc_rt
+
+
 fft routines
 ~~~~~~~~~~~~
 
@@ -123,14 +156,18 @@ in the mandatory requirements of PyLops, meaning that when installing PyLops wit
 ``pip``, :py:class:`pyfftw.FFTW` will *not* be installed automatically.
 
 If interested to use ``FFTW`` backend, you will just need to manually install
-:py:class:`pyfftw.FFTW` with either ``pip``:
+``pyfftw`` with either pip:
 
 .. code-block:: bash
 
    >> pip install pyfftw
 
-or ``conda``:
+or conda:
 
 .. code-block:: bash
 
    >> conda install -c conda-forge pyfftw
+
+
+.. note:: All the optional dependencies can also be installed automatically by cloning the repository and installing
+   pylops via ``make dev-install`` or ``make dev-install_conda``.
