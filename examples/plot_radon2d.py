@@ -34,7 +34,7 @@ x[4, nt//2] = 1
 # data vector.
 RLop = pylops.signalprocessing.Radon2D(t, h, px, centeredh=True,
                                        kind='linear', interp=False,
-                                       engine='numba')
+                                       engine='numpy')
 RPop = pylops.signalprocessing.Radon2D(t, h, px, centeredh=True,
                                        kind='parabolic', interp=False,
                                        engine='numpy')

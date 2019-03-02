@@ -44,8 +44,8 @@ def _rmatvec_numba(x, y, dims, dimsd, interp, table, dtable):
             if interp:
                 dindices = dtable[isp, it]
 
-            for i in range(len(indices)):
-                index = int(indices[i])
+            for i, indexfloat in enumerate(indices):
+                index = int(indexfloat)
                 if index != -9223372036854775808: # =int(np.nan)
                     if not interp:
                         y[isp, it] += x[i, index]
