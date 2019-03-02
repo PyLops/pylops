@@ -20,8 +20,8 @@ par = {'ox':-200, 'dx':2, 'nx':201,
 # We can now create tapers in 1d
 tap_han = pylops.utils.tapers.hanningtaper(par['nx'],
                                            par['ntapx'])
-tap_cos = pylops.utils.tapers.cosinetaper(par['nx'], False)
-tap_cos2 = pylops.utils.tapers.cosinetaper(par['nx'], True)
+tap_cos = pylops.utils.tapers.cosinetaper(par['nx'], par['ntapx'], False)
+tap_cos2 = pylops.utils.tapers.cosinetaper(par['nx'], par['ntapx'], True)
 
 plt.figure()
 plt.plot(tap_han, 'r', label='hanning')

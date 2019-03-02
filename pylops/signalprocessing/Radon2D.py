@@ -59,10 +59,10 @@ def _indices_2d_onthefly(f, x, px, ip, it, nt, interp=True):
 
 
 def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
-            interp=True, onthefly=False, dtype='float64'):
+            interp=True, onthefly=False, engine='numpy', dtype='float64'):
     r"""Two dimensional Radon transform.
 
-    Apply two dimensional Radon forward (and adjoint) transform to a two
+    Apply two dimensional Radon forward (and adjoint) transform to a
     2-dimensional array of size :math:`[n_{px} \times n_t]`
     (and :math:`[n_x \times n_t]`).
 
@@ -90,6 +90,9 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
         and adjoint modelling (``True``) or at initialization and store them
         in look-up table (``False``). Using a look-up table is computationally
         more efficient but increases the memory burden
+    engine : :obj:`str`, optional
+        Engine used for fft computation (``numpy`` or ``numba``). Note that
+        ``numba`` can only be used when providing a look-up table
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -151,7 +154,7 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
     if onthefly:
         fh = lambda x, y: _indices_2d_onthefly(f, haxisunitless, pxaxis,
                                                x, y, nt, interp=interp)[1:]
-        r2op = Spread(dims, dimsd, fh=fh, dtype=dtype)
+        r2op = Spread(dims, dimsd, fh=fh, engine=engine, dtype=dtype)
     else:
         table = np.full((npx, nt, nh), np.nan, dtype=np.float32)
         if interp:
@@ -168,5 +171,7 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
                 if interp:
                     dtable[ipx, it, xscan] = dtscan
 
-        r2op = Spread(dims, dimsd, table=table, dtable=dtable, dtype=dtype)
+        r2op = Spread(dims, dimsd, table=table,
+                      dtable=dtable, engine=engine,
+                      dtype=dtype)
     return r2op

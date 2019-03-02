@@ -2,7 +2,57 @@ import logging
 import numpy as np
 from pylops import LinearOperator
 
+try:
+    from numba import jit
+except ModuleNotFoundError:
+    jit = None
+
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+
+
+@jit(nopython=True, parallel=True)
+def _matvec_numba(x, y, dims, interp, table, dtable):
+    """numba implementation of forward mode. See official documentation for
+    description of variables
+    """
+    x = x.reshape(dims)
+    for it in range(dims[1]):
+        for isp in range(dims[0]):
+            indices = table[isp, it]
+            if interp:
+                dindices = dtable[isp, it]
+
+            for i, indexfloat in enumerate(indices):
+                index = int(indexfloat)
+                if index != -9223372036854775808: # =int(np.nan)
+                    if not interp:
+                        y[i, index] += x[isp, it]
+                    else:
+                        y[i, index] += (1 -dindices[i])*x[isp, it]
+                        y[i, index + 1] += dindices[i] * x[isp, it]
+    return y.ravel()
+
+@jit(nopython=True, parallel=True)
+def _rmatvec_numba(x, y, dims, dimsd, interp, table, dtable):
+    """numba implementation of adjoint mode. See official documentation for
+    description of variables
+    """
+    x = x.reshape(dimsd)
+    for it in range(dims[1]):
+        for isp in range(dims[0]):
+            indices = table[isp, it]
+            if interp:
+                dindices = dtable[isp, it]
+
+            for i, indexfloat in enumerate(indices):
+                index = int(indexfloat)
+                if index != -9223372036854775808: # =int(np.nan)
+                    if not interp:
+                        y[isp, it] += x[i, index]
+                    else:
+                        y[isp, it] += x[i, index]*(1 - dindices[i]) + \
+                                      x[i, index + 1]*dindices[i]
+    return y.ravel()
 
 
 class Spread(LinearOperator):
@@ -38,6 +88,9 @@ class Spread(LinearOperator):
         Function handle that returns an index to be used for spreading/stacking
         given indices in :math:`sp` and and :math:`t`
         axes (if ``None`` use look-up table ``table``)
+    engine : :obj:`str`, optional
+        Engine used for fft computation (``numpy`` or ``numba``). Note that
+        ``numba`` can only be used when providing a look-up table
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -84,7 +137,7 @@ class Spread(LinearOperator):
 
     """
     def __init__(self, dims, dimsd, table=None, dtable=None,
-                 fh=None, dtype='float64'):
+                 fh=None, engine='numpy', dtype='float64'):
         # axes
         self.dims, self.dimsd = dims, dimsd
         self.nsp, self.nt, self.nx = self.dims[0], self.dims[1], self.dimsd[0]
@@ -114,8 +167,18 @@ class Spread(LinearOperator):
         self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
+        if engine == 'numba' and jit is not None and self.usetable:
+            self.engine = 'numba'
+        else:
 
-    def _matvec(self, x):
+            if engine == 'numba' and jit is None:
+                logging.warning('numba not available, revert to numpy...')
+            if engine == 'numba' and not self.usetable:
+                logging.warning('cannot use numba without table, '
+                                'revert to numpy...')
+            self.engine = 'numpy'
+
+    def _matvec_numpy(self, x):
         x = x.reshape(self.dims)
         y = np.zeros(self.dimsd, dtype=self.dtype)
         for it in range(self.dims[1]):
@@ -134,12 +197,12 @@ class Spread(LinearOperator):
                     indices = (indices[mask]).astype(np.int)
                     if not self.interp:
                         y[mask, indices] += x[isp, it]
-                    if self.interp:
-                        y[mask, indices] += (1 -dindices[mask])*x[isp, it]
+                    else:
+                        y[mask, indices] += (1-dindices[mask])*x[isp, it]
                         y[mask, indices + 1] += dindices[mask] * x[isp, it]
         return y.ravel()
 
-    def _rmatvec(self, x):
+    def _rmatvec_numpy(self, x):
         x = x.reshape(self.dimsd)
         y = np.zeros(self.dims, dtype=self.dtype)
         for it in range(self.dims[1]):
@@ -163,3 +226,25 @@ class Spread(LinearOperator):
                             np.sum(x[mask, indices]*(1-dindices[mask])) + \
                             np.sum(x[mask, indices+1]*dindices[mask])
         return y.ravel()
+
+    def _matvec(self, x):
+        if self.engine == 'numba':
+            y = np.zeros(self.dimsd, dtype=self.dtype)
+            y = _matvec_numba(x, y, self.dims, self.interp,
+                              self.table,
+                              self.table if self.dtable is None else self.dtable)
+
+        else:
+            y = self._matvec_numpy(x)
+        return y
+
+    def _rmatvec(self, x):
+        if self.engine == 'numba':
+            y = np.zeros(self.dims, dtype=self.dtype)
+            y = _rmatvec_numba(x, y, self.dims, self.dimsd,
+                               self.interp,
+                               self.table,
+                               self.table if self.dtable is None else self.dtable)
+        else:
+            y = self._rmatvec_numpy(x)
+        return y

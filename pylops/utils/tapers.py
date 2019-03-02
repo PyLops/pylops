@@ -26,14 +26,14 @@ def hanningtaper(nmask, ntap):
             raise ValueError('ntap=%d must be smaller or '
                              'equal than %d' %(ntap, ntap_min))
     han_win = np.hanning(ntap*2-1)
-    st_tpr = han_win[:ntap,]
-    mid_tpr = np.ones([nmask-(2*ntap),])
+    st_tpr = han_win[:ntap, ]
+    mid_tpr = np.ones([nmask - (2 * ntap), ])
     end_tpr = np.flipud(st_tpr)
     tpr_1d = np.concatenate([st_tpr, mid_tpr, end_tpr])
     return tpr_1d
 
 
-def cosinetaper(nmask, square=False):
+def cosinetaper(nmask, ntap, square=False):
     r"""1D Cosine or Cosine square taper
 
     Create unitary mask of length ``nmask`` with Hanning tapering
@@ -43,6 +43,8 @@ def cosinetaper(nmask, square=False):
     ----------
     nmask : :obj:`int`
         Number of samples of mask
+    ntap : :obj:`int`
+        Number of samples of hanning tapering at edges
     square : :obj:`bool`
         Cosine square taper (``True``)or Cosine taper (``False``)
 
@@ -53,8 +55,12 @@ def cosinetaper(nmask, square=False):
 
     """
     exponent = 1 if not square else 2
-    tpr_1d = (0.5*(np.cos((np.arange(nmask)-
-                           (nmask-1)/2)*np.pi/((nmask-1)/2)) + 1.))**exponent
+    cos_win = (0.5*(np.cos((np.arange(ntap * 2 - 1)-
+                            (ntap * 2 - 2)/2)*np.pi/((ntap * 2 - 2)/2)) + 1.))**exponent
+    st_tpr = cos_win[:ntap, ]
+    mid_tpr = np.ones([nmask - (2 * ntap), ])
+    end_tpr = np.flipud(st_tpr)
+    tpr_1d = np.concatenate([st_tpr, mid_tpr, end_tpr])
     return tpr_1d
 
 
@@ -72,7 +78,7 @@ def taper2d(nt, nmask, ntap, tapertype='hanning'):
         Number of space samples of mask along first dimension
     ntap : :obj:`int`
         Number of samples of tapering at edges of first dimension
-    tapertype : :obj:`int`
+    tapertype : :obj:`str`, optional
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
 
     Returns
@@ -86,9 +92,9 @@ def taper2d(nt, nmask, ntap, tapertype='hanning'):
     if tapertype == 'hanning':
         tpr_1d = hanningtaper(nmask, ntap)
     elif tapertype == 'cosine':
-        tpr_1d = cosinetaper(nmask, False)
+        tpr_1d = cosinetaper(nmask, ntap, False)
     elif tapertype == 'cosinesquare':
-        tpr_1d = cosinetaper(nmask, True)
+        tpr_1d = cosinetaper(nmask, ntap, True)
     else:
         tpr_1d = np.ones(nmask)
 
@@ -130,11 +136,11 @@ def taper3d(nt, nmask, ntap, tapertype='hanning'):
         tpr_y = hanningtaper(nmasky, ntapy)
         tpr_x = hanningtaper(nmaskx, ntapx)
     elif tapertype == 'cosine':
-        tpr_y = cosinetaper(nmasky, False)
-        tpr_x = cosinetaper(nmaskx, False)
+        tpr_y = cosinetaper(nmasky, ntapy, False)
+        tpr_x = cosinetaper(nmaskx, ntapx, False)
     elif tapertype == 'cosinesquare':
-        tpr_y = cosinetaper(nmasky, True)
-        tpr_x = cosinetaper(nmaskx, True)
+        tpr_y = cosinetaper(nmasky, ntapy, True)
+        tpr_x = cosinetaper(nmaskx, ntapx, True)
     else:
         tpr_y = np.ones(nmasky)
         tpr_x = np.ones(nmaskx)

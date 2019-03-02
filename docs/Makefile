@@ -1,6 +1,9 @@
 # Minimal makefile for Sphinx documentation
 #
 
+# Disable numba
+# export NUMBA_DISABLE_JIT=1
+
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build

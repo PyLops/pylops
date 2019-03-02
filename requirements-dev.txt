@@ -1,5 +1,6 @@
 numpy>=1.15.0
 scipy
+numba
 pyfftw
 matplotlib
 ipython
