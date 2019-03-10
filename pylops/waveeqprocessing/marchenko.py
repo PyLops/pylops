@@ -153,7 +153,7 @@ class Marchenko():
     .. [2] van der Neut, J., Vasconcelos, I., and Wapenaar, K. "On Green's
        function retrieval by iterative substitution of the coupled
        Marchenko equations", Geophysical Journal International, vol. 203,
-       pp. 792-813., 2015.
+       pp. 792-813. 2015.
 
     """
     def __init__(self, R, R1=None, dt=0.004, nt=None, dr=1.,

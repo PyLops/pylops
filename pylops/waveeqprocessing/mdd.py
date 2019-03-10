@@ -182,7 +182,7 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         :py:func:`scipy.sparse.linalg.lsqr` solver
 
     Returns
-    ----------
+    -------
     minv : :obj:`numpy.ndarray`
         Inverted model.
     madj : :obj:`numpy.ndarray`

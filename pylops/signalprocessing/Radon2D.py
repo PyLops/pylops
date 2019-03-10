@@ -38,18 +38,20 @@ def _indices_2d(f, x, px, it, nt, interp=True):
         Spatial indices
     tscan : :obj:`np.ndarray`
         Time indices
+    dtscan : :obj:`np.ndarray`
+        Decimal time variations for interpolation
+
     """
     tdecscan = f(x, it, px)
     if not interp:
-        tinside = (tdecscan >= 0) & (tdecscan < nt)
+        xscan = (tdecscan >= 0) & (tdecscan < nt)
     else:
-        tinside = (tdecscan >= 0) & (tdecscan < nt - 1)
-    tscan = tdecscan[tinside].astype(np.int)
+        xscan = (tdecscan >= 0) & (tdecscan < nt - 1)
+    tscan = tdecscan[xscan].astype(np.int)
     if interp:
-        dtscan = tdecscan[tinside] - tscan
+        dtscan = tdecscan[xscan] - tscan
     else:
         dtscan = None
-    xscan = (x[tinside] - x[0]).astype(np.int)
     return xscan, tscan, dtscan
 
 def _indices_2d_onthefly(f, x, px, ip, it, nt, interp=True):
@@ -152,8 +154,12 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
     dimsd = (nh, nt)
 
     if onthefly:
-        fh = lambda x, y: _indices_2d_onthefly(f, haxisunitless, pxaxis,
+        if interp:
+            fh = lambda x, y: _indices_2d_onthefly(f, haxisunitless, pxaxis,
                                                x, y, nt, interp=interp)[1:]
+        else:
+            fh = lambda x, y: _indices_2d_onthefly(f, haxisunitless, pxaxis,
+                                                   x, y, nt, interp=interp)[1]
         r2op = Spread(dims, dimsd, fh=fh, engine=engine, dtype=dtype)
     else:
         table = np.full((npx, nt, nh), np.nan, dtype=np.float32)
@@ -170,7 +176,6 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
                 table[ipx, it, xscan] = tscan
                 if interp:
                     dtable[ipx, it, xscan] = dtscan
-
         r2op = Spread(dims, dimsd, table=table,
                       dtable=dtable, engine=engine,
                       dtype=dtype)
