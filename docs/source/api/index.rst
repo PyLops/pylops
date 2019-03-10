@@ -78,10 +78,12 @@ Signal processing
 
     FFT
     FFT2D
+    FFTND
     Convolve1D
     Convolve2D
     Interp
     Radon2D
+    Radon3D
     Sliding2D
 
 

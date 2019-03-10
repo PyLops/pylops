@@ -18,14 +18,14 @@ class FFT2D(LinearOperator):
     dims : :obj:`tuple`
         Number of samples for each dimension
     dirs : :obj:`tuple`, optional
-        Pair of directions along which FFT2D is applied.
+        Pair of directions along which FFT2D is applied
     nffts : :obj:`tuple`, optional
         Number of samples in Fourier Transform for each direction (same as
         input if ``nffts=(None, None)``)
     sampling : :obj:`tuple`, optional
-        Sampling steps ``dy`` and ``dx``.
+        Sampling steps ``dy`` and ``dx``
     dtype : :obj:`str`, optional
-        Type of elements in input array.
+        Type of elements in input array
 
     Attributes
     ----------
@@ -34,6 +34,12 @@ class FFT2D(LinearOperator):
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (True) or not (False)
+
+    Raises
+    ------
+    ValueError
+        If ``dims`` has less than two elements, and if ``dirs``, ``nffts``,
+        or ``sampling`` has more or less than two elements.
 
     Notes
     -----
@@ -60,11 +66,11 @@ class FFT2D(LinearOperator):
         # checks
         if len(dims) < 2:
             raise ValueError('provide at least two dimensions')
-        if len(dirs) < 2:
+        if len(dirs) != 2:
             raise ValueError('provide at two directions along which fft is applied')
-        if len(nffts) < 2:
+        if len(nffts) != 2:
             raise ValueError('provide at two nfft dimensions')
-        if len(sampling) < 2:
+        if len(sampling) != 2:
             raise ValueError('provide two sampling steps')
 
         self.dirs = dirs

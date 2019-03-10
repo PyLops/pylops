@@ -1,8 +1,9 @@
 """
 Fourier Transform
 =================
-This example shows how to use the :py:class:`pylops.signalprocessing.FFT` and
-:py:class:`pylops.signalprocessing.FFT2D` operators to apply the Fourier
+This example shows how to use the :py:class:`pylops.signalprocessing.FFT`,
+:py:class:`pylops.signalprocessing.FFT2D`
+and :py:class:`pylops.signalprocessing.FFTND` operators to apply the Fourier
 Transform to the model and the inverse Fourier Transform to the data.
 """
 import numpy as np
@@ -49,7 +50,6 @@ axs[1].set_xlim([0, 3*f0])
 # numpy in many cases but it is not inserted in the mandatory requirements of
 # PyLops. If interested to use ``FFTW`` backend, read the `fft routines`
 # section at :ref:`performance`.
-
 FFTop = pylops.signalprocessing.FFT(dims=nt, nfft=nfft,
                                     sampling=dt, engine='fftw')
 D = FFTop * d
@@ -103,7 +103,7 @@ axs[1][1].axis('tight')
 fig.tight_layout()
 
 ###############################################################################
-# Finally we apply the two dimensional FFT to to a two-dimensional signal
+# We can also apply the two dimensional FFT to to a two-dimensional signal
 dt, dx = 0.005, 5
 nt, nx = 100, 201
 t = np.arange(nt)*dt
@@ -132,6 +132,46 @@ axs[1][0].imshow(dinv, vmin=-100, vmax=100, cmap='seismic')
 axs[1][0].set_title('Inverted')
 axs[1][0].axis('tight')
 axs[1][1].imshow(d-dinv, vmin=-100, vmax=100, cmap='seismic')
+axs[1][1].set_title('Error')
+axs[1][1].axis('tight')
+fig.tight_layout()
+
+
+###############################################################################
+# Finally can apply the three dimensional FFT to to a three-dimensional signal
+dt, dx, dy = 0.005, 5, 3
+nt, nx, ny = 30, 51, 21
+t = np.arange(nt)*dt
+x = np.arange(nx)*dx
+y = np.arange(nx)*dy
+f0 = 10
+nfft = 2**8
+d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(nx) + 1)
+d = np.tile(d[:, :, np.newaxis], [1, 1, ny])
+
+FFTop = pylops.signalprocessing.FFTND(dims=(nt, nx, ny),
+                                      nffts=(nfft, nfft, nfft),
+                                      sampling=(dt, dx, dy))
+D = FFTop*d.flatten()
+
+dinv = FFTop.H*D
+dinv = FFTop / D
+dinv = np.real(dinv).reshape(nt, nx, ny)
+
+fig, axs = plt.subplots(2, 2, figsize=(10, 6))
+axs[0][0].imshow(d[:, :, ny//2], vmin=-100, vmax=100, cmap='seismic')
+axs[0][0].set_title('Signal')
+axs[0][0].axis('tight')
+axs[0][1].imshow(np.abs(np.fft.fftshift(D.reshape(nfft, nfft, nfft),
+                                        axes=1)[:200, :, nfft//2]),
+                 cmap='seismic')
+axs[0][1].set_title('Fourier Transform')
+axs[0][1].axis('tight')
+axs[1][0].imshow(dinv[:, :, ny//2], vmin=-100, vmax=100, cmap='seismic')
+axs[1][0].set_title('Inverted')
+axs[1][0].axis('tight')
+axs[1][1].imshow(d[:, :, ny//2]-dinv[:, :, ny//2],
+                 vmin=-100, vmax=100, cmap='seismic')
 axs[1][1].set_title('Error')
 axs[1][1].axis('tight')
 fig.tight_layout()

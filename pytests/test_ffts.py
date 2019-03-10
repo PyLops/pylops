@@ -5,31 +5,31 @@ from numpy.testing import assert_array_almost_equal
 from scipy.sparse.linalg import lsqr
 
 from pylops.utils import dottest
-from pylops.signalprocessing import FFT, FFT2D
+from pylops.signalprocessing import FFT, FFT2D, FFTND
 
 par1 = {'nt': 101, 'nx': 31, 'ny': 10,
         'nfft': True, 'real': False,
         'engine': 'numpy'} # nfft=nt, complex input, numpy engine
 par2 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': 1024, 'real': False,
+        'nfft': 256, 'real': False,
         'engine': 'numpy'} # nfft>nt, complex input, numpy engine
 par3 = {'nt': 101, 'nx': 31, 'ny': 10,
         'nfft': True, 'real': True,
         'engine': 'numpy'}  # nfft=nt, real input, numpy engine
 par4 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': 1024, 'real': True,
+        'nfft': 256, 'real': True,
         'engine': 'numpy'} # nfft>nt, real input, numpy engine
 par1w = {'nt': 101, 'nx': 31, 'ny': 10,
          'nfft': True, 'real': False,
          'engine': 'fftw'}  # nfft=nt, complex input, fftw engine
 par2w = {'nt': 101, 'nx': 31, 'ny': 10,
-         'nfft': 1024, 'real': False,
+         'nfft': 256, 'real': False,
          'engine': 'fftw'}  # nfft>nt, complex input, fftw engine
 par3w = {'nt': 101, 'nx': 31, 'ny': 10,
          'nfft': True, 'real': True,
          'engine': 'fftw'}  # nfft=nt, real input, fftw engine
 par4w = {'nt': 101, 'nx': 31, 'ny': 10,
-         'nfft': 1024, 'real': True,
+         'nfft': 256, 'real': True,
          'engine': 'fftw'}  # nfft>nt, real input, fftw engine
 
 
@@ -251,6 +251,36 @@ def test_FFT2D(par):
 
     dadj = np.real(dadj).reshape(par['nt'], par['nx'])
     dinv = np.real(dinv).reshape(par['nt'], par['nx'])
+
+    assert_array_almost_equal(d, dadj, decimal=8)
+    assert_array_almost_equal(d, dinv, decimal=8)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
+def test_FFT3D(par):
+    """Dot-test and inversion for FFTND operator for 3d signal
+    """
+    dt, dx, dy = 0.005, 5, 2
+    t = np.arange(par['nt']) * dt
+    f0 = 10
+    nfft1 = par['nt'] if isinstance(par['nfft'], bool) else par['nfft']
+    nfft2 = par['nx'] if isinstance(par['nfft'], bool) else par['nfft']
+    nfft3 = par['ny'] if isinstance(par['nfft'], bool) else par['nfft']
+    d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(par['nx']) + 1)
+    d = np.tile(d[:, :, np.newaxis], [1, 1, par['ny']])
+
+    FFTop = FFTND(dims=(par['nt'], par['nx'], par['ny']),
+                  nffts=(nfft1, nfft2, nfft3),
+                  sampling=(dt, dx, dy))
+    assert dottest(FFTop, nfft1*nfft2*nfft3,
+                   par['nt']*par['nx']*par['ny'], complexflag=2)
+
+    D = FFTop * d.flatten()
+    dadj = FFTop.H*D # adjoint is inverse for fft
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+
+    dadj = np.real(dadj).reshape(par['nt'], par['nx'], par['ny'])
+    dinv = np.real(dinv).reshape(par['nt'], par['nx'], par['ny'])
 
     assert_array_almost_equal(d, dadj, decimal=8)
     assert_array_almost_equal(d, dinv, decimal=8)

@@ -2,11 +2,12 @@ r"""
 2D Sliding
 ==========
 This example shows how to use the :py:class:`pylops.signalprocessing.Sliding2D`
-operator to perform repeated transforms over small patches of a two dimensional
-signal. The transform that we apply in this example is the
+operator to perform repeated transforms over small patches of a 2-dimensional
+array. The transform that we apply in this example is the
 :py:class:`pylops.signalprocessing.Radon2D` but this operator has been
 design to allow a variety of transforms as long as they operate with signals
-that are two dimensional in nature.
+that are 2-dimensional in nature.
+
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,8 +17,8 @@ import pylops
 plt.close('all')
 
 ###############################################################################
-# Let's start by creating an 2d matrix of size :math:`n_x \times n_t`
-# and composed of 3 parabolic events
+# Let's start by creating an 2-dimensional array of size :math:`n_x \times n_t`
+# composed of 3 parabolic events
 par = {'ox':-140, 'dx':2, 'nx':140,
        'ot':0, 'dt':0.004, 'nt':200,
        'f0': 20}
@@ -39,11 +40,11 @@ _, data = pylops.utils.seismicevents.parabolic2d(x, t, t0, px,
                                                  pxx, amp, wav)
 
 ###############################################################################
-# We start by divide this 2d dimensional data into small overlapping
-# patches in the spatial direction and apply the adjoint
-# :py:class:`pylops.signalprocessing.Radon2D` to each patch. This is done by
-# using the adjoint of the :py:class:`pylops.signalprocessing.Sliding2D`
-# operator
+# We want to divide this 2-dimensional data into small overlapping
+# patches in the spatial direction and apply the adjoint of the
+# :py:class:`pylops.signalprocessing.Radon2D` operator to each patch. This is
+# done by simply using the adjoint of the
+# :py:class:`pylops.signalprocessing.Sliding2D` operator
 nwins = 5
 winsize = 36
 overlap = 10
@@ -68,8 +69,8 @@ radon = Slid.H * data.flatten()
 radon = radon.reshape(dims)
 
 ###############################################################################
-# We want to show now how we can simply apply the forward of the same operator
-# (this time adding a taper in the overllapping part of the patches)
+# We now create  a similar operator but we also add a taper to the overlapping
+# parts of the patches.
 Slid = pylops.signalprocessing.Sliding2D(Op, dims, dimsd,
                                          winsize, overlap,
                                          tapertype='cosine')
@@ -92,26 +93,54 @@ reconstructed_datainv = reconstructed_datainv.reshape(dimsd)
 ###############################################################################
 # Let's finally visualize all the intermediate results as well as our final
 # data reconstruction after inverting the
-# :py:class:`pylops.signalprocessing.Sliding2D` operator. As you can see,
-# provided small enough patches and a transform that can explain data
-# *locally*, we have been able reconstruct our original data almost to
-# perfection. An appropriate transform and a sliding window approach will
-# result a very good approach for interpolation (or *regularization*) or
-# irregularly sampled seismic data.
-fig, axs = plt.subplots(2, 3, figsize=(10, 10))
-axs[0][0].imshow(data.T, cmap='gray')
+# :py:class:`pylops.signalprocessing.Sliding2D` operator.
+fig, axs = plt.subplots(2, 3, sharey=True, figsize=(12, 10))
+im = axs[0][0].imshow(data.T, cmap='gray')
 axs[0][0].set_title('Original data')
+plt.colorbar(im, ax=axs[0][0])
 axs[0][0].axis('tight')
-axs[0][1].imshow(radon.T, cmap='gray')
+im = axs[0][1].imshow(radon.T, cmap='gray')
 axs[0][1].set_title('Adjoint Radon')
+plt.colorbar(im, ax=axs[0][1])
 axs[0][1].axis('tight')
-axs[0][2].imshow(reconstructed_data.T, cmap='gray')
+im = axs[0][2].imshow(reconstructed_data.T, cmap='gray')
 axs[0][2].set_title('Reconstruction from adjoint')
+plt.colorbar(im, ax=axs[0][2])
 axs[0][2].axis('tight')
 axs[1][0].axis('off')
-axs[1][1].imshow(radoninv.T, cmap='gray')
+im = axs[1][1].imshow(radoninv.T, cmap='gray')
 axs[1][1].set_title('Inverse Radon')
+plt.colorbar(im, ax=axs[1][1])
 axs[1][1].axis('tight')
-axs[1][2].imshow(reconstructed_datainv.T, cmap='gray')
+im = axs[1][2].imshow(reconstructed_datainv.T, cmap='gray')
 axs[1][2].set_title('Reconstruction from inverse')
+plt.colorbar(im, ax=axs[1][2])
 axs[1][2].axis('tight')
+
+for i in range(0, 114, 24):
+    axs[0][0].axvline(i, color='w', lw=1, ls='--')
+    axs[0][0].axvline(i + winsize, color='k', lw=1, ls='--')
+    axs[0][0].text(i + winsize//2, par['nt']-10, 'w'+str(i//24),
+                   ha='center', va='center', weight='bold',
+                   color='w')
+
+for i in range(0, 305, 61):
+    axs[0][1].axvline(i, color='w', lw=1, ls='--')
+    axs[0][1].text(i + npx//2, par['nt']-10, 'w'+str(i//61),
+                   ha='center', va='center', weight='bold',
+                   color='w')
+    axs[1][1].axvline(i, color='w', lw=1, ls='--')
+    axs[1][1].text(i + npx//2, par['nt']-10, 'w'+str(i//61),
+                   ha='center', va='center', weight='bold',
+                   color='w')
+
+###############################################################################
+# We notice two things, i)provided small enough patches and a transform
+# that can explain data *locally*, we have been able reconstruct our
+# original data almost to perfection. ii) inverse is betten than adjoint as
+# expected as the adjoin does not only introduce small artifacts but also does
+# not respect the original amplitudes of the data.
+#
+# An appropriate transform alongside with a sliding window approach will
+# result a very good approach for interpolation (or *regularization*) or
+# irregularly sampled seismic data.
