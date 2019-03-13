@@ -50,7 +50,10 @@ in the :ref:`performance` page.
 Step-by-step installation for users
 -----------------------------------
 
-Simply type the following command in your terminal:
+Python environment
+~~~~~~~~~~~~~~~~~~
+
+Activate your Python environment, and simply type the following command in your terminal:
 
 .. code-block:: bash
 
@@ -68,12 +71,30 @@ or just clone the repository
 
    >> git clone https://github.com/equinor/pylops.git
 
-or download the zip file of the repository (green button in the top right corner of the main github repo page) and
-install PyLops from terminal using the command:
+or download the zip file from the repository (green button in the top right corner of the
+main github repo page) and install PyLops from terminal using the command:
 
 .. code-block:: bash
 
    >> make install
+
+Docker
+~~~~~~
+
+If you want to try PyLops but do not have Python in your
+local machine, you can use our `Docker <https://www.docker.com>`_ image instead.
+
+After installing Docker in your computer, type the following command in your terminal
+(note that this will take sometimes the first time you type it as you will download and install the docker image):
+
+.. code-block:: bash
+
+   >> docker run -it -v /path/to/local/folder:/home/jupyter/notebook -p 8888:8888 mrava87/pylops:notebook
+
+This will give you an address that you can put in your browser and will open a jupyter-notebook enviroment with PyLops
+and other basic Python libraries installed. Here `/path/to/local/folder` is the absolute path of a local folder
+on your computer where you will create a notebook (or containing notebooks that you want to continue working on). Note that
+anything you do to the notebook(s) will be saved in your local folder.
 
 
 Step-by-step installation for developers

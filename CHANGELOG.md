@@ -3,9 +3,9 @@
 * Added ``ISTA`` and ``FISTA`` sparse solvers
 * Added possibility to broadcast (handle multi-dimensional arrays)
   to ``Diagonal`` and ``Restriction`` operators
-* Added possibility ``Interp`` operator
-* Added possibility ``Spread`` operator
-* Added possibility ``Radon2D`` operator
+* Added ``Interp`` operator
+* Added ``Spread`` operator
+* Added ``Radon2D`` operator
 
 # 1.2.0
 * Added ``eigs`` and ``cond`` methods to ``LinearOperator``
