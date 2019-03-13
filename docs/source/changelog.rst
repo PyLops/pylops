@@ -13,9 +13,9 @@ Version 1.3.0
   :py:func:`pylops.optimization.sparsity.FISTA` sparse solvers
 * Added possibility to broadcast (handle multi-dimensional arrays)
   to :py:class:`pylops.Diagonal` and :py:func:`pylops..Restriction` operators
-* Added possibility :py:class:`pylops.signalprocessing.Interp` operator
-* Added possibility :py:class:`pylops.Spread` operator
-* Added possibility :py:class:`pylops.signalprocessing.Radon2D` operator
+* Added :py:class:`pylops.signalprocessing.Interp` operator
+* Added :py:class:`pylops.Spread` operator
+* Added :py:class:`pylops.signalprocessing.Radon2D` operator
 
 
 Version 1.2.0
