@@ -35,12 +35,12 @@ plt.close('all')
 ###############################################################################
 # Let's start by creating a very simple 2d data composed of 3 linear events
 # input parameters
-par = {'ox':0, 'dx':2, 'nx':140,
-       'ot':0, 'dt':0.004, 'nt':200,
+par = {'ox':0, 'dx':2, 'nx':70,
+       'ot':0, 'dt':0.004, 'nt':80,
        'f0': 20}
 
 v = 1500
-t0_m = [0.2, 0.4, 0.5]
+t0_m = [0.1, 0.2, 0.28]
 theta_m = [0, 30, -80]
 phi_m = [0]
 amp_m = [1., -2, 0.5]
@@ -58,7 +58,7 @@ _, x = linear2d(xaxis, taxis, v, t0_m, theta_m, amp_m, wav)
 # We can now define the spatial locations along which the data has been
 # sampled. In this specific example we will assume that we have access only to
 # 40% of the 'original' locations.
-perc_subsampling = 0.4
+perc_subsampling = 0.6
 nxsub = int(np.round(par['nx']*perc_subsampling))
 
 iava = np.sort(np.random.permutation(np.arange(par['nx']))[:nxsub])
@@ -79,7 +79,7 @@ ymask = Rop.mask(x.flatten())
 xinv = Rop / y.ravel()
 xinv = xinv.reshape(par['nx'], par['nt'])
 
-fig, axs = plt.subplots(1, 2, figsize=(5, 4))
+fig, axs = plt.subplots(1, 2, sharey=True, figsize=(5, 4))
 axs[0].imshow(x.T, cmap='gray', vmin=-2, vmax=2,
               extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
 axs[0].set_title('Model')
@@ -118,12 +118,12 @@ xsmooth, istop, itn, r1norm, r2norm = \
                                                           epsRs=[np.sqrt(0.1)],
                                                           returninfo=True,
                                                           **dict(damp=np.sqrt(1e-4),
-                                                                 iter_lim=200,
+                                                                 iter_lim=50,
                                                                  show=0))
 xsmooth = xsmooth.reshape(par['nx'], par['nt'])
 
 # sparse inversion with FFT2
-nfft = 2**11
+nfft = 2**8
 FFTop = pylops.signalprocessing.FFT2D(dims=[par['nx'], par['nt']],
                                       nffts=[nfft, nfft],
                                       sampling=[par['dx'], par['dt']])
@@ -134,13 +134,13 @@ Xl1, niter, cost = \
     pylops.optimization.sparsity.FISTA(Rop*FFTop.H,
                                        y.ravel(),
                                        niter=50,
-                                       eps=1e-2,
+                                       eps=1e-1,
                                        returninfo=True)
 xl1 = FFTop.H*Xl1
 Xl1 = Xl1.reshape(nfft, nfft)
 xl1 = np.real(xl1.reshape(par['nx'], par['nt']))
 
-fig, axs = plt.subplots(1, 4, figsize=(13, 4))
+fig, axs = plt.subplots(1, 4, sharey=True, figsize=(13, 4))
 axs[0].imshow(x.T, cmap='gray', vmin=-2, vmax=2,
               extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
 axs[0].set_title('Model')
@@ -185,7 +185,7 @@ axs[2].set_title('FISTA convergence')
 # fact be chosen here to be the linear
 # :py:class:`pylops.signalprocessing.Radon2D` transform in spite of the
 # :py:class:`pylops.FFT2` transform.
-npx = 200
+npx = 40
 pxmax = 1e-3
 px = np.linspace(-pxmax, pxmax, npx)
 Radop = pylops.signalprocessing.Radon2D(taxis, xaxis, px, engine='numba')
@@ -193,17 +193,47 @@ Radop = pylops.signalprocessing.Radon2D(taxis, xaxis, px, engine='numba')
 RRop = Rop*Radop
 
 # adjoint
+Xadj_fromx = Radop.H*x.flatten()
+Xadj_fromx = Xadj_fromx.reshape(npx, par['nt'])
+
 Xadj = RRop.H*y.flatten()
 Xadj = Xadj.reshape(npx, par['nt'])
 
 # L1 inverse
 Xl1, niter, cost = \
-    pylops.optimization.sparsity.FISTA(RRop, y.flatten(), niter=20,
+    pylops.optimization.sparsity.FISTA(RRop, y.flatten(), niter=50,
                                        eps=1e-1, returninfo=True)
 xl1 = Radop*Xl1
 
 Xl1 = Xl1.reshape(npx, par['nt'])
 xl1 = np.real(xl1.reshape(par['nx'], par['nt']))
+
+
+fig, axs = plt.subplots(2, 3, sharey=True, figsize=(12, 7))
+axs[0][0].imshow(x.T, cmap='gray', vmin=-2, vmax=2,
+                 extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
+axs[0][0].set_title('Data', fontsize=12)
+axs[0][0].axis('tight')
+axs[0][1].imshow(ymask.T, cmap='gray', vmin=-2, vmax=2,
+                 extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
+axs[0][1].set_title('Masked data', fontsize=12)
+axs[0][1].axis('tight')
+axs[0][2].imshow(xl1.T, cmap='gray', vmin=-2, vmax=2,
+                 extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
+axs[0][2].set_title('Reconstructed data', fontsize=12)
+axs[0][2].axis('tight')
+axs[1][0].imshow(Xadj_fromx.T, cmap='gray', vmin=-70, vmax=70,
+                 extent=(px[0], px[-1], taxis[-1], taxis[0]))
+axs[1][0].set_title('Adj. Radon on data', fontsize=12)
+axs[1][0].axis('tight')
+axs[1][1].imshow(Xadj.T, cmap='gray', vmin=-50, vmax=50,
+                 extent=(px[0], px[-1], taxis[-1], taxis[0]))
+axs[1][1].set_title('Adj. Radon on subsampled data', fontsize=12)
+axs[1][1].axis('tight')
+axs[1][2].imshow(Xl1.T, cmap='gray', vmin=-0.2, vmax=0.2,
+                 extent=(px[0], px[-1], taxis[-1], taxis[0]))
+axs[1][2].set_title('Inverse Radon on subsampled data', fontsize=12)
+axs[1][2].axis('tight')
 
 ###############################################################################
 # Finally, let's take now a more realistic dataset. We will use once again the
@@ -214,17 +244,17 @@ xl1 = np.real(xl1.reshape(par['nx'], par['nt']))
 inputfile = '../../pylops/testdata/marchenko/input.npz'
 inputdata = np.load(inputfile)
 
-x = inputdata['R'][50, :, :-400]
+x = inputdata['R'][50, :, ::2]
 x = x/np.abs(x).max()
+taxis, xaxis = inputdata['t'][::2], inputdata['r'][0]
 
-taxis, xaxis = inputdata['t'][:-400], inputdata['r'][0]
 par = {}
 par['nx'], par['nt'] = x.shape
 par['dx'] = inputdata['r'][0, 1] - inputdata['r'][0, 0]
 par['dt'] = inputdata['t'][1] - inputdata['t'][0]
 
 # add wavelet
-wav = inputdata['wav']
+wav = inputdata['wav'][::2]
 wav_c = np.argmax(wav)
 x = np.apply_along_axis(convolve, 1, x, wav, mode='full')
 x = x[:, wav_c:][:, :par['nt']]
@@ -254,10 +284,10 @@ ymask = Rop.mask(x.flatten())
 
 # sliding windows with radon transform
 dx = par['dx']
-nwins = 9
-nwin = 20
-nover = 10
-npx = 101
+nwins = 4
+nwin = 27
+nover = 3
+npx = 31
 pxmax = 5e-4
 px = np.linspace(-pxmax, pxmax, npx)
 dimsd = x.shape
@@ -270,7 +300,7 @@ Op = \
                                     px, centeredh=True, kind='linear',
                                     engine='numba')
 Slidop = pylops.signalprocessing.Sliding2D(Op, dims, dimsd, nwin, nover,
-                                           tapertype='cosine')
+                                           tapertype='cosine', design=True)
 
 # adjoint
 RSop = Rop*Slidop
@@ -283,7 +313,7 @@ Xadj = Xadj.reshape(npx*nwins, par['nt'])
 
 Xl1, niter, cost = \
     pylops.optimization.sparsity.FISTA(RSop, y.flatten(),
-                                       niter=70, eps=1e-2,
+                                       niter=50, eps=1e-2,
                                        returninfo=True)
 xl1 = Slidop*Xl1
 
@@ -291,15 +321,15 @@ Xl1 = Xl1.reshape(npx*nwins, par['nt'])
 xl1 = xl1.reshape(par['nx'], par['nt'])
 
 fig, axs = plt.subplots(2, 3, sharey=True, figsize=(12, 14))
-axs[0][0].imshow(x.T, cmap='gray', vmin=-0.2, vmax=0.2,
+axs[0][0].imshow(x.T, cmap='gray', vmin=-0.1, vmax=0.1,
                  extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
 axs[0][0].set_title('Data')
 axs[0][0].axis('tight')
-axs[0][1].imshow(ymask.T, cmap='gray', vmin=-0.2, vmax=0.2,
+axs[0][1].imshow(ymask.T, cmap='gray', vmin=-0.1, vmax=0.1,
                  extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
 axs[0][1].set_title('Masked data')
 axs[0][1].axis('tight')
-axs[0][2].imshow(xl1.T, cmap='gray', vmin=-0.2, vmax=0.2,
+axs[0][2].imshow(xl1.T, cmap='gray', vmin=-0.1, vmax=0.1,
                  extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
 axs[0][2].set_title('Reconstructed data')
 axs[0][2].axis('tight')
@@ -311,7 +341,7 @@ axs[1][1].imshow(Xadj.T, cmap='gray', vmin=-0.6, vmax=0.6,
                  extent=(px[0], px[-1], taxis[-1], taxis[0]))
 axs[1][1].set_title('Adjoint Radon on subsampled data')
 axs[1][1].axis('tight')
-axs[1][2].imshow(Xl1.T, cmap='gray', vmin=-0.01, vmax=0.01,
+axs[1][2].imshow(Xl1.T, cmap='gray', vmin=-0.03, vmax=0.03,
                  extent=(px[0], px[-1], taxis[-1], taxis[0]))
 axs[1][2].set_title('Inverse Radon on subsampled data')
 axs[1][2].axis('tight')
@@ -319,5 +349,7 @@ axs[1][2].axis('tight')
 ###############################################################################
 # As expected the linear :py:class:`pylops.signalprocessing.Radon2D` is
 # able to locally explain events in the input data and leads to a satisfactory
-# recovery. Note that increasing the number of iterations can further refine
-# the result, especially the accuracy of weak events.
+# recovery. Note that increasing the number of iterations and sliding windows
+# can further refine the result, especially the accuracy of weak events, as
+# shown in this companion
+# `notebook <https://github.com/mrava87/pylops_notebooks/blob/master/developement/SeismicInterpolation.ipynb>`_.
