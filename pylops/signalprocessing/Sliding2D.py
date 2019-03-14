@@ -109,7 +109,7 @@ def Sliding2D(Op, dims, dimsd, nwin, nover,
                         % (str(dwin_ins), str(dwin_ends)))
     if nwins*Op.shape[1]//dims[1] != dims[0]:
         raise ValueError('Model shape (dims=%s) is not consistent with chosen '
-                         'number of windows. Choose dims[0]=%d for the'
+                         'number of windows. Choose dims[0]=%d for the '
                          'operator to work with estimated number of windows...'
                          % (str(dims), nwins*Op.shape[1]//dims[1]))
     # transform to apply
