@@ -241,7 +241,7 @@ axs[1][2].axis('tight')
 # take advantnge of the :py:class:`pylops.signalprocessing.Sliding2D` operator
 # to perform such a transform locally instead of globally to the entire
 # dataset.
-inputfile = '../../pylops/testdata/marchenko/input.npz'
+inputfile = '../testdata/marchenko/input.npz'
 inputdata = np.load(inputfile)
 
 x = inputdata['R'][50, :, ::2]
