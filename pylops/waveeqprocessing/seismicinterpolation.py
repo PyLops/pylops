@@ -172,16 +172,18 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
         Rop = Interp(np.prod(dims), iava, dims=dims,
                      dir=0, kind='linear', dtype=dtype)
         if ndims == 3 and iava1 is not None:
-            Rop1 = Interp(np.prod(dims), iava1, dims=dims,
+            dims1 = (len(iava), nrec[1], dimsd[2])
+            Rop1 = Interp(np.prod(dims1), iava1, dims=dims1,
                           dir=1, kind='linear', dtype=dtype)
-            Rop *= Rop1
+            Rop = Rop1*Rop
     else:
         Rop = Restriction(np.prod(dims), iava, dims=dims,
                           dir=0, dtype=dtype)
         if ndims == 3 and iava1 is not None:
-            Rop1 = Restriction(np.prod(dims), iava1, dims=dims,
+            dims1 = (len(iava), nrec[1], dimsd[2])
+            Rop1 = Restriction(np.prod(dims1), iava1, dims=dims1,
                                dir=1, dtype=dtype)
-            Rop *= Rop1
+            Rop = Rop1*Rop
 
     # create other operators for inversion
     if kind == 'spatial':
