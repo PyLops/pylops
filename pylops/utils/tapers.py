@@ -104,7 +104,7 @@ def taper2d(nt, nmask, ntap, tapertype='hanning'):
 
 
 def taper3d(nt, nmask, ntap, tapertype='hanning'):
-    r"""2D taper
+    r"""3D taper
 
     Create 2d mask of size :math:`[n_{mask}[0] \times n_{mask}[1] \times n_t]`
     with tapering of size ``ntap`` along the first and second dimension

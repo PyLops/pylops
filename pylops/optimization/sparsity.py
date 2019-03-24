@@ -158,8 +158,8 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
         return xinv, nouter
 
 
-def ISTA(Op, data, niter, eps=0.1, alpha=None,
-         tol=1e-10, monitorres=False, returninfo=False):
+def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
+         tol=1e-10, monitorres=False, returninfo=False, show=False):
     r"""Iterative Soft Thresholding Algorithm (ISTA).
 
     Solve an optimization problem with :math:`L1` regularization function given
@@ -180,6 +180,10 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None,
         Step size (:math:`\alpha \le 1/\lambda_{max}(\mathbf{Op}^H\mathbf{Op})`
         guarantees convergence. If ``None``, estimated to satisfy the
         condition, otherwise the condition will not be checked)
+    eigsiter: :obj:`float`, optional
+        Number of iterations for eigenvalue estimation if ``alpha=None``
+    eigstol: :obj:`float`, optional
+        Tolerance for eigenvalue estimation if ``alpha=None``
     tol : :obj:`float`, optional
         Tolerance. Stop iterations if difference between inverted model
         at subsequent iterations is smaller than ``tol``
@@ -187,6 +191,8 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None,
         Monitor that residual is decreasing
     returninfo : :obj:`bool`, optional
         Return info of CG solver
+    show : :obj:`bool`, optional
+        Display iterations log
 
     Returns
     -------
@@ -230,18 +236,31 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None,
        Imaging Sciences, vol. 2, pp. 183-202. 2009.
 
     """
+    if show:
+        print('ISTA optimization\n'
+              '-----------------------------------------------------------\n'
+              'The Operator Op has %d rows and %d cols\n'
+              'eps = %10e\ttol = %10e\tniter = %d' % (Op.shape[0],
+                                                      Op.shape[1],
+                                                      eps, tol, niter))
     # step size
     if alpha is None:
         if not isinstance(Op, LinearOperator):
             Op = LinearOperator(Op, explicit=False)
         # compute largest eigenvalues of Op^H * Op
         Op1 = LinearOperator(Op.H * Op, explicit=False)
-        maxeig = np.abs(Op1.eigs(neigs=1, tol=1e-2, symmetric=True,
-                                 **dict(which='LM')))[0]
+        maxeig = np.abs(Op1.eigs(neigs=1, symmetric=True, niter=eigsiter,
+                                 **dict(tol=eigstol, which='LM')))[0]
         alpha = 1./maxeig
 
     # define threshold
     thresh = eps*alpha*0.5
+
+    if show:
+        print('alpha = %10e\tthresh = %10e' % (alpha, thresh))
+        print('-----------------------------------------------------------\n')
+        head1 = '   Itn       x[0]        r2norm     r12norm     xupdate'
+        print(head1)
 
     # initialize model and cost function
     xinv = np.zeros(Op.shape[1], dtype=Op.dtype)
@@ -265,10 +284,6 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None,
             else:
                 normresold = normres
 
-        if returninfo and iiter > 0:
-            cost[iiter-1] = 0.5*np.linalg.norm(res)** 2 + \
-                            eps * np.linalg.norm(xinv, ord=1)
-
         # compute gradient
         grad = alpha*Op.rmatvec(res)
 
@@ -276,24 +291,40 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None,
         xinv_unthesh = xinv + grad
         xinv = _softthreshold(xinv_unthesh, thresh)
 
+        # model update
+        xupdate = np.linalg.norm(xinv - xinvold)
+
+        if returninfo or show:
+            costdata = 0.5 * np.linalg.norm(res) ** 2
+            costreg = eps * np.linalg.norm(xinv, ord=1)
+        if returninfo:
+            cost[iiter] = costdata + costreg
+
+        if show:
+            if niter < 10 or niter - iiter < 10 or iiter % 10 == 0:
+                msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
+                      (iiter+1, xinv[0], costdata, costdata+costreg, xupdate)
+                print(msg)
+
         # check tolerance
-        if np.linalg.norm(xinv - xinvold) < tol:
+        if xupdate < tol:
             niter = iiter
             break
 
     # get values pre-threshold at locations where xinv is different from zero
     #xinv = np.where(xinv != 0, xinv_unthesh, xinv)
 
+    if show:
+        print('\nISTA finished')
+
     if returninfo:
-        cost[iiter] = 0.5*np.linalg.norm(res)** 2 + \
-                      eps * np.linalg.norm(xinv, ord=1)
         return xinv, niter, cost[:niter]
     else:
         return xinv, niter
 
 
-def FISTA(Op, data, niter, eps=0.1, alpha=None,
-          tol=1e-10, returninfo=False):
+def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
+          tol=1e-10,  returninfo=False, show=False):
     r"""Fast Iterative Soft Thresholding Algorithm (FISTA).
 
     Solve an optimization problem with :math:`L1` regularization function given
@@ -314,11 +345,17 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None,
         Step size (:math:`\alpha \le 1/\lambda_{max}(\mathbf{Op}^H\mathbf{Op})`
         guarantees convergence. If ``None``, estimated to satisfy the
         condition, otherwise the condition will not be checked)
+    eigsiter: :obj:`int`, optional
+        Number of iterations for eigenvalue estimation if ``alpha=None``
+    eigstol: :obj:`float`, optional
+        Tolerance for eigenvalue estimation if ``alpha=None``
     tol : :obj:`float`, optional
         Tolerance. Stop iterations if difference between inverted model
         at subsequent iterations is smaller than ``tol``
     returninfo : :obj:`bool`, optional
         Return info of FISTA solver
+    show : :obj:`bool`, optional
+        Display iterations log
 
     Returns
     -------
@@ -351,18 +388,31 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None,
        Imaging Sciences, vol. 2, pp. 183-202. 2009.
 
     """
+    if show:
+        print('FISTA optimization\n'
+              '-----------------------------------------------------------\n'
+              'The Operator Op has %d rows and %d cols\n'
+              'eps = %10e\ttol = %10e\tniter = %d' % (Op.shape[0],
+                                                          Op.shape[1],
+                                                          eps, tol, niter))
     # step size
     if alpha is None:
         if not isinstance(Op, LinearOperator):
             Op = LinearOperator(Op, explicit=False)
         # compute largest eigenvalues of Op^H * Op
         Op1 = LinearOperator(Op.H * Op, explicit=False)
-        maxeig = np.abs(Op1.eigs(neigs=1, tol=1e-2, symmetric=True,
-                                 **dict(which='LM')))[0]
+        maxeig = np.abs(Op1.eigs(neigs=1, symmetric=True, niter=eigsiter,
+                                 **dict(tol=eigstol, which='LM')))[0]
         alpha = 1./maxeig
 
     # define threshold
     thresh = eps*alpha*0.5
+
+    if show:
+        print('alpha = %10e\tthresh = %10e' % (alpha, thresh))
+        print('-----------------------------------------------------------\n')
+        head1 = '   Itn       x[0]        r2norm     r12norm     xupdate'
+        print(head1)
 
     # initialize model and cost function
     xinv = np.zeros(Op.shape[1], dtype=Op.dtype)
@@ -390,17 +440,31 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None,
         t = (1. + np.sqrt(1. + 4. * t ** 2)) / 2.
         zinv = xinv + ((told - 1.) / t) * (xinv - xinvold)
 
+        # model update
+        xupdate = np.linalg.norm(xinv - xinvold)
+
+        if returninfo or show:
+            costdata = 0.5*np.linalg.norm(data - Op.matvec(xinv))** 2
+            costreg = eps*np.linalg.norm(xinv, ord=1)
         if returninfo:
-            cost[iiter] = 0.5*np.linalg.norm(data - Op.matvec(xinv))** 2 + \
-                          eps*np.linalg.norm(xinv, ord=1)
+            cost[iiter] = costdata + costreg
+
+        if show:
+            if niter < 10 or niter-iiter<10 or iiter % 10 ==0:
+                msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
+                      (iiter+1, xinv[0], costdata, costdata+costreg, xupdate)
+                print(msg)
 
         # check tolerance
-        if np.linalg.norm(xinv - xinvold) < tol:
+        if xupdate < tol:
             niter = iiter
             break
 
     # get values pre-threshold  at locations where xinv is different from zero
     #xinv = np.where(xinv != 0, xinv_unthesh, xinv)
+
+    if show:
+        print('\nFISTA finished')
 
     if returninfo:
         return xinv, niter, cost[:niter]

@@ -163,6 +163,7 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
       :py:func:`scipy.sparse.linalg.lsqr` is used
     * ``explicit=False`` with ``epsR``: the iterative solver
       :py:func:`pylops.optimization.leastsquares.RegularizedInversion` is used
+      to solve the spatially regularized problem.
 
     Note that the convergence of iterative solvers such as
     :py:func:`scipy.sparse.linalg.lsqr` can be very slow for this type of

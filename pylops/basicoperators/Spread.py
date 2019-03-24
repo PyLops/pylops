@@ -3,21 +3,22 @@ import numpy as np
 from pylops import LinearOperator
 
 try:
-    from numba import jit
+    from numba import jit, prange
 except ModuleNotFoundError:
     jit = None
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
-@jit(nopython=True, parallel=True)
+@jit(nopython=True, parallel=True, nogil=True)
 def _matvec_numba(x, y, dims, interp, table, dtable):
     """numba implementation of forward mode. See official documentation for
     description of variables
     """
+    dim0, dim1 = dims
     x = x.reshape(dims)
-    for it in range(dims[1]):
-        for isp in range(dims[0]):
+    for isp in range(dim0):
+        for it in range(dim1):
             indices = table[isp, it]
             if interp:
                 dindices = dtable[isp, it]
@@ -32,14 +33,15 @@ def _matvec_numba(x, y, dims, interp, table, dtable):
                         y[i, index + 1] += dindices[i] * x[isp, it]
     return y.ravel()
 
-@jit(nopython=True, parallel=True)
+@jit(nopython=True, parallel=True, nogil=True)
 def _rmatvec_numba(x, y, dims, dimsd, interp, table, dtable):
     """numba implementation of adjoint mode. See official documentation for
     description of variables
     """
+    dim0, dim1 = dims
     x = x.reshape(dimsd)
-    for it in range(dims[1]):
-        for isp in range(dims[0]):
+    for isp in prange(dim0):
+        for it in range(dim1):
             indices = table[isp, it]
             if interp:
                 dindices = dtable[isp, it]
@@ -170,7 +172,6 @@ class Spread(LinearOperator):
         if engine == 'numba' and jit is not None and self.usetable:
             self.engine = 'numba'
         else:
-
             if engine == 'numba' and jit is None:
                 logging.warning('numba not available, revert to numpy...')
             if engine == 'numba' and not self.usetable:
@@ -233,7 +234,6 @@ class Spread(LinearOperator):
             y = _matvec_numba(x, y, self.dims, self.interp,
                               self.table,
                               self.table if self.dtable is None else self.dtable)
-
         else:
             y = self._matvec_numpy(x)
         return y

@@ -7,3 +7,4 @@ from .Interp import Interp
 from .Radon2D import Radon2D
 from .Radon3D import Radon3D
 from .Sliding2D import Sliding2D
+from .Sliding3D import Sliding3D
