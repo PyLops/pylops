@@ -100,7 +100,7 @@ If you do not see any error, you should be good to go, enjoy!
 
 Alternatively, if you simply want to try PyLops but do not have Python in your
 local machine, you can use our [Docker](https://www.docker.com) image. After installing Docker in your computer,
-type the following command in your terminal (note that this will take sometimes the first time
+type the following command in your terminal (note that this will take some time the first time
 you type it as you will download and install the docker image):
 
 ```

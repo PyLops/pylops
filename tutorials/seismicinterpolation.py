@@ -112,15 +112,12 @@ D2op = pylops.SecondDerivative(par['nx']*par['nt'],
                                dims=(par['nx'], par['nt']),
                                dir=0, dtype='float64')
 
-xsmooth, istop, itn, r1norm, r2norm = \
-    pylops.optimization.leastsquares.RegularizedInversion(Rop, [D2op],
-                                                          y.ravel(),
-                                                          epsRs=[np.sqrt(0.1)],
-                                                          returninfo=True,
-                                                          **dict(damp=np.sqrt(1e-4),
-                                                                 iter_lim=50,
-                                                                 show=0))
-xsmooth = xsmooth.reshape(par['nx'], par['nt'])
+xsmooth, _, _ = \
+    pylops.waveeqprocessing.SeismicInterpolation(y, par['nx'], iava,
+                                                 kind='spatial',
+                                                 **dict(epsRs=[np.sqrt(0.1)],
+                                                        damp=np.sqrt(1e-4),
+                                                        iter_lim=50, show=0))
 
 # sparse inversion with FFT2
 nfft = 2**8
@@ -130,15 +127,13 @@ FFTop = pylops.signalprocessing.FFT2D(dims=[par['nx'], par['nt']],
 X = FFTop*x.flatten()
 X = np.reshape(X, (nfft, nfft))
 
-Xl1, niter, cost = \
-    pylops.optimization.sparsity.FISTA(Rop*FFTop.H,
-                                       y.ravel(),
-                                       niter=50,
-                                       eps=1e-1,
-                                       returninfo=True)
-xl1 = FFTop.H*Xl1
-Xl1 = Xl1.reshape(nfft, nfft)
-xl1 = np.real(xl1.reshape(par['nx'], par['nt']))
+xl1, Xl1, cost = \
+    pylops.waveeqprocessing.SeismicInterpolation(y, par['nx'], iava, kind='fk',
+                                                 nffts=(nfft, nfft),
+                                                 sampling=(par['dx'],
+                                                           par['dt']),
+                                                 **dict(niter=50, eps=1e-1,
+                                                        returninfo=True))
 
 fig, axs = plt.subplots(1, 4, sharey=True, figsize=(13, 4))
 axs[0].imshow(x.T, cmap='gray', vmin=-2, vmax=2,
@@ -200,14 +195,14 @@ Xadj = RRop.H*y.flatten()
 Xadj = Xadj.reshape(npx, par['nt'])
 
 # L1 inverse
-Xl1, niter, cost = \
-    pylops.optimization.sparsity.FISTA(RRop, y.flatten(), niter=50,
-                                       eps=1e-1, returninfo=True)
-xl1 = Radop*Xl1
-
-Xl1 = Xl1.reshape(npx, par['nt'])
-xl1 = np.real(xl1.reshape(par['nx'], par['nt']))
-
+xl1, Xl1, cost = \
+    pylops.waveeqprocessing.SeismicInterpolation(y, par['nx'], iava,
+                                                 kind='radon-linear',
+                                                 spataxis=xaxis,
+                                                 taxis=taxis, paxis=px,
+                                                 centeredh=True,
+                                                 **dict(niter=50, eps=1e-1,
+                                                        returninfo=True))
 
 fig, axs = plt.subplots(2, 3, sharey=True, figsize=(12, 7))
 axs[0][0].imshow(x.T, cmap='gray', vmin=-2, vmax=2,
@@ -311,14 +306,15 @@ Xadj_fromx = Xadj_fromx.reshape(npx*nwins, par['nt'])
 Xadj = RSop.H*y.flatten()
 Xadj = Xadj.reshape(npx*nwins, par['nt'])
 
-Xl1, niter, cost = \
-    pylops.optimization.sparsity.FISTA(RSop, y.flatten(),
-                                       niter=50, eps=1e-2,
-                                       returninfo=True)
-xl1 = Slidop*Xl1
-
-Xl1 = Xl1.reshape(npx*nwins, par['nt'])
-xl1 = xl1.reshape(par['nx'], par['nt'])
+# inverse
+xinv, pinv, _ = \
+    pylops.waveeqprocessing.SeismicInterpolation(y, par['nx'], iava,
+                                                 kind='sliding',
+                                                 spataxis=xaxis,
+                                                 taxis=taxis, paxis=px,
+                                                 nwins=nwins, nwin=nwin,
+                                                 nover=nover,
+                                                 **dict(niter=50, eps=1e-2))
 
 fig, axs = plt.subplots(2, 3, sharey=True, figsize=(12, 14))
 axs[0][0].imshow(x.T, cmap='gray', vmin=-0.1, vmax=0.1,

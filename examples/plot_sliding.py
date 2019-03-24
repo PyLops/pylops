@@ -1,12 +1,14 @@
 r"""
-2D Sliding
-==========
+2D and 3D Sliding
+=================
 This example shows how to use the :py:class:`pylops.signalprocessing.Sliding2D`
-operator to perform repeated transforms over small patches of a 2-dimensional
+and  :py:class:`pylops.signalprocessing.Sliding3D` operators
+to perform repeated transforms over small patches of a 2- or 3-dimensional
 array. The transform that we apply in this example is the
-:py:class:`pylops.signalprocessing.Radon2D` but this operator has been
+:py:class:`pylops.signalprocessing.Radon2D`
+(and :py:class:`pylops.signalprocessing.Radon3D`) but this operator has been
 design to allow a variety of transforms as long as they operate with signals
-that are 2-dimensional in nature.
+that are 2 or 3-dimensional in nature, respectively.
 
 """
 import numpy as np
@@ -54,7 +56,7 @@ px = np.linspace(-5e-3, 5e-3, npx)
 dimsd = data.shape
 dims = (nwins*npx, par['nt'])
 
-# sliding window transform without taper
+# Sliding window transform without taper
 Op = \
     pylops.signalprocessing.Radon2D(t, np.linspace(-par['dx']*winsize//2,
                                                    par['dx']*winsize//2,
@@ -144,3 +146,128 @@ for i in range(0, 305, 61):
 # An appropriate transform alongside with a sliding window approach will
 # result a very good approach for interpolation (or *regularization*) or
 # irregularly sampled seismic data.
+
+###############################################################################
+# Finally we do the same for a 3-dimensional array of size
+# :math:`n_y \times n_x \times n_t` composed of 3 hyperbolic events
+import pylops
+
+par = {'oy':-15, 'dy':2, 'ny':14,
+       'ox':-18, 'dx':2, 'nx':18,
+       'ot':0, 'dt':0.004, 'nt':50,
+       'f0': 30}
+
+vrms = [200, 200]
+t0 = [0.05, 0.1]
+amp = [1., -2]
+
+# Create axis
+t, t2, x, y = pylops.utils.seismicevents.makeaxis(par)
+
+# Create wavelet
+wav = pylops.utils.wavelets.ricker(t[:41], f0=par['f0'])[0]
+
+# Generate model
+_, data = \
+    pylops.utils.seismicevents.hyperbolic3d(x, y, t, t0, vrms, vrms, amp, wav)
+
+# Sliding window plan
+nwins = (4, 5)
+winsize = (5, 6)
+overlap = (2, 3)
+npx = 21
+px = np.linspace(-5e-3, 5e-3, npx)
+
+dimsd = data.shape
+dims = (nwins[0]*npx, nwins[1]*npx, par['nt'])
+
+# Sliding window transform without taper
+Op = \
+    pylops.signalprocessing.Radon3D(t,
+                                    np.linspace(-par['dy']*winsize[0]//2,
+                                                par['dy']*winsize[0]//2,
+                                                winsize[0]),
+                                    np.linspace(-par['dx']*winsize[1]//2,
+                                                par['dx']*winsize[1]//2,
+                                                winsize[1]),
+                                    px, px, centeredh=True, kind='linear',
+                                    engine='numba')
+Slid = pylops.signalprocessing.Sliding3D(Op, dims, dimsd,
+                                         winsize, overlap, (npx, npx),
+                                         tapertype=None)
+
+radon = Slid.H * data.flatten()
+radon = radon.reshape(nwins[0], nwins[1], npx, npx, par['nt'])
+
+Slid = pylops.signalprocessing.Sliding3D(Op, dims, dimsd,
+                                         winsize, overlap, (npx, npx),
+                                         tapertype='cosine', design=True)
+
+reconstructed_data = Slid * radon.flatten()
+reconstructed_data = reconstructed_data.reshape(dimsd)
+
+radoninv = pylops.LinearOperator(Slid, explicit=False).div(data.flatten(),
+                                                           niter=10)
+reconstructed_datainv = Slid * radoninv.flatten()
+
+radoninv = radoninv.reshape(nwins[0], nwins[1], npx, npx, par['nt'])
+reconstructed_datainv = reconstructed_datainv.reshape(dimsd)
+
+fig, axs = plt.subplots(2, 3, sharey=True, figsize=(12, 7))
+im = axs[0][0].imshow(data[par['ny']//2].T, cmap='gray', vmin=-2, vmax=2)
+axs[0][0].set_title('Original data')
+plt.colorbar(im, ax=axs[0][0])
+axs[0][0].axis('tight')
+im = axs[0][1].imshow(radon[nwins[0]//2, :, :, npx//2].reshape(nwins[1]*npx,
+                                                               par['nt']).T,
+                      cmap='gray', vmin=-25, vmax=25)
+axs[0][1].set_title('Adjoint Radon')
+plt.colorbar(im, ax=axs[0][1])
+axs[0][1].axis('tight')
+im = axs[0][2].imshow(reconstructed_data[par['ny']//2].T, cmap='gray',
+                      vmin=-1000, vmax=1000)
+axs[0][2].set_title('Reconstruction from adjoint')
+plt.colorbar(im, ax=axs[0][2])
+axs[0][2].axis('tight')
+axs[1][0].axis('off')
+im = axs[1][1].imshow(radoninv[nwins[0]//2, :, :, npx//2].reshape(nwins[1]*npx,
+                                                                  par['nt']).T,
+                      cmap='gray', vmin=-0.025, vmax=0.025)
+axs[1][1].set_title('Inverse Radon')
+plt.colorbar(im, ax=axs[1][1])
+axs[1][1].axis('tight')
+im = axs[1][2].imshow(reconstructed_datainv[par['ny']//2].T, cmap='gray',
+                      vmin=-2, vmax=2)
+axs[1][2].set_title('Reconstruction from inverse')
+plt.colorbar(im, ax=axs[1][2])
+axs[1][2].axis('tight')
+
+
+fig, axs = plt.subplots(2, 3, figsize=(12, 7))
+im = axs[0][0].imshow(data[:, :, 25], cmap='gray', vmin=-2, vmax=2)
+axs[0][0].set_title('Original data')
+plt.colorbar(im, ax=axs[0][0])
+axs[0][0].axis('tight')
+im = axs[0][1].imshow(radon[nwins[0]//2, :, :, :, 25].reshape(nwins[1]*npx,
+                                                              npx).T,
+                      cmap='gray', vmin=-25, vmax=25)
+axs[0][1].set_title('Adjoint Radon')
+plt.colorbar(im, ax=axs[0][1])
+axs[0][1].axis('tight')
+im = axs[0][2].imshow(reconstructed_data[:, :, 25], cmap='gray',
+                      vmin=-1000, vmax=1000)
+axs[0][2].set_title('Reconstruction from adjoint')
+plt.colorbar(im, ax=axs[0][2])
+axs[0][2].axis('tight')
+axs[1][0].axis('off')
+im = axs[1][1].imshow(radoninv[nwins[0]//2, :, :, :, 25].reshape(nwins[1]*npx,
+                                                                 npx).T,
+                      cmap='gray', vmin=-0.025, vmax=0.025)
+axs[1][1].set_title('Inverse Radon')
+plt.colorbar(im, ax=axs[1][1])
+axs[1][1].axis('tight')
+im = axs[1][2].imshow(reconstructed_datainv[:, :, 25],
+                      cmap='gray', vmin=-2, vmax=2)
+axs[1][2].set_title('Reconstruction from inverse')
+plt.colorbar(im, ax=axs[1][2])
+axs[1][2].axis('tight')

@@ -84,6 +84,8 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
     kind : :obj:`str`, optional
         Curve to be used for stacking/spreading (``linear``, ``parabolic``,
         and ``hyperbolic`` are currently supported)
+    centeredh : :obj:`bool`, optional
+        Assume centered spatial axis (``True``) or not (``False``)
     interp : :obj:`bool`, optional
         Apply linear interpolation (``True``) or nearest interpolation
         (``False``) during stacking/spreading along parametric curve

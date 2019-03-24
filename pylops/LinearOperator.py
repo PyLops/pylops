@@ -82,7 +82,7 @@ class LinearOperator(spLinearOperator):
             xest = lsqr(self, y, iter_lim=niter)[0]
         return xest
 
-    def eigs(self, neigs=None, symmetric=False, **kwargs_eig):
+    def eigs(self, neigs=None, symmetric=False, niter=None, **kwargs_eig):
         r"""Most significant eigenvalues of linear operator.
 
         Return an estimate of the most significant eigenvalues
@@ -102,6 +102,8 @@ class LinearOperator(spLinearOperator):
             Operator is symmetric (``True``) or not (``False``). User should
             set this parameter to ``True`` only when it is guaranteed that the
             operator is real-symmetric or complex-hermitian matrices
+        niter : :obj:`int`, optional
+            Number of iterations for eigenvalue estimation
         **kwargs_eig
             Arbitrary keyword arguments for
             :func:`scipy.sparse.linalg.eigs` or
@@ -133,10 +135,11 @@ class LinearOperator(spLinearOperator):
                     eigenvalues = eigvals(self.A)
                 else:
                     if symmetric:
-                        eigenvalues = sp_eigsh(self.A, k=neigs,
+                        eigenvalues = sp_eigsh(self.A, k=neigs, maxiter=niter,
                                                **kwargs_eig)[0]
                     else:
-                        eigenvalues = sp_eigs(self.A, k=neigs, **kwargs_eig)[0]
+                        eigenvalues = sp_eigs(self.A, k=neigs, maxiter=niter,
+                                              **kwargs_eig)[0]
 
             else:
                 if neigs is None or neigs == self.shape[1]:
@@ -145,18 +148,21 @@ class LinearOperator(spLinearOperator):
                 else:
                     eigenvalues = np.sqrt(sp_eigsh(
                         np.dot(np.conj(self.A.T), self.A),
-                        k=neigs, **kwargs_eig)[0])
+                        k=neigs, maxiter=niter, **kwargs_eig)[0])
         else:
             if neigs is None or neigs >= self.shape[1]:
                 neigs = self.shape[1]-2
             if self.shape[0] == self.shape[1]:
                 if symmetric:
-                    eigenvalues = sp_eigsh(self, k=neigs, **kwargs_eig)[0]
+                    eigenvalues = sp_eigsh(self, k=neigs, maxiter=niter,
+                                           **kwargs_eig)[0]
                 else:
-                    eigenvalues = sp_eigs(self, k=neigs, **kwargs_eig)[0]
+                    eigenvalues = sp_eigs(self, k=neigs, maxiter=niter,
+                                          **kwargs_eig)[0]
             else:
                 eigenvalues = np.sqrt(sp_eigs(self.H * self,
-                                              k=neigs, **kwargs_eig)[0])
+                                              k=neigs, maxiter=niter,
+                                              **kwargs_eig)[0])
         return -np.sort(-eigenvalues)
 
     def cond(self, **kwargs_eig):

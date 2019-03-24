@@ -85,6 +85,7 @@ Signal processing
     Radon2D
     Radon3D
     Sliding2D
+    Sliding3D
 
 
 Wave-Equation processing
@@ -126,7 +127,6 @@ Least-squares
     leastsquares.NormalEquationsInversion
     leastsquares.RegularizedInversion
     leastsquares.PreconditionedInversion
-    sparsity.IRLS
 
 
 Sparsity
@@ -152,12 +152,13 @@ Wave-Equation processing
 .. autosummary::
    :toctree: generated/
 
+    SeismicInterpolation
     MDD
     Marchenko
 
 
-Geophysicical subsurface characterization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Geophysical subsurface characterization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. currentmodule:: pylops.avo
 

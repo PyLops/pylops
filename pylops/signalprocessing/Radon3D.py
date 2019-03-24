@@ -70,7 +70,7 @@ def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
     r"""Three dimensional Radon transform.
 
     Apply three dimensional Radon forward (and adjoint) transform to a
-    3-dimensional array of size :math:`[n_{py} \timesn_{px} \times n_t]`
+    3-dimensional array of size :math:`[n_{py} \times n_{px} \times n_t]`
     (and :math:`[n_y \times n_x \times n_t]`).
 
     In forward mode this entails to spreading the model vector
@@ -93,6 +93,8 @@ def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
     kind : :obj:`str`, optional
         Curve to be used for stacking/spreading (``linear``, ``parabolic``,
         and ``hyperbolic`` are currently supported)
+    centeredh : :obj:`bool`, optional
+        Assume centered spatial axis (``True``) or not (``False``)
     interp : :obj:`bool`, optional
         Apply linear interpolation (``True``) or nearest interpolation
         (``False``) during stacking/spreading along parametric curve
