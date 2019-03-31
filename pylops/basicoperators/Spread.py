@@ -11,9 +11,9 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
 @jit(nopython=True, parallel=True, nogil=True)
-def _matvec_numba(x, y, dims, interp, table, dtable):
-    """numba implementation of forward mode. See official documentation for
-    description of variables
+def _matvec_numba_table(x, y, dims, interp, table, dtable):
+    """numba implementation of forward mode with table.
+    See official documentation for description of variables
     """
     dim0, dim1 = dims
     x = x.reshape(dims)
@@ -34,9 +34,9 @@ def _matvec_numba(x, y, dims, interp, table, dtable):
     return y.ravel()
 
 @jit(nopython=True, parallel=True, nogil=True)
-def _rmatvec_numba(x, y, dims, dimsd, interp, table, dtable):
-    """numba implementation of adjoint mode. See official documentation for
-    description of variables
+def _rmatvec_numba_table(x, y, dims, dimsd, interp, table, dtable):
+    """numba implementation of adjoint mode with table.
+    See official documentation for description of variables
     """
     dim0, dim1 = dims
     x = x.reshape(dimsd)
@@ -46,6 +46,52 @@ def _rmatvec_numba(x, y, dims, dimsd, interp, table, dtable):
             if interp:
                 dindices = dtable[isp, it]
 
+            for i, indexfloat in enumerate(indices):
+                index = int(indexfloat)
+                if index != -9223372036854775808: # =int(np.nan)
+                    if not interp:
+                        y[isp, it] += x[i, index]
+                    else:
+                        y[isp, it] += x[i, index]*(1 - dindices[i]) + \
+                                      x[i, index + 1]*dindices[i]
+    return y.ravel()
+
+@jit(nopython=True, parallel=True, nogil=True)
+def _matvec_numba_onthefly(x, y, dims, interp, fh):
+    """numba implementation of forward mode with on-the-fly computations.
+    See official documentation for description of variables
+    """
+    dim0, dim1 = dims
+    x = x.reshape(dims)
+    for isp in range(dim0):
+        for it in range(dim1):
+            if interp:
+                indices, dindices = fh(isp, it)
+            else:
+                indices, dindices = fh(isp, it)
+            for i, indexfloat in enumerate(indices):
+                index = int(indexfloat)
+                if index != -9223372036854775808: # =int(np.nan)
+                    if not interp:
+                        y[i, index] += x[isp, it]
+                    else:
+                        y[i, index] += (1 -dindices[i])*x[isp, it]
+                        y[i, index + 1] += dindices[i] * x[isp, it]
+    return y.ravel()
+
+@jit(nopython=True, parallel=True, nogil=True)
+def _rmatvec_numba_onthefly(x, y, dims, dimsd, interp, fh):
+    """numba implementation of adjoint mode with on-the-fly computations.
+    See official documentation for description of variables
+    """
+    dim0, dim1 = dims
+    x = x.reshape(dimsd)
+    for isp in prange(dim0):
+        for it in range(dim1):
+            if interp:
+                indices, dindices = fh(isp, it)
+            else:
+                indices, dindices = fh(isp, it)
             for i, indexfloat in enumerate(indices):
                 index = int(indexfloat)
                 if index != -9223372036854775808: # =int(np.nan)
@@ -87,9 +133,15 @@ class Spread(LinearOperator):
         :math:`[n_{sp} \times n_t \times n_x]` (if ``None`` use function
         handle ``fh``)
     fh : :obj:`np.ndarray`, optional
-        Function handle that returns an index to be used for spreading/stacking
-        given indices in :math:`sp` and and :math:`t`
-        axes (if ``None`` use look-up table ``table``)
+        Function handle that returns an index (and a fractional value in case
+        of ``interp=True``) to be used for spreading/stacking given indices
+        in :math:`sp` and :math:`t` axes (if ``None`` use look-up table
+        ``table``)
+    interp : :obj:`bool`, optional
+        Apply linear interpolation (``True``) or nearest interpolation
+        (``False``) during stacking/spreading along parametric curve. To be
+        used only if ``engine='numba'``, inferred directly from the number of
+        outputs of ``fh`` for ``engine='numpy'``
     engine : :obj:`str`, optional
         Engine used for fft computation (``numpy`` or ``numba``). Note that
         ``numba`` can only be used when providing a look-up table
@@ -106,6 +158,8 @@ class Spread(LinearOperator):
 
     Raises
     ------
+    KeyError
+        If ``engine`` is neither ``numpy`` nor ``numba``
     NotImplementedError
         If both ``table`` and ``fh`` are not provided
     ValueError
@@ -139,7 +193,16 @@ class Spread(LinearOperator):
 
     """
     def __init__(self, dims, dimsd, table=None, dtable=None,
-                 fh=None, engine='numpy', dtype='float64'):
+                 fh=None, interp=False, engine='numpy', dtype='float64'):
+        if not engine in ['numpy', 'numba']:
+            raise KeyError('engine must be numpy or numba')
+        if engine == 'numba' and jit is not None:
+            self.engine = 'numba'
+        else:
+            if engine == 'numba' and jit is None:
+                logging.warning('numba not available, revert to numpy...')
+            self.engine = 'numpy'
+
         # axes
         self.dims, self.dimsd = dims, dimsd
         self.nsp, self.nt, self.nx = self.dims[0], self.dims[1], self.dimsd[0]
@@ -164,20 +227,14 @@ class Spread(LinearOperator):
                     raise ValueError('dtable must have shape [nsp x nt x nx]')
                 self.interp = True
         else:
-            if len(fh(0, 0)) == 2:
-                self.interp = True
+            if self.engine == 'numba':
+                self.interp = interp
+            else:
+                if len(fh(0, 0)) == 2:
+                    self.interp = True
         self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
-        if engine == 'numba' and jit is not None and self.usetable:
-            self.engine = 'numba'
-        else:
-            if engine == 'numba' and jit is None:
-                logging.warning('numba not available, revert to numpy...')
-            if engine == 'numba' and not self.usetable:
-                logging.warning('cannot use numba without table, '
-                                'revert to numpy...')
-            self.engine = 'numpy'
 
     def _matvec_numpy(self, x):
         x = x.reshape(self.dims)
@@ -231,9 +288,14 @@ class Spread(LinearOperator):
     def _matvec(self, x):
         if self.engine == 'numba':
             y = np.zeros(self.dimsd, dtype=self.dtype)
-            y = _matvec_numba(x, y, self.dims, self.interp,
-                              self.table,
-                              self.table if self.dtable is None else self.dtable)
+            if self.usetable:
+                y = _matvec_numba_table(x, y, self.dims, self.interp,
+                                        self.table,
+                                        self.table if self.dtable is None
+                                        else self.dtable)
+            else:
+                y = _matvec_numba_onthefly(x, y, self.dims, self.interp,
+                                           self.fh)
         else:
             y = self._matvec_numpy(x)
         return y
@@ -241,10 +303,14 @@ class Spread(LinearOperator):
     def _rmatvec(self, x):
         if self.engine == 'numba':
             y = np.zeros(self.dims, dtype=self.dtype)
-            y = _rmatvec_numba(x, y, self.dims, self.dimsd,
-                               self.interp,
-                               self.table,
-                               self.table if self.dtable is None else self.dtable)
+            if self.usetable:
+                y = _rmatvec_numba_table(x, y, self.dims, self.dimsd,
+                                         self.interp, self.table,
+                                         self.table if self.dtable is None
+                                         else self.dtable)
+            else:
+                y = _rmatvec_numba_onthefly(x, y, self.dims, self.dimsd,
+                                            self.interp, self.fh)
         else:
             y = self._rmatvec_numpy(x)
         return y

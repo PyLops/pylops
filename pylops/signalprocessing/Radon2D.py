@@ -2,7 +2,13 @@ import logging
 import numpy as np
 from pylops.basicoperators import Spread
 
+try:
+    from numba import jit, prange, vectorize, float64, int64, float32, int32
+except ModuleNotFoundError:
+    jit = None
+
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+
 
 def _linear(x, t, px):
     return t + px*x
@@ -59,6 +65,86 @@ def _indices_2d_onthefly(f, x, px, ip, it, nt, interp=True):
     parametric curves"""
     return _indices_2d(f, x, px[ip], it, nt, interp=interp)
 
+def _create_table(f, x, pxaxis, nt, npx, nx, interp):
+    """Create look up table
+    """
+    table = np.full((npx, nt, nx), np.nan, dtype=np.float32)
+    if interp:
+        dtable = np.full((npx, nt, nx), np.nan)
+    else:
+        dtable = None
+
+    for ipx, px in enumerate(pxaxis):
+        for it in range(nt):
+            xscan, tscan, dtscan = _indices_2d(f, x, px,
+                                               it, nt,
+                                               interp=interp)
+            table[ipx, it, xscan] = tscan
+            if interp:
+                dtable[ipx, it, xscan] = dtscan
+    return table, dtable
+
+# numba
+@jit(nopython=True)
+def _linear_numba(x, t, px):
+    return t + px * x
+
+@jit(nopython=True)
+def _parabolic_numba(x, t, px):
+    return t + px*x**2
+
+@jit(nopython=True)
+def _hyperbolic_numba(x, t, px):
+    return np.sqrt(t**2 + (x/px)**2)
+
+@jit(nopython=True, nogil=True)
+def _indices_2d_numba(f, x, px, it, nt, interp=True):
+    """Compute time and space indices of parametric line in ``f`` function
+    using numba. Refer to ``_indices_2d`` for full documentation.
+
+    """
+    tdecscan = f(x, it, px)
+    if not interp:
+        xscan = (tdecscan >= 0) & (tdecscan < nt)
+    else:
+        xscan = (tdecscan >= 0) & (tdecscan < nt - 1)
+    tscanf = tdecscan[xscan]
+    tscan = np.zeros(len(tscanf))
+    dtscan = np.zeros(len(tscanf))
+    for it in range(len(tscanf)):
+        tscan[it] = int(tscanf[it])
+        if interp:
+            dtscan[it] = tscanf[it] - tscan[it]
+    return xscan, tscan, dtscan
+
+@jit(nopython=True, parallel=True, nogil=True)
+def _indices_2d_onthefly_numba(f, x, px, ip, it, nt, interp=True):
+    """Wrapper around _indices_2d to allow on-the-fly computation of
+    parametric curves using numba
+    """
+    return _indices_2d_numba(f, x, px[ip], it, nt, interp=interp)
+
+@jit(nopython=True, parallel=True, nogil=True)
+def _create_table_numba(f, x, pxaxis, nt, npx, nx, interp):
+    """Create look up table using numba
+    """
+    table = np.full((npx, nt, nx), np.nan, dtype=np.float32)
+    dtable = np.full((npx, nt, nx), np.nan)
+    for ipx in range(npx):
+        px = pxaxis[ipx]
+        for it in range(nt):
+            xscan, tscan, dtscan = _indices_2d_numba(f, x, px,
+                                                     it, nt,
+                                                     interp=interp)
+            itscan = 0
+            for ixscan in range(len(xscan)):
+                if xscan[ixscan]:
+                    table[ipx, it, ixscan] = tscan[itscan]
+                    if interp:
+                        dtable[ipx, it, ixscan] = dtscan[itscan]
+                    itscan += 1
+    return table, dtable
+
 
 def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
             interp=True, onthefly=False, engine='numpy', dtype='float64'):
@@ -107,6 +193,8 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
 
     Raises
     ------
+    KeyError
+        If ``engine`` is neither ``numpy`` nor ``numba``
     NotImplementedError
         If ``kind`` is not ``linear``, ``parabolic``, or ``hyperbolic``
 
@@ -134,14 +222,19 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
     same parametric curves. This operator is actually a thin wrapper around
     the :class:`pylops.Spread` operator.
     """
+    # engine
+    if not engine in ['numpy', 'numba']:
+        raise KeyError('engine must be numpy or numba')
+    if engine == 'numba' and jit is None:
+        engine = 'numpy'
     # axes
     nt, nh, npx = taxis.size, haxis.size, pxaxis.size
     if kind == 'linear':
-        f = _linear
+        f = _linear if engine == 'numpy' else _linear_numba
     elif kind == 'parabolic':
-        f = _parabolic
+        f = _parabolic if engine == 'numpy' else _parabolic_numba
     elif kind == 'hyperbolic':
-        f = _hyperbolic
+        f = _hyperbolic if engine == 'numpy' else _hyperbolic_numba
     else:
         raise NotImplementedError('kind must be linear, '
                                   'parabolic, or hyperbolic...')
@@ -156,29 +249,35 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
     dimsd = (nh, nt)
 
     if onthefly:
-        if interp:
-            fh = lambda x, y: _indices_2d_onthefly(f, haxisunitless, pxaxis,
-                                               x, y, nt, interp=interp)[1:]
+        if engine == 'numba':
+            @jit(nopython=True, nogil=True)
+            def ontheflyfunc(x, y):
+                return _indices_2d_onthefly_numba(f, haxisunitless, pxaxis,
+                                                  x, y, nt, interp=interp)[1:]
         else:
-            fh = lambda x, y: _indices_2d_onthefly(f, haxisunitless, pxaxis,
-                                                   x, y, nt, interp=interp)[1]
-        r2op = Spread(dims, dimsd, fh=fh, engine=engine, dtype=dtype)
+            if interp:
+                ontheflyfunc = \
+                    lambda x, y : _indices_2d_onthefly(f, haxisunitless,
+                                                       pxaxis, x, y, nt,
+                                                       interp=interp)[1:]
+            else:
+                ontheflyfunc = \
+                    lambda x, y: _indices_2d_onthefly(f, haxisunitless,
+                                                      pxaxis, x, y, nt,
+                                                      interp=interp)[1]
+        r2op = Spread(dims, dimsd, fh=ontheflyfunc, interp=interp,
+                      engine=engine, dtype=dtype)
     else:
-        table = np.full((npx, nt, nh), np.nan, dtype=np.float32)
-        if interp:
-            dtable = np.full((npx, nt, nh), np.nan)
+        if engine == 'numba':
+            tablefunc = _create_table_numba
         else:
-            dtable = None
+            tablefunc = _create_table
 
-        for ipx, px in enumerate(pxaxis):
-            for it in range(nt):
-                xscan, tscan, dtscan = _indices_2d(f, haxisunitless, px,
-                                                   it, nt,
-                                                   interp=interp)
-                table[ipx, it, xscan] = tscan
-                if interp:
-                    dtable[ipx, it, xscan] = dtscan
+        table, dtable = tablefunc(f, haxisunitless, pxaxis,
+                                  nt, npx, nh, interp)
+        if not interp:
+            dtable = None
         r2op = Spread(dims, dimsd, table=table,
-                      dtable=dtable, engine=engine,
-                      dtype=dtype)
+                      dtable=dtable, interp=interp,
+                      engine=engine, dtype=dtype)
     return r2op

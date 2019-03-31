@@ -7,34 +7,56 @@ from pylops.utils import dottest
 from pylops.signalprocessing import Radon2D, Radon3D
 from pylops.optimization.sparsity import FISTA
 
-par1 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
+par1 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx': 21, 'npy': 17,
+        'pymax': 1e-2, 'pxmax': 2e-2,
+        'centeredh': True, 'kind': 'linear', 'interp': True,
+        'onthefly': False,
+        'engine': 'numpy'}  # linear, centered, table, linear interp, numpy
+par2 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx': 21, 'npy': 17,
+        'pymax': 1e-2, 'pxmax': 2e-2,
+        'centeredh': False, 'kind': 'linear', 'interp': True,
+        'onthefly': True,
+        'engine': 'numpy'}  # linear, uncentered, fly, linear interp, numpy
+par3 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
         'pymax':1e-2, 'pxmax':2e-2,
         'centeredh': True, 'kind': 'linear', 'interp':True,
-        'onthefly':True, 'engine':'numba'} # linear, centered, linear interp
-par2 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
+        'onthefly':False,
+        'engine':'numba'} # linear, centered, table, linear interp, numba
+par4 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
         'pymax':1e-2, 'pxmax':2e-2,
         'centeredh': False, 'kind': 'linear', 'interp':False,
-        'onthefly':False, 'engine':'numba'}  # linear, uncentered, nn interp
-par3 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
+        'onthefly':True,
+        'engine':'numba'}  # linear, uncentered, fly, linear interp, numba
+par5 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
         'pymax': 8e-3, 'pxmax': 7e-3,
         'centeredh': True, 'kind': 'parabolic', 'interp':False,
         'onthefly':True, 'engine':'numpy'}  # parabolic, centered, nn interp
-par4 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
+par6 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
         'pymax': 8e-3, 'pxmax': 7e-3,
         'centeredh': False, 'kind': 'parabolic', 'interp':True,
         'onthefly':False, 'engine':'numba'}  # parabolic, uncentered, linear interp
-par5 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
+par7 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
         'pymax': 9e-2, 'pxmax': 8e-2,
         'centeredh': True, 'kind': 'hyperbolic', 'interp':True,
         'onthefly':True, 'engine':'numpy'}  # hyperbolic, centered, linear interp
-par6 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
+par8 = {'nt': 11, 'nhx': 21, 'nhy': 10, 'npx':21, 'npy':17,
         'pymax': 7e-2, 'pxmax': 8e-2,
         'centeredh': False, 'kind': 'hyperbolic', 'interp':False,
         'onthefly':False, 'engine':'numba'}  # hyperbolic, uncentered, nn interp
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3),
-                                 (par4), (par5), (par6)])
+@pytest.mark.parametrize("par", [(par1)])
+def test_unknown_engine(par):
+    """Check error is raised if unknown engine is passed
+    """
+    with pytest.raises(KeyError):
+        _ = Radon2D(None, None, None, engine='foo')
+    with pytest.raises(KeyError):
+        _ = Radon3D(None, None, None, None, None, engine='foo')
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+                                 (par5), (par6), (par7), (par8)])
 def test_Radon2D(par):
     """Dot-test and sparse inverse for Radon2D operator
     """
@@ -58,8 +80,8 @@ def test_Radon2D(par):
     assert_array_almost_equal(x.flatten(), xinv, decimal=1)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3),
-                                 (par4), (par5), (par6)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+                                 (par5), (par6), (par7), (par8)])
 def test_Radon3D(par):
     """Dot-test and sparse inverse for Radon3D operator
     """
@@ -79,7 +101,7 @@ def test_Radon3D(par):
     assert dottest(Rop, par['nhy']*par['nhx']*par['nt'],
                    par['npy']*par['npx']*par['nt'],
                    complexflag=0)
-    if Rop.engine == 'numba': # as numpy is too slow here...
+    if Rop.engine == 'numba' and Rop.usetable == True: # as numpy is too slow here...
         y = Rop * x.flatten()
         y = y.reshape(par['nhy'], par['nhx'], par['nt'])
 

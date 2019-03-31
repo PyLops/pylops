@@ -111,11 +111,11 @@ xls = \
                                                                  show=0))
 
 xista, niteri, costi = \
-    pylops.optimization.sparsity.ISTA(Cop, yn, niter=1000, eps=5e-1,
+    pylops.optimization.sparsity.ISTA(Cop, yn, niter=100, eps=5e-1,
                                       tol=1e-5, returninfo=True)
 
 xfista, niterf, costf = \
-    pylops.optimization.sparsity.FISTA(Cop, yn, niter=1000, eps=5e-1,
+    pylops.optimization.sparsity.FISTA(Cop, yn, niter=100, eps=5e-1,
                                        tol=1e-5, returninfo=True)
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 3))
@@ -130,9 +130,10 @@ ax.legend()
 plt.tight_layout()
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 3))
-ax.plot(costi, 'm', lw=2, label=r'$x_{ISTA} (niter=%d)$' % niteri)
-ax.plot(costf, 'y', lw=2, label=r'$x_{FISTA} (niter=%d)$' % niterf)
+ax.semilogy(costi, 'm', lw=2, label=r'$x_{ISTA} (niter=%d)$' % niteri)
+ax.semilogy(costf, 'y', lw=2, label=r'$x_{FISTA} (niter=%d)$' % niterf)
 ax.set_title('Cost function', size=15, fontweight='bold')
 ax.set_xlabel('Iteration')
 ax.legend()
+ax.grid(True, which='both')
 plt.tight_layout()

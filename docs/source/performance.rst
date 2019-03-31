@@ -137,6 +137,9 @@ Finally, it is also advised to install the additional package
 
    >> conda install -c numba icc_rt
 
+Similarly to ``Intel MKL``, you need to set the environment variable
+``NUMBA_NUM_THREADS`` to tell numba how many threads to use.
+
 
 fft routines
 ~~~~~~~~~~~~

@@ -317,11 +317,12 @@ plt.tight_layout()
 plt.subplots_adjust(top=0.8)
 
 fig, ax = plt.subplots(1, 1, figsize=(12, 3))
-ax.plot(costi, 'r', lw=2, label='ISTA')
-ax.plot(costf, 'g', lw=2, label='FISTA')
+ax.semilogy(costi, 'r', lw=2, label='ISTA')
+ax.semilogy(costf, 'g', lw=2, label='FISTA')
 ax.set_title('Cost functions', size=15, fontweight='bold')
 ax.set_xlabel('Iteration')
 ax.legend()
+ax.grid(True)
 plt.tight_layout()
 
 ###############################################################################

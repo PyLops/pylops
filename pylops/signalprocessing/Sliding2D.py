@@ -83,7 +83,7 @@ def Sliding2D(Op, dims, dimsd, nwin, nover,
     Returns
     -------
     Sop : :obj:`pylops.LinearOperator`
-        Sliding operator (``None`` if ``design=True``)
+        Sliding operator
 
     Raises
     ------
