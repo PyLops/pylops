@@ -3,7 +3,7 @@ import numpy as np
 from pylops.basicoperators import Spread
 
 try:
-    from numba import jit, prange, vectorize, float64, int64, float32, int32
+    from numba import jit, prange
 except ModuleNotFoundError:
     jit = None
 
