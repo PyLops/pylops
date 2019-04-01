@@ -1,5 +1,5 @@
 import pytest
-
+import multiprocessing
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
@@ -85,26 +85,29 @@ def test_Radon2D(par):
 def test_Radon3D(par):
     """Dot-test and sparse inverse for Radon3D operator
     """
-    dt, dhy, dhx = 0.005, 1 , 1
-    t = np.arange(par['nt']) * dt
-    hy = np.arange(par['nhy']) * dhy
-    hx = np.arange(par['nhx']) * dhx
-    py = np.linspace(0, par['pymax'], par['npy'])
-    px = np.linspace(0, par['pxmax'], par['npx'])
-    x = np.zeros((par['npy'], par['npx'], par['nt']))
-    x[3, 2, par['nt']//2] = 1
+    print('threads', multiprocessing.cpu_count())
+    if par['engine'] == 'numba' and \
+        multiprocessing.cpu_count() >= 4: # avoid timeout in travis
 
-    Rop = Radon3D(t, hy, hx, py, px, centeredh=par['centeredh'],
-                  interp=par['interp'], kind=par['kind'],
-                  onthefly=par['onthefly'], engine=par['engine'],
-                  dtype='float64')
-    assert dottest(Rop, par['nhy']*par['nhx']*par['nt'],
-                   par['npy']*par['npx']*par['nt'],
-                   complexflag=0)
-    if Rop.engine == 'numba' and Rop.usetable == True: # as numpy is too slow here...
-        y = Rop * x.flatten()
-        y = y.reshape(par['nhy'], par['nhx'], par['nt'])
+        dt, dhy, dhx = 0.005, 1 , 1
+        t = np.arange(par['nt']) * dt
+        hy = np.arange(par['nhy']) * dhy
+        hx = np.arange(par['nhx']) * dhx
+        py = np.linspace(0, par['pymax'], par['npy'])
+        px = np.linspace(0, par['pxmax'], par['npx'])
+        x = np.zeros((par['npy'], par['npx'], par['nt']))
+        x[3, 2, par['nt']//2] = 1
 
-        xinv, _, _ = FISTA(Rop, y.flatten(), 200, eps=3e0, returninfo=True)
-        assert_array_almost_equal(x.flatten(), xinv, decimal=1)
+        Rop = Radon3D(t, hy, hx, py, px, centeredh=par['centeredh'],
+                      interp=par['interp'], kind=par['kind'],
+                      onthefly=par['onthefly'], engine=par['engine'],
+                      dtype='float64')
+        assert dottest(Rop, par['nhy']*par['nhx']*par['nt'],
+                       par['npy']*par['npx']*par['nt'],
+                       complexflag=0)
+        if Rop.engine == 'numba' and Rop.usetable == True: # as numpy is too slow here...
+            y = Rop * x.flatten()
+            y = y.reshape(par['nhy'], par['nhx'], par['nt'])
 
+            xinv, _, _ = FISTA(Rop, y.flatten(), 200, eps=3e0, returninfo=True)
+            assert_array_almost_equal(x.flatten(), xinv, decimal=1)

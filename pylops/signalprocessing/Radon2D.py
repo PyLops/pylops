@@ -3,7 +3,7 @@ import numpy as np
 from pylops.basicoperators import Spread
 
 try:
-    from numba import jit, prange
+    from numba import jit
 except ModuleNotFoundError:
     jit = None
 
@@ -108,13 +108,13 @@ def _indices_2d_numba(f, x, px, it, nt, interp=True):
         xscan = (tdecscan >= 0) & (tdecscan < nt)
     else:
         xscan = (tdecscan >= 0) & (tdecscan < nt - 1)
-    tscanf = tdecscan[xscan]
-    tscan = np.zeros(len(tscanf))
-    dtscan = np.zeros(len(tscanf))
-    for it in range(len(tscanf)):
-        tscan[it] = int(tscanf[it])
+    tscanfs = tdecscan[xscan]
+    tscan = np.zeros(len(tscanfs))
+    dtscan = np.zeros(len(tscanfs))
+    for it, tscanf in enumerate(tscanfs):
+        tscan[it] = int(tscanf)
         if interp:
-            dtscan[it] = tscanf[it] - tscan[it]
+            dtscan[it] = tscanf - tscan[it]
     return xscan, tscan, dtscan
 
 @jit(nopython=True, parallel=True, nogil=True)
@@ -133,12 +133,12 @@ def _create_table_numba(f, x, pxaxis, nt, npx, nx, interp):
     for ipx in range(npx):
         px = pxaxis[ipx]
         for it in range(nt):
-            xscan, tscan, dtscan = _indices_2d_numba(f, x, px,
-                                                     it, nt,
-                                                     interp=interp)
+            xscans, tscan, dtscan = _indices_2d_numba(f, x, px,
+                                                      it, nt,
+                                                      interp=interp)
             itscan = 0
-            for ixscan in range(len(xscan)):
-                if xscan[ixscan]:
+            for ixscan, xscan in enumerate(xscans):
+                if xscan:
                     table[ipx, it, ixscan] = tscan[itscan]
                     if interp:
                         dtable[ipx, it, ixscan] = dtscan[itscan]

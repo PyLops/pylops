@@ -113,13 +113,13 @@ def _indices_3d_numba(f, y, x, py, px, it, nt, interp=True):
         sscan = (tdecscan >= 0) & (tdecscan < nt)
     else:
         sscan = (tdecscan >= 0) & (tdecscan < nt - 1)
-    tscanf = tdecscan[sscan]
-    tscan = np.zeros(len(tscanf))
-    dtscan = np.zeros(len(tscanf))
-    for it in range(len(tscanf)):
-        tscan[it] = int(tscanf[it])
+    tscanfs = tdecscan[sscan]
+    tscan = np.zeros(len(tscanfs))
+    dtscan = np.zeros(len(tscanfs))
+    for it, tscanf in enumerate(tscanfs):
+        tscan[it] = int(tscanf)
         if interp:
-            dtscan[it] = tscanf[it] - tscan[it]
+            dtscan[it] = tscanf - tscan[it]
     return sscan, tscan, dtscan
 
 @jit(nopython=True, parallel=True, nogil=True)
@@ -139,13 +139,13 @@ def _create_table_numba(f, y, x, pyaxis, pxaxis, nt, npy, npx, ny, nx, interp):
         py = pyaxis[ip]
         px = pxaxis[ip]
         for it in range(nt):
-            sscan, tscan, dtscan = _indices_3d_numba(f, y, x,
+            sscans, tscan, dtscan = _indices_3d_numba(f, y, x,
                                                      py, px,
                                                      it, nt,
                                                      interp=interp)
             itscan = 0
-            for isscan in range(len(sscan)):
-                if sscan[isscan]:
+            for isscan, sscan in enumerate(sscans):
+                if sscan:
                     table[ip, it, isscan] = tscan[itscan]
                     if interp:
                         dtable[ip, it, isscan] = dtscan[itscan]
