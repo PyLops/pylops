@@ -85,9 +85,8 @@ def test_Radon2D(par):
 def test_Radon3D(par):
     """Dot-test and sparse inverse for Radon3D operator
     """
-    print('threads', multiprocessing.cpu_count())
-    if par['engine'] == 'numba' and \
-        multiprocessing.cpu_count() >= 4: # avoid timeout in travis
+    if par['engine'] == 'numpy' or \
+        multiprocessing.cpu_count() >= 4: # avoid timeout in travis for numba
 
         dt, dhy, dhx = 0.005, 1 , 1
         t = np.arange(par['nt']) * dt

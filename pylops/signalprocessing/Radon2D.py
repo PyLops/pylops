@@ -181,8 +181,7 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
         in look-up table (``False``). Using a look-up table is computationally
         more efficient but increases the memory burden
     engine : :obj:`str`, optional
-        Engine used for fft computation (``numpy`` or ``numba``). Note that
-        ``numba`` can only be used when providing a look-up table
+        Engine used for computation (``numpy`` or ``numba``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
