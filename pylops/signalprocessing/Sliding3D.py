@@ -58,7 +58,7 @@ def Sliding3D(Op, dims, dimsd, nwin, nover, nop,
     Returns
     -------
     Sop : :obj:`pylops.LinearOperator`
-        Sliding operator (``None`` if ``design=True``)
+        Sliding operator
 
     Raises
     ------

@@ -1,4 +1,5 @@
 import pytest
+import multiprocessing
 import numpy as np
 
 from pylops.utils.seismicevents import makeaxis, linear2d, linear3d
@@ -8,6 +9,11 @@ from pylops.waveeqprocessing.seismicinterpolation import SeismicInterpolation
 
 np.random.seed(5)
 
+# avoid timeout in travis for numba
+if multiprocessing.cpu_count() >= 4:
+    engine = 'numba'
+else:
+    engine = 'numpy'
 
 # params
 par = {'oy':0, 'dy':2, 'ny':30,
@@ -92,7 +98,8 @@ def test_SeismicInterpolation2d(par):
     """
     xinv, _, _ = SeismicInterpolation(y2d, par['ny'], iava, kind=par['kind'],
                                       spataxis=yaxis, taxis=taxis,
-                                      dottest=True, **par['kwargs'])
+                                      engine=engine, dottest=True,
+                                      **par['kwargs'])
     assert np.linalg.norm(x2d - xinv) / np.linalg.norm(xinv) < 2e-1
 
 
@@ -103,7 +110,7 @@ def test_SeismicInterpolation3d(par):
     xinv, _, _ = SeismicInterpolation(y3d, (par['ny'], par['nx']),
                                       iava, kind=par['kind'],
                                       spataxis=yaxis, spat1axis=xaxis,
-                                      taxis=taxis,
+                                      taxis=taxis, engine=engine,
                                       dottest=True, **par['kwargs'])
     # remove edges before checking inversion if using sliding windows
     if par['kind'] == 'sliding':

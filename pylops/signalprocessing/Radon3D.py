@@ -2,7 +2,13 @@ import logging
 import numpy as np
 from pylops.basicoperators import Spread
 
+try:
+    from numba import jit, prange
+except ModuleNotFoundError:
+    jit = None
+
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+
 
 def _linear(y, x, t, py, px):
     return t + px*x + py*y
@@ -63,6 +69,89 @@ def _indices_3d_onthefly(f, y, x, py, px, ip, it, nt, interp=True):
     parametric curves"""
     return _indices_3d(f, y, x, py[ip], px[ip], it, nt, interp=interp)
 
+def _create_table(f, y, x, pyaxis, pxaxis, nt, npy, npx, ny, nx, interp):
+    """Create look up table
+    """
+    table = np.full((npx * npy, nt, ny * nx), np.nan, dtype=np.float32)
+    if interp:
+        dtable = np.full((npx * npy, nt, ny * nx), np.nan)
+    else:
+        dtable = None
+
+    for ip, (py, px) in enumerate(zip(pyaxis, pxaxis)):
+        for it in range(nt):
+            sscan, tscan, dtscan = _indices_3d(f, y, x,
+                                               py, px,
+                                               it, nt,
+                                               interp=interp)
+            table[ip, it, sscan] = tscan
+            if interp:
+                dtable[ip, it, sscan] = dtscan
+    return table, dtable
+
+# numba
+@jit(nopython=True)
+def _linear_numba(y, x, t, py, px):
+    return t + px*x + py*y
+
+@jit(nopython=True)
+def _parabolic_numba(y, x, t, py, px):
+    return t + px*x**2 + py*y**2
+
+@jit(nopython=True)
+def _hyperbolic_numba(y, x, t, py, px):
+    return np.sqrt(t**2 + (x/px)**2 + (y/py)**2)
+
+@jit(nopython=True, parallel=True, nogil=True)
+def _indices_3d_numba(f, y, x, py, px, it, nt, interp=True):
+    """Compute time and space indices of parametric line in ``f`` function
+    using numba. Refer to ``_indices_3d`` for full documentation.
+
+    """
+    tdecscan = f(y, x, it, py, px)
+    if not interp:
+        sscan = (tdecscan >= 0) & (tdecscan < nt)
+    else:
+        sscan = (tdecscan >= 0) & (tdecscan < nt - 1)
+    tscanfs = tdecscan[sscan]
+    tscan = np.zeros(len(tscanfs))
+    dtscan = np.zeros(len(tscanfs))
+    for it, tscanf in enumerate(tscanfs):
+        tscan[it] = int(tscanf)
+        if interp:
+            dtscan[it] = tscanf - tscan[it]
+    return sscan, tscan, dtscan
+
+@jit(nopython=True, parallel=True, nogil=True)
+def _indices_3d_onthefly_numba(f, y, x, py, px, ip, it, nt, interp=True):
+    """Wrapper around _indices_3d to allow on-the-fly computation of
+    parametric curves using numba
+    """
+    return _indices_3d_numba(f, y, x, py[ip], px[ip], it, nt, interp=interp)
+
+@jit(nopython=True, parallel=True, nogil=True)
+def _create_table_numba(f, y, x, pyaxis, pxaxis, nt, npy, npx, ny, nx, interp):
+    """Create look up table using numba
+    """
+    table = np.full((npx * npy, nt, ny * nx), np.nan, dtype=np.float32)
+    dtable = np.full((npx * npy, nt, ny * nx), np.nan)
+    for ip in prange(len(pyaxis)):
+        py = pyaxis[ip]
+        px = pxaxis[ip]
+        for it in range(nt):
+            sscans, tscan, dtscan = _indices_3d_numba(f, y, x,
+                                                     py, px,
+                                                     it, nt,
+                                                     interp=interp)
+            itscan = 0
+            for isscan, sscan in enumerate(sscans):
+                if sscan:
+                    table[ip, it, isscan] = tscan[itscan]
+                    if interp:
+                        dtable[ip, it, isscan] = dtscan[itscan]
+                    itscan += 1
+    return table, dtable
+
 
 def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
             centeredh=True, interp=True, onthefly=False,
@@ -104,8 +193,7 @@ def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
         in look-up table (``False``). Using a look-up table is computationally
         more efficient but increases the memory burden
     engine : :obj:`str`, optional
-        Engine used for fft computation (``numpy`` or ``numba``). Note that
-        ``numba`` can only be used when providing a look-up table
+        Engine used for computation (``numpy`` or ``numba``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -116,6 +204,8 @@ def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
 
     Raises
     ------
+    KeyError
+        If ``engine`` is neither ``numpy`` nor ``numba``
     NotImplementedError
         If ``kind`` is not ``linear``, ``parabolic``, or ``hyperbolic``
 
@@ -144,15 +234,21 @@ def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
     same parametric curves. This operator is actually a thin wrapper around
     the :class:`pylops.Spread` operator.
     """
+    # engine
+    if not engine in ['numpy', 'numba']:
+        raise KeyError('engine must be numpy or numba')
+    if engine == 'numba' and jit is None:
+        engine = 'numpy'
+
     # axes
     nt, nhy, nhx = taxis.size, hyaxis.size, hxaxis.size
     npy, npx = pyaxis.size, pxaxis.size
     if kind == 'linear':
-        f = _linear
+        f = _linear if engine == 'numpy' else _linear_numba
     elif kind == 'parabolic':
-        f = _parabolic
+        f = _parabolic if engine == 'numpy' else _parabolic_numba
     elif kind == 'hyperbolic':
-        f = _hyperbolic
+        f = _hyperbolic if engine == 'numpy' else _hyperbolic_numba
     else:
         raise NotImplementedError('kind must be linear, '
                                   'parabolic, or hyperbolic...')
@@ -178,40 +274,46 @@ def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
     dimsd = (nhy*nhx, nt)
 
     if onthefly:
-        if interp:
-            fh = lambda x, y: _indices_3d_onthefly(f, hyaxisunitless.ravel(),
-                                                   hxaxisunitless.ravel(),
-                                                   pyaxis.ravel(),
-                                                   pxaxis.ravel(),
-                                                   x, y, nt, interp=interp)[1:]
+        if engine == 'numba':
+            @jit(nopython=True, nogil=True)
+            def ontheflyfunc(x, y):
+                return _indices_3d_onthefly_numba(f, hyaxisunitless.ravel(),
+                                                  hxaxisunitless.ravel(),
+                                                  pyaxis.ravel(),
+                                                  pxaxis.ravel(),
+                                                  x, y, nt, interp=interp)[1:]
         else:
-            fh = lambda x, y: _indices_3d_onthefly(f,
-                                                   hyaxisunitless.ravel(),
-                                                   hxaxisunitless.ravel(),
-                                                   pyaxis.ravel(),
-                                                   pxaxis.ravel(),
-                                                   x, y, nt,
-                                                   interp=interp)[1]
-        r2op = Spread(dims, dimsd, fh=fh, engine=engine, dtype=dtype)
+            if interp:
+                ontheflyfunc = \
+                    lambda x, y: _indices_3d_onthefly(f,
+                                                      hyaxisunitless.ravel(),
+                                                      hxaxisunitless.ravel(),
+                                                      pyaxis.ravel(),
+                                                      pxaxis.ravel(),
+                                                      x, y, nt, interp=interp)[1:]
+            else:
+                ontheflyfunc = \
+                    lambda x, y: _indices_3d_onthefly(f,
+                                                      hyaxisunitless.ravel(),
+                                                      hxaxisunitless.ravel(),
+                                                      pyaxis.ravel(),
+                                                      pxaxis.ravel(),
+                                                      x, y, nt, interp=interp)[1]
+        r3op = Spread(dims, dimsd, fh=ontheflyfunc, interp=interp,
+                      engine=engine, dtype=dtype)
     else:
-        table = np.full((npx*npy, nt, nhy*nhx), np.nan, dtype=np.float32)
-        if interp:
-            dtable = np.full((npx*npy, nt, nhy*nhx), np.nan)
+        if engine == 'numba':
+            tablefunc = _create_table_numba
         else:
+            tablefunc = _create_table
+
+        table, dtable = tablefunc(f, hyaxisunitless.ravel(),
+                                  hxaxisunitless.ravel(),
+                                  pyaxis.ravel(), pxaxis.ravel(),
+                                  nt, npy, npx, nhy, nhx, interp=interp)
+        if not interp:
             dtable = None
-
-        for ip, (py, px) in enumerate(zip(pyaxis.ravel(), pxaxis.ravel())):
-            for it in range(nt):
-                sscan, tscan, dtscan = _indices_3d(f, hyaxisunitless.ravel(),
-                                                   hxaxisunitless.ravel(),
-                                                   py, px,
-                                                   it, nt,
-                                                   interp=interp)
-                table[ip, it, sscan] = tscan
-                if interp:
-                    dtable[ip, it, sscan] = dtscan
-
-        r2op = Spread(dims, dimsd, table=table,
-                      dtable=dtable, engine=engine,
-                      dtype=dtype)
-    return r2op
+        r3op = Spread(dims, dimsd, table=table,
+                      dtable=dtable, interp=interp,
+                      engine=engine, dtype=dtype)
+    return r3op

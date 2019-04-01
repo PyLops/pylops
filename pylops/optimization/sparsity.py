@@ -180,9 +180,9 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         Step size (:math:`\alpha \le 1/\lambda_{max}(\mathbf{Op}^H\mathbf{Op})`
         guarantees convergence. If ``None``, estimated to satisfy the
         condition, otherwise the condition will not be checked)
-    eigsiter: :obj:`float`, optional
+    eigsiter : :obj:`float`, optional
         Number of iterations for eigenvalue estimation if ``alpha=None``
-    eigstol: :obj:`float`, optional
+    eigstol : :obj:`float`, optional
         Tolerance for eigenvalue estimation if ``alpha=None``
     tol : :obj:`float`, optional
         Tolerance. Stop iterations if difference between inverted model
@@ -228,8 +228,8 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         \mathbf{x}^{(i+1)} = soft (\mathbf{x}^{(i)} + \mathbf{Op}^H
         (\mathbf{d} - \mathbf{Op} \mathbf{x}^{(i)})), \epsilon \alpha /2)
 
-    where 9p}^H\mathbf{Op}^)` is the
-    step size and :math:`soft(.)` is the so-called soft-thresholding rule.
+    where :math:`\epsilon \alpha /2` is the
+    threshold and :math:`soft()` is the so-called soft-thresholding rule.
 
     .. [1] Beck, A., and Teboulle, M., “A Fast Iterative Shrinkage-Thresholding
        Algorithm for Linear Inverse Problems”, SIAM Journal on
@@ -301,7 +301,7 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
             cost[iiter] = costdata + costreg
 
         if show:
-            if niter < 10 or niter - iiter < 10 or iiter % 10 == 0:
+            if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
                 msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
                       (iiter+1, xinv[0], costdata, costdata+costreg, xupdate)
                 print(msg)
@@ -345,9 +345,9 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         Step size (:math:`\alpha \le 1/\lambda_{max}(\mathbf{Op}^H\mathbf{Op})`
         guarantees convergence. If ``None``, estimated to satisfy the
         condition, otherwise the condition will not be checked)
-    eigsiter: :obj:`int`, optional
+    eigsiter : :obj:`int`, optional
         Number of iterations for eigenvalue estimation if ``alpha=None``
-    eigstol: :obj:`float`, optional
+    eigstol : :obj:`float`, optional
         Tolerance for eigenvalue estimation if ``alpha=None``
     tol : :obj:`float`, optional
         Tolerance. Stop iterations if difference between inverted model
@@ -444,13 +444,13 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         xupdate = np.linalg.norm(xinv - xinvold)
 
         if returninfo or show:
-            costdata = 0.5*np.linalg.norm(data - Op.matvec(xinv))** 2
+            costdata = 0.5*np.linalg.norm(data - Op.matvec(xinv))**2
             costreg = eps*np.linalg.norm(xinv, ord=1)
         if returninfo:
             cost[iiter] = costdata + costreg
 
         if show:
-            if niter < 10 or niter-iiter<10 or iiter % 10 ==0:
+            if iiter < 10 or niter-iiter<10 or iiter % 10 ==0:
                 msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
                       (iiter+1, xinv[0], costdata, costdata+costreg, xupdate)
                 print(msg)

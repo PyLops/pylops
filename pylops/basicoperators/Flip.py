@@ -15,7 +15,7 @@ class Flip(LinearOperator):
         Number of samples for each dimension
         (``None`` if only one dimension is available)
     dir : :obj:`int`, optional
-        Direction along which smoothing is applied.
+        Direction along which flipping is applied.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -29,14 +29,16 @@ class Flip(LinearOperator):
 
     Notes
     -----
-    The Flop operator flips the input model (and data) along any chosen
+    The Flip operator flips the input model (and data) along any chosen
     direction. For simplicity, given a one dimensional array,
-    this is equivalent to:
+    in forward mode this is equivalent to:
 
     .. math::
         y[i] = x[N-i] \quad \forall i=0,1,2,...,N-1
 
-    where :math:`N` is the lenght of the input model.
+    where :math:`N` is the lenght of the input model. As this operator is
+    self-adjoint, :math:`x` and :math:`y` in the equation above are simply
+    swapped in adjoint mode.
 
     """
     def __init__(self, N, dims=None, dir=0, dtype='float64'):

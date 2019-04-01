@@ -16,7 +16,7 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
                          spataxis=None, spat1axis=None, taxis=None,
                          paxis=None, p1axis=None, centeredh=True,
                          nwins=None, nwin=None, nover=None, design=False,
-                         dottest=False, **kwargs_solver):
+                         engine='numba', dottest=False, **kwargs_solver):
     r"""Seismic interpolation (or regularization).
 
     Interpolate seismic data from irregular to regular spatial grid.
@@ -86,6 +86,8 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
     design : :obj:`bool`, optional
         Print number of sliding window (``True``) or not (``False``) when
         using ``kind='sliding'``
+    engine : :obj:`str`, optional
+        Engine used for Radon computations (``numpy`` or ``numba``)
     dottest : :obj:`bool`, optional
         Apply dot-test
     **kwargs_solver
@@ -172,16 +174,18 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
         Rop = Interp(np.prod(dims), iava, dims=dims,
                      dir=0, kind='linear', dtype=dtype)
         if ndims == 3 and iava1 is not None:
-            Rop1 = Interp(np.prod(dims), iava1, dims=dims,
+            dims1 = (len(iava), nrec[1], dimsd[2])
+            Rop1 = Interp(np.prod(dims1), iava1, dims=dims1,
                           dir=1, kind='linear', dtype=dtype)
-            Rop *= Rop1
+            Rop = Rop1*Rop
     else:
         Rop = Restriction(np.prod(dims), iava, dims=dims,
                           dir=0, dtype=dtype)
         if ndims == 3 and iava1 is not None:
-            Rop1 = Restriction(np.prod(dims), iava1, dims=dims,
+            dims1 = (len(iava), nrec[1], dimsd[2])
+            Rop1 = Restriction(np.prod(dims1), iava1, dims=dims1,
                                dir=1, dtype=dtype)
-            Rop *= Rop1
+            Rop = Rop1*Rop
 
     # create other operators for inversion
     if kind == 'spatial':
@@ -228,12 +232,12 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
         kindradon = kind.split('-')[-1]
         if ndims == 3:
             Pop = Radon3D(taxis, spataxis, spat1axis, paxis, p1axis,
-                          centeredh=centeredh, kind=kindradon, engine='numba')
+                          centeredh=centeredh, kind=kindradon, engine=engine)
             dimsp = (paxis.size, p1axis.size, taxis.size)
 
         else:
             Pop = Radon2D(taxis, spataxis, paxis,
-                          centeredh=centeredh, kind=kindradon, engine='numba')
+                          centeredh=centeredh, kind=kindradon, engine=engine)
             dimsp = (paxis.size, taxis.size)
         SIop = Rop*Pop
     elif kind == 'sliding':
@@ -254,7 +258,7 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
             dimsp = (nwins[0]*npaxis, nwins[1]*np1axis, dimsslid[2])
             Op = Radon3D(taxis, spataxis_local, spat1axis_local,
                          paxis, p1axis, centeredh=True,
-                         kind='linear', engine='numba')
+                         kind='linear', engine=engine)
             Pop = Sliding3D(Op, dimsp, dimsslid, nwin, nover,
                             (npaxis, np1axis), tapertype='cosine')
             # to be able to reshape correctly the preconditioned model
@@ -271,7 +275,7 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
             dimsp = (nwins * npaxis, dimsslid[1])
 
             Op = Radon2D(taxis, spataxis_local, paxis, centeredh=True,
-                         kind='linear', engine='numba')
+                         kind='linear', engine=engine)
             Pop = Sliding2D(Op, dimsp, dimsslid, nwin, nover,
                             tapertype='cosine', design=design)
         SIop = Rop * Pop

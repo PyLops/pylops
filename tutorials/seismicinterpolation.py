@@ -307,7 +307,7 @@ Xadj = RSop.H*y.flatten()
 Xadj = Xadj.reshape(npx*nwins, par['nt'])
 
 # inverse
-xinv, pinv, _ = \
+xl1, Xl1, _ = \
     pylops.waveeqprocessing.SeismicInterpolation(y, par['nx'], iava,
                                                  kind='sliding',
                                                  spataxis=xaxis,

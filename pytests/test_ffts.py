@@ -33,6 +33,15 @@ par4w = {'nt': 101, 'nx': 31, 'ny': 10,
          'engine': 'fftw'}  # nfft>nt, real input, fftw engine
 
 
+@pytest.mark.parametrize("par", [(par1)])
+def test_unknown_engine(par):
+    """Check error is raised if unknown engine is passed
+    """
+    with pytest.raises(KeyError):
+        _ = FFT(dims=[par['nt']], nfft=par['nfft'], sampling=0.005,
+                    real=par['real'], engine='foo')
+
+
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
                                  (par1w), (par2w), (par3w), (par4w)])
 def test_FFT_1dsignal(par):
