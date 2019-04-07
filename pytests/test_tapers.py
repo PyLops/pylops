@@ -27,8 +27,6 @@ def test_taper2d(par):
     """
     tap = taper2d(par['nt'], par['nspat'][0],
                   par['ntap'][0], par['tapertype'])
-    print(tap)
-    print(tap.shape)
 
     assert tap.shape == (par['nspat'][0], par['nt'])
     assert_array_equal(tap[0], np.zeros(par['nt']))

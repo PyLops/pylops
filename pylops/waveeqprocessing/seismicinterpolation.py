@@ -45,9 +45,9 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
         second dimension of regularly sampled spatial grid of interpolated
         signal. Can be used only in case of 3-dimensional data.
     kind : :obj:`str`, optional
-        Type of inversion: ``fk`` (default), ``smooth``, ``radon-linear``,
+        Type of inversion: ``fk`` (default), ``spatial``, ``radon-linear``,
         ``radon-parabolic`` or , ``radon-hyperbolic`` and
-        ``slidingradon-linear``
+        ``sliding``
     nffts : :obj:`int` or :obj:`tuple`, optional
         nffts : :obj:`tuple`, optional
         Number of samples in Fourier Transform for each direction.
@@ -107,6 +107,12 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
     cost : :obj:`np.ndarray`
         Cost function norm
 
+    Raises
+    ------
+    KeyError
+        If ``kind`` is neither ``spatial``, ``fl``, ``radon-linear``,
+        ``radon-parabolic``, ``radon-hyperbolic`` nor ``sliding``
+
     Notes
     -----
     The problem of seismic data interpolation (or regularization) can be
@@ -127,7 +133,7 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
     mostly differ in the choice of the regularization (or preconditining) used
     to mitigate the ill-posedness of the problem:
 
-        * ``smooth``: least-squares inversion in the original time-space domain
+        * ``spatial``: least-squares inversion in the original time-space domain
           with an additional spatial smoothing regularization term,
           corresponding to the cost function
           :math:`J = ||\mathbf{y} - \mathbf{R} \mathbf{x}||_2 +
@@ -279,6 +285,9 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
             Pop = Sliding2D(Op, dimsp, dimsslid, nwin, nover,
                             tapertype='cosine', design=design)
         SIop = Rop * Pop
+    else:
+        raise KeyError('kind must be spatial, fk, radon-linear, '
+                       'radon-parabolic, radon-hyperbolic or sliding')
 
     # dot-test
     if dottest:

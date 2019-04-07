@@ -3,7 +3,7 @@ import numpy as np
 from pylops.basicoperators import Spread
 
 try:
-    from numba import jit, prange
+    from numba import jit
 except ModuleNotFoundError:
     jit = None
 
@@ -135,7 +135,7 @@ def _create_table_numba(f, y, x, pyaxis, pxaxis, nt, npy, npx, ny, nx, interp):
     """
     table = np.full((npx * npy, nt, ny * nx), np.nan, dtype=np.float32)
     dtable = np.full((npx * npy, nt, ny * nx), np.nan)
-    for ip in prange(len(pyaxis)):
+    for ip in range(len(pyaxis)):
         py = pyaxis[ip]
         px = pxaxis[ip]
         for it in range(nt):
@@ -211,16 +211,17 @@ def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
 
     See Also
     --------
+    pylops.signalprocessing.Radon2D: Two dimensional Radon transform
     pylops.Spread: Spread operator
 
     Notes
     -----
     The Radon3D operator applies the following linear transform in adjoint mode
-    to the data after reshaping it into a 2-dimensional array of
-    size :math:`[n_x \times n_t]` in adjoint mode:
+    to the data after reshaping it into a 3-dimensional array of
+    size :math:`[n_y \times n_x \times n_t]` in adjoint mode:
 
     .. math::
-        m(p_y, p_x, t_0) = \int{d(y, x, t = f(p_y, p_x, y, x, t))} dx
+        m(p_y, p_x, t_0) = \int{d(y, x, t = f(p_y, p_x, y, x, t))} dx dy
 
     where :math:`f(p_y, p_x, y, x, t) = t_0 + p_y * y + p_x * x` in linear
     mode, :math:`f(p_y, p_x, y, x, t) = t_0 + p_y * y^2 + p_x * x^2` in

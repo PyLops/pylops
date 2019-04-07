@@ -97,6 +97,7 @@ Wave-Equation processing
    :toctree: generated/
 
     MDC
+    UpDownComposition2D
 
 
 Geophysicical subsurface characterization
@@ -153,8 +154,10 @@ Wave-Equation processing
    :toctree: generated/
 
     SeismicInterpolation
+    WavefieldDecomposition
     MDD
     Marchenko
+
 
 
 Geophysical subsurface characterization
