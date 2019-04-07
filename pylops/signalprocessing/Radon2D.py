@@ -199,6 +199,7 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
 
     See Also
     --------
+    pylops.signalprocessing.Radon3D: Three dimensional Radon transform
     pylops.Spread: Spread operator
 
     Notes

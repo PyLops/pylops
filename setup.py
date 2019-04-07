@@ -21,10 +21,10 @@ setup(
               'inverse problems',
               'large-scale optimization'],
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
+        'License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.6',
         'Topic :: Scientific/Engineering :: Mathematics'
