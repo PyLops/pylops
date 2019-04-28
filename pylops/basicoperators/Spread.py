@@ -107,7 +107,7 @@ class Spread(LinearOperator):
     r"""Spread operator.
 
     Spread values from the input model vector arranged as a 2-dimensional
-    array of size :math:`[n_{sp} \times n_t]` into the data vector of size
+    array of size :math:`[n_{sp} \times n_{t0}]` into the data vector of size
     :math:`[n_x \times n_t]`. Spreading is performed along parametric curves
     provided as look-up table of pre-computed indices (``table``)
     or computed on-the-fly using a function handle (``fh``).
@@ -118,19 +118,19 @@ class Spread(LinearOperator):
     Parameters
     ----------
     dims : :obj:`tuple`
-        Dimensions of model vector (vector will be reshaped internal into
-        a two-dimensional array of size :math:`[n_{sp} \times n_t]`,
+        Dimensions of model vector (vector will be reshaped internally into
+        a two-dimensional array of size :math:`[n_{sp} \times n_{t0}]`,
         where the first dimension is the spreading/stacking direction)
     dimsd : :obj:`tuple`
         Dimensions of model vector (vector will be reshaped internal into
         a two-dimensional array of size :math:`[n_x \times n_t]`)
     table : :obj:`np.ndarray`, optional
         Look-up table of indeces of size
-        :math:`[n_{sp} \times n_t \times n_x]` (if ``None`` use function
+        :math:`[n_{sp} \times n_{t0} \times n_x]` (if ``None`` use function
         handle ``fh``)
     dtable : :obj:`np.ndarray`, optional
         Look-up table of decimals remainders for linear interpolation of size
-        :math:`[n_{sp} \times n_t \times n_x]` (if ``None`` use function
+        :math:`[n_{sp} \times n_{t0} \times n_x]` (if ``None`` use function
         handle ``fh``)
     fh : :obj:`np.ndarray`, optional
         Function handle that returns an index (and a fractional value in case
@@ -205,17 +205,21 @@ class Spread(LinearOperator):
 
         # axes
         self.dims, self.dimsd = dims, dimsd
-        self.nsp, self.nt, self.nx = self.dims[0], self.dims[1], self.dimsd[0]
+        self.nsp, self.nt0 = self.dims[0], self.dims[1]
+        self.nx, self.nt = self.dimsd[0], self.dimsd[1]
         self.table = table
         self.dtable = dtable
         self.fh = fh
+
         # find out if mapping is in table of function handle
         if table is None and fh is None:
             raise NotImplementedError('provide either table or fh...')
         elif table is not None:
-            if self.table.shape != (self.nsp, self.nt, self.nx):
-                raise ValueError('table must have shape [nsp x nt x nx]')
+            if self.table.shape != (self.nsp, self.nt0, self.nx):
+                raise ValueError('table must have shape [nsp x nt0 x nx]')
             self.usetable = True
+            if np.any(self.table > self.nt):
+                raise ValueError('values in table must be smaller than nt')
         else:
             self.usetable = False
 
@@ -223,7 +227,7 @@ class Spread(LinearOperator):
         self.interp = False
         if self.usetable:
             if dtable is not None:
-                if self.dtable.shape != (self.nsp, self.nt, self.nx):
+                if self.dtable.shape != (self.nsp, self.nt0, self.nx):
                     raise ValueError('dtable must have shape [nsp x nt x nx]')
                 self.interp = True
         else:
@@ -298,6 +302,7 @@ class Spread(LinearOperator):
                                            self.fh)
         else:
             y = self._matvec_numpy(x)
+
         return y
 
     def _rmatvec(self, x):
