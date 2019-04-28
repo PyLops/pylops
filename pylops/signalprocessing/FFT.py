@@ -237,7 +237,7 @@ def FFT(dims, dir=0, nfft=None, sampling=1.,
     ------
     ValueError
         If ``dims`` is not provided and if ``dir`` is bigger than ``len(dims)``
-    KeyError
+    NotImplementedError
         If ``engine`` is neither ``numpy`` nor ``numba``
 
     Notes
@@ -272,6 +272,6 @@ def FFT(dims, dir=0, nfft=None, sampling=1.,
         f = _FFT_numpy(dims, dir=dir, nfft=nfft,
                        sampling=sampling, real=real, dtype=dtype)
     else:
-        raise KeyError('engine must be numpy or fftw')
+        raise NotImplementedError('engine must be numpy or fftw')
 
     return f

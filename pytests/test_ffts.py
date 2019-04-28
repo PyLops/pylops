@@ -37,7 +37,7 @@ par4w = {'nt': 101, 'nx': 31, 'ny': 10,
 def test_unknown_engine(par):
     """Check error is raised if unknown engine is passed
     """
-    with pytest.raises(KeyError):
+    with pytest.raises(NotImplementedError):
         _ = FFT(dims=[par['nt']], nfft=par['nfft'], sampling=0.005,
                     real=par['real'], engine='foo')
 
