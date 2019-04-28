@@ -368,10 +368,10 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
             elif epsI is not None:
                 # create regularized normal equations
                 PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0*nm)
-                datar = np.dot(PPop.A.T, datar.reshape(nt0*ntheta, nspatprod))
+                datarn = np.dot(PPop.A.T, datar.reshape(nt0*ntheta, nspatprod))
                 if not simultaneous:
                     # solve regularized normal eqs. trace-by-trace
-                    minv = lstsq(PP, datar,
+                    minv = lstsq(PP, datarn,
                                  **kwargs_solver)[0]
                 else:
                     # solve regularized normal equations simultaneously
@@ -380,9 +380,9 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
             else:
                 # create regularized normal eqs. and solve them simultaneously
                 PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0*nm)
-                datar = PPop.A.T * datar.reshape(nt0*ntheta, nspatprod)
+                datarn = PPop.A.T * datar.reshape(nt0*ntheta, nspatprod)
                 PPop_reg = MatrixMult(PP, dims=ntheta*nspatprod)
-                minv = lstsq(PPop_reg, datar.flatten(), **kwargs_solver)[0]
+                minv = lstsq(PPop_reg, datarn.flatten(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
             minv = lsqr(PPop, datar, **kwargs_solver)[0]
@@ -395,14 +395,17 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
             Regop = Laplacian((nt0, nm, nx), dirs=(0, 2), dtype=PPop.dtype)
         else:
             Regop = Laplacian((nt0, nm, nx, ny), dirs=(2, 3), dtype=PPop.dtype)
-        minv = RegularizedInversion(PPop, [Regop], data.flatten(),
+        minv = RegularizedInversion(PPop, [Regop], data.ravel(),
                                     x0=m0.flatten() if m0 is not None else None,
                                     epsRs=[epsR], returninfo=False,
                                     **kwargs_solver)
 
     # compute residual
     if returnres:
-        datar = data.flatten() - PPop * minv.flatten()
+        if epsR is None:
+            datar -= PPop * minv.ravel()
+        else:
+            datar = data.ravel() - PPop * minv.ravel()
 
     # re-swap axes for explicit operator
     if explicit:

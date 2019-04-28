@@ -218,10 +218,10 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
             elif epsI is not None:
                 # create regularized normal equations
                 PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0)
-                datar = np.dot(PPop.A.T, datar.reshape(nt0, nspatprod))
+                datarn = np.dot(PPop.A.T, datar.reshape(nt0, nspatprod))
                 if not simultaneous:
                     # solve regularized normal eqs. trace-by-trace
-                    minv = lstsq(PP, datar,
+                    minv = lstsq(PP, datarn,
                                  **kwargs_solver)[0]
                 else:
                     # solve regularized normal equations simultaneously
@@ -230,9 +230,9 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
             else:
                 # create regularized normal eqs. and solve them simultaneously
                 PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0)
-                datar = PPop.A.T * datar.reshape(nt0, nspatprod)
+                datarn = PPop.A.T * datar.reshape(nt0, nspatprod)
                 PPop_reg = MatrixMult(PP, dims=nspatprod)
-                minv = lstsq(PPop_reg, datar.flatten(), **kwargs_solver)[0]
+                minv = lstsq(PPop_reg, datarn.flatten(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
             minv = lsqr(PPop, datar, **kwargs_solver)[0]
@@ -246,12 +246,15 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
             Regop = Laplacian((nt0, nx, ny), dirs=(1, 2), dtype=PPop.dtype)
 
         minv = RegularizedInversion(PPop, [Regop], data.flatten(),
-                                    x0=m0.flatten(), epsRs=[epsR],
-                                    returninfo=False,
+                                    x0=None if m0 is None else m0.flatten(),
+                                    epsRs=[epsR], returninfo=False,
                                     **kwargs_solver)
 
     # compute residual
-    datar = data.flatten() - PPop * minv.flatten()
+    if epsR is None:
+        datar -= PPop * minv.ravel()
+    else:
+        datar = data.ravel() - PPop * minv.ravel()
 
     # reshape inverted model and residual data
     if dims == 1:

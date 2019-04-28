@@ -208,9 +208,10 @@ def test_PrestackLinearModelling2d(par):
             dict_inv = dict(damp=0 if par['epsI'] is None else par['epsI'],
                             iter_lim=80)
 
-        minv2d = PrestackInversion(d, theta, wav, m0=mback2d,
-                                   explicit=explicit,
-                                   epsR=par['epsR'], epsI=par['epsI'],
-                                   simultaneous=par['simultaneous'],
-                                   **dict_inv)
+        minv2d, dinv2d = PrestackInversion(d, theta, wav, m0=mback2d,
+                                           explicit=explicit,
+                                           epsR=par['epsR'], epsI=par['epsI'],
+                                           simultaneous=par['simultaneous'],
+                                           returnres=True,
+                                           **dict_inv)
         assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < 2e-1
