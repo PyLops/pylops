@@ -254,3 +254,11 @@ ax.invert_yaxis()
 ax.axis('tight')
 ax.legend()
 plt.tight_layout()
+
+###############################################################################
+# That's almost it. If you wonder how this can be applied to real data,
+# head over to the following `notebook
+# <https://github.com/equinor/segyio-notebooks/blob/master/notebooks/pylops/01_seismic_inversion.ipynb>`_
+# where the open-source `segyio <https://github.com/equinor/segyio>`_ library
+# is used alongside pylops to create an end-to-end open-source seismic
+# inversion workflow with SEG-Y input data.

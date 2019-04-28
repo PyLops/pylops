@@ -1,8 +1,8 @@
 """
 08. Multi-Dimensional Deconvolution
 ===================================
-This example shows how to set-up and run the :py:class:`pylops.waveeqprocessing.MDD`
-inversion using synthetic data.
+This example shows how to set-up and run the
+:py:class:`pylops.waveeqprocessing.MDD` inversion using synthetic data.
 
 """
 import numpy as np
@@ -16,20 +16,21 @@ from pylops.utils.seismicevents import makeaxis, hyperbolic2d
 plt.close('all')
 
 ###############################################################################
-# Let's start by creating a set of hyperbolic events to be used as our MDC kernel
+# Let's start by creating a set of hyperbolic events to be used as
+# our MDC kernel
 
 # Input parameters
-par = {'ox':-300, 'dx':10, 'nx':61,
-       'oy':-500, 'dy':10, 'ny':101,
-       'ot':0, 'dt':0.004, 'nt':400,
+par = {'ox':-150, 'dx':10, 'nx':31,
+       'oy':-250, 'dy':10, 'ny':51,
+       'ot':0, 'dt':0.004, 'nt':300,
        'f0': 20, 'nfmax': 200}
 
 t0_m = [0.2]
-vrms_m = [1100.]
+vrms_m = [700.]
 amp_m = [1.]
 
 t0_G = [0.2, 0.5, 0.7]
-vrms_G = [1200., 1500., 2000.]
+vrms_G = [800., 1200., 1500.]
 amp_G = [1., 0.6, 0.5]
 
 # Taper
@@ -55,7 +56,8 @@ G, Gwav = G*tap, Gwav*tap
 # Add negative part to data and model
 m = np.concatenate((np.zeros((par['nx'], par['nt']-1)), m), axis=-1)
 mwav = np.concatenate((np.zeros((par['nx'], par['nt']-1)), mwav), axis=-1)
-Gwav2 = np.concatenate((np.zeros((par['ny'], par['nx'], par['nt']-1)), Gwav), axis=-1)
+Gwav2 = np.concatenate((np.zeros((par['ny'], par['nx'], par['nt']-1)), Gwav),
+                       axis=-1)
 
 # Define MDC linear operator
 Gwav_fft = np.fft.rfft(Gwav2, 2*par['nt']-1, axis=-1)
@@ -103,15 +105,15 @@ axs[1].set_ylabel(r'$t$')
 fig.tight_layout()
 
 ###############################################################################
-# We are now ready to feed our operator to :py:class:`pylops.waveeqprocessing.MDD`
-# and invert back for our input model
+# We are now ready to feed our operator to
+# :py:class:`pylops.waveeqprocessing.MDD` and invert back for our input model
 minv, madj, psfinv, psfadj = \
     pylops.waveeqprocessing.MDD(Gwav, d[:, par['nt'] - 1:],
                                 dt=par['dt'], dr=par['dx'],
                                 nfmax=par['nfmax'], wav=wav,
                                 twosided=True, adjoint=True, psf=True,
                                 dtype='complex64', dottest=False,
-                                **dict(damp=1e-4, iter_lim=50, show=0))
+                                **dict(damp=1e-4, iter_lim=20, show=0))
 
 fig = plt.figure(figsize=(8, 6))
 ax1 = plt.subplot2grid((1, 5), (0, 0), colspan=2)
@@ -129,19 +131,23 @@ ax2.imshow(minv.T, aspect='auto', interpolation='nearest', cmap='gray',
 ax2.set_title('Inverted m', fontsize=15)
 ax2.set_xlabel(r'$x_V$')
 axs[1].set_ylabel(r'$t$')
-ax3.plot(madj[int(par['nx']/2)]/np.abs(madj[int(par['nx']/2)]).max(), t2, 'r', lw=5)
-ax3.plot(minv[int(par['nx']/2)]/np.abs(minv[int(par['nx']/2)]).max(), t2, '--k', lw=3)
+ax3.plot(madj[int(par['nx']/2)]/np.abs(madj[int(par['nx']/2)]).max(),
+         t2, 'r', lw=5)
+ax3.plot(minv[int(par['nx']/2)]/np.abs(minv[int(par['nx']/2)]).max(),
+         t2, 'k', lw=3)
 ax3.set_ylim([t2[-1], t2[0]])
 fig.tight_layout()
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 6))
-axs[0].imshow(psfinv[int(par['nx']/2)].T, aspect='auto', interpolation='nearest',
+axs[0].imshow(psfinv[int(par['nx']/2)].T,
+              aspect='auto', interpolation='nearest',
               vmin=-np.abs(psfinv.max()), vmax=np.abs(psfinv.max()),
               cmap='gray', extent=(x.min(), x.max(), t2.max(), t2.min()))
 axs[0].set_title('Inverted psf - inline view', fontsize=15)
 axs[0].set_xlabel(r'$x_V$')
 axs[1].set_ylabel(r'$t$')
-axs[1].imshow(psfinv[:, int(par['nx']/2)].T, aspect='auto', interpolation='nearest',
+axs[1].imshow(psfinv[:, int(par['nx']/2)].T,
+              aspect='auto', interpolation='nearest',
               vmin=-np.abs(psfinv.max()), vmax=np.abs(psfinv.max()),
               cmap='gray', extent=(y.min(), y.max(), t2.max(), t2.min()))
 axs[1].set_title('Inverted psf - xline view', fontsize=15)
@@ -150,16 +156,20 @@ axs[1].set_ylabel(r'$t$')
 fig.tight_layout()
 
 ###############################################################################
-# We repeat the same procedure but this time we will add a preconditioning by means
-# of ``causality_precond`` parameter, which enforces the inverted model to be zero in
-# the negative part of the time axis (as expected by theory). This preconditioning will
-# have the effect of speeding up the convergence of the iterative solver and thus reduce
-# the computation time of the deconvolution
+# We repeat the same procedure but this time we will add a preconditioning
+# by means of ``causality_precond`` parameter, which enforces the inverted
+# model to be zero in the negative part of the time axis (as expected by
+# theory). This preconditioning will have the effect of speeding up the
+# convergence of the iterative solver and thus reduce the computation time
+# of the deconvolution
 minvprec = pylops.waveeqprocessing.MDD(Gwav, d[:, par['nt'] - 1:],
-                                       dt=par['dt'], dr=par['dx'], nfmax=par['nfmax'], wav=wav,
+                                       dt=par['dt'], dr=par['dx'],
+                                       nfmax=par['nfmax'], wav=wav,
                                        twosided=True, adjoint=False, psf=False,
-                                       causality_precond=True, dtype='complex64',
-                                       dottest=False, **dict(damp=1e-4, iter_lim=50, show=0))
+                                       causality_precond=True,
+                                       dtype='complex64',
+                                       dottest=False,
+                                       **dict(damp=1e-4, iter_lim=50, show=0))
 
 # sphinx_gallery_thumbnail_number = 5
 fig = plt.figure(figsize=(8, 6))
@@ -178,7 +188,9 @@ ax2.imshow(minvprec.T, aspect='auto', interpolation='nearest', cmap='gray',
 ax2.set_title('Inverted m', fontsize=15)
 ax2.set_xlabel(r'$x_V$')
 axs[1].set_ylabel(r'$t$')
-ax3.plot(madj[int(par['nx']/2)]/np.abs(madj[int(par['nx']/2)]).max(), t2, 'r', lw=5)
-ax3.plot(minvprec[int(par['nx']/2)]/np.abs(minv[int(par['nx']/2)]).max(), t2, '--k', lw=3)
+ax3.plot(madj[int(par['nx']/2)]/np.abs(madj[int(par['nx']/2)]).max(),
+         t2, 'r', lw=5)
+ax3.plot(minvprec[int(par['nx']/2)]/np.abs(minv[int(par['nx']/2)]).max(),
+         t2, 'k', lw=3)
 ax3.set_ylim([t2[-1], t2[0]])
 fig.tight_layout()
