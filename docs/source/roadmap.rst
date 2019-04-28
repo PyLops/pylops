@@ -1,5 +1,8 @@
 .. _roadmap:
 
+.. role:: strike
+    :class: strike
+
 Roadmap
 =======
 
@@ -9,6 +12,9 @@ and new functionality that are planned for the PyLops library.
 Any of the fixes/additions mentioned in the roadmap are directly linked to a *Github Issue*
 that provides more details onto the reason and initial thoughts for the implementation of
 such a fix/addition.
+
+:strike:`Striked tasks` have been completed and related github issue closed
+with more details regarding how this task has been carried out.
 
 Library structure
 -----------------
@@ -37,8 +43,8 @@ Code optimization
   `numba <http://numba.pydata.org>`_ ``@jit`` and ``@stencil`` decorators -
   `Issue #23 <https://github.com/Statoil/pylops/issues/23>`_.
 
-* Replace ``np.fft.*`` routines used in several submodules with
-  `pyFFTW <https://github.com/pyFFTW/pyFFTW>`_ routines -
+* Replace ``np.fft.*`` routines used in several submodules with double engine,
+  numpy and `pyFFTW <https://github.com/pyFFTW/pyFFTW>`_ -
   `Issue #20 <https://github.com/Statoil/pylops/issues/20>`_.
 
 
@@ -70,12 +76,12 @@ optimization
 signalprocessing
 ~~~~~~~~~~~~~~~~
 
-* Compare performance in ``FTT`` operator of performing
-  ``np.swap+np.fft.fft(..., axis=-1)`` versus ``np.fft.fft(..., axis=chosen)``
+* :strike:`Compare performance in FTT operator of performing
+  np.swap+np.fft.fft(..., axis=-1) versus np.fft.fft(..., axis=chosen)`
   - `Issue #33 <https://github.com/Statoil/pylops/issues/33>`_.
 
 * Add ``Wavelet`` operator performing the wavelet transform.
-  `pywavelets <https://pywavelets.readthedocs.io/en/latest/>`_ can be ued as back-end -
+  `pywavelets <https://pywavelets.readthedocs.io/en/latest/>`_ can be used as back-end -
   `Issue #21 <https://github.com/Statoil/pylops/issues/21>`_.
 
 * ``Fredholm1`` and ``Fredholm2`` operators applying Fredholm integrals
@@ -96,5 +102,5 @@ waveeqprocessing
 * ``NMO`` operator performing NMO modelling -
   `Issue #29 <https://github.com/Statoil/pylops/issues/29>`_.
 
-* ``AcousticSeparation`` operator performing acoustic wavefield separation
-  by inversion - `Issue #30 <https://github.com/Statoil/pylops/issues/30>`_.
+* :strike:`WavefieldDecomposition operator performing acoustic wavefield separation
+  by inversion` - `Issue #30 <https://github.com/Statoil/pylops/issues/30>`_.

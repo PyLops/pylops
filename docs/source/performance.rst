@@ -99,11 +99,20 @@ control indipendently from the ``Intel MKL`` ones using ``OMP_NUM_THREADS``.
 
 Optional dependencies
 ---------------------
-
 To avoid increasing the number of *required* dependencies, which may lead to conflicts with
-other libraries that you may need to have in your system, we have decided to build some of the additional features
+other libraries that you have in your system, we have decided to build some of the additional features
 of PyLops in such a way that if an *optional* dependency is not present in your python environment,
 a safe fallback to one of the required dependencies will be enforced.
+
+From version ``1.4.0`` optional dependencies can be installed as part of the pylops
+installation via pip:
+
+.. code-block:: bash
+
+   >> pip install pylops[Advanced]
+
+Note that the additional libraries are installed from their PyPI wheels. If you instead prefer to install
+such of those dependencies from conda, do so manually before installing pylops as explained below.
 
 numba
 ~~~~~
@@ -117,14 +126,7 @@ always available implementation to the numba implementation by simply providing 
 additional input parameter to the operator ``engine='numba'``. This is for example the case in the
 :py:class:`pylops.signalprocessing.Radon2D`.
 
-If interested to use ``numba`` backend, you will just need to manually install
-``numba`` with either pip:
-
-.. code-block:: bash
-
-   >> pip install numba
-
-or conda:
+If interested to use ``numba`` backend from conda, you will need to manually install it:
 
 .. code-block:: bash
 
@@ -158,19 +160,13 @@ outperform the one from numpy in many cases, however it has not been inserted
 in the mandatory requirements of PyLops, meaning that when installing PyLops with
 ``pip``, :py:class:`pyfftw.FFTW` will *not* be installed automatically.
 
-If interested to use ``FFTW`` backend, you will just need to manually install
-``pyfftw`` with either pip:
-
-.. code-block:: bash
-
-   >> pip install pyfftw
-
-or conda:
+Again, if interested to use ``FFTW`` backend from conda, you will need to manually install it:
 
 .. code-block:: bash
 
    >> conda install -c conda-forge pyfftw
 
 
-.. note:: All the optional dependencies can also be installed automatically by cloning the repository and installing
+.. note:: If you are a developer, all the optional dependencies can also be
+   installed automatically by cloning the repository and installing
    pylops via ``make dev-install`` or ``make dev-install_conda``.

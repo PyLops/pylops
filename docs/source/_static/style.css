@@ -96,6 +96,10 @@ h1 {
     float: right;
 }
 
+.strike {
+  text-decoration: line-through;
+}
+
 /* Don't let the edit and notebook download links disappear on mobile. */
 @media screen and (max-width: 480px) {
     .wy-breadcrumbs li.source-link {
