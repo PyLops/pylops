@@ -16,6 +16,7 @@ dependencies:
   - numba
   - icc_rt
   - pip:
+    - scikit-fmm
     - pytest-runner
     - setuptools_scm
     - sphinx-rtd-theme

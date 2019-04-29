@@ -164,7 +164,7 @@ class Spread(LinearOperator):
         If both ``table`` and ``fh`` are not provided
     ValueError
         If ``table`` has shape different from
-        :math:`[n_{sp} \times n_t \times n_x]`
+        :math:`[n_{sp} \times n_t0 \times n_x]`
 
     Notes
     -----
@@ -302,7 +302,6 @@ class Spread(LinearOperator):
                                            self.fh)
         else:
             y = self._matvec_numpy(x)
-
         return y
 
     def _rmatvec(self, x):
