@@ -293,6 +293,7 @@ def WavefieldDecomposition(p, vz, nt, nr, dt, dr, rho, vel,
         Type of elements in input array.
     **kwargs_solver
         Arbitrary keyword arguments for chosen ``solver``
+
     Returns
     -------
     pup : :obj:`np.ndarray`

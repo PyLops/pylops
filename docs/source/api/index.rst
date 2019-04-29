@@ -96,8 +96,10 @@ Wave-Equation processing
 .. autosummary::
    :toctree: generated/
 
-    MDC
+
     UpDownComposition2D
+    MDC
+    Demigration
 
 
 Geophysicical subsurface characterization
@@ -157,6 +159,7 @@ Wave-Equation processing
     WavefieldDecomposition
     MDD
     Marchenko
+    LSM
 
 
 

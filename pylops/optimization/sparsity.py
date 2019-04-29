@@ -164,7 +164,8 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     Solve an optimization problem with :math:`L1` regularization function given
     the operator ``Op`` and data ``y``. The operator can be real or complex,
-    and should be either square :math:`N=M` or underdetermined :math:`N<M`.
+    and should ideally be either square :math:`N=M` or underdetermined
+    :math:`N<M`.
 
     Parameters
     ----------
@@ -218,14 +219,14 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
 
     .. math::
-        J = \frac{1}{2}||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2 +
+        J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
             \epsilon ||\mathbf{x}||_1
 
     using the Iterative Soft Thresholding Algorithm (ISTA) [1]_. This is a very
     simple iterative algorithm which applies the following step:
 
     .. math::
-        \mathbf{x}^{(i+1)} = soft (\mathbf{x}^{(i)} + \mathbf{Op}^H
+        \mathbf{x}^{(i+1)} = soft (\mathbf{x}^{(i)} + \alpha \mathbf{Op}^H
         (\mathbf{d} - \mathbf{Op} \mathbf{x}^{(i)})), \epsilon \alpha /2)
 
     where :math:`\epsilon \alpha /2` is the
@@ -329,7 +330,8 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     Solve an optimization problem with :math:`L1` regularization function given
     the operator ``Op`` and data ``y``. The operator can be real or complex,
-    and should be either square :math:`N=M` or underdetermined :math:`N<M`.
+    and should ideally be either square :math:`N=M` or underdetermined
+    :math:`N<M`.
 
     Parameters
     ----------
@@ -376,7 +378,7 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
 
     .. math::
-        J = \frac{1}{2}||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2 +
+        J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
             \epsilon ||\mathbf{x}||_1
 
     using the Fast Iterative Soft Thresholding Algorithm (FISTA) [1]_. This is

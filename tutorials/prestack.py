@@ -223,8 +223,9 @@ plt.subplots_adjust(top=0.85)
 inputfile = '../testdata/avo/poststack_model.npz'
 
 model = np.load(inputfile)
-x, z, m = model['x'][::6]/1000., model['z']/1000., 1000*model['model'][:, ::6]
+x, z = model['x'][::6]/1000., model['z'][:300]/1000.
 nx, nz = len(x), len(z)
+m = 1000*model['model'][:300, ::6]
 
 mvp = m.copy()
 mvs = m/2
@@ -275,7 +276,7 @@ minv_lop_reg = \
                                           m0=minv_dense_noisy,
                                           explicit=False, epsR=5e-1,
                                           **dict(damp=np.sqrt(1e-3),
-                                                 iter_lim=80))
+                                                 iter_lim=40))
 
 ###############################################################################
 # Let's now visualize the inverted elastic parameters for the different

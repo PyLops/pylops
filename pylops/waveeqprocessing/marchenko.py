@@ -18,19 +18,25 @@ def directwave(wav, trav, nt, dt, nfft=None):
 
     Parameters
     ----------
-    wav : :obj:`numpy.ndarray`, optional
+    wav : :obj:`numpy.ndarray`
         Wavelet in time domain to apply to direct arrival when created
         using ``trav``. Phase will be discarded resulting in a zero-phase
         wavelet with same amplitude spectrum as provided by ``wav``
     trav : :obj:`numpy.ndarray`
-            Traveltime of first arrival from subsurface point to
-            surface receivers
+        Traveltime of first arrival from subsurface point to
+        surface receivers of size :math:`\lbrack nr \times 1 \rbrack`
     nt : :obj:`float`, optional
         Number of samples in time
     dt : :obj:`float`, optional
         Sampling in time
     nfft : :obj:`int`, optional
         Number of samples in fft time (if ``None``, :math:`nfft=nt`)
+
+    Returns
+    -------
+    direct : :obj:`numpy.ndarray`
+        Direct arrival in time domain of size
+        :math:`\lbrack nt \times nr \rbrack`
 
     """
     nr = len(trav)

@@ -2,6 +2,7 @@ numpy>=1.15.0
 scipy
 numba
 pyfftw
+scikit-fmm
 matplotlib
 ipython
 pytest
