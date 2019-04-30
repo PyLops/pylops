@@ -3,10 +3,32 @@
 Changelog
 =========
 
+Version 1.4.0
+-------------
+
+*Released on: 01/05/2019*
+
+* Added ``numba`` engine to :py:class:`pylops.basicoperators.Spread` and
+  :py:class:`pylops.basicoperators.Radon2D` operators
+* Added :py:class:`pylops.signalprocessing.Radon3D` operator
+* Added :py:class:`pylops.signalprocessing.Sliding2D` and
+  :py:class:`pylops.signalprocessing.Sliding3D` operators
+* Added :py:class:`pylops.signalprocessing.FFTND` operator
+* Added :py:class:`pylops.signalprocessing.Radon3D` operator
+* Added ``niter`` option to :py:class:`pylops.LinearOperator.eigs` method
+* Added ``show`` option to :py:class:`pylops.optimization.sparsity.ISTA` and
+  :py:class:`pylops.optimization.sparsity.FISTA` solvers
+* Added :py:mod:`pylops.waveeqprocessing.seismicinterpolation`,
+  :py:mod:`pylops.waveeqprocessing.waveeqdecomposition` and
+  :py:mod:`pylops.waveeqprocessing.lsm` submodules
+* Added tests for ``engine`` in various operators
+* Added documentation regarding usage of ``pylops`` Docker container
+
+
 Version 1.3.0
 -------------
 
-*Released on: 24/02/2018*
+*Released on: 24/02/2019*
 
 * Added ``fftw`` engine to :py:class:`pylops.signalprocessing.FFT` operator
 * Added :py:func:`pylops.optimization.sparsity.ISTA` and
@@ -21,7 +43,7 @@ Version 1.3.0
 Version 1.2.0
 -------------
 
-*Released on: 13/01/2018*
+*Released on: 13/01/2019*
 
 * Added :py:func:`pylops.LinearOperator.eigs` and :py:func:`pylops.LinearOperator.cond`
   methods to estimate estimate eigenvalues and conditioning number using scipy wrapping of

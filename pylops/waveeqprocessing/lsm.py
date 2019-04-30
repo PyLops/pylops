@@ -235,12 +235,14 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
         if ndim == 2:
             itrav = itrav.reshape(nx, nz, ns * nr)
             travd = travd.reshape(nx, nz, ns * nr)
+            dims = tuple(dims)
         else:
-            itrav = itrav.reshape(ny, nx, nz, ns * nr)
-            travd = travd.reshape(ny, nx, nz, ns * nr)
+            itrav = itrav.reshape(ny*nx, nz, ns * nr)
+            travd = travd.reshape(ny*nx, nz, ns * nr)
+            dims = (dims[0]*dims[1], dims[2])
 
         # create operator
-        sop = Spread(dims=tuple(dims), dimsd=(ns * nr, nt),
+        sop = Spread(dims=dims, dimsd=(ns * nr, nt),
                      table=itrav, dtable=travd, engine='numba')
 
         cop = Convolve1D(ns * nr * nt, h=wav, offset=wavcenter,
@@ -292,7 +294,7 @@ class LSM():
     as least-squares migration (LSM) as historically a least-squares cost
     function has been used for this purpose. In practice any other cost
     function could be used, for examples if
-    ``solver='pylops.optimization.sparsity.FISTA`` a sparse representation of
+    ``solver='pylops.optimization.sparsity.FISTA'`` a sparse representation of
     reflectivity is produced as result of the inversion.
 
     Finally, it is worth noting that in the first iteration of an iterative

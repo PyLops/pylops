@@ -1,3 +1,20 @@
+# 1.4.0
+Added ``numba`` engine to ``pylops.basicoperators.Spread`` and
+ ``pylops.basicoperators.Radon2D`` operators
+* Added ``pylops.signalprocessing.Radon3D`` operator
+* Added ``pylops.signalprocessing.Sliding2D`` and
+ ``pylops.signalprocessing.Sliding3D`` operators
+* Added ``pylops.signalprocessing.FFTND`` operator
+* Added ``pylops.signalprocessing.Radon3D`` operator
+* Added ``niter`` option to ``pylops.LinearOperator.eigs` method
+* Added ``show`` option to ``pylops.optimization.sparsity.ISTA`` and
+ ``pylops.optimization.sparsity.FISTA`` solvers
+* Added ``pylops.waveequprocessing.seismicinterpolation``,
+ ``pylops.waveequprocessing.waveeqdecomposition` and
+ ``pylops.waveequprocessing.lsm`` submodules
+* Added tests for ``engine`` in various operators
+* Added documentation regarding usage of ``pylops`` Docker container
+
 # 1.3.0
 * Added ``fftw`` engine to ``FFT`` operator
 * Added ``ISTA`` and ``FISTA`` sparse solvers
