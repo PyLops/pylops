@@ -56,9 +56,9 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode='eikonal'):
     x : :obj:`numpy.ndarray`
         Spatial axis
     srcs : :obj:`numpy.ndarray`
-        Sources in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Sources in array of size :math:`\lbrack 2/3 \times n_s \rbrack`
     recs : :obj:`numpy.ndarray`
-        Receivers in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Receivers in array of size :math:`\lbrack 2/3 \times n_r \rbrack`
     vel : :obj:`numpy.ndarray` or :obj:`float`
         Velocity model of size :math:`\lbrack (n_y \times) n_x
         \times n_z \rbrack` (or constant)
@@ -166,9 +166,9 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
     t : :obj:`numpy.ndarray`
         Time axis for data
     srcs : :obj:`numpy.ndarray`
-        Sources in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Sources in array of size :math:`\lbrack 2/3 \times n_s \rbrack`
     recs : :obj:`numpy.ndarray`
-        Receivers in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Receivers in array of size :math:`\lbrack 2/3 \times n_r \rbrack`
     vel : :obj:`numpy.ndarray` or :obj:`float`
         Velocity model of size :math:`\lbrack (n_y \times) n_x
         \times n_z \rbrack` (or constant)
@@ -235,12 +235,14 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
         if ndim == 2:
             itrav = itrav.reshape(nx, nz, ns * nr)
             travd = travd.reshape(nx, nz, ns * nr)
+            dims = tuple(dims)
         else:
-            itrav = itrav.reshape(ny, nx, nz, ns * nr)
-            travd = travd.reshape(ny, nx, nz, ns * nr)
+            itrav = itrav.reshape(ny*nx, nz, ns * nr)
+            travd = travd.reshape(ny*nx, nz, ns * nr)
+            dims = (dims[0]*dims[1], dims[2])
 
         # create operator
-        sop = Spread(dims=tuple(dims), dimsd=(ns * nr, nt),
+        sop = Spread(dims=dims, dimsd=(ns * nr, nt),
                      table=itrav, dtable=travd, engine='numba')
 
         cop = Convolve1D(ns * nr * nt, h=wav, offset=wavcenter,
@@ -268,9 +270,9 @@ class LSM():
     t : :obj:`numpy.ndarray`
         Time axis for data
     srcs : :obj:`numpy.ndarray`
-        Sources in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Sources in array of size :math:`\lbrack 2/3 \times n_s \rbrack`
     recs : :obj:`numpy.ndarray`
-        Receivers in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Receivers in array of size :math:`\lbrack 2/3 \times n_r \rbrack`
     vel : :obj:`numpy.ndarray` or :obj:`float`
         Velocity model of size :math:`\lbrack (n_y \times) n_x
         \times n_z \rbrack` (or constant)
@@ -286,13 +288,22 @@ class LSM():
     dottest : :obj:`bool`, optional
         Apply dot-test
 
+    Attributes
+    ----------
+    Demop : :class:`pylops.LinearOperator`
+        Demigration operator
+
+    See Also
+    --------
+    pylops.waveeqprocessing.Demigration : Demigration operator
+
     Notes
     -----
     Inverting a demigration operator is generally referred in the literature
     as least-squares migration (LSM) as historically a least-squares cost
     function has been used for this purpose. In practice any other cost
     function could be used, for examples if
-    ``solver='pylops.optimization.sparsity.FISTA`` a sparse representation of
+    ``solver='pylops.optimization.sparsity.FISTA'`` a sparse representation of
     reflectivity is produced as result of the inversion.
 
     Finally, it is worth noting that in the first iteration of an iterative
@@ -303,7 +314,7 @@ class LSM():
 
     """
     def __init__(self, z, x, t, srcs, recs, vel, wav, wavcenter, y=None,
-                 mode='eikonal', dottest=False, ):
+                 mode='eikonal', dottest=False):
         self.y, self.x, self.z = y, x, z
         self.Demop = Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
                                  y=y, mode=mode)
