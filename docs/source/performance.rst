@@ -104,15 +104,8 @@ other libraries that you have in your system, we have decided to build some of t
 of PyLops in such a way that if an *optional* dependency is not present in your python environment,
 a safe fallback to one of the required dependencies will be enforced.
 
-From version ``1.4.0`` optional dependencies can be installed as part of the pylops
-installation via pip:
-
-.. code-block:: bash
-
-   >> pip install pylops[advanced]
-
-Note that the additional libraries are installed from their PyPI wheels. If you instead prefer to install
-such of those dependencies from conda, do so manually before installing pylops as explained below.
+If you want to use some of the optional dependencies, manually install them
+prior to installing pylops as explained below.
 
 numba
 ~~~~~
