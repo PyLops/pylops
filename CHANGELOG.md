@@ -1,5 +1,5 @@
 # 1.4.0
-Added ``numba`` engine to ``pylops.basicoperators.Spread`` and
+* Added ``numba`` engine to ``pylops.basicoperators.Spread`` and
  ``pylops.basicoperators.Radon2D`` operators
 * Added ``pylops.signalprocessing.Radon3D`` operator
 * Added ``pylops.signalprocessing.Sliding2D`` and

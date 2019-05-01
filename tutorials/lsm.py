@@ -157,3 +157,9 @@ axs[3].imshow(dinv_sparse[ns//2, :, :300].T, cmap='gray',
               vmin=-d.max(), vmax=d.max())
 axs[3].set_title(r'$d_{fista}$')
 axs[3].axis('tight')
+
+
+###############################################################################
+# This was just a short teaser, for a more advanced set of examples of 2D and
+# 3D traveltime-based LSM head over to this
+# `notebook <https://github.com/mrava87/pylops_notebooks/blob/master/developement/LeastSquaresMigration.ipynb>`_.

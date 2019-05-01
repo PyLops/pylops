@@ -56,9 +56,9 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode='eikonal'):
     x : :obj:`numpy.ndarray`
         Spatial axis
     srcs : :obj:`numpy.ndarray`
-        Sources in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Sources in array of size :math:`\lbrack 2/3 \times n_s \rbrack`
     recs : :obj:`numpy.ndarray`
-        Receivers in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Receivers in array of size :math:`\lbrack 2/3 \times n_r \rbrack`
     vel : :obj:`numpy.ndarray` or :obj:`float`
         Velocity model of size :math:`\lbrack (n_y \times) n_x
         \times n_z \rbrack` (or constant)
@@ -166,9 +166,9 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
     t : :obj:`numpy.ndarray`
         Time axis for data
     srcs : :obj:`numpy.ndarray`
-        Sources in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Sources in array of size :math:`\lbrack 2/3 \times n_s \rbrack`
     recs : :obj:`numpy.ndarray`
-        Receivers in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Receivers in array of size :math:`\lbrack 2/3 \times n_r \rbrack`
     vel : :obj:`numpy.ndarray` or :obj:`float`
         Velocity model of size :math:`\lbrack (n_y \times) n_x
         \times n_z \rbrack` (or constant)
@@ -270,9 +270,9 @@ class LSM():
     t : :obj:`numpy.ndarray`
         Time axis for data
     srcs : :obj:`numpy.ndarray`
-        Sources in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Sources in array of size :math:`\lbrack 2/3 \times n_s \rbrack`
     recs : :obj:`numpy.ndarray`
-        Receivers in array of size :math:`\lbrack 2/3 \times ns \rbrack`
+        Receivers in array of size :math:`\lbrack 2/3 \times n_r \rbrack`
     vel : :obj:`numpy.ndarray` or :obj:`float`
         Velocity model of size :math:`\lbrack (n_y \times) n_x
         \times n_z \rbrack` (or constant)
@@ -287,6 +287,15 @@ class LSM():
         constant velocity)
     dottest : :obj:`bool`, optional
         Apply dot-test
+
+    Attributes
+    ----------
+    Demop : :class:`pylops.LinearOperator`
+        Demigration operator
+
+    See Also
+    --------
+    pylops.waveeqprocessing.Demigration : Demigration operator
 
     Notes
     -----
@@ -305,7 +314,7 @@ class LSM():
 
     """
     def __init__(self, z, x, t, srcs, recs, vel, wav, wavcenter, y=None,
-                 mode='eikonal', dottest=False, ):
+                 mode='eikonal', dottest=False):
         self.y, self.x, self.z = y, x, z
         self.Demop = Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
                                  y=y, mode=mode)
