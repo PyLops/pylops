@@ -3,9 +3,10 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
+from pylops.utils import dottest
 from pylops.utils.wavelets import ricker
 from pylops.waveeqprocessing.lsm import _identify_geometry, \
-    _traveltime_table, LSM
+    _traveltime_table, Demigration, LSM
 
 PAR = {'ny': 10, 'nx': 12, 'nz': 20, 'nt': 50,
        'dy': 3, 'dx': 1, 'dz': 2, 'dt': 0.004,
@@ -32,12 +33,11 @@ r2d = np.vstack((rx, 2 * np.ones(PAR['nrx'])))
 r3d = np.vstack((ryy.ravel(), rxx.ravel(),
                  2 * np.ones(PAR['nrx'] * PAR['nry'])))
 
-par1 = {'ny': 11, 'nx': 11, 'nz': 21, 'nt':101,
-        'dy': 2, 'dx': 2, 'dz': 1, 'dt': 0.004,
-        'nsy': 3, 'nry': 2, 'nsx': 7, 'nrx': 5, 'mode':'analytic'}
-par2 = {'ny': 10, 'nx': 12, 'nz': 20, 'nt':100,
-        'dy': 3, 'dx': 1, 'dz': 2, 'dt': 0.004,
-        'nsy': 2, 'nry': 3, 'nsx': 6, 'nrx': 4, 'mode':'eikonal'}
+wav, _, wavc = ricker(t[:41], f0=40)
+
+par1 = {'mode':'analytic'}
+par2 = {'mode':'eikonal'}
+par3 = {'mode':'byot'}
 
 
 def test_identify_geometry():
@@ -115,13 +115,36 @@ def test_traveltime_table():
     assert_array_almost_equal(trav_ana, trav_eik, decimal=2)
 
 
+def test_unknown_mode():
+    """Check error is raised if unknown mode is passed
+    """
+    with pytest.raises(NotImplementedError):
+        _ = LSM(z, x, t, s2d, r2d, 0,
+                  np.ones(3), 1, mode='foo')
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3)])
+def test_demigration2d(par):
+    """Dot-test for Demigration operator
+    """
+    vel = v0 * np.ones((PAR['nx'], PAR['nz']))
+
+    if par['mode'] == 'byot':
+        trav, _, _ = \
+            _traveltime_table(z, x, s2d, r2d, v0, mode='analytic')
+    else:
+        trav = None
+
+    Dop = Demigration(z, x, t, s2d, r2d,
+                      vel if par['mode'] == 'eikonal' else v0, wav, wavc,
+                      y=None, trav=trav, mode=par['mode'])
+    assert dottest(Dop, PAR['nsx']*PAR['nrx']*PAR['nt'], PAR['nz']*PAR['nx'])
+
+
 @pytest.mark.parametrize("par", [(par1), (par2)])
-def test_lsm(par):
+def test_lsm2d(par):
     """Dot-test and inverse for LSM operator
     """
-    wav, _, wavc = ricker(t[:41], f0=40)
-
-    # 2d
     vel = v0 * np.ones((PAR['nx'], PAR['nz']))
     refl = np.zeros((PAR['nx'], PAR['nz']))
     refl[:, PAR['nz']//2] = 1

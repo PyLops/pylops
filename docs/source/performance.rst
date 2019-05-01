@@ -19,7 +19,7 @@ PyLops relies on the `numpy <http://www.numpy.org>`_ and
 link these to the most performant `BLAS <https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms>`_
 will ensure optimal performance of PyLops when using only *required dependencies*.
 
-As already mentioned in the  the :ref:`installation` page, we strongly encourage using
+As already mentioned in the :ref:`installation` page, we strongly encourage using
 the `Anaconda Python distribution <https://www.anaconda.com/download>`_ as
 *numpy* and *scipy* will be automatically linked to the ``Intel MKL``
 library, which is per today the most performant library for basic linear algebra
@@ -109,7 +109,7 @@ installation via pip:
 
 .. code-block:: bash
 
-   >> pip install pylops[Advanced]
+   >> pip install pylops[advanced]
 
 Note that the additional libraries are installed from their PyPI wheels. If you instead prefer to install
 such of those dependencies from conda, do so manually before installing pylops as explained below.
@@ -145,7 +145,6 @@ Similarly to ``Intel MKL``, you need to set the environment variable
 
 fft routines
 ~~~~~~~~~~~~
-
 Two different *engines* are provided by the :py:class:`pylops.signalprocessing.FFT` operator for
 ``fft`` and ``ifft`` routines in the forward and adjoint modes: ``engine='numpy'`` (default)
 and ``engine='fftw'``.
@@ -165,6 +164,20 @@ Again, if interested to use ``FFTW`` backend from conda, you will need to manual
 .. code-block:: bash
 
    >> conda install -c conda-forge pyfftw
+
+skfmm
+~~~~~
+This library is used to compute traveltime tables with the fast-marching method in the
+initialization of the :py:class:`pylops.waveeqprocessing.Demigration` operator
+when choosing ``mode == 'eikonal'``.
+
+As this may not be of interest for many users, this library has not been inserted
+in the mandatory requirements of PyLops. If interested to use ``skfmm``,
+you will need to manually install it:
+
+.. code-block:: bash
+
+   >> pip install scikit-fmm
 
 
 .. note:: If you are a developer, all the optional dependencies can also be

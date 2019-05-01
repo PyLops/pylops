@@ -141,9 +141,11 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode='eikonal'):
                    trav_recs.reshape(ny * nx * nz, 1, nr)
             trav = trav.reshape(ny * nx * nz, ns * nr)
         else:
-            logging.warning('cannot compute traveltime with method=eikonal as'
-                            'skfmm is not installed... revert to analytical'
-                            'if using constant velocity model')
+            raise NotImplementedError('cannot compute traveltime with '
+                                      'method=eikonal as skfmm is not '
+                                      'installed... choose analytical'
+                                      'if using constant velocity model, '
+                                      'or install scikit-fmm library')
             trav = None
     else:
         raise NotImplementedError('method must be analytic or eikonal')
@@ -152,7 +154,7 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode='eikonal'):
 
 
 def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
-                y=None, mode='eikonal'):
+                y=None, trav=None, mode='eikonal'):
     r"""Demigration operator.
 
     Seismic demigration/migration operator.
@@ -178,9 +180,13 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
         Index of wavelet center
     y : :obj:`numpy.ndarray`
         Additional spatial axis (for 3-dimensional problems)
-    mode : :obj:`numpy.ndarray`, optional
-        Computation mode (``eikonal``, ``analytic`` - only for
-        constant velocity)
+    mode : :obj:`str`, optional
+        Computation mode (``analytic``, ``eikonal`` or ``byot``, see Notes for
+        more details)
+    trav : :obj:`numpy.ndarray`, optional
+        Traveltime table of size
+        :math:`\lbrack (n_y*) n_x*n_z \times n_r \rbrack` (to be provided if
+        ``mode='byot'``)
 
     Returns
     -------
@@ -190,7 +196,7 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
     Raises
     ------
     NotImplementedError
-        If ``mode`` is neither ``analytic`` nor ``eikonal``
+        If ``mode`` is neither ``analytic``, ``eikonal``, or ``byot``
 
     Notes
     -----
@@ -215,7 +221,9 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
       Green's functions are implemented from traveltime look-up tables, placing
       the reflectivity values at corresponding source-to-receiver time in the
       data.
-
+    * ``byot``: bring your own table. Traveltime table provided
+      directly by user using ``trav`` input parameter. Green's functions are
+      then implemented in the same way as previous options.
 
     The adjoint of the demigration operator is a *migration* operator which
     projects data in the model domain creating an image of the subsurface
@@ -226,9 +234,10 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
         _identify_geometry(z, x, srcs, recs, y=y)
     dt = t[1] - t[0]
     nt = len(t)
-    if mode in ['analytic', 'eikonal']:
-        # compute traveltime table
-        trav = _traveltime_table(z, x, srcs, recs, vel, y=y, mode=mode)[0]
+    if mode in ['analytic', 'eikonal', 'byot']:
+        if mode in ['analytic', 'eikonal']:
+            # compute traveltime table
+            trav = _traveltime_table(z, x, srcs, recs, vel, y=y, mode=mode)[0]
 
         itrav = (np.round(trav / dt)).astype(np.int32)
         travd = trav - itrav
