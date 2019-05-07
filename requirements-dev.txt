@@ -2,7 +2,7 @@ numpy>=1.15.0
 scipy
 numba
 pyfftw
-scikit-fmm
+scikit-fmm==2019.1.30
 matplotlib
 ipython
 pytest
