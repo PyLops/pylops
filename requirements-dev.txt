@@ -3,7 +3,7 @@ scipy
 numba
 pyfftw
 scikit-fmm
-matplotlib
+matplotlib==3.0.3
 ipython
 pytest
 pytest-runner
