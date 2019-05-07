@@ -9,7 +9,7 @@ pytest
 pytest-runner
 setuptools_scm
 Sphinx
-sphinx-rtd-theme
+sphinx-rtd-theme==0.4.3
 sphinx-gallery
 numpydoc
 nbsphinx
