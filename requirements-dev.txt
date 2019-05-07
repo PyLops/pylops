@@ -7,7 +7,7 @@ matplotlib
 ipython
 pytest
 pytest-runner
-setuptools_scm
+setuptools_scm==3.2.0
 Sphinx
 sphinx-rtd-theme
 sphinx-gallery
