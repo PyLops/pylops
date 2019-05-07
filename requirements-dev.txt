@@ -13,4 +13,4 @@ sphinx-rtd-theme
 sphinx-gallery
 numpydoc
 nbsphinx
-image
+image==1.5.27
