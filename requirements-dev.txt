@@ -5,7 +5,7 @@ pyfftw
 scikit-fmm
 matplotlib
 ipython
-pytest
+pytest==4.4.1
 pytest-runner
 setuptools_scm
 Sphinx
