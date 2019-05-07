@@ -1,6 +1,6 @@
 numpy>=1.15.0
 scipy
-numba
+numba==0.43.1
 pyfftw
 scikit-fmm
 matplotlib
