@@ -11,6 +11,6 @@ setuptools_scm
 Sphinx
 sphinx-rtd-theme
 sphinx-gallery
-numpydoc
+numpydoc==0.9.1
 nbsphinx
 image
