@@ -12,5 +12,5 @@ Sphinx
 sphinx-rtd-theme
 sphinx-gallery
 numpydoc
-nbsphinx
+nbsphinx==0.4.2
 image
