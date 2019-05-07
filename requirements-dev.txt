@@ -6,7 +6,7 @@ scikit-fmm
 matplotlib
 ipython
 pytest
-pytest-runner
+pytest-runner==4.4
 setuptools_scm
 Sphinx
 sphinx-rtd-theme
