@@ -33,7 +33,7 @@ setup(
     author_email='mrava@equinor.com',
     install_requires=['numpy >= 1.15.0', 'scipy'],
     extras_require={'advanced': ['llvmlite', 'numba',
-                                 'pyfftw', 'scikit-fmm']},
+                                 'pyfftw', 'scikit-fmm', 'spgl1']},
     packages=find_packages(exclude=['pytests']),
     use_scm_version=dict(root = '.',
                          relative_to = __file__,

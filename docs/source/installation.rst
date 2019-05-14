@@ -37,7 +37,7 @@ in our ``requirements.txt`` and ``environment.yml`` files and thus are not stric
 needed nor installed directly as part of a standar installation (see below for details)
 
 However, we sometimes implement additional back-ends (referred to as ``engine`` in the code)
-to some of our operators in order too improve their performance.
+for some of our operators in order to improve their performance.
 To do so, we rely on third-party libraries. Those libraries are generally added to the
 list of our optional dependencies.
 If you are not after code performance, you may simply stick to the mandatory dependencies

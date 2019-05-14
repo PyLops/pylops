@@ -141,6 +141,7 @@ Sparsity
     sparsity.IRLS
     sparsity.ISTA
     sparsity.FISTA
+    sparsity.SPGL1
 
 
 

@@ -104,8 +104,15 @@ other libraries that you have in your system, we have decided to build some of t
 of PyLops in such a way that if an *optional* dependency is not present in your python environment,
 a safe fallback to one of the required dependencies will be enforced.
 
-If you want to use some of the optional dependencies, manually install them
-prior to installing pylops as explained below.
+From version ``1.4.0`` optional dependencies can be installed as part of the pylops
+installation via pip:
+
+.. code-block:: bash
+
+   >> pip install pylops[advanced]
+
+Note that the additional libraries are installed from their PyPI wheels. If you instead prefer to install
+such of those dependencies from conda, do so manually before installing pylops as explained below.
 
 numba
 ~~~~~
@@ -171,6 +178,17 @@ you will need to manually install it:
 .. code-block:: bash
 
    >> pip install scikit-fmm
+
+spgl1
+~~~~~
+This library is used to solve sparsity-promoting BP, BPDN, and LASSO problems
+in :py:func:`pylops.optimization.sparsity.SPGL1` solver.
+
+If interested to use ``spgl1``, you can manually install it:
+
+.. code-block:: bash
+
+   >> pip install spgl1
 
 
 .. note:: If you are a developer, all the optional dependencies can also be

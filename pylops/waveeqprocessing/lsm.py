@@ -239,8 +239,8 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
             # compute traveltime table
             trav = _traveltime_table(z, x, srcs, recs, vel, y=y, mode=mode)[0]
 
-        itrav = (np.round(trav / dt)).astype(np.int32)
-        travd = trav - itrav
+        itrav = (trav / dt).astype('int32')
+        travd = (trav / dt - itrav)
         if ndim == 2:
             itrav = itrav.reshape(nx, nz, ns * nr)
             travd = travd.reshape(nx, nz, ns * nr)

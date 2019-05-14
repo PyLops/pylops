@@ -3,6 +3,7 @@ scipy
 numba
 pyfftw
 scikit-fmm
+spgl1
 matplotlib
 ipython
 pytest

@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import MatrixMult
-from pylops.optimization.sparsity import IRLS, ISTA, FISTA
+from pylops.optimization.sparsity import IRLS, ISTA, FISTA, SPGL1
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0, 'x0': False,
         'dtype': 'float64'}  # square real, zero initial guess
@@ -25,7 +25,7 @@ par3j = {'ny': 31, 'nx': 11, 'imag': 1j, 'x0':False,
 par4j = {'ny': 31, 'nx': 11, 'imag': 1j, 'x0': True,
          'dtype': 'complex64'} # overdetermined complex, non-zero initial guess
 par5j = {'ny': 11, 'nx': 41, 'imag': 1j, 'x0': True,
-        'dtype': 'complex64'}  # underdetermined complex, non-zero initial guess
+         'dtype': 'complex64'}  # underdetermined complex, non-zero initial guess
 
 
 @pytest.mark.parametrize("par", [(par3), (par4), (par3j), (par4j)])
@@ -34,8 +34,8 @@ def test_IRLS(par):
     """
     np.random.seed(10)
     G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype('float32') + \
-        par['imag']*np.random.normal(0, 10,
-                                     (par['ny'], par['nx'])).astype('float32')
+        par['imag']*np.random.normal(0, 10, (par['ny'],
+                                             par['nx'])).astype('float32')
     Gop = MatrixMult(G, dtype=par['dtype'])
     x = np.ones(par['nx']) + par['imag']*np.ones(par['nx'])
     x0 = np.random.normal(0, 10, par['nx']) + \
@@ -81,4 +81,26 @@ def test_ISTA_FISTA(par):
     # FISTA
     xinv, _, _ = FISTA(Aop, y, maxit, eps=eps,
                        tol=0, returninfo=True)
+    assert_array_almost_equal(x, xinv, decimal=1)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5),
+                                 (par1j), (par3j)])
+def test_SPGL1(par):
+    """Invert problem with SPGL1
+    """
+    np.random.seed(42)
+    Aop = MatrixMult(np.random.randn(par['ny'], par['nx']))
+
+    x = np.zeros(par['nx'])
+    x[par['nx'] // 2] = 1
+    x[3] = 1
+    x[par['nx'] - 4] = -1
+
+    x0 = np.random.normal(0, 10, par['nx']) + \
+         par['imag'] * np.random.normal(0, 10, par['nx']) if \
+        par['x0'] else None
+    y = Aop * x
+    xinv = SPGL1(Aop, y, x0=x0, iter_lim=5000)[0]
+
     assert_array_almost_equal(x, xinv, decimal=1)
