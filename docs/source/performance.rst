@@ -104,15 +104,24 @@ other libraries that you have in your system, we have decided to build some of t
 of PyLops in such a way that if an *optional* dependency is not present in your python environment,
 a safe fallback to one of the required dependencies will be enforced.
 
-From version ``1.4.0`` optional dependencies can be installed as part of the pylops
-installation via pip:
+When available in your system, we reccomend using the Conda package manager and install all the
+mandatory and optional dependencies of PyLops at once using the command:
+
+.. code-block:: bash
+
+   >> conda install -c conda-forge pylops
+
+in this case all dependencies will be installed from their conda distributions.
+
+Alternatively, from version ``1.4.0`` optional dependencies can also be installed as
+part of the pip installation via:
 
 .. code-block:: bash
 
    >> pip install pylops[advanced]
 
-Note that the additional libraries are installed from their PyPI wheels. If you instead prefer to install
-such of those dependencies from conda, do so manually before installing pylops as explained below.
+Dependencies are however installed from their PyPI wheels.
+
 
 numba
 ~~~~~
@@ -139,7 +148,7 @@ Finally, it is also advised to install the additional package
 
    >> conda install -c numba icc_rt
 
-Similarly to ``Intel MKL``, you need to set the environment variable
+or pip equivalent. Similarly to ``Intel MKL``, you need to set the environment variable
 ``NUMBA_NUM_THREADS`` to tell numba how many threads to use.
 
 
@@ -165,6 +174,8 @@ Again, if interested to use ``FFTW`` backend from conda, you will need to manual
 
    >> conda install -c conda-forge pyfftw
 
+or pip equivalent.
+
 skfmm
 ~~~~~
 This library is used to compute traveltime tables with the fast-marching method in the
@@ -177,7 +188,9 @@ you will need to manually install it:
 
 .. code-block:: bash
 
-   >> pip install scikit-fmm
+   >> conda install -c conda-forge scikit-fmm
+
+or pip equivalent.
 
 spgl1
 ~~~~~

@@ -53,11 +53,22 @@ Step-by-step installation for users
 Python environment
 ~~~~~~~~~~~~~~~~~~
 
-Activate your Python environment, and simply type the following command in your terminal:
+Activate your Python environment, and simply type the following command in your terminal
+to install the PyPi distribution:
 
 .. code-block:: bash
 
    >> pip install pylops
+
+If using Conda, you can also install our conda-forge distribution via:
+
+.. code-block:: bash
+
+   >> conda install -c conda-forge pylops
+
+Note that using the ``conda-forge`` distribution is reccomended as all the dependencies (both mandatory
+and optional) will be correctly installed for you, while only mandatory dependencies are installed
+using the ``pip`` distribution.
 
 Alternatively, to access the latest source from github:
 
