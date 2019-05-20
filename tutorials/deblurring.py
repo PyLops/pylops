@@ -15,13 +15,11 @@ of the point-spread function.
 """
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import misc
-
 import pylops
 
 ###############################################################################
 # Let's start by importing a 2d image and defining the blurring operator
-im = np.asarray(misc.imread('../testdata/python.png'))[::5, ::5, 0]
+im = np.load('../testdata/python.npy')[::5, ::5, 0]
 
 Nz, Nx = im.shape
 
