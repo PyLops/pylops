@@ -17,6 +17,7 @@ dependencies:
   - icc_rt
   - pip:
     - scikit-fmm
+    - spgl1
     - pytest-runner
     - setuptools_scm
     - sphinx-rtd-theme

@@ -300,7 +300,7 @@ xfista = FFTop.H*pfista
 
 fig, axs = plt.subplots(2, 1, figsize=(12, 8))
 fig.suptitle('Data reconstruction with sparsity', fontsize=14,
-             fontweight='bold', y=0.95)
+             fontweight='bold', y=0.9)
 axs[0].plot(f, np.abs(X), 'k', lw=3)
 axs[0].plot(f, np.abs(pista), '--r', lw=3)
 axs[0].plot(f, np.abs(pfista), '--g', lw=3)
@@ -331,3 +331,41 @@ plt.tight_layout()
 # recovering the underlying densely sampled input signal. Moreover, FISTA
 # converges much faster than ISTA as expected and should be preferred when
 # using sparse solvers.
+#
+# Finally we consider a slightly different cost function (note that in this
+# case we try to solve a constrained problem):
+#
+#   .. math::
+#        J_1 = ||\mathbf{p}||_1
+#              \quad subj.to \quad  ||\mathbf{y} -
+#              \mathbf{R} \mathbf{F} \mathbf{p}||
+#
+# A very popular solver to solve such kind of cost function is called *spgl1*
+# and can be accessed via :py:class:`pylops.optimization.sparsity.SPGL1`.
+
+xspgl1, pspgl1, info = \
+    pylops.optimization.sparsity.SPGL1(Rop, y, FFTop, tau=3, iter_lim=200)
+
+fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+fig.suptitle('Data reconstruction with SPGL1', fontsize=14,
+             fontweight='bold', y=0.9)
+axs[0].plot(f, np.abs(X), 'k', lw=3)
+axs[0].plot(f, np.abs(pspgl1), '--m', lw=3)
+axs[0].set_xlim(0, 30)
+axs[0].set_title('Frequency domain')
+axs[1].plot(t[iava], y, '.k', ms=20, label='available samples')
+axs[1].plot(t, x, 'k', lw=3, label='original')
+axs[1].plot(t, xspgl1, '--m', lw=3, label='SPGL1')
+axs[1].set_title('Time domain')
+axs[1].axis('tight')
+axs[1].legend()
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)
+
+fig, ax = plt.subplots(1, 1, figsize=(12, 3))
+ax.semilogy(info['rnorm2'], 'k', lw=2, label='ISTA')
+ax.set_title('Cost functions', size=15, fontweight='bold')
+ax.set_xlabel('Iteration')
+ax.legend()
+ax.grid(True)
+plt.tight_layout()

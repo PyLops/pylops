@@ -37,7 +37,7 @@ in our ``requirements.txt`` and ``environment.yml`` files and thus are not stric
 needed nor installed directly as part of a standar installation (see below for details)
 
 However, we sometimes implement additional back-ends (referred to as ``engine`` in the code)
-to some of our operators in order too improve their performance.
+for some of our operators in order to improve their performance.
 To do so, we rely on third-party libraries. Those libraries are generally added to the
 list of our optional dependencies.
 If you are not after code performance, you may simply stick to the mandatory dependencies
@@ -53,11 +53,22 @@ Step-by-step installation for users
 Python environment
 ~~~~~~~~~~~~~~~~~~
 
-Activate your Python environment, and simply type the following command in your terminal:
+Activate your Python environment, and simply type the following command in your terminal
+to install the PyPi distribution:
 
 .. code-block:: bash
 
    >> pip install pylops
+
+If using Conda, you can also install our conda-forge distribution via:
+
+.. code-block:: bash
+
+   >> conda install -c conda-forge pylops
+
+Note that using the ``conda-forge`` distribution is reccomended as all the dependencies (both mandatory
+and optional) will be correctly installed for you, while only mandatory dependencies are installed
+using the ``pip`` distribution.
 
 Alternatively, to access the latest source from github:
 

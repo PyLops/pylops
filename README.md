@@ -1,6 +1,7 @@
 ![PyLops](https://github.com/equinor/pylops/blob/master/docs/source/_static/pylops_b.png)
 
 [![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/pylops/badges/version.svg)](https://anaconda.org/conda-forge/pylops)
 [![Build Status](https://travis-ci.org/equinor/pylops.svg?branch=master)](https://travis-ci.org/equinor/pylops)
 [![AzureDevOps Status](https://dev.azure.com/MRAVA/PyLops/_apis/build/status/equinor.pylops?branchName=master)](https://dev.azure.com/MRAVA/PyLops/_build/latest?definitionId=1&branchName=master)
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=latest)](https://pylops.readthedocs.io/en/latest/?badge=latest)
@@ -97,9 +98,17 @@ import pylops
 
 If you do not see any error, you should be good to go, enjoy!
 
+#### From Conda-forge
+
+Alternatively, you can install PyLops using the conda-forge distribution by typing the following command in your terminal:
+
+```
+conda install -c conda-forge pylops
+```
+
 #### From Docker *(preview)*
 
-Alternatively, if you simply want to try PyLops but do not have Python in your
+If you simply want to try PyLops but do not have Python in your
 local machine, you can use our [Docker](https://www.docker.com) image. After installing Docker in your computer,
 type the following command in your terminal (note that this will take some time the first time
 you type it as you will download and install the docker image):

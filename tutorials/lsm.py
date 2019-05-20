@@ -112,7 +112,7 @@ minv = minv.reshape(nx, nz)
 
 minv_sparse = lsm.solve(d.ravel(),
                         solver=pylops.optimization.sparsity.FISTA,
-                        **dict(eps=1e5, niter=100))
+                        **dict(eps=1e2, niter=100))
 minv_sparse = minv_sparse.reshape(nx, nz)
 
 # demigration
@@ -141,6 +141,24 @@ axs[1][1].axis('tight')
 axs[1][1].set_title(r'$m_{FISTA}$')
 
 fig, axs = plt.subplots(1, 4, figsize=(10, 4))
+axs[0].imshow(d[0, :, :300].T, cmap='gray',
+              vmin=-d.max(), vmax=d.max())
+axs[0].set_title(r'$d$')
+axs[0].axis('tight')
+axs[1].imshow(dadj[0, :, :300].T, cmap='gray',
+              vmin=-dadj.max(), vmax=dadj.max())
+axs[1].set_title(r'$d_{adj}$')
+axs[1].axis('tight')
+axs[2].imshow(dinv[0, :, :300].T, cmap='gray',
+              vmin=-d.max(), vmax=d.max())
+axs[2].set_title(r'$d_{inv}$')
+axs[2].axis('tight')
+axs[3].imshow(dinv_sparse[0, :, :300].T, cmap='gray',
+              vmin=-d.max(), vmax=d.max())
+axs[3].set_title(r'$d_{fista}$')
+axs[3].axis('tight')
+
+fig, axs = plt.subplots(1, 4, figsize=(10, 4))
 axs[0].imshow(d[ns//2, :, :300].T, cmap='gray',
               vmin=-d.max(), vmax=d.max())
 axs[0].set_title(r'$d$')
@@ -157,7 +175,6 @@ axs[3].imshow(dinv_sparse[ns//2, :, :300].T, cmap='gray',
               vmin=-d.max(), vmax=d.max())
 axs[3].set_title(r'$d_{fista}$')
 axs[3].axis('tight')
-
 
 ###############################################################################
 # This was just a short teaser, for a more advanced set of examples of 2D and

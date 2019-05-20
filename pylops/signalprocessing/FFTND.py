@@ -3,7 +3,7 @@ from pylops import LinearOperator
 
 
 class FFTND(LinearOperator):
-    r"""Three dimensional Fast-Fourier Transform.
+    r"""N-dimensional Fast-Fourier Transform.
 
     Apply n-dimensional Fast-Fourier Transform (FFT) to any n axes
     of a multi-dimensional array depending on the choice of ``dirs``.

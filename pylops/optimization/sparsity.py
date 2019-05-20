@@ -4,6 +4,11 @@ from pylops import LinearOperator
 from pylops.basicoperators import Diagonal
 from pylops.optimization.leastsquares import NormalEquationsInversion
 
+try:
+    from spgl1 import spgl1
+except ModuleNotFoundError:
+    spgl1 = None
+
 
 def _softthreshold(x, thresh):
     r"""Soft thresholding.
@@ -325,7 +330,7 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
 
 def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
-          tol=1e-10,  returninfo=False, show=False):
+          tol=1e-10, returninfo=False, show=False):
     r"""Fast Iterative Soft Thresholding Algorithm (FISTA).
 
     Solve an optimization problem with :math:`L1` regularization function given
@@ -395,8 +400,8 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
               '-----------------------------------------------------------\n'
               'The Operator Op has %d rows and %d cols\n'
               'eps = %10e\ttol = %10e\tniter = %d' % (Op.shape[0],
-                                                          Op.shape[1],
-                                                          eps, tol, niter))
+                                                      Op.shape[1],
+                                                      eps, tol, niter))
     # step size
     if alpha is None:
         if not isinstance(Op, LinearOperator):
@@ -452,7 +457,7 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
             cost[iiter] = costdata + costreg
 
         if show:
-            if iiter < 10 or niter-iiter<10 or iiter % 10 ==0:
+            if iiter < 10 or niter-iiter < 10 or iiter % 10 == 0:
                 msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
                       (iiter+1, xinv[0], costdata, costdata+costreg, xupdate)
                 print(msg)
@@ -472,3 +477,123 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         return xinv, niter, cost[:niter]
     else:
         return xinv, niter
+
+def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
+    r"""Spectral Projected-Gradient for L1 norm.
+
+    Solve a system of regularized equations given the operator ``Op``
+    and a sparsyfing transform ``SOp`` aiming to retrive a model that
+    is sparse in the sparsyfing domain.
+
+    This is a simple wrapper to :py:func:`spgl1.spgl1`
+    which is a porting of the well-known
+    `SPGL1 <https://www.cs.ubc.ca/~mpf/spgl1/>`_ MATLAB solver into Python.
+    In order to be able to use this solver you need to have installed the
+    ``spgl1`` library
+
+    Parameters
+    ----------
+    Op : :obj:`pylops.LinearOperator`
+        Operator to invert
+    data : :obj:`numpy.ndarray`
+        Data
+    SOp : :obj:`pylops.LinearOperator`
+        Sparsyfing transform
+    tau : :obj:`float`
+        Non-negative LASSO scalar. If different from ``0``,
+        SPGL1 will solve LASSO problem
+    sigma : :obj:`list`
+        BPDN scalar. If different from ``0``,
+        SPGL1 will solve BPDN problem
+    x0 : :obj:`numpy.ndarray`
+        Initial guess
+    **kwargs_spgl1
+        Arbitrary keyword arguments for
+        :py:func:`spgl1.spgl1` solver
+
+    Returns
+    -------
+    xinv : :obj:`numpy.ndarray`
+        Inverted model in original domain.
+    pinv : :obj:`numpy.ndarray`
+        Inverted model in sparse domain.
+    info : :obj:`dict`
+        Dictionary with the following information:
+
+        ``tau``, final value of tau (see sigma above)
+
+        ``rnorm``, two-norm of the optimal residual
+
+        ``rgap``, relative duality gap (an optimality measure)
+
+        ``gnorm``, Lagrange multiplier of (LASSO)
+
+        ``stat``,
+           ``1``: found a BPDN solution,
+           ``2``: found a BP solution; exit based on small gradient,
+           ``3``: found a BP solution; exit based on small residual,
+           ``4``: found a LASSO solution,
+           ``5``: error, too many iterations,
+           ``6``: error, linesearch failed,
+           ``7``: error, found suboptimal BP solution,
+           ``8``: error, too many matrix-vector products.
+
+        ``niters``, number of iterations
+
+        ``nProdA``, number of multiplications with A
+
+        ``nProdAt``, number of multiplications with A'
+
+        ``n_newton``, number of Newton steps
+
+        ``time_project``, projection time (seconds)
+
+        ``time_matprod``, matrix-vector multiplications time (seconds)
+
+        ``time_total``, total solution time (seconds)
+
+        ``niters_lsqr``, number of lsqr iterations (if ``subspace_min=True``)
+
+        ``xnorm1``, L1-norm model solution history through iterations
+
+        ``rnorm2``, L2-norm residual history through iterations
+
+        ``lambdaa``, Lagrange multiplier history through iterations
+
+    Raises
+    ------
+    ModuleNotFoundError
+        If the ``spgl1`` library is not installed
+
+    Notes
+    -----
+    Solve different variations of sparsity-promoting inverse problem by
+    imposing sparsity in the retrieved model [1]_.
+
+    The first problem is called *basis pursuit denoise (BPDN)* and
+    its cost function is
+
+        .. math::
+            ||\mathbf{x}||_1 \quad  subj. to \quad
+            ||\mathbf{Op}\mathbf{S}^H\mathbf{x}-\mathbf{b}||_2 <= \sigma,
+
+    while the second problem is the *l1-regularized least-squares or LASSO*
+    problem and its cost function is
+
+        .. math::
+            ||\mathbf{Op}\mathbf{S}^H\mathbf{x}-\mathbf{b}||_2 \quad  subj.
+            to \quad  ||\mathbf{x}||_1  <= \tau
+
+    .. [1] van den Berg E., Friedlander M.P., "Probing the Pareto frontier
+       for basis pursuit solutions", SIAM J. on Scientific Computing,
+       vol. 31(2), pp. 890-912. 2008.
+
+    """
+    if spgl1 is None:
+        raise ModuleNotFoundError('spgl1 not installed')
+    pinv, _, _, info = \
+        spgl1(Op if SOp is None else Op*SOp.H, data,
+              tau=tau, sigma=sigma, x0=x0, **kwargs_spgl1)
+
+    xinv = pinv.copy() if SOp is None else SOp.H * pinv
+    return xinv, pinv, info
