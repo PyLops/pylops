@@ -2,14 +2,15 @@
 Operators concatenation
 =======================
 
-This example shows how to use stacking operators such as
+This example shows how to use 'stacking' operators such as
 :py:class:`pylops.VStack`, :py:class:`pylops.HStack`,
-:py:class:`pylops.Block`, and :py:class:`pylops.BlockDiag`.
+:py:class:`pylops.Block`, :py:class:`pylops.BlockDiag`,
+and :py:class:`pylops.Kronecker`.
 
-These operators allow for different combinations of multiple linear operators in
-a single operator. Such functionalities are used within PyLops as the basis for
-the creation of complex operators as well as in the definition of various types
-of optimization problems with regularization or preceonditioning.
+These operators allow for different combinations of multiple linear operators
+in a single operator. Such functionalities are used within PyLops as the basis
+for the creation of complex operators as well as in the definition of various
+types of optimization problems with regularization or preceonditioning.
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -189,3 +190,84 @@ axs[1].set_title(r'$y$')
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
+
+###############################################################################
+# Finally we use the *Kronecker operator* and replicate this example on
+# `wiki <https://en.wikipedia.org/wiki/Kronecker_product>`_.
+#
+#    .. math::
+#       \begin{bmatrix}
+#           1  & 2  \\
+#           3  & 4 \\
+#       \end{bmatrix} \otimes
+#       \begin{bmatrix}
+#           0  & 5  \\
+#           6  & 7 \\
+#       \end{bmatrix} =
+#       \begin{bmatrix}
+#            0 &  5 &  0 & 10 \\
+#            6 &  7 & 12 & 14 \\
+#            0 & 15 &  0 & 20 \\
+#           18 & 21 & 24 & 28 \\
+#       \end{bmatrix}
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[0, 5], [6, 7]])
+AB = np.kron(A, B)
+
+n1, m1 = A.shape
+n2, m2 = B.shape
+
+Aop = pylops.MatrixMult(A)
+Bop = pylops.MatrixMult(B)
+
+ABop = pylops.Kronecker(Aop, Bop)
+x = np.ones(m1*m2)
+
+y = AB.dot(x)
+yop = ABop*x
+xinv = ABop / yop
+
+print('AB = \n', AB)
+
+print('x = ', x)
+print('y = ', y)
+print('yop = ', yop)
+print('xinv = ', x)
+
+###############################################################################
+# We can also use :py:class:`pylops.Kronecker` to do something more
+# interesting. Any operator can in fact be applied on a single direction of a
+# multi-dimensional input array if combined with an :py:class:`pylops.Identity`
+# operator via Kronecker product. We apply here the
+# :py:class:`pylops.FirstDerivative` to the second dimension of the model.
+#
+# Note that for those operators whose implementation allows their application
+# to a single axis via the ``dir`` parameter, using the Kronecker product
+# would lead to slower performance. Nevertheless, the Kronecker product allows
+# any other operator to be applied to a single dimension.
+Nv, Nh = 11, 21
+
+Iop = pylops.Identity(Nv, dtype='float32')
+D2hop = pylops.FirstDerivative(Nh, dtype='float32')
+
+X = np.zeros((Nv, Nh))
+X[Nv//2, Nh//2] = 1
+D2hop = pylops.Kronecker(Iop, D2hop)
+
+Y = D2hop*X.ravel()
+Y = Y.reshape(Nv, Nh)
+
+fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+fig.suptitle('Kronecker', fontsize=14,
+             fontweight='bold', y=0.95)
+im = axs[0].imshow(X, interpolation='nearest')
+axs[0].axis('tight')
+axs[0].set_title(r'$x$')
+plt.colorbar(im, ax=axs[0])
+im = axs[1].imshow(Y, interpolation='nearest')
+axs[1].axis('tight')
+axs[1].set_title(r'$y$')
+plt.colorbar(im, ax=axs[1])
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)
+

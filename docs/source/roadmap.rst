@@ -60,10 +60,10 @@ avo
 basicoperators
 ~~~~~~~~~~~~~~
 
-* Create ``Kronecker`` operator -
+* :strike:`Create Kronecker operator` -
   `Issue #28 <https://github.com/Statoil/pylops/issues/28>`_.
 
-* Deal with edges in ``FirstDerivative`` and ``SecondDerivative`` operator -
+* :strike:`Deal with edges in FirstDerivative and SecondDerivative operators` -
   `Issue #34 <https://github.com/Statoil/pylops/issues/34>`_.
 
 optimization

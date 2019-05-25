@@ -53,7 +53,7 @@ Basic operators
     HStack
     Block
     BlockDiag
-
+    Kronecker
 
 Smoothing and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~

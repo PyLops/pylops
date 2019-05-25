@@ -14,6 +14,7 @@ from .VStack import VStack
 from .HStack import HStack
 from .Block import Block
 from .BlockDiag import BlockDiag
+from .Kronecker import Kronecker
 
 from .Smoothing1D import Smoothing1D
 from .Smoothing2D import Smoothing2D
