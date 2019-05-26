@@ -18,6 +18,9 @@ class FirstDerivative(LinearOperator):
         Direction along which smoothing is applied.
     sampling : :obj:`float`, optional
         Sampling step ``dx``.
+    edge : :obj:`bool`, optional
+        Use reduced order derivative at edges (``True``) or
+        ignore them (``False``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -41,10 +44,12 @@ class FirstDerivative(LinearOperator):
         y[i] = (0.5x[i+1] - 0.5x[i-1]) / dx
 
     """
-    def __init__(self, N, dims=None, dir=0, sampling=1., dtype='float64'):
+    def __init__(self, N, dims=None, dir=0,
+                 sampling=1., edge=False, dtype='float64'):
         self.N = N
         self.dir = dir
         self.sampling = sampling
+        self.edge = edge
         if dims is None:
             self.dims = (self.N, )
             self.reshape = False
@@ -60,8 +65,12 @@ class FirstDerivative(LinearOperator):
 
     def _matvec(self, x):
         if not self.reshape:
+            x = x.squeeze()
             y = np.zeros(self.N, self.dtype)
             y[1:-1] = (0.5*x[2:]-0.5*x[0:-2])/self.sampling
+            if self.edge:
+                y[0] = (x[1] - x[0]) / self.sampling
+                y[-1] = (x[-1] - x[-2]) / self.sampling
         else:
             x = np.reshape(x, self.dims)
             y = np.zeros(self.dims, self.dtype)
@@ -69,6 +78,9 @@ class FirstDerivative(LinearOperator):
                 x = np.swapaxes(x, self.dir, 0)
                 y = np.swapaxes(y, self.dir, 0)
             y[1:-1] = (0.5*x[2:]-0.5*x[0:-2])/self.sampling
+            if self.edge:
+                y[0] = (x[1] - x[0])/self.sampling
+                y[-1] = (x[-1] - x[-2])/self.sampling
             if self.dir > 0:
                 y = np.swapaxes(y, 0, self.dir)
             y = y.ravel()
@@ -76,9 +88,15 @@ class FirstDerivative(LinearOperator):
 
     def _rmatvec(self, x):
         if not self.reshape:
+            x = x.squeeze()
             y = np.zeros(self.N, self.dtype)
             y[0:-2] -= (0.5*x[1:-1])/self.sampling
             y[2:] += (0.5*x[1:-1])/self.sampling
+            if self.edge:
+                y[0] -= x[0] / self.sampling
+                y[1] += x[0] / self.sampling
+                y[-2] -= x[-1] / self.sampling
+                y[-1] += x[-1] / self.sampling
         else:
             x = np.reshape(x, (self.dims))
             y = np.zeros((self.dims), self.dtype)
@@ -87,6 +105,11 @@ class FirstDerivative(LinearOperator):
                 y = np.swapaxes(y, self.dir, 0)
             y[0:-2] -= (0.5 * x[1:-1])/self.sampling
             y[2:] += (0.5 * x[1:-1])/self.sampling
+            if self.edge:
+                y[0] -= x[0] / self.sampling
+                y[1] += x[0] / self.sampling
+                y[-2] -= x[-1] / self.sampling
+                y[-1] += x[-1] / self.sampling
             if self.dir > 0:
                 y = np.swapaxes(y, 0, self.dir)
             y = y.ravel()
