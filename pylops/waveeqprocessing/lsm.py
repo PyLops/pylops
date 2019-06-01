@@ -146,7 +146,6 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode='eikonal'):
                                       'installed... choose analytical'
                                       'if using constant velocity model, '
                                       'or install scikit-fmm library')
-            trav = None
     else:
         raise NotImplementedError('method must be analytic or eikonal')
 

@@ -107,6 +107,9 @@ and other basic Python libraries installed. Here `/path/to/local/folder` is the 
 on your computer where you will create a notebook (or containing notebooks that you want to continue working on). Note that
 anything you do to the notebook(s) will be saved in your local folder.
 
+A larger image with Conda distribution is also available. Simply use `conda_notebook` instead of `notebook` in the
+previous command.
+
 
 Step-by-step installation for developers
 ----------------------------------------

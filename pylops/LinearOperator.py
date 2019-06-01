@@ -25,8 +25,7 @@ class LinearOperator(spLinearOperator):
     Parameters
     ----------
     Op : :obj:`scipy.sparse.linalg.LinearOperator` or :obj:`scipy.sparse.linalg._ProductLinearOperator` or :obj:`scipy.sparse.linalg._SumLinearOperator`
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
+        Operator
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (``True``) or not (``False``)
