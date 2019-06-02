@@ -24,6 +24,10 @@ class Restriction(LinearOperator):
         Direction along which restriction is applied.
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    inplace : :obj:`bool`, optional
+        Work inplace (``True``) or make a new copy (``False``). By default,
+        data is a reference to the model (in forward) and model is a reference
+        to the data (in adjoint).
 
     Attributes
     ----------
@@ -62,7 +66,8 @@ class Restriction(LinearOperator):
     vector).
 
     """
-    def __init__(self, M, iava, dims=None, dir=0, dtype='float64'):
+    def __init__(self, M, iava, dims=None, dir=0,
+                 dtype='float64', inplace=True):
         self.M = M
         self.dir = dir
         self.iava = iava
@@ -81,11 +86,13 @@ class Restriction(LinearOperator):
                                    [1] * (len(self.dims) - self.dir - 1)
                 self.N = np.prod(self.dimsd)
                 self.reshape = True
+        self.inplace = inplace
         self.shape = (self.N, self.M)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
+        if not self.inplace: x = x.copy()
         if not self.reshape:
             y = x[self.iava]
         else:
@@ -94,6 +101,7 @@ class Restriction(LinearOperator):
         return y
 
     def _rmatvec(self, x):
+        if not self.inplace: x = x.copy()
         if not self.reshape:
             y = np.zeros(self.dims, dtype=self.dtype)
             y[self.iava] = x

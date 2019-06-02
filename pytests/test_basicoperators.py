@@ -115,11 +115,11 @@ def test_MatrixMult_repeated(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
-def test_Identity(par):
+def test_Identity_inplace(par):
     """Dot-test, forward and adjoint for Identity operator
     """
     np.random.seed(10)
-    Iop = Identity(par['ny'], par['nx'], dtype=par['dtype'])
+    Iop = Identity(par['ny'], par['nx'], dtype=par['dtype'], inplace=True)
     assert dottest(Iop, par['ny'], par['nx'],
                    complexflag=0 if par['imag'] == 0 else 3)
 
@@ -131,6 +131,29 @@ def test_Identity(par):
                               y[:min(par['ny'], par['nx'])], decimal=4)
     assert_array_almost_equal(x[:min(par['ny'], par['nx'])],
                               x1[:min(par['ny'], par['nx'])], decimal=4)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Identity_noinplace(par):
+    """Dot-test, forward and adjoint for Identity operator (not in place)
+    """
+    np.random.seed(10)
+    Iop = Identity(par['ny'], par['nx'], dtype=par['dtype'], inplace=False)
+    assert dottest(Iop, par['ny'], par['nx'],
+                   complexflag=0 if par['imag'] == 0 else 3)
+
+    x = np.ones(par['nx']) + par['imag'] * np.ones(par['nx'])
+    y = Iop*x
+    x1 = Iop.H*y
+
+    assert_array_almost_equal(x[:min(par['ny'], par['nx'])],
+                              y[:min(par['ny'], par['nx'])], decimal=4)
+    assert_array_almost_equal(x[:min(par['ny'], par['nx'])],
+                              x1[:min(par['ny'], par['nx'])], decimal=4)
+
+    # change value in x and check it doesn't change in y
+    x[0] = 10
+    assert x[0] != y[0]
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])

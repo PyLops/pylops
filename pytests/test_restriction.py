@@ -7,15 +7,19 @@ from pylops.utils import dottest
 from pylops.basicoperators import Restriction
 
 par1 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 0,
-        'dtype':'float32'}  # real
+        'dtype':'float32', 'inplace':'True'}  # real, inplace
 par2 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 1j,
-        'dtype':'complex64'} # complex
+        'dtype':'complex64', 'inplace':'True'} # complex, inplace
+par3 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 0,
+        'dtype':'float32', 'inplace':'False'}  # real, out of place
+par4 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 1j,
+        'dtype':'complex64', 'inplace':'False'} # complex, out of place
 
 # subsampling factor
 perc_subsampling = 0.4
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_Restriction_1dsignal(par):
     """Dot-test, forward and adjoint for Restriction operator for 1d signal
     """
@@ -24,7 +28,8 @@ def test_Restriction_1dsignal(par):
     Nsub = int(np.round(par['nx'] * perc_subsampling))
     iava = np.sort(np.random.permutation(np.arange(par['nx']))[:Nsub])
 
-    Rop = Restriction(par['nx'], iava, dtype=par['dtype'])
+    Rop = Restriction(par['nx'], iava, inplace=par['dtype'],
+                      dtype=par['dtype'])
     assert dottest(Rop, Nsub, par['nx'],
                    complexflag=0 if par['imag'] == 0 else 3)
 
@@ -37,7 +42,7 @@ def test_Restriction_1dsignal(par):
     assert_array_almost_equal(x[iava], x1[iava])
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_Restriction_2dsignal(par):
     """Dot-test, forward and adjoint for Restriction operator for 2d signal
     """
@@ -50,9 +55,8 @@ def test_Restriction_2dsignal(par):
     Nsub = int(np.round(par['nx'] * perc_subsampling))
     iava = np.sort(np.random.permutation(np.arange(par['nx']))[:Nsub])
 
-    Rop = Restriction(par['nx']*par['nt'], iava,
-                      dims=(par['nx'], par['nt']), dir=0,
-                      dtype=par['dtype'])
+    Rop = Restriction(par['nx']*par['nt'], iava, dims=(par['nx'], par['nt']),
+                      dir=0, inplace=par['dtype'], dtype=par['dtype'])
     assert dottest(Rop, Nsub*par['nt'], par['nx']*par['nt'],
                    complexflag=0 if par['imag'] == 0 else 3)
 
@@ -70,9 +74,8 @@ def test_Restriction_2dsignal(par):
     Nsub = int(np.round(par['nt'] * perc_subsampling))
     iava = np.sort(np.random.permutation(np.arange(par['nt']))[:Nsub])
 
-    Rop = Restriction(par['nx'] * par['nt'], iava,
-                      dims=(par['nx'], par['nt']), dir=1,
-                      dtype=par['dtype'])
+    Rop = Restriction(par['nx'] * par['nt'], iava, dims=(par['nx'], par['nt']),
+                      dir=1, inplace=par['dtype'], dtype=par['dtype'])
     assert dottest(Rop, par['nx'] * Nsub, par['nx'] * par['nt'],
                    complexflag=0 if par['imag'] == 0 else 3)
 
@@ -86,7 +89,7 @@ def test_Restriction_2dsignal(par):
     assert_array_almost_equal(x[:, iava], x1[:, iava])
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_Restriction_3dsignal(par):
     """Dot-test, forward and adjoint for Restriction operator for 3d signal
     """
@@ -101,7 +104,7 @@ def test_Restriction_3dsignal(par):
 
     Rop = Restriction(par['ny']*par['nx']*par['nt'], iava,
                       dims=(par['ny'], par['nx'], par['nt']), dir=0,
-                      dtype=par['dtype'])
+                      inplace=par['dtype'], dtype=par['dtype'])
     assert dottest(Rop, Nsub*par['nx']*par['nt'],
                    par['ny']*par['nx']*par['nt'],
                    complexflag=0 if par['imag'] == 0 else 3)
@@ -122,7 +125,7 @@ def test_Restriction_3dsignal(par):
 
     Rop = Restriction(par['ny'] * par['nx'] * par['nt'], iava,
                       dims=(par['ny'], par['nx'], par['nt']), dir=1,
-                      dtype=par['dtype'])
+                      inplace=par['dtype'], dtype=par['dtype'])
     assert dottest(Rop, par['ny'] * Nsub * par['nt'],
                    par['ny'] * par['nx'] * par['nt'],
                    complexflag=0 if par['imag'] == 0 else 3)
@@ -142,7 +145,7 @@ def test_Restriction_3dsignal(par):
 
     Rop = Restriction(par['ny'] * par['nx'] * par['nt'], iava,
                       dims=(par['ny'], par['nx'], par['nt']), dir=2,
-                      dtype=par['dtype'])
+                      inplace=par['dtype'], dtype=par['dtype'])
     assert dottest(Rop, par['ny'] * par['nx'] * Nsub,
                    par['ny'] * par['nx'] * par['nt'],
                    complexflag=0 if par['imag'] == 0 else 3)

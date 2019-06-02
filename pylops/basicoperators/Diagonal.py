@@ -58,10 +58,9 @@ class Diagonal(LinearOperator):
             self.dims = None
             self.reshape = False
         else:
-            for _ in range(dir):
-                self.diag = np.expand_dims(self.diag, axis=0)
-            for _ in range(len(dims) - dir - 1):
-                self.diag = np.expand_dims(self.diag, axis=-1)
+            diagdims = [1] * len(dims)
+            diagdims[dir] = dims[dir]
+            self.diag =self.diag.reshape(diagdims)
             self.shape = (np.prod(dims), np.prod(dims))
             self.dims = dims
             self.reshape = True
@@ -72,19 +71,19 @@ class Diagonal(LinearOperator):
         if not self.reshape:
             y = self.diag*x
         else:
-            x = np.reshape(x, self.dims)
+            x = x.reshape(self.dims)
             y = (self.diag*x).flatten()
         return y
 
     def _rmatvec(self, x):
         if self.complex:
-            diagadj = np.conj(self.diag)
+            diagadj = self.diag.conj()
         else:
             diagadj = self.diag
         if not self.reshape:
             y = diagadj * x
         else:
-            x = np.reshape(x, self.dims)
+            x = x.reshape(self.dims)
             y = diagadj * x
         return y
 

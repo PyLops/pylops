@@ -7,20 +7,20 @@ def _matvec_numba_table(x, y, dims, interp, table, dtable):
     """
     dim0, dim1 = dims
     x = x.reshape(dims)
-    for isp in range(dim0):
+    for ix0 in range(dim0):
         for it in range(dim1):
-            indices = table[isp, it]
+            indices = table[ix0, it]
             if interp:
-                dindices = dtable[isp, it]
+                dindices = dtable[ix0, it]
 
             for i, indexfloat in enumerate(indices):
                 index = int(indexfloat)
                 if index != -9223372036854775808: # =int(np.nan)
                     if not interp:
-                        y[i, index] += x[isp, it]
+                        y[i, index] += x[ix0, it]
                     else:
-                        y[i, index] += (1 -dindices[i])*x[isp, it]
-                        y[i, index + 1] += dindices[i] * x[isp, it]
+                        y[i, index] += (1 -dindices[i])*x[ix0, it]
+                        y[i, index + 1] += dindices[i] * x[ix0, it]
     return y.ravel()
 
 @jit(nopython=True, parallel=True, nogil=True)
@@ -30,19 +30,19 @@ def _rmatvec_numba_table(x, y, dims, dimsd, interp, table, dtable):
     """
     dim0, dim1 = dims
     x = x.reshape(dimsd)
-    for isp in prange(dim0):
+    for ix0 in prange(dim0):
         for it in range(dim1):
-            indices = table[isp, it]
+            indices = table[ix0, it]
             if interp:
-                dindices = dtable[isp, it]
+                dindices = dtable[ix0, it]
 
             for i, indexfloat in enumerate(indices):
                 index = int(indexfloat)
                 if index != -9223372036854775808: # =int(np.nan)
                     if not interp:
-                        y[isp, it] += x[i, index]
+                        y[ix0, it] += x[i, index]
                     else:
-                        y[isp, it] += x[i, index]*(1 - dindices[i]) + \
+                        y[ix0, it] += x[i, index]*(1 - dindices[i]) + \
                                       x[i, index + 1]*dindices[i]
     return y.ravel()
 
@@ -53,20 +53,20 @@ def _matvec_numba_onthefly(x, y, dims, interp, fh):
     """
     dim0, dim1 = dims
     x = x.reshape(dims)
-    for isp in range(dim0):
+    for ix0 in range(dim0):
         for it in range(dim1):
             if interp:
-                indices, dindices = fh(isp, it)
+                indices, dindices = fh(ix0, it)
             else:
-                indices, dindices = fh(isp, it)
+                indices, dindices = fh(ix0, it)
             for i, indexfloat in enumerate(indices):
                 index = int(indexfloat)
                 if index != -9223372036854775808: # =int(np.nan)
                     if not interp:
-                        y[i, index] += x[isp, it]
+                        y[i, index] += x[ix0, it]
                     else:
-                        y[i, index] += (1 -dindices[i])*x[isp, it]
-                        y[i, index + 1] += dindices[i] * x[isp, it]
+                        y[i, index] += (1 -dindices[i])*x[ix0, it]
+                        y[i, index + 1] += dindices[i] * x[ix0, it]
     return y.ravel()
 
 @jit(nopython=True, parallel=True, nogil=True)
@@ -76,18 +76,18 @@ def _rmatvec_numba_onthefly(x, y, dims, dimsd, interp, fh):
     """
     dim0, dim1 = dims
     x = x.reshape(dimsd)
-    for isp in prange(dim0):
+    for ix0 in prange(dim0):
         for it in range(dim1):
             if interp:
-                indices, dindices = fh(isp, it)
+                indices, dindices = fh(ix0, it)
             else:
-                indices, dindices = fh(isp, it)
+                indices, dindices = fh(ix0, it)
             for i, indexfloat in enumerate(indices):
                 index = int(indexfloat)
                 if index != -9223372036854775808: # =int(np.nan)
                     if not interp:
-                        y[isp, it] += x[i, index]
+                        y[ix0, it] += x[i, index]
                     else:
-                        y[isp, it] += x[i, index]*(1 - dindices[i]) + \
+                        y[ix0, it] += x[i, index]*(1 - dindices[i]) + \
                                       x[i, index + 1]*dindices[i]
     return y.ravel()
