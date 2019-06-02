@@ -151,6 +151,10 @@ def test_Identity_noinplace(par):
     assert_array_almost_equal(x[:min(par['ny'], par['nx'])],
                               x1[:min(par['ny'], par['nx'])], decimal=4)
 
+    # change value in x and check it doesn't change in y
+    x[0] = 10
+    assert x[0] != y[0]
+
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
 def test_Zero(par):
