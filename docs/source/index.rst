@@ -18,35 +18,42 @@ on a vector or another matrix.
 Luckily, many iterative methods (e.g. cg, lsqr) do not need to know the individual entries of a matrix to solve a linear system.
 Such solvers only require the computation of forward and adjoint matrix-vector products as done for any of the PyLops operators.
 
-Here is simple example showing how a dense first-order first derivative operator can be created,
+Here is a simple example showing how a dense first-order first derivative operator can be created,
 applied and inverted using numpy/scipy commands:
 
 .. code-block:: python
 
+   import numpy as np
+   from scipy.linalg import lstsq
+
    nx = 7
    x = np.arange(nx) - (nx-1)/2
 
-   D = np.diag(0.5*np.ones(nx-1), k=1) - np.diag(0.5*np.ones(nx-1), k=-1)
+   D = np.diag(0.5*np.ones(nx-1), k=1) - \
+       np.diag(0.5*np.ones(nx-1), k=-1)
    D[0] = D[-1] = 0 # take away edge effects
 
    # y = Dx
-   y = np.dot(D, x)
+   y = np.dot(D,x)
    # x = D'y
-   xadj = np.dot(D.T, y)
+   xadj = np.dot(D.T,y)
    # xinv = D^-1 y
-   xinv = scipy.linalg.lstsq(D, y)
+   xinv = lstsq(D, y)[0]
 
 and similarly using PyLops commands:
 
 .. code-block:: python
 
+   from pylops import FirstDerivative
+
    Dlop = FirstDerivative(nx, dtype='float64')
+
    # y = Dx
    y = Dlop*x
    # x = D'y
    xadj = Dlop.H*y
    # xinv = D^-1 y
-   xinv = D / y
+   xinv = Dlop / y
 
 Note how this second approach does not require creating a dense matrix, reducing both the memory load and the computational cost of
 applying a derivative to an input vector :math:`\mathbf{x}`. Moreover, the code becomes even more compact and espressive than in the previous case
@@ -56,21 +63,32 @@ letting the user focus on the formulation of equations of the forward problem to
 Terminology
 -----------
 A common *terminology* is used within the entire documentation of PyLops. Every linear operator and its application to
-a model will be defined as **forward model (or operation)** while its
+a model will be referred to as **forward model (or operation)**
 
 .. math::
     \mathbf{y} =  \mathbf{A} \mathbf{x}
 
-while its application to a data is defined as as **adjoint modelling (or operation)** while its
+while its application to a data is referred to as **adjoint modelling (or operation)**
 
 .. math::
     \mathbf{x} = \mathbf{A}^H \mathbf{y}
 
-where :math:`\mathbf{A}` is called *operator*, :math:`\mathbf{x}` is called *model* and :math:`\mathbf{y}` is called *data*.
+where :math:`\mathbf{x}` is called *model* and :math:`\mathbf{y}` is called *data*.
+The *operator* :math:`\mathbf{A}:\mathbb{F}^m \to \mathbb{F}^n` effectively maps a
+vector of size :math:`m` in the *model space* to a vector of size :math:`n`
+in the *data space*, conversely the * adjoint operator*
+:math:`\mathbf{A}^H:\mathbb{F}^n \to \mathbb{F}^m` maps a
+vector of size :math:`n` in the *data space* to a vector of size :math:`m`
+in the *model space*. As linear operators mimics the effect a matrix on a vector
+we can also loosely refer to :math:`m` as the number of *columns* and :math:`n` as the
+number of *rows* of the operator.
 
-Ultimately, solving an inverse problems accounts to removing the effect of :math:`\mathbf{A}` from the
-data :math:`\mathbf{y}` to retrieve the model :math:`\mathbf{x}`.
+Ultimately, solving an inverse problems accounts to removing the effect of
+:math:`\mathbf{A}` from the data :math:`\mathbf{y}` to retrieve the model :math:`\mathbf{x}`.
 
+For a more detailed description of the concepts of linear operators, adjoints
+and inverse problems in general, you can head over to one of Jon Claerbout's books
+such as `Basic Earth Imaging <http://sepwww.stanford.edu/sep/prof/bei11.2010.pdf>`_.
 
 
 Implementation
@@ -102,7 +120,9 @@ that can be tailored to our needs, and as contribution to the free software comm
    :caption: Getting started:
 
    installation.rst
+   performance.rst
    tutorials/index.rst
+   FAQs <faq.rst>
 
 .. toctree::
    :maxdepth: 2
@@ -118,6 +138,8 @@ that can be tailored to our needs, and as contribution to the free software comm
    :caption: Getting involved:
 
    Implementing new operators  <adding.rst>
-   Contributing      <contributing.rst>
-   Credits           <credits.rst>
+   Contributing <contributing.rst>
+   Changelog <changelog.rst>
+   Roadmap <roadmap.rst>
+   Credits <credits.rst>
 

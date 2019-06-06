@@ -1,8 +1,8 @@
 """
 Convolution
 ===========
-This example shows how to use the :py:class:`lops.signalprocessing.Convolve1D` and
-:py:class:`lops.signalprocessing.Convolve2D` operators to perform convolution between two signals.
+This example shows how to use the :py:class:`pylops.signalprocessing.Convolve1D` and
+:py:class:`pylops.signalprocessing.Convolve2D` operators to perform convolution between two signals.
 
 Such operators can be used in the forward model of several common application
 in signal processing that require filtering of an input signal for the instrument response.
@@ -16,15 +16,18 @@ from the recorded signal to be able to better interpret the response of the subs
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import lops
+import pylops
 
-from lops.utils.wavelets import ricker
+from pylops.utils.wavelets import ricker
+
+plt.close('all')
 
 ###############################################################################
-# We will start by creating a zero signal of lenght :math:`nt` and we will place a
-# unitary spike at its center. We also create our filter to be applied by means of
-# :py:class:`lops.signalprocessing.Convolve1D` operator. Following the seismic example
-# mentioned above, the filter is a `Ricker wavelet <http://subsurfwiki.org/wiki/Ricker_wavelet>`_
+# We will start by creating a zero signal of lenght :math:`nt` and we will
+# place a unitary spike at its center. We also create our filter to be
+# applied by means of :py:class:`pylops.signalprocessing.Convolve1D` operator.
+# Following the seismic example mentioned above, the filter is a
+# `Ricker wavelet <http://subsurfwiki.org/wiki/Ricker_wavelet>`_
 # with dominant frequency :math:`f_0 = 30 Hz`.
 nt = 1001
 dt = 0.004
@@ -33,7 +36,7 @@ x = np.zeros(nt)
 x[int(nt/2)] = 1
 h, th, hcenter = ricker(t[:101], f0=30)
 
-Cop = lops.signalprocessing.Convolve1D(nt, h=h, offset=hcenter, dtype='float32')
+Cop = pylops.signalprocessing.Convolve1D(nt, h=h, offset=hcenter, dtype='float32')
 y = Cop*x
 
 xinv = Cop / y
@@ -48,9 +51,9 @@ ax.set_xlim(1.9, 2.1)
 
 ###############################################################################
 # We show now that also a filter with mixed phase (i.e., not centered around zero)
-# can be applied and inverted for using the :py:class:`lops.signalprocessing.Convolve1D`
+# can be applied and inverted for using the :py:class:`pylops.signalprocessing.Convolve1D`
 # operator.
-Cop = lops.signalprocessing.Convolve1D(nt, h=h, offset=hcenter-3, dtype='float32')
+Cop = pylops.signalprocessing.Convolve1D(nt, h=h, offset=hcenter - 3, dtype='float32')
 y = Cop*x
 y1 = Cop.H*x
 xinv = Cop / y
@@ -66,7 +69,7 @@ ax.legend()
 
 ###############################################################################
 # Finally we repeat a similar exercise but using two dimensional signals and
-# filters taking advantage of the :py:class:`lops.signalprocessing.Convolve2D` operator.
+# filters taking advantage of the :py:class:`pylops.signalprocessing.Convolve2D` operator.
 nt = 51
 nx = 81
 dt = 0.004
@@ -77,8 +80,8 @@ x[int(nt/2), int(nx/2)] = 1
 nh = [11, 5]
 h = np.ones((nh[0], nh[1]))
 
-Cop = lops.signalprocessing.Convolve2D(nt*nx, h=h, offset=(int(nh[0])/2, int(nh[1])/2),
-                                       dims=(nt, nx), dtype='float32')
+Cop = pylops.signalprocessing.Convolve2D(nt * nx, h=h, offset=(int(nh[0]) / 2, int(nh[1]) / 2),
+                                         dims=(nt, nx), dtype='float32')
 y = Cop*x.flatten()
 xinv = Cop / y
 
@@ -86,7 +89,8 @@ y = y.reshape(nt, nx)
 xinv = xinv.reshape(nt, nx)
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 3))
-fig.suptitle('Convolve in 1st direction of 2d data', fontsize=14, fontweight='bold')
+fig.suptitle('Convolve in 1st direction of 2d data', fontsize=14,
+             fontweight='bold', y=0.95)
 axs[0].imshow(x, cmap='gray', vmin=-1, vmax=1)
 axs[1].imshow(y, cmap='gray', vmin=-1, vmax=1)
 axs[2].imshow(xinv, cmap='gray', vmin=-1, vmax=1)
@@ -96,9 +100,12 @@ axs[1].set_title('y')
 axs[1].axis('tight')
 axs[2].set_title('xlsqr')
 axs[2].axis('tight')
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Convolve in 1st direction of 2d data', fontsize=14, fontweight='bold')
+fig.suptitle('Convolve in 1st direction of 2d data', fontsize=14,
+             fontweight='bold', y=0.95)
 ax[0].plot(x[int(nt/2), :], 'k', lw=2, label=r'$x$')
 ax[0].plot(y[int(nt/2), :], 'r', lw=2, label=r'$y=Ax$')
 ax[0].plot(xinv[int(nt/2), :], '--g', lw=2, label=r'$x_{ext}$')
@@ -109,3 +116,5 @@ ax[0].legend()
 ax[0].set_xlim(30, 50)
 ax[1].legend()
 ax[1].set_xlim(10, 40)
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)

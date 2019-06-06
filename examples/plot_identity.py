@@ -1,21 +1,23 @@
 """
 Identity
 ========
-This example shows how to use the :py:class:`lops.Identity` operator to transfer model
+This example shows how to use the :py:class:`pylops.Identity` operator to transfer model
 into data and viceversa.
 """
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as pltgs
 
-import lops
+import pylops
+
+plt.close('all')
 
 ###############################################################################
 # Let's define an identity operator :math:`\mathbf{I}` with same number of elements for data
 # :math:`N` and model :math:`M`.
 N, M = 5, 5
 x = np.arange(M)
-Iop = lops.Identity(M, dtype='int')
+Iop = pylops.Identity(M, dtype='int')
 
 y = Iop*x
 xadj = Iop.H*y
@@ -56,7 +58,7 @@ fig.colorbar(im, ax=ax, ticks=[0, 1], pad=0.3, shrink=0.7)
 # Similarly we can consider the case with data bigger than model
 N, M = 10, 5
 x = np.arange(M)
-Iop = lops.Identity(N, M, dtype='int')
+Iop = pylops.Identity(N, M, dtype='int')
 
 y = Iop*x
 xadj = Iop.H*y
@@ -69,7 +71,7 @@ print('I\'*y = %s ' % xadj)
 # and model bigger than data
 N, M = 5, 10
 x = np.arange(M)
-Iop = lops.Identity(N, M, dtype='int')
+Iop = pylops.Identity(N, M, dtype='int')
 
 y = Iop*x
 xadj = Iop.H*y

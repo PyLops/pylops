@@ -2,7 +2,7 @@ r"""
 Matrix Multiplication
 =====================
 
-This example shows how to use the :py:class:`lops.MatrixMult` operator
+This example shows how to use the :py:class:`pylops.MatrixMult` operator
 to perform *Matrix inversion* of the following linear system.
 
 .. math::
@@ -19,12 +19,15 @@ not exist and a least-square solution is computed instead.
 """
 
 import numpy as np
+from scipy.sparse import rand
 from scipy.sparse.linalg import lsqr
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as pltgs
 
-import lops
+import pylops
+
+plt.close('all')
 # sphinx_gallery_thumbnail_number = 2
 
 ###############################################################################
@@ -36,7 +39,7 @@ A = np.random.normal(0, 1, (N, M))
 x = np.ones(M)
 
 #a = 1
-Aop = lops.MatrixMult(A, dtype='float64')
+Aop = pylops.MatrixMult(A, dtype='float64')
 
 ###############################################################################
 # We can now apply the forward operator to create the data vector :math:`\mathbf{y}`
@@ -114,7 +117,7 @@ ax.yaxis.set_ticklabels([])
 
 plt.figure(figsize=(8, 3))
 plt.plot(Aop.eigs(), 'k', lw=2)
-plt.title('Eigenvalues', size=20, fontweight='bold')
+plt.title('Eigenvalues', size=16, fontweight='bold')
 plt.xlabel('#eigenvalue')
 plt.xlabel('intensity')
 plt.tight_layout()
@@ -125,7 +128,7 @@ N, M = 200, 50
 A = np.random.normal(0, 1, (N, M))
 x = np.ones(M)
 
-Aop = lops.MatrixMult(A, dtype='float64')
+Aop = pylops.MatrixMult(A, dtype='float64')
 y = Aop*x
 yn = y + np.random.normal(0, 0.3, N)
 
@@ -136,12 +139,32 @@ plt.figure(figsize=(8, 3))
 plt.plot(x, 'k', lw=2, label='True')
 plt.plot(xest, '--r', lw=2, label='Noise-free')
 plt.plot(xnest, '--g', lw=2, label='Noisy')
-plt.title('Matrix inversion', size=20, fontweight='bold')
+plt.title('Matrix inversion', size=16, fontweight='bold')
 plt.legend()
 
 ###############################################################################
-# Finally, the same matrix can be applied to multiple columns of of input model
-# :math:`\mathbf{x}`. We can express this operation in a matrix form:
+# And we can also use a sparse matrix from the :obj:`scipy.sparse`
+# family of sparse matrices.
+N, M = 5, 5
+A = rand(N, M , density=0.75)
+x = np.ones(M)
+
+Aop = pylops.MatrixMult(A, dtype='float64')
+y = Aop*x
+xest = Aop/y
+
+print('A= %s' % Aop.A.todense())
+print('A^-1=', Aop.inv().todense())
+print('eigs=', Aop.eigs())
+print('x= %s' % x)
+print('y= %s' % y)
+print('lsqr solution xest= %s' % xest)
+
+###############################################################################
+# Finally, in several circumstances the input model :math:`\mathbf{x}` may
+# be more naturally arranged as a matrix or a multi-dimensional array and
+# it may be desirable to apply the same matrix to every columns of the model.
+# This can be mathematically expressed as:
 #
 #    .. math::
 #       \mathbf{y} =
@@ -155,17 +178,23 @@ plt.legend()
 #               \mathbf{x_2}  \\
 #               \mathbf{x_3}
 #       \end{bmatrix}
-
+#
+# and apply it using the same implementation of the
+# :py:class:`pylops.MatrixMult` operator by simply telling the operator how we
+# want the model to be organized through the ``dims`` input parameter.
 A = np.array([[1., 2.], [4., 5.]])
-x = np.array([[1., 1.], [2., 2.], [3., 3.]]).flatten()
+x = np.array([[1., 1.],
+              [2., 2.],
+              [3., 3.]])
 
-Aop = lops.MatrixMult(A, dims=(3), dtype='float64')
-y = Aop*x
-
+Aop = pylops.MatrixMult(A, dims=(3,), dtype='float64')
+y = Aop*x.flatten()
 
 xest, istop, itn, r1norm, r2norm = \
         lsqr(Aop, y, damp=1e-10, iter_lim=10, show=0)[0:5]
+xest = xest.reshape(3, 2)
 
 print('A= %s' % A)
 print('x= %s' % x)
+print('y= %s' % y)
 print('lsqr solution xest= %s' % xest)

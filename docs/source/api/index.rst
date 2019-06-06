@@ -1,40 +1,59 @@
 .. _api:
 
-
 PyLops API
 ==========
 
-Linear Operators
+The Application Programming Interface (API) of PyLops can be loosely seen
+as composed of a stack of three main layers:
+
+* *Linear operators*: building blocks for the setting up of inverse problems
+* *Solvers*: interfaces to a variety of solvers, providing an easy way to
+  augment an inverse problem with additional regularization and/or
+  preconditioning term
+* *Applications*: high-level interfaces allowing users to easily setup and solve
+  specific problems (while hiding the non-needed details - i.e., creation and
+  setup of linear operator and solver).
+
+
+Linear operators
 ----------------
 
-.. automodule:: lops
+Templates
+~~~~~~~~~
+.. automodule:: pylops
 
-.. currentmodule:: lops
+.. currentmodule:: pylops
 
 .. autosummary::
    :toctree: generated/
 
     LinearOperator
-
+    FunctionOperator
 
 Basic operators
 ~~~~~~~~~~~~~~~
 
-.. currentmodule:: lops
+.. currentmodule:: pylops
 
 .. autosummary::
    :toctree: generated/
 
-    LinearRegression
     MatrixMult
     Identity
     Zero
     Diagonal
     Restriction
+    Regression
+    LinearRegression
+    CausalIntegration
+    Spread
+    Flip
+    Symmetrize
     VStack
     HStack
+    Block
     BlockDiag
-
+    Kronecker
 
 Smoothing and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -52,41 +71,47 @@ Smoothing and derivatives
 Signal processing
 ~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: lops.signalprocessing
+.. currentmodule:: pylops.signalprocessing
 
 .. autosummary::
    :toctree: generated/
 
     FFT
     FFT2D
+    FFTND
     Convolve1D
     Convolve2D
+    Interp
+    Radon2D
+    Radon3D
+    Sliding2D
+    Sliding3D
 
 
 Wave-Equation processing
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: lops.waveeqprocessing
+.. currentmodule:: pylops.waveeqprocessing
 
 .. autosummary::
    :toctree: generated/
 
+
+    UpDownComposition2D
     MDC
-    MDD
-    Marchenko
+    Demigration
 
 
 Geophysicical subsurface characterization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: lops.avo
+.. currentmodule:: pylops.avo
 
 .. autosummary::
    :toctree: generated/
 
     avo.AVOLinearModelling
     poststack.PoststackLinearModelling
-    poststack.PoststackInversion
     prestack.PrestackLinearModelling
     prestack.PrestackWaveletModelling
 
@@ -94,7 +119,10 @@ Geophysicical subsurface characterization
 Solvers
 -------
 
-.. currentmodule:: lops.optimization
+Least-squares
+~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.optimization
 
 .. autosummary::
    :toctree: generated/
@@ -103,3 +131,46 @@ Solvers
     leastsquares.RegularizedInversion
     leastsquares.PreconditionedInversion
 
+
+Sparsity
+~~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+    sparsity.IRLS
+    sparsity.ISTA
+    sparsity.FISTA
+    sparsity.SPGL1
+
+
+
+Applications
+------------
+
+Wave-Equation processing
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.waveeqprocessing
+
+.. autosummary::
+   :toctree: generated/
+
+    SeismicInterpolation
+    WavefieldDecomposition
+    MDD
+    Marchenko
+    LSM
+
+
+
+Geophysical subsurface characterization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.avo
+
+.. autosummary::
+   :toctree: generated/
+
+    poststack.PoststackInversion
+    prestack.PrestackInversion

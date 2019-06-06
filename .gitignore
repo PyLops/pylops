@@ -15,14 +15,15 @@ db.sqlite3
 # Build #
 build
 dist
+pylops.egg-info/
 
 # setuptools_scm generated  #
-lops/version.py
+pylops/version.py
 
-# Others #
-pylops.egg-info/
+# Development #
+.ipynb_checkpoints/
+notebooks
 TODO
-notebooks/.ipynb_checkpoints/
 
 # Documentation #
 docs/build
@@ -33,3 +34,15 @@ docs/source/tutorials
 # Pylint #
 pylint_plot.py
 pylintrc
+
+# Coverage reports
+COVERAGE
+.coverage
+coverage.xml
+htmlcov/
+
+# Airspeed velocity benchmarks
+ASV
+.asv/
+asv.conf.json
+benchmarks/

@@ -1,39 +1,43 @@
 r"""
-2D Interpolation
-================
-In the mathematical field of numerical analysis, interpolation is the of constructing new data
+05. 2D Interpolation
+====================
+In the mathematical field of numerical analysis, interpolation is the problem of constructing new data
 points within the range of a discrete set of known data points. In signal and image processing,
 the data may be recorded at irregular locations and it is often required to *regularize* the data
 into a regular grid.
 
 In this tutorial, an example of 2d interpolation of an image is carried out using a combination
-of PyLops operators (:py:class:`lops.Restriction` and
-:py:class:`lops.Laplacian`) and the :py:mod:`lops.optimization` module.
+of PyLops operators (:py:class:`pylops.Restriction` and
+:py:class:`pylops.Laplacian`) and the :py:mod:`pylops.optimization` module.
 
 Mathematically speaking, if we want to interpolate a signal using the theory of inverse problems,
 we can define the following forward problem:
-   .. math::
-       \mathbf{y} = \mathbf{R} \mathbf{x}
+
+.. math::
+   \mathbf{y} = \mathbf{R} \mathbf{x}
 
 where the restriction operator :math:`\mathbf{R}` selects  :math:`M` elements from
 the regularly sampled signal :math:`\mathbf{x}` at random locations.
 The input and output signals are:
-    .. math::
-       \mathbf{y}= [y_1, y_2,...,y_N]^T, \qquad \mathbf{x}= [x_1, x_2,...,x_M]^T, \qquad
+
+.. math::
+   \mathbf{y}= [y_1, y_2,...,y_N]^T, \qquad \mathbf{x}= [x_1, x_2,...,x_M]^T, \qquad
 
 with :math:`M>>N`.
 
 """
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import misc
+import pylops
 
-import lops
+plt.close('all')
+np.random.seed(0)
 
 ###############################################################################
 # To start we import a 2d image and define our restriction operator to irregularly and randomly
 # sample the image for 30% of the entire grid
-im = np.asarray(misc.imread('../testdata/python.png'))[:, :, 0]
+im = np.load('../testdata/python.npy')[:, :, 0]
+
 Nz, Nx = im.shape
 N = Nz * Nx
 
@@ -44,11 +48,11 @@ Nsub2d = int(np.round(N*perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(N))[:Nsub2d])
 
 # Create operators and data
-Rop = lops.Restriction(N, iava, dtype='float64')
-D2op = lops.Laplacian((Nz, Nx), weights=(1, 1), dtype='float64')
+Rop = pylops.Restriction(N, iava, dtype='float64')
+D2op = pylops.Laplacian((Nz, Nx), weights=(1, 1), dtype='float64')
 
 x = im.flatten()
-y = Rop.matvec(x)
+y = Rop * x
 y1 = Rop.mask(x)
 
 ###############################################################################
@@ -56,17 +60,19 @@ y1 = Rop.mask(x)
 # to estimate our original image in the regular grid.
 
 xcg_reg_lop = \
-    lops.optimization.leastsquares.NormalEquationsInversion(Rop, [D2op], y,
-                                                            epsRs=[np.sqrt(0.1)],
-                                                            returninfo=False,
-                                                            **dict(maxiter=200))
+    pylops.optimization.leastsquares.NormalEquationsInversion(Rop, [D2op], y,
+                                                              epsRs=[np.sqrt(0.1)],
+                                                              returninfo=False,
+                                                              **dict(maxiter=200))
 
 # Invert for interpolated signal, lsqrt
 xlsqr_reg_lop, istop, itn, r1norm, r2norm = \
-    lops.optimization.leastsquares.RegularizedInversion(Rop, [D2op], y,
-                                                        epsRs=[np.sqrt(0.1)],
-                                                        returninfo=True,
-                                                        **dict(damp=0, iter_lim=200, show=0))
+    pylops.optimization.leastsquares.RegularizedInversion(Rop, [D2op], y,
+                                                          epsRs=[np.sqrt(0.1)],
+                                                          returninfo=True,
+                                                          **dict(damp=0,
+                                                                 iter_lim=200,
+                                                                 show=0))
 
 # Reshape estimated images
 im_sampled = y1.reshape((Nz, Nx))
@@ -74,10 +80,12 @@ im_rec_lap_cg = xcg_reg_lop.reshape((Nz, Nx))
 im_rec_lap_lsqr = xlsqr_reg_lop.reshape((Nz, Nx))
 
 ###############################################################################
-# Finally we visualize the original image, the reconstructed images and their error
+# Finally we visualize the original image, the reconstructed images and
+# their error
 
-fig, axs = plt.subplots(1, 4, figsize=(16, 4))
-fig.suptitle('Data reconstruction - normal eqs', fontsize=14, fontweight='bold')
+fig, axs = plt.subplots(1, 4, figsize=(12, 4))
+fig.suptitle('Data reconstruction - normal eqs', fontsize=14,
+             fontweight='bold', y=0.95)
 axs[0].imshow(im, cmap='viridis', vmin=0, vmax=250)
 axs[0].axis('tight')
 axs[0].set_title('Original')
@@ -90,9 +98,12 @@ axs[2].set_title('2D Regularization')
 axs[3].imshow(im - im_rec_lap_cg, cmap='gray', vmin=-80, vmax=80)
 axs[3].axis('tight')
 axs[3].set_title('2D Regularization Error')
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)
 
-fig, axs = plt.subplots(1, 4, figsize=(16, 4))
-fig.suptitle('Data reconstruction - regularized eqs', fontsize=14, fontweight='bold')
+fig, axs = plt.subplots(1, 4, figsize=(12, 4))
+fig.suptitle('Data reconstruction - regularized eqs', fontsize=14,
+             fontweight='bold', y=0.95)
 axs[0].imshow(im, cmap='viridis', vmin=0, vmax=250)
 axs[0].axis('tight')
 axs[0].set_title('Original')
@@ -105,3 +116,5 @@ axs[2].set_title('2D Regularization')
 axs[3].imshow(im - im_rec_lap_lsqr, cmap='gray', vmin=-80, vmax=80)
 axs[3].axis('tight')
 axs[3].set_title('2D Regularization Error')
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)

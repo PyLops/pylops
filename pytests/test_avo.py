@@ -5,10 +5,10 @@ from numpy.testing import assert_array_almost_equal
 from scipy.signal import filtfilt
 from scipy.sparse.linalg import lsqr
 
-from lops.utils import dottest
-from lops.avo.avo import zoeppritz_scattering, zoeppritz_pp, zoeppritz_element
-from lops.avo.avo import approx_zoeppritz_pp, akirichards, fatti
-from lops.avo.prestack import AVOLinearModelling
+from pylops.utils import dottest
+from pylops.avo.avo import zoeppritz_scattering, zoeppritz_pp, zoeppritz_element
+from pylops.avo.avo import approx_zoeppritz_pp, akirichards, fatti
+from pylops.avo.prestack import AVOLinearModelling
 
 
 # Create medium parameters for single contrast

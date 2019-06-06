@@ -1,6 +1,14 @@
-![PyLops](docs/source/_static/pylops_b.png)
+![PyLops](https://github.com/equinor/pylops/blob/master/docs/source/_static/pylops_b.png)
 
-[![Build Status](https://travis-ci.org/Statoil/pylops.svg?branch=master)](https://travis-ci.org/Statoil/pylops)
+[![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/pylops/badges/version.svg)](https://anaconda.org/conda-forge/pylops)
+[![Build Status](https://travis-ci.org/equinor/pylops.svg?branch=master)](https://travis-ci.org/equinor/pylops)
+[![AzureDevOps Status](https://dev.azure.com/MRAVA/PyLops/_apis/build/status/equinor.pylops?branchName=master)](https://dev.azure.com/MRAVA/PyLops/_build/latest?definitionId=1&branchName=master)
+[![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=latest)](https://pylops.readthedocs.io/en/latest/?badge=latest)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=equinor/pylops&amp;utm_campaign=Badge_Grade)
+[![Codacy Coverage](https://api.codacy.com/project/badge/Coverage/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&utm_medium=referral&utm_content=equinor/pylops&utm_campaign=Badge_Coverage)
+[![OS-support](https://img.shields.io/badge/OS-linux,osx-850A8B.svg)](https://github.com/equinor/pylops)
+[![Slack Status](https://img.shields.io/badge/chat-slack-green.svg)](https://pylops.slack.com)
 
 ## Objective
 This Python library is inspired by the MATLAB [Spot – A Linear-Operator Toolbox](http://www.cs.ubc.ca/labs/scl/spot/) project.
@@ -21,13 +29,17 @@ on a vector or another matrix.
 Luckily, many iterative methods (e.g. cg, lsqr) do not need to know the individual entries of a matrix to solve a linear system.
 Such solvers only require the computation of forward and adjoint matrix-vector products as done for any of the PyLops operators.
 
-Here is simple example showing how a dense first-order first derivative operator can be created,
+Here is a simple example showing how a dense first-order first derivative operator can be created,
 applied and inverted using numpy/scipy commands:
 ```python
+import numpy as np
+from scipy.linalg import lstsq
+
 nx = 7
 x = np.arange(nx) - (nx-1)/2
 
-D = np.diag(0.5*np.ones(nx-1),k=1) - np.diag(0.5*np.ones(nx-1),-1)
+D = np.diag(0.5*np.ones(nx-1), k=1) - \
+    np.diag(0.5*np.ones(nx-1), k=-1)
 D[0] = D[-1] = 0 # take away edge effects
 
 # y = Dx
@@ -35,17 +47,20 @@ y = np.dot(D,x)
 # x = D'y
 xadj = np.dot(D.T,y)
 # xinv = D^-1 y
-xinv = scipy.linalg.lstsq(D, y]
+xinv = lstsq(D, y)[0]
 ```
 and similarly using PyLops commands:
 ```python
+from pylops import FirstDerivative
+
 Dlop = FirstDerivative(nx, dtype='float64')
+
 # y = Dx
 y = Dlop*x
 # x = D'y
 xadj = Dlop.H*y
 # xinv = D^-1 y
-xinv = D / y
+xinv = Dlop / y
 ```
 
 Note how this second approach does not require creating a dense matrix, reducing both the memory load and the computational cost of
@@ -55,7 +70,7 @@ letting the user focus on the formulation of equations of the forward problem to
 
 ## Project structure
 This repository is organized as follows:
-* **lops**:       python library containing various linear operators and auxiliary routines
+* **pylops**:       python library containing various linear operators and auxiliary routines
 * **pytests**:    set of pytests
 * **testdata**:   sample datasets used in pytests and documentation
 * **docs**:       sphinx documentation
@@ -64,39 +79,71 @@ This repository is organized as follows:
 
 ## Getting started
 
+You need **Python 3.6.4 or greater**.
+
+#### From PyPi
+
+If you want to use PyLops within your codes,
+install it in your Python environment by typing the following command in your terminal:
+
+```
+pip install pylops
+```
+
+Open a python terminal and type:
+
+```
+import pylops
+```
+
+If you do not see any error, you should be good to go, enjoy!
+
+#### From Conda-forge
+
+Alternatively, you can install PyLops using the conda-forge distribution by typing the following command in your terminal:
+
+```
+conda install -c conda-forge pylops
+```
+
+#### From Docker
+
+If you simply want to try PyLops but do not have Python in your
+local machine, you can use our [Docker](https://www.docker.com) image. After installing Docker in your computer,
+type the following command in your terminal (note that this will take some time the first time
+you type it as you will download and install the docker image):
+
+```
+docker run -it -v /path/to/local/folder:/home/jupyter/notebook -p 8888:8888 mrava87/pylops:notebook
+```
+
+This will give you an address that you can put in your browser and will open a jupyter-notebook enviroment with PyLops
+and other basic Python libraries installed. Here `/path/to/local/folder` is the absolute path of a local folder
+on your computer where you will create a notebook (or containing notebooks that you want to continue working on). Note that
+anything you do to the notebook(s) will be saved in your local folder.
+
+A larger image with Conda distribution is also available. Simply use `conda_notebook` instead of `notebook` in the
+previous command.
+
+## Contributing
+
+*Feel like contributing to the project? Adding new operators or tutorial?*
+
 We advise using the [Anaconda Python distribution](https://www.anaconda.com/download)
-to ensure that all the dependencies are installed via the ``Conda`` package manager.
+to ensure that all the dependencies are installed via the `Conda` package manager. Follow
+the following instructions and read carefully the [CONTRIBUTING](CONTRIBUTING.md) file before getting started.
 
-### 1. Clone the repository
+### 1. Fork and clone the repository
 
-Execute the following in your terminal:
+Execute the following command in your terminal:
 
 ```
-git clone git@bitbucket.org:mravasi/pylops.git
-```
-
-### 2a. Installation for users (Your own environment)
-
-The first time you clone the repository run the following command:
-```
-make install
-```
-to install the dependencies of PyLops and the PyLops library in your own active environment.
-
-### 2b. Installation for users (New Conda environment)
-The first time you clone the repository, create a new envionment and install the PyLops library
-by running the following command:
-```
-make install_conda
-```
-Remember to always activate the conda environment every time you open a new *bash* shell by typing:
-```
-source activate pylops
+git clone https://github.com/your_name_here/pylops.git
 ```
 
-### 3. Installation environment for developers (New Conda environment)
-To ensure that further development of PyLops is performed within the same enviroment (i.e., same dependencies) as
-that defined by ``requirements.txt`` and ``environment.yml`` files, we suggest to work off a new Conda enviroment.
+### 2. Install PyLops in a new Conda environment
+To ensure that further development of PyLops is performed within the same environment (i.e., same dependencies) as
+that defined by ``requirements-dev.txt`` or ``environment-dev.yml`` files, we suggest to work off a new Conda enviroment.
 
 The first time you clone the repository run the following command:
 ```
@@ -108,14 +155,13 @@ make tests
 ```
 Make sure no tests fail, this guarantees that the installation has been successfull.
 
-Again, if using Conda environment, remember to always activate the conda environment every time you open
-a new terminal by typing:
+Remember to always activate the conda environment every time you open a new terminal by typing:
 ```
-source activate lops
+source activate pylops
 ```
 
 ## Documentation
-The official documentation of PyLops is available at *COMING SOON*.
+The official documentation of PyLops is available [here](https://pylops.readthedocs.io/).
 
 Visit this page to get started learning about different operators and their applications as well as how to
 create new operators yourself and make it to the ``Contributors`` list.
@@ -141,4 +187,7 @@ operators that can be tailored to our needs, and as contribution to the free sof
 
 
 ## Contributors
-* Matteo Ravasi, Equinor
+* Matteo Ravasi, mrava87
+* Carlos da Costa, cako
+* Dieter Werthmüller, prisae
+* Tristan van Leeuwen, TristanvanLeeuwen

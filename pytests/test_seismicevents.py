@@ -3,9 +3,9 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from lops.utils.wavelets import ricker
-from lops.utils.seismicevents import makeaxis, linear2d, linear3d
-from lops.utils.seismicevents import parabolic2d, hyperbolic2d, hyperbolic3d
+from pylops.utils.wavelets import ricker
+from pylops.utils.seismicevents import makeaxis, linear2d, linear3d
+from pylops.utils.seismicevents import parabolic2d, hyperbolic2d, hyperbolic3d
 
 # Wavelet
 wav = ricker(np.arange(41)*0.004, f0=10)[0]

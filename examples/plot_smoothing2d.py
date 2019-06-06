@@ -2,14 +2,16 @@
 2D Smoothing
 ============
 
-This example shows how to use the :py:class:`lops.Smoothing2D` operator
+This example shows how to use the :py:class:`pylops.Smoothing2D` operator
 to smooth a multi-dimensional input signal along two given axes.
 
 """
 import numpy as np
 import matplotlib.pyplot as plt
 
-import lops
+import pylops
+
+plt.close('all')
 
 ###############################################################################
 # Define the input parameters: number of samples of input signal (``N`` and ``M``) and
@@ -21,7 +23,7 @@ nsmooth1, nsmooth2 = 5, 3
 A = np.zeros((N, M))
 A[5, 10] = 1
 
-Sop = lops.Smoothing2D(nsmooth=[nsmooth1, nsmooth2], dims=[N, M], dtype='float64')
+Sop = pylops.Smoothing2D(nsmooth=[nsmooth1, nsmooth2], dims=[N, M], dtype='float64')
 B = Sop*A.flatten()
 B = np.reshape(B, (N, M))
 

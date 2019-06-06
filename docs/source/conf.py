@@ -4,12 +4,11 @@ import os
 import datetime
 import sphinx_rtd_theme
 import sphinx_gallery
-from sphinx_gallery.sorting import FileNameSortKey
+from sphinx_gallery.sorting import ExampleTitleSortKey
+from pkg_resources import get_distribution
 
 # Sphinx needs to be able to import the package to use autodoc and get the version number
-sys.path.insert(0, os.path.abspath('../../lops'))
-
-full_version='1.0.0'
+sys.path.insert(0, os.path.abspath('../../pylops'))
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -35,6 +34,8 @@ intersphinx_mapping = {
     "sklearn": ("http://scikit-learn.org/stable/", None),
     "pandas": ("http://pandas.pydata.org/pandas-docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),
+    "pyfftw": ("https://pyfftw.readthedocs.io/en/latest/", None),
+    "spgl1": ("https://spgl1.readthedocs.io/en/latest/", None),
 }
 
 ## Generate autodoc stubs with summaries from code
@@ -59,13 +60,13 @@ sphinx_gallery_conf = {
     # Remove the "Download all examples" button from the top level gallery
     'download_all_examples': False,
     # Sort gallery example by file name instead of number of lines (default)
-    'within_subsection_order': FileNameSortKey,
+    'within_subsection_order': ExampleTitleSortKey,
     # directory where function granular galleries are stored
     'backreferences_dir': 'api/generated/backreferences',
     # Modules for which function level galleries are created.
-    'doc_module': 'lops',
+    'doc_module': 'pylops',
     # Insert links to documentation of objects in the examples
-    'reference_url': {'lops': None}
+    'reference_url': {'pylops': None}
 }
 
 # Always show the source code that generates a plot
@@ -83,11 +84,12 @@ master_doc = 'index'
 # General information about the project
 year = datetime.date.today().year
 project = 'PyLops'
-copyright = '2018-{}, Matteo Ravasi'.format(year)
-if len(full_version.split('+')) > 1 or full_version == 'unknown':
+copyright = '{}, Matteo Ravasi'.format(year)
+
+# Version
+version = get_distribution('pylops').version
+if len(version.split('+')) > 1 or version == 'unknown':
     version = 'dev'
-else:
-    version = full_version
 
 # These enable substitutions using |variable| in the rst files
 rst_epilog = """
@@ -113,18 +115,19 @@ html_theme_options = {
     'display_version': True,
 }
 html_context = {
-    'menu_links_name': 'Getting help and contributing',
+    'menu_links_name': 'Repository',
     'menu_links': [
-        ('<i class="fa fa-github fa-fw"></i> Source Code', 'https://github.com/Statoil/pylops'),
-        ('<i class="fa fa-users fa-fw"></i> Contributing', 'https://github.com/Statoil/pylops/src/master/CONTRIBUTING.md'),
+        ('<i class="fa fa-github fa-fw"></i> Source Code', 'https://github.com/equinor/pylops'),
+        ('<i class="fa fa-users fa-fw"></i> Contributing', 'https://github.com/equinor/pylops/blob/master/CONTRIBUTING.md'),
     ],
     # Custom variables to enable "Improve this page"" and "Download notebook"
     # links
-    'doc_path': 'docs',
+    'doc_path': 'docs/source',
     'galleries': sphinx_gallery_conf['gallery_dirs'],
     'gallery_dir': dict(zip(sphinx_gallery_conf['gallery_dirs'],
                             sphinx_gallery_conf['examples_dirs'])),
-    'github_repo': 'Statoil/pylops',
+    'github_project': 'equinor',
+    'github_repo': 'pylops',
     'github_version': 'master',
 }
 

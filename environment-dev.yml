@@ -1,16 +1,23 @@
-name: lops
+name: pylops
 channels:
   - defaults
+  - conda-forge
+  - numba
 dependencies:
-  - python=3.6.4
-  - numpy
+  - python>=3.6.4
+  - numpy>=1.15.0
   - scipy
+  - pyfftw
   - matplotlib
   - ipython
   - pytest
   - Sphinx
   - numpydoc
+  - numba
+  - icc_rt
   - pip:
+    - scikit-fmm
+    - spgl1
     - pytest-runner
     - setuptools_scm
     - sphinx-rtd-theme

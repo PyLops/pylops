@@ -5,6 +5,13 @@ Contributing
 
 Contributions are welcome and greatly appreciated!
 
+The best way to get in touch with the core developers and mantainers is to
+join the `PyLops slack channel <https://pylops.slack.com/>`_ as well as
+open new *Issues* directly from the `github repo <https://github.com/equinor/pylops>`_.
+
+Moreover, take a look at the :ref:`roadmap` page for a list of current ideas
+for improvements and additions to the PyLops library.
+
 
 Types of Contributions
 ----------------------
@@ -12,7 +19,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/Statoil/pylops/issues.
+Report bugs at https://github.com/equinor/pylops/issues.
 
 If you are playing with the PyLops library and find a bug, please report it including:
 
@@ -23,8 +30,7 @@ If you are playing with the PyLops library and find a bug, please report it incl
 Propose New Operators or Features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The best way to send feedback is to open an issue at https://github.com/Statoil/pylops/issues.
-with tag *enhancement*.
+Open an issue at https://github.com/equinor/pylops/issues with tag *enhancement*.
 
 If you are proposing a new operator or a new feature:
 
@@ -58,12 +64,19 @@ Ready to contribute?
 
 .. code-block:: bash
 
-   >>  git clone https://github.com:your_name_here/pylops.git
+   >>  git clone https://github.com/your_name_here/pylops.git
 
 3. Follow the installation instructions for *developers* that you find in :ref:`installation` page.
    Ensure that you are able to *pass all the tests before moving forward*.
 
-4. Create a branch for local development:
+4. Add the main repository to the list of your remotes (this will be important to ensure you
+   pull the latest changes before tyring to merge your local changes):
+
+.. code-block:: bash
+
+   >>  git remote add upstream https://github.com/equinor/pylops
+
+5. Create a branch for local development:
 
 .. code-block:: bash
 
@@ -71,14 +84,14 @@ Ready to contribute?
 
 Now you can make your changes locally.
 
-5. When you're done making changes, check that your code follows the guidelines for :ref:`addingoperator` and
+6. When you're done making changes, check that your code follows the guidelines for :ref:`addingoperator` and
 that the both old and new tests pass successfully:
 
 .. code-block:: bash
 
-   >>  python setup.py test
+   >>  make tests
 
-6. Commit your changes and push your branch to GitLab:
+7. Commit your changes and push your branch to GitLab:
 
 .. code-block:: bash
 
@@ -88,7 +101,7 @@ that the both old and new tests pass successfully:
 
 Remember to add ``-u`` when pushing the branch for the first time.
 
-7. Submit a pull request through the GitHub website.
+8. Submit a pull request through the GitHub website.
 
 
 Pull Request Guidelines

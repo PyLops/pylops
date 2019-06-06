@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 from scipy.signal import convolve
-from lops.waveeqprocessing.marchenko import Marchenko
+from pylops.waveeqprocessing.marchenko import Marchenko
 
 # Test data
 inputfile = 'testdata/marchenko/input.npz'
@@ -55,7 +55,8 @@ g0sub = g0sub[wav_c:][:nt]
 
 # Direct arrival window
 trav = np.sqrt((vs[0] - r[0]) ** 2 + (vs[1] - r[1]) ** 2) / vel
-trav_multi = np.sqrt((vs_multi[0]-r[0][:, np.newaxis])**2+(vs_multi[1]-r[1][:, np.newaxis])**2)/vel
+trav_multi = np.sqrt((vs_multi[0]-r[0][:, np.newaxis])**2 +
+                     (vs_multi[1]-r[1][:, np.newaxis])**2)/vel
 
 
 # Create Rs in frequency domain
@@ -81,11 +82,13 @@ def test_Marchenko_freq(par):
 
     _, _, _, g_inv_minus, g_inv_plus = \
         MarchenkoWM.apply_onepoint(trav, G0=g0sub.T, rtm=True, greens=True,
-                                   dottest=True, **dict(iter_lim=par['niter'], show=True))
+                                   dottest=True, **dict(iter_lim=par['niter'],
+                                                        show=True))
     ginvsub = (g_inv_minus + g_inv_plus)[:, nt-1:].T
     ginvsub_norm = ginvsub / ginvsub.max()
     gsub_norm = gsub / gsub.max()
-    assert np.linalg.norm(gsub_norm-ginvsub_norm) / np.linalg.norm(gsub_norm) < 1e-1
+    assert np.linalg.norm(gsub_norm-ginvsub_norm) / \
+           np.linalg.norm(gsub_norm) < 1e-1
 
 
 @pytest.mark.parametrize("par", [(par1)])
@@ -97,40 +100,49 @@ def test_Marchenko_time(par):
 
     _, _, _, g_inv_minus, g_inv_plus = \
         MarchenkoWM.apply_onepoint(trav, G0=g0sub.T, rtm=True, greens=True,
-                                   dottest=True, **dict(iter_lim=par['niter'], show=True))
+                                   dottest=True, **dict(iter_lim=par['niter'],
+                                                        show=True))
     ginvsub = (g_inv_minus + g_inv_plus)[:, nt - 1:].T
     ginvsub_norm = ginvsub / ginvsub.max()
     gsub_norm = gsub / gsub.max()
-    assert np.linalg.norm(gsub_norm - ginvsub_norm) / np.linalg.norm(gsub_norm) < 1e-1
+    assert np.linalg.norm(gsub_norm - ginvsub_norm) / \
+           np.linalg.norm(gsub_norm) < 1e-1
 
 
 @pytest.mark.parametrize("par", [(par1)])
 def test_Marchenko_time_ana(par):
-    """Solve marchenko equations using input Rs in time domain and analytical direct wave
+    """Solve marchenko equations using input Rs in time domain and analytical
+    direct wave
     """
     MarchenkoWM = Marchenko(R, dt=dt, dr=dr, nfmax=nfmax, wav=wav,
                             toff=toff, nsmooth=nsmooth)
 
     _, _, g_inv_minus, g_inv_plus = \
         MarchenkoWM.apply_onepoint(trav, nfft=2**11, rtm=False, greens=True,
-                                   dottest=True, **dict(iter_lim=par['niter'], show=True))
+                                   dottest=True, **dict(iter_lim=par['niter'],
+                                                        show=True))
     ginvsub = (g_inv_minus + g_inv_plus)[:, nt-1:].T
     ginvsub_norm = ginvsub / ginvsub.max()
     gsub_norm = gsub / gsub.max()
-    assert np.linalg.norm(gsub_norm-ginvsub_norm) / np.linalg.norm(gsub_norm) < 1e-1
+    assert np.linalg.norm(gsub_norm-ginvsub_norm) / \
+           np.linalg.norm(gsub_norm) < 1e-1
 
 
 @pytest.mark.parametrize("par", [(par1)])
 def test_Marchenko_timemulti_ana(par):
-    """Solve marchenko equations using input Rs in time domain with multiple points
+    """Solve marchenko equations using input Rs in time domain with multiple
+    points
     """
     MarchenkoWM = Marchenko(R, dt=dt, dr=dr, nfmax=nfmax, wav=wav,
                             toff=toff, nsmooth=nsmooth)
 
     _, _, g_inv_minus, g_inv_plus = \
-        MarchenkoWM.apply_multiplepoints(trav_multi, nfft=2**11, rtm=False, greens=True,
-                                         dottest=True, **dict(iter_lim=par['niter'], show=True))
+        MarchenkoWM.apply_multiplepoints(trav_multi, nfft=2**11, rtm=False,
+                                         greens=True, dottest=True,
+                                         **dict(iter_lim=par['niter'],
+                                                show=True))
     ginvsub = (g_inv_minus + g_inv_plus)[:, 1, nt - 1:].T
     ginvsub_norm = ginvsub / ginvsub.max()
     gsub_norm = gsub / gsub.max()
-    assert np.linalg.norm(gsub_norm - ginvsub_norm) / np.linalg.norm(gsub_norm) < 1e-1
+    assert np.linalg.norm(gsub_norm - ginvsub_norm) / \
+           np.linalg.norm(gsub_norm) < 1e-1

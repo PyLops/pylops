@@ -3,10 +3,10 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from lops.utils import dottest
-from lops.utils.wavelets import ricker
-from lops.utils.seismicevents import makeaxis, linear2d, linear3d
-from lops.waveeqprocessing.mdd import MDC, MDD
+from pylops.utils import dottest
+from pylops.utils.wavelets import ricker
+from pylops.utils.seismicevents import makeaxis, linear2d, linear3d
+from pylops.waveeqprocessing.mdd import MDC, MDD
 
 PAR = {'ox': 0, 'dx': 2, 'nx': 10,
        'oy': 0, 'dy': 2, 'ny': 20,
@@ -81,7 +81,7 @@ def test_MDC_1virtualsource(par):
     t, _, x, y = makeaxis(par)
 
     # Create wavelet
-    wav = ricker(t[:41], f0=par['f0'], plotflag=False)[0]
+    wav = ricker(t[:41], f0=par['f0'])[0]
 
     # Generate model
     _, mwav = linear2d(x, t, v, t0_m, theta_m, amp_m, wav)
@@ -140,7 +140,7 @@ def test_MDC_Nvirtualsources(par):
     t, _, x, y = makeaxis(par)
 
     # Create wavelet
-    wav = ricker(t[:41], f0=par['f0'], plotflag=False)[0]
+    wav = ricker(t[:41], f0=par['f0'])[0]
 
     # Generate model
     _, mwav = linear3d(x, x, t, v, t0_m, theta_m, phi_m, amp_m, wav)
