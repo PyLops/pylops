@@ -34,32 +34,32 @@ par4['twosided'] = True
 par4['nfmax'] = int(np.ceil((PAR['nt']+1.)/2))-30
 
 # nt even, single-sided, full fft
-par4 = PAR.copy()
-par4['nt'] -= 1
-par4['twosided'] = False
-par4['nfmax'] = int(np.ceil((PAR['nt']+1.)/2))
-
-# nt even, double-sided, full fft
 par5 = PAR.copy()
 par5['nt'] -= 1
-par5['twosided'] = True
+par5['twosided'] = False
 par5['nfmax'] = int(np.ceil((PAR['nt']+1.)/2))
 
-# nt even, single-sided, truncated fft
+# nt even, double-sided, full fft
 par6 = PAR.copy()
 par6['nt'] -= 1
-par6['twosided'] = False
-par6['nfmax'] = int(np.ceil((PAR['nt']+1.)/2))-30
+par6['twosided'] = True
+par6['nfmax'] = int(np.ceil((PAR['nt']+1.)/2))
 
-# nt even, double-sided, truncated fft
+# nt even, single-sided, truncated fft
 par7 = PAR.copy()
 par7['nt'] -= 1
-par7['twosided'] = True
+par7['twosided'] = False
 par7['nfmax'] = int(np.ceil((PAR['nt']+1.)/2))-30
+
+# nt even, double-sided, truncated fft
+par8 = PAR.copy()
+par8['nt'] -= 1
+par8['twosided'] = True
+par8['nfmax'] = int(np.ceil((PAR['nt']+1.)/2))-30
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
-                                 (par5), (par6), (par7)])
+                                 (par5), (par6), (par7), (par8)])
 def test_MDC_1virtualsource(par):
     """Dot-test and inversion for MDC operator of 1 virtual source
     """
@@ -90,8 +90,10 @@ def test_MDC_1virtualsource(par):
 
     # Add negative part to data and model
     if par['twosided']:
-        mwav = np.concatenate((np.zeros((par['nx'], par['nt'] - 1)), mwav), axis=-1)
-        Gwav = np.concatenate((np.zeros((par['ny'], par['nx'], par['nt'] - 1)), Gwav), axis=-1)
+        mwav = np.concatenate((np.zeros((par['nx'], par['nt'] - 1)), mwav),
+                              axis=-1)
+        Gwav = np.concatenate((np.zeros((par['ny'], par['nx'], par['nt'] - 1)),
+                               Gwav), axis=-1)
 
     # Define MDC linear operator
     Gwav_fft = np.fft.fft(Gwav, par['nt2'], axis=-1)
@@ -110,14 +112,32 @@ def test_MDC_1virtualsource(par):
     minv = MDD(Gwav[:, :, par['nt']-1:] if par['twosided'] else Gwav,
                d[:, par['nt']-1:] if par['twosided'] else d,
                dt=par['dt'], dr=par['dx'], nfmax=par['nfmax'],
-               twosided=par['twosided'], adjoint=False, psf=False, dtype='complex64',
-               dottest=False,
+               twosided=par['twosided'], adjoint=False, psf=False,
+               dtype='complex64', dottest=False,
                **dict(damp=1e-10, iter_lim=50, show=1))
     assert_array_almost_equal(mwav, minv, decimal=2)
 
+    # Same tests for future behaviour (remove tests above in v2.0.0)
+    MDCop = MDC(Gwav_fft.transpose(2, 0, 1), nt=par['nt2'], nv=1,
+                dt=par['dt'], dr=par['dx'],
+                twosided=par['twosided'], transpose=False,
+                dtype='float32')
+    dottest(MDCop, par['nt2'] * par['ny'], par['nt2'] * par['nx'])
+    mwav = mwav.T
+    d = MDCop * mwav.flatten()
+    d = d.reshape(par['nt2'], par['ny'])
+
+    minv = MDD(Gwav[:, :, par['nt'] - 1:] if par['twosided'] else Gwav,
+               d[par['nt'] - 1:].T if par['twosided'] else d.T,
+               dt=par['dt'], dr=par['dx'], nfmax=par['nfmax'],
+               twosided=par['twosided'], add_negative=True,
+               adjoint=False, psf=False, dtype='complex64',
+               dottest=False, **dict(damp=1e-10, iter_lim=50, show=1))
+    assert_array_almost_equal(mwav, minv.T, decimal=2)
+
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
-                                 (par5), (par6), (par7)])
+                                 (par5), (par6), (par7), (par8)])
 def test_MDC_Nvirtualsources(par):
     """Dot-test and inversion for MDC operator of N virtual source
     """
@@ -150,16 +170,20 @@ def test_MDC_Nvirtualsources(par):
 
     # Add negative part to data and model
     if par['twosided']:
-        mwav = np.concatenate((np.zeros((par['nx'], par['nx'], par['nt'] - 1)), mwav), axis=-1)
-        Gwav = np.concatenate((np.zeros((par['ny'], par['nx'], par['nt'] - 1)), Gwav), axis=-1)
+        mwav = np.concatenate((np.zeros((par['nx'], par['nx'], par['nt'] - 1)),
+                               mwav), axis=-1)
+        Gwav = np.concatenate((np.zeros((par['ny'], par['nx'], par['nt'] - 1)),
+                               Gwav), axis=-1)
 
     # Define MDC linear operator
     Gwav_fft = np.fft.fft(Gwav, par['nt2'], axis=-1)
     Gwav_fft = Gwav_fft[..., :par['nfmax']]
 
     MDCop = MDC(Gwav_fft, nt=par['nt2'], nv=par['nx'],
-                dt=par['dt'], dr=par['dx'], twosided=par['twosided'], dtype='float32')
-    dottest(MDCop, par['nt2']*par['ny']*par['nx'], par['nt2']*par['nx']*par['nx'])
+                dt=par['dt'], dr=par['dx'], twosided=par['twosided'],
+                dtype='float32')
+    dottest(MDCop, par['nt2']*par['ny']*par['nx'],
+            par['nt2']*par['nx']*par['nx'])
 
     # Create data
     d = MDCop * mwav.flatten()
@@ -168,7 +192,28 @@ def test_MDC_Nvirtualsources(par):
     # Apply mdd function
     minv = MDD(Gwav[:, :, par['nt']-1:] if par['twosided'] else Gwav,
                d[:, :, par['nt']-1:] if par['twosided'] else d,
-               dt=par['dt'], dr=par['dx'], nfmax=par['nfmax'], twosided=par['twosided'],
-               adjoint=False, psf=False, dtype='complex64', dottest=False,
+               dt=par['dt'], dr=par['dx'], nfmax=par['nfmax'],
+               twosided=par['twosided'], adjoint=False, psf=False,
+               dtype='complex64', dottest=False,
                **dict(damp=1e-10, iter_lim=50, show=1))
     assert_array_almost_equal(mwav, minv, decimal=2)
+
+    # Same tests for future behaviour (remove tests above in v2.0.0)
+    MDCop = MDC(Gwav_fft.transpose(2, 0, 1), nt=par['nt2'], nv=par['nx'],
+                dt=par['dt'], dr=par['dx'], twosided=par['twosided'],
+                transpose=False, dtype='float32')
+    dottest(MDCop, par['nt2'] * par['ny'] * par['nx'],
+            par['nt2'] * par['nx'] * par['nx'])
+
+    mwav = mwav.transpose(2, 0, 1)
+    d = MDCop * mwav.flatten()
+    d = d.reshape(par['nt2'], par['ny'], par['nx'])
+
+    minv = MDD(Gwav[:, :, par['nt']-1:] if par['twosided'] else Gwav,
+               d[par['nt']-1:].transpose(1, 2, 0) if par['twosided'] else
+               d.transpose(1, 2, 0),
+               dt=par['dt'], dr=par['dx'], nfmax=par['nfmax'],
+               twosided=par['twosided'], add_negative=True,
+               adjoint=False, psf=False, dtype='complex64',
+               dottest=False, **dict(damp=1e-10, iter_lim=50, show=1))
+    assert_array_almost_equal(mwav, minv.transpose(2, 0, 1), decimal=2)

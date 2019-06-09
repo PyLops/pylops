@@ -316,9 +316,9 @@ class Marchenko():
         d = np.concatenate((d.reshape(self.nr, self.nt2),
                             np.zeros((self.nr, self.nt2))))
 
+        # Invert for focusing functions
         f1_inv = lsqr(Mop, d.flatten(), **kwargs_lsqr)[0]
         f1_inv = f1_inv.reshape(2 * self.nr, self.nt2)
-
         f1_inv_tot = f1_inv + np.concatenate((np.zeros((self.nr, self.nt2)),
                                               fd_plus))
         f1_inv_minus, f1_inv_plus = f1_inv_tot[:self.nr], f1_inv_tot[self.nr:]
@@ -326,6 +326,7 @@ class Marchenko():
         if greens:
             # Create Green's functions
             g_inv = Gop * f1_inv_tot.flatten()
+            g_inv = np.real(g_inv) # cast to real as Gop is a complex operator
             g_inv = g_inv.reshape(2 * self.nr, (2 * self.nt - 1))
             g_inv_minus, g_inv_plus = -g_inv[:self.nr], \
                                       np.fliplr(g_inv[self.nr:])
@@ -451,9 +452,9 @@ class Marchenko():
         d = np.concatenate((d.reshape(self.nr, nvs, self.nt2),
                             np.zeros((self.nr, nvs, self.nt2))))
 
+        # Invert for focusing functions
         f1_inv = lsqr(Mop, d.flatten(), **kwargs_lsqr)[0]
         f1_inv = f1_inv.reshape(2 * self.nr, nvs, self.nt2)
-
         f1_inv_tot = f1_inv + np.concatenate((np.zeros((self.nr, nvs,
                                                         2 * self.nt - 1)),
                                               fd_plus))
@@ -462,6 +463,7 @@ class Marchenko():
         if greens:
             # Create Green's functions
             g_inv = Gop * f1_inv_tot.flatten()
+            g_inv = np.real(g_inv) # cast to real as Gop is a complex operator
             g_inv = g_inv.reshape(2 * self.nr, nvs, (2 * self.nt - 1))
             g_inv_minus, g_inv_plus = -g_inv[:self.nr], \
                                       np.flip(g_inv[self.nr:], axis=-1)

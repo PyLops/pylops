@@ -129,7 +129,6 @@ f1_inv_minus, f1_inv_plus, p0_minus, g_inv_minus, g_inv_plus = \
                                dottest=True, **dict(iter_lim=niter, show=True))
 g_inv_tot = g_inv_minus + g_inv_plus
 
-
 ##############################################################################
 # We can now compare the result of Marchenko redatuming via LSQR
 # with standard redatuming
