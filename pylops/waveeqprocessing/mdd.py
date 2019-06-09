@@ -5,7 +5,7 @@ import numpy as np
 from scipy.sparse.linalg import lsqr
 from scipy.ndimage.filters import convolve1d as sp_convolve1d
 
-from pylops import LinearOperator, Diagonal, Identity, Transpose
+from pylops import Diagonal, Identity, Transpose
 from pylops.signalprocessing import FFT, Fredholm1
 from pylops.utils import dottest as Dottest
 from pylops.optimization.leastsquares import PreconditionedInversion
@@ -19,12 +19,12 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
 
     Apply multi-dimensional convolution between two datasets. If
     ``transpose=True``, model and data should be provided after flattening
-    2- or 3-dimensional arrays of size :math:`[n_r \times n_{vs} \times n_t]`
-    and :math:`[n_s \times n_{vs} \times n_t]` (or :math:`2*n_t-1` for
+    2- or 3-dimensional arrays of size :math:`[n_r (\times n_{vs}) \times n_t]`
+    and :math:`[n_s (\times n_{vs}) \times n_t]` (or :math:`2*n_t-1` for
     ``twosided=True``), respectively. If ``transpose=False``, model and data
     should be provided after flattening 2- or 3-dimensional arrays of size
-    :math:`[n_t \times n_r \times n_{vs}]` and
-    :math:`[n_t \times n_s \times n_{vs}]` (or :math:`2*n_t-1` for
+    :math:`[n_t \times n_r (\times n_{vs})]` and
+    :math:`[n_t \times n_s (\times n_{vs})]` (or :math:`2*n_t-1` for
     ``twosided=True``), respectively.
 
     .. warning:: A new implementation of MDC is provided in v1.5.0. This
