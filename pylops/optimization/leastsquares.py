@@ -180,7 +180,8 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
     Weight : :obj:`pylops.LinearOperator`, optional
         Weight operator
     dataregs : :obj:`list`, optional
-        Regularization data
+        Regularization data (if ``None`` a zero data will be used for every
+        regularization operator in ``Regs``
     epsRs : :obj:`list`, optional
          Regularization dampings
     x0 : :obj:`numpy.ndarray`, optional
@@ -239,28 +240,32 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
             \epsilon_{R_N} \mathbf{d}_{R_N} \\
         \end{bmatrix}
 
-    Note that the ``Weight`` provided here is equivalent to the
+    where the ``Weight`` provided here is equivalent to the
     square-root of the weight in
-    :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion`.
+    :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion`. Note
+    that this system is solved using the :py:func:`scipy.sparse.linalg.lsqr`
+    and an initial guess ``x0`` can be provided to this solver, despite the
+    original solver does not allow so.
 
     """
-    # regularized operator
-    if Regs is None and Weight is None:
-        raise ValueError('Regs and Weight are None, simply use lsqr')
+    # create regularization data
     if dataregs is None and Regs is not None:
         dataregs = [np.zeros(Op.shape[1])] * len(Regs)
 
     if epsRs is None and Regs is not None:
         epsRs = [1] * len(Regs)
 
-    # operator
+    # create regularization operators
     if Weight is not None:
         if Regs is None:
             RegOp = Weight * Op
         else:
             RegOp = RegularizedOperator(Weight * Op, Regs, epsRs=epsRs)
     else:
-        RegOp = RegularizedOperator(Op, Regs, epsRs=epsRs)
+        if Regs is None:
+            RegOp = Op
+        else:
+            RegOp = RegularizedOperator(Op, Regs, epsRs=epsRs)
 
     # augumented data
     if Weight is not None:
@@ -268,6 +273,7 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
     else:
         datatot = data.copy()
 
+    # augumented operator
     if Regs is not None:
         for epsR, datareg in zip(epsRs, dataregs):
             datatot = np.hstack((datatot, epsR*datareg))

@@ -106,7 +106,7 @@ def _UpDownDecomposition2D_analytical(nt, nr, dt, dr, rho, vel,
 def UpDownComposition2D(nt, nr, dt, dr, rho, vel, nffts=(None, None),
                         critical=100., ntaper=10, scaling=1.,
                         dtype='complex128'):
-    r"""Up-down wavefield 2D composition.
+    r"""2D Up-down wavefield composition.
 
     Apply multi-component seismic wavefield composition from its
     up- and down-going constituents. This input model required by the operator
@@ -221,7 +221,7 @@ def UpDownComposition2D(nt, nr, dt, dr, rho, vel, nffts=(None, None),
 
     # cut off and taper
     OBL = _filter_obliquity(OBL, F, Kx, vel, critical, ntaper)
-    OBLop = Diagonal(OBL.ravel(), dtype='complex128')
+    OBLop = Diagonal(OBL.ravel(), dtype=dtype)
 
     # create up-down modelling operator
     UDop = (BlockDiag([FFTop.H, scaling*FFTop.H]) * \
@@ -328,7 +328,7 @@ def WavefieldDecomposition(p, vz, nt, nr, dt, dr, rho, vel,
         \end{bmatrix}
 
     if ``kind='analytical'`` or alternatively by solving the equation in
-    :func:`ptcpy.waveequprocessing.UpDownComposition2D` as an inverse problem,
+    :func:`ptcpy.waveeqprocessing.UpDownComposition2D` as an inverse problem,
     if ``kind='inverse'``.
 
     The latter approach has several advantages as data regularization

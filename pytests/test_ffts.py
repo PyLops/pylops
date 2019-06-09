@@ -8,29 +8,32 @@ from pylops.utils import dottest
 from pylops.signalprocessing import FFT, FFT2D, FFTND
 
 par1 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': True, 'real': False,
-        'engine': 'numpy'} # nfft=nt, complex input, numpy engine
+        'nfft': True, 'real': False, 'engine': 'numpy',
+        'ffthshift': False} # nfft=nt, complex input, numpy engine
 par2 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': 256, 'real': False,
-        'engine': 'numpy'} # nfft>nt, complex input, numpy engine
+        'nfft': 256, 'real': False, 'engine': 'numpy',
+        'ffthshift': False} # nfft>nt, complex input, numpy engine
 par3 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': True, 'real': True,
-        'engine': 'numpy'}  # nfft=nt, real input, numpy engine
+        'nfft': True, 'real': True, 'engine': 'numpy',
+        'ffthshift': False}  # nfft=nt, real input, numpy engine
 par4 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': 256, 'real': True,
-        'engine': 'numpy'} # nfft>nt, real input, numpy engine
+        'nfft': 256, 'real': True, 'engine': 'numpy',
+        'ffthshift': False}  # nfft>nt, real input, numpy engine
+par5 = {'nt': 101, 'nx': 31, 'ny': 10,
+        'nfft': 256, 'real': True, 'engine': 'numpy',
+        'ffthshift': True}  # nfft>nt, real input and fftshift, numpy engine
 par1w = {'nt': 101, 'nx': 31, 'ny': 10,
-         'nfft': True, 'real': False,
-         'engine': 'fftw'}  # nfft=nt, complex input, fftw engine
+         'nfft': True, 'real': False, 'engine': 'fftw',
+         'ffthshift': False}  # nfft=nt, complex input, fftw engine
 par2w = {'nt': 101, 'nx': 31, 'ny': 10,
-         'nfft': 256, 'real': False,
-         'engine': 'fftw'}  # nfft>nt, complex input, fftw engine
+         'nfft': 256, 'real': False, 'engine': 'fftw',
+         'ffthshift': False}  # nfft>nt, complex input, fftw engine
 par3w = {'nt': 101, 'nx': 31, 'ny': 10,
-         'nfft': True, 'real': True,
-         'engine': 'fftw'}  # nfft=nt, real input, fftw engine
+         'nfft': True, 'real': True, 'engine': 'fftw',
+         'ffthshift': False}  # nfft=nt, real input, fftw engine
 par4w = {'nt': 101, 'nx': 31, 'ny': 10,
-         'nfft': 256, 'real': True,
-         'engine': 'fftw'}  # nfft>nt, real input, fftw engine
+         'nfft': 256, 'real': True, 'engine': 'fftw',
+         'ffthshift': False}  # nfft>nt, real input, fftw engine
 
 
 @pytest.mark.parametrize("par", [(par1)])
@@ -42,7 +45,7 @@ def test_unknown_engine(par):
                     real=par['real'], engine='foo')
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5),
                                  (par1w), (par2w), (par3w), (par4w)])
 def test_FFT_1dsignal(par):
     """Dot-test and inversion for FFT operator for 1d signal
@@ -75,7 +78,7 @@ def test_FFT_1dsignal(par):
     assert_array_almost_equal(x, xinv, decimal=8)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5),
                                  (par1w), (par2w), (par3w), (par4w)])
 def test_FFT_2dsignal(par):
     """Dot-test and inversion for fft operator for 2d signal
@@ -142,7 +145,7 @@ def test_FFT_2dsignal(par):
     assert_array_almost_equal(d, dinv, decimal=8)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5),
                                  (par1w), (par2w), (par3w), (par4w)])
 def test_FFT_3dsignal(par):
     """Dot-test and inversion for fft operator for 3d signal

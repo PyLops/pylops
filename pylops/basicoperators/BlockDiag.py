@@ -30,10 +30,10 @@ class BlockDiag(LinearOperator):
 
     .. math::
         \begin{bmatrix}
-            \mathbf{L_1}  \quad \mathbf{0}     \quad  ... \quad  \mathbf{0}  \\
-            \mathbf{0}    \quad \mathbf{L_2}   \quad  ... \quad  \mathbf{0}  \\
-            ...           \quad ...            \quad  ... \quad  ...         \\
-            \mathbf{0}    \quad \mathbf{0}     \quad  ... \quad  \mathbf{L_N}
+            \mathbf{L_1}  & \mathbf{0}   &  ... &  \mathbf{0}  \\
+            \mathbf{0}    & \mathbf{L_2} &  ... &  \mathbf{0}  \\
+            ...           & ...          &  ... &  ...         \\
+            \mathbf{0}    & \mathbf{0}   &  ... &  \mathbf{L_N}
         \end{bmatrix}
         \begin{bmatrix}
             \mathbf{x}_{1}  \\

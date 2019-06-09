@@ -9,6 +9,7 @@ from .Restriction import Restriction
 from .Flip import Flip
 from .Symmetrize import Symmetrize
 from .Spread import Spread
+from .Transpose import Transpose
 
 from .VStack import VStack
 from .HStack import HStack

@@ -12,7 +12,7 @@ as composed of a stack of three main layers:
   preconditioning term
 * *Applications*: high-level interfaces allowing users to easily setup and solve
   specific problems (while hiding the non-needed details - i.e., creation and
-  setup of linear operator and solver).
+  setup of linear operators and solvers).
 
 
 Linear operators
@@ -42,13 +42,14 @@ Basic operators
     Identity
     Zero
     Diagonal
+    Transpose
+    Flip
+    Symmetrize
     Restriction
     Regression
     LinearRegression
     CausalIntegration
     Spread
-    Flip
-    Symmetrize
     VStack
     HStack
     Block
@@ -86,6 +87,7 @@ Signal processing
     Radon3D
     Sliding2D
     Sliding3D
+    Fredholm1
 
 
 Wave-Equation processing
@@ -95,7 +97,6 @@ Wave-Equation processing
 
 .. autosummary::
    :toctree: generated/
-
 
     UpDownComposition2D
     MDC

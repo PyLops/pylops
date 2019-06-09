@@ -80,8 +80,7 @@ class Identity(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
-        if not self.inplace:
-            x = x.copy()
+        if not self.inplace: x = x.copy()
         if self.shape[0] == self.shape[1]:
             y = x
         elif self.shape[0] < self.shape[1]:
@@ -92,7 +91,7 @@ class Identity(LinearOperator):
         return y
 
     def _rmatvec(self, x):
-        if self.inplace: x = x.copy()
+        if not self.inplace: x = x.copy()
         if self.shape[0] == self.shape[1]:
             y = x
         elif self.shape[0] < self.shape[1]:

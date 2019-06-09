@@ -53,7 +53,6 @@ G, Gwav = np.zeros((par['ny'], par['nx'], par['nt'])), \
           np.zeros((par['ny'], par['nx'], par['nt']))
 for iy, y0 in enumerate(y):
     G[iy], Gwav[iy] = hyperbolic2d(x-y0, t, t0_G, vrms_G, amp_G, wav)
-
 G, Gwav = G*tap, Gwav*tap
 
 # Add negative part to data and model
@@ -65,16 +64,22 @@ Gwav2 = np.concatenate((np.zeros((par['ny'], par['nx'], par['nt']-1)), Gwav), ax
 Gwav_fft = np.fft.rfft(Gwav2, 2*par['nt']-1, axis=-1)
 Gwav_fft = Gwav_fft[..., :par['nfmax']]
 
+# Move frequency/time to first axis
+m, mwav = m.T, mwav.T
+Gwav_fft = Gwav_fft.transpose(2,0,1)
+
+# Create operator
 MDCop = pylops.waveeqprocessing.MDC(Gwav_fft, nt=2 * par['nt'] - 1, nv=1,
-                                    dt=0.004, dr=1., dtype='float32')
+                                    dt=0.004, dr=1., transpose=False,
+                                    dtype='float32')
 
 # Create data
 d = MDCop*m.flatten()
-d = d.reshape(par['ny'], 2*par['nt']-1)
+d = d.reshape(2*par['nt']-1, par['ny'])
 
 # Apply adjoint operator to data
 madj = MDCop.H*d.flatten()
-madj = madj.reshape(par['nx'], 2*par['nt']-1)
+madj = madj.reshape(2*par['nt']-1, par['nx'])
 
 ###############################################################################
 # Finally let's display the operator, input model, data and adjoint model
@@ -97,23 +102,23 @@ axs[1].set_ylabel('t')
 fig.tight_layout()
 
 fig, axs = plt.subplots(1, 3, figsize=(9, 6))
-axs[0].imshow(mwav.T, aspect='auto',
+axs[0].imshow(mwav, aspect='auto',
               interpolation='nearest', cmap='gray',
               vmin=-mwav.max(), vmax=mwav.max(),
               extent=(x.min(), x.max(), t2.max(), t2.min()))
 axs[0].set_title(r'$m$', fontsize=15)
 axs[0].set_xlabel('r')
 axs[0].set_ylabel('t')
-axs[1].imshow(d.T, aspect='auto', interpolation='nearest', cmap='gray',
+axs[1].imshow(d, aspect='auto', interpolation='nearest', cmap='gray',
               vmin=-d.max(), vmax=d.max(),
               extent=(x.min(), x.max(), t2.max(), t2.min()))
 axs[1].set_title(r'$d$', fontsize=15)
 axs[1].set_xlabel('s')
 axs[1].set_ylabel('t')
-axs[2].imshow(madj.T, aspect='auto', interpolation='nearest', cmap='gray',
+axs[2].imshow(madj, aspect='auto', interpolation='nearest', cmap='gray',
               vmin=-madj.max(), vmax=madj.max(),
               extent=(x.min(), x.max(), t2.max(), t2.min()))
 axs[2].set_title(r'$m_{adj}$', fontsize=15)
 axs[2].set_xlabel('s')
-axs[1].set_ylabel('t')
+axs[2].set_ylabel('t')
 fig.tight_layout()
