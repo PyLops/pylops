@@ -159,6 +159,7 @@ plt.axis('tight')
 #   performs inversion of an operator
 # * ``Op.eigs()``: estimates the eigenvalues of the operator
 # * ``Op.cond()``: estimates the condition number of the operator
+# * ``Op.conj()``: create complex conjugate operator
 
 # +
 print(Dop+Dop)
@@ -179,6 +180,36 @@ print(Dop.eigs(neigs=3))
 
 # cond
 print(Dop.cond())
+
+# conj
+print(Dop.conj())
+
+###############################################################################
+# To understand the effect of ``conj`` we need to look into a problem with an
+# operator in the complex domain. Let's create again our
+# :py:class:`pylops.Diagonal` operator but this time we populate it with
+# complex numbers. We will see that the action of the operator and its complex
+# conjugate is different even if the model is real.
+n = 5
+d = 1j*(np.arange(n) + 1.)
+x = np.ones(n)
+Dop = pylops.Diagonal(d)
+
+print('y = Dx', Dop*x)
+print('y = conj(D)x', Dop.conj()*x)
+
+###############################################################################
+# Finally it is worth remembering a useful trick. If two linear operators are
+# combined by means of the algebraical operations shown above, the resulting
+# operator will lose some of the convenience methods (e.g. ``\``) as it will
+# be turned into a :py:class:`scipy.sparse.linalg.LinearOperator` instead of
+# a :py:class:`pylops.LinearOperator`. To transform it back to a PyLops linear
+# operator simply do the following
+Dop1 = Dop + Dop.conj()
+Dop1 = pylops.LinearOperator(Dop, explicit=False)
+
+y = Dop1 * x
+print('x = (Dop + conj(Dop))/y', Dop1 / y)
 
 ###############################################################################
 # This first tutorial is completed. You have seen the basic operations that

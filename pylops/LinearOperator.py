@@ -8,13 +8,15 @@ from scipy.linalg import eigvals
 from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
 
+
 class LinearOperator(spLinearOperator):
     """Common interface for performing matrix-vector products.
 
     This class is an overload of the
     :py:class:`scipy.sparse.linalg.LinearOperator` class. It adds
     functionalities by overloading standard operators such as ``__truediv__``
-    as well as creating convenience methods such as ``eigs`` and ``cond``.
+    as well as creating convenience methods such as ``eigs``, ``cond``, and
+    ``conj``.
 
     .. note:: End users of PyLops should not use this class directly but simply
       use operators that are already implemented. This class is meant for
@@ -205,3 +207,32 @@ class LinearOperator(spLinearOperator):
         cond = np.asscalar(self.eigs(neigs=1, which='LM', **kwargs_eig))/ \
                np.asscalar(self.eigs(neigs=1, which='SM', **kwargs_eig))
         return cond
+
+    def conj(self):
+        """Complex conjugate operator
+
+        Returns
+        -------
+        eigenvalues : :obj:`pylops.LinearOperator`
+            Complex conjugate operator
+
+        """
+        return _ConjLinearOperator(self)
+
+
+class _ConjLinearOperator(LinearOperator):
+    """Complex conjugate linear operator"""
+    def __init__(self, Op):
+        if not isinstance(Op, spLinearOperator):
+            raise TypeError('A must be a LinearOperator')
+        super(_ConjLinearOperator, self).__init__(Op, Op.shape)
+        self.Op = Op
+
+    def _matvec(self, x):
+        return (self.Op.matvec(x.conj())).conj()
+
+    def _rmatvec(self, x):
+        return (self.rmatvec(x.conj())).conj()
+
+    def _adjoint(self):
+        return _ConjLinearOperator(self.Op.H)
