@@ -65,4 +65,3 @@ class Roll(LinearOperator):
             x = np.reshape(x, self.dims)
         y = np.roll(x, shift=-self.shift, axis=self.dir)
         return y.ravel()
-    

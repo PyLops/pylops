@@ -14,7 +14,7 @@ from pylops.optimization.leastsquares import PreconditionedInversion
 
 
 def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
-        dtype=None, fftengine='numpy', transpose=True):
+        dtype=None, fftengine='numpy', transpose=True, conj=False):
     r"""Multi-dimensional convolution.
 
     Apply multi-dimensional convolution between two datasets. If
@@ -63,6 +63,8 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         Transpose ``G`` and inputs such that time/frequency is placed in first
         dimension. This will be removed in v2.0.0 and time/frequency axis will
         be required to be in first dimension
+    conj : :obj:`str`, optional
+        Perform Fredholm integral computation with complex conjugate of ``G``
 
     See Also
     --------
@@ -75,17 +77,17 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
     a multi-dimensional integration, and an inverse Fourier transform:
 
     .. math::
-        y(f, s, v) = \mathscr{F}^{-1} \Big( \int_S R(f, s, r)
+        y(f, s, v) = \mathscr{F}^{-1} \Big( \int_S G(f, s, r)
         \mathscr{F}(x(f, r, v)) dr \Big)
 
     This operation can be discretized and performed by means of a
     linear operator
 
     .. math::
-        \mathbf{D}= \mathbf{F}^H  \mathbf{R} \mathbf{F}
+        \mathbf{D}= \mathbf{F}^H  \mathbf{G} \mathbf{F}
 
     where :math:`\mathbf{F}` is the Fourier transform applied along
-    the time axis and :math:`\mathbf{R}` is the multi-dimensional
+    the time axis and :math:`\mathbf{G}` is the multi-dimensional
     convolution kernel.
 
     .. [1] Wapenaar, K., van der Neut, J., Ruigrok, E., Draganov, D., Hunziker,
@@ -115,6 +117,8 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
     dtype = G[0, 0, 0].dtype
     fdtype = (G[0, 0, 0] + 1j*G[0, 0, 0]).dtype
     Frop = Fredholm1(dr*dt*np.sqrt(nt)*G, nv, usematmul=False, dtype=fdtype)
+    if conj:
+        Frop = Frop.conj()
 
     # create FFT operators
     nfmax, ns, nr = G.shape

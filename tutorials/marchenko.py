@@ -5,6 +5,7 @@ This example shows how to set-up and run the
 :py:class:`pylops.waveeqprocessing.Marchenko` inversion using synthetic data.
 
 """
+# sphinx_gallery_thumbnail_number = 5
 # pylint: disable=C0103
 import numpy as np
 import matplotlib.pyplot as plt
@@ -132,8 +133,6 @@ g_inv_tot = g_inv_minus + g_inv_plus
 ##############################################################################
 # We can now compare the result of Marchenko redatuming via LSQR
 # with standard redatuming
-
-# sphinx_gallery_thumbnail_number = 5
 fig, axs = plt.subplots(1, 3, sharey=True, figsize=(16, 9))
 axs[0].imshow(p0_minus.T, cmap='gray', vmin=-5e5, vmax=5e5,
               extent=(r[0, 0], r[0, -1], t[-1], -t[-1]))

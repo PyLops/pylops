@@ -229,10 +229,10 @@ class _ConjLinearOperator(LinearOperator):
         self.Op = Op
 
     def _matvec(self, x):
-        return (self.Op.matvec(x.conj())).conj()
+        return (self.Op._matvec(x.conj())).conj()
 
     def _rmatvec(self, x):
-        return (self.rmatvec(x.conj())).conj()
+        return (self.Op._rmatvec(x.conj())).conj()
 
     def _adjoint(self):
         return _ConjLinearOperator(self.Op.H)
