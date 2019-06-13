@@ -1,4 +1,5 @@
 import logging
+import warnings
 import numpy as np
 
 from scipy.signal import filtfilt
@@ -69,9 +70,8 @@ class Marchenko():
         Multi-dimensional reflection response in time or frequency
         domain of size :math:`[n_s \times n_r \times n_t/n_{fmax}]`
     R1 : :obj:`bool`, optional
-        *Deprecated*, will be removed in v2.0.0. ``R`` is used also to
-        perform multi-dimensional convolution with the complex conjugate
-        reflection response
+        *Deprecated*, will be removed in v2.0.0. Simply kept for
+        back-compatibility with previous implementation
     dt : :obj:`float`, optional
         Sampling of time integration axis
     nt : :obj:`float`, optional
@@ -88,6 +88,11 @@ class Marchenko():
         Number of samples of smoothing operator to apply to window
     dtype : :obj:`bool`, optional
         Type of elements in input array.
+    saveRt : :obj:`bool`, optional
+        Save ``R`` and ``R^H`` to speed up the computation of adjoint of
+        :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
+        ``R^H`` on-the-fly (``False``) Note that ``saveRt=True`` will be
+        faster but double the amount of required memory
 
     Attributes
     ----------
@@ -165,13 +170,23 @@ class Marchenko():
     """
     def __init__(self, R, R1=None, dt=0.004, nt=None, dr=1.,
                  nfmax=None, wav=None, toff=0.0, nsmooth=10,
-                 dtype='float64'):
+                 dtype='float64', saveRt=True):
+        warnings.warn('A new implementation of Marchenko is provided in v1.5.0. '
+                      'This currently affects only the inner working of the '
+                      'operator, end-users can continue using the operator in '
+                      'the same way. Nevertheless, R1 is not required anymore'
+                      'even when R is provided in frequency domain. It is '
+                      'recommended to start using the operator without the R1 '
+                      'input as this behaviour will become default in '
+                      'version v2.0.0 and R1 will be removed from the inputs.',
+                      FutureWarning)
         # Save inputs into class
         self.dt = dt
         self.dr = dr
         self.wav = wav
         self.toff = toff
         self.nsmooth = nsmooth
+        self.saveRt = saveRt
         self.dtype = dtype
         self.explicit = False
 
@@ -203,7 +218,6 @@ class Marchenko():
             self.Rtwosided_fft = R
         # bring frequency to first dimension
         self.Rtwosided_fft = self.Rtwosided_fft.transpose(2, 0, 1)
-
 
     def apply_onepoint(self, trav, G0=None, nfft=None, rtm=False, greens=False,
                        dottest=False, fast=None, **kwargs_lsqr):
@@ -267,9 +281,11 @@ class Marchenko():
 
         # Create operators
         Rop = MDC(self.Rtwosided_fft, self.nt2, nv=1, dt=self.dt, dr=self.dr,
-                  twosided=True, conj=False, transpose=False, dtype=self.dtype)
+                  twosided=True, conj=False, transpose=False,
+                  saveGt=self.saveRt, dtype=self.dtype)
         R1op = MDC(self.Rtwosided_fft, self.nt2, nv=1, dt=self.dt, dr=self.dr,
-                   twosided=True, conj=True, transpose=False, dtype=self.dtype)
+                   twosided=True, conj=True, transpose=False,
+                   saveGt=self.saveRt, dtype=self.dtype)
         Rollop = Roll(self.nt2 * self.ns,
                       dims=(self.nt2, self.ns),
                       dir=0, shift=-1, dtype=self.dtype)
@@ -301,7 +317,7 @@ class Marchenko():
                                  'Provide either G0 or wav and nfft...')
 
         fd_plus = np.concatenate((np.fliplr(G0).T,
-                                  np.zeros((self.nt - 1, self.nr))), axis=0)
+                                  np.zeros((self.nt - 1, self.nr))))
 
         # Run standard redatuming as benchmark
         if rtm:
@@ -320,7 +336,6 @@ class Marchenko():
                                               fd_plus))
         f1_inv_minus = f1_inv_tot[:self.nt2].T
         f1_inv_plus = f1_inv_tot[self.nt2:].T
-
         if greens:
             # Create Green's functions
             g_inv = Gop * f1_inv_tot.flatten()
@@ -441,8 +456,7 @@ class Marchenko():
                                  'Provide either G0 or wav and nfft...')
 
         fd_plus = np.concatenate((np.flip(G0, axis=-1).transpose(2, 0, 1),
-                                  np.zeros((self.nt - 1, self.nr, nvs))),
-                                 axis=0)
+                                  np.zeros((self.nt - 1, self.nr, nvs))))
 
         # Run standard redatuming as benchmark
         if rtm:
@@ -458,9 +472,9 @@ class Marchenko():
         # Invert for focusing functions
         f1_inv = lsqr(Mop, d.flatten(), **kwargs_lsqr)[0]
         f1_inv = f1_inv.reshape(2 * self.nt2, self.nr, nvs)
-        f1_inv_tot = f1_inv + np.concatenate((np.zeros((self.nt2, self.nr,
-                                                        nvs,)),
-                                              fd_plus))
+        f1_inv_tot = \
+            f1_inv + np.concatenate((np.zeros((self.nt2, self.nr, nvs)),
+                                     fd_plus))
         f1_inv_minus = f1_inv_tot[:self.nt2].transpose(1, 2, 0)
         f1_inv_plus = f1_inv_tot[self.nt2:].transpose(1, 2, 0)
 
