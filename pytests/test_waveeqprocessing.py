@@ -68,11 +68,13 @@ def test_MDC_1virtualsource(par):
     else:
         par['nt2'] = par['nt']
     v = 1500
-    t0_m = 0.2
+    it0_m = 25
+    t0_m = it0_m*par['dt']
     theta_m = 0
     amp_m = 1.
 
-    t0_G = (0.1, 0.2, 0.3)
+    it0_G = np.array([25, 50, 75])
+    t0_G = it0_G*par['dt']
     theta_G = (0, 0, 0)
     phi_G = (0, 0, 0)
     amp_G = (1., 0.6, 2.)
@@ -108,6 +110,16 @@ def test_MDC_1virtualsource(par):
     d = MDCop * mwav.flatten()
     d = d.reshape(par['ny'], par['nt2'])
 
+    # Check that events are at correct time and correct amplitude
+    for it, amp in zip(it0_G, amp_G):
+        ittot = it0_m + it
+        if par['twosided']:
+            ittot += par['nt'] - 1
+        assert np.abs(d[par['ny'] // 2, ittot] -
+                      np.abs(wav ** 2).sum() * amp_m * amp *
+                      par['nx'] * par['dx'] * par['dt'] *
+                      np.sqrt(par['nt2'])) < 1e-2
+
     # Apply mdd function
     minv = MDD(Gwav[:, :, par['nt']-1:] if par['twosided'] else Gwav,
                d[:, par['nt']-1:] if par['twosided'] else d,
@@ -126,6 +138,15 @@ def test_MDC_1virtualsource(par):
     mwav = mwav.T
     d = MDCop * mwav.flatten()
     d = d.reshape(par['nt2'], par['ny'])
+
+    for it, amp in zip(it0_G, amp_G):
+        ittot = it0_m + it
+        if par['twosided']:
+            ittot += par['nt'] - 1
+        assert np.abs(d[ittot, par['ny'] // 2] -
+                      np.abs(wav ** 2).sum() * amp_m * amp *
+                      par['nx'] * par['dx'] * par['dt'] *
+                      np.sqrt(par['nt2'])) < 1e-2
 
     minv = MDD(Gwav[:, :, par['nt'] - 1:] if par['twosided'] else Gwav,
                d[par['nt'] - 1:].T if par['twosided'] else d.T,
@@ -146,12 +167,14 @@ def test_MDC_Nvirtualsources(par):
     else:
         par['nt2'] = par['nt']
     v = 1500
-    t0_m = 0.2
+    it0_m = 25
+    t0_m = it0_m * par['dt']
     theta_m = 0
     phi_m = 0
     amp_m = 1.
 
-    t0_G = (0.1, 0.2, 0.3)
+    it0_G = np.array([25, 50, 75])
+    t0_G = it0_G * par['dt']
     theta_G = (0, 0, 0)
     phi_G = (0, 0, 0)
     amp_G = (1., 0.6, 2.)
@@ -189,6 +212,16 @@ def test_MDC_Nvirtualsources(par):
     d = MDCop * mwav.flatten()
     d = d.reshape(par['ny'], par['nx'], par['nt2'])
 
+    # Check that events are at correct time
+    for it, amp in zip(it0_G, amp_G):
+        ittot = it0_m + it
+        if par['twosided']:
+            ittot += par['nt'] - 1
+        assert d[par['ny'] // 2, par['nx'] // 2, ittot] > \
+               d[par['ny'] // 2, par['nx'] // 2, ittot - 1]
+        assert d[par['ny'] // 2, par['nx'] // 2, ittot] > \
+               d[par['ny'] // 2, par['nx'] // 2, ittot + 1]
+
     # Apply mdd function
     minv = MDD(Gwav[:, :, par['nt']-1:] if par['twosided'] else Gwav,
                d[:, :, par['nt']-1:] if par['twosided'] else d,
@@ -208,6 +241,15 @@ def test_MDC_Nvirtualsources(par):
     mwav = mwav.transpose(2, 0, 1)
     d = MDCop * mwav.flatten()
     d = d.reshape(par['nt2'], par['ny'], par['nx'])
+
+    for it, amp in zip(it0_G, amp_G):
+        ittot = it0_m + it
+        if par['twosided']:
+            ittot += par['nt'] - 1
+        assert d[ittot, par['ny'] // 2, par['nx'] // 2] > \
+               d[ittot - 1, par['ny'] // 2, par['nx'] // 2]
+        assert d[ittot, par['ny'] // 2, par['nx'] // 2] > \
+               d[ittot + 1, par['ny'] // 2, par['nx'] // 2]
 
     minv = MDD(Gwav[:, :, par['nt']-1:] if par['twosided'] else Gwav,
                d[par['nt']-1:].transpose(1, 2, 0) if par['twosided'] else

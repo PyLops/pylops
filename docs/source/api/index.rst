@@ -44,6 +44,7 @@ Basic operators
     Diagonal
     Transpose
     Flip
+    Roll
     Symmetrize
     Restriction
     Regression

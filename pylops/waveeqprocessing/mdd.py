@@ -14,7 +14,8 @@ from pylops.optimization.leastsquares import PreconditionedInversion
 
 
 def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
-        dtype=None, fftengine='numpy', transpose=True):
+        dtype=None, fftengine='numpy', transpose=True,
+        saveGt=True, conj=False):
     r"""Multi-dimensional convolution.
 
     Apply multi-dimensional convolution between two datasets. If
@@ -61,8 +62,16 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         Engine used for fft computation (``numpy`` or ``fftw``)
     transpose : :obj:`str`, optional
         Transpose ``G`` and inputs such that time/frequency is placed in first
-        dimension. This will be removed in v2.0.0 and time/frequency axis will
-        be required to be in first dimension
+        dimension. This allows back-compatibility with v1.4.0 and older but
+        will be removed in v2.0.0 where time/frequency axis will be required
+        to be in first dimension for efficiency reasons.
+    saveGt : :obj:`bool`, optional
+        Save ``G`` and ``G^H`` to speed up the computation of adjoint of
+        :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
+        ``G^H`` on-the-fly (``False``) Note that ``saveGt=True`` will be
+        faster but double the amount of required memory
+    conj : :obj:`str`, optional
+        Perform Fredholm integral computation with complex conjugate of ``G``
 
     See Also
     --------
@@ -75,17 +84,17 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
     a multi-dimensional integration, and an inverse Fourier transform:
 
     .. math::
-        y(f, s, v) = \mathscr{F}^{-1} \Big( \int_S R(f, s, r)
+        y(f, s, v) = \mathscr{F}^{-1} \Big( \int_S G(f, s, r)
         \mathscr{F}(x(f, r, v)) dr \Big)
 
     This operation can be discretized and performed by means of a
     linear operator
 
     .. math::
-        \mathbf{D}= \mathbf{F}^H  \mathbf{R} \mathbf{F}
+        \mathbf{D}= \mathbf{F}^H  \mathbf{G} \mathbf{F}
 
     where :math:`\mathbf{F}` is the Fourier transform applied along
-    the time axis and :math:`\mathbf{R}` is the multi-dimensional
+    the time axis and :math:`\mathbf{G}` is the multi-dimensional
     convolution kernel.
 
     .. [1] Wapenaar, K., van der Neut, J., Ruigrok, E., Draganov, D., Hunziker,
@@ -95,13 +104,13 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
        pp. 1335-1364. 2011.
 
     """
-    warnings.warn('A new implementation of MDC is provided in v1.5.0. This'
-                  'currently affects only the inner working of the operator '
-                  'and end-users can use the operator in the same way as they '
-                  'used to do with the previous one. Nevertheless, it is now '
-                  'reccomended to use the operator with transpose=True, as '
-                  'this behaviour will become default in version v2.0.0 and '
-                  'the behaviour with transpose=False will be deprecated.',
+    warnings.warn('A new implementation of MDC is provided in v1.5.0. This '
+                  'currently affects only the inner working of the operator, '
+                  'end-users can continue using the operator in the same way. '
+                  'Nevertheless, it is now recommended to start using the '
+                  'operator with transpose=True, as this behaviour will '
+                  'become default in version v2.0.0 and the behaviour with '
+                  'transpose=False will be deprecated.',
                   FutureWarning)
 
     if twosided and nt % 2 == 0:
@@ -114,7 +123,10 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
     # create Fredholm operator
     dtype = G[0, 0, 0].dtype
     fdtype = (G[0, 0, 0] + 1j*G[0, 0, 0]).dtype
-    Frop = Fredholm1(dr*dt*np.sqrt(nt)*G, nv, usematmul=False, dtype=fdtype)
+    Frop = Fredholm1(dr*dt*np.sqrt(nt)*G, nv, saveGt=saveGt,
+                     usematmul=False, dtype=fdtype)
+    if conj:
+        Frop = Frop.conj()
 
     # create FFT operators
     nfmax, ns, nr = G.shape
@@ -158,7 +170,7 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         twosided=True, add_negative=True,
         causality_precond=False, adjoint=False,
         psf=False, dtype='float64',
-        dottest=False, **kwargs_lsqr):
+        dottest=False, saveGt=True, **kwargs_lsqr):
     r"""Multi-dimensional deconvolution.
 
     Solve multi-dimensional deconvolution problem using
@@ -180,6 +192,9 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         Sampling of receiver integration axis
     nfmax : :obj:`int`, optional
         Index of max frequency to include in deconvolution process
+    wav : :obj:`numpy.ndarray`, optional
+        Wavelet to convolve to the inverted model and psf. If ``None``, the
+        outputs of the inversion are returned directly
     twosided : :obj:`bool`, optional
         MDC operator and data both negative and positive time (``True``)
         or only positive (``False``)
@@ -196,6 +211,11 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         Type of elements in input array.
     dottest : :obj:`bool`, optional
         Apply dot-test
+    saveGt : :obj:`bool`, optional
+        Save ``G`` and ``G^H`` to speed up the computation of adjoint of
+        :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
+        ``G^H`` on-the-fly (``False``) Note that ``saveGt=True`` will be
+        faster but double the amount of required memory
     **kwargs_lsqr
         Arbitrary keyword arguments for
         :py:func:`scipy.sparse.linalg.lsqr` solver
@@ -289,10 +309,10 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
 
     # Define MDC linear operator
     MDCop = MDC(Gfft, nt2, nv=nv, dt=dt, dr=dr, twosided=twosided,
-                transpose=False)
+                transpose=False, saveGt=saveGt)
     if psf:
         PSFop = MDC(Gfft, nt2, nv=nr, dt=dt, dr=dr, twosided=twosided,
-                    transpose=False)
+                    transpose=False, saveGt=saveGt)
     if dottest:
         Dottest(MDCop, nt2*ns*nv, nt2*nr*nv, verb=True)
         if psf:

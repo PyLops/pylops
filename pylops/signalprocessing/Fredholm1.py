@@ -22,8 +22,8 @@ class Fredholm1(LinearOperator):
     nz : :obj:`numpy.ndarray`, optional
         Additional dimension of model
     saveGt : :obj:`bool`, optional
-        Save ``G`` and ``G^T`` to speed up the computation of adjoint
-        (``True``) or create ``G^T`` on-the-fly (``False``)
+        Save ``G`` and ``G^H`` to speed up the computation of adjoint
+        (``True``) or create ``G^H`` on-the-fly (``False``)
         Note that ``saveGt=True`` will double the amount of required memory
     usematmul : :obj:`bool`, optional
         Use :func:`numpy.matmul` (``True``) or for-loop with :func:`numpy.dot`
@@ -115,5 +115,5 @@ class Fredholm1(LinearOperator):
                     y[isl] = np.dot(self.GT[isl], x[isl])
             else:
                 for isl in range(self.nsl):
-                    y[isl] = np.dot(self.G[isl].T, x[isl])
+                    y[isl] = np.dot(self.G[isl].conj().T, x[isl])
         return y.ravel()

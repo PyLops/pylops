@@ -10,6 +10,7 @@ from .Flip import Flip
 from .Symmetrize import Symmetrize
 from .Spread import Spread
 from .Transpose import Transpose
+from .Roll import Roll
 
 from .VStack import VStack
 from .HStack import HStack
