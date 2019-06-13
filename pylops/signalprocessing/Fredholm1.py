@@ -115,5 +115,5 @@ class Fredholm1(LinearOperator):
                     y[isl] = np.dot(self.GT[isl], x[isl])
             else:
                 for isl in range(self.nsl):
-                    y[isl] = np.dot(self.G[isl].T, x[isl])
+                    y[isl] = np.dot(self.G[isl].conj().T, x[isl])
         return y.ravel()
