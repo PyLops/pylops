@@ -29,7 +29,7 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
         as ``Regs``)
     epsI : :obj:`float`, optional
         Tikhonov damping
-    epsRs : :obj:`list`
+    epsRs : :obj:`list`, optional
          Regularization dampings (must have the same number of elements
          as ``Regs``)
     x0 : :obj:`numpy.ndarray`, optional
@@ -144,8 +144,8 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
     Notes
     -----
     Create a regularized operator by augumenting the problem operator
-    :math:`\mathbf{Op}`, by a set of regularization terms :math:`\mathbf{R_i}` and their
-    damping factors and :math:`\epsilon_{{R}_i}`:
+    :math:`\mathbf{Op}`, by a set of regularization terms :math:`\mathbf{R_i}`
+    and their damping factors and :math:`\epsilon_{{R}_i}`:
 
     .. math::
         \begin{bmatrix}
@@ -161,8 +161,8 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
     return OpReg
 
 
-def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
-                         x0=None, returninfo=False, **kwargs_lsqr):
+def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
+                         epsRs=None, x0=None, returninfo=False, **kwargs_lsqr):
     r"""Regularized inversion.
 
     Solve a system of regularized equations given the operator ``Op``,
@@ -181,7 +181,7 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
         Weight operator
     dataregs : :obj:`list`, optional
         Regularization data (if ``None`` a zero data will be used for every
-        regularization operator in ``Regs``
+        regularization operator in ``Regs``)
     epsRs : :obj:`list`, optional
          Regularization dampings
     x0 : :obj:`numpy.ndarray`, optional
@@ -202,14 +202,16 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
         :math:`\mathbf{d} = \mathbf{Op}\mathbf{x}`
 
-        ``2`` means :math:`\mathbf{x}` approximately solves the least-squares problem
+        ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
+        problem
     itn : :obj:`int`
         Iteration number upon termination
     r1norm : :obj:`float`
         :math:`||\mathbf{r}||_2`, where
         :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\mathbf{x}`
     r2norm : :obj:`float`
-        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +  \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
+        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
+        \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
         Equal to ``r1norm`` if :math:`\epsilon=0`
 
     See Also
@@ -291,7 +293,8 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
         return xinv
 
 
-def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_lsqr):
+def PreconditionedInversion(Op, P, data, x0=None, returninfo=False,
+                            **kwargs_lsqr):
     r"""Preconditioned inversion.
 
     Solve a system of preconditioned equations given the operator
@@ -325,14 +328,16 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_lsq
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
         :math:`\mathbf{d} = \mathbf{Op}\mathbf{x}`
 
-        ``2`` means :math:`\mathbf{x}` approximately solves the least-squares problem
+        ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
+        problem
     itn : :obj:`int`
         Iteration number upon termination
     r1norm : :obj:`float`
-        :math:`||\mathbf{r}||_2`, where :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\mathbf{x}`
+        :math:`||\mathbf{r}||_2`, where :math:`\mathbf{r} = \mathbf{d} -
+        \mathbf{Op}\mathbf{x}`
     r2norm : :obj:`float`
-        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +  \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
-        Equal to ``r1norm`` if :math:`\epsilon=0`
+        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +  \epsilon^2
+        \mathbf{x}^T\mathbf{x}}`. Equal to ``r1norm`` if :math:`\epsilon=0`
 
     See Also
     --------
@@ -349,7 +354,8 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_lsq
         \mathbf{d} = \mathbf{Op} (\mathbf{P} \mathbf{p})
 
     where :math:`\mathbf{p}` is the solution in the preconditioned space
-    and :math:`\mathbf{x} = \mathbf{P}\mathbf{p}` is the solution in the original space.
+    and :math:`\mathbf{x} = \mathbf{P}\mathbf{p}` is the solution in the
+    original space.
 
     """
     # Preconditioned operator

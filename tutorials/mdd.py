@@ -111,7 +111,8 @@ minv, madj, psfinv, psfadj = \
     pylops.waveeqprocessing.MDD(Gwav, d[:, par['nt'] - 1:],
                                 dt=par['dt'], dr=par['dx'],
                                 nfmax=par['nfmax'], wav=wav,
-                                twosided=True, adjoint=True, psf=True,
+                                twosided=True, add_negative=True,
+                                adjoint=True, psf=True,
                                 dtype='complex64', dottest=False,
                                 **dict(damp=1e-4, iter_lim=20, show=0))
 
@@ -165,7 +166,8 @@ fig.tight_layout()
 minvprec = pylops.waveeqprocessing.MDD(Gwav, d[:, par['nt'] - 1:],
                                        dt=par['dt'], dr=par['dx'],
                                        nfmax=par['nfmax'], wav=wav,
-                                       twosided=True, adjoint=False, psf=False,
+                                       twosided=True, add_negative=True,
+                                       adjoint=False, psf=False,
                                        causality_precond=True,
                                        dtype='complex64',
                                        dottest=False,

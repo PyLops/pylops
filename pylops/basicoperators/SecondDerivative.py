@@ -66,14 +66,14 @@ class SecondDerivative(LinearOperator):
     def _matvec(self, x):
         if not self.reshape:
             x = x.squeeze()
-            y = np.zeros(self.N)
+            y = np.zeros(self.N, self.dtype)
             y[1:-1] = (x[2:] - 2*x[1:-1] + x[0:-2]) / self.sampling**2
             if self.edge:
                 y[0] = (x[0] - 2*x[1] + x[2]) / self.sampling**2
                 y[-1] = (x[-3] - 2*x[-2] + x[-1]) / self.sampling**2
         else:
             x = np.reshape(x, (self.dims))
-            y = np.zeros((self.dims))
+            y = np.zeros((self.dims), self.dtype)
             if self.dir > 0:  # need to bring the dim. to derive to first dim.
                 x = np.swapaxes(x, self.dir, 0)
                 y = np.swapaxes(y, self.dir, 0)
@@ -89,7 +89,7 @@ class SecondDerivative(LinearOperator):
     def _rmatvec(self, x):
         if not self.reshape:
             x = x.squeeze()
-            y = np.zeros(self.N)
+            y = np.zeros(self.N, self.dtype)
             y[0:-2] += (x[1:-1]) / self.sampling**2
             y[1:-1] -= (2*x[1:-1]) / self.sampling**2
             y[2:] += (x[1:-1]) / self.sampling**2
@@ -102,7 +102,7 @@ class SecondDerivative(LinearOperator):
                 y[-1] += x[-1] / self.sampling**2
         else:
             x = np.reshape(x, self.dims)
-            y = np.zeros((self.dims))
+            y = np.zeros(self.dims, self.dtype)
             if self.dir > 0:  # need to bring the dim. to derive to first dim.
                 x = np.swapaxes(x, self.dir, 0)
                 y = np.swapaxes(y, self.dir, 0)

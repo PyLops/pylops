@@ -2,7 +2,8 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal
-from pylops.optimization.leastsquares import NormalEquationsInversion
+from pylops.optimization.leastsquares import NormalEquationsInversion, \
+    RegularizedInversion
 
 try:
     from spgl1 import spgl1
@@ -24,6 +25,21 @@ def _softthreshold(x, thresh):
         Threshold
     """
     return np.maximum(np.abs(x)-thresh, 0.)*np.sign(x)
+
+def _shrinkage(x, thresh):
+    r"""Shrinkage.
+
+    Applies shrinkage to vector ``x``.
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Vector
+    thresh : :obj:`float`
+        Threshold
+    """
+    xabs = np.abs(x)
+    return x/(xabs+1e-10) * np.maximum(xabs - thresh, 0)
 
 
 def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
@@ -481,7 +497,7 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
     r"""Spectral Projected-Gradient for L1 norm.
 
-    Solve a system of regularized equations given the operator ``Op``
+    Solve a constrained system of equations given the operator ``Op``
     and a sparsyfing transform ``SOp`` aiming to retrive a model that
     is sparse in the sparsyfing domain.
 
@@ -489,7 +505,7 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
     which is a porting of the well-known
     `SPGL1 <https://www.cs.ubc.ca/~mpf/spgl1/>`_ MATLAB solver into Python.
     In order to be able to use this solver you need to have installed the
-    ``spgl1`` library
+    ``spgl1`` library.
 
     Parameters
     ----------
@@ -597,3 +613,169 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
 
     xinv = pinv.copy() if SOp is None else SOp.H * pinv
     return xinv, pinv, info
+
+
+def SplitBregman(Op, RegsL1, data, niter_outer, niter_inner, RegsL2=None,
+                 dataregsL2=None, mu=1., epsRL1s=None, epsRL2s=None,
+                 tol=1e-10, tau=1., x0=None, restart=False,
+                 show=False, **kwargs_lsqr):
+    r"""Split Bregman for mixed L2-L1 norms.
+
+    Solve an unconstrained system of equations with mixed L2-L1 regularization
+    terms given the operator ``Op``, a list of L1 regularization terms
+    ``RegsL1``, and an optional list of L2 regularization terms ``RegsL2``.
+
+    Parameters
+    ----------
+    Op : :obj:`pylops.LinearOperator`
+        Operator to invert
+    RegsL1 : :obj:`list`
+        L1 regularization operators
+    data : :obj:`numpy.ndarray`
+        Data
+    niter_outer : :obj:`int`
+        Number of iterations of outer loop
+    niter_inner : :obj:`int`
+        Number of iterations of inner loop
+    RegsL2 : :obj:`list`
+        Additional L2 regularization operators
+        (if ``None``, L2 regularization is not added to the problem)
+    dataregsL2 : :obj:`list`, optional
+        L2 Regularization data (must have the same number of elements
+        of ``RegsL2`` or equal to ``None`` to use a zero data for every
+        regularization operator in ``RegsL2``)
+    mu : :obj:`float`, optional
+         Data term damping
+    epsRL1s : :obj:`list`
+         L1 Regularization dampings (must have the same number of elements
+         as ``RegsL1``)
+    epsRL2s : :obj:`list`
+         L2 Regularization dampings (must have the same number of elements
+         as ``RegsL2``)
+    tol : :obj:`float`, optional
+        Tolerance. Stop outer iterations if difference between inverted model
+        at subsequent iterations is smaller than ``tol``
+    tau : :obj:`float`, optional
+        Scaling factor in the Bregman update (must be close to 1)
+    x0 : :obj:`numpy.ndarray`, optional
+        Initial guess
+    restart : :obj:`bool`, optional
+        The unconstrained inverse problem in inner loop is initialized with
+        the initial guess (``True``) or with the last estimate (``False``)
+    show : :obj:`bool`, optional
+        Display iterations log
+    **kwargs_lsqr
+        Arbitrary keyword arguments for
+        :py:func:`scipy.sparse.linalg.lsqr` solver
+
+    Returns
+    -------
+    xinv : :obj:`numpy.ndarray`
+        Inverted model :math:`\mathbf{Op}`
+    itn_out : :obj:`int`
+        Iteration number of outer loop upon termination
+
+    Notes
+    -----
+    Solve the following system of unconstrained, regularized equations
+    given the operator :math:`\mathbf{Op}` and a set of mixed norm (L2 and L1)
+    regularization terms :math:`\mathbf{R_{L2,i}}` and
+    :math:`\mathbf{R_{L1,i}}`, respectively:
+
+    .. math::
+        J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x} |||_2 +
+        \sum_i \epsilon_{{R}_{L2,i}} ||\mathbf{d}_{{R}_{L2,i}} -
+        \mathbf{R_{L2,i}} \textbf{x} |||_1 +
+        \sum_i ||\mathbf{R_{L1,2}} \textbf{x} |||_2
+
+    where :math:`\mu` and :math:`\epsilon_{{R}_{L2,i}}` are the damping factors
+    used to weight the different terms of the cost function.
+
+    The generalized Split Bergman algorithm is used to solve such cost
+    function: the algorithm is composed of a sequence of unconstrained
+    inverse problems and Bregman updates. Note that the L1 terms are not
+    weighted in the  original cost function but are first converted into
+    constraints and then re-inserted in the cost function with Lagrange
+    multipliers :math:`\epsilon_{{R}_{L1,i}}`, which effectively act as
+    damping factors for those terms. See [1]_ for detailed derivation.
+
+    The :py:func:`scipy.sparse.linalg.lsqr` solver and a fast shrinkage
+    algorithm are used within the inner loop to solve the unconstrained
+    inverse problem, and the same procedure is repeated ``niter_outer`` times
+    until convergence.
+
+    .. [1] Goldstein T. and Osher S., "The Split Bregman Method for
+       L1-Regularized Problems", SIAM J. on Scientific Computing, vol. 2(2),
+       pp. 323-343. 2008.
+
+    """
+    if show:
+        print('Split-Bregman optimization\n'
+              '---------------------------------------------------------\n'
+              'The Operator Op has %d rows and %d cols\n'
+              'niter_outer = %3d     niter_inner = %3d\n'
+              'mu = %2.2e         epsL1 = %s       tol = %2.2e'
+              % (Op.shape[0], Op.shape[1],
+                 niter_outer, niter_inner,
+                 mu, str(epsRL1s), tol))
+        print('---------------------------------------------------------\n')
+        head1 = '   Itn          x[0]           r2norm          r12norm'
+        print(head1)
+
+    # L1 regularizations
+    nregsL1 = len(RegsL1)
+    b = [np.zeros(RegL1.shape[0]) for RegL1 in RegsL1]
+    d = b.copy()
+
+    # L2 regularizations
+    nregsL2 = 0 if RegsL2 is None else len(RegsL2)
+    if nregsL2 > 0:
+        Regs = RegsL2 + RegsL1
+        if dataregsL2 is None:
+            dataregsL2 = [np.zeros(Op.shape[1])] * nregsL2
+    else:
+        Regs = RegsL1
+        dataregsL2 = []
+
+    # Rescale dampings
+    epsRs = [np.sqrt(epsRL2s[ireg] / 2) / np.sqrt(mu / 2) for ireg in
+             range(nregsL2)] + \
+            [np.sqrt(epsRL1s[ireg] / 2) / np.sqrt(mu / 2) for ireg in
+             range(nregsL1)]
+    xinv = np.zeros_like(np.zeros(Op.shape[1])) if x0 is None else x0
+    xold = np.inf * np.ones_like(np.zeros(Op.shape[1]))
+
+    itn_out = 0
+    while np.linalg.norm(xinv - xold) > tol and itn_out < niter_outer:
+        xold = xinv
+        for _ in range(niter_inner):
+            # Regularized problem
+            dataregs = \
+                dataregsL2 + [d[ireg] - b[ireg] for ireg in range(nregsL1)]
+            xinv = RegularizedInversion(Op, Regs, data,
+                                        dataregs=dataregs,
+                                        epsRs=epsRs,
+                                        x0=x0 if restart else xinv,
+                                        **kwargs_lsqr)
+            # Shrinkage
+            d = [_shrinkage(RegsL1[ireg] * xinv + b[ireg], epsRL1s[ireg])
+                 for ireg in range(nregsL1)]
+        # Bregman update
+        b = [b[ireg] + tau * (RegsL1[ireg] * xinv - d[ireg]) for ireg in
+             range(nregsL1)]
+        itn_out += 1
+
+        if show:
+            costdata = mu/2. * np.linalg.norm(data - Op.matvec(xinv)) ** 2
+            costregL2 = 0 if RegsL2 is None else \
+                [epsRL2 * np.linalg.norm(dataregL2 - RegL2.matvec(xinv)) ** 2
+                 for epsRL2, RegL2, dataregL2 in zip(epsRL2s, RegsL2, dataregsL2)]
+            costregL1 = [np.linalg.norm(RegL1.matvec(xinv), ord=1)
+                         for epsRL1, RegL1 in zip(epsRL1s, RegsL1)]
+            cost = costdata + np.sum(np.array(costregL2)) + \
+                   np.sum(np.array(costregL1))
+            msg = '%6g  %12.5e       %10.3e        %9.3e' % \
+                  (np.abs(itn_out), xinv[0], costdata, cost)
+            print(msg)
+
+    return xinv, itn_out

@@ -31,7 +31,7 @@ from .avo.prestack import PrestackWaveletModelling, PrestackLinearModelling
 
 from .optimization.leastsquares import NormalEquationsInversion, RegularizedInversion
 from .optimization.leastsquares import PreconditionedInversion
-from .optimization.sparsity import IRLS
+from .optimization.sparsity import IRLS, ISTA, FISTA, SPGL1, SplitBregman
 
 from .utils.seismicevents import makeaxis, linear2d, parabolic2d
 from .utils.tapers import hanningtaper, cosinetaper, taper2d, taper3d

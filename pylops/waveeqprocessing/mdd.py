@@ -167,10 +167,9 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
 
 
 def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
-        twosided=True, add_negative=True,
-        causality_precond=False, adjoint=False,
-        psf=False, dtype='float64',
-        dottest=False, saveGt=True, **kwargs_lsqr):
+        twosided=True, causality_precond=False, adjoint=False,
+        psf=False, dtype='float64', dottest=False,
+        saveGt=True, add_negative=True, **kwargs_lsqr):
     r"""Multi-dimensional deconvolution.
 
     Solve multi-dimensional deconvolution problem using
@@ -180,9 +179,11 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
     ----------
     G : :obj:`numpy.ndarray`
         Multi-dimensional convolution kernel in time domain of size
-        :math:`[n_s \times n_r \times n_t]` for ``twosided=False``
+        :math:`[n_s \times n_r \times n_t]` for ``twosided=False`` or
+        ``twosided=True`` and ``add_negative=True``
         (with only positive times) or size
-        :math:`[n_s \times n_r \times 2*n_t-1]` for ``twosided=True``
+        :math:`[n_s \times n_r \times 2*n_t-1]` for ``twosided=True`` and
+        ``add_negative=False``
         (with both positive and negative times)
     d : :obj:`numpy.ndarray`
         Data in time domain :math:`[n_s (\times n_vs) \times n_t]`
@@ -199,8 +200,9 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         MDC operator and data both negative and positive time (``True``)
         or only positive (``False``)
     add_negative : :obj:`bool`, optional
-        Add negative side to MDC operator and data (``True``) or already
-        provided with both positve and negative sides (``False``)
+        Add negative side to MDC operator and data (``True``) or not
+        (``False``)- operator and data are already provided with both positive
+        and negative sides. To be used only with ``twosided=True``.
     causality_precond : :obj:`bool`, optional
         Apply causality mask (``True``) or not (``False``)
     adjoint : :obj:`bool`, optional
