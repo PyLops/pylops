@@ -39,14 +39,17 @@ mback2d = filtfilt(np.ones(nsmooth) / float(nsmooth), 1, mback2d, axis=1)
 wav = ricker(t0[:ntwav//2+1], 20)[0]
 
 
-par1 = {'epsR': None, 'epsI': None,
+par1 = {'epsR': None, 'epsRL1': None, 'epsI': None,
         'simultaneous': False} # unregularized
-par2 = {'epsR': 1e-4, 'epsI': 1e-6,
+par2 = {'epsR': 1e-4, 'epsRL1': None, 'epsI': 1e-6,
         'simultaneous': False} # regularized
-par3 = {'epsR': None, 'epsI': None,
+par3 = {'epsR': None, 'epsRL1': None, 'epsI': None,
         'simultaneous': True} # unregularized, simultaneous
-par4 = {'epsR': 1e-4, 'epsI': 1e-6,
+par4 = {'epsR': 1e-4, 'epsRL1': None, 'epsI': 1e-6,
         'simultaneous': True} # regularized, simultaneous
+par5 = {'epsR': 1e-4, 'epsRL1': 1e-1, 'epsI': 1e-6,
+        'simultaneous': True}  # blocky, simultaneous
+
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_PoststackLinearModelling1d(par):
@@ -80,7 +83,7 @@ def test_PoststackLinearModelling1d(par):
         assert np.linalg.norm(m-minv) / np.linalg.norm(minv) < 1e-2
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5)])
 def test_PoststackLinearModelling2d(par):
     """Dot-test and inversion for PoststackLinearModelling in 2d
     """
@@ -104,16 +107,17 @@ def test_PoststackLinearModelling2d(par):
     for explicit in [True, False]:
         if explicit and not par['simultaneous'] and par['epsR'] is None:
             dict_inv = {}
-        elif explicit and not par['simultaneous'] \
-                and par['epsR'] is not None:
+        elif explicit and not par['simultaneous'] and par['epsR'] is not None:
             dict_inv = dict(damp=0 if par['epsI'] is None else par['epsI'],
-                            iter_lim=80)
+                            iter_lim=10)
         else:
             dict_inv = dict(damp=0 if par['epsI'] is None else par['epsI'],
-                            iter_lim=80)
-
-        minv2d = PoststackInversion(d, wav, m0=mback2d, explicit=explicit,
-                                    epsR=par['epsR'], epsI=par['epsI'],
-                                    simultaneous=par['simultaneous'],
-                                    **dict_inv)[0]
-        assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < 2e-1
+                            iter_lim=10)
+        minv2d = \
+            PoststackInversion(d, wav, m0=mback2d, explicit=explicit,
+                               epsI=par['epsI'], epsR=par['epsR'],
+                               epsRL1=par['epsRL1'],
+                               simultaneous=par['simultaneous'],
+                               **dict_inv)[0]
+        assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(m2d) < 1e-1
+        

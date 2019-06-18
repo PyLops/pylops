@@ -30,8 +30,9 @@ Code cleaning
 
 * Change all ``np.flatten()`` into ``np.ravel()`` -
   `Issue #24 <https://github.com/Statoil/pylops/issues/24>`_.
-* Fix all ``if: return ... else: ...`` statements using the one-liner
-  ``return ... else ...`` - `Issue #26 <https://github.com/Statoil/pylops/issues/26>`_.
+* Fix all ``if: return ... else: ...`` statements to enforce a single return
+  with the same number of outputs
+  - `Issue #26 <https://github.com/Statoil/pylops/issues/26>`_.
 * Protected attributes and @property attributes in linear operator classes?
   - `Issue #27 <https://github.com/Statoil/pylops/issues/27>`_.
 
@@ -84,8 +85,11 @@ signalprocessing
   `pywavelets <https://pywavelets.readthedocs.io/en/latest/>`_ can be used as back-end -
   `Issue #21 <https://github.com/Statoil/pylops/issues/21>`_.
 
-* ``Fredholm1`` and ``Fredholm2`` operators applying Fredholm integrals
-  of first and second kind  - `Issue #31 <https://github.com/Statoil/pylops/issues/31>`_.
+* :strike:`Fredholm1 operator applying Fredholm integrals
+  of first kind`  - `Issue #31 <https://github.com/Statoil/pylops/issues/31>`_.
+
+* ``Fredholm2`` operators applying Fredholm integrals
+  of second kind  - `Issue #31 <https://github.com/Statoil/pylops/issues/31>`_.
 
 utils
 ~~~~~
@@ -96,8 +100,8 @@ Nothing so far
 waveeqprocessing
 ~~~~~~~~~~~~~~~~
 
-* Use ``numpy.matmul`` as a way to speed up integral computation (i.e., inner for loop)
-  in ``MDC`` operator - `Issue #32 <https://github.com/Statoil/pylops/issues/32>`_.
+* :strike:`numpy.matmul as a way to speed up integral computation (i.e., inner for loop)
+  in ``MDC`` operator` - `Issue #32 <https://github.com/Statoil/pylops/issues/32>`_.
 
 * ``NMO`` operator performing NMO modelling -
   `Issue #29 <https://github.com/Statoil/pylops/issues/29>`_.

@@ -8,10 +8,11 @@ from scipy.linalg import block_diag
 from pylops.signalprocessing import Convolve1D
 from pylops.utils.signalprocessing import convmtx
 from pylops.utils import dottest as Dottest
-from pylops import MatrixMult, FirstDerivative, VStack,\
+from pylops import MatrixMult, FirstDerivative, Diagonal, Identity, VStack,\
     SecondDerivative, Laplacian
 from pylops.avo.avo import AVOLinearModelling, akirichards, fatti
 from pylops.optimization.leastsquares import RegularizedInversion
+from pylops.optimization.sparsity import SplitBregman
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -238,8 +239,8 @@ def PrestackWaveletModelling(m, theta, nwav, wavc=None,
 
 def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
                       explicit=False, simultaneous=False,
-                      epsI=None, epsR=None, dottest=False, returnres=False,
-                      **kwargs_solver):
+                      epsI=None, epsR=None, dottest=False,
+                      returnres=False, epsRL1=None, **kwargs_solver):
     r"""Pre-stack linearized seismic inversion.
 
     Invert pre-stack seismic operator to retrieve a set of elastic property
@@ -273,14 +274,18 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
         trace-by-trace (``False``) when using ``explicit`` operator
         (note that the entire data is always inverted when working
         with linear operator)
-    epsI : :obj:`float`, optional
-        Damping factor for Tikhonov regularization term
+    epsI : :obj:`float` or :obj:`list`, optional
+        Damping factor(s) for Tikhonov regularization term. If a list of
+        :math:`n_{m}` elements is provided, the regularization term will have
+        different strenght for each elastic property
     epsR : :obj:`float`, optional
         Damping factor for additional Laplacian regularization term
     dottest : :obj:`bool`, optional
         Apply dot-test
     returnres : :obj:`bool`, optional
         Return residuals
+    epsRL1 : :obj:`float`, optional
+        Damping factor for additional blockiness regularization term
     **kwargs_solver
         Arbitrary keyword arguments for :py:func:`scipy.linalg.lstsq`
         solver (if ``explicit=True`` and  ``epsR=None``)
@@ -307,7 +312,8 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
     """
     # find out dimensions
     if m0 is None and linearization is None:
-        raise ValueError('either m0 or linearization must be provided')
+        raise NotImplementedError('either m0 or linearization '
+                                  'must be provided')
     elif m0 is None:
         nm = _linearizations[linearization]
     else:
@@ -371,34 +377,103 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
                 datarn = np.dot(PPop.A.T, datar.reshape(nt0*ntheta, nspatprod))
                 if not simultaneous:
                     # solve regularized normal eqs. trace-by-trace
-                    minv = lstsq(PP, datarn,
-                                 **kwargs_solver)[0]
+                    minv = lstsq(PP, datarn, **kwargs_solver)[0]
                 else:
                     # solve regularized normal equations simultaneously
                     PPop_reg = MatrixMult(PP, dims=nspatprod)
-                    minv = lsqr(PPop_reg, datar.flatten(), **kwargs_solver)[0]
-            else:
-                # create regularized normal eqs. and solve them simultaneously
-                PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0*nm)
-                datarn = PPop.A.T * datar.reshape(nt0*ntheta, nspatprod)
-                PPop_reg = MatrixMult(PP, dims=ntheta*nspatprod)
-                minv = lstsq(PPop_reg, datarn.flatten(), **kwargs_solver)[0]
+                    minv = lsqr(PPop_reg, datarn.flatten(), **kwargs_solver)[0]
+            #else:
+            #    # create regularized normal eqs. and solve them simultaneously
+            #    PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0*nm)
+            #    datarn = PPop.A.T * datar.reshape(nt0*ntheta, nspatprod)
+            #    PPop_reg = MatrixMult(PP, dims=ntheta*nspatprod)
+            #    minv = lstsq(PPop_reg, datarn.flatten(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
             minv = lsqr(PPop, datar, **kwargs_solver)[0]
     else:
-        # inversion with spatial regularization
-        if dims == 1:
-            Regop = SecondDerivative(nt0*nm, dtype=PPop.dtype,
-                                     dims=(nt0, nm))
-        elif dims == 2:
-            Regop = Laplacian((nt0, nm, nx), dirs=(0, 2), dtype=PPop.dtype)
+        # Create Thicknov regularization
+        if epsI is not None:
+            if isinstance(epsI, (list, tuple)):
+                if len(epsI) != nm:
+                    raise ValueError('epsI must be a scalar or a list of'
+                                     'size nm')
+                RegI = Diagonal(np.array(epsI),
+                                dims=(nt0, nm,nspatprod), dir=1)
+            else:
+                RegI = epsI * Identity(nt0 * nm * nspatprod)
+
+        if epsRL1 is None:
+            # L2 inversion with spatial regularization
+            if dims == 1:
+                Regop = SecondDerivative(nt0 * nm, dtype=PPop.dtype,
+                                         dims=(nt0, nm))
+            elif dims == 2:
+                Regop = Laplacian((nt0, nm, nx), dirs=(0, 2), dtype=PPop.dtype)
+            else:
+                Regop = Laplacian((nt0, nm, nx, ny), dirs=(2, 3),
+                                  dtype=PPop.dtype)
+            if epsI is None:
+                Regop = (Regop, )
+                epsR = (epsR, )
+            else:
+                Regop = (Regop, RegI)
+                epsR = (epsR, 1)
+            minv = \
+                RegularizedInversion(PPop, Regop, data.ravel(),
+                                     x0=m0.flatten() if m0 is not None
+                                     else None, epsRs=epsR,
+                                     returninfo=False, **kwargs_solver)
         else:
-            Regop = Laplacian((nt0, nm, nx, ny), dirs=(2, 3), dtype=PPop.dtype)
-        minv = RegularizedInversion(PPop, [Regop], data.ravel(),
-                                    x0=m0.flatten() if m0 is not None else None,
-                                    epsRs=[epsR], returninfo=False,
-                                    **kwargs_solver)
+            # Blockiness-promoting inversion with spatial regularization
+            if dims == 1:
+                RegL1op = FirstDerivative(nt0 * nm, dtype=PPop.dtype)
+                RegL2op = None
+            elif dims == 2:
+                RegL1op = FirstDerivative(nt0 * nx * nm, dims=(nt0, nm, nx),
+                                          dir=0, dtype=PPop.dtype)
+                RegL2op = SecondDerivative(nt0 * nx * nm, dims=(nt0, nm, nx),
+                                           dir=2, dtype=PPop.dtype)
+            else:
+                RegL1op = FirstDerivative(nt0 * nx * ny * nm,
+                                          dims=(nt0, nm, nx, ny),
+                                          dir=0, dtype=PPop.dtype)
+                RegL2op = Laplacian((nt0, nm, nx, ny), dirs=(2, 3),
+                                    dtype=PPop.dtype)
+            if dims == 1:
+                if epsI is not None:
+                    RegL2op = (RegI, )
+                    epsR = (1, )
+            else:
+                if epsI is None:
+                    RegL2op = (RegL2op,)
+                    epsR = (epsR,)
+                else:
+                    RegL2op = (RegL2op, RegI)
+                    epsR = (epsR, 1)
+            epsRL1 = (epsRL1, )
+            if 'mu' in kwargs_solver.keys():
+                mu = kwargs_solver['mu']
+                kwargs_solver.pop('mu')
+            else:
+                mu = 1.
+            if 'niter_outer' in kwargs_solver.keys():
+                niter_outer = kwargs_solver['niter_outer']
+                kwargs_solver.pop('niter_outer')
+            else:
+                niter_outer = 3
+            if 'niter_inner' in kwargs_solver.keys():
+                niter_inner = kwargs_solver['niter_inner']
+                kwargs_solver.pop('niter_inner')
+            else:
+                niter_inner = 5
+            minv = SplitBregman(PPop, (RegL1op, ), data.ravel(),
+                                RegsL2=RegL2op, epsRL1s=epsRL1,
+                                epsRL2s=epsR, mu=mu,
+                                niter_outer=niter_outer,
+                                niter_inner=niter_inner,
+                                x0=None if m0 is None else m0.flatten(),
+                                **kwargs_solver)[0]
 
     # compute residual
     if returnres:

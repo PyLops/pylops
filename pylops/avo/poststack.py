@@ -8,6 +8,7 @@ from pylops.utils.signalprocessing import convmtx
 from pylops.utils import dottest as Dottest
 from pylops import MatrixMult, FirstDerivative, SecondDerivative, Laplacian
 from pylops.optimization.leastsquares import RegularizedInversion
+from pylops.optimization.sparsity import SplitBregman
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -94,7 +95,7 @@ def PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False):
 
 
 def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
-                       epsI=None, epsR=None, dottest=False,
+                       epsI=None, epsR=None, dottest=False, epsRL1=None,
                        **kwargs_solver):
     r"""Post-stack linearized seismic inversion.
 
@@ -129,11 +130,13 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
         Damping factor for additional Laplacian regularization term
     dottest : :obj:`bool`, optional
         Apply dot-test
+    epsRL1 : :obj:`float`, optional
+        Damping factor for additional blockiness regularization term
     **kwargs_solver
         Arbitrary keyword arguments for :py:func:`scipy.linalg.lstsq`
         solver (if ``explicit=True`` and  ``epsR=None``)
         or :py:func:`scipy.sparse.linalg.lsqr` solver (if ``explicit=False``
-        and/or ``epsR`` is not ``None``))
+        and/or ``epsR`` is not ``None``)
 
     Returns
     -------
@@ -161,9 +164,13 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
       if ``simultaneous=True``)
     * ``explicit=False`` and ``epsR=None``: the iterative solver
       :py:func:`scipy.sparse.linalg.lsqr` is used
-    * ``explicit=False`` with ``epsR``: the iterative solver
-      :py:func:`pylops.optimization.leastsquares.RegularizedInversion` is used
-      to solve the spatially regularized problem.
+    * ``explicit=False`` with ``epsR`` and ``epsRL1=None``: the iterative
+      solver :py:func:`pylops.optimization.leastsquares.RegularizedInversion`
+      is used to solve the spatially regularized problem.
+    * ``explicit=False`` with ``epsR`` and ``epsRL1``: the iterative
+      solver :py:func:`pylops.optimization.sparsity.SplitBregman`
+      is used to solve the blockiness-promoting (in vertical direction)
+      and spatially regularized (in additional horizontal directions) problem.
 
     Note that the convergence of iterative solvers such as
     :py:func:`scipy.sparse.linalg.lsqr` can be very slow for this type of
@@ -237,18 +244,61 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
             # solve unregularized normal equations simultaneously with lop
             minv = lsqr(PPop, datar, **kwargs_solver)[0]
     else:
-        # inversion with spatial regularization
-        if dims==1:
-            Regop = SecondDerivative(nt0, dtype=PPop.dtype)
-        elif dims==2:
-            Regop = Laplacian((nt0, nx), dtype=PPop.dtype)
-        else:
-            Regop = Laplacian((nt0, nx, ny), dirs=(1, 2), dtype=PPop.dtype)
+        if epsRL1 is None:
+            # L2 inversion with spatial regularization
+            if dims==1:
+                Regop = SecondDerivative(nt0, dtype=PPop.dtype)
+            elif dims==2:
+                Regop = Laplacian((nt0, nx), dtype=PPop.dtype)
+            else:
+                Regop = Laplacian((nt0, nx, ny), dirs=(1, 2), dtype=PPop.dtype)
 
-        minv = RegularizedInversion(PPop, [Regop], data.flatten(),
-                                    x0=None if m0 is None else m0.flatten(),
-                                    epsRs=[epsR], returninfo=False,
-                                    **kwargs_solver)
+            minv = RegularizedInversion(PPop, [Regop], data.flatten(),
+                                        x0=None if m0 is None else m0.flatten(),
+                                        epsRs=[epsR], returninfo=False,
+                                        **kwargs_solver)
+        else:
+            # Blockiness-promoting inversion with spatial regularization
+            if dims == 1:
+                RegL1op = FirstDerivative(nt0, dtype=PPop.dtype)
+                RegL2op = None
+            elif dims == 2:
+                RegL1op = FirstDerivative(nt0*nx, dims=(nt0, nx),
+                                          dir=0, dtype=PPop.dtype)
+                RegL2op = SecondDerivative(nt0*nx, dims=(nt0, nx),
+                                           dir=1, dtype=PPop.dtype)
+            else:
+                RegL1op = FirstDerivative(nt0*nx*ny, dims=(nt0, nx, ny),
+                                          dir=0, dtype=PPop.dtype)
+                RegL2op = Laplacian((nt0, nx, ny), dirs=(1, 2),
+                                    dtype=PPop.dtype)
+
+            if 'mu' in kwargs_solver.keys():
+                mu = kwargs_solver['mu']
+                kwargs_solver.pop('mu')
+            else:
+                mu = 1.
+            if 'niter_outer' in kwargs_solver.keys():
+                niter_outer = kwargs_solver['niter_outer']
+                kwargs_solver.pop('niter_outer')
+            else:
+                niter_outer = 3
+            if 'niter_inner' in kwargs_solver.keys():
+                niter_inner = kwargs_solver['niter_inner']
+                kwargs_solver.pop('niter_inner')
+            else:
+                niter_inner = 5
+            if not isinstance(epsRL1, (list, tuple)):
+                epsRL1 = list([epsRL1])
+            if not isinstance(epsR, (list, tuple)):
+                epsR = list([epsR])
+            minv = SplitBregman(PPop, [RegL1op], data.ravel(),
+                                RegsL2=[RegL2op], epsRL1s=epsRL1,
+                                epsRL2s=epsR, mu=mu,
+                                niter_outer=niter_outer,
+                                niter_inner=niter_inner,
+                                x0=None if m0 is None else m0.flatten(),
+                                **kwargs_solver)[0]
 
     # compute residual
     if epsR is None:

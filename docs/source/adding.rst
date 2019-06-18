@@ -85,7 +85,7 @@ And that's it, we have implemented our first linear operator!
 
 Testing the operator
 --------------------
-Being able to write an operator is not yet a guarantee of the fact the operator is correct, or in other words
+Being able to write an operator is not yet a guarantee of the fact that the operator is correct, or in other words
 that the adjoint code is actually the *adjoint* of the forward code. Luckily for us, a simple test can be performed
 to check the validity of forward and adjoint operators, the so called *dot-test*.
 

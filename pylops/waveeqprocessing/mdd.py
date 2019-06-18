@@ -49,8 +49,6 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         Sampling of time integration axis
     dr : :obj:`float`, optional
         Sampling of receiver integration axis
-    dr : :obj:`float`, optional
-        Sampling of receiver integration axis
     twosided : :obj:`bool`, optional
         MDC operator has both negative and positive time (``True``) or
         only positive (``False``)
@@ -60,7 +58,7 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         *Deprecated*, will be removed in v2.0.0
     fftengine : :obj:`str`, optional
         Engine used for fft computation (``numpy`` or ``fftw``)
-    transpose : :obj:`str`, optional
+    transpose : :obj:`bool`, optional
         Transpose ``G`` and inputs such that time/frequency is placed in first
         dimension. This allows back-compatibility with v1.4.0 and older but
         will be removed in v2.0.0 where time/frequency axis will be required

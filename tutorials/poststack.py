@@ -185,19 +185,22 @@ minv_dense_noisy = \
                                             explicit=True, epsI=4e-2,
                                             simultaneous=False)[0]
 
-# spatially regularized dense inversion with noisy data
-minv_dense_reg = \
-    pylops.avo.poststack.PoststackInversion(dn, wav, m0=minv_dense_noisy,
-                                            explicit=True, epsR=5e1,
-                                            **dict(damp=np.sqrt(1e-4),
-                                                   iter_lim=80))[0]
-
 # spatially regularized lop inversion with noisy data
 minv_lop_reg = \
     pylops.avo.poststack.PoststackInversion(dn, wav, m0=minv_dense_noisy,
                                             explicit=False, epsR=5e1,
                                             **dict(damp=np.sqrt(1e-4),
                                                    iter_lim=80))[0]
+
+# blockiness promoting inversion with noisy data
+minv_lop_blocky = \
+    pylops.avo.poststack.PoststackInversion(dn, wav, m0=mback,
+                                            explicit=False,
+                                            epsR=[0.4], epsRL1=[0.1],
+                                            **dict(mu=0.1,
+                                                   niter_outer=5,
+                                                   niter_inner=10,
+                                                   iter_lim=5, damp=1e-3))[0]
 
 # sphinx_gallery_thumbnail_number = 2
 fig, axs = plt.subplots(2, 4, figsize=(15, 9))
@@ -231,15 +234,15 @@ axs[1][1].imshow(minv_dense_noisy, cmap='gist_rainbow',
                  vmin=m.min(), vmax=m.max())
 axs[1][1].set_title('Trace-by-trace Noisy Inversion')
 axs[1][1].axis('tight')
-axs[1][2].imshow(minv_dense_reg, cmap='gist_rainbow',
+axs[1][2].imshow(minv_lop_reg, cmap='gist_rainbow',
                  extent=(x[0], x[-1], z[-1], z[0]),
                  vmin=m.min(), vmax=m.max())
-axs[1][2].set_title('Regularized Noisy Inversion - dense')
+axs[1][2].set_title('Regularized Noisy Inversion - lop ')
 axs[1][2].axis('tight')
-axs[1][3].imshow(minv_lop_reg, cmap='gist_rainbow',
+axs[1][3].imshow(minv_lop_blocky, cmap='gist_rainbow',
                  extent=(x[0], x[-1], z[-1], z[0]),
                  vmin=m.min(), vmax=m.max())
-axs[1][3].set_title('Regularized Noisy Inversion - lop ')
+axs[1][3].set_title('Blocky Noisy Inversion - lop ')
 axs[1][3].axis('tight')
 
 fig, ax = plt.subplots(1, 1, figsize=(3, 7))
@@ -247,8 +250,8 @@ ax.plot(m[:, nx//2], z, 'k', lw=4, label='True')
 ax.plot(mback[:, nx//2], z, '--r', lw=4, label='Back')
 ax.plot(minv_dense[:, nx//2], z, '--b', lw=2, label='Inv Dense')
 ax.plot(minv_dense_noisy[:, nx//2], z, '--m', lw=2, label='Inv Dense noisy')
-ax.plot(minv_dense_reg[:, nx//2], z, '--g', lw=2, label='Inv Dense regularized')
-ax.plot(minv_lop_reg[:, nx//2], z, '--y', lw=2, label='Inv Lop regularized')
+ax.plot(minv_lop_reg[:, nx//2], z, '--g', lw=2, label='Inv Lop regularized')
+ax.plot(minv_lop_blocky[:, nx//2], z, '--y', lw=2, label='Inv Lop blocky')
 ax.set_title('Model')
 ax.invert_yaxis()
 ax.axis('tight')

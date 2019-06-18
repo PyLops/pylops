@@ -21,7 +21,8 @@ regularization term that enforces sparsity in the first derivative of
 the solution:
 
 .. math::
-        J = ||\mathbf{y} - \mathbf{I} \mathbf{x}||_2 + || \nabla \mathbf{x}||_1
+        J = \mu/2  ||\mathbf{y} - \mathbf{I} \mathbf{x}||_2 +
+        || \nabla \mathbf{x}||_1
 
 """
 
@@ -95,7 +96,7 @@ plt.title('TV inversion')
 ###############################################################################
 # Finally, we repeat the same exercise on a 2-dimensional image. In this case
 # we however consider the MRI imaging problem where the Split Bregman
-# solver shines. The data is this time created by first appling a 2D Fourier
+# solver shines. The data is created by first appling a 2D Fourier
 # Transform of the input model and by randomly sampling 60% of its values.
 x = np.load('../testdata/optimization/shepp_logan_phantom.npy')
 x = x/x.max()
@@ -130,15 +131,24 @@ axs[2].axis('tight')
 
 ###############################################################################
 # Let's attempt now to reconstruct the model using the Split Bregman
-# solver and an isotropic Besov regularization (aka L1 norm of the sum of
-# first derivatives over x and y).
+# with anisotropic TV regularization (aka sum of L1 norms of the
+# first derivatives over x and y):
+#
+# .. math::
+#         J = \mu/2 ||\mathbf{y} - \mathbf{R} \mathbf{F} \mathbf{x}||_2
+#         + || \nabla_x \mathbf{x}||_1 + || \nabla_y \mathbf{x}||_1
+
+
+#Dop = \
+#    [pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=0, edge=False, dtype=np.complex) + \
+#     pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=1, edge=False, dtype=np.complex)]
 Dop = \
-    [pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=0, edge=False, dtype=np.complex) + \
+    [pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=0, edge=False, dtype=np.complex),
      pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=1, edge=False, dtype=np.complex)]
 
 # TV
 mu = 1.5
-lamda = [0.1]
+lamda = [0.1, 0.1]
 niter = 20
 niterinner = 10
 
@@ -159,12 +169,12 @@ axs[1].set_title('TV Inversion')
 axs[1].axis('tight')
 
 fig, axs = plt.subplots(2, 1, figsize=(10, 5))
-axs[0].plot(x[ny//2], 'k', lw=3, label='x')
-axs[0].plot(xinv[ny//2], 'r', lw=5, label='xinv TV')
+axs[0].plot(x[ny//2], 'k', lw=5, label='x')
+axs[0].plot(xinv[ny//2], 'r', lw=3, label='xinv TV')
 axs[0].set_title('Horizontal section')
 axs[0].legend()
-axs[1].plot(x[:, nx//2], 'k', lw=3, label='x')
-axs[1].plot(xinv[:, nx//2], 'r', lw=5, label='xinv TV')
+axs[1].plot(x[:, nx//2], 'k', lw=5, label='x')
+axs[1].plot(xinv[:, nx//2], 'r', lw=3, label='xinv TV')
 axs[1].set_title('Vertical section')
 axs[1].legend()
 

@@ -615,7 +615,7 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
     return xinv, pinv, info
 
 
-def SplitBregman(Op, RegsL1, data, niter_outer, niter_inner, RegsL2=None,
+def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
                  dataregsL2=None, mu=1., epsRL1s=None, epsRL2s=None,
                  tol=1e-10, tau=1., x0=None, restart=False,
                  show=False, **kwargs_lsqr):
@@ -713,11 +713,11 @@ def SplitBregman(Op, RegsL1, data, niter_outer, niter_inner, RegsL2=None,
         print('Split-Bregman optimization\n'
               '---------------------------------------------------------\n'
               'The Operator Op has %d rows and %d cols\n'
-              'niter_outer = %3d     niter_inner = %3d\n'
-              'mu = %2.2e         epsL1 = %s       tol = %2.2e'
+              'niter_outer = %3d     niter_inner = %3d   tol = %2.2e\n'
+              'mu = %2.2e         epsL1 = %s\t  epsL2 = %s     '
               % (Op.shape[0], Op.shape[1],
-                 niter_outer, niter_inner,
-                 mu, str(epsRL1s), tol))
+                 niter_outer, niter_inner, tol,
+                 mu, str(epsRL1s), str(epsRL2s)))
         print('---------------------------------------------------------\n')
         head1 = '   Itn          x[0]           r2norm          r12norm'
         print(head1)
