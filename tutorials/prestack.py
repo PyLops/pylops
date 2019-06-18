@@ -2,7 +2,7 @@ r"""
 07. Pre-stack (AVO) inversion
 =============================
 Pre-stack inversion represents one step beyond post-stack inversion in that
-not only the profile of acoustic impedence can be inferred from seismic data,
+not only the profile of acoustic impedance can be inferred from seismic data,
 rather a set of elastic parameters is estimated from pre-stack data
 (i.e., angle gathers) using the information contained in the so-called
 AVO (amplitude versus offset) response. Such elastic parameters represent
@@ -267,16 +267,28 @@ minv_dense = \
 # dense inversion with noisy data
 minv_dense_noisy = \
     pylops.avo.prestack.PrestackInversion(dPPn, theta, wav, m0=mback,
-                                          explicit=True, epsI=5e-3,
+                                          explicit=True, epsI=4e-2,
                                           simultaneous=False)
 
 # spatially regularized lop inversion with noisy data
 minv_lop_reg = \
     pylops.avo.prestack.PrestackInversion(dPPn, theta, wav,
                                           m0=minv_dense_noisy,
-                                          explicit=False, epsR=5e-1,
-                                          **dict(damp=np.sqrt(1e-3),
-                                                 iter_lim=40))
+                                          explicit=False, epsR=1e1,
+                                          **dict(damp=np.sqrt(1e-4),
+                                                 iter_lim=20))
+
+# blockiness promoting inversion with noisy data
+minv_blocky = \
+    pylops.avo.prestack.PrestackInversion(dPPn, theta, wav,
+                                          m0=mback,
+                                          explicit=False,
+                                          epsR=0.4, epsRL1=0.1,
+                                          **dict(mu=0.1,
+                                                 niter_outer=3,
+                                                 niter_inner=3,
+                                                 iter_lim=5, damp=1e-3))
+
 
 ###############################################################################
 # Let's now visualize the inverted elastic parameters for the different
@@ -370,7 +382,7 @@ plt.setp(ax3.get_yticklabels(), visible=False)
 plt.setp(ax4.get_yticklabels(), visible=False)
 
 # inverted models
-fig, axs = plt.subplots(5, 3, figsize=(8, 15))
+fig, axs = plt.subplots(6, 3, figsize=(8, 19))
 fig.suptitle('Model', fontsize=12, fontweight='bold', y=0.95)
 plotmodel(axs[0], m, x, z, m.min(),
           m.max(), title='True')
@@ -382,6 +394,8 @@ plotmodel(axs[3], minv_dense_noisy, x, z,
           m.min(), m.max(), title='Dense noisy')
 plotmodel(axs[4], minv_lop_reg, x, z,
           m.min(), m.max(), title='Lop regularized')
+plotmodel(axs[5], minv_blocky, x, z,
+          m.min(), m.max(), title='Lop blocky')
 plt.tight_layout()
 plt.subplots_adjust(top=0.92)
 
@@ -392,8 +406,10 @@ for ip, param in enumerate(['VP', 'VS', 'Rho']):
     axs[ip].plot(minv_dense[:, ip, nx//2], z, '--b', lw=2, label='Inv Dense')
     axs[ip].plot(minv_dense_noisy[:, ip, nx//2], z, '--m', lw=2,
                  label='Inv Dense noisy')
-    axs[ip].plot(minv_lop_reg[:, ip, nx//2], z, '--y', lw=2,
+    axs[ip].plot(minv_lop_reg[:, ip, nx//2], z, '--g', lw=2,
                  label='Inv Lop regularized')
+    axs[ip].plot(minv_blocky[:, ip, nx // 2], z, '--y', lw=2,
+                 label='Inv Lop blocky')
     axs[ip].set_title(param)
     axs[ip].invert_yaxis()
 axs[2].legend(loc=8, fontsize='small')
@@ -404,11 +420,10 @@ axs[2].legend(loc=8, fontsize='small')
 # :py:class:`pylops.avo.prestack.PrestackInversion` can also produce so-called
 # relative elastic parameters (i.e., variations from an average medium
 # property) when the background model ``m0`` is not available.
-
 dminv = \
     pylops.avo.prestack.PrestackInversion(dPP, theta, wav, m0=None,
                                           explicit=True,
-                                          simultaneous = False)
+                                          simultaneous=False)
 
 fig, axs = plt.subplots(1, 3, figsize=(8, 3))
 plotmodel(axs, dminv, x, z, -dminv.max(), dminv.max(),

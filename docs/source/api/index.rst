@@ -144,6 +144,7 @@ Sparsity
     sparsity.ISTA
     sparsity.FISTA
     sparsity.SPGL1
+    sparsity.SplitBregman
 
 
 

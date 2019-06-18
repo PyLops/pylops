@@ -15,7 +15,7 @@ The first thing we need to do is to create a new file with the name of the opera
 Note that as the operator will be a class, we need to follow the UpperCaseCamelCase convention both for the class itself
 and for the filename.
 
-Once you have create the file, we will start by importing the modules that will be needed by the operator.
+Once we have created the file, we will start by importing the modules that will be needed by the operator.
 While this varies from operator to operator, you will always need to import the :py:class:`pylops.LinearOperator` class,
 which will be used as *parent* class for any of our operators:
 
@@ -85,7 +85,7 @@ And that's it, we have implemented our first linear operator!
 
 Testing the operator
 --------------------
-Being able to write an operator is not yet a guarantee of the fact the the operator is correct, or in other words
+Being able to write an operator is not yet a guarantee of the fact that the operator is correct, or in other words
 that the adjoint code is actually the *adjoint* of the forward code. Luckily for us, a simple test can be performed
 to check the validity of forward and adjoint operators, the so called *dot-test*.
 

@@ -5,11 +5,10 @@ from pylops import LinearOperator
 class Diagonal(LinearOperator):
     r"""Diagonal operator.
 
-    Applies element-wise multiplication of the input vector with a vector
-    ``diag`` in forward and with its complex conjugate in
-    adjoint mode.
+    Applies element-wise multiplication of the input vector with the vector
+    ``diag`` in forward and with its complex conjugate in adjoint mode.
 
-    This operator can also broadcast, in this case the input vector is
+    This operator can also broadcast; in this case the input vector is
     reshaped into its dimensions ``dims`` and the element-wise multiplication
     with ``diag`` is perfomed on the direction ``dir``. Note that the
     vector ``diag`` will need to have size equal to ``dims[dir]``.
@@ -18,11 +17,11 @@ class Diagonal(LinearOperator):
     ----------
     diag : :obj:`numpy.ndarray`
         Vector to be used for element-wise multiplication.
-    dims : :obj:`list`
+    dims : :obj:`list`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
     dir : :obj:`int`, optional
-        Direction along which restriction is applied.
+        Direction along which multiplication is applied.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -37,17 +36,20 @@ class Diagonal(LinearOperator):
     Notes
     -----
     Element-wise multiplication between the model :math:`\mathbf{x}` and/or
-    data :math:`\mathbf{y}` vectors and the array :math:`\mathbf{d}` can be
-    expressed as
+    data :math:`\mathbf{y}` vectors and the array :math:`\mathbf{d}`
+    can be expressed as
 
     .. math::
 
         y_i = d_i x_i  \quad \forall i=1,2,...,N
 
     This is equivalent to a matrix-vector multiplication with a matrix
-    containing the vector :math:`\mathbf{d}` along its main diagonal. As the
-    adjoint of a diagonal matrix is the diagonal matrix itself, the Diagonal is
-    self-adjoint.
+    containing the vector :math:`\mathbf{d}` along its main diagonal.
+
+    For real-valued ``diag``, the Diagonal operator is self-adjoint as the
+    adjoint of a diagonal matrix is the diagonal matrix itself. For
+    complex-valued ``diag``, the adjoint is equivalent to the element-wise
+    multiplication with the complex conjugate elements of ``diag``.
 
     """
     def __init__(self, diag, dims=None, dir=0, dtype='float64'):
@@ -60,7 +62,7 @@ class Diagonal(LinearOperator):
         else:
             diagdims = [1] * len(dims)
             diagdims[dir] = dims[dir]
-            self.diag =self.diag.reshape(diagdims)
+            self.diag = self.diag.reshape(diagdims)
             self.shape = (np.prod(dims), np.prod(dims))
             self.dims = dims
             self.reshape = True

@@ -10,7 +10,7 @@ and :py:class:`pylops.Kronecker`.
 These operators allow for different combinations of multiple linear operators
 in a single operator. Such functionalities are used within PyLops as the basis
 for the creation of complex operators as well as in the definition of various
-types of optimization problems with regularization or preceonditioning.
+types of optimization problems with regularization or preconditioning.
 """
 import numpy as np
 import matplotlib.pyplot as plt

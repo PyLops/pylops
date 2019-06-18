@@ -3,8 +3,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from pylops.basicoperators import MatrixMult
-from pylops.optimization.sparsity import IRLS, ISTA, FISTA, SPGL1
+from pylops.basicoperators import MatrixMult, Identity, FirstDerivative
+from pylops.optimization.sparsity import IRLS, ISTA, FISTA, SPGL1, SplitBregman
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0, 'x0': False,
         'dtype': 'float64'}  # square real, zero initial guess
@@ -66,7 +66,7 @@ def test_ISTA_FISTA(par):
     y = Aop * x
 
     eps = 0.5
-    maxit = 5000
+    maxit = 2000
 
     # ISTA with too high alpha (check that exception is raised)
     with pytest.raises(ValueError):
@@ -75,12 +75,12 @@ def test_ISTA_FISTA(par):
 
     # ISTA
     xinv, _, _ = ISTA(Aop, y, maxit, eps=eps,
-                      tol=0, returninfo=True)
+                      tol=0, returninfo=True, show=True)
     assert_array_almost_equal(x, xinv, decimal=1)
 
     # FISTA
     xinv, _, _ = FISTA(Aop, y, maxit, eps=eps,
-                       tol=0, returninfo=True)
+                       tol=0, returninfo=True, show=True)
     assert_array_almost_equal(x, xinv, decimal=1)
 
 
@@ -104,3 +104,32 @@ def test_SPGL1(par):
     xinv = SPGL1(Aop, y, x0=x0, iter_lim=5000)[0]
 
     assert_array_almost_equal(x, xinv, decimal=1)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_SplitBregman(par):
+    """Invert denoise problem with SplitBregman
+    """
+    np.random.seed(42)
+    nx = 3 * par['nx']  # need enough samples for TV regularization to be effective
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+
+    x = np.zeros(nx)
+    x[:nx // 2] = 10
+    x[nx // 2:3 * nx // 4] = -5
+    n = np.random.normal(0, 1, nx)
+    y = x + n
+
+    mu = 0.01
+    lamda = 0.2
+    niter_end = 100
+    niter_in = 3
+    x0 = np.ones(nx)
+    xinv, niter = SplitBregman(Iop, [Dop], y, niter_end, niter_in,
+                               mu=mu, epsRL1s=[lamda],
+                               tol=1e-4, tau=1,
+                               x0=x0 if par['x0'] else None,
+                               restart=False, show=True,
+                               **dict(iter_lim=5, damp=1e-3))
+    assert (np.linalg.norm(x - xinv) / np.linalg.norm(x)) < 1e-1
