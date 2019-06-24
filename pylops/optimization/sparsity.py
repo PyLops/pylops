@@ -1,3 +1,4 @@
+import time
 import numpy as np
 
 from pylops import LinearOperator
@@ -259,6 +260,7 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     """
     if show:
+        tstart = time.time()
         print('ISTA optimization\n'
               '-----------------------------------------------------------\n'
               'The Operator Op has %d rows and %d cols\n'
@@ -335,10 +337,10 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     # get values pre-threshold at locations where xinv is different from zero
     #xinv = np.where(xinv != 0, xinv_unthesh, xinv)
-
     if show:
-        print('\nISTA finished')
-
+        print('\nIterations = %d        Total time (s) = %.2f'
+              % (niter, time.time() - tstart))
+        print('---------------------------------------------------------\n')
     if returninfo:
         return xinv, niter, cost[:niter]
     else:
@@ -412,6 +414,7 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     """
     if show:
+        tstart = time.time()
         print('FISTA optimization\n'
               '-----------------------------------------------------------\n'
               'The Operator Op has %d rows and %d cols\n'
@@ -485,14 +488,15 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     # get values pre-threshold  at locations where xinv is different from zero
     #xinv = np.where(xinv != 0, xinv_unthesh, xinv)
-
     if show:
-        print('\nFISTA finished')
-
+        print('\nIterations = %d        Total time (s) = %.2f'
+              % (niter, time.time() - tstart))
+        print('---------------------------------------------------------\n')
     if returninfo:
         return xinv, niter, cost[:niter]
     else:
         return xinv, niter
+
 
 def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
     r"""Spectral Projected-Gradient for L1 norm.
@@ -671,7 +675,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     Returns
     -------
     xinv : :obj:`numpy.ndarray`
-        Inverted model :math:`\mathbf{Op}`
+        Inverted model
     itn_out : :obj:`int`
         Iteration number of outer loop upon termination
 
@@ -710,6 +714,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
 
     """
     if show:
+        tstart = time.time()
         print('Split-Bregman optimization\n'
               '---------------------------------------------------------\n'
               'The Operator Op has %d rows and %d cols\n'
@@ -778,4 +783,9 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
                   (np.abs(itn_out), xinv[0], costdata, cost)
             print(msg)
 
+    if show:
+        print('\nIterations = %d        Total time (s) = %.2f'
+              % (itn_out, time.time() - tstart))
+        print('---------------------------------------------------------\n')
     return xinv, itn_out
+
