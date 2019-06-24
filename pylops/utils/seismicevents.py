@@ -132,13 +132,13 @@ def parabolic2d(x, t, t0, px, pxx, amp, wav):
     t : :obj:`numpy.ndarray`
         time axis
     t0 : :obj:`tuple` or :obj:`float`
-        intercept time at :math:`x=0` of each linear event
+        intercept time at :math:`x=0` of each parabolic event
     px : :obj:`tuple` or :obj:`float`
-        slowness of each linear event
+        slowness of each parabolic event
     pxx : :obj:`tuple` or :obj:`float`
-        curvature of each linear event
+        curvature of each parabolic event
     amp : :obj:`tuple` or :obj:`float`
-        amplitude of each linear event
+        amplitude of each parabolic event
     wav : :obj:`numpy.ndarray`
         wavelet to be applied to data
 
@@ -188,8 +188,8 @@ def parabolic2d(x, t, t0, px, pxx, amp, wav):
 def hyperbolic2d(x, t, t0, vrms, amp, wav):
     r"""Hyperbolic 2D events
 
-    Create 2d hyperbolic events given intercept time root-mean-square velocity,
-    and amplitude of each event
+    Create 2d hyperbolic events given intercept time, root-mean-square
+    velocity, and amplitude of each event
 
     Parameters
     ----------
@@ -198,11 +198,11 @@ def hyperbolic2d(x, t, t0, vrms, amp, wav):
     t : :obj:`numpy.ndarray`
         time axis
     t0 : :obj:`tuple` or :obj:`float`
-        intercept time at :math:`x=0` of each of linear event
+        intercept time at :math:`x=0` of each of hyperbolic event
     vrms : :obj:`tuple` or :obj:`float`
-        root-mean-square velocity of each linear event
+        root-mean-square velocity of each hyperbolic event
     amp : :obj:`tuple` or :obj:`float`
-        amplitude of each linear event
+        amplitude of each hyperbolic event
     wav : :obj:`numpy.ndarray`
         wavelet to be applied to data
 
@@ -326,8 +326,8 @@ def linear3d(x, y, t, v, t0, theta, phi, amp, wav):
 def hyperbolic3d(x, y, t, t0, vrms_x, vrms_y, amp, wav):
     r"""Hyperbolic 3D events
 
-    Create 3d hyperbolic events given intercept time root-mean-square velocity,
-    and amplitude of each event
+    Create 3d hyperbolic events given intercept time, root-mean-square
+    velocities, and amplitude of each event
 
     Parameters
     ----------
@@ -338,13 +338,13 @@ def hyperbolic3d(x, y, t, t0, vrms_x, vrms_y, amp, wav):
     t : :obj:`numpy.ndarray`
         time axis
     t0 : :obj:`tuple` or :obj:`float`
-        intercept time at :math:`x=0` of each of linear event
+        intercept time at :math:`x=0` of each of hyperbolic event
     vrms_x : :obj:`tuple` or :obj:`float`
-        root-mean-square velocity in x direction for each linear event
+        root-mean-square velocity in x direction for each hyperbolic event
     vrms_y : :obj:`tuple` or :obj:`float`
-        root-mean-square velocity in y direction for each linear event
+        root-mean-square velocity in y direction for each hyperbolic event
     amp : :obj:`tuple` or :obj:`float`
-        amplitude of each linear event
+        amplitude of each hyperbolic event
     wav : :obj:`numpy.ndarray`
         wavelet to be applied to data
 
@@ -360,7 +360,12 @@ def hyperbolic3d(x, y, t, t0, vrms_x, vrms_y, amp, wav):
     Each event is created using the following relation:
 
     .. math::
-        t_i(x, y) = \sqrt{t_{0,i}^2 + x^2 / v_{rms_x, i}^2 + y^2 / v_{rms_y, i}^2}
+        t_i(x, y) = \sqrt{t_{0,i}^2 + x^2 / v_{rms_x, i}^2 +
+        y^2 / v_{rms_y, i}^2}
+
+    Note that velocities do not have a physical meaning here (compared to the
+    corresponding :func:`pylops.utils.seismicevents.hyperbolic2d`), they rather
+    simply control the curvature of the hyperboloid along the spatial axes.
 
     """
     if isinstance(t0, (float, int)): t0 = (t0,)

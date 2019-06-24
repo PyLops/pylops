@@ -17,7 +17,7 @@ h2 = np.outer(triang(nfilt[0], sym=True), triang(nfilt[1], sym=True))
 par1_1d = {'nz': 21, 'ny': 51, 'nx': 51,
            'offset': nfilt[0]//2, 'dir':0}  # zero phase, first direction
 par2_1d = {'nz': 21, 'ny': 61, 'nx': 51,
-           'offset': nfilt[0]//2-1, 'dir':0}  # non-zero phase, first direction
+           'offset': 0, 'dir':0}  # non-zero phase, first direction
 par3_1d = {'nz': 21, 'ny': 51, 'nx': 51,
            'offset': nfilt[0]//2, 'dir': 1}  # zero phase, second direction
 par4_1d = {'nz': 21, 'ny': 61, 'nx': 51,
@@ -50,7 +50,6 @@ def test_Convolve1D(par):
         x = np.zeros((par['nx']))
         x[par['nx']//2] = 1.
         xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, show=0)[0]
-        print(np.abs(x-xlsqr).max())
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 1D on 2D
@@ -63,7 +62,6 @@ def test_Convolve1D(par):
       int(par['nx']/2-3):int(par['nx']/2+3)] = 1.
     x = x.flatten()
     xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, show=0)[0]
-    print(np.abs(x - xlsqr).max())
     assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
@@ -83,7 +81,6 @@ def test_Convolve2D(par):
           int(par['nx'] / 2 - 3):int(par['nx'] / 2 + 3)] = 1.
         x = x.flatten()
         xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, show=0)[0]
-        print(np.abs(x - xlsqr).max())
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 2D on 3D

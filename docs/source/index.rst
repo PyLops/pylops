@@ -34,9 +34,9 @@ applied and inverted using numpy/scipy commands:
    D[0] = D[-1] = 0 # take away edge effects
 
    # y = Dx
-   y = np.dot(D,x)
+   y = np.dot(D, x)
    # x = D'y
-   xadj = np.dot(D.T,y)
+   xadj = np.dot(D.T, y)
    # xinv = D^-1 y
    xinv = lstsq(D, y)[0]
 

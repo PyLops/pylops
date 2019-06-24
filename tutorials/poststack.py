@@ -160,7 +160,7 @@ dn = d + n
 # * trace-by-trace inversion with explicit solver and dense operator
 #   with noisy data
 #
-# * multi-trace regularized inversion with explicit solver and dense operator
+# * multi-trace regularized inversion with iterative solver and linear operator
 #   using the result of trace-by-trace inversion as starting guess
 #
 #   .. math::
@@ -170,8 +170,7 @@ dn = d + n
 #   where :math:`\Delta \mathbf{d}=\mathbf{d}-\mathbf{W}\mathbf{AI_0}` is
 #   the residual data
 #
-# * multi-trace regularized inversion with iterative solver and linear operator
-#   using the result of trace-by-trace inversion as starting guess
+# * multi-trace blocky inversion with iterative solver and linear operator
 
 # dense inversion with noise-free data
 minv_dense = \

@@ -47,7 +47,6 @@ class SecondDerivative(LinearOperator):
     def __init__(self, N, dims=None, dir=0, sampling=1,
                  edge=False, dtype='float64'):
         self.N = N
-        self.dir = dir
         self.sampling = sampling
         self.edge = edge
         if dims is None:
@@ -59,6 +58,7 @@ class SecondDerivative(LinearOperator):
             else:
                 self.dims = dims
                 self.reshape = True
+        self.dir = dir if dir >= 0 else len(self.dims) + dir
         self.shape = (self.N, self.N)
         self.dtype = np.dtype(dtype)
         self.explicit = False
@@ -72,11 +72,10 @@ class SecondDerivative(LinearOperator):
                 y[0] = (x[0] - 2*x[1] + x[2]) / self.sampling**2
                 y[-1] = (x[-3] - 2*x[-2] + x[-1]) / self.sampling**2
         else:
-            x = np.reshape(x, (self.dims))
-            y = np.zeros((self.dims), self.dtype)
+            x = np.reshape(x, self.dims)
             if self.dir > 0:  # need to bring the dim. to derive to first dim.
                 x = np.swapaxes(x, self.dir, 0)
-                y = np.swapaxes(y, self.dir, 0)
+            y = np.zeros(x.shape, self.dtype)
             y[1:-1] = (x[2:] - 2*x[1:-1] + x[0:-2])/self.sampling**2
             if self.edge:
                 y[0] = (x[0] - 2*x[1] + x[2]) / self.sampling ** 2
@@ -102,10 +101,9 @@ class SecondDerivative(LinearOperator):
                 y[-1] += x[-1] / self.sampling**2
         else:
             x = np.reshape(x, self.dims)
-            y = np.zeros(self.dims, self.dtype)
             if self.dir > 0:  # need to bring the dim. to derive to first dim.
                 x = np.swapaxes(x, self.dir, 0)
-                y = np.swapaxes(y, self.dir, 0)
+            y = np.zeros(x.shape, self.dtype)
             y[0:-2] += (x[1:-1]) / self.sampling**2
             y[1:-1] -= (2*x[1:-1]) / self.sampling**2
             y[2:] += (x[1:-1]) / self.sampling**2

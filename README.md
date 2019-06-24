@@ -8,6 +8,7 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=equinor/pylops&amp;utm_campaign=Badge_Grade)
 [![Codacy Coverage](https://api.codacy.com/project/badge/Coverage/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&utm_medium=referral&utm_content=equinor/pylops&utm_campaign=Badge_Coverage)
 [![OS-support](https://img.shields.io/badge/OS-linux,osx-850A8B.svg)](https://github.com/equinor/pylops)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pylops.svg)
 [![Slack Status](https://img.shields.io/badge/chat-slack-green.svg)](https://pylops.slack.com)
 
 ## Objective
@@ -43,9 +44,9 @@ D = np.diag(0.5*np.ones(nx-1), k=1) - \
 D[0] = D[-1] = 0 # take away edge effects
 
 # y = Dx
-y = np.dot(D,x)
+y = np.dot(D, x)
 # x = D'y
-xadj = np.dot(D.T,y)
+xadj = np.dot(D.T, y)
 # xinv = D^-1 y
 xinv = lstsq(D, y)[0]
 ```
