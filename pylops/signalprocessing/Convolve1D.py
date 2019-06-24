@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import convolve, correlate
+from scipy.signal import convolve, correlate, fftconvolve
 from pylops import LinearOperator
 
 
@@ -72,6 +72,13 @@ class Convolve1D(LinearOperator):
     def __init__(self, N, h, offset=0, dims=None, dir=0, dtype='float64'):
         self.offset = int(offset)
         self.h = h
+        self.hstar = np.flip(h)
+        if dims is not None:
+            # add dimensions to filter to match dimensions of model and data
+            hdims = [1] * len(dims)
+            hdims[dir] = len(h)
+            self.h = self.h.reshape(hdims)
+            self.hstar = self.hstar.reshape(hdims)
         self.dir = dir
         if dims is None:
             self.dims = np.array([N, 1])
@@ -82,9 +89,6 @@ class Convolve1D(LinearOperator):
             else:
                 self.dims = np.array(dims)
                 self.reshape = True
-        #self.shape  = ((self.dims[self.dir]+len(h)-1-2*self.offset)*
-        #                np.prod(np.delete(self.dims,self.dir)),
-        #                np.prod(self.dims))
         self.shape = (np.prod(self.dims), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
@@ -92,29 +96,26 @@ class Convolve1D(LinearOperator):
     def _matvec(self, x):
         if not self.reshape:
             y = convolve(x, self.h, mode='full')
-            y = y[self.offset:-self.h.size+self.offset+1]
+            y = y[self.offset:-self.h.size + self.offset + 1]
         else:
             x = np.reshape(x, self.dims)
-            if self.dir > 0:  # need to bring the dimension to convolve to first dimension
-                x = np.swapaxes(x, self.dir, 0)
-            y = np.apply_along_axis(convolve, 0, x, self.h, mode='full')
-            y = y[self.offset:-self.h.size+self.offset+1]
-            if self.dir > 0:
-                y = np.swapaxes(y, 0, self.dir)
-            y = np.ndarray.flatten(y)
+            y = fftconvolve(x, self.h, mode='full', axes=self.dir)
+            y = np.take(y, np.arange(self.offset, y.shape[self.dir] -
+                                     (self.h.size - self.offset - 1)),
+                        axis=self.dir)
+            y = y.ravel()
         return y
 
     def _rmatvec(self, x):
         if not self.reshape:
             y = correlate(x, self.h, mode='full')
-            y = y[self.h.size-self.offset-1:-self.offset]
+            y = y[self.h.size - self.offset - 1:y.size-self.offset]
         else:
             x = np.reshape(x, self.dims)
-            if self.dir > 0:  # need to bring the dimension to derive to first dimension
-                x = np.swapaxes(x, self.dir, 0)
-            y = np.apply_along_axis(correlate, 0, x, self.h, mode='full')
-            y = y[self.h.size-self.offset-1:-self.offset]
-            if self.dir > 0:
-                y = np.swapaxes(y, 0, self.dir)
-            y = np.ndarray.flatten(y)
+            y = fftconvolve(x, self.hstar, mode='full', axes=self.dir)
+            y = np.take(y, np.arange(self.h.size - self.offset - 1,
+                                     y.shape[self.dir] - self.offset),
+                        axis=self.dir)
+            y = y.ravel()
         return y
+
