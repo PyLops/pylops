@@ -684,9 +684,9 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
 
     .. math::
         J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x} |||_2 +
-        \sum_i \epsilon_{{R}_{L2,i}} ||\mathbf{d}_{{R}_{L2,i}} -
-        \mathbf{R_{L2,i}} \textbf{x} |||_1 +
-        \sum_i ||\mathbf{R_{L1,2}} \textbf{x} |||_2
+        \sum_i \epsilon_{{R}_{L2,i}} ||\mathbf{d_{{R}_{L2,i}}} -
+        \mathbf{R_{L2,i}} \textbf{x} |||_2 +
+        \sum_i || \mathbf{R_{L1,i}} \textbf{x} |||_1
 
     where :math:`\mu` and :math:`\epsilon_{{R}_{L2,i}}` are the damping factors
     used to weight the different terms of the cost function.
