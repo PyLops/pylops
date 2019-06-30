@@ -53,7 +53,11 @@ class Convolve1D(LinearOperator):
         Y(f) = \mathscr{F} (h(t)) * \mathscr{F} (x(t))
 
     Convolve1D operator uses :py:func:`scipy.signal.convolve` that
-    automatically chooses the best domain for the operation to be carried out.
+    automatically chooses the best domain for the operation to be carried out
+    for one dimensional inputs. The fft implementation
+    :py:func:`scipy.signal.fftconvolve` is however enforced for signals in
+    2 or more dimensions as this routine efficently operates on
+    multi-dimensional arrays.
 
     As the adjoint of convolution is correlation, Convolve1D operator applies
     correlation in the adjoint mode.
@@ -118,4 +122,3 @@ class Convolve1D(LinearOperator):
                         axis=self.dir)
             y = y.ravel()
         return y
-

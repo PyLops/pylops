@@ -1,3 +1,21 @@
+# 1.5.0
+* Added ``conj`` method to ``pylops.LinearOperator``
+* Added ``pylops.basicoperators.Kronecker``,
+  ``pylops.basicoperators.Roll``, and
+  ``pylops.basicoperators.Transpose`` operators
+* Added ``pylops.signalprocessing.Fredholm1`` operator
+* Added ``pylops.optimization.sparsity.SPGL1`` and
+  ``pylops.optimization.sparsity.SplitBregman`` solvers
+* Sped up ``pylops.signalprocessing.Convolve1D`` using
+  ``scipy.signal.fftconvolve`` for multi-dimensional signals
+* Changes in implementation of ``pylops.waveeqprocessing.MDC`` and
+  ``pylops.waveeqprocessing.Marchenko`` to take advantage of primitives
+  operators
+* Added ``epsRL1`` option to ``pylops.avo.poststack.PoststackInversion``
+  and ``pylops.avo.prestack.PrestackInversion`` to include
+  TV-regularization terms by means of
+  ``pylops.optimization.sparsity.SplitBregman`` solver
+
 # 1.4.0
 * Added ``numba`` engine to ``pylops.basicoperators.Spread`` and
  ``pylops.basicoperators.Radon2D`` operators

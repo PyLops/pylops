@@ -3,13 +3,36 @@
 Changelog
 =========
 
+Version 1.5.0
+-------------
+
+*Released on: 30/06/2019*
+
+* Added ``conj`` method to :py:class:`pylops.LinearOperator`
+* Added :py:class:`pylops.Kronecker`,
+  :py:class:`pylops.Roll`, and
+  :py:class:`pylops.Transpose` operators
+* Added :py:class:`pylops.signalprocessing.Fredholm1` operator
+* Added :py:class:`pylops.optimization.sparsity.SPGL1` and
+  :py:class:`pylops.optimization.sparsity.SplitBregman` solvers
+* Sped up :py:class:`pylops.signalprocessing.Convolve1D` using
+  :py:class:`scipy.signal.fftconvolve` for multi-dimensional signals
+* Changes in implementation of :py:class:`pylops.waveeqprocessing.MDC` and
+  :py:class:`pylops.waveeqprocessing.Marchenko` to take advantage of primitives
+  operators
+* Added ``epsRL1`` option to :py:class:`pylops.avo.poststack.PoststackInversion`
+  and :py:class:`pylops.avo.prestack.PrestackInversion` to include
+  TV-regularization terms by means of
+  :py:class:`pylops.optimization.sparsity.SplitBregman` solver
+
+
 Version 1.4.0
 -------------
 
 *Released on: 01/05/2019*
 
-* Added ``numba`` engine to :py:class:`pylops.basicoperators.Spread` and
-  :py:class:`pylops.basicoperators.Radon2D` operators
+* Added ``numba`` engine to :py:class:`pylops.Spread` and
+  :py:class:`pylops.signalprocessing.Radon2D` operators
 * Added :py:class:`pylops.signalprocessing.Radon3D` operator
 * Added :py:class:`pylops.signalprocessing.Sliding2D` and
   :py:class:`pylops.signalprocessing.Sliding3D` operators
