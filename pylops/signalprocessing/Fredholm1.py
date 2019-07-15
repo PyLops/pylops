@@ -92,6 +92,8 @@ class Fredholm1(LinearOperator):
     def _matvec(self, x):
         x = np.squeeze(x.reshape(self.nsl, self.ny, self.nz))
         if self.usematmul:
+            if self.nz == 1:
+                x = x[..., np.newaxis]
             y = np.matmul(self.G, x)
         else:
             y = np.squeeze(np.zeros((self.nsl, self.nx, self.nz),
@@ -103,6 +105,8 @@ class Fredholm1(LinearOperator):
     def _rmatvec(self, x):
         x = np.squeeze(x.reshape(self.nsl, self.nx, self.nz))
         if self.usematmul:
+            if self.nz == 1:
+                x = x[..., np.newaxis]
             if hasattr(self, 'GT'):
                 y = np.matmul(self.GT, x)
             else:
