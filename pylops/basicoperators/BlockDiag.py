@@ -94,12 +94,12 @@ class BlockDiag(LinearOperator):
         y = np.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
             y[self.nnops[iop]:self.nnops[iop + 1]] = \
-                oper.matvec(x[self.mmops[iop]:self.mmops[iop + 1]])
+                oper.matvec(x[self.mmops[iop]:self.mmops[iop + 1]]).squeeze()
         return y
 
     def _rmatvec(self, x):
         y = np.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
             y[self.mmops[iop]:self.mmops[iop + 1]] = \
-                oper.rmatvec(x[self.nnops[iop]:self.nnops[iop + 1]])
+                oper.rmatvec(x[self.nnops[iop]:self.nnops[iop + 1]]).squeeze()
         return y
