@@ -5,6 +5,7 @@ This example shows how to set-up and run the
 :py:class:`pylops.waveeqprocessing.MDD` inversion using synthetic data.
 
 """
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import pylops
@@ -13,6 +14,7 @@ from pylops.utils.tapers import taper3d
 from pylops.utils.wavelets import ricker
 from pylops.utils.seismicevents import makeaxis, hyperbolic2d
 
+warnings.filterwarnings('ignore')
 plt.close('all')
 
 ###############################################################################

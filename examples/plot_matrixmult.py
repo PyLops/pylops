@@ -31,15 +31,14 @@ plt.close('all')
 # sphinx_gallery_thumbnail_number = 2
 
 ###############################################################################
-# Let's define the size of matrix :math:`\mathbf{A}` (``N`` and ``M``) and
-# fill matrix with random numbers
+# Let's define the sizes of the matrix :math:`\mathbf{A}` (``N`` and ``M``) and
+# fill the matrix with random numbers
 
 N, M = 20, 20
 A = np.random.normal(0, 1, (N, M))
-x = np.ones(M)
-
-#a = 1
 Aop = pylops.MatrixMult(A, dtype='float64')
+
+x = np.ones(M)
 
 ###############################################################################
 # We can now apply the forward operator to create the data vector :math:`\mathbf{y}`

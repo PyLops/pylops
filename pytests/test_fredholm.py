@@ -19,11 +19,19 @@ par3 = {'nsl': 3, 'ny': 6, 'nx': 4, 'nz': 5,
 par4 = {'nsl': 3, 'ny': 6, 'nx': 4, 'nz': 5, 'saveGt': False,
         'usematmul': False,
         'imag': 1j, 'dtype': 'complex64'}  # complex, unsaved Gt
+par5 = {'nsl': 3, 'ny': 6, 'nx': 4, 'nz': 1,
+        'usematmul': True,
+        'saveGt': True, 'imag': 0, 'dtype': 'float32'}  # real, saved Gt, nz=1
+par6 = {'nsl': 3, 'ny': 6, 'nx': 4, 'nz': 1,
+        'usematmul': True,
+        'saveGt': False, 'imag': 0, 'dtype': 'float32'}  # real, unsaved Gt, nz=1
 
 np.random.seed(10)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+@pytest.mark.parametrize("par", [(par1), (par2),
+                                 (par3), (par4),
+                                 (par5), (par6)])
 def test_Fredholm1(par):
     """Dot-test and inversion for Fredholm1 operator
     """

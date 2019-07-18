@@ -1,9 +1,8 @@
-import numpy as np
-from scipy.signal import convolve2d, correlate2d
-from pylops import LinearOperator
+from pylops.signalprocessing import ConvolveND
 
 
-class Convolve2D(LinearOperator):
+def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype='float64',
+               method='fft'):
     r"""2D convolution operator.
 
     Apply two-dimensional convolution with a compact filter to model
@@ -25,14 +24,13 @@ class Convolve2D(LinearOperator):
         (set to None for 2d arrays)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    method : :obj:`str`, optional
+        Method used to calculate the convolution (``direct`` or ``fft``).
 
-    Attributes
-    ----------
-    shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved
-        explicitly (``True``) or not (``False``)
+    Returns
+    -------
+    cop : :obj:`pylops.LinearOperator`
+        Convolve2D linear operator
 
     Notes
     -----
@@ -74,52 +72,16 @@ class Convolve2D(LinearOperator):
         y(t, x) = \mathscr{F}^{-1} (H(f, k_x)^* * X(f, k_x))
 
     """
-    def __init__(self, N, h, dims, offset=(0, 0), nodir=None, dtype='float64'):
-        self.offset = np.array(offset, dtype=np.int)
-        self.h = np.array(h)
-        self.nodir = nodir
-
-        if np.prod(dims) != N:
-            raise ValueError('product of dims must equal N!')
-        else:
-            self.dims = np.array(dims)
-            self.reshape = True
-        if self.nodir is None:
-            self.shape = (np.prod(self.dims), np.prod(self.dims))
-        else:
-            self.shape = (np.prod(self.dims), np.prod(self.dims))
-
-        self.dtype = np.dtype(dtype)
-        self.explicit = False
-
-    def _matvec(self, x):
-        x = np.reshape(x, self.dims)
-        if self.nodir is None:
-            y = convolve2d(x, self.h, mode='full')
-            y = y[self.offset[0]:-self.h.shape[0]+self.offset[0]+1,
-                  self.offset[1]:-self.h.shape[1]+self.offset[1]+1]
-        else:
-            x = np.swapaxes(x, self.nodir, 0)
-            y = np.array([convolve2d(x[i], self.h, mode='full')
-                          for i in range(self.dims[self.nodir])])
-            y = y[:, self.offset[0]:-self.h.shape[0]+self.offset[0]+1,
-                  self.offset[1]:-self.h.shape[1]+self.offset[1]+1]
-            y = np.swapaxes(y, self.nodir, 0)
-        y = np.ndarray.flatten(y)
-        return y
-
-    def _rmatvec(self, x):
-        x = np.reshape(x, self.dims)
-        if self.nodir is None:
-            y = correlate2d(x, self.h, mode='full')
-            y = y[self.h.shape[0]-self.offset[0]-1:-self.offset[0],
-                  self.h.shape[1]-self.offset[1]-1:-self.offset[1]]
-        else:
-            x = np.swapaxes(x, self.nodir, 0)
-            y = np.array([correlate2d(x[i], self.h, mode='full')
-                          for i in range(self.dims[self.nodir])])
-            y = y[:, self.h.shape[0]-self.offset[0]-1:-self.offset[0],
-                  self.h.shape[1]-self.offset[1]-1:-self.offset[1]]
-            y = np.swapaxes(y, self.nodir, 0)
-        y = np.ndarray.flatten(y)
-        return y
+    if h.ndim != 2:
+        raise ValueError('h must be 2-dimensional')
+    if nodir is None or h.ndim == 2:
+        dirs = (0, 1)
+    elif nodir == 0:
+        dirs = (1, 2)
+    elif nodir == 1:
+        dirs = (0, 2)
+    else:
+        dirs = (0, 1)
+    cop = ConvolveND(N, h, dims, offset=offset, dirs=dirs, method=method,
+                     dtype=dtype)
+    return cop

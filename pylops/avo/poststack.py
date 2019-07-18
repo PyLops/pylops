@@ -188,7 +188,6 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     """
     # check if background model and data have same shape
     if m0 is not None and data.shape != m0.shape:
-        print(m0.shape, data.shape)
         raise ValueError('data and m0 must have same shape')
 
     # find out dimensions

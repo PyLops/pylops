@@ -16,7 +16,7 @@ class Transpose(LinearOperator):
         Number of samples for each dimension
         (``None`` if only one dimension is available)
     axes : :obj:`tuple`, optional
-        Direction along which symmetrization is applied
+        Direction along which transposition is applied
     dtype : :obj:`str`, optional
         Type of elements in input array
 
