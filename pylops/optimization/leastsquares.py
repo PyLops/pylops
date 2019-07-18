@@ -320,8 +320,6 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False,
     -------
     xinv : :obj:`numpy.ndarray`
         Inverted model.
-    xinv : :obj:`numpy.ndarray`
-        Inverted model :math:`\mathbf{Op}`
     istop : :obj:`int`
         Gives the reason for termination
 

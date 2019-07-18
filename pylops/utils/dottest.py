@@ -36,7 +36,7 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False):
     A dot-test is mathematical tool used in the development of numerical linear operators.
 
     More specifically, a correct implementation of forward and adjoint for
-    a linear operator should verify the the following *equality*
+    a linear operator should verify the following *equality*
     within a numerical tolerance:
 
     .. math::

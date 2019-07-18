@@ -82,8 +82,8 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
     a multi-dimensional integration, and an inverse Fourier transform:
 
     .. math::
-        y(f, s, v) = \mathscr{F}^{-1} \Big( \int_S G(f, s, r)
-        \mathscr{F}(x(f, r, v)) dr \Big)
+        y(t, s, v) = \mathscr{F}^{-1} \Big( \int_S G(f, s, r)
+        \mathscr{F}(x(t, r, v)) dr \Big)
 
     This operation can be discretized and performed by means of a
     linear operator
