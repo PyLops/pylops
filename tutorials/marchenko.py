@@ -7,12 +7,14 @@ This example shows how to set-up and run the
 """
 # sphinx_gallery_thumbnail_number = 5
 # pylint: disable=C0103
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.signal import convolve
 from pylops.waveeqprocessing import Marchenko
 
+warnings.filterwarnings('ignore')
 plt.close('all')
 
 ###############################################################################
