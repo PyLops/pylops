@@ -2,6 +2,7 @@ from .FFT import FFT
 from .FFT2D import FFT2D
 from .FFTND import FFTND
 from .Convolve1D import Convolve1D
+from .ConvolveND import ConvolveND
 from .Convolve2D import Convolve2D
 from .Interp import Interp
 from .Radon2D import Radon2D

@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import convolve, correlate, fftconvolve
+from scipy.signal import convolve, fftconvolve
 from pylops import LinearOperator
 
 
@@ -23,6 +23,9 @@ class Convolve1D(LinearOperator):
         (``None`` if only one dimension is available)
     dir : :obj:`int`, optional
         Direction along which convolution is applied
+    method : :obj:`str`, optional
+        Method used to calculate the convolution (``direct`` or ``fft``).
+        Note that ``fft`` approach is always used if ``dims=None``.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -33,6 +36,11 @@ class Convolve1D(LinearOperator):
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved
         explicitly (``True``) or not (``False``)
+
+    Raises
+    ------
+    ValueError
+        If ``offset`` is bigger than ``len(h) - 1``
 
     Notes
     -----
@@ -73,14 +81,26 @@ class Convolve1D(LinearOperator):
         y(t) = \mathscr{F}^{-1} (H(f)^* * X(f))
 
     """
-    def __init__(self, N, h, offset=0, dims=None, dir=0, dtype='float64'):
-        self.offset = int(offset)
+    def __init__(self, N, h, offset=0, dims=None, dir=0, dtype='float64',
+                 method='direct'):
+        if offset > len(h) - 1:
+            raise ValueError('offset must be smaller than len(h) - 1')
         self.h = h
-        self.hstar = np.flip(h)
+        self.hstar = np.flip(self.h)
+        self.nh = len(h)
+        self.offset = 2*(self.nh // 2 - int(offset))
+        if self.nh % 2 == 0:
+            self.offset -= 1
+        if self.offset != 0:
+            self.h = \
+                np.pad(self.h, (self.offset if self.offset > 0 else 0,
+                                -self.offset if self.offset < 0 else 0),
+                       mode='constant')
+        self.hstar = np.flip(self.h)
         if dims is not None:
             # add dimensions to filter to match dimensions of model and data
             hdims = [1] * len(dims)
-            hdims[dir] = len(h)
+            hdims[dir] = len(self.h)
             self.h = self.h.reshape(hdims)
             self.hstar = self.hstar.reshape(hdims)
         self.dir = dir
@@ -93,32 +113,25 @@ class Convolve1D(LinearOperator):
             else:
                 self.dims = np.array(dims)
                 self.reshape = True
+        self.method = method
         self.shape = (np.prod(self.dims), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         if not self.reshape:
-            y = convolve(x, self.h, mode='full')
-            y = y[self.offset:-self.h.size + self.offset + 1]
+            y = convolve(x, self.h, mode='same', method=self.method)
         else:
             x = np.reshape(x, self.dims)
-            y = fftconvolve(x, self.h, mode='full', axes=self.dir)
-            y = np.take(y, np.arange(self.offset, y.shape[self.dir] -
-                                     (self.h.size - self.offset - 1)),
-                        axis=self.dir)
+            y = fftconvolve(x, self.h, mode='same', axes=self.dir)
             y = y.ravel()
         return y
 
     def _rmatvec(self, x):
         if not self.reshape:
-            y = correlate(x, self.h, mode='full')
-            y = y[self.h.size - self.offset - 1:y.size-self.offset]
+            y = convolve(x, self.hstar, mode='same', method=self.method)
         else:
             x = np.reshape(x, self.dims)
-            y = fftconvolve(x, self.hstar, mode='full', axes=self.dir)
-            y = np.take(y, np.arange(self.h.size - self.offset - 1,
-                                     y.shape[self.dir] - self.offset),
-                        axis=self.dir)
+            y = fftconvolve(x, self.hstar, mode='same', axes=self.dir)
             y = y.ravel()
         return y

@@ -83,6 +83,7 @@ Signal processing
     FFTND
     Convolve1D
     Convolve2D
+    ConvolveND
     Interp
     Radon2D
     Radon3D
