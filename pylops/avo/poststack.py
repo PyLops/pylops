@@ -14,8 +14,57 @@ from pylops.optimization.sparsity import SplitBregman
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
-def PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
-                             sparse=False):
+def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
+                              sparse=False, _MatrixMult=MatrixMult,
+                              _Convolve1D=Convolve1D,
+                              _FirstDerivative=FirstDerivative,
+                              args_MatrixMult={}, args_Convolve1D={},
+                              args_FirstDerivative={}):
+    """Post-stack linearized seismic modelling operator.
+
+    Used to be able to provide operators from different libraries to
+    PoststackLinearModelling.
+
+    """
+    # organize dimensions
+    if spatdims is None:
+        dims = (nt0,)
+        spatdims = None
+    elif isinstance(spatdims, int):
+        dims = (nt0, spatdims)
+        spatdims = (spatdims,)
+    else:
+        dims = (nt0,) + spatdims
+
+    if explicit:
+        # Create derivative operator
+        D = np.diag(0.5 * np.ones(nt0 - 1), k=1) - \
+            np.diag(0.5 * np.ones(nt0 - 1), -1)
+        D[0] = D[-1] = 0
+
+        # Create wavelet operator
+        C = convmtx(wav, nt0)[:, len(wav) // 2:-len(wav) // 2 + 1]
+
+        # Combine operators
+        M = np.dot(C, D)
+        if sparse:
+            M = csc_matrix(M)
+        Pop = _MatrixMult(M, dims=spatdims, **args_MatrixMult)
+    else:
+        # Create wavelet operator
+        Cop = _Convolve1D(np.prod(np.array(dims)), h=wav,
+                          offset=len(wav) // 2, dir=0, dims=dims,
+                          **args_Convolve1D)
+
+        # Create derivative operator
+        Dop = _FirstDerivative(np.prod(np.array(dims)), dims=dims,
+                               dir=0, sampling=1., **args_FirstDerivative)
+        Pop = Cop * Dop
+    return Pop
+
+
+def PoststackLinearModelling(wav, nt0, spatdims=None,
+                             explicit=False, sparse=False):
     r"""Post-stack linearized seismic modelling operator.
 
     Create operator to be applied to an acoustic impedance trace (or stack of
@@ -65,40 +114,8 @@ def PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
     the impedance profile from the band-limited seismic stack data.
 
     """
-    # organize dimensions
-    if spatdims is None:
-        dims = (nt0, )
-        spatdims = None
-    elif isinstance(spatdims, int):
-        dims = (nt0, spatdims)
-        spatdims = (spatdims,)
-    else:
-        dims = (nt0, ) + spatdims
-
-    if explicit:
-        # Create derivative operator
-        D = np.diag(0.5 * np.ones(nt0 - 1), k=1) - \
-            np.diag(0.5 * np.ones(nt0 - 1), -1)
-        D[0] = D[-1] = 0
-
-        # Create wavelet operator
-        C = convmtx(wav, nt0)[:, len(wav) // 2:-len(wav) // 2 + 1]
-
-        # Combine operators
-        M = np.dot(C, D)
-        if sparse:
-            M = csc_matrix(M)
-        Pop = MatrixMult(M, dims=spatdims)
-    else:
-        # Create wavelet operator
-        Cop = Convolve1D(np.prod(np.array(dims)), h=wav,
-                         offset=len(wav)//2, dir=0, dims=dims)
-
-        # Create derivative operator
-        Dop = FirstDerivative(np.prod(np.array(dims)), dims=dims,
-                              dir=0, sampling=1.)
-        Pop = Cop*Dop
-    return Pop
+    return _PoststackLinearModelling(wav, nt0, spatdims=spatdims,
+                                     explicit=explicit, sparse=sparse)
 
 
 def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
