@@ -62,7 +62,7 @@ def test_FirstDerivative(par):
 
     # 2d - derivative on 2nd direction
     D1op = FirstDerivative(par['ny'] * par['nx'], dims=(par['ny'], par['nx']),
-                           dir=1, sampling=4., edge=par['edge'],
+                           dir=1, sampling=par['dx'], edge=par['edge'],
                            dtype='float32')
     assert dottest(D1op, par['ny'] * par['nx'],
                    par['ny'] * par['nx'], tol=1e-3)

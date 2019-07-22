@@ -15,15 +15,19 @@ h2 = np.outer(triang(nfilt[0], sym=True), triang(nfilt[1], sym=True))
 h3 = np.outer(np.outer(triang(nfilt[0], sym=True), triang(nfilt[1], sym=True)),
               triang(nfilt[2], sym=True)).reshape(nfilt)
 
-par1_1d = {'nz': 21, 'ny': 51, 'nx': 31,
-           'offset': nfilt[0] // 2, 'dir': 0}  # zero phase, first direction
-par2_1d = {'nz': 21, 'ny': 61, 'nx': 31,
-           'offset': 0, 'dir': 0}  # non-zero phase, first direction
+par1_1d = {'nz': 21, 'ny': 51, 'nx': 31, 'offset': nfilt[0] // 2,
+           'dir': 0}  # zero phase, first direction
+par2_1d = {'nz': 21, 'ny': 61, 'nx': 31, 'offset': 0,
+           'dir': 0}  # non-zero phase, first direction
 par3_1d = {'nz': 21, 'ny': 51, 'nx': 31,
-           'offset': nfilt[0] // 2, 'dir': 1}  # zero phase, second direction
-par4_1d = {'nz': 21, 'ny': 61, 'nx': 31,
-           'offset': nfilt[0] // 2 - 1,
+           'offset': nfilt[0] // 2,
+           'dir': 1}  # zero phase, second direction
+par4_1d = {'nz': 21, 'ny': 61, 'nx': 31, 'offset': nfilt[0] // 2 - 1,
            'dir': 1}  # non-zero phase, second direction
+par5_1d = {'nz': 21, 'ny': 51, 'nx': 31, 'offset': nfilt[0] // 2,
+           'dir': 2}  # zero phase, third direction
+par6_1d = {'nz': 21, 'ny': 61, 'nx': 31, 'offset': nfilt[0] // 2 - 1,
+           'dir': 2}  # non-zero phase, third direction
 
 par1_2d = {'nz': 21, 'ny': 51, 'nx': 31,
            'offset': (nfilt[0] // 2, nfilt[1] // 2),
@@ -52,12 +56,14 @@ par2_3d = {'nz': 21, 'ny': 61, 'nx': 31, 'nt': 5,
            'dir': 0}  # non-zero phase, first direction
 
 
-@pytest.mark.parametrize("par", [(par1_1d), (par2_1d), (par3_1d), (par4_1d)])
+@pytest.mark.parametrize("par", [(par1_1d), (par2_1d),
+                                 (par3_1d), (par4_1d),
+                                 (par5_1d), (par6_1d)])
 def test_Convolve1D(par):
     """Dot-test and inversion for Convolve1D operator
     """
     np.random.seed(10)
-    #1D
+    # 1D
     if par['dir'] == 0:
         Cop = Convolve1D(par['nx'], h=h1, offset=par['offset'],
                          dtype='float32')
@@ -69,14 +75,31 @@ def test_Convolve1D(par):
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 1D on 2D
-    Cop = Convolve1D(par['ny'] * par['nx'], h=h1, offset=par['offset'],
-                     dims=(par['ny'], par['nx']), dir=par['dir'],
-                     dtype='float32')
-    assert dottest(Cop, par['ny'] * par['nx'], par['ny'] * par['nx'])
+    if par['dir'] < 2:
+        Cop = Convolve1D(par['ny'] * par['nx'], h=h1, offset=par['offset'],
+                        dims=(par['ny'], par['nx']), dir=par['dir'],
+                        dtype='float32')
+        assert dottest(Cop, par['ny'] * par['nx'], par['ny'] * par['nx'])
 
-    x = np.zeros((par['ny'], par['nx']))
-    x[int(par['ny']/2-3):int(par['ny']/2+3),
-      int(par['nx']/2-3):int(par['nx']/2+3)] = 1.
+        x = np.zeros((par['ny'], par['nx']))
+        x[int(par['ny']/2-3):int(par['ny']/2+3),
+          int(par['nx']/2-3):int(par['nx']/2+3)] = 1.
+        x = x.flatten()
+        xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, show=0)[0]
+        assert_array_almost_equal(x, xlsqr, decimal=1)
+
+    # 1D on 3D
+    Cop = Convolve1D(par['nz'] * par['ny'] * par['nx'], h=h1,
+                     offset=par['offset'],
+                     dims=(par['nz'], par['ny'], par['nx']), dir=par['dir'],
+                     dtype='float32')
+    assert dottest(Cop, par['nz'] * par['ny'] * par['nx'],
+                   par['nz'] * par['ny'] * par['nx'])
+
+    x = np.zeros((par['nz'], par['ny'], par['nx']))
+    x[int(par['nz'] / 2 - 3):int(par['nz'] / 2 + 3),
+      int(par['ny'] / 2 - 3):int(par['ny'] / 2 + 3),
+      int(par['nx'] / 2 - 3):int(par['nx'] / 2 + 3)] = 1.
     x = x.flatten()
     xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
