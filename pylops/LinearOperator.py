@@ -224,7 +224,7 @@ class _ConjLinearOperator(LinearOperator):
     """Complex conjugate linear operator"""
     def __init__(self, Op):
         if not isinstance(Op, spLinearOperator):
-            raise TypeError('A must be a LinearOperator')
+            raise TypeError('Op must be a LinearOperator')
         super(_ConjLinearOperator, self).__init__(Op, Op.shape)
         self.Op = Op
 

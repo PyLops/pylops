@@ -24,6 +24,7 @@ Subsequently the acoustic impedance model is estimated via the
 inversion strategy is finally presented to deal with the case of noisy data.
 
 """
+# sphinx_gallery_thumbnail_number = 4
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import filtfilt
@@ -121,6 +122,46 @@ axs[1].legend(loc=1)
 # couple our modelling operator with different types of spatial regularizations
 # or preconditioning.
 #
+# Before we move onto a 2d example, let's consider the case of non-stationary
+# wavelet and see how we can easily use the same routines in this case
+
+# wavelet
+ntwav = 41
+f0s = np.flip(np.arange(nt0) * 0.05 + 3)
+wavs = np.array([ricker(t0[:ntwav], f0)[0] for f0 in f0s])
+wavc = np.argmax(wavs[0])
+
+plt.figure(figsize=(5, 4))
+plt.imshow(wavs.T, cmap='gray', extent=(t0[0], t0[-1], t0[ntwav], -t0[ntwav]))
+plt.xlabel('t')
+plt.title('Wavelets')
+plt.axis('tight')
+
+# operator
+PPop = \
+    pylops.avo.poststack.PoststackLinearModelling(wavs, nt0=nt0, explicit=True)
+
+# data
+d = PPop * m
+
+# solve
+minv = \
+    pylops.avo.poststack.PoststackInversion(d, wavs, m0=mback, explicit=True,
+                                            **dict(cond=1e-10))[0]
+
+fig, axs = plt.subplots(1, 2, figsize=(6, 7), sharey=True)
+axs[0].plot(d, t0, 'k', lw=4)
+axs[0].set_title('Data')
+axs[0].invert_yaxis()
+axs[0].axis('tight')
+axs[1].plot(m, t0, 'k', lw=4, label='True')
+axs[1].plot(mback, t0, '--b', lw=4, label='Back')
+axs[1].plot(minv, t0, '--r', lw=2, label='Inv')
+axs[1].set_title('Model')
+axs[1].axis('tight')
+axs[1].legend(loc=1)
+
+###############################################################################
 # We move now to a 2d example. First of all the model is loaded and
 # data generated.
 
@@ -201,7 +242,6 @@ minv_lop_blocky = \
                                                    niter_inner=10,
                                                    iter_lim=5, damp=1e-3))[0]
 
-# sphinx_gallery_thumbnail_number = 2
 fig, axs = plt.subplots(2, 4, figsize=(15, 9))
 axs[0][0].imshow(d, cmap='gray',
                  extent=(x[0], x[-1], z[-1], z[0]),

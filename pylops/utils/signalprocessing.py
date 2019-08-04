@@ -35,3 +35,36 @@ def convmtx(h, n):
         col_1 = np.r_[h, np.zeros(n - 1)]
     C = toeplitz(col_1, row_1)
     return C
+
+
+def nonstationary_convmtx(H, n, hc=0, pad=(0, 0)):
+    r"""Convolution matrix from a bank of filters
+
+    Makes a dense convolution matrix :math:`\mathbf{C}`
+    such that the dot product ``np.dot(C, x)`` is the nonstationary
+    convolution of the bank of filters :math:`H=[h_1, h_2, h_n]`
+    and the input signal :math:`x`.
+
+    Parameters
+    ----------
+    H : :obj:`np.ndarray`
+        Convolution filters (2D array of shape
+        :math:`[n_{filters} \times n_{h}]`
+    n : :obj:`int`
+        Number of columns of convolution matrix
+    hc : :obj:`np.ndarray`, optional
+        Index of center of first filter
+    pad : :obj:`np.ndarray`
+        Zero-padding to apply to the bank of filters before and after the
+        provided values (use it to avoid wrap-around or pass filters with
+        enough padding)
+    Returns
+    ----------
+    C : :obj:`np.ndarray`
+        Convolution matrix
+
+    """
+    H = np.pad(H, ((0, 0), pad), mode='constant')
+    C = np.array([np.roll(h, ih) for ih, h in enumerate(H)])
+    C = C[:, pad[0] + hc:pad[0] + hc + n].T  # take away edges
+    return C
