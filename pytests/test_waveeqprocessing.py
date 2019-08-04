@@ -100,12 +100,10 @@ def test_MDC_1virtualsource(par):
     # Define MDC linear operator
     Gwav_fft = np.fft.fft(Gwav, par['nt2'], axis=-1)
     Gwav_fft = Gwav_fft[..., :par['nfmax']]
-
     MDCop = MDC(Gwav_fft, nt=par['nt2'], nv=1,
-                dt=par['dt'], dr=par['dx'],
+                dt=par['dt'], dr=par['dx'], fftengine='fftw',
                 twosided=par['twosided'], dtype='float32')
     dottest(MDCop, par['nt2']*par['ny'], par['nt2']*par['nx'])
-
     # Create data
     d = MDCop * mwav.flatten()
     d = d.reshape(par['ny'], par['nt2'])
@@ -126,7 +124,7 @@ def test_MDC_1virtualsource(par):
                dt=par['dt'], dr=par['dx'], nfmax=par['nfmax'],
                twosided=par['twosided'], adjoint=False, psf=False,
                dtype='complex64', dottest=False,
-               **dict(damp=1e-10, iter_lim=50, show=1))
+               **dict(damp=1e-10, iter_lim=50, show=0))
     assert_array_almost_equal(mwav, minv, decimal=2)
 
     # Same tests for future behaviour (remove tests above in v2.0.0)
@@ -153,7 +151,7 @@ def test_MDC_1virtualsource(par):
                dt=par['dt'], dr=par['dx'], nfmax=par['nfmax'],
                twosided=par['twosided'], add_negative=True,
                adjoint=False, psf=False, dtype='complex64',
-               dottest=False, **dict(damp=1e-10, iter_lim=50, show=1))
+               dottest=False, **dict(damp=1e-10, iter_lim=50, show=0))
     assert_array_almost_equal(mwav, minv.T, decimal=2)
 
 
@@ -228,7 +226,7 @@ def test_MDC_Nvirtualsources(par):
                dt=par['dt'], dr=par['dx'], nfmax=par['nfmax'],
                twosided=par['twosided'], adjoint=False, psf=False,
                dtype='complex64', dottest=False,
-               **dict(damp=1e-10, iter_lim=50, show=1))
+               **dict(damp=1e-10, iter_lim=50, show=0))
     assert_array_almost_equal(mwav, minv, decimal=2)
 
     # Same tests for future behaviour (remove tests above in v2.0.0)
@@ -257,5 +255,5 @@ def test_MDC_Nvirtualsources(par):
                dt=par['dt'], dr=par['dx'], nfmax=par['nfmax'],
                twosided=par['twosided'], add_negative=True,
                adjoint=False, psf=False, dtype='complex64',
-               dottest=False, **dict(damp=1e-10, iter_lim=50, show=1))
+               dottest=False, **dict(damp=1e-10, iter_lim=50, show=0))
     assert_array_almost_equal(mwav, minv.transpose(2, 0, 1), decimal=2)

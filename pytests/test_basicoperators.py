@@ -330,7 +330,7 @@ def test_Roll1D(par):
     x = np.arange(par['ny']) + par['imag'] * np.arange(par['ny'])
 
     Rop = Roll(par['ny'], shift=2, dtype=par['dtype'])
-    dottest(Rop, par['ny'], par['ny'], verb=True)
+    assert dottest(Rop, par['ny'], par['ny'])
 
     y = Rop * x
     xadj = Rop.H * y

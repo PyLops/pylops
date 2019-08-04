@@ -39,7 +39,7 @@ def test_Fredholm1(par):
                                                                par['nx'],
                                                                par['ny'])
     F = _F - par['imag'] * _F
-    print(F)
+
     x = np.ones((par['nsl'], par['ny'], par['nz'])) + \
         par['imag'] * np.ones((par['nsl'], par['ny'], par['nz']))
 
