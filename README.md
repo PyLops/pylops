@@ -194,6 +194,11 @@ PyLops was initially written and it is currently maintained by [Equinor](https:/
 It is a flexible and scalable python library for large-scale optimization with linear
 operators that can be tailored to our needs, and as contribution to the free software community.
 
+## Citing
+When using ``pylops`` in scientific publications, please cite the following paper:
+
+- Ravasi, M., and Vasconcelos I., *PyLops--A Linear-Operator Python Library for large scale optimization*,
+  arXiv preprint, [arXiv:1907.12349](https://arxiv.org/abs/1907.12349)  (2019).
 
 ## Contributors
 * Matteo Ravasi, mrava87

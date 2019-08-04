@@ -91,8 +91,10 @@ def PoststackLinearModelling(wav, nt0, spatdims=None,
     wav : :obj:`np.ndarray`
         Wavelet in time domain (must have odd number of elements
         and centered to zero). If 1d, assume stationary wavelet for the entire
-        time axis. If 2d of size :math:`[n_{t0} \times n_h]` use as
-        non-stationary wavelet
+        time axis. If 2d, use as non-stationary wavelet (user must provide
+        one wavelet per time sample in an array of size
+        :math:`[n_{t0} \times n_{wav}]` where :math:`n_{wav}` is the lenght
+        of each wavelet)
     nt0 : :obj:`int`
         Number of samples along time axis
     spatdims : :obj:`int` or :obj:`tuple`, optional
