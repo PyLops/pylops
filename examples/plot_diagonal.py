@@ -21,7 +21,7 @@ plt.close('all')
 # ``0`` to ``N`` and a unitary model :math:`\mathbf{x}`.
 N = 10
 d = np.arange(N)
-x = np.ones(10)
+x = np.ones(N)
 
 Dop = pylops.Diagonal(d)
 
@@ -38,6 +38,7 @@ ax.set_yticks(np.arange(N-1)+0.5)
 ax.grid(linewidth=3, color='white')
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
+ax.axis('tight')
 ax = plt.subplot(gs[0, 3])
 ax.imshow(x[:, np.newaxis], cmap='rainbow', vmin=0, vmax=N)
 ax.set_title('x', size=20, fontweight='bold')

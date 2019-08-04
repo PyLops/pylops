@@ -49,9 +49,9 @@ vs = inputdata['vs']
 rho = inputdata['rho']
 z, x = inputdata['z'], inputdata['x']
 
-# Reflection data and subsurface fields
+# Reflection data (R[s, r, t]) and subsurface fields
 R = inputdata['R'][:, :, :-100]
-R = np.swapaxes(R, 0, 1)
+R = np.swapaxes(R, 0, 1) # just because of how the data was saved
 
 Gsub = inputdata['Gsub'][:-100]
 G0sub = inputdata['G0sub'][:-100]

@@ -1,18 +1,24 @@
 """
 Convolution
 ===========
-This example shows how to use the :py:class:`pylops.signalprocessing.Convolve1D` and
-:py:class:`pylops.signalprocessing.Convolve2D` operators to perform convolution between two signals.
+This example shows how to use the :py:class:`pylops.signalprocessing.Convolve1D`,
+:py:class:`pylops.signalprocessing.Convolve2D` and
+:py:class:`pylops.signalprocessing.ConvolveND` operators to perform convolution
+between two signals.
 
 Such operators can be used in the forward model of several common application
-in signal processing that require filtering of an input signal for the instrument response.
-Similarly, removing the effect of the instrument response from signal is equivalent to solving
-linear system of equations based on Convolve1D or Convolve2D operators. This problem is generally
-referred to as *Deconvolution*.
+in signal processing that require filtering of an input signal for the
+instrument response. Similarly, removing the effect of the instrument
+response from signal is equivalent to solving linear system of equations
+based on Convolve1D, Convolve2D or ConvolveND operators.
+This problem is generally referred to as *Deconvolution*.
 
-A very practical example of deconvolution can be found in the geophysical processing of seismic
-data where the effect of the source response (i.e., airgun or vibroseis) should be removed
-from the recorded signal to be able to better interpret the response of the subsurface.
+A very practical example of deconvolution can be found in the geophysical
+processing of seismic data where the effect of the source response
+(i.e., airgun or vibroseis) should be removed from the recorded signal
+to be able to better interpret the response of the subsurface. Similar examples
+can be found in telecommunication and speech analysis.
+
 """
 import numpy as np
 import matplotlib.pyplot as plt

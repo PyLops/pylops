@@ -18,6 +18,7 @@ Note that in case of rectangular :math:`\mathbf{A}`, an exact inverse does
 not exist and a least-square solution is computed instead.
 """
 
+import warnings
 import numpy as np
 from scipy.sparse import rand
 from scipy.sparse.linalg import lsqr
@@ -28,6 +29,7 @@ import matplotlib.gridspec as pltgs
 import pylops
 
 plt.close('all')
+warnings.filterwarnings('ignore')
 # sphinx_gallery_thumbnail_number = 2
 
 ###############################################################################

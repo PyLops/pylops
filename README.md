@@ -80,7 +80,7 @@ This repository is organized as follows:
 
 ## Getting started
 
-You need **Python 3.6.4 or greater**.
+You need **Python 3.5 or greater**.
 
 #### From PyPi
 

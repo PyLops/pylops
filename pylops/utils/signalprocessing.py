@@ -20,7 +20,7 @@ def convmtx(h, n):
         (if :math:`len(h) \geq n`) of convolution matrix
 
     Returns
-    ----------
+    -------
     C : :obj:`np.ndarray`
         Convolution matrix of size :math:`len(h)+n-1 \times n`
         (if :math:`len(h) < n`) or :math:`n \times len(h)+n-1`
@@ -58,8 +58,9 @@ def nonstationary_convmtx(H, n, hc=0, pad=(0, 0)):
         Zero-padding to apply to the bank of filters before and after the
         provided values (use it to avoid wrap-around or pass filters with
         enough padding)
+
     Returns
-    ----------
+    -------
     C : :obj:`np.ndarray`
         Convolution matrix
 
