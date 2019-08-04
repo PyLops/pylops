@@ -58,6 +58,7 @@ class Transpose(LinearOperator):
         self.dimsd = np.zeros(ndims, dtype=np.int)
         self.axesd[self.axes] = np.arange(ndims, dtype=np.int)
         self.dimsd[self.axesd] = self.dims
+        self.axesd = list(self.axesd)
 
         self.shape = (np.prod(self.dims), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
@@ -65,10 +66,10 @@ class Transpose(LinearOperator):
 
     def _matvec(self, x):
         y = x.reshape(self.dims)
-        y = np.transpose(y, self.axes)
+        y = y.transpose(self.axes)
         return y.ravel()
 
     def _rmatvec(self, x):
         y = x.reshape(self.dimsd)
-        y = np.transpose(y, self.axesd)
+        y = y.transpose(self.axesd)
         return y.ravel()

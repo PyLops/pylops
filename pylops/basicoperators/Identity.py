@@ -14,7 +14,7 @@ class Identity(LinearOperator):
     Parameters
     ----------
     N : :obj:`int`
-        Number of samples in data (and model in M is not provided).
+        Number of samples in data (and model, if ``M`` is not provided).
     M : :obj:`int`, optional
         Number of samples in model.
     dtype : :obj:`str`, optional

@@ -1,5 +1,17 @@
 from pylops.basicoperators import HStack, VStack
 
+
+def _Block(ops, dtype=None, _HStack=HStack, _VStack=VStack,
+           args_HStack={}, args_VStack={}):
+    """Block operator.
+
+    Used to be able to provide operators from different libraries to
+    Block.
+    """
+    hblocks = [_HStack(hblock, dtype=dtype, **args_HStack) for hblock in ops]
+    return _VStack(hblocks, dtype=dtype, **args_VStack)
+
+
 def Block(ops, dtype=None):
     r"""Block operator.
 
@@ -82,5 +94,4 @@ def Block(ops, dtype=None):
         \end{bmatrix}
 
     """
-    hblocks = [HStack(hblock, dtype=dtype) for hblock in ops]
-    return VStack(hblocks, dtype=dtype)
+    return _Block(ops, dtype=dtype)

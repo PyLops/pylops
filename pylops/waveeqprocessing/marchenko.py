@@ -68,7 +68,8 @@ class Marchenko():
     ----------
     R : :obj:`numpy.ndarray`
         Multi-dimensional reflection response in time or frequency
-        domain of size :math:`[n_s \times n_r \times n_t/n_{fmax}]`
+        domain of size :math:`[n_s \times n_r \times n_t/n_{fmax}]`. If
+        provided in time, `R` should not be of complex type
     R1 : :obj:`bool`, optional
         *Deprecated*, will be removed in v2.0.0. Simply kept for
         back-compatibility with previous implementation
