@@ -1,3 +1,14 @@
+# 1.6.0
+* Added ``pylops.signalprocessing.ConvolveND`` operator
+* Added ``pylops.utils.signalprocessing.nonstationary_convmtx`` to create
+  matrix for non-stationary convolution
+* Added possibility to perform seismic modelling (and inversion) with
+  non-stationary wavelet in ``pylops.avo.poststack.PoststackLinearModelling``
+* Create private methods for ``pylops.basicoperators.Block``,
+  ``pylops.avo.poststack.PoststackLinearModelling``,
+  ``pylops.waveeqprocessing.MDC`` to allow calling different operators
+  (e.g., from pylops-distributed or pylops-gpu) within the method
+
 # 1.5.0
 * Added ``conj`` method to ``pylops.LinearOperator``
 * Added ``pylops.basicoperators.Kronecker``,
