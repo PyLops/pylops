@@ -64,6 +64,7 @@ class _FFT_numpy(LinearOperator):
             else:
                 y = np.sqrt(1. / self.nfft) * np.fft.fft(x, n=self.nfft,
                                                          axis=self.dir)
+            y = y.flatten()
         return y
 
     def _rmatvec(self, x):
@@ -91,7 +92,7 @@ class _FFT_numpy(LinearOperator):
                             axis=self.dir)
             if self.fftshift:
                 y = np.fft.fftshift(y, axes=self.dir)
-            y = np.ndarray.flatten(y)
+            y = y.flatten()
         return y
 
 

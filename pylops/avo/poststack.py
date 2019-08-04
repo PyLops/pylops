@@ -5,7 +5,7 @@ from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import lsqr
 
 from pylops.signalprocessing import Convolve1D
-from pylops.utils.signalprocessing import convmtx
+from pylops.utils.signalprocessing import convmtx, nonstationary_convmtx
 from pylops.utils import dottest as Dottest
 from pylops import MatrixMult, FirstDerivative, SecondDerivative, Laplacian
 from pylops.optimization.leastsquares import RegularizedInversion
@@ -14,8 +14,72 @@ from pylops.optimization.sparsity import SplitBregman
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
-def PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
-                             sparse=False):
+def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
+                              sparse=False, _MatrixMult=MatrixMult,
+                              _Convolve1D=Convolve1D,
+                              _FirstDerivative=FirstDerivative,
+                              args_MatrixMult={}, args_Convolve1D={},
+                              args_FirstDerivative={}):
+    """Post-stack linearized seismic modelling operator.
+
+    Used to be able to provide operators from different libraries to
+    PoststackLinearModelling. It operates in the same way as public method
+    (PoststackLinearModelling) but has additional input parameters allowing
+    passing a different operator and additional arguments to be passed to such
+    operator.
+
+    """
+    if wav.ndim == 2 and wav.shape[0] != nt0:
+        raise ValueError('Provide 1d wavelet or 2d wavelet composed of nt0 '
+                         'wavelets')
+
+    # organize dimensions
+    if spatdims is None:
+        dims = (nt0,)
+        spatdims = None
+    elif isinstance(spatdims, int):
+        dims = (nt0, spatdims)
+        spatdims = (spatdims,)
+    else:
+        dims = (nt0,) + spatdims
+
+    if explicit:
+        # Create derivative operator
+        D = np.diag(0.5 * np.ones(nt0 - 1), k=1) - \
+            np.diag(0.5 * np.ones(nt0 - 1), -1)
+        D[0] = D[-1] = 0
+
+        # Create wavelet operator
+        if wav.ndim == 1:
+            C = convmtx(wav, nt0)[:, len(wav) // 2:-len(wav) // 2 + 1]
+        else:
+            C = nonstationary_convmtx(wav, nt0, hc=wav.shape[1] // 2,
+                                      pad=(nt0, nt0))
+        # Combine operators
+        M = np.dot(C, D)
+        if sparse:
+            M = csc_matrix(M)
+        Pop = _MatrixMult(M, dims=spatdims, **args_MatrixMult)
+    else:
+        # Create wavelet operator
+        if len(wav.shape) == 1:
+            Cop = _Convolve1D(np.prod(np.array(dims)), h=wav,
+                              offset=len(wav) // 2, dir=0, dims=dims,
+                              **args_Convolve1D)
+        else:
+            Cop = _MatrixMult(nonstationary_convmtx(wav, nt0,
+                                                    hc=wav.shape[1] // 2,
+                                                    pad=(nt0, nt0)),
+                              dims=spatdims, **args_MatrixMult)
+        # Create derivative operator
+        Dop = _FirstDerivative(np.prod(np.array(dims)), dims=dims,
+                               dir=0, sampling=1., **args_FirstDerivative)
+        Pop = Cop * Dop
+    return Pop
+
+
+def PoststackLinearModelling(wav, nt0, spatdims=None,
+                             explicit=False, sparse=False):
     r"""Post-stack linearized seismic modelling operator.
 
     Create operator to be applied to an acoustic impedance trace (or stack of
@@ -25,8 +89,10 @@ def PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
     Parameters
     ----------
     wav : :obj:`np.ndarray`
-        Wavelet in time domain (must had odd number of elements
-        and centered to zero)
+        Wavelet in time domain (must have odd number of elements
+        and centered to zero). If 1d, assume stationary wavelet for the entire
+        time axis. If 2d of size :math:`[n_{t0} \times n_h]` use as
+        non-stationary wavelet
     nt0 : :obj:`int`
         Number of samples along time axis
     spatdims : :obj:`int` or :obj:`tuple`, optional
@@ -44,6 +110,11 @@ def PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
     -------
     Pop : :obj:`LinearOperator`
         post-stack modelling operator.
+
+    Raises
+    ------
+    ValueError
+        If ``wav`` is 2dimensional but does not contain ``nt0`` wavelets
 
     Notes
     -----
@@ -65,40 +136,8 @@ def PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
     the impedance profile from the band-limited seismic stack data.
 
     """
-    # organize dimensions
-    if spatdims is None:
-        dims = (nt0, )
-        spatdims = None
-    elif isinstance(spatdims, int):
-        dims = (nt0, spatdims)
-        spatdims = (spatdims,)
-    else:
-        dims = (nt0, ) + spatdims
-
-    if explicit:
-        # Create derivative operator
-        D = np.diag(0.5 * np.ones(nt0 - 1), k=1) - \
-            np.diag(0.5 * np.ones(nt0 - 1), -1)
-        D[0] = D[-1] = 0
-
-        # Create wavelet operator
-        C = convmtx(wav, nt0)[:, len(wav) // 2:-len(wav) // 2 + 1]
-
-        # Combine operators
-        M = np.dot(C, D)
-        if sparse:
-            M = csc_matrix(M)
-        Pop = MatrixMult(M, dims=spatdims)
-    else:
-        # Create wavelet operator
-        Cop = Convolve1D(np.prod(np.array(dims)), h=wav,
-                         offset=len(wav)//2, dir=0, dims=dims)
-
-        # Create derivative operator
-        Dop = FirstDerivative(np.prod(np.array(dims)), dims=dims,
-                              dir=0, sampling=1.)
-        Pop = Cop*Dop
-    return Pop
+    return _PoststackLinearModelling(wav, nt0, spatdims=spatdims,
+                                     explicit=explicit, sparse=sparse)
 
 
 def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
@@ -118,8 +157,10 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
         Band-limited seismic post-stack data of size
         :math:`[n_{t0} (\times n_x \times n_y)]`
     wav : :obj:`np.ndarray`
-        Wavelet in time domain (must had odd number of elements
-        and centered to zero)
+        Wavelet in time domain (must have odd number of elements
+        and centered to zero). If 1d, assume stationary wavelet for the entire
+        time axis. If 2d of size :math:`[n_{t0} \times n_h]` use as
+        non-stationary wavelet
     m0 : :obj:`np.ndarray`, optional
         Background model of size :math:`[n_{t0} (\times n_x \times n_y)]`
     explicit : :obj:`bool`, optional
@@ -252,9 +293,9 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     else:
         if epsRL1 is None:
             # L2 inversion with spatial regularization
-            if dims==1:
+            if dims == 1:
                 Regop = SecondDerivative(nt0, dtype=PPop.dtype)
-            elif dims==2:
+            elif dims == 2:
                 Regop = Laplacian((nt0, nx), dtype=PPop.dtype)
             else:
                 Regop = Laplacian((nt0, nx, ny), dirs=(1, 2), dtype=PPop.dtype)

@@ -80,7 +80,7 @@ This repository is organized as follows:
 
 ## Getting started
 
-You need **Python 3.6.4 or greater**.
+You need **Python 3.5 or greater**.
 
 #### From PyPi
 
@@ -107,9 +107,17 @@ Alternatively, you can install PyLops using the conda-forge distribution by typi
 conda install -c conda-forge pylops
 ```
 
+#### From Github
+
+You can also directly install from the master node (although this is not reccomended)
+
+```
+pip install git+https://git@github.com/equinor/pylops.git@master
+```
+
 #### From Docker
 
-If you simply want to try PyLops but do not have Python in your
+Finally, if you simply want to try PyLops but do not have Python in your
 local machine, you can use our [Docker](https://www.docker.com) image. After installing Docker in your computer,
 type the following command in your terminal (note that this will take some time the first time
 you type it as you will download and install the docker image):

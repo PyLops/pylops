@@ -56,22 +56,22 @@ D1op = pylops.FirstDerivative(nx, dtype='float32')
 y_lop = D1op*x
 xadj_lop = D1op.H*y_lop
 
-fig, axs = plt.subplots(2, 1, figsize=(13, 5))
-axs[0].stem(np.arange(nx), y_dir, linefmt='k',
-            markerfmt='ko', label='direct')
-axs[0].stem(np.arange(nx), y_lop, linefmt='--r',
-            markerfmt='ro', label='lop')
-axs[0].set_title('Forward', size=20, fontweight='bold')
-axs[0].legend()
-axs[1].stem(np.arange(nx), xadj_dir, linefmt='k',
-            markerfmt='ko', label='direct')
-axs[1].stem(np.arange(nx), xadj_lop, linefmt='--r',
-            markerfmt='ro', label='lop')
-axs[1].set_title('Adjoint', size=20, fontweight='bold')
+fig, axs = plt.subplots(3, 1, figsize=(13, 8))
+axs[0].stem(np.arange(nx), x, linefmt='k', markerfmt='ko')
+axs[0].set_title('Input', size=20, fontweight='bold')
+axs[1].stem(np.arange(nx), y_dir, linefmt='k', markerfmt='ko', label='direct')
+axs[1].stem(np.arange(nx), y_lop, linefmt='--r', markerfmt='ro', label='lop')
+axs[1].set_title('Forward', size=20, fontweight='bold')
 axs[1].legend()
+axs[2].stem(np.arange(nx), xadj_dir, linefmt='k',
+            markerfmt='ko', label='direct')
+axs[2].stem(np.arange(nx), xadj_lop, linefmt='--r',
+            markerfmt='ro', label='lop')
+axs[2].set_title('Adjoint', size=20, fontweight='bold')
+axs[2].legend()
 plt.tight_layout()
 
-#############################################
+###############################################################################
 # As expected we obtain the same result, with the only difference that
 # in the second case we did not need to explicitly create a matrix,
 # saving memory and computational time.
@@ -83,7 +83,7 @@ A = np.zeros((nx, ny))
 A[nx//2, ny//2] = 1.
 
 D1op = pylops.FirstDerivative(nx * ny, dims=(nx, ny), dir=0, dtype='float64')
-B = np.reshape(D1op*np.ndarray.flatten(A), (nx, ny))
+B = np.reshape(D1op * A.flatten(), (nx, ny))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('First Derivative in 1st direction', fontsize=12,
@@ -99,14 +99,14 @@ plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
 
-#############################################
+###############################################################################
 # We can now do the same for the second derivative
 
 A = np.zeros((nx, ny))
 A[nx//2, ny//2] = 1.
 
 D2op = pylops.SecondDerivative(nx * ny, dims=(nx, ny), dir=0, dtype='float64')
-B = np.reshape(D2op*np.ndarray.flatten(A), (nx, ny))
+B = np.reshape(D2op * A.flatten(), (nx, ny))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('Second Derivative in 1st direction', fontsize=12,
@@ -122,7 +122,7 @@ plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
 
-#############################################
+###############################################################################
 # We can also apply the second derivative to the second direction of
 # our data (``dir=1``)
 D2op = pylops.SecondDerivative(nx * ny, dims=(nx, ny),
@@ -144,7 +144,7 @@ plt.tight_layout()
 plt.subplots_adjust(top=0.8)
 
 
-#############################################
+###############################################################################
 # And finally we use the symmetrical Laplacian operator as well
 # as a asymmetrical version of it (by adding more weight to the
 # derivative along one direction)
@@ -155,8 +155,8 @@ L2symop = pylops.Laplacian(dims=(nx, ny), weights=(1, 1), dtype='float64')
 # asymmetrical
 L2asymop = pylops.Laplacian(dims=(nx, ny), weights=(3, 1), dtype='float64')
 
-Bsym = np.reshape(L2symop*np.ndarray.flatten(A), (nx, ny))
-Basym = np.reshape(L2asymop*np.ndarray.flatten(A), (nx, ny))
+Bsym = np.reshape(L2symop * A.flatten(), (nx, ny))
+Basym = np.reshape(L2asymop * A.flatten(), (nx, ny))
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 3))
 fig.suptitle('Laplacian', fontsize=12,

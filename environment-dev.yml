@@ -6,7 +6,7 @@ channels:
 dependencies:
   - python>=3.6.4
   - numpy>=1.15.0
-  - scipy
+  - scipy>=1.1.0
   - pyfftw
   - matplotlib
   - ipython

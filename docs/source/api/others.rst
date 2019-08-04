@@ -48,6 +48,7 @@ Signal-processing
    :toctree: generated/
 
     signalprocessing.convmtx
+    signalprocessing.nonstationary_convmtx
 
 
 Tapers

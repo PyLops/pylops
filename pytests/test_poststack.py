@@ -35,8 +35,13 @@ nx, nz = len(x), len(z)
 mback2d = filtfilt(np.ones(nsmooth) / float(nsmooth), 1, m2d, axis=0)
 mback2d = filtfilt(np.ones(nsmooth) / float(nsmooth), 1, mback2d, axis=1)
 
-# wavelet
+# stationary wavelet
 wav = ricker(t0[:ntwav//2+1], 20)[0]
+
+# non-stationary wavelet
+f0s = np.flip(np.arange(nt0) * 0.05 + 3)
+wavs = np.array([ricker(t0[:ntwav], f0)[0] for f0 in f0s])
+wavc = np.argmax(wavs[0])
 
 
 par1 = {'epsR': None, 'epsRL1': None, 'epsI': None,
@@ -54,7 +59,7 @@ par5 = {'epsR': 1e-4, 'epsRL1': 1e-1, 'epsI': 1e-6,
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_PoststackLinearModelling1d(par):
     """Dot-test, comparison of dense vs lop implementation and
-    inversion for PoststackLinearModelling in 1d
+    inversion for PoststackLinearModelling in 1d with stationary wavelet
     """
     # Dense
     PPop_dense = PoststackLinearModelling(wav, nt0=nt0, explicit=True)
@@ -77,6 +82,38 @@ def test_PoststackLinearModelling1d(par):
             dict_inv = dict(damp=0 if par['epsI'] is None else par['epsI'],
                             iter_lim=80)
         minv = PoststackInversion(d, wav, m0=mback, explicit=explicit,
+                                  epsR=par['epsR'], epsI=par['epsI'],
+                                  simultaneous=par['simultaneous'],
+                                  **dict_inv)[0]
+        assert np.linalg.norm(m-minv) / np.linalg.norm(minv) < 1e-2
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
+def test_PoststackLinearModelling1d_nonstationary(par):
+    """Dot-test, comparison of dense vs lop implementation and
+    inversion for PoststackLinearModelling in 1d with nonstationary wavelet
+    """
+    # Dense
+    PPop_dense = PoststackLinearModelling(wavs, nt0=nt0, explicit=True)
+    assert dottest(PPop_dense, nt0, nt0, tol=1e-4)
+
+    # Linear operator
+    PPop = PoststackLinearModelling(wavs, nt0=nt0, explicit=False)
+    assert dottest(PPop, nt0, nt0, tol=1e-4)
+
+    # Compare data
+    d = PPop * m.flatten()
+    d_dense = PPop_dense * m.T.flatten()
+    assert_array_almost_equal(d, d_dense, decimal=4)
+
+    # Inversion
+    for explicit in [True, False]:
+        if par['epsR'] is None:
+            dict_inv = {}
+        else:
+            dict_inv = dict(damp=0 if par['epsI'] is None else par['epsI'],
+                            iter_lim=80)
+        minv = PoststackInversion(d, wavs, m0=mback, explicit=explicit,
                                   epsR=par['epsR'], epsI=par['epsI'],
                                   simultaneous=par['simultaneous'],
                                   **dict_inv)[0]

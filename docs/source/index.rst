@@ -121,6 +121,7 @@ that can be tailored to our needs, and as contribution to the free software comm
 
    installation.rst
    performance.rst
+   extensions.rst
    tutorials/index.rst
    FAQs <faq.rst>
 
@@ -141,5 +142,6 @@ that can be tailored to our needs, and as contribution to the free software comm
    Contributing <contributing.rst>
    Changelog <changelog.rst>
    Roadmap <roadmap.rst>
+   Citing <citing.rst>
    Credits <credits.rst>
 
