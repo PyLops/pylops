@@ -94,9 +94,7 @@ class FFTND(LinearOperator):
         self.dims_fft = self.dims.copy()
         for direction, nfft in zip(self.dirs, self.nffts):
             self.dims_fft[direction] = nfft
-        self.shape = (int(np.prod(dims)*np.prod(self.nffts)/
-                          (np.prod(self.dims[list(self.dirs)]))),
-                      int(np.prod(dims)))
+        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 

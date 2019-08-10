@@ -86,9 +86,7 @@ class FFT2D(LinearOperator):
         self.dims_fft[self.dirs[0]] = self.nffts[0]
         self.dims_fft[self.dirs[1]] = self.nffts[1]
 
-        self.shape = (int(np.prod(dims)*np.prod(self.nffts)/
-                          (self.dims[dirs[0]]*self.dims[dirs[1]])),
-                      int(np.prod(dims)))
+        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 

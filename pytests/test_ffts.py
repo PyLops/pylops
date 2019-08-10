@@ -11,28 +11,28 @@ par1 = {'nt': 101, 'nx': 31, 'ny': 10,
         'nfft': None, 'real': False, 'engine': 'numpy',
         'ffthshift': False} # nfft=nt, complex input, numpy engine
 par2 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': 256, 'real': False, 'engine': 'numpy',
+        'nfft': 128, 'real': False, 'engine': 'numpy',
         'ffthshift': False} # nfft>nt, complex input, numpy engine
 par3 = {'nt': 101, 'nx': 31, 'ny': 10,
         'nfft': None, 'real': True, 'engine': 'numpy',
         'ffthshift': False}  # nfft=nt, real input, numpy engine
 par4 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': 256, 'real': True, 'engine': 'numpy',
+        'nfft': 128, 'real': True, 'engine': 'numpy',
         'ffthshift': False}  # nfft>nt, real input, numpy engine
 par5 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': 256, 'real': True, 'engine': 'numpy',
+        'nfft': 128, 'real': True, 'engine': 'numpy',
         'ffthshift': True}  # nfft>nt, real input and fftshift, numpy engine
 par1w = {'nt': 101, 'nx': 31, 'ny': 10,
          'nfft': None, 'real': False, 'engine': 'fftw',
          'ffthshift': False}  # nfft=nt, complex input, fftw engine
 par2w = {'nt': 101, 'nx': 31, 'ny': 10,
-         'nfft': 256, 'real': False, 'engine': 'fftw',
+         'nfft': 128, 'real': False, 'engine': 'fftw',
          'ffthshift': False}  # nfft>nt, complex input, fftw engine
 par3w = {'nt': 101, 'nx': 31, 'ny': 10,
          'nfft': None, 'real': True, 'engine': 'fftw',
          'ffthshift': False}  # nfft=nt, real input, fftw engine
 par4w = {'nt': 101, 'nx': 31, 'ny': 10,
-         'nfft': 256, 'real': True, 'engine': 'fftw',
+         'nfft': 128, 'real': True, 'engine': 'fftw',
          'ffthshift': False}  # nfft>nt, real input, fftw engine
 
 
@@ -118,7 +118,7 @@ def test_FFT_2dsignal(par):
     assert_array_almost_equal(d, dinv, decimal=8)
 
     # 2nd dimension
-    nfft = par['nx'] if par['nfft']is None else par['nfft']
+    nfft = par['nx'] if par['nfft'] is None else par['nfft']
     FFTop = FFT(dims=(nt, nx), dir=1, nfft=nfft, sampling=dt,
                 real=par['real'], engine=par['engine'])
 
@@ -247,8 +247,8 @@ def test_FFT2D(par):
     dt, dx = 0.005, 5
     t = np.arange(par['nt']) * dt
     f0 = 10
-    nfft1 = par['nt'] if par['nfft']is None  else par['nfft']
-    nfft2 = par['nx'] if par['nfft']is None  else par['nfft']
+    nfft1 = par['nt'] if par['nfft'] is None else par['nfft']
+    nfft2 = par['nx'] if par['nfft'] is None else par['nfft']
     d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(par['nx']) + 1)
 
     FFTop = FFT2D(dims=(par['nt'], par['nx']), nffts=(nfft1, nfft2),
@@ -273,9 +273,10 @@ def test_FFT3D(par):
     dt, dx, dy = 0.005, 5, 2
     t = np.arange(par['nt']) * dt
     f0 = 10
-    nfft1 = par['nt'] if par['nfft']is None else par['nfft']
-    nfft2 = par['nx'] if par['nfft']is None else par['nfft']
-    nfft3 = par['ny'] if par['nfft']is None else par['nfft']
+    nfft1 = par['nt'] if par['nfft'] is None else par['nfft']
+    nfft2 = par['nx'] if par['nfft'] is None else par['nfft']
+    nfft3 = par['ny'] if par['nfft'] is None else par['nfft']
+    print(nfft1, nfft2, nfft3)
     d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(par['nx']) + 1)
     d = np.tile(d[:, :, np.newaxis], [1, 1, par['ny']])
 

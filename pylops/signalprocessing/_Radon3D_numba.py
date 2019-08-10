@@ -1,5 +1,10 @@
+import os
 import numpy as np
 from numba import jit
+
+# detect whether to use parallel or not
+numba_threads = int(os.getenv('NUMBA_NUM_THREADS', '1'))
+parallel = True if numba_threads != 1 else False
 
 
 @jit(nopython=True)
@@ -14,7 +19,7 @@ def _parabolic_numba(y, x, t, py, px):
 def _hyperbolic_numba(y, x, t, py, px):
     return np.sqrt(t**2 + (x/px)**2 + (y/py)**2)
 
-@jit(nopython=True, parallel=True, nogil=True)
+@jit(nopython=True, parallel=parallel, nogil=True)
 def _indices_3d_numba(f, y, x, py, px, it, nt, interp=True):
     """Compute time and space indices of parametric line in ``f`` function
     using numba. Refer to ``_indices_3d`` for full documentation.
@@ -34,14 +39,14 @@ def _indices_3d_numba(f, y, x, py, px, it, nt, interp=True):
             dtscan[it] = tscanf - tscan[it]
     return sscan, tscan, dtscan
 
-@jit(nopython=True, parallel=True, nogil=True)
+@jit(nopython=True, parallel=parallel, nogil=True)
 def _indices_3d_onthefly_numba(f, y, x, py, px, ip, it, nt, interp=True):
     """Wrapper around _indices_3d to allow on-the-fly computation of
     parametric curves using numba
     """
     return _indices_3d_numba(f, y, x, py[ip], px[ip], it, nt, interp=interp)
 
-@jit(nopython=True, parallel=True, nogil=True)
+@jit(nopython=True, parallel=parallel, nogil=True)
 def _create_table_numba(f, y, x, pyaxis, pxaxis, nt, npy, npx, ny, nx, interp):
     """Create look up table using numba
     """
