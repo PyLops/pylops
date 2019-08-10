@@ -6,7 +6,7 @@ Changelog
 Version 1.6.0
 -------------
 
-*Released on: 06/08/2019*
+*Released on: 10/08/2019*
 
 * Added :py:class:`pylops.signalprocessing.ConvolveND` operator
 * Added :py:func:`pylops.utils.signalprocessing.nonstationary_convmtx` to create

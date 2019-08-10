@@ -149,7 +149,8 @@ Finally, it is also advised to install the additional package
    >> conda install -c numba icc_rt
 
 or pip equivalent. Similarly to ``Intel MKL``, you need to set the environment variable
-``NUMBA_NUM_THREADS`` to tell numba how many threads to use.
+``NUMBA_NUM_THREADS`` to tell numba how many threads to use. If this variable is not
+present in your environment, numba code will be compiled with ``parallel=False``.
 
 
 fft routines

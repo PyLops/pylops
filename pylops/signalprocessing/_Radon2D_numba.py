@@ -1,5 +1,10 @@
+import os
 import numpy as np
 from numba import jit
+
+# detect whether to use parallel or not
+numba_threads = int(os.getenv('NUMBA_NUM_THREADS', '1'))
+parallel = True if numba_threads != 1 else False
 
 
 @jit(nopython=True)
@@ -34,14 +39,14 @@ def _indices_2d_numba(f, x, px, it, nt, interp=True):
             dtscan[it] = tscanf - tscan[it]
     return xscan, tscan, dtscan
 
-@jit(nopython=True, parallel=True, nogil=True)
+@jit(nopython=True, parallel=parallel, nogil=True)
 def _indices_2d_onthefly_numba(f, x, px, ip, it, nt, interp=True):
     """Wrapper around _indices_2d to allow on-the-fly computation of
     parametric curves using numba
     """
     return _indices_2d_numba(f, x, px[ip], it, nt, interp=interp)
 
-@jit(nopython=True, parallel=True, nogil=True)
+@jit(nopython=True, parallel=parallel, nogil=True)
 def _create_table_numba(f, x, pxaxis, nt, npx, nx, interp):
     """Create look up table using numba
     """

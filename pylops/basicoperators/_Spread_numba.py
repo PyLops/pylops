@@ -1,6 +1,12 @@
+import os
 from numba import jit, prange
 
-@jit(nopython=True, parallel=True, nogil=True)
+# detect whether to use parallel or not
+numba_threads = int(os.getenv('NUMBA_NUM_THREADS', '1'))
+parallel = True if numba_threads != 1 else False
+
+
+@jit(nopython=True, parallel=parallel, nogil=True)
 def _matvec_numba_table(x, y, dims, interp, table, dtable):
     """numba implementation of forward mode with table.
     See official documentation for description of variables
@@ -23,7 +29,7 @@ def _matvec_numba_table(x, y, dims, interp, table, dtable):
                         y[i, index + 1] += dindices[i] * x[ix0, it]
     return y.ravel()
 
-@jit(nopython=True, parallel=True, nogil=True)
+@jit(nopython=True, parallel=parallel, nogil=True)
 def _rmatvec_numba_table(x, y, dims, dimsd, interp, table, dtable):
     """numba implementation of adjoint mode with table.
     See official documentation for description of variables
@@ -46,7 +52,7 @@ def _rmatvec_numba_table(x, y, dims, dimsd, interp, table, dtable):
                                       x[i, index + 1]*dindices[i]
     return y.ravel()
 
-@jit(nopython=True, parallel=True, nogil=True)
+@jit(nopython=True, parallel=parallel, nogil=True)
 def _matvec_numba_onthefly(x, y, dims, interp, fh):
     """numba implementation of forward mode with on-the-fly computations.
     See official documentation for description of variables
@@ -69,7 +75,7 @@ def _matvec_numba_onthefly(x, y, dims, interp, fh):
                         y[i, index + 1] += dindices[i] * x[ix0, it]
     return y.ravel()
 
-@jit(nopython=True, parallel=True, nogil=True)
+@jit(nopython=True, parallel=parallel, nogil=True)
 def _rmatvec_numba_onthefly(x, y, dims, dimsd, interp, fh):
     """numba implementation of adjoint mode with on-the-fly computations.
     See official documentation for description of variables

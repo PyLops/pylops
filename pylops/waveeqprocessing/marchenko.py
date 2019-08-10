@@ -69,7 +69,8 @@ class Marchenko():
     R : :obj:`numpy.ndarray`
         Multi-dimensional reflection response in time or frequency
         domain of size :math:`[n_s \times n_r \times n_t/n_{fmax}]`. If
-        provided in time, `R` should not be of complex type
+        provided in time, `R` should not be of complex type. Note that the
+        reflection response should have already been multiplied by 2.
     R1 : :obj:`bool`, optional
         *Deprecated*, will be removed in v2.0.0. Simply kept for
         back-compatibility with previous implementation
@@ -158,6 +159,9 @@ class Marchenko():
            \mathbf{f^-}  \\
            \mathbf{f^+}
         \end{bmatrix}
+
+    Here :math:`\mathbf{R}` is the monopole-to-particle velocity seismic
+    response (already multiplied by 2).
 
     .. [1] Wapenaar, K., Thorbecke, J., Van der Neut, J., Broggini, F.,
         Slob, E., and Snieder, R., "Marchenko imaging", Geophysics, vol. 79,

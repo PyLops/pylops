@@ -38,9 +38,7 @@ class _FFT_numpy(LinearOperator):
             self.dims_fft[self.dir] = self.nfft // 2 + 1 if \
                 self.real else self.nfft
             self.reshape = True
-        self.shape = (int(np.prod(dims)*(self.nfft//2 + 1 if self.real
-                                         else self.nfft)/self.dims[dir]),
-                      int(np.prod(dims)))
+        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
@@ -137,9 +135,7 @@ class _FFT_fftw(LinearOperator):
             self.dims_fft[self.dir] = self.nfft//2 + 1 if \
                 self.real else self.nfft
             self.reshape = True
-        self.shape = (int(np.prod(dims)*(self.nfft//2 + 1 if self.real
-                                         else self.nfft)/self.dims[dir]),
-                      int(np.prod(dims)))
+        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
