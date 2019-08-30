@@ -120,7 +120,7 @@ class Convolve1D(LinearOperator):
 
     def _matvec(self, x):
         if not self.reshape:
-            y = convolve(x, self.h, mode='same', method=self.method)
+            y = convolve(x.squeeze(), self.h, mode='same', method=self.method)
         else:
             x = np.reshape(x, self.dims)
             y = fftconvolve(x, self.h, mode='same', axes=self.dir)
@@ -129,7 +129,7 @@ class Convolve1D(LinearOperator):
 
     def _rmatvec(self, x):
         if not self.reshape:
-            y = convolve(x, self.hstar, mode='same', method=self.method)
+            y = convolve(x.squeeze(), self.hstar, mode='same', method=self.method)
         else:
             x = np.reshape(x, self.dims)
             y = fftconvolve(x, self.hstar, mode='same', axes=self.dir)
