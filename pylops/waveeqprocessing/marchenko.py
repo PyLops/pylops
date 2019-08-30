@@ -11,11 +11,12 @@ from pylops.waveeqprocessing.mdd import MDC
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
-def directwave(wav, trav, nt, dt, nfft=None):
+def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d'):
     r"""Analytical direct wave
 
-    Compute analytical 2d Green's function in frequency domain given
-    a traveltime curve ``trav`` and wavelet ``wav``.
+    Compute analytical 2d or 3d Green's function in frequency domain given
+    a wavelet ``wav``, traveltime curve ``trav`` and distance ``dist``
+    (for 3d case only).
 
     Parameters
     ----------
@@ -32,6 +33,11 @@ def directwave(wav, trav, nt, dt, nfft=None):
         Sampling in time
     nfft : :obj:`int`, optional
         Number of samples in fft time (if ``None``, :math:`nfft=nt`)
+    dist: :obj:`numpy.ndarray`
+        Distance between subsurface point to
+        surface receivers of size :math:`\lbrack nr \times 1 \rbrack`
+    kind : :obj:`str`, optional
+        2-dimensional (``2d``) or 3-dimensional (``3d``)
 
     Returns
     -------
@@ -47,11 +53,14 @@ def directwave(wav, trav, nt, dt, nfft=None):
 
     direct = np.zeros((nfft, nr), dtype=np.complex128)
     for it in range(len(W)):
-        #direct[it] = W[it] * 1j * f[it] * np.exp(-1j * ((f[it] * trav) \
-        #             + np.sign(f[it]) * np.pi / 4)) / \
-        #             np.sqrt(8 * np.pi * np.abs(f[it]) * trav + 1e-10)
-        direct[it] = W[it] * 1j * f[it] * (-1j) * \
-                     hankel2(0, f[it] * trav + 1e-10) / 4
+        if kind == '2d':
+            #direct[it] = W[it] * 1j * f[it] * np.exp(-1j * ((f[it] * trav) \
+            #             + np.sign(f[it]) * np.pi / 4)) / \
+            #             np.sqrt(8 * np.pi * np.abs(f[it]) * trav + 1e-10)
+            direct[it] = W[it] * 1j * f[it] * (-1j) * \
+                         hankel2(0, f[it] * trav + 1e-10) / 4
+        else:
+            direct[it] = W[it] * np.exp(-1j * f[it] * trav) / (4 * np.pi * dist)
 
     direct = np.fft.irfft(direct, nfft, axis=0) / dt
     direct = np.real(direct[:nt])
