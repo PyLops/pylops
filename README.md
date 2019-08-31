@@ -7,8 +7,7 @@
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=latest)](https://pylops.readthedocs.io/en/latest/?badge=latest)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=equinor/pylops&amp;utm_campaign=Badge_Grade)
 [![Codacy Coverage](https://api.codacy.com/project/badge/Coverage/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&utm_medium=referral&utm_content=equinor/pylops&utm_campaign=Badge_Coverage)
-[![OS-support](https://img.shields.io/badge/OS-linux,win,osx-850A8B.svg)]
-[![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
+![OS-support](https://img.shields.io/badge/OS-linux,win,osx-850A8B.svg)
 [![Slack Status](https://img.shields.io/badge/chat-slack-green.svg)](https://pylops.slack.com)
 
 ## Objective
