@@ -29,7 +29,7 @@ def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
     operator.
 
     """
-    if wav.ndim == 2 and wav.shape[0] != nt0:
+    if len(wav.shape) == 2 and wav.shape[0] != nt0:
         raise ValueError('Provide 1d wavelet or 2d wavelet composed of nt0 '
                          'wavelets')
 
@@ -50,7 +50,7 @@ def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
         D[0] = D[-1] = 0
 
         # Create wavelet operator
-        if wav.ndim == 1:
+        if len(wav.shape) == 1:
             C = convmtx(wav, nt0)[:, len(wav) // 2:-len(wav) // 2 + 1]
         else:
             C = nonstationary_convmtx(wav, nt0, hc=wav.shape[1] // 2,
@@ -82,7 +82,7 @@ def PoststackLinearModelling(wav, nt0, spatdims=None,
                              explicit=False, sparse=False):
     r"""Post-stack linearized seismic modelling operator.
 
-    Create operator to be applied to an acoustic impedance trace (or stack of
+    Create operator to be applied to an elastic parameter trace (or stack of
     traces) for generation of band-limited seismic post-stack data. The input
     model and data have shape :math:`[n_{t0} (\times n_x \times n_y)]`.
 
@@ -121,21 +121,27 @@ def PoststackLinearModelling(wav, nt0, spatdims=None,
     Notes
     -----
     Post-stack seismic modelling is the process of constructing
-    seismic post-stack data from a profile of acoustic impedance in
+    seismic post-stack data from a profile of an elastic parameter of choice in
     time (or depth) domain. This can be easily achieved using the
     following forward model:
 
     .. math::
-        d(t, \theta=0) = w(t) * \frac{dln(AI(t))}{dt}
+        d(t, \theta) =  w(t) * \frac{dln(m(t))}{dt}
 
-    where :math:`AI(t)` is the acoustic impedance profile and
+    where :math:`m(t)` is the elastic parameter profile and
     :math:`w(t)` is the time domain seismic wavelet. In compact form:
 
     .. math::
-        \mathbf{d}= \mathbf{W} \mathbf{D} \mathbf{ai}
+        \mathbf{d}= \mathbf{W} \mathbf{D} \mathbf{m}
 
-    On the other hand, post-stack inversion aims at recovering
-    the impedance profile from the band-limited seismic stack data.
+    In the special case of acoustic impedance (:math:`m(t)=AI(t)`), the
+    modelling operator can be used to create zero-offset data:
+
+        .. math::
+        d(t, \theta=0) = \frac{1}{2} w(t) * \frac{dln(m(t))}{dt}
+
+    where the scaling factor :math:`\frac{1}{2}` can be easily included in
+    the wavelet.
 
     """
     return _PoststackLinearModelling(wav, nt0, spatdims=spatdims,
@@ -147,8 +153,8 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
                        **kwargs_solver):
     r"""Post-stack linearized seismic inversion.
 
-    Invert post-stack seismic operator to retrieve an acoustic
-    impedance profile from band-limited seismic post-stack data.
+    Invert post-stack seismic operator to retrieve an elastic parameter of
+    choice from band-limited seismic post-stack data.
     Depending on the choice of input parameters, inversion can be
     trace-by-trace with explicit operator or global with either
     explicit or linear operator.
@@ -288,7 +294,7 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
                 PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0)
                 datarn = PPop.A.T * datar.reshape(nt0, nspatprod)
                 PPop_reg = MatrixMult(PP, dims=nspatprod)
-                minv = lstsq(PPop_reg, datarn.flatten(), **kwargs_solver)[0]
+                minv = lstsq(PPop_reg.A, datarn.flatten(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
             minv = lsqr(PPop, datar, **kwargs_solver)[0]

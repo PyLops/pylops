@@ -11,6 +11,7 @@ from .Symmetrize import Symmetrize
 from .Spread import Spread
 from .Transpose import Transpose
 from .Roll import Roll
+from .Pad import Pad
 
 from .VStack import VStack
 from .HStack import HStack

@@ -23,7 +23,6 @@ plt.close('all')
 # Input parameters
 inputfile = '../testdata/marchenko/input.npz'
 
-vs_zx = [1060, 1200] # virtual source z,x
 vel = 2400.0         # velocity
 toff = 0.045         # direct arrival time shift
 nsmooth = 10         # time window smoothing

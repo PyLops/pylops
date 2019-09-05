@@ -13,8 +13,8 @@ import pylops
 plt.close('all')
 
 ###############################################################################
-# Let's define an identity operator :math:`\mathbf{I}` with same number of elements for data
-# :math:`N` and model :math:`M`.
+# Let's define an identity operator :math:`\mathbf{Iop}` with same number of
+# elements for data and model (:math:`N=M`).
 N, M = 5, 5
 x = np.arange(M)
 Iop = pylops.Identity(M, dtype='int')

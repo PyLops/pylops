@@ -10,6 +10,7 @@ from .basicoperators import Symmetrize
 from .basicoperators import Spread
 from .basicoperators import Transpose
 from .basicoperators import Roll
+from .basicoperators import Pad
 from .basicoperators import FunctionOperator
 
 from .basicoperators import VStack
