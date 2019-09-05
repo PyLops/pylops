@@ -14,7 +14,6 @@ class Transpose(LinearOperator):
     ----------
     dims : :obj:`tuple`, optional
         Number of samples for each dimension
-        (``None`` if only one dimension is available)
     axes : :obj:`tuple`, optional
         Direction along which transposition is applied
     dtype : :obj:`str`, optional

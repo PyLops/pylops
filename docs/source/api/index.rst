@@ -45,6 +45,7 @@ Basic operators
     Transpose
     Flip
     Roll
+    Pad
     Symmetrize
     Restriction
     Regression

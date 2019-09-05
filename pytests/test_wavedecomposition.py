@@ -76,7 +76,7 @@ p2d, vz2d = d2d[:PAR['nx']], d2d[PAR['nx']:]
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
-def test_WavefieldDecompositionD(par):
+def test_WavefieldDecomposition2D(par):
     """WavefieldDecomposition operator of 2d data
     """
     p2d_minus_est, p2d_plus_est= \
