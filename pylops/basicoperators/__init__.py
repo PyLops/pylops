@@ -26,3 +26,4 @@ from .CausalIntegration import CausalIntegration
 from .FirstDerivative import FirstDerivative
 from .SecondDerivative import SecondDerivative
 from .Laplacian import Laplacian
+from .Gradient import Gradient

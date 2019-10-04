@@ -2,8 +2,8 @@
 Derivatives
 ===========
 This example shows how to use the suite of derivative operators, namely
-:py:class:`pylops.FirstDerivative`, :py:class:`pylops.SecondDerivative`
-and :py:class:`pylops.Laplacian`.
+:py:class:`pylops.FirstDerivative`, :py:class:`pylops.SecondDerivative`,
+:py:class:`pylops.Laplacian` and :py:class:`pylops.Gradient`.
 
 The derivative operators are very useful when the model to be inverted for
 is expect to be smooth in one or more directions. As shown in the
@@ -145,7 +145,7 @@ plt.subplots_adjust(top=0.8)
 
 
 ###############################################################################
-# And finally we use the symmetrical Laplacian operator as well
+# We use the symmetrical Laplacian operator as well
 # as a asymmetrical version of it (by adding more weight to the
 # derivative along one direction)
 
@@ -172,6 +172,32 @@ plt.colorbar(im, ax=axs[1])
 im = axs[2].imshow(Basym, interpolation='nearest', cmap='rainbow')
 axs[2].axis('tight')
 axs[2].set_title('y asym')
+plt.colorbar(im, ax=axs[2])
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)
+
+
+###############################################################################
+# Finally we consider the gradient operator
+Gop = pylops.Gradient(dims=(nx, ny), dtype='float64')
+
+B = np.reshape(Gop * A.flatten(), (2*nx, ny))
+C = np.reshape(Gop.H * B.flatten(), (nx, ny))
+
+fig, axs = plt.subplots(1, 3, figsize=(10, 3))
+fig.suptitle('Gradient', fontsize=12,
+             fontweight='bold', y=0.95)
+im = axs[0].imshow(A, interpolation='nearest', cmap='rainbow')
+axs[0].axis('tight')
+axs[0].set_title('x')
+plt.colorbar(im, ax=axs[0])
+im = axs[1].imshow(B, interpolation='nearest', cmap='rainbow')
+axs[1].axis('tight')
+axs[1].set_title('y')
+plt.colorbar(im, ax=axs[1])
+im = axs[2].imshow(C, interpolation='nearest', cmap='rainbow')
+axs[2].axis('tight')
+axs[2].set_title('xadj')
 plt.colorbar(im, ax=axs[2])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)

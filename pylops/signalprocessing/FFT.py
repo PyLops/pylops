@@ -297,7 +297,7 @@ def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
         f = _FFT_fftw(dims, dir=dir, nfft=nfft, sampling=sampling,
                       real=real, fftshift=fftshift, dtype=dtype, **kwargs_fftw)
     elif engine == 'numpy' or pyfftw is None:
-        if pyfftw is None:
+        if engine == 'fftw' and pyfftw is None:
             logging.warning('use numpy, pyfftw not available...')
         f = _FFT_numpy(dims, dir=dir, nfft=nfft, sampling=sampling,
                        real=real, fftshift=fftshift, dtype=dtype)
