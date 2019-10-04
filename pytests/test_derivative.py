@@ -4,7 +4,8 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 from pylops.utils import dottest
-from pylops.basicoperators import FirstDerivative, SecondDerivative, Laplacian
+from pylops.basicoperators import FirstDerivative, SecondDerivative, \
+    Laplacian, Gradient
 
 
 par1 = {'nz': 10, 'ny': 30, 'nx': 40,
@@ -264,3 +265,22 @@ def test_Laplacian(par):
                        edge=par['edge'], dtype='float32')
     assert dottest(Dlapop, par['nz']*par['ny']*par['nx'],
                    par['nz']*par['ny']*par['nx'], tol=1e-3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+                                 (par1e), (par2e), (par3e), (par4e)])
+def test_Gradient(par):
+    """Dot-test for Gradient operator
+    """
+    # 2d
+    Gop = Gradient((par['ny'], par['nx']), sampling=(par['dy'], par['dx']),
+                   edge=par['edge'], dtype='float32')
+    assert dottest(Gop, 2 * par['ny'] * par['nx'], par['ny'] * par['nx'],
+                   tol=1e-3)
+
+    # 3d
+    Gop = Gradient((par['nz'], par['ny'], par['nx']),
+                   sampling=(par['dz'], par['dy'], par['dx']),
+                   edge=par['edge'], dtype='float32')
+    assert dottest(Gop, 3 * par['nz'] * par['ny'] * par['nx'],
+                   par['nz'] * par['ny'] * par['nx'], tol=1e-3)

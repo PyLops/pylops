@@ -69,6 +69,7 @@ Smoothing and derivatives
    FirstDerivative
    SecondDerivative
    Laplacian
+   Gradient
 
 
 Signal processing

@@ -6,7 +6,7 @@ def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1),
               edge=False, dtype='float64'):
     r"""Laplacian.
 
-    Apply second-order centered laplacian operator to a multi-dimensional
+    Apply second-order centered Laplacian operator to a multi-dimensional
     array (at least 2 dimensions are required)
 
     Parameters
@@ -19,7 +19,7 @@ def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1),
         Weight to apply to each direction (real laplacian operator if
         ``weights=[1,1]``)
     sampling : :obj:`tuple`, optional
-        Sampling steps ``dx`` and ``dy`` for each direction
+        Sampling steps for each direction
     edge : :obj:`bool`, optional
         Use reduced order derivative at edges (``True``) or
         ignore them (``False``)

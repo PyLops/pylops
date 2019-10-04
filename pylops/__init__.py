@@ -23,6 +23,7 @@ from .basicoperators import CausalIntegration
 from .basicoperators import FirstDerivative
 from .basicoperators import SecondDerivative
 from .basicoperators import Laplacian
+from .basicoperators import Gradient
 from .basicoperators import Restriction
 from .basicoperators import Smoothing1D
 from .basicoperators import Smoothing2D
