@@ -7,7 +7,7 @@ from scipy.sparse.linalg import lsqr
 
 from pylops.utils import dottest
 from pylops.basicoperators import Regression, LinearRegression, MatrixMult, \
-    Identity, Zero, Flip, Symmetrize, Roll
+    Identity, Zero, Flip, Symmetrize, Roll, Sum
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0,
         'dtype':'float32'}  # square real
@@ -397,3 +397,27 @@ def test_Roll3D(par):
 
         xinv = Rop.H * y
         assert_array_almost_equal(x[str(dir)].ravel(), xinv, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Sum2D(par):
+    """Dot-test for Sum operator on 2d signal
+    """
+    for dir in [0, 1]:
+        dim_d = [par['ny'], par['nx']]
+        dim_d.pop(dir)
+        Sop = Sum(dims=(par['ny'], par['nx']),
+                  dir=dir,  dtype=par['dtype'])
+        assert dottest(Sop, np.prod(dim_d), par['ny'] * par['nx'])
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Sum3D(par):
+    """Dot-test, forward and adjoint for Sum operator on 3d signal
+    """
+    for dir in [0, 1, 2]:
+        dim_d = [par['ny'], par['nx'], par['nx']]
+        dim_d.pop(dir)
+        Sop = Sum(dims=(par['ny'], par['nx'], par['nx']),
+                  dir=dir, dtype=par['dtype'])
+        assert dottest(Sop, np.prod(dim_d), par['ny'] * par['nx'] * par['nx'])

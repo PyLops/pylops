@@ -5,7 +5,7 @@ from numpy.testing import assert_array_almost_equal
 
 from pylops.utils import dottest
 from pylops.basicoperators import FirstDerivative, SecondDerivative, \
-    Laplacian, Gradient
+    Laplacian, Gradient, FirstDirectionalDerivative
 
 
 par1 = {'nz': 10, 'ny': 30, 'nx': 40,
@@ -283,4 +283,29 @@ def test_Gradient(par):
                    sampling=(par['dz'], par['dy'], par['dx']),
                    edge=par['edge'], dtype='float32')
     assert dottest(Gop, 3 * par['nz'] * par['ny'] * par['nx'],
+                   par['nz'] * par['ny'] * par['nx'], tol=1e-3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+                                 (par1e), (par2e), (par3e), (par4e)])
+def test_FirstDirectionalDerivative(par):
+    """Dot-test for FirstDirectionalDerivative operator
+    """
+    # 2d
+    Fdop = \
+        FirstDirectionalDerivative((par['ny'], par['nx']),
+                                   v=np.sqrt(2.)/2. * np.ones(2),
+                                   sampling=(par['dy'], par['dx']),
+                                   edge=par['edge'],
+                                   dtype='float32')
+    assert dottest(Fdop, par['ny'] * par['nx'],
+                   par['ny'] * par['nx'], tol=1e-3)
+
+    # 3d
+    Fdop = \
+        FirstDirectionalDerivative((par['nz'], par['ny'], par['nx']),
+                                   v=np.ones(3) / np.sqrt(3),
+                                   sampling=(par['dz'], par['dy'], par['dx']),
+                                   edge=par['edge'], dtype='float32')
+    assert dottest(Fdop, par['nz'] * par['ny'] * par['nx'],
                    par['nz'] * par['ny'] * par['nx'], tol=1e-3)
