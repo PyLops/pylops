@@ -1,5 +1,3 @@
-import numpy as np
-import numpy as np
 from pylops.basicoperators import Gradient, Diagonal, Sum
 
 
