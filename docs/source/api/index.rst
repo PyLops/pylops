@@ -46,6 +46,7 @@ Basic operators
     Flip
     Roll
     Pad
+    Sum
     Symmetrize
     Restriction
     Regression
@@ -70,6 +71,8 @@ Smoothing and derivatives
    SecondDerivative
    Laplacian
    Gradient
+   FirstDirectionalDerivative
+   SecondDirectionalDerivative
 
 
 Signal processing

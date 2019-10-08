@@ -11,6 +11,7 @@ from .basicoperators import Spread
 from .basicoperators import Transpose
 from .basicoperators import Roll
 from .basicoperators import Pad
+from .basicoperators import Sum
 from .basicoperators import FunctionOperator
 
 from .basicoperators import VStack
@@ -24,6 +25,8 @@ from .basicoperators import FirstDerivative
 from .basicoperators import SecondDerivative
 from .basicoperators import Laplacian
 from .basicoperators import Gradient
+from .basicoperators import FirstDirectionalDerivative
+from .basicoperators import SecondDirectionalDerivative
 from .basicoperators import Restriction
 from .basicoperators import Smoothing1D
 from .basicoperators import Smoothing2D

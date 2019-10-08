@@ -12,6 +12,7 @@ from .Spread import Spread
 from .Transpose import Transpose
 from .Roll import Roll
 from .Pad import Pad
+from .Sum import Sum
 
 from .VStack import VStack
 from .HStack import HStack
@@ -27,3 +28,5 @@ from .FirstDerivative import FirstDerivative
 from .SecondDerivative import SecondDerivative
 from .Laplacian import Laplacian
 from .Gradient import Gradient
+from .DirectionalDerivative import FirstDirectionalDerivative
+from .DirectionalDerivative import SecondDirectionalDerivative

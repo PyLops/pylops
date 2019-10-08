@@ -3,7 +3,9 @@ Derivatives
 ===========
 This example shows how to use the suite of derivative operators, namely
 :py:class:`pylops.FirstDerivative`, :py:class:`pylops.SecondDerivative`,
-:py:class:`pylops.Laplacian` and :py:class:`pylops.Gradient`.
+:py:class:`pylops.Laplacian` and :py:class:`pylops.Gradient`,
+:py:class:`pylops.FirstDirectionalDerivative` and
+:py:class:`pylops.SecondDirectionalDerivative`.
 
 The derivative operators are very useful when the model to be inverted for
 is expect to be smooth in one or more directions. As shown in the
@@ -16,6 +18,7 @@ import matplotlib.pyplot as plt
 import pylops
 
 plt.close('all')
+np.random.seed(0)
 
 ###############################################################################
 # Let's start by looking at a simple first-order centered derivative and how
@@ -101,7 +104,6 @@ plt.subplots_adjust(top=0.8)
 
 ###############################################################################
 # We can now do the same for the second derivative
-
 A = np.zeros((nx, ny))
 A[nx//2, ny//2] = 1.
 
@@ -178,7 +180,9 @@ plt.subplots_adjust(top=0.8)
 
 
 ###############################################################################
-# Finally we consider the gradient operator
+# We consider now the gradient operator. Given a 2-dimensional array,
+# this operator applies first-order derivatives on both dimensions and
+# concatenates them.
 Gop = pylops.Gradient(dims=(nx, ny), dtype='float64')
 
 B = np.reshape(Gop * A.flatten(), (2*nx, ny))
@@ -201,3 +205,53 @@ axs[2].set_title('xadj')
 plt.colorbar(im, ax=axs[2])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
+
+###############################################################################
+# Finally we use the Gradient operator to commpute directional derivatives.
+# We create a model which has some layering in the horizontal and vertical
+# directions and show how the direction derivatives differs from standard
+# derivatives
+nx, nz = 60, 40
+
+horlayers = np.cumsum(np.random.uniform(2, 10, 20).astype(np.int))
+horlayers = horlayers[horlayers < nz//2]
+nhorlayers = len(horlayers)
+
+vertlayers = np.cumsum(np.random.uniform(2, 20, 10).astype(np.int))
+vertlayers = vertlayers[vertlayers < nx]
+nvertlayers = len(vertlayers)
+
+A = 1500 * np.ones((nz, nx))
+for top, base in zip(horlayers[:-1], horlayers[1:]):
+    A[top:base] = np.random.normal(2000, 200)
+for top, base in zip(vertlayers[:-1], vertlayers[1:]):
+    A[horlayers[-1]:, top:base] = np.random.normal(2000, 200)
+
+v = np.zeros((2, nz, nx))
+v[0, :horlayers[-1]] = 1
+v[1, horlayers[-1]:] = 1
+
+Ddop = pylops.FirstDirectionalDerivative((nz, nx), v=v, sampling=(nz, nx))
+D2dop = pylops.SecondDirectionalDerivative((nz, nx), v=v, sampling=(nz, nx))
+
+dirder = Ddop * A.ravel()
+dirder = dirder.reshape(nz, nx)
+dir2der = D2dop * A.ravel()
+dir2der = dir2der.reshape(nz, nx)
+
+jump = 4
+fig, axs = plt.subplots(3, 1, figsize=(4, 9))
+im = axs[0].imshow(A, cmap='gist_rainbow', extent=(0, nx//jump, nz//jump, 0))
+q = axs[0].quiver(np.arange(nx//jump)+.5, np.arange(nz//jump)+.5,
+                  np.flipud(v[1, ::jump, ::jump]),
+                  np.flipud(v[0, ::jump, ::jump]),
+                  color='w', linewidths=20)
+axs[0].set_title('x')
+axs[0].axis('tight')
+axs[1].imshow(dirder, cmap='gray', extent=(0, nx//jump, nz//jump, 0))
+axs[1].set_title('y = D * x')
+axs[1].axis('tight')
+axs[2].imshow(dir2der, cmap='gray', extent=(0, nx//jump, nz//jump, 0))
+axs[2].set_title('y = D2 * x')
+axs[2].axis('tight')
+plt.tight_layout()
