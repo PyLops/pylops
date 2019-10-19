@@ -41,6 +41,7 @@ from .optimization.sparsity import IRLS, ISTA, FISTA, SPGL1, SplitBregman
 from .utils.seismicevents import makeaxis, linear2d, parabolic2d
 from .utils.tapers import hanningtaper, cosinetaper, taper2d, taper3d
 from .utils.wavelets import ricker, gaussian
+from .utils.utils import Report
 
 from . import avo
 from . import basicoperators
