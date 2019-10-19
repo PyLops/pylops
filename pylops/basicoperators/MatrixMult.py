@@ -27,10 +27,16 @@ class MatrixMult(LinearOperator):
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (``True``) or not (``False``)
+    complex : :obj:`bool`
+        Matrix has complex numbers (``True``) or not (``False``)
 
     """
     def __init__(self, A, dims=None, dtype='float64'):
         self.A = A
+        if isinstance(A, np.ndarray):
+            self.complex = np.iscomplexobj(A)
+        else:
+            self.complex = np.iscomplexobj(A.data)
         if dims is None:
             self.reshape = False
             self.shape = A.shape
@@ -59,7 +65,11 @@ class MatrixMult(LinearOperator):
         if self.reshape:
             x = np.reshape(x, np.insert([np.prod(self.dims)], 0,
                            self.A.shape[0]))
-        y = self.A.conj().T.dot(x)
+        if self.complex:
+            y = (self.A.T.dot(x.conj())).conj()
+        else:
+            y = self.A.T.dot(x)
+
         if self.reshape:
             return y.ravel()
         else:

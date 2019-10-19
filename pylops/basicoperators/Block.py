@@ -20,7 +20,9 @@ def Block(ops, dtype=None):
     Parameters
     ----------
     ops : :obj:`list`
-        List of lists of operators to be combined in block fashion
+        List of lists of operators to be combined in block fashion.
+        Alternatively, :obj:`numpy.ndarray` or :obj:`scipy.sparse` matrices
+        can be passed in place of one or more operators.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
