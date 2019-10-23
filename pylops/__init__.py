@@ -53,4 +53,8 @@ from . import waveeqprocessing
 try:
     from .version import version as __version__
 except ImportError:
-    __version__ = '0.0.0'
+    # If it was not installed, then we don't know the version. We could throw a
+    # warning here, but this case *should* be rare. pylops should be installed
+    # properly!
+    from datetime import datetime
+    __version__ = 'unknown-'+datetime.today().strftime('%Y%m%d')
