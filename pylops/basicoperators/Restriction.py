@@ -98,6 +98,7 @@ class Restriction(LinearOperator):
         else:
             x = np.reshape(x, self.dims)
             y = np.take(x, self.iava, axis=self.dir)
+            y = y.ravel()
         return y
 
     def _rmatvec(self, x):
@@ -110,6 +111,7 @@ class Restriction(LinearOperator):
             y = np.zeros(self.dims, dtype=self.dtype)
             np.put_along_axis(y, np.reshape(self.iava, self.iavareshape),
                               x, axis=self.dir)
+            y = y.ravel()
         return y
 
     def mask(self, x):

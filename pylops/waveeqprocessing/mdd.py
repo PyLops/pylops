@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 
 from scipy.sparse.linalg import lsqr
+from scipy.signal import filtfilt
 from scipy.ndimage.filters import convolve1d as sp_convolve1d
 
 from pylops import Diagonal, Identity, Transpose
@@ -187,7 +188,7 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
 def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         twosided=True, causality_precond=False, adjoint=False,
         psf=False, dtype='float64', dottest=False,
-        saveGt=True, add_negative=True, **kwargs_lsqr):
+        saveGt=True, add_negative=True, smooth_precond=0, **kwargs_lsqr):
     r"""Multi-dimensional deconvolution.
 
     Solve multi-dimensional deconvolution problem using
@@ -352,6 +353,8 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
     if twosided and causality_precond:
         P = np.ones((nt2, nr, nv))
         P[:nt - 1] = 0
+        if smooth_precond > 0:
+            P = filtfilt(np.ones(smooth_precond)/smooth_precond, 1, P, axis=0)
         Pop = Diagonal(P)
         minv = PreconditionedInversion(MDCop, Pop, d.flatten(),
                                        returninfo=False, **kwargs_lsqr)

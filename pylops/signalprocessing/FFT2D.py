@@ -92,9 +92,9 @@ class FFT2D(LinearOperator):
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
-        y = np.sqrt(1./np.prod(self.nffts))*np.fft.fft2(x, s=self.nffts,
-                                                        axes=(self.dirs[0],
-                                                              self.dirs[1]))
+        y = np.sqrt(1./np.prod(self.nffts)) * np.fft.fft2(x, s=self.nffts,
+                                                          axes=(self.dirs[0],
+                                                                self.dirs[1]))
         y = np.ndarray.flatten(y)
         return y
 

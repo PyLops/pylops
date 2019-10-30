@@ -1,13 +1,19 @@
 r"""
-ISTA and FISTA
-==============
+OMP, ISTA and FISTA
+===================
 
-This example shows how to use the :py:class:`pylops.optimization.sparsity.ISTA`
-and :py:class:`pylops.optimization.sparsity.FISTA` solvers.
+This example shows how to use the :py:class:`pylops.optimization.sparsity.OMP`,
+:py:class:`pylops.optimization.sparsity.ISTA`, and
+:py:class:`pylops.optimization.sparsity.FISTA` solvers.
 
 These solvers can be used when the model to retrieve is supposed to have
-a sparse representation in a certail domain, which mathematically translates
-to optimizing the following cost function:
+a sparse representation in a certain domain. OMP uses a L0 norm and
+mathematically translates to solving the following constrained problem:
+
+.. math::
+    ||\mathbf{x}||_0 \quad  subj. to \quad ||\mathbf{Op}\mathbf{x}-\mathbf{b}||_2 <= \sigma,
+
+while ISTA and FISTA solve an uncostrained problem with a L1 regularization term:
 
 .. math::
     J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2 + \epsilon ||\mathbf{x}||_1
@@ -39,23 +45,21 @@ y = Aop*x
 # ISTA
 eps = 0.5
 maxit = 1000
-x_ista, niter, cost = pylops.optimization.sparsity.ISTA(Aop, y, maxit, eps=eps,
-                                                        tol=0, returninfo=True)
+x_omp = pylops.optimization.sparsity.OMP(Aop, y, maxit, sigma=1e-4)[0]
+x_ista = pylops.optimization.sparsity.ISTA(Aop, y, maxit, eps=eps,
+                                           tol=0, returninfo=True)[0]
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 3))
-ax.stem(x, linefmt='k',
+ax.stem(x, linefmt='k', basefmt='k',
         markerfmt='ko', label='True')
+ax.stem(x_omp, linefmt='--g', basefmt='--g',
+        markerfmt='go', label='OMP')
 ax.stem(x_ista, linefmt='--r',
         markerfmt='ro', label='ISTA')
 ax.set_title('Model', size=15, fontweight='bold')
 ax.legend()
 plt.tight_layout()
 
-fig, ax = plt.subplots(1, 1, figsize=(8, 3))
-ax.plot(cost, 'k', lw=2)
-ax.set_title('ISTA Cost function', size=15, fontweight='bold')
-ax.set_xlabel('Iteration')
-plt.tight_layout()
 
 ###############################################################################
 # We now consider a more interesting problem problem, *wavelet deconvolution*
@@ -88,7 +92,10 @@ yn = y + np.random.normal(0, 0.1, y.shape)
 # noise free
 xls = Cop / y
 
-xista, niter, cost = \
+xomp, nitero, costo = \
+    pylops.optimization.sparsity.OMP(Cop, y, niter_outer=200, sigma=1e-8)
+
+xista, niteri, costi = \
     pylops.optimization.sparsity.ISTA(Cop, y, niter=400, eps=5e-1,
                                       tol=1e-8, returninfo=True)
 
@@ -96,7 +103,9 @@ fig, ax = plt.subplots(1, 1, figsize=(8, 3))
 ax.plot(t, x, 'k', lw=8, label=r'$x$')
 ax.plot(t, y, 'r', lw=4, label=r'$y=Ax$')
 ax.plot(t, xls, '--g', lw=4, label=r'$x_{LS}$')
-ax.plot(t, xista, '--m', lw=4, label=r'$x_{ISTA} (niter=%d)$' % niter)
+ax.plot(t, xomp, '--b', lw=4, label=r'$x_{OMP} (niter=%d)$' % nitero)
+ax.plot(t, xista, '--m', lw=4, label=r'$x_{ISTA} (niter=%d)$' % niteri)
+
 ax.set_title('Noise-free deconvolution', fontsize=14, fontweight='bold')
 ax.legend()
 plt.tight_layout()

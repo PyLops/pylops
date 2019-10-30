@@ -213,15 +213,44 @@ class LinearOperator(spLinearOperator):
 
         Returns
         -------
-        eigenvalues : :obj:`pylops.LinearOperator`
+        conjop : :obj:`pylops.LinearOperator`
             Complex conjugate operator
 
         """
-        return _ConjLinearOperator(self)
+        conjop = _ConjLinearOperator(self)
+        return conjop
+
+    def apply_columns(self, cols):
+        """Apply subset of columns of operator
+
+        This method can be used to wrap a LinearOperator and mimic the action
+        of a subset of columns of the operator on a reduced model in forward
+        mode, and retrieve only the result of a subset of rows in adjoint mode.
+
+        Note that unless the operator has ``explicit=True``, this is not
+        optimal as the entire forward and adjoint passes of the original
+        operator will have to be perfomed. It can however be useful for the
+        implementation of solvers such as Orthogonal Matching Pursuit (OMP)
+        that iteratively build a solution by evaluate only a subset of the
+        columns of the operator.
+
+        Parameters
+        ----------
+        cols : :obj:`list`
+            Columns to be selected
+
+        Returns
+        -------
+         : :obj:`pylops.LinearOperator`
+            Complex conjugate operator
+
+        """
+        return _ColumnLinearOperator(self, cols)
 
 
 class _ConjLinearOperator(LinearOperator):
-    """Complex conjugate linear operator"""
+    """Complex conjugate linear operator
+    """
     def __init__(self, Op):
         if not isinstance(Op, spLinearOperator):
             raise TypeError('Op must be a LinearOperator')
@@ -236,3 +265,37 @@ class _ConjLinearOperator(LinearOperator):
 
     def _adjoint(self):
         return _ConjLinearOperator(self.Op.H)
+
+
+class _ColumnLinearOperator(LinearOperator):
+    """Column selector linear operator
+
+    Produces the forward and adjoint passes with a subset of columns of the
+    original operator
+    """
+    def __init__(self, Op, cols):
+        if not isinstance(Op, spLinearOperator):
+            raise TypeError('Op must be a LinearOperator')
+        super(_ColumnLinearOperator, self).__init__(Op, Op.explicit)
+        self.Op = Op
+        self.cols = cols
+        self.shape = (Op.shape[0], len(cols))
+        if self.explicit:
+            self.Opcol = Op.A[:, cols]
+
+    def _matvec(self, x):
+        if self.explicit:
+            y = self.Opcol @ x
+        else:
+            y = np.zeros(self.Op.shape[1])
+            y[self.cols] = x
+            y = self.Op._matvec(y)
+        return y
+
+    def _rmatvec(self, x):
+        if self.explicit:
+            y = self.Opcol.T @ x
+        else:
+            y = self.Op._rmatvec(x)
+            y = y[self.cols]
+        return y

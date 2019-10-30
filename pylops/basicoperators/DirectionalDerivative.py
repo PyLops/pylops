@@ -99,13 +99,15 @@ def SecondDirectionalDerivative(dims, v, sampling=1, edge=False,
 
     .. math::
         d^2f_\mathbf{v} =
-            D_\mathbf{v} [D_\mathbf{v} f]
+            - D_\mathbf{v}^T [D_\mathbf{v} f]
 
     where :math:`D_\mathbf{v}` is the first-order directional derivative
     implemented by :func:`pylops.SecondDirectionalDerivative`.
 
+    This operator is sometimes also referred to as directional Laplacian
+    in the literature.
     """
     Dop = FirstDirectionalDerivative(dims, v, sampling=sampling,
                                      edge=edge, dtype=dtype)
-    ddop = Dop * Dop
+    ddop = - Dop.H * Dop
     return ddop
