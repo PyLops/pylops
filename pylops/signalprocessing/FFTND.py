@@ -68,10 +68,10 @@ class FFTND(LinearOperator):
                  sampling=(1., 1., 1.), dtype='complex128'):
         # checks
         if len(dims) < 3:
-            raise ValueError('provide at least three dimensions...')
+            raise ValueError('provide at least three dimensions')
         if len(dirs) < 3:
-            raise ValueError('provide at three directions along which '
-                             'fft is applie')
+            raise ValueError('provide at least three directions along which '
+                             'fft is applied')
         if len(nffts) != 3:
             raise ValueError('provide at least three fft dimensions')
         if len(sampling) != 3:

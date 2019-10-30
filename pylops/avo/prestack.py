@@ -63,7 +63,7 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
     Pre-stack seismic modelling is the process of constructing seismic
     pre-stack data from three (or two) profiles of elastic parameters in time
     (or depth) domain arranged in an input vector :math:`\mathbf{m}` of size
-    :math:`nt0 \times N`. This can be easily achieved using the following
+    :math:`nt0 \times n\theta`. This can be easily achieved using the following
     forward model:
 
     .. math::

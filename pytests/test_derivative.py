@@ -1,11 +1,11 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from pylops.utils import dottest
 from pylops.basicoperators import FirstDerivative, SecondDerivative, \
-    Laplacian, Gradient, FirstDirectionalDerivative
+    Laplacian, Gradient, FirstDirectionalDerivative, SecondDirectionalDerivative
 
 
 par1 = {'nz': 10, 'ny': 30, 'nx': 40,
@@ -32,6 +32,8 @@ par3e = {'nz': 11, "ny": 51, 'nx': 61,
 par4e = {'nz': 11, "ny": 51, 'nx': 61,
          'dz': 0.4, 'dy': 2., 'dx': 0.5,
          'edge': True}  # odd with non-unitary sampling
+
+np.random.seed(10)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
@@ -309,3 +311,53 @@ def test_FirstDirectionalDerivative(par):
                                    edge=par['edge'], dtype='float32')
     assert dottest(Fdop, par['nz'] * par['ny'] * par['nx'],
                    par['nz'] * par['ny'] * par['nx'], tol=1e-3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+                                 (par1e), (par2e), (par3e), (par4e)])
+def test_SecondDirectionalDerivative(par):
+    """Dot-test for test_SecondDirectionalDerivative operator
+    """
+    # 2d
+    Fdop = \
+        SecondDirectionalDerivative((par['ny'], par['nx']),
+                                    v=np.sqrt(2.) / 2. * np.ones(2),
+                                    sampling=(par['dy'], par['dx']),
+                                    edge=par['edge'],
+                                    dtype='float32')
+    assert dottest(Fdop, par['ny'] * par['nx'],
+                   par['ny'] * par['nx'], tol=1e-3)
+
+    # 3d
+    Fdop = \
+        SecondDirectionalDerivative((par['nz'], par['ny'], par['nx']),
+                                    v=np.ones(3) / np.sqrt(3),
+                                    sampling=(par['dz'], par['dy'], par['dx']),
+                                    edge=par['edge'], dtype='float32')
+    assert dottest(Fdop, par['nz'] * par['ny'] * par['nx'],
+                   par['nz'] * par['ny'] * par['nx'], tol=1e-3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+                                 (par1e), (par2e), (par3e), (par4e)])
+def test_SecondDirectionalDerivative_verticalderivative(par):
+    """Compare vertical derivative for SecondDirectionalDerivative operator
+    and SecondDerivative
+    """
+    Fop = \
+        FirstDerivative(par['ny'] * par['nx'],
+                        (par['ny'], par['nx']), dir=0,
+                        edge=par['edge'],
+                        dtype='float32')
+    F2op = Fop.H * Fop
+
+    F2dop = \
+        SecondDirectionalDerivative((par['ny'], par['nx']),
+                                    v=np.array([1, 0]),
+                                    edge=par['edge'],
+                                    dtype='float32')
+
+    x = np.random.normal(0., 1., (par['ny'], par['nx']))
+    assert_array_equal(-F2op * x.ravel(),
+                       F2dop * x.ravel())
+    
