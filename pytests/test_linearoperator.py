@@ -58,3 +58,29 @@ def test_conj(par):
 
     # adjoint
     assert_array_almost_equal(Opconj.H * y, np.dot(M.T, y))
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
+def test_apply_columns_explicit(par):
+    """Apply columns to explicit and non-explicit operator
+    """
+    M = np.ones((par['ny'], par['nx']))
+    Mop = MatrixMult(M, dtype=par['dtype'])
+    M1op = MatrixMult(M, dtype=par['dtype'])
+    M1op.explicit = False
+    cols = np.sort(np.random.permutation(np.arange(par['nx']))[:par['nx']//2])
+
+    Mcols = M[:, cols]
+    Mcolsop = Mop.apply_columns(cols)
+    M1colsop = M1op.apply_columns(cols)
+
+    x = np.arange(len(cols))
+    y = np.arange(par['ny'])
+
+    # forward
+    assert_array_almost_equal(Mcols @ x, Mcolsop.matvec(x))
+    assert_array_almost_equal(Mcols @ x, M1colsop.matvec(x))
+
+    # adjoint
+    assert_array_almost_equal(Mcols.T @ y, Mcolsop.rmatvec(y))
+    assert_array_almost_equal(Mcols.T @ y, M1colsop.rmatvec(y))

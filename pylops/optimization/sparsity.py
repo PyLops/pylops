@@ -1,6 +1,7 @@
 import time
 import numpy as np
 
+from scipy.sparse.linalg import lsqr
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal
 from pylops.optimization.leastsquares import NormalEquationsInversion, \
@@ -180,6 +181,116 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
         return xinv, nouter
 
 
+def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4, show=False):
+    r"""Orthogonal Matching Pursuit (OMP).
+
+    Solve an optimization problem with :math:`L0` regularization function given
+    the operator ``Op`` and data ``y``. The operator can be real or complex,
+    and should ideally be either square :math:`N=M` or underdetermined
+    :math:`N<M`.
+
+    Parameters
+    ----------
+    Op : :obj:`pylops.LinearOperator`
+        Operator to invert
+    data : :obj:`numpy.ndarray`
+        Data
+    niter_outer : :obj:`int`
+        Number of iterations of outer loop
+    niter_inner : :obj:`int`
+        Number of iterations of inner loop
+    sigma : :obj:`list`
+        Maximum L2 norm of residual. When smaller stop iterations.
+    show : :obj:`bool`, optional
+        Display iterations log
+
+    Returns
+    -------
+    xinv : :obj:`numpy.ndarray`
+        Inverted model
+    iiter : :obj:`int`
+        Number of effective outer iterations
+    cost : :obj:`numpy.ndarray`, optional
+        History of cost function
+
+    See Also
+    --------
+    ISTA: Iterative Soft Thresholding Algorithm (ISTA).
+    FISTA: Fast Iterative Soft Thresholding Algorithm (FISTA).
+    SPGL1: Spectral Projected-Gradient for L1 norm (SPGL1).
+    SplitBregman: Split Bregman for mixed L2-L1 norms.
+
+    Notes
+    -----
+    Solves the following optimization problem for the operator
+    :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
+
+    .. math::
+            ||\mathbf{x}||_0 \quad  subj. to \quad
+            ||\mathbf{Op}\mathbf{x}-\mathbf{b}||_2 <= \sigma,
+
+    using Orthogonal Matching Pursuit (OMP). This is a very
+    simple iterative algorithm which applies the following step:
+
+    .. math::
+        \Lambda_k = \Lambda_{k-1} \cup \{ arg max_j
+        |\mathbf{A}_j \mathbf{r}_k| \} \\
+        \mathbf{x}_k =  \{ arg min_{\mathbf{x}}
+        ||\mathbf{A}_{\Lambda_k} \mathbf{x} - \mathbf{b}||_2
+
+    """
+    Op = LinearOperator(Op)
+    if show:
+        tstart = time.time()
+        print('OMP optimization\n'
+              '-----------------------------------------------------------------\n'
+              'The Operator Op has %d rows and %d cols\n'
+              'sigma = %.2e\tniter_outer = %d\tniter_inner = %d' %
+              (Op.shape[0], Op.shape[1], sigma, niter_outer, niter_inner))
+
+        if show:
+            print('-----------------------------------------------------------------')
+            head1 = '    Itn           r2norm'
+            print(head1)
+
+    cols = []
+    res = data.copy()
+    cost = np.zeros(niter_outer + 1)
+    cost[0] = np.linalg.norm(data)
+    iiter = 0
+    while iiter < niter_outer and cost[iiter] > sigma:
+        cres = np.abs(Op.rmatvec(res))
+        # exclude columns already chosen by putting them negative
+        if iiter > 0:
+            cres[cols] = -1
+        # choose column with max cres
+        imax = np.argwhere(cres == np.max(cres)).ravel()
+        nimax = len(imax)
+        if nimax > 0:
+            imax = imax[np.random.permutation(nimax)[0]]
+        else:
+            imax = imax[0]
+        cols.append(imax)
+
+        # estimate model for current set of columns
+        Opcol = Op.apply_columns(cols)
+        x = lsqr(Opcol, data, iter_lim=niter_inner)[0]
+        res = data - Opcol.matvec(x)
+        iiter += 1
+        cost[iiter] = np.linalg.norm(res)
+        if show:
+            if iiter < 10 or niter_outer - iiter < 10 or iiter % 10 == 0:
+                msg = '%6g        %12.5e' % (iiter + 1, cost[iiter])
+                print(msg)
+    xinv = np.zeros(Op.shape[1], dtype=Op.dtype)
+    xinv[cols] = x
+    if show:
+        print('\nIterations = %d        Total time (s) = %.2f'
+              % (iiter, time.time() - tstart))
+        print('-----------------------------------------------------------------\n')
+    return xinv, iiter, cost
+
+
 def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
          tol=1e-10, monitorres=False, returninfo=False, show=False):
     r"""Iterative Soft Thresholding Algorithm (ISTA).
@@ -233,7 +344,10 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     See Also
     --------
+    OMP: Orthogonal Matching Pursuit (OMP).
     FISTA: Fast Iterative Soft Thresholding Algorithm (FISTA).
+    SPGL1: Spectral Projected-Gradient for L1 norm (SPGL1).
+    SplitBregman: Split Bregman for mixed L2-L1 norms.
 
     Notes
     -----
@@ -393,7 +507,10 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     See Also
     --------
+    OMP: Orthogonal Matching Pursuit (OMP).
     ISTA: Iterative Soft Thresholding Algorithm (FISTA).
+    SPGL1: Spectral Projected-Gradient for L1 norm (SPGL1).
+    SplitBregman: Split Bregman for mixed L2-L1 norms.
 
     Notes
     -----
@@ -788,4 +905,3 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
               % (itn_out, time.time() - tstart))
         print('---------------------------------------------------------\n')
     return xinv, itn_out
-

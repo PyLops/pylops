@@ -147,6 +147,7 @@ Sparsity
    :toctree: generated/
 
     sparsity.IRLS
+    sparsity.OMP
     sparsity.ISTA
     sparsity.FISTA
     sparsity.SPGL1
