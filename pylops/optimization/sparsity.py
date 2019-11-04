@@ -181,7 +181,8 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
         return xinv, nouter
 
 
-def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4, show=False):
+def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
+        normalizecols=False, show=False):
     r"""Orthogonal Matching Pursuit (OMP).
 
     Solve an optimization problem with :math:`L0` regularization function given
@@ -201,6 +202,12 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4, show=False):
         Number of iterations of inner loop
     sigma : :obj:`list`
         Maximum L2 norm of residual. When smaller stop iterations.
+    normalizecols : :obj:`list`
+        Normalize columns (``True``) or not (``False``). Note that this can be
+        expensive as it requires applying the forward operator
+        :math:`n_{cols}`times to unit vectors (i.e., containing 1 at position j
+        and zero otherwise); use only when the columns of the operator are
+        expected to have highly varying norms.
     show : :obj:`bool`, optional
         Display iterations log
 
@@ -234,9 +241,9 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4, show=False):
 
     .. math::
         \Lambda_k = \Lambda_{k-1} \cup \{ arg max_j
-        |\mathbf{A}_j \mathbf{r}_k| \} \\
+        |\mathbf{Op}_j^H \mathbf{r}_k| \} \\
         \mathbf{x}_k =  \{ arg min_{\mathbf{x}}
-        ||\mathbf{A}_{\Lambda_k} \mathbf{x} - \mathbf{b}||_2
+        ||\mathbf{Op}_{\Lambda_k} \mathbf{x} - \mathbf{b}||_2
 
     """
     Op = LinearOperator(Op)
@@ -245,13 +252,22 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4, show=False):
         print('OMP optimization\n'
               '-----------------------------------------------------------------\n'
               'The Operator Op has %d rows and %d cols\n'
-              'sigma = %.2e\tniter_outer = %d\tniter_inner = %d' %
-              (Op.shape[0], Op.shape[1], sigma, niter_outer, niter_inner))
-
-        if show:
-            print('-----------------------------------------------------------------')
-            head1 = '    Itn           r2norm'
-            print(head1)
+              'sigma = %.2e\tniter_outer = %d\tniter_inner = %d\n'
+              'normalization=%s' %
+              (Op.shape[0], Op.shape[1], sigma, niter_outer,
+               niter_inner, normalizecols))
+    # find normalization factor for each column
+    if normalizecols:
+        ncols = Op.shape[1]
+        norms = np.zeros(ncols)
+        for icol in range(ncols):
+            unit = np.zeros(ncols)
+            unit[icol] = 1
+            norms[icol] = np.linalg.norm(Op.matvec(unit))
+    if show:
+        print('-----------------------------------------------------------------')
+        head1 = '    Itn           r2norm'
+        print(head1)
 
     cols = []
     res = data.copy()
@@ -260,6 +276,8 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4, show=False):
     iiter = 0
     while iiter < niter_outer and cost[iiter] > sigma:
         cres = np.abs(Op.rmatvec(res))
+        if normalizecols:
+            cres = cres / norms
         # exclude columns already chosen by putting them negative
         if iiter > 0:
             cres[cols] = -1
