@@ -76,7 +76,7 @@ while its application to a data is referred to as **adjoint modelling (or operat
 where :math:`\mathbf{x}` is called *model* and :math:`\mathbf{y}` is called *data*.
 The *operator* :math:`\mathbf{A}:\mathbb{F}^m \to \mathbb{F}^n` effectively maps a
 vector of size :math:`m` in the *model space* to a vector of size :math:`n`
-in the *data space*, conversely the * adjoint operator*
+in the *data space*, conversely the *adjoint operator*
 :math:`\mathbf{A}^H:\mathbb{F}^n \to \mathbb{F}^m` maps a
 vector of size :math:`n` in the *data space* to a vector of size :math:`m`
 in the *model space*. As linear operators mimics the effect a matrix on a vector
