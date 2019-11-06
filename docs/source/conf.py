@@ -100,6 +100,7 @@ html_last_updated_fmt = '%b %d, %Y'
 html_title = 'PyLops'
 html_short_title = 'PyLops'
 html_logo = '_static/pylops.png'
+html_favicon = '_static/favicon.ico'
 html_static_path = ['_static']
 html_extra_path = []
 pygments_style = 'default'
