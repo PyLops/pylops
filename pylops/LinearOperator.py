@@ -241,11 +241,12 @@ class LinearOperator(spLinearOperator):
 
         Returns
         -------
-         : :obj:`pylops.LinearOperator`
-            Complex conjugate operator
+        colop : :obj:`pylops.LinearOperator`
+            Apply column operator
 
         """
-        return _ColumnLinearOperator(self, cols)
+        colop = _ColumnLinearOperator(self, cols)
+        return colop
 
 
 class _ConjLinearOperator(LinearOperator):
