@@ -3,6 +3,25 @@
 Changelog
 =========
 
+
+Version 1.7.0
+-------------
+
+*Released on: 10/11/2019*
+
+* Added :py:class:`pylops.Gradient`,
+  :py:class:`pylops.Sum`,
+  :py:class:`pylops.FirstDirectionalDerivative`, and
+  :py:class:`pylops.SecondDirectionalDerivative` operators
+* Added :py:class:`pylops.LinearOperator._ColumnLinearOperator` private operator
+* Added possibility to directly mix Linear operators and numpy/scipy
+  2d arrays in :py:class:`pylops.VStack` and
+  :py:class:`pylops.HStack`
+  and :py:class:`pylops.BlockDiag` operators
+* Added :py:class:`pylops.optimization.sparsity.OMP` solver
+
+
+
 Version 1.6.0
 -------------
 
@@ -13,7 +32,7 @@ Version 1.6.0
   matrix for non-stationary convolution
 * Added possibility to perform seismic modelling (and inversion) with
   non-stationary wavelet in :py:func:`pylops.avo.poststack.PoststackLinearModelling`
-* Create private methods for :py:func:`pylops.basicoperators.Block`,
+* Create private methods for :py:func:`pylops.Block`,
   :py:func:`pylops.avo.poststack.PoststackLinearModelling`,
   :py:func:`pylops.waveeqprocessing.MDC` to allow calling different operators
   (e.g., from pylops-distributed or pylops-gpu) within the method
