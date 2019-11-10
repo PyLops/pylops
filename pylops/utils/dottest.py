@@ -80,15 +80,17 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False):
                            ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
         checkimag = np.abs((np.real(yy) - np.real(xx)) /
                            ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
-
         if checkreal and checkimag:
-            if verb: print('Dot test passed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
-                           % (yy, xx))
+            if verb:
+                print('Dot test passed, v^T(Opu)=%f%+fi - u^T(Op^Tv)=%f%+fi'
+                      % (yy.real, yy.imag, xx.real, xx.imag))
             return True
         else:
             if raiseerror:
-                raise ValueError('Dot test failed, v^H(Opu)=%f - u^H(Op^Hv)=%f'
-                                 % (yy, xx))
-            if verb: print('Dot test failed, v^H(Opu)=%f - u^H(Op^Hv)=%f'
-                           % (yy, xx))
+                raise ValueError('Dot test failed, v^H(Opu)=%f%+fi '
+                                 '- u^H(Op^Hv)=%f%+fi'
+                                 % (yy.real, yy.imag, xx.real, xx.imag))
+            if verb:
+                print('Dot test failed, v^H(Opu)=%f%+fi - u^H(Op^Hv)=%f%+fi'
+                      % (yy.real, yy.imag, xx.real, xx.imag))
             return False
