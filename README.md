@@ -204,3 +204,4 @@ When using ``pylops`` in scientific publications, please cite the following pape
 * Carlos da Costa, cako
 * Dieter Werthmüller, prisae
 * Tristan van Leeuwen, TristanvanLeeuwen
+* Leonardo Uieda, leouieda

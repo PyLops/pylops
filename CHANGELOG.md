@@ -1,3 +1,15 @@
+# 1.7.0
+* Added ``pylops.basicoperators.Gradient``,
+  ``pylops.basicoperators.Sum``,
+  ``pylops.basicoperators.FirstDirectionalDerivative``, and
+  ``pylops.basicoperators.SecondDirectionalDerivative`` operators
+* Added ``pylops._ColumnLinearOperator`` private operator
+* Added possibility to directly mix Linear operators and numpy/scipy
+  2d arrays in ``pylops.basicoperators.VStack`` and
+  ``pylops.basicoperators.HStack`` and
+  ``pylops.basicoperators.BlockDiagonal`` operators
+* Added ``pylops.optimization.sparsity.OMP`` solver
+
 # 1.6.0
 * Added ``pylops.signalprocessing.ConvolveND`` operator
 * Added ``pylops.utils.signalprocessing.nonstationary_convmtx`` to create
