@@ -7,7 +7,7 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 def _checkunique(iava):
     _, count = np.unique(iava, return_counts=True)
     if np.any(count > 1):
-        raise ValueError('repeated values in iava array')
+        raise ValueError('Repeated values in iava array')
 
 def _nearestinterp(M, iava, dims=None, dir=0, dtype='float64'):
     """Nearest neighbour interpolation.
@@ -19,8 +19,6 @@ def _nearestinterp(M, iava, dims=None, dir=0, dtype='float64'):
 def _linearinterp(M, iava, dims=None, dir=0, dtype='float64'):
     """Linear interpolation.
     """
-    # ensure that samples are not beyond the last sample, in that case set to
-    # penultimate sample and raise a warning
     if np.issubdtype(iava.dtype, np.integer):
         iava = iava.astype(np.float)
     if dims is None:
@@ -32,6 +30,8 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype='float64'):
         dimsd[dir] = len(iava)
         dimsd = tuple(dimsd)
 
+    # ensure that samples are not beyond the last sample, in that case set to
+    # penultimate sample and raise a warning
     outside = (iava >= lastsample - 1)
     if sum(outside) > 0:
         logging.warning('at least one value is beyond penultimate sample, '
@@ -55,8 +55,8 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype='float64'):
 def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
     r"""Interpolation operator.
 
-    Apply different kind of interpolations given a subset of values
-    from input vector at locations ``iava``.
+    Apply interpolation along direction ``dir``
+    from regularly sampled input vector into fractionary positions ``iava``.
 
     *Nearest neighbour* interpolation
     is a thin wrapper around :obj:`pylops.Restriction` at ``np.round(iava)``
@@ -68,7 +68,7 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
     interpolated values at locations ``np.floor(iava)`` and
     ``np.floor(iava)+1`` in an otherwise zero vector in adjoint mode.
 
-    .. note:: the vector ``iava`` should contain unique values. If the same
+    .. note:: The vector ``iava`` should contain unique values. If the same
       index is repeated twice an error will be raised. This also applies when
       values beyond the last element of the input array for
       *linear interpolation* as those values are forced to be just before this
@@ -80,7 +80,7 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
         Number of samples in model.
     iava : :obj:`list` or :obj:`numpy.ndarray`
          Floating indices of locations of available samples for interpolation.
-    dims : :obj:`list`
+    dims : :obj:`list`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
     dir : :obj:`int`, optional
@@ -96,8 +96,8 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
     op : :obj:`pylops.LinearOperator`
         Linear intepolation operator
     iava : :obj:`list` or :obj:`numpy.ndarray`
-         Corrected indices of locations of available samples
-         (samples at ``M-1`` or beyond are forced to be at ``M-1-eps``)
+        Corrected indices of locations of available samples
+        (samples at ``M-1`` or beyond are forced to be at ``M-1-eps``)
 
     Raises
     ------
@@ -119,23 +119,21 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
     .. math::
 
         y_i = (1-w_i) x_{l^{l}_i} + w_i x_{l^{r}_i}
-        \quad \forall i=1,2,...,M
+        \quad \forall i=1,2,...,N
 
     where :math:`\mathbf{l^l}=[\lfloor l_1 \rfloor, \lfloor l_2 \rfloor,...,
-    \lfloor l_M \rfloor]` and :math:`\mathbf{l^r}=[\lfloor l_1 \rfloor +1,
+    \lfloor l_N \rfloor]` and :math:`\mathbf{l^r}=[\lfloor l_1 \rfloor +1,
     \lfloor l_2 \rfloor +1,...,
-    \lfloor l_M \rfloor +1]` are vectors containing the indeces
+    \lfloor l_N \rfloor +1]` are vectors containing the indeces
     of the original array at which samples are taken, and
     :math:`\mathbf{w}=[l_1 - \lfloor l_1 \rfloor, l_2 - \lfloor l_2 \rfloor,
-    ..., l_M - \lfloor l_M \rfloor]` are the linear interpolation weights.
+    ..., l_N - \lfloor l_N \rfloor]` are the linear interpolation weights.
 
     This operator can be implemented by simply summing two
     :class:`pylops.Restriction` operators which are weighted
     using :class:`pylops.basicoperators.Diagonal` operators.
 
     """
-    # ensure that samples are not beyond the last sample, in that case set to
-    # penultimate sample and raise a warning
     if kind == 'nearest':
         interpop, iava = _nearestinterp(M, iava, dims=dims, dir=dir, dtype=dtype)
     elif kind == 'linear':

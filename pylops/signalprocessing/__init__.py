@@ -5,6 +5,7 @@ from .Convolve1D import Convolve1D
 from .ConvolveND import ConvolveND
 from .Convolve2D import Convolve2D
 from .Interp import Interp
+from .Bilinear import Bilinear
 from .Radon2D import Radon2D
 from .Radon3D import Radon3D
 from .Sliding2D import Sliding2D
