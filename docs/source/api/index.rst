@@ -90,6 +90,7 @@ Signal processing
     Convolve2D
     ConvolveND
     Interp
+    Bilinear
     Radon2D
     Radon3D
     Sliding2D
