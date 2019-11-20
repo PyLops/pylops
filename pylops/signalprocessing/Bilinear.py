@@ -90,7 +90,7 @@ class Bilinear(LinearOperator):
 
         # expand dims to weights for nd-arrays
         if ndims > 2:
-            for i in range(ndims - 2):
+            for _ in range(ndims - 2):
                 self.weights_tb = \
                     np.expand_dims(self.weights_tb, axis=-1)
                 self.weights_lr = \
@@ -103,11 +103,6 @@ class Bilinear(LinearOperator):
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
-        print(x.shape)
-        print(self.weights_tb.shape)
-        print(self.weights_lr.shape)
-        print(x[self.iava_t, self.iava_l].shape)
-        print(x[self.iava_t, self.iava_r].shape)
         y = x[self.iava_t, self.iava_l] * (1 - self.weights_tb) * (1 - self.weights_lr) + \
             x[self.iava_t, self.iava_r] * (1 - self.weights_tb) * self.weights_lr + \
             x[self.iava_b, self.iava_l] * self.weights_tb * (1 - self.weights_lr) + \
@@ -118,7 +113,6 @@ class Bilinear(LinearOperator):
     def _rmatvec(self, x):
         x = np.reshape(x, self.dimsd)
         y = np.zeros(self.dims, dtype=self.dtype)
-        print((x * (1 - self.weights_tb) * (1 - self.weights_lr)).shape)
         np.add.at(y, [self.iava_t, self.iava_l],
                   x * (1 - self.weights_tb) * (1 - self.weights_lr))
         np.add.at(y, [self.iava_t, self.iava_r],
