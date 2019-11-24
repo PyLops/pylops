@@ -112,8 +112,7 @@ axs[1].set_title('G0')
 axs[1].set_xlabel(r'$x_R$')
 axs[1].set_ylabel(r'$t$')
 axs[1].axis('tight')
-axs[1].set_ylim(1.5, 0)
-
+axs[1].set_ylim(1.5, 0);
 
 ##############################################################################
 # Let's now create an object of the
@@ -177,7 +176,7 @@ ax2.axis('tight')
 ax2.set_ylim(1.2, 0)
 ax3.plot(Gsub[:, nr//2]/Gsub.max(), t, 'r', lw=5)
 ax3.plot(g_inv_tot[nr//2, nt-1:]/g_inv_tot.max(), t, 'k', lw=3)
-ax3.set_ylim(1.2, 0)
+ax3.set_ylim(1.2, 0);
 
 ##############################################################################
 # Note that Marchenko redatuming can also be applied simultaneously
