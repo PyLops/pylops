@@ -34,7 +34,7 @@ The best way to understand which ``BLAS`` library is currently linked to your
    import numpy as np
    import scipy as sp
    print(np.__config__.show())
-   print(scipy.__config__.show())
+   print(sp.__config__.show())
 
 
 You should be able to understand if your *numpy* and *scipy* are
