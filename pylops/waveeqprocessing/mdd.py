@@ -45,13 +45,15 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
     if transpose:
         G = np.transpose(G, axes=(2, 0, 1))
 
-    # create Fredholm operator
+    # find out dtype of G
     dtype = G[0, 0, 0].dtype
-    fdtype = (G[0, 0, 0] + 1j * G[0, 0, 0]).dtype
+
+    # create Fredholm operator
     Frop = _Fredholm1(dr * dt * np.sqrt(nt) * G, nv, saveGt=saveGt,
-                      dtype=fdtype, **args_Fredholm1)
+                      dtype=dtype, **args_Fredholm1)
     if conj:
         Frop = Frop.conj()
+
     # create FFT operators
     nfmax, ns, nr = G.shape
     # ensure that nfmax is not bigger than allowed
@@ -61,9 +63,9 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         logging.warning('nfmax set equal to ceil[(nt+1)/2=%d]' % nfmax)
 
     Fop = _FFT(dims=(nt, nr, nv), dir=0, real=True,
-               fftshift=twosided, dtype=fdtype, **args_FFT)
+               fftshift=twosided, dtype=dtype, **args_FFT)
     F1op = _FFT(dims=(nt, ns, nv), dir=0, real=True,
-                fftshift=False, dtype=fdtype, **args_FFT1)
+                fftshift=False, dtype=dtype, **args_FFT1)
 
     # create Identity operator to extract only relevant frequencies
     Iop = _Identity(N=nfmax * nr * nv, M=nfft * nr * nv,
@@ -92,7 +94,7 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
 
 def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         dtype=None, fftengine='numpy', transpose=True,
-        saveGt=True, conj=False):
+        saveGt=True, conj=False, usematmul=False):
     r"""Multi-dimensional convolution.
 
     Apply multi-dimensional convolution between two datasets. If
@@ -147,6 +149,10 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         faster but double the amount of required memory
     conj : :obj:`str`, optional
         Perform Fredholm integral computation with complex conjugate of ``G``
+    usematmul : :obj:`bool`, optional
+        Use :func:`numpy.matmul` (``True``) or for-loop with :func:`numpy.dot`
+        (``False``) in :py:class:`pylops.signalprocessing.Fredholm1` operator.
+        Refer to Fredholm1 documentation for details.
 
     See Also
     --------
@@ -182,7 +188,7 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
     return _MDC(G, nt, nv, dt=dt, dr=dr, twosided=twosided, fast=fast,
                 dtype=dtype, transpose=transpose, saveGt=saveGt,
                 conj=conj, args_FFT={'engine': fftengine},
-                args_Fredholm1={'usematmul': False})
+                args_Fredholm1={'usematmul': usematmul})
 
 
 def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
