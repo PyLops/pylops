@@ -154,9 +154,9 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode='eikonal'):
 
 def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
                 y=None, trav=None, mode='eikonal'):
-    r"""Demigration operator.
+    r"""Kirchoff Demigration operator.
 
-    Seismic demigration/migration operator.
+    Traveltime based seismic demigration/migration operator.
 
     Parameters
     ----------
@@ -168,8 +168,10 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
         Time axis for data
     srcs : :obj:`numpy.ndarray`
         Sources in array of size :math:`\lbrack 2/3 \times n_s \rbrack`
+        The first axis should be ordered as (``y``,) ``x``, ``z``.
     recs : :obj:`numpy.ndarray`
         Receivers in array of size :math:`\lbrack 2/3 \times n_r \rbrack`
+        The first axis should be ordered as (``y``,) ``x``, ``z``.
     vel : :obj:`numpy.ndarray` or :obj:`float`
         Velocity model of size :math:`\lbrack (n_y \times) n_x
         \times n_z \rbrack` (or constant)

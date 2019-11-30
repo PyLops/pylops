@@ -205,9 +205,9 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
     normalizecols : :obj:`list`
         Normalize columns (``True``) or not (``False``). Note that this can be
         expensive as it requires applying the forward operator
-        :math:`n_{cols}`times to unit vectors (i.e., containing 1 at position j
-        and zero otherwise); use only when the columns of the operator are
-        expected to have highly varying norms.
+        :math:`n_{cols}` times to unit vectors (i.e., containing 1 at
+        position j and zero otherwise); use only when the columns of the
+        operator are expected to have highly varying norms.
     show : :obj:`bool`, optional
         Display iterations log
 
