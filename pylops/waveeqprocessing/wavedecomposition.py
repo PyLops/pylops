@@ -134,8 +134,9 @@ def UpDownComposition2D(nt, nr, dt, dr, rho, vel, nffts=(None, None),
         Number of samples along the wavenumber and frequency axes
     critical : :obj:`float`, optional
         Percentage of angles to retain in obliquity factor. For example, if
-        ``critical=100`` only angles below the critical angle
-        :math`\frac{f(k_x)}{vel}` will be retained
+        ``critical=100`` only angles below the critical angle :math:`\frac{f(k_x)}{v}`
+        will be retained
+
     ntaper : :obj:`float`, optional
         Number of samples of taper applied to obliquity factor around critical
         angle
@@ -272,15 +273,17 @@ def WavefieldDecomposition(p, vz, nt, nr, dt, dr, rho, vel,
         Number of samples along the wavenumber and frequency axes
     critical : :obj:`float`, optional
         Percentage of angles to retain in obliquity factor. For example, if
-        ``critical=100`` only angles below the critical angle
-        :math:`\frac{f(k_x)}{vel}` will be retained
+        ``critical=100`` only angles below the critical angle :math:`\frac{f(k_x)}{v}`
+        will be retained
     ntaper : :obj:`float`, optional
         Number of samples of taper applied to obliquity factor around critical
         angle
     kind : :obj:`str`, optional
         Type of separation: ``inverse`` (default) or ``analytical``
     scaling : :obj:`float`, optional
-        Scaling to apply to the particle velocity data at the
+        Scaling to apply to the operator (see Notes of
+        :func:`pylops.waveeqprocessing.wavedecomposition.UpDownComposition2D`
+        for more details)
     restriction : :obj:`pylops.LinearOperator`, optional
         Restriction operator
     sptransf : :obj:`pylops.LinearOperator`, optional
