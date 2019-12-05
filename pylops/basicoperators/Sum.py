@@ -44,6 +44,8 @@ class Sum(LinearOperator):
 
     """
     def __init__(self, dims, dir, dtype='float64'):
+        if len(dims) == 1:
+            dims = (dims[0], 1) # to avoid reducing matvec to a scalar
         self.dims = dims
         self.dir = dir
         # data dimensions

@@ -1,5 +1,6 @@
 from __future__ import division
 
+import logging
 import numpy as np
 from scipy.linalg import solve, lstsq
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
@@ -7,6 +8,8 @@ from scipy.sparse.linalg import spsolve, lsqr
 from scipy.linalg import eigvals
 from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
+
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
 class LinearOperator(spLinearOperator):
@@ -48,6 +51,14 @@ class LinearOperator(spLinearOperator):
         if callable(self.Op._rmatvec):
             return self.Op._rmatvec(x)
 
+    def _matmat(self, X):
+        """Matrix-matrix multiplication handler.
+
+        Modified version of scipy _matmat to avoid having trailing dimension
+        in col when provided to matvec
+        """
+        return np.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
+
     def div(self, y, niter=100):
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
 
@@ -82,6 +93,31 @@ class LinearOperator(spLinearOperator):
         else:
             xest = lsqr(self, y, iter_lim=niter)[0]
         return xest
+
+    def dense(self):
+        r"""Return dense matrix.
+
+        The operator in converted into its dense matrix equivalent. In order
+        to do so, the operator is applied to an identity matrix whose number
+        of rows and columns is equivalent to the number of columns of the
+        operator. Note that this operation may be costly for very large
+        operators and it is only suggest it to use as a way to inspect the
+        structure of the matricial equivalent of the operator.
+
+        Returns
+        -------
+        matrix : :obj:`numpy.ndarray`
+            Dense matrix.
+
+        """
+        # Wrap self into a LinearOperator. This is done for cases where self
+        # is a _SumLinearOperator or _ProductLinearOperator, so that it regains
+        #the dense method
+        Op = LinearOperator(self)
+
+        identity = np.eye(self.shape[1], dtype=self.dtype)
+        matrix = Op.matmat(identity)
+        return matrix
 
     def eigs(self, neigs=None, symmetric=False, niter=None, **kwargs_eig):
         r"""Most significant eigenvalues of linear operator.

@@ -39,7 +39,7 @@ def _phase_shift(phiin, freq, kx, vel, dz, ky=0, adj=False):
     # vertical slowness
     kz = ((freq / vel) ** 2 - kx ** 2 - ky ** 2)
     kz = np.sqrt(kz.astype(phiin.dtype))
-    # ensures evanescent region is complex positive
+    # ensure evanescent region is complex positive
     kz = np.real(kz) - 1j * np.sign(dz) * np.abs(np.imag(kz))
     # create and apply propagator
     gazx = np.exp(-1j * 2 * np.pi * dz * kz)
@@ -50,7 +50,7 @@ def _phase_shift(phiin, freq, kx, vel, dz, ky=0, adj=False):
 
 
 class _PhaseShift(LinearOperator):
-    """Phase shift operator
+    """Phase shift operator in frequency-wavenumber domain
 
     Apply positive phase shift directly in frequency-wavenumber domain.
     See :class:`pylops.waveeqprocessingPhaseShift` for details on
@@ -160,4 +160,4 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype='float64'):
         Pop = Fop.H * Kxop * Pop * Kxop.H * Fop
     else:
         Pop = Fop.H * Kxop * Kyop * Pop * Kyop.H * Kxop.H * Fop
-    return Pop
+    return LinearOperator(Pop)

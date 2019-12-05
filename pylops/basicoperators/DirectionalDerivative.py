@@ -1,3 +1,4 @@
+from pylops import LinearOperator
 from pylops.basicoperators import Gradient, Diagonal, Sum
 
 
@@ -60,7 +61,7 @@ def FirstDirectionalDerivative(dims, v, sampling=1, edge=False,
         Dop = Diagonal(v.ravel(), dtype=dtype)
     Sop = Sum(dims=[len(dims)]+list(dims), dir=0, dtype=dtype)
     ddop = Sop * Dop * Gop
-    return ddop
+    return LinearOperator(ddop)
 
 
 def SecondDirectionalDerivative(dims, v, sampling=1, edge=False,
@@ -110,4 +111,4 @@ def SecondDirectionalDerivative(dims, v, sampling=1, edge=False,
     Dop = FirstDirectionalDerivative(dims, v, sampling=sampling,
                                      edge=edge, dtype=dtype)
     ddop = - Dop.H * Dop
-    return ddop
+    return LinearOperator(ddop)
