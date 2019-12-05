@@ -121,15 +121,15 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype='float64'):
 
     .. math::
         d(f, k_x, k_y) = m(f, k_x, k_y) *
-        e^{-j \sqrt{\omega^2/v^2 - k_x^2} \Delta z}
+        e^{-j \sqrt{\omega^2/v^2 - k_x^2 - k_y^2} \Delta z}
 
     where :math:`v` is the constant propagation velocity and
     :math:`\Delta z` is the propagation depth. In adjoint mode, the data is
     propagated backward using the following transformation:
 
     .. math::
-        d(f, k_x, k_y) = m(f, k_x, k_y) *
-        e^{\sqrt{\omega^2/v^2 - k_x^2} \Delta z}
+        m(f, k_x, k_y) = d(f, k_x, k_y) *
+        e^{j \sqrt{\omega^2/v^2 - k_x^2 - k_y^2} \Delta z}
 
     Effectively, the input model and data are assumed to be in time-space
     domain and forward Fourier transform is applied to both dimensions, leading
