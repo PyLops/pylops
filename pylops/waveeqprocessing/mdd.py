@@ -35,9 +35,7 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
                   'Nevertheless, it is now recommended to start using the '
                   'operator with transpose=True, as this behaviour will '
                   'become default in version v2.0.0 and the behaviour with '
-                  'transpose=False will be deprecated.',
-                  FutureWarning)
-
+                  'transpose=False will be deprecated.', FutureWarning)
     if twosided and nt % 2 == 0:
         raise ValueError('nt must be odd number')
 
@@ -154,6 +152,11 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         (``False``) in :py:class:`pylops.signalprocessing.Fredholm1` operator.
         Refer to Fredholm1 documentation for details.
 
+    Raises
+    ------
+    ValueError
+        If ``nt`` is even and  ``twosided=True``
+
     See Also
     --------
     MDD : Multi-dimensional deconvolution
@@ -211,7 +214,10 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         ``add_negative=False``
         (with both positive and negative times)
     d : :obj:`numpy.ndarray`
-        Data in time domain :math:`[n_s (\times n_vs) \times n_t]`
+        Data in time domain :math:`[n_s (\times n_vs) \times n_t]` if
+        ``twosided=False`` or ``twosided=True`` and ``add_negative=True``
+        (with only positive times) or size
+        :math:`[n_s (\times n_vs) \times 2*n_t-1]` if ``twosided=True``
     dt : :obj:`float`, optional
         Sampling of time integration axis
     dr : :obj:`float`, optional
@@ -219,8 +225,9 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
     nfmax : :obj:`int`, optional
         Index of max frequency to include in deconvolution process
     wav : :obj:`numpy.ndarray`, optional
-        Wavelet to convolve to the inverted model and psf. If ``None``, the
-        outputs of the inversion are returned directly
+        Wavelet to convolve to the inverted model and psf
+        (must be centered around its index in the middle of the array).
+        If ``None``, the outputs of the inversion are returned directly.
     twosided : :obj:`bool`, optional
         MDC operator and data both negative and positive time (``True``)
         or only positive (``False``)
@@ -298,10 +305,9 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
     """
     ns, nr, nt = G.shape
     if len(d.shape) == 2:
-        ns, nt = d.shape
         nv = 1
     else:
-        ns, nv, nt = d.shape
+        nv = d.shape[1]
     if twosided:
         if add_negative:
             nt2 = 2 * nt - 1

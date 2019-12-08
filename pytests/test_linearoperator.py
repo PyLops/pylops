@@ -1,7 +1,7 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from pylops.basicoperators import MatrixMult, VStack, Diagonal, Zero
 
@@ -13,6 +13,17 @@ par1j = {'ny': 11, 'nx': 11,
          'imag': 1j, 'dtype':'complex64'} # square imag
 par2j = {'ny': 21, 'nx': 11,
          'imag': 1j, 'dtype': 'complex64'}  # overdetermined imag
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
+def test_dense(par):
+    """Dense matrix representation
+    """
+    diag = np.arange(par['nx']) +\
+           par['imag'] * np.arange(par['nx'])
+    D = np.diag(diag)
+    Dop = Diagonal(diag, dtype=par['dtype'])
+    assert_array_equal(Dop.dense(), D)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])

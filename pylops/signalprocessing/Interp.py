@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+from pylops import LinearOperator
 from pylops.basicoperators import Restriction, Diagonal
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
@@ -140,4 +141,4 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
         interpop, iava = _linearinterp(M, iava, dims=dims, dir=dir, dtype=dtype)
     else:
         raise NotImplementedError('kind is not correct...')
-    return interpop, iava
+    return LinearOperator(interpop), iava

@@ -199,6 +199,18 @@ print('y = Dx', Dop*x)
 print('y = conj(D)x', Dop.conj()*x)
 
 ###############################################################################
+# At this point, the concept of linear operator may sound abstract.
+# The convinience method :func:`pylops.LinearOperator.dense` can be used to
+# create the equivalent dense matrix of any operator. In this case for example
+# we expect to see a diagonal matrix with ``d`` values along the main diagonal
+D = Dop.dense()
+
+plt.figure(figsize=(5, 5))
+plt.imshow(np.abs(D))
+plt.title('Dense representation of Diagonal operator')
+plt.axis('tight')
+
+###############################################################################
 # Finally it is worth remembering a useful trick. If two linear operators are
 # combined by means of the algebraical operations shown above, the resulting
 # operator will lose some of the convenience methods (e.g. ``\``) as it will

@@ -71,11 +71,11 @@ class Diagonal(LinearOperator):
 
     def _matvec(self, x):
         if not self.reshape:
-            y = self.diag*x
+            y = self.diag * x
         else:
             x = x.reshape(self.dims)
-            y = (self.diag*x).flatten()
-        return y
+            y = self.diag * x
+        return y.ravel()
 
     def _rmatvec(self, x):
         if self.complex:
@@ -86,8 +86,8 @@ class Diagonal(LinearOperator):
             y = diagadj * x
         else:
             x = x.reshape(self.dims)
-            y = (diagadj * x).flatten()
-        return y
+            y = diagadj * x
+        return y.ravel()
 
     def matrix(self):
         """Return diagonal matrix as dense :obj:`numpy.ndarray`
