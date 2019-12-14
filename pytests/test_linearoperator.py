@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
+from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult, VStack, Diagonal, Zero
 
 par1 = {'ny': 11, 'nx': 11,
@@ -16,6 +17,31 @@ par2j = {'ny': 21, 'nx': 11,
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
+def test_overloads(par):
+    """Apply various overloaded operators (.H, -, +, *) and ensure that the
+    returned operator is still of pylops LinearOperator type
+    """
+    diag = np.arange(par['nx']) +\
+           par['imag'] * np.arange(par['nx'])
+    Dop = Diagonal(diag, dtype=par['dtype'])
+
+    # .H
+    assert isinstance(Dop.H, LinearOperator)
+    # negate
+    assert isinstance(-Dop, LinearOperator)
+    # multiply by scalar
+    assert isinstance(2*Dop, LinearOperator)
+    # +
+    assert isinstance(Dop + Dop, LinearOperator)
+    # -
+    assert isinstance(Dop - 2*Dop, LinearOperator)
+    # *
+    assert isinstance(Dop * Dop, LinearOperator)
+    # **
+    assert isinstance(Dop **2, LinearOperator)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
 def test_dense(par):
     """Dense matrix representation
     """
@@ -23,7 +49,7 @@ def test_dense(par):
            par['imag'] * np.arange(par['nx'])
     D = np.diag(diag)
     Dop = Diagonal(diag, dtype=par['dtype'])
-    assert_array_equal(Dop.dense(), D)
+    assert_array_equal(Dop.todense(), D)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])

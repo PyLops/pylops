@@ -59,6 +59,30 @@ class LinearOperator(spLinearOperator):
         """
         return np.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
 
+    def __mul__(self, x):
+        y = super().__mul__(x)
+        if isinstance(y, spLinearOperator):
+            y = LinearOperator(y)
+        return y
+
+    def __rmul__(self, x):
+        return LinearOperator(super().__rmul__(x))
+
+    def __pow__(self, p):
+        return LinearOperator(super().__pow__(p))
+
+    def __add__(self, x):
+        return LinearOperator(super().__add__(x))
+
+    def __neg__(self):
+        return LinearOperator(super().__neg__())
+
+    def __sub__(self, x):
+        return LinearOperator(super().__sub__(x))
+
+    def _adjoint(self):
+        return LinearOperator(super()._adjoint())
+
     def div(self, y, niter=100):
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
 
@@ -94,7 +118,7 @@ class LinearOperator(spLinearOperator):
             xest = lsqr(self, y, iter_lim=niter)[0]
         return xest
 
-    def dense(self):
+    def todense(self):
         r"""Return dense matrix.
 
         The operator in converted into its dense matrix equivalent. In order

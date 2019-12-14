@@ -20,7 +20,7 @@ par2j = {'ny': 21, 'nx': 11,
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_Kroneker(par):
-    """Dot-test and inversion for Kronecker operator
+    """Dot-test, inversion and comparison with np.kron for Kronecker operator
     """
     np.random.seed(10)
     G1 = np.random.normal(0, 10, (par['ny'], par['nx'])).astype(par['dtype'])
@@ -36,6 +36,11 @@ def test_Kroneker(par):
     xlsqr = lsqr(Kop, Kop * x, damp=1e-20, iter_lim=300, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=2)
 
+    # Comparison with numpy
+    assert_array_almost_equal(np.kron(G1, G2), Kop * np.eye(par['nx']**2),
+                              decimal=3)
+
+
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_Kroneker_Derivative(par):
     """Use Kronecker operator to apply the Derivative operator over one axis
@@ -47,8 +52,7 @@ def test_Kroneker_Derivative(par):
                            dir=0, sampling=1, edge=True,
                            dtype='float32')
 
-    Kop = Kronecker(Dop,
-                    Identity(par['nx'], dtype=par['dtype']),
+    Kop = Kronecker(Dop, Identity(par['nx'], dtype=par['dtype']),
                     dtype=par['dtype'])
 
     x = np.zeros((par['ny'], par['nx'])) + \

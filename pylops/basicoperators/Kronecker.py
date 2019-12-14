@@ -30,7 +30,7 @@ class Kronecker(LinearOperator):
 
     Notes
     -----
-    The Kronecker product denoted with :math`\otimes` is an operation
+    The Kronecker product (denoted with :math:`\otimes`) is an operation
     on two operators :math:`\mathbf{Op_1}` and :math:`\mathbf{Op_2}` of
     sizes :math:`\lbrack n_1 \times m_1 \rbrack` and
     :math:`\lbrack n_2 \times m_2 \rbrack` respectively, resulting in a
@@ -46,13 +46,12 @@ class Kronecker(LinearOperator):
 
     The application of the resulting matrix to a vector :math:`\mathbf{x}` of
     size :math:`\lbrack m_1 m_2 \times 1 \rbrack` is equivalent to the
-    application of the second operator :math:`\mathbf{Op_2}` to the columns of
+    application of the second operator :math:`\mathbf{Op_2}` to the rows of
     a matrix of size :math:`\lbrack m_2 \times m_1 \rbrack` obtained by
     reshaping the input vector :math:`\mathbf{x}`, followed by the application
     of the first operator to the transposed matrix produced by the first
-    operator. Similarly, in adjoint mode the two operators are applied in
-    reversed order to a reshaped matrix of size
-    :math:`\lbrack n_1 \times n_2 \rbrack`.
+    operator. In adjoint mode the same procedure is followed but the adjoint of
+    each operator is used.
 
     """
     def __init__(self, Op1, Op2, dtype='float64'):
@@ -66,13 +65,13 @@ class Kronecker(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
-        x = x.reshape(self.Op2.shape[1], self.Op1.shape[1])
-        y = self.Op2.matmat(x).T
+        x = x.reshape(self.Op1.shape[1], self.Op2.shape[1])
+        y = self.Op2.matmat(x.T).T
         y = self.Op1.matmat(y).ravel()
         return y
 
     def _rmatvec(self, x):
         x = x.reshape(self.Op1.shape[0], self.Op2.shape[0])
-        y = self.Op1H.matmat(x).T
-        y = self.Op2H.matmat(y).ravel()
+        y = self.Op2H.matmat(x.T).T
+        y = self.Op1H.matmat(y).ravel()
         return y
