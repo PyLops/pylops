@@ -193,6 +193,7 @@ you will need to manually install it:
 
 or pip equivalent.
 
+
 spgl1
 ~~~~~
 This library is used to solve sparsity-promoting BP, BPDN, and LASSO problems
@@ -205,6 +206,20 @@ If interested to use ``spgl1``, you can manually install it:
    >> pip install spgl1
 
 
+pywt
+~~~~
+This library is used to implement the Wavelet operators.
+
+If interested to use ``pywt``, you can manually install it:
+
+.. code-block:: bash
+
+   >> conda install pywavelets
+
+or pip equivalent.
+
+
 .. note:: If you are a developer, all the optional dependencies can also be
    installed automatically by cloning the repository and installing
    pylops via ``make dev-install`` or ``make dev-install_conda``.
+

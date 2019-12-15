@@ -2,6 +2,7 @@ numpy>=1.15.0
 scipy>=1.1.0
 numba
 pyfftw
+PyWavelets
 scikit-fmm
 spgl1
 matplotlib

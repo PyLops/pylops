@@ -8,6 +8,7 @@ dependencies:
   - numpy>=1.15.0
   - scipy>=1.1.0
   - pyfftw
+  - pywavelets
   - matplotlib
   - ipython
   - pytest
