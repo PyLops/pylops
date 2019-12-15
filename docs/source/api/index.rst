@@ -83,14 +83,16 @@ Signal processing
 .. autosummary::
    :toctree: generated/
 
-    FFT
-    FFT2D
-    FFTND
     Convolve1D
     Convolve2D
     ConvolveND
     Interp
     Bilinear
+    FFT
+    FFT2D
+    FFTND
+    DWT
+    DWT2D
     Radon2D
     Radon3D
     Sliding2D
