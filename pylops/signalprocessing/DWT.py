@@ -9,6 +9,12 @@ try:
     import pywt
 except ModuleNotFoundError:
     pywt = None
+    pywt_message = 'Pywt package not installed. ' \
+                   'Run "pip install PyWavelets" or ' \
+                   'conda install pywavelets".'
+except Exception as e:
+    pywt = None
+    pywt_message = 'Failed to import pywt (error:%s).' % e
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -87,10 +93,7 @@ class DWT(LinearOperator):
     """
     def __init__(self, dims, dir=0, wavelet='haar', level=1, dtype='float64'):
         if pywt is None:
-            raise ModuleNotFoundError('The wavelet operator requires '
-                                      'the pywt package t be installed. '
-                                      'Run "pip install PyWavelets" or '
-                                      '"conda install pywavelets".')
+            raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
 
         if isinstance(dims, int):

@@ -11,6 +11,11 @@ try:
     from spgl1 import spgl1
 except ModuleNotFoundError:
     spgl1 = None
+    spgl1_message = 'Spgl1 not installed. ' \
+                    'Run "pip install spgl1".'
+except Exception as e:
+    spgl1 = None
+    spgl1_message = 'Failed to import spgl1 (error:%s).' % e
 
 
 def _softthreshold(x, thresh):
@@ -745,7 +750,7 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
 
     """
     if spgl1 is None:
-        raise ModuleNotFoundError('spgl1 not installed')
+        raise ModuleNotFoundError(spgl1_message)
     pinv, _, _, info = \
         spgl1(Op if SOp is None else Op*SOp.H, data,
               tau=tau, sigma=sigma, x0=x0, **kwargs_spgl1)
