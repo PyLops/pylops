@@ -3,8 +3,8 @@ scipy>=1.1.0
 numba
 pyfftw
 PyWavelets
-scikit-fmm
 spgl1
+scikit-fmm
 matplotlib
 ipython
 pytest
