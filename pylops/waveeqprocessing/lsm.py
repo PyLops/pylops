@@ -10,7 +10,13 @@ try:
     import skfmm
 except ModuleNotFoundError:
     skfmm = None
-
+    skfmm_message = 'Skfmm package not installed. Choose method=analytical ' \
+                    'if using constant velocity or run ' \
+                    '"pip install scikit-fmm" or ' \
+                    '"conda install -c conda-forge scikit-fmm".'
+except Exception as e:
+    skfmm = None
+    skfmm_message = 'Failed to import skfmm (error:%s).' % e
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -141,11 +147,7 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode='eikonal'):
                    trav_recs.reshape(ny * nx * nz, 1, nr)
             trav = trav.reshape(ny * nx * nz, ns * nr)
         else:
-            raise NotImplementedError('cannot compute traveltime with '
-                                      'method=eikonal as skfmm is not '
-                                      'installed... choose analytical'
-                                      'if using constant velocity model, '
-                                      'or install scikit-fmm library')
+            raise NotImplementedError(skfmm_message)
     else:
         raise NotImplementedError('method must be analytic or eikonal')
 

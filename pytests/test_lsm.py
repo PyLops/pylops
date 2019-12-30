@@ -1,4 +1,5 @@
 import pytest
+import platform
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
@@ -89,30 +90,33 @@ def test_traveltime_ana():
 def test_traveltime_table():
     """Compare analytical and eikonal traveltimes in homogenous medium
     """
-    # 2d
-    trav_ana, trav_srcs_ana, trav_recs_ana =\
-        _traveltime_table(z, x, s2d, r2d, v0, mode='analytic')
+    # stop testing eikonal on mac until
+    # https://github.com/scikit-fmm/scikit-fmm/issues/34 is solved
+    if platform.system() != 'Darwin':
+        # 2d
+        trav_ana, trav_srcs_ana, trav_recs_ana =\
+            _traveltime_table(z, x, s2d, r2d, v0, mode='analytic')
 
-    trav_eik, trav_srcs_eik, trav_recs_eik = \
-        _traveltime_table(z, x, s2d, r2d, v0*np.ones((PAR['nx'], PAR['nz'])),
-                          mode='eikonal')
+        trav_eik, trav_srcs_eik, trav_recs_eik = \
+            _traveltime_table(z, x, s2d, r2d, v0*np.ones((PAR['nx'], PAR['nz'])),
+                              mode='eikonal')
 
-    assert_array_almost_equal(trav_srcs_ana, trav_srcs_eik, decimal=2)
-    assert_array_almost_equal(trav_recs_ana, trav_recs_ana, decimal=2)
-    assert_array_almost_equal(trav_ana, trav_eik, decimal=2)
+        assert_array_almost_equal(trav_srcs_ana, trav_srcs_eik, decimal=2)
+        assert_array_almost_equal(trav_recs_ana, trav_recs_ana, decimal=2)
+        assert_array_almost_equal(trav_ana, trav_eik, decimal=2)
 
-    # 3d
-    trav_ana, trav_srcs_ana, trav_recs_ana = \
-        _traveltime_table(z, x, s3d, r3d, v0, y=y, mode='analytic')
+        # 3d
+        trav_ana, trav_srcs_ana, trav_recs_ana = \
+            _traveltime_table(z, x, s3d, r3d, v0, y=y, mode='analytic')
 
-    trav_eik, trav_srcs_eik, trav_recs_eik = \
-        _traveltime_table(z, x, s3d, r3d,
-                          v0 * np.ones((PAR['ny'], PAR['nx'], PAR['nz'])),
-                          y=y, mode='eikonal')
+        trav_eik, trav_srcs_eik, trav_recs_eik = \
+            _traveltime_table(z, x, s3d, r3d,
+                              v0 * np.ones((PAR['ny'], PAR['nx'], PAR['nz'])),
+                              y=y, mode='eikonal')
 
-    assert_array_almost_equal(trav_srcs_ana, trav_srcs_eik, decimal=2)
-    assert_array_almost_equal(trav_recs_ana, trav_recs_eik, decimal=2)
-    assert_array_almost_equal(trav_ana, trav_eik, decimal=2)
+        assert_array_almost_equal(trav_srcs_ana, trav_srcs_eik, decimal=2)
+        assert_array_almost_equal(trav_recs_ana, trav_recs_eik, decimal=2)
+        assert_array_almost_equal(trav_ana, trav_eik, decimal=2)
 
 
 def test_unknown_mode():
@@ -127,40 +131,49 @@ def test_unknown_mode():
 def test_demigration2d(par):
     """Dot-test for Demigration operator
     """
-    vel = v0 * np.ones((PAR['nx'], PAR['nz']))
+    # stop testing eikonal on mac until
+    # https://github.com/scikit-fmm/scikit-fmm/issues/34 is solved
+    if (par['mode'] in ('analytic', 'byot')) or \
+        (par['mode'] == 'eikonal'  and platform.system() != 'Darwin'):
 
-    if par['mode'] == 'byot':
-        trav, _, _ = \
-            _traveltime_table(z, x, s2d, r2d, v0, mode='analytic')
-    else:
-        trav = None
+        vel = v0 * np.ones((PAR['nx'], PAR['nz']))
 
-    Dop = Demigration(z, x, t, s2d, r2d,
-                      vel if par['mode'] == 'eikonal' else v0, wav, wavc,
-                      y=None, trav=trav, mode=par['mode'])
-    assert dottest(Dop, PAR['nsx']*PAR['nrx']*PAR['nt'], PAR['nz']*PAR['nx'])
+        if par['mode'] == 'byot':
+            trav, _, _ = \
+                _traveltime_table(z, x, s2d, r2d, v0, mode='analytic')
+        else:
+            trav = None
+
+        Dop = Demigration(z, x, t, s2d, r2d,
+                          vel if par['mode'] == 'eikonal' else v0, wav, wavc,
+                          y=None, trav=trav, mode=par['mode'])
+        assert dottest(Dop, PAR['nsx']*PAR['nrx']*PAR['nt'], PAR['nz']*PAR['nx'])
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_lsm2d(par):
     """Dot-test and inverse for LSM operator
     """
-    vel = v0 * np.ones((PAR['nx'], PAR['nz']))
-    refl = np.zeros((PAR['nx'], PAR['nz']))
-    refl[:, PAR['nz']//2] = 1
-    refl[:, 3*PAR['nz']//4] = 1
+    # stop testing eikonal on mac until
+    # https://github.com/scikit-fmm/scikit-fmm/issues/34 is solved
+    if (par['mode'] in ('analytic', 'byot')) or \
+            (par['mode'] == 'eikonal' and platform.system() != 'Darwin'):
+        vel = v0 * np.ones((PAR['nx'], PAR['nz']))
+        refl = np.zeros((PAR['nx'], PAR['nz']))
+        refl[:, PAR['nz']//2] = 1
+        refl[:, 3*PAR['nz']//4] = 1
 
-    lsm = LSM(z, x, t, s2d, r2d, vel if par['mode'] == 'eikonal' else v0,
-              wav, wavc, mode=par['mode'], dottest=True)
+        lsm = LSM(z, x, t, s2d, r2d, vel if par['mode'] == 'eikonal' else v0,
+                  wav, wavc, mode=par['mode'], dottest=True)
 
-    d = lsm.Demop * refl.ravel()
-    d = d.reshape(PAR['nsx'], PAR['nrx'], PAR['nt'])
+        d = lsm.Demop * refl.ravel()
+        d = d.reshape(PAR['nsx'], PAR['nrx'], PAR['nt'])
 
-    minv = lsm.solve(d.ravel(), **dict(iter_lim=100, show=True))
-    minv = minv.reshape(PAR['nx'], PAR['nz'])
+        minv = lsm.solve(d.ravel(), **dict(iter_lim=100, show=True))
+        minv = minv.reshape(PAR['nx'], PAR['nz'])
 
-    dinv = lsm.Demop * minv.ravel()
-    dinv = dinv.reshape(PAR['nsx'], PAR['nrx'], PAR['nt'])
+        dinv = lsm.Demop * minv.ravel()
+        dinv = dinv.reshape(PAR['nsx'], PAR['nrx'], PAR['nt'])
 
-    assert_array_almost_equal(d, dinv, decimal=1)
-    assert_array_almost_equal(refl, minv, decimal=1)
+        assert_array_almost_equal(d, dinv, decimal=1)
+        assert_array_almost_equal(refl, minv, decimal=1)

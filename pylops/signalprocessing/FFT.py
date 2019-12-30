@@ -6,6 +6,12 @@ try:
     import pyfftw
 except ModuleNotFoundError:
     pyfftw = None
+    pyfftw_message = 'Pyfftw not installed, use numpy or run ' \
+                     '"pip install pyFFTW" or ' \
+                     '"conda install -c conda-forge pyfftw".'
+except Exception as e:
+    pyfftw = None
+    pyfftw_message = 'Failed to import pyfftw (error:%s), use numpy.' % e
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -296,9 +302,9 @@ def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
     if engine == 'fftw' and pyfftw is not None:
         f = _FFT_fftw(dims, dir=dir, nfft=nfft, sampling=sampling,
                       real=real, fftshift=fftshift, dtype=dtype, **kwargs_fftw)
-    elif engine == 'numpy' or pyfftw is None:
+    elif engine == 'numpy' or (engine == 'fftw' and pyfftw is None):
         if engine == 'fftw' and pyfftw is None:
-            logging.warning('use numpy, pyfftw not available...')
+            logging.warning(pyfftw_message)
         f = _FFT_numpy(dims, dir=dir, nfft=nfft, sampling=sampling,
                        real=real, fftshift=fftshift, dtype=dtype)
     else:

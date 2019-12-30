@@ -8,6 +8,10 @@ try:
         _matvec_numba_onthefly, _rmatvec_numba_onthefly
 except ModuleNotFoundError:
     jit = None
+    jit_message = 'Numba not available, reverting to numpy.'
+except Exception as e:
+    jit = None
+    jit_message = 'Failed to import numba (error:%s), use numpy.' % e
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -109,7 +113,7 @@ class Spread(LinearOperator):
             self.engine = 'numba'
         else:
             if engine == 'numba' and jit is None:
-                logging.warning('numba not available, revert to numpy...')
+                logging.warning(jit_message)
             self.engine = 'numpy'
 
         # axes

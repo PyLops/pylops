@@ -43,9 +43,11 @@ def zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
 
     """
     # Create theta1 array of angles in radiants
-    theta1 = np.radians(np.array(theta1))
-    if theta1.size == 1:
-        theta1 = np.expand_dims(theta1, axis=1)
+    if isinstance(theta1, (int, float)):
+        theta1 = np.array([float(theta1), ])
+    elif isinstance(theta1, (list, tuple)):
+        theta1 = np.array(theta1)
+    theta1 = np.radians(theta1)
 
     # Set the ray parameter p
     p = sin(theta1) / vp1
