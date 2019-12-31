@@ -108,7 +108,9 @@ Wave-Equation processing
 .. autosummary::
    :toctree: generated/
 
+    PressureToVelocity
     UpDownComposition2D
+    UpDownComposition3D
     MDC
     PhaseShift
     Demigration
