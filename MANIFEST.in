@@ -7,4 +7,3 @@ recursive-exclude examples *
 recursive-exclude pytests *
 recursive-exclude testdata *
 recursive-exclude tutorials *
-
