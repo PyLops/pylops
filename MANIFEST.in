@@ -1,7 +1,6 @@
 exclude .*
 exclude environment.yml requirements.txt  Makefile
 exclude environment-dev.yml requirements-dev.txt azure-pipelines.yml readthedocs.yml
-recursive-exclude pylops.egg-info *
 recursive-exclude docs *
 recursive-exclude examples *
 recursive-exclude pytests *
