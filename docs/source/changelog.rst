@@ -3,6 +3,22 @@
 Changelog
 =========
 
+Version 1.8.0
+-------------
+
+*Released on: 11/01/2020*
+
+* Added :py:func:`pylops.LinearOperator.todense` method
+  to :py:func:`pylops.LinearOperator`
+* Added :py:class:`pylops.signalprocessing.Bilinear`,
+  :py:class:`pylops.signalprocessing.DWT`, and
+  :py:class:`pylops.signalprocessing.DWT2` operators
+* Added :py:class:`pylops.waveeqprocessing.PressureToVelocity`,
+  :py:class:`pylops.waveeqprocessing.UpDownComposition3Doperator`, and
+  :py:class:`pylops.waveeqprocessing.PhaseShift` operators
+* Fix bug in :py:class:`pylops.basicoperators.Kronecker`
+  (see `Issue #125 <https://github.com/Statoil/pylops/issues/125>`_.)
+
 
 Version 1.7.0
 -------------
@@ -21,7 +37,6 @@ Version 1.7.0
 * Added :py:class:`pylops.optimization.sparsity.OMP` solver
 
 
-
 Version 1.6.0
 -------------
 
@@ -36,7 +51,6 @@ Version 1.6.0
   :py:func:`pylops.avo.poststack.PoststackLinearModelling`,
   :py:func:`pylops.waveeqprocessing.MDC` to allow calling different operators
   (e.g., from pylops-distributed or pylops-gpu) within the method
-
 
 
 Version 1.5.0
@@ -131,6 +145,7 @@ Version 1.1.0
 *Released on: 13/12/2018*
 
 * Added :py:class:`pylops.CausalIntegration` operator
+
 
 Version 1.0.1
 -------------

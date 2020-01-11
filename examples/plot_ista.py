@@ -30,10 +30,11 @@ np.random.seed(0)
 
 ###############################################################################
 # Let's start with a simple example, where we create a dense mixing matrix
-# and a sparse signal and we use ISTA to recover such a signal. Note that the
-# mixing matrix leads to an underdetermined system of equations (:math:`N < M`)
-# so being able to add some extra prior information regarding the sparsity of
-# our desired model is essential to be able to invert such a system.
+# and a sparse signal and we use OMP and ISTA to recover such a signal.
+# Note that the mixing matrix leads to an underdetermined system of equations
+# (:math:`N < M`) so being able to add some extra prior information regarding
+# the sparsity of our desired model is essential to be able to invert
+# such a system.
 
 N, M = 15, 20
 Aop = pylops.MatrixMult(np.random.randn(N, M))

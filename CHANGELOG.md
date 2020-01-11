@@ -1,3 +1,14 @@
+# 1.8.0
+* Added ``todense`` method to ``pylops.LinearOperator``
+* Added ``pylops.signalprocessing.Bilinear``,
+  ``pylops.signalprocessing.DWT``, and
+  ``pylops.signalprocessing.DWT2`` operators
+* Added ``pylops.waveeqprocessing.PressureToVelocity``,
+  ``pylops.waveeqprocessing.UpDownComposition3Doperator``, and
+  ``pylops.waveeqprocessing.PhaseShift`` operators
+* Fix bug in ``pylops.basicoperators.Kronecker``
+  (see [Issue #125](https://github.com/Statoil/pylops/issues/125))
+
 # 1.7.0
 * Added ``pylops.basicoperators.Gradient``,
   ``pylops.basicoperators.Sum``,
