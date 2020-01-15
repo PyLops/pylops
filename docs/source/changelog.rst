@@ -6,7 +6,7 @@ Changelog
 Version 1.8.0
 -------------
 
-*Released on: 11/01/2020*
+*Released on: 12/01/2020*
 
 * Added :py:func:`pylops.LinearOperator.todense` method
   to :py:func:`pylops.LinearOperator`
@@ -17,7 +17,7 @@ Version 1.8.0
   :py:class:`pylops.waveeqprocessing.UpDownComposition3Doperator`, and
   :py:class:`pylops.waveeqprocessing.PhaseShift` operators
 * Fix bug in :py:class:`pylops.basicoperators.Kronecker`
-  (see `Issue #125 <https://github.com/Statoil/pylops/issues/125>`_.)
+  (see `Issue #125 <https://github.com/Statoil/pylops/issues/125>`_)
 
 
 Version 1.7.0

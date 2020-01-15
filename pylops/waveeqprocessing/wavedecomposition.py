@@ -247,7 +247,7 @@ def PressureToVelocity(nt, nr, dt, dr, rho, vel, nffts=(None, None, None),
     .. math::
         p(k_x, \omega) = \frac{\omega \rho}{k_z} v_z(k_x, \omega)
 
-    Ffor 3-dimensional applications the only difference is represented
+    For 3-dimensional applications the only difference is represented
     by the vertical wavenumber :math:`k_z`, which is defined as
     :math:`k_z=\sqrt{\omega^2/c^2 - k_x^2 - k_y^2}`.
 
@@ -504,33 +504,32 @@ def WavefieldDecomposition(p, vz, nt, nr, dt, dr, rho, vel,
                            nffts=(None, None, None), critical=100.,
                            ntaper=10, scaling=1., kind='inverse',
                            restriction=None, sptransf=None, solver=lsqr,
-                           dottest=False, dtype='complex128',
-                           **kwargs_solver):
+                           dottest=False, dtype='complex128', **kwargs_solver):
     r"""Up-down wavefield decomposition.
 
-    Apply seismic wavefield decomposition from its multi-component (pressure
-    and vertical particle velocity) data.
+    Apply seismic wavefield decomposition from multi-component (pressure
+    and vertical particle velocity) data. This process is also generally
+    referred to as data-based deghosting.
 
     Parameters
     ----------
     p : :obj:`np.ndarray`
-        Pressure data of of size :math:`\lbrack n_r
-        \times n_t \rbrack` (or :math:`\lbrack n_{r,sub} \times n_t \rbrack`
-        in case a ``restriction`` operator is provided, and :math:`n_{r,sub}`
-        must agree with the size of the output of this an operator)
+        Pressure data of size :math:`\lbrack n_{r_x} (\times n_{r_y})
+        \times n_t \rbrack` (or :math:`\lbrack n_{r_{x,sub}}
+        (\times n_{r_{y,sub}}) \times n_t \rbrack`
+        in case a ``restriction`` operator is provided. Note that
+        :math:`n_{r_{x,sub}}` (and :math:`n_{r_{y,sub}}`)
+        must agree with the size of the output of this operator)
     vz : :obj:`np.ndarray`
-        Vertical particle velocity data of size :math:`\lbrack n_r
-        \times n_t \rbrack` (or :math:`\lbrack n_{r,sub} \times n_t \rbrack`)
+        Vertical particle velocity data of same size as pressure data
     nt : :obj:`int`
         Number of samples along the time axis
-    nr : :obj:`np.ndarray`
-        Number of samples along the receiver axis of the separated
-        pressure consituents
+    nr : :obj:`int` or :obj:`tuple`
+        Number of samples along the receiver axis (or axes)
     dt : :obj:`float`
         Sampling along the time axis
-    dr : :obj:`float`
-        Sampling along the receiver array of the separated
-        pressure consituents
+    dr : :obj:`float` or :obj:`tuple`
+        Sampling along the receiver array (or axes)
     rho : :obj:`float`
         Density along the receiver array (must be constant)
     vel : :obj:`float`
