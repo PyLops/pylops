@@ -104,6 +104,12 @@ class Marchenko():
         :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
         ``R^H`` on-the-fly (``False``) Note that ``saveRt=True`` will be
         faster but double the amount of required memory
+    prescaled : :obj:`bool`, optional
+        Apply scaling to ``R`` (``False``) or not (``False``)
+        when performing spatial and temporal summations within the
+        :class:`pylops.waveeqprocessing.MDC` operator. In case
+        ``prescaled=True``, the ``R`` is assumed to have been pre-scaled by
+        the user.
 
     Attributes
     ----------
@@ -184,7 +190,7 @@ class Marchenko():
     """
     def __init__(self, R, R1=None, dt=0.004, nt=None, dr=1.,
                  nfmax=None, wav=None, toff=0.0, nsmooth=10,
-                 dtype='float64', saveRt=True):
+                 dtype='float64', saveRt=True, prescaled=False):
         warnings.warn('A new implementation of Marchenko is provided in v1.5.0. '
                       'This currently affects only the inner working of the '
                       'operator, end-users can continue using the operator in '
@@ -201,6 +207,7 @@ class Marchenko():
         self.toff = toff
         self.nsmooth = nsmooth
         self.saveRt = saveRt
+        self.prescaled = prescaled
         self.dtype = dtype
         self.explicit = False
 
@@ -296,10 +303,12 @@ class Marchenko():
         # Create operators
         Rop = MDC(self.Rtwosided_fft, self.nt2, nv=1, dt=self.dt, dr=self.dr,
                   twosided=True, conj=False, transpose=False,
-                  saveGt=self.saveRt, dtype=self.dtype)
+                  saveGt=self.saveRt, prescaled=self.prescaled,
+                  dtype=self.dtype)
         R1op = MDC(self.Rtwosided_fft, self.nt2, nv=1, dt=self.dt, dr=self.dr,
                    twosided=True, conj=True, transpose=False,
-                   saveGt=self.saveRt, dtype=self.dtype)
+                   saveGt=self.saveRt, prescaled=self.prescaled,
+                   dtype=self.dtype)
         Rollop = Roll(self.nt2 * self.ns,
                       dims=(self.nt2, self.ns),
                       dir=0, shift=-1, dtype=self.dtype)
@@ -433,10 +442,12 @@ class Marchenko():
         # Create operators
         Rop = MDC(self.Rtwosided_fft, self.nt2, nv=nvs,
                   dt=self.dt, dr=self.dr, twosided=True,
-                  conj=False, transpose=False, dtype=self.dtype)
+                  conj=False, transpose=False, prescaled=self.prescaled,
+                  dtype=self.dtype)
         R1op = MDC(self.Rtwosided_fft, self.nt2, nv=nvs,
                    dt=self.dt, dr=self.dr, twosided=True,
-                   conj=True, transpose=False, dtype=self.dtype)
+                   conj=True, transpose=False, prescaled=self.prescaled,
+                   dtype=self.dtype)
         Rollop = Roll(self.ns * nvs * self.nt2,
                       dims=(self.nt2, self.ns, nvs),
                       dir=0, shift=-1, dtype=self.dtype)

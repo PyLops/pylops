@@ -14,8 +14,8 @@ from pylops.optimization.leastsquares import PreconditionedInversion
 #logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
-def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
-         dtype=None, transpose=True, saveGt=True, conj=False,
+def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
+         transpose=True, saveGt=True, conj=False, prescaled=False,
          _Identity=Identity, _Transpose=Transpose, _FFT=FFT,
          _Fredholm1=Fredholm1, args_Identity={}, args_Transpose={},
          args_FFT={}, args_Identity1={}, args_Transpose1={},
@@ -47,8 +47,12 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
     dtype = G[0, 0, 0].dtype
 
     # create Fredholm operator
-    Frop = _Fredholm1(dr * dt * np.sqrt(nt) * G, nv, saveGt=saveGt,
-                      dtype=dtype, **args_Fredholm1)
+    if prescaled:
+        Frop = _Fredholm1(G, nv, saveGt=saveGt,
+                          dtype=dtype,  **args_Fredholm1)
+    else:
+        Frop = _Fredholm1(dr * dt * np.sqrt(nt) * G, nv, saveGt=saveGt,
+                          dtype=dtype, **args_Fredholm1)
     if conj:
         Frop = Frop.conj()
 
@@ -92,7 +96,7 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
 
 def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         dtype=None, fftengine='numpy', transpose=True,
-        saveGt=True, conj=False, usematmul=False):
+        saveGt=True, conj=False, usematmul=False, prescaled=False):
     r"""Multi-dimensional convolution.
 
     Apply multi-dimensional convolution between two datasets. If
@@ -151,11 +155,16 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         Use :func:`numpy.matmul` (``True``) or for-loop with :func:`numpy.dot`
         (``False``) in :py:class:`pylops.signalprocessing.Fredholm1` operator.
         Refer to Fredholm1 documentation for details.
+    prescaled : :obj:`bool`, optional
+        Apply scaling to kernel (``False``) or not (``False``) when performing
+        spatial and temporal summations. In case ``prescaled=True``, the
+        kernel is assumed to have been pre-scaled when passed to the MDC
+        routine.
 
     Raises
     ------
     ValueError
-        If ``nt`` is even and  ``twosided=True``
+        If ``nt`` is even and ``twosided=True``
 
     See Also
     --------
@@ -170,6 +179,14 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
     .. math::
         y(t, s, v) = \mathscr{F}^{-1} \Big( \int_S G(f, s, r)
         \mathscr{F}(x(t, r, v)) dr \Big)
+
+    which is discretized as follows:
+
+    .. math::
+        y(t, s, v) = \mathscr{F}^{-1} \Big( \sum_{i_r=0}^{n_r}
+        (\sqrt{n_t} * d_t * d_r) G(f, s, i_r) \mathscr{F}(x(t, i_r, v)) \Big)
+
+    where :math:`(\sqrt{n_t} * d_t * d_r)` is not applied if ``prescaled=True``.
 
     This operation can be discretized and performed by means of a
     linear operator
@@ -190,7 +207,8 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
     """
     return _MDC(G, nt, nv, dt=dt, dr=dr, twosided=twosided, fast=fast,
                 dtype=dtype, transpose=transpose, saveGt=saveGt,
-                conj=conj, args_FFT={'engine': fftengine},
+                conj=conj, prescaled=prescaled,
+                args_FFT={'engine': fftengine},
                 args_Fredholm1={'usematmul': usematmul})
 
 

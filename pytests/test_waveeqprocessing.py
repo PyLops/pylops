@@ -1,7 +1,7 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from pylops.utils import dottest
 from pylops.utils.wavelets import ricker
@@ -117,6 +117,16 @@ def test_MDC_1virtualsource(par):
                       np.abs(wav ** 2).sum() * amp_m * amp *
                       par['nx'] * par['dx'] * par['dt'] *
                       np.sqrt(par['nt2'])) < 1e-2
+
+    # Check that MDC with prescaled=True gives same result
+    MDCpreop = MDC(np.sqrt(par['nt2']) * par['dt'] * par['dx'] * Gwav_fft,
+                   nt=par['nt2'], nv=1, dt=par['dt'], dr=par['dx'],
+                   fftengine='fftw', twosided=par['twosided'], prescaled=True,
+                   dtype='float32')
+    dottest(MDCpreop, par['nt2'] * par['ny'], par['nt2'] * par['nx'])
+    dpre = MDCpreop * mwav.flatten()
+    dpre = dpre.reshape(par['ny'], par['nt2'])
+    assert_array_equal(d, dpre)
 
     # Apply mdd function
     minv = MDD(Gwav[:, :, par['nt']-1:] if par['twosided'] else Gwav,
