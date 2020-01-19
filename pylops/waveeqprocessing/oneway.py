@@ -165,7 +165,6 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype='float64'):
         Pop = Fop.H * Kxop * Pop * Kxop.H * Fop
     else:
         Pop = Fop.H * Kxop * Kyop * Pop * Kyop.H * Kxop.H * Fop
-    print(Pop.dtype)
     # Recasting of type is required to avoid FFT operators to cast to complex.
     # We know this is correct because forward and inverse FFTs are applied at
     # the beginning and end of this combined operator

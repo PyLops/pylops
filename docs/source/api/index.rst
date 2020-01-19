@@ -20,8 +20,6 @@ Linear operators
 
 Templates
 ~~~~~~~~~
-.. automodule:: pylops
-
 .. currentmodule:: pylops
 
 .. autosummary::
@@ -173,6 +171,7 @@ Wave-Equation processing
    :toctree: generated/
 
     SeismicInterpolation
+    Deghosting
     WavefieldDecomposition
     MDD
     Marchenko
