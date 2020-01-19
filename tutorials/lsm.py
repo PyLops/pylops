@@ -1,5 +1,5 @@
 r"""
-13. Least-squares migration
+15. Least-squares migration
 ===========================
 Seismic migration is the process by which seismic data are manipulated to create
 an image of the subsurface reflectivity.

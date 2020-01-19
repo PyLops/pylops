@@ -1,5 +1,5 @@
 r"""
-07. Pre-stack (AVO) inversion
+08. Pre-stack (AVO) inversion
 =============================
 Pre-stack inversion represents one step beyond post-stack inversion in that
 not only the profile of acoustic impedance can be inferred from seismic data,

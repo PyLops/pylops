@@ -1,5 +1,5 @@
 r"""
-14. Bayesian Inversion
+04. Bayesian Inversion
 ======================
 This tutorial focuses on Bayesian inversion, a special type of inverse problem
 that aims at incorporating prior information in terms of model and data

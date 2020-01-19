@@ -1,5 +1,5 @@
 r"""
-06. Post-stack inversion
+07. Post-stack inversion
 ========================
 Estimating subsurface properties from band-limited seismic data represents an
 important task for geophysical subsurface characterization.

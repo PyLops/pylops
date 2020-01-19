@@ -1,10 +1,10 @@
 r"""
-12. Seismic wavefield decomposition
+14. Seismic wavefield decomposition
 ===================================
 Multi-component seismic data can be decomposed
-in their up- and down-going constituents. This task can be accurately achieved
-by linearly combining the input pressure and particle velocity data
-in the frequency-wavenumber described in details in
+in their up- and down-going constituents in a purely data driven fashion.
+This task can be accurately achieved by linearly combining the input pressure
+and particle velocity data in the frequency-wavenumber described in details in
 :func:`pylops.waveeqprocessing.UpDownComposition2D` and
 :func:`pylops.waveeqprocessing.WavefieldDecomposition`.
 
@@ -248,6 +248,7 @@ axs[2].axis('tight')
 
 ###############################################################################
 # To see more examples, including applying wavefield separation and
-# regularization simultaneously, head over to these companion notebooks:
+# regularization simultaneously, as well as 3D examples, head over to
+# the following notebooks:
 # `notebook1 <https://github.com/mrava87/pylops_notebooks/blob/master/developement/WavefieldSeparation.ipynb>`_
 # and `notebook2 <https://github.com/mrava87/pylops_notebooks/blob/master/developement/WavefieldSeparation-Synthetic.ipynb>`_
