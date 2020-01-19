@@ -1,5 +1,5 @@
 r"""
-11. Seismic regularization
+12. Seismic regularization
 ==========================
 The problem of *seismic data regularization* (or interpolation) is a very
 simple one to write, yet ill-posed and very hard to solve.

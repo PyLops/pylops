@@ -1,5 +1,5 @@
 r"""
-10. Radon filtering
+11. Radon filtering
 ===================
 In this example we will be taking advantage of the
 :py:class:`pylops.signalprocessing.Radon2D` operator to perform filtering of

@@ -1,5 +1,5 @@
 """
-08. Multi-Dimensional Deconvolution
+09. Multi-Dimensional Deconvolution
 ===================================
 This example shows how to set-up and run the
 :py:class:`pylops.waveeqprocessing.MDD` inversion using synthetic data.

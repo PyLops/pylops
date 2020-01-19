@@ -1,5 +1,5 @@
 r"""
-04. Image deblurring
+05. Image deblurring
 ====================
 *Deblurring* is the process of removing blurring effects from images, caused for
 example by defocus aberration or motion blur.
