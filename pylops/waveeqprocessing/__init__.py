@@ -4,5 +4,5 @@ from .marchenko import Marchenko
 from .seismicinterpolation import SeismicInterpolation
 from .wavedecomposition import PressureToVelocity, UpDownComposition2D, \
     UpDownComposition3D, WavefieldDecomposition
-from .oneway import PhaseShift
+from .oneway import PhaseShift, Deghosting
 from .lsm import Demigration, LSM
