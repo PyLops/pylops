@@ -62,26 +62,26 @@ class LinearOperator(spLinearOperator):
     def __mul__(self, x):
         y = super().__mul__(x)
         if isinstance(y, spLinearOperator):
-            y = LinearOperator(y)
+            y = aslinearoperator(y)
         return y
 
     def __rmul__(self, x):
-        return LinearOperator(super().__rmul__(x))
+        return aslinearoperator(super().__rmul__(x))
 
     def __pow__(self, p):
-        return LinearOperator(super().__pow__(p))
+        return aslinearoperator(super().__pow__(p))
 
     def __add__(self, x):
-        return LinearOperator(super().__add__(x))
+        return aslinearoperator(super().__add__(x))
 
     def __neg__(self):
-        return LinearOperator(super().__neg__())
+        return aslinearoperator(super().__neg__())
 
     def __sub__(self, x):
-        return LinearOperator(super().__sub__(x))
+        return aslinearoperator(super().__sub__(x))
 
     def _adjoint(self):
-        return LinearOperator(super()._adjoint())
+        return aslinearoperator(super()._adjoint())
 
     def div(self, y, niter=100):
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
@@ -137,7 +137,7 @@ class LinearOperator(spLinearOperator):
         # Wrap self into a LinearOperator. This is done for cases where self
         # is a _SumLinearOperator or _ProductLinearOperator, so that it regains
         #the dense method
-        Op = LinearOperator(self)
+        Op = aslinearoperator(self)
 
         identity = np.eye(self.shape[1], dtype=self.dtype)
         matrix = Op.matmat(identity)
@@ -360,3 +360,27 @@ class _ColumnLinearOperator(LinearOperator):
             y = self.Op._rmatvec(x)
             y = y[self.cols]
         return y
+
+
+def aslinearoperator(Op):
+    """Return Op as a LinearOperator.
+
+    Converts any operator into a LinearOperator. This can be used when `Op`
+    is a private operator to ensure that the return operator has all properties
+    and methods of the parent class.
+
+    Parameters
+    ----------
+    Op : :obj:`pylops.LinearOperator` or any other Operator
+        Operator of any type
+
+    Returns
+    -------
+    Op : :obj:`pylops.LinearOperator`
+        Operator of type :obj:`pylops.LinearOperator`
+
+    """
+    if isinstance(Op, LinearOperator):
+        return Op
+    else:
+        return LinearOperator(Op)
