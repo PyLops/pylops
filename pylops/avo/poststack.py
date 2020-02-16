@@ -137,7 +137,7 @@ def PoststackLinearModelling(wav, nt0, spatdims=None,
     In the special case of acoustic impedance (:math:`m(t)=AI(t)`), the
     modelling operator can be used to create zero-offset data:
 
-        .. math::
+    .. math::
         d(t, \theta=0) = \frac{1}{2} w(t) * \frac{dln(m(t))}{dt}
 
     where the scaling factor :math:`\frac{1}{2}` can be easily included in

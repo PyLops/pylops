@@ -1,5 +1,5 @@
 import numpy as np
-from pylops import LinearOperator
+from pylops.LinearOperator import aslinearoperator
 from pylops.basicoperators import SecondDerivative
 
 
@@ -50,5 +50,4 @@ def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1),
     l2op += weights[1]*SecondDerivative(np.prod(dims), dims=dims, dir=dirs[1],
                                         sampling=sampling[1],
                                         edge=edge, dtype=dtype)
-
-    return LinearOperator(l2op)
+    return aslinearoperator(l2op)

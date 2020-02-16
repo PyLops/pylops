@@ -50,8 +50,7 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d'):
     nfft = nt if nfft is None or nfft < nt else nfft
     W = np.abs(np.fft.rfft(wav, nfft)) * dt
     f = 2 * np.pi * np.arange(nfft) / (dt * nfft)
-
-    direct = np.zeros((nfft, nr), dtype=np.complex128)
+    direct = np.zeros((nfft // 2 + 1, nr), dtype=np.complex128)
     for it in range(len(W)):
         if kind == '2d':
             #direct[it] = W[it] * 1j * f[it] * np.exp(-1j * ((f[it] * trav) \
@@ -61,7 +60,6 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d'):
                          hankel2(0, f[it] * trav + 1e-10) / 4
         else:
             direct[it] = W[it] * np.exp(-1j * f[it] * trav) / (4 * np.pi * dist)
-
     direct = np.fft.irfft(direct, nfft, axis=0) / dt
     direct = np.real(direct[:nt])
     return direct
@@ -291,7 +289,6 @@ class Marchenko():
         trav_off = trav - self.toff
         trav_off = np.round(trav_off / self.dt).astype(np.int)
 
-        # window
         w = np.zeros((self.nr, self.nt))
         for ir in range(self.nr):
             w[ir, :trav_off[ir]] = 1
