@@ -53,7 +53,8 @@ def test_unknown_engine():
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
                                  (par5), (par6), (par7), (par8)])
 def test_Radon2D(par):
-    """Dot-test and sparse inverse for Radon2D operator
+    """Dot-test, forward and adjoint consistency check
+    (for onthefly parameter), and sparse inverse for Radon2D operator
     """
     dt, dh = 0.005, 1
     t = np.arange(par['nt']) * dt
@@ -71,20 +72,24 @@ def test_Radon2D(par):
                    onthefly=True, engine=par['engine'],
                    dtype='float64')
     assert dottest(Rop, par['nhx']*par['nt'], par['npx']*par['nt'], tol=1e-3)
-    y = Rop * x.ravel()
-    y = y.reshape(par['nhx'], par['nt'])
-    y1 = R1op * x.flatten()
-    y1 = y1.reshape(par['nhx'], par['nt'])
-    assert_array_almost_equal(y.ravel(), y1.ravel(), decimal=4)
 
-    xinv, _, _ = FISTA(Rop, y.ravel(), 30, eps=1e0, returninfo=True)
+    y = Rop * x.ravel()
+    y1 = R1op * x.ravel()
+    assert_array_almost_equal(y, y1, decimal=4)
+
+    xadj = Rop.H * y
+    xadj1 = R1op.H * y
+    assert_array_almost_equal(xadj, xadj1, decimal=4)
+
+    xinv, _, _ = FISTA(Rop, y, 30, eps=1e0, returninfo=True)
     assert_array_almost_equal(x.ravel(), xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
                                  (par5), (par6), (par7), (par8)])
 def test_Radon3D(par):
-    """Dot-test and sparse inverse for Radon3D operator
+    """Dot-test,  forward and adjoint consistency check
+    (for onthefly parameter), and sparse inverse for Radon3D operator
     """
     if par['engine'] == 'numpy' or \
         multiprocessing.cpu_count() >= 4: # avoid timeout in travis for numba
@@ -110,11 +115,13 @@ def test_Radon3D(par):
         assert dottest(Rop, par['nhy']*par['nhx']*par['nt'],
                        par['npy']*par['npx']*par['nt'], tol=1e-3)
         y = Rop * x.flatten()
-        y = y.reshape(par['nhy'], par['nhx'], par['nt'])
         y1 = R1op * x.flatten()
-        y1 = y1.reshape(par['nhy'], par['nhx'], par['nt'])
-        assert_array_almost_equal(y.ravel(), y1.ravel(), decimal=4)
+        assert_array_almost_equal(y, y1, decimal=4)
+
+        xadj = Rop.H * y
+        xadj1 = R1op.H * y
+        assert_array_almost_equal(xadj, xadj1, decimal=4)
 
         if Rop.engine == 'numba': # as numpy is too slow here...
-            xinv, _, _ = FISTA(Rop, y.flatten(), 200, eps=3e0, returninfo=True)
+            xinv, _, _ = FISTA(Rop, y, 200, eps=3e0, returninfo=True)
             assert_array_almost_equal(x.flatten(), xinv, decimal=1)

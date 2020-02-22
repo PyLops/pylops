@@ -95,9 +95,9 @@ plt.title('TV inversion')
 
 ###############################################################################
 # Finally, we repeat the same exercise on a 2-dimensional image. In this case
-# we however consider the MRI imaging problem where the Split Bregman
-# solver shines. The data is created by first appling a 2D Fourier
-# Transform of the input model and by randomly sampling 60% of its values.
+# we mock a medical imaging problem: the data is created by appling a 2D
+# Fourier Transform to the input model and by randomly sampling 60% of
+# its values.
 x = np.load('../testdata/optimization/shepp_logan_phantom.npy')
 x = x/x.max()
 ny, nx = x.shape
