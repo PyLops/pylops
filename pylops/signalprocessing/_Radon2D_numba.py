@@ -20,12 +20,12 @@ def _hyperbolic_numba(x, t, px):
     return np.sqrt(t**2 + (x/px)**2)
 
 @jit(nopython=True, nogil=True)
-def _indices_2d_numba(f, x, px, it, nt, interp=True):
+def _indices_2d_numba(f, x, px, t, nt, interp=True):
     """Compute time and space indices of parametric line in ``f`` function
     using numba. Refer to ``_indices_2d`` for full documentation.
 
     """
-    tdecscan = f(x, it, px)
+    tdecscan = f(x, t, px)
     if not interp:
         xscan = (tdecscan >= 0) & (tdecscan < nt)
     else:
@@ -40,11 +40,21 @@ def _indices_2d_numba(f, x, px, it, nt, interp=True):
     return xscan, tscan, dtscan
 
 @jit(nopython=True, parallel=parallel, nogil=True)
-def _indices_2d_onthefly_numba(f, x, px, ip, it, nt, interp=True):
+def _indices_2d_onthefly_numba(f, x, px, ip, t, nt, interp=True):
     """Wrapper around _indices_2d to allow on-the-fly computation of
     parametric curves using numba
     """
-    return _indices_2d_numba(f, x, px[ip], it, nt, interp=interp)
+    tscan = np.full(len(x), np.nan, dtype=np.float32)
+    if interp:
+        dtscan = np.full(len(x), np.nan)
+    else:
+        dtscan = None
+    xscan, tscan1, dtscan1 = \
+        _indices_2d_numba(f, x, px[ip], t, nt, interp=interp)
+    tscan[xscan] = tscan1
+    if interp:
+        dtscan[xscan] = dtscan1
+    return xscan, tscan, dtscan
 
 @jit(nopython=True, parallel=parallel, nogil=True)
 def _create_table_numba(f, x, pxaxis, nt, npx, nx, interp):

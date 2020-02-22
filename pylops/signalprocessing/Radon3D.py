@@ -22,7 +22,7 @@ def _parabolic(y, x, t, py, px):
 def _hyperbolic(y, x, t, py, px):
     return np.sqrt(t**2 + (x/px)**2 + (y/py)**2)
 
-def _indices_3d(f, y, x, py, px, it, nt, interp=True):
+def _indices_3d(f, y, x, py, px, t, nt, interp=True):
     """Compute time and space indices of parametric line in ``f`` function
 
     Parameters
@@ -37,8 +37,8 @@ def _indices_3d(f, y, x, py, px, it, nt, interp=True):
         Slowness/curvature in slow axis
     px : :obj:`float`
         Slowness/curvature in fast axis
-    it : :obj:`int`
-        Index of time axis
+    t : :obj:`int`
+        Time sample (time axis is assumed to have sampling 1)
     nt : :obj:`int`
         Size scaof time axis
     interp : :obj:`bool`, optional
@@ -55,7 +55,7 @@ def _indices_3d(f, y, x, py, px, it, nt, interp=True):
         Decimal time variations for interpolation
 
     """
-    tdecscan = f(y, x, it, py, px)
+    tdecscan = f(y, x, t, py, px)
     if not interp:
         sscan = (tdecscan >= 0) & (tdecscan < nt)
     else:
@@ -70,7 +70,17 @@ def _indices_3d(f, y, x, py, px, it, nt, interp=True):
 def _indices_3d_onthefly(f, y, x, py, px, ip, it, nt, interp=True):
     """Wrapper around _indices_3d to allow on-the-fly computation of
     parametric curves"""
-    return _indices_3d(f, y, x, py[ip], px[ip], it, nt, interp=interp)
+    tscan = np.full(len(y), np.nan, dtype=np.float32)
+    if interp:
+        dtscan = np.full(len(y), np.nan)
+    else:
+        dtscan = None
+    sscan, tscan1, dtscan1 = \
+        _indices_3d(f, y, x, py[ip], px[ip], it, nt, interp=interp)
+    tscan[sscan] = tscan1
+    if interp:
+        dtscan[sscan] = dtscan1
+    return sscan, tscan, dtscan
 
 def _create_table(f, y, x, pyaxis, pxaxis, nt, npy, npx, ny, nx, interp):
     """Create look up table
