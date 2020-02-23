@@ -20,12 +20,11 @@ def _hyperbolic_numba(y, x, t, py, px):
     return np.sqrt(t**2 + (x/px)**2 + (y/py)**2)
 
 @jit(nopython=True, parallel=parallel, nogil=True)
-def _indices_3d_numba(f, y, x, py, px, it, nt, interp=True):
+def _indices_3d_numba(f, y, x, py, px, t, nt, interp=True):
     """Compute time and space indices of parametric line in ``f`` function
     using numba. Refer to ``_indices_3d`` for full documentation.
-
     """
-    tdecscan = f(y, x, it, py, px)
+    tdecscan = f(y, x, t, py, px)
     if not interp:
         sscan = (tdecscan >= 0) & (tdecscan < nt)
     else:
@@ -40,11 +39,21 @@ def _indices_3d_numba(f, y, x, py, px, it, nt, interp=True):
     return sscan, tscan, dtscan
 
 @jit(nopython=True, parallel=parallel, nogil=True)
-def _indices_3d_onthefly_numba(f, y, x, py, px, ip, it, nt, interp=True):
+def _indices_3d_onthefly_numba(f, y, x, py, px, ip, t, nt, interp=True):
     """Wrapper around _indices_3d to allow on-the-fly computation of
     parametric curves using numba
     """
-    return _indices_3d_numba(f, y, x, py[ip], px[ip], it, nt, interp=interp)
+    tscan = np.full(len(y), np.nan, dtype=np.float32)
+    if interp:
+        dtscan = np.full(len(y), np.nan)
+    else:
+        dtscan = None
+    sscan, tscan1, dtscan1 = \
+        _indices_3d_numba(f, y, x, py[ip], px[ip], t, nt, interp=interp)
+    tscan[sscan] = tscan1
+    if interp:
+        dtscan[sscan] = dtscan1
+    return sscan, tscan, dtscan
 
 @jit(nopython=True, parallel=parallel, nogil=True)
 def _create_table_numba(f, y, x, pyaxis, pxaxis, nt, npy, npx, ny, nx, interp):
