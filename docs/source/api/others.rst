@@ -49,6 +49,7 @@ Signal-processing
 
     signalprocessing.convmtx
     signalprocessing.nonstationary_convmtx
+    signalprocessing.slope_estimate
 
 
 Tapers

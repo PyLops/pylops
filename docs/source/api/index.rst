@@ -91,6 +91,7 @@ Signal processing
     FFTND
     DWT
     DWT2D
+    Seislet
     Radon2D
     Radon3D
     Sliding2D
