@@ -66,7 +66,7 @@ If using Conda, you can also install our conda-forge distribution via:
 
    >> conda install -c conda-forge pylops
 
-Note that using the ``conda-forge`` distribution is reccomended as all the dependencies (both mandatory
+Note that using the ``conda-forge`` distribution is recommended as all the dependencies (both mandatory
 and optional) will be correctly installed for you, while only mandatory dependencies are installed
 using the ``pip`` distribution.
 
