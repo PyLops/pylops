@@ -50,23 +50,24 @@ def _predict(traces, dt, dx, slopes, repeat=0,
              backward=False, adj=False):
     """Predict set of traces given time-varying slopes.
 
-    A set of input traces are resampled based on local slopes. If ``traces``
-    are by multiples spatial steps ``dx``, the prediction is done recursively
-    or in other words the output traces are obtained by resampling the input
-    traces followed by ``repeat-1`` further resampling steps of the
-    intermediate results. Note that local slopes must be always provided
-    at ``dx`` sampling.
+    A set of input traces are resampled based on local slopes. If the number
+    of traces in ``slopes`` is twice the number of traces in ``traces``, the
+    resampling is done only once per trace. If the number of traces in
+    ``slopes`` is a multiple of 2 of the number of traces in ``traces``,
+    the prediction is done recursively or in other words the output traces
+    are obtained by resampling the input traces followed by ``repeat-1``
+    further resampling steps of the intermediate results.
 
     Parameters
     ----------
     traces : :obj:`numpy.ndarray`
-        Input traces of size :math:`n_t \times n_x`
+        Input traces of size :math:`n_x \times n_t`
     dt : :obj:`float`
-        Time axis sampling
+        Time axis sampling of the slope field
     dx : :obj:`float`
-        Spatial axis sampling
+        Spatial axis sampling of the slope field
     slopes: :obj:`numpy.ndarray`
-        Slope field of size :math:`n_t \times n_x* 2^{repeat}`
+        Slope field of size :math:`n_t \times n_x * 2^{repeat}`
     backward : :obj:`bool`, optional
         Predicted trace is on the right (``False``) or on the left (``True``)
         of input trace
@@ -88,40 +89,50 @@ def _predict(traces, dt, dx, slopes, repeat=0,
     slopejump = 2 ** (repeat + 1)
     repeat = 2 ** repeat
 
-    nt, nx = traces.shape
+    nx, nt = traces.shape
     t = np.arange(nt) * dt
     pred = np.zeros_like(traces)
     for ix in range(nx):
-        pred_tmp = traces[:, ix]
+        pred_tmp = traces[ix]
         if adj:
             for irepeat in range(repeat - 1, -1, -1):
                 pred_tmp = \
                     _predict_trace(pred_tmp, t, dt, idir * dx,
-                                   slopes[:, ix * slopejump + iback * repeat + idir * irepeat],
+                                   slopes[ix * slopejump + iback * repeat + idir * irepeat],
                                    adj=True)
         else:
             for irepeat in range(repeat):
                 pred_tmp = \
                     _predict_trace(pred_tmp, t, dt, idir * dx,
-                                   slopes[:, ix*slopejump + iback * repeat + idir * irepeat])
-        pred[:, ix] = pred_tmp
+                                   slopes[ix*slopejump + iback * repeat + idir * irepeat])
+        pred[ix] = pred_tmp
     return pred
 
 
 class Seislet(LinearOperator):
     r"""Two dimensional Seislet operator.
 
-    Apply 2D-Seislet Transform to a two-dimensional input dataset given an
-    estimate of its local ``slopes``.
+    Apply 2D-Seislet Transform to an input array given an
+    estimate of its local ``slopes``. In forward mode, the input array is
+    reshaped into a two-dimensional array of size :math:`n_x \times n_t` and
+    the transform is performed along the first (spatial) axis (see Notes for
+    more details).
 
     Parameters
     ----------
     slopes: :obj:`numpy.ndarray`
-        Slope field
+        Slope field of size :math:`n_x \times n_t`
     sampling : :obj:`tuple`, optional
-        Sampling steps ``dy`` and ``dx``
+        Sampling steps in x- and t-axis.
     level : :obj:`int`, optional
         Number of scaling levels (must be >=0).
+    inv : :obj:`int`, optional
+        Apply inverse transform when invoking the adjoint (``True``)
+        or not (``False``). Note that in some scenario it may be more
+        appropriate to use the exact inverse as adjoint of the Seislet
+        operator even if this is not an orthogonal operator and the dot-test
+        would not be satisfied (see Notes for details). Otherwise, the user
+        can access the inverse directly as method of this class.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -220,7 +231,7 @@ class Seislet(LinearOperator):
            \mathbf{c}_1  \\ \mathbf{c}_2  \\ ...
         \end{bmatrix}
 
-    which can written more easily in the following two steps:
+    which can be written more easily in the following two steps:
 
     .. math::
         \mathbf{o} = \mathbf{r} - \mathbf{U}^H\mathbf{c}
@@ -235,24 +246,23 @@ class Seislet(LinearOperator):
        Geophysics, 75, no. 3, V25-V38. 2010.
 
     """
-    def __init__(self, slopes, sampling=(1., 1.),
-                 level=None, dtype='float64'):
-        # checks
+    def __init__(self, slopes, sampling=(1., 1.), level=None,
+                 inv=False, dtype='float64'):
         if len(sampling) != 2:
             raise ValueError('provide two sampling steps')
 
         # define padding for length to be power of 2
         dims = slopes.shape
-        ndimpow2 = 2 ** ceil(log(dims[1], 2))
+        ndimpow2 = 2 ** ceil(log(dims[0], 2))
         pad = [(0, 0)] * len(dims)
-        pad[1] = (0, ndimpow2 - dims[1])
+        pad[0] = (0, ndimpow2 - dims[0])
         self.pad = Pad(dims, pad)
         self.dims = list(dims)
-        self.dims[1] = ndimpow2
-        self.nt, self.nx = self.dims[0], self.dims[1]
+        self.dims[0] = ndimpow2
+        self.nx, self.nt = self.dims
 
         # define levels
-        nlevels_max = int(np.log2(dims[1]))
+        nlevels_max = int(np.log2(self.dims[0]))
         self.levels_size = np.flip(np.array([2 ** i for i in range(nlevels_max)]))
         if level is not None:
             self.levels_size = self.levels_size[:level]
@@ -262,55 +272,60 @@ class Seislet(LinearOperator):
         self.level = level
         self.levels_cum = np.cumsum(self.levels_size)
         self.levels_cum = np.insert(self.levels_cum, 0, 0)
-        self.dt, self.dx = sampling[0], sampling[1]
+        self.dx, self.dt = sampling
         self.slopes = (self.pad * slopes.ravel()).reshape(self.dims)
-        self.shape = (int(np.prod(self.dims)), int(np.prod(self.dims)))
+        self.inv = inv
+        self.shape = (int(np.prod(self.slopes.size)),
+                      int(np.prod(slopes.size)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         x = self.pad.matvec(x)
         x = np.reshape(x, self.dims)
-        y = np.zeros((self.nt, np.sum(self.levels_size) + self.levels_size[-1]))
+        y = np.zeros((np.sum(self.levels_size) + self.levels_size[-1], self.nt))
         for ilevel in range(self.level):
-            odd = x[:, 1::2]
-            even = x[:, ::2]
+            odd = x[1::2]
+            even = x[::2]
             res = odd - _predict(even, self.dt, self.dx, self.slopes,
                                  repeat=ilevel, backward=False)
             x = even + _predict(res, self.dt, self.dx,
                                 self.slopes, repeat=ilevel,
                                 backward=True) / 2.
-            y[:, self.levels_cum[ilevel]:self.levels_cum[ilevel + 1]] = res
-        y[:, self.levels_cum[-1]:] = x
+            y[self.levels_cum[ilevel]:self.levels_cum[ilevel + 1]] = res
+        y[self.levels_cum[-1]:] = x
         return y.ravel()
 
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dims)
-        y = x[:, self.levels_cum[-1]:]
-        for ilevel in range(self.level, 0, -1):
-            res = x[:, self.levels_cum[ilevel - 1]:self.levels_cum[ilevel]]
-            odd = res + _predict(y, self.dt, self.dx, self.slopes,
-                                 repeat=ilevel - 1, backward=True,
-                                 adj=True) / 2.
-            even = y - _predict(odd, self.dt, self.dx, self.slopes,
-                                repeat=ilevel - 1, backward=False, adj=True)
-            y = np.zeros((self.nt, 2 * even.shape[1]))
-            y[:, 1::2] = odd
-            y[:, ::2] = even
-        y = self.pad.rmatvec(y.ravel())
+        if not self.inv:
+            x = np.reshape(x, self.dims)
+            y = x[self.levels_cum[-1]:]
+            for ilevel in range(self.level, 0, -1):
+                res = x[self.levels_cum[ilevel - 1]:self.levels_cum[ilevel]]
+                odd = res + _predict(y, self.dt, self.dx, self.slopes,
+                                     repeat=ilevel - 1, backward=True,
+                                     adj=True) / 2.
+                even = y - _predict(odd, self.dt, self.dx, self.slopes,
+                                    repeat=ilevel - 1, backward=False, adj=True)
+                y = np.zeros((2 * even.shape[0], self.nt))
+                y[1::2] = odd
+                y[::2] = even
+            y = self.pad.rmatvec(y.ravel())
+        else:
+            y = self.inverse(x)
         return y
 
     def inverse(self, x):
         x = np.reshape(x, self.dims)
-        y = x[:, self.levels_cum[-1]:]
+        y = x[self.levels_cum[-1]:]
         for ilevel in range(self.level, 0, -1):
-            res = x[:, self.levels_cum[ilevel - 1]:self.levels_cum[ilevel]]
+            res = x[self.levels_cum[ilevel - 1]:self.levels_cum[ilevel]]
             even = y - _predict(res, self.dt, self.dx, self.slopes,
                                 repeat=ilevel - 1, backward=True) / 2.
             odd = res + _predict(even, self.dt, self.dx, self.slopes,
                                  repeat=ilevel - 1, backward=False)
-            y = np.zeros((self.nt, 2 * even.shape[1]))
-            y[:, 1::2] = odd
-            y[:, ::2] = even
+            y = np.zeros((2 * even.shape[0], self.nt))
+            y[1::2] = odd
+            y[::2] = even
         y = self.pad.rmatvec(y.ravel())
         return y

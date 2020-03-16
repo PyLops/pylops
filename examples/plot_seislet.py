@@ -28,17 +28,17 @@ plt.close('all')
 inputfile='../testdata/sigmoid.npz'
 
 d = np.load(inputfile)
-d = d['sigmoid'].T
-nt, nx = d.shape
-dt, dx = 0.004, 8
-t, x = np.arange(nt) * dt, np.arange(nx) * dx
+d = d['sigmoid']
+nx, nt = d.shape
+dx, dt = 8, 0.004
+x, t = np.arange(nx) * dx, np.arange(nt) * dt
 
 # slope estimation
-slope = -pylops.utils.signalprocessing.slope_estimate(d, dt, dx, smooth=6)[0]
+slope = -pylops.utils.signalprocessing.slope_estimate(d.T, dt, dx, smooth=6)[0]
 
 clip = 0.002
 fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-axs[0].imshow(d, cmap='gray', vmin=-clip, vmax=clip,
+axs[0].imshow(d.T, cmap='gray', vmin=-clip, vmax=clip,
               extent = (x[0], x[-1], t[-1], t[0]))
 axs[0].set_title('Data')
 axs[0].axis('tight')
@@ -50,20 +50,20 @@ plt.colorbar(im, ax=axs[1])
 
 ############################################
 # Next the Seislet transform is computed.
-Sop = pylops.signalprocessing.Seislet(slope, sampling=(dt, dx))
+Sop = pylops.signalprocessing.Seislet(slope.T, sampling=(dx, dt))
 
 seis = Sop * d.ravel()
 drec = Sop.inverse(seis)
 
-seis = seis.reshape(nt, nx)
-drec = drec.reshape(nt, nx)
+seis = seis.reshape(nx, nt)
+drec = drec.reshape(nx, nt)
 
 nlevels_max = int(np.log2(nx))
 levels_size = np.flip(np.array([2 ** i for i in range(nlevels_max)]))
 levels_cum = np.cumsum(levels_size)
 
 plt.figure(figsize=(14, 5))
-plt.imshow(seis, cmap='gray', vmin=-clip, vmax=clip)
+plt.imshow(seis.T, cmap='gray', vmin=-clip, vmax=clip)
 for level in levels_cum:
     plt.axvline(level-0.5, color='w')
 plt.title('Seislet transform')
@@ -74,12 +74,13 @@ plt.axis('tight')
 # As a comparison we also compute the Seislet transform fixing slopes to zero.
 # This way we turn the Seislet tranform into a basic 1d Wavelet transform
 # performed over the spatial axis.
-Wop = pylops.signalprocessing.Seislet(np.zeros_like(slope), sampling=(dt, dx))
+Wop = pylops.signalprocessing.Seislet(np.zeros_like(slope.T),
+                                      sampling=(dx, dt))
 dwt = Wop * d.ravel()
-dwt = dwt.reshape(nt, nx)
+dwt = dwt.reshape(nx, nt)
 
 plt.figure(figsize=(14, 5))
-plt.imshow(dwt, cmap='gray', vmin=-clip, vmax=clip)
+plt.imshow(dwt.T, cmap='gray', vmin=-clip, vmax=clip)
 for level in levels_cum:
     plt.axvline(level-0.5, color='w')
 plt.title('Wavelet transform')
@@ -93,19 +94,19 @@ plt.axis('tight')
 # the compression error.
 
 seis1 = seis.copy()
-seis1[:, :levels_cum[1]] = 0
+seis1[:levels_cum[1]] = 0
 drec1 = Sop.inverse(seis1.ravel())
-drec1 = drec1.reshape(nt, nx)
+drec1 = drec1.reshape(nx, nt)
 
 fig, axs = plt.subplots(1, 3, figsize=(14, 4))
-axs[0].imshow(d, cmap='gray', vmin=-clip, vmax=clip)
+axs[0].imshow(d.T, cmap='gray', vmin=-clip, vmax=clip)
 axs[0].set_title('Data')
 axs[0].axis('tight')
-axs[1].imshow(drec1, cmap='gray', vmin=-clip, vmax=clip)
+axs[1].imshow(drec1.T, cmap='gray', vmin=-clip, vmax=clip)
 axs[1].set_title('Rec. from Seislet (%.1f %% coeffs.)' %
                  (100 * (nx - levels_cum[1]) / nx))
 axs[1].axis('tight')
-axs[2].imshow(d - drec1, cmap='gray', vmin=-clip, vmax=clip)
+axs[2].imshow(d.T - drec1.T, cmap='gray', vmin=-clip, vmax=clip)
 axs[2].set_title('Rec. error from Seislet')
 axs[2].axis('tight')
 

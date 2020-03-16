@@ -8,9 +8,11 @@ from pylops.signalprocessing.Seislet import _predict_trace, _predict
 from pylops.signalprocessing import Seislet
 
 par1 = {'nx': 16, 'nt': 30, 'dx': 10, 'dt': 0.004, 'level': None,
-        'dtype': 'float32'}
+        'dtype': 'float32'} # nx power of 2, max level
 par2 = {'nx': 16, 'nt': 30, 'dx': 10, 'dt': 0.004, 'level': 2,
-        'dtype': 'float32'}
+        'dtype': 'float32'} # nx power of 2, smaller level
+par3 = {'nx': 13, 'nt': 30, 'dx': 10, 'dt': 0.004, 'level': 2,
+        'dtype': 'float32'}  # nx not power of 2, max level
 
 np.random.seed(10)
 
@@ -35,12 +37,12 @@ def test_predict(par):
     """
     def _predict_reshape(traces, nt, nx, dt, dx, slopes, repeat=0,
                          backward=False, adj=False):
-        return _predict(traces.reshape(nt, nx), dt, dx, slopes, repeat=repeat,
+        return _predict(traces.reshape(nx, nt), dt, dx, slopes, repeat=repeat,
                         backward=backward, adj=adj)
 
     for repeat in (0, 1, 2):
         slope = \
-            np.random.normal(0, .1, (par['nt'], 2 ** (repeat + 1) * par['nx']))
+            np.random.normal(0, .1, (2 ** (repeat + 1) * par['nx'], par['nt']))
         for backward in (False, True):
             Fop = FunctionOperator(
                 lambda x: _predict_reshape(x, par['nt'], par['nx'],
@@ -53,17 +55,18 @@ def test_predict(par):
             dottest(Fop, par['nt']*par['nx'], par['nt']*par['nx'])
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 def test_Seislet(par):
     """Dot-test and forward-inverse for Seislet
     """
-    slope = np.random.normal(0, .1, (par['nt'], par['nx']))
+    slope = np.random.normal(0, .1, (par['nx'], par['nt']))
 
-    Sop = Seislet(slope, sampling=(par['dt'], par['dx']), level=par['level'],
+    Sop = Seislet(slope, sampling=(par['dx'], par['dt']), level=par['level'],
                   dtype=par['dtype'])
-    dottest(Sop, par['nt']*par['nx'], par['nt']*par['nx'])
+    print(Sop)
+    dottest(Sop, Sop.shape[0], par['nx']*par['nt'])
 
-    x = np.random.normal(0, .1, par['nt'] * par['nx'])
+    x = np.random.normal(0, .1, par['nx'] * par['nt'])
     y = Sop * x
     xinv = Sop.inverse(y)
 
