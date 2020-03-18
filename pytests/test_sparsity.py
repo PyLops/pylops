@@ -73,6 +73,28 @@ def test_OMP(par):
     assert_array_almost_equal(x, xinv, decimal=1)
 
 
+@pytest.mark.parametrize("par", [(par1)])
+def test_ISTA_FISTA_unknown_threshkind(par):
+    """Check error is raised if unknown threshkind is passed
+    """
+    with pytest.raises(NotImplementedError):
+        _ = ISTA(Identity(5), np.ones(5), 10, threshkind='foo')
+    with pytest.raises(NotImplementedError):
+        _ = FISTA(Identity(5), np.ones(5), 10, threshkind='foo')
+
+
+@pytest.mark.parametrize("par", [(par1)])
+def test_ISTA_FISTA_missing_perc(par):
+    """Check error is raised if perc=None and threshkind is percentile based
+    """
+    with pytest.raises(ValueError):
+        _ = ISTA(Identity(5), np.ones(5), 10, perc=None,
+                 threshkind='soft-percentile')
+    with pytest.raises(ValueError):
+        _ = FISTA(Identity(5), np.ones(5), 10, perc=None,
+                  threshkind='soft-percentile')
+
+
 @pytest.mark.parametrize("par", [(par1), (par3), (par5),
                                  (par1j), (par3j), (par5j)])
 def test_ISTA_FISTA(par):
@@ -88,6 +110,7 @@ def test_ISTA_FISTA(par):
     y = Aop * x
 
     eps = 0.5
+    perc = 30
     maxit = 2000
 
     # ISTA with too high alpha (check that exception is raised)
@@ -95,15 +118,29 @@ def test_ISTA_FISTA(par):
         xinv, _, _ = ISTA(Aop, y, maxit, eps=eps, alpha=1e5, monitorres=True,
                           tol=0, returninfo=True)
 
-    # ISTA
-    xinv, _, _ = ISTA(Aop, y, maxit, eps=eps,
-                      tol=0, returninfo=True, show=False)
-    assert_array_almost_equal(x, xinv, decimal=1)
+    # Regularization based ISTA and FISTA
+    for threshkind in ['hard', 'soft', 'half']:
+        # ISTA
+        xinv, _, _ = ISTA(Aop, y, maxit, eps=eps, threshkind=threshkind,
+                          tol=0, returninfo=True, show=False)
+        assert_array_almost_equal(x, xinv, decimal=1)
 
-    # FISTA
-    xinv, _, _ = FISTA(Aop, y, maxit, eps=eps,
-                       tol=0, returninfo=True, show=False)
-    assert_array_almost_equal(x, xinv, decimal=1)
+        # FISTA
+        xinv, _, _ = FISTA(Aop, y, maxit, eps=eps, threshkind=threshkind,
+                           tol=0, returninfo=True, show=False)
+        assert_array_almost_equal(x, xinv, decimal=1)
+
+    # Percentile based ISTA and FISTA
+    for threshkind in ['hard-percentile', 'soft-percentile', 'half-percentile']:
+        # ISTA
+        xinv, _, _ = ISTA(Aop, y, maxit, perc=perc, threshkind=threshkind,
+                          tol=0, returninfo=True, show=False)
+        assert_array_almost_equal(x, xinv, decimal=1)
+
+        # FISTA
+        xinv, _, _ = FISTA(Aop, y, maxit, perc=perc, threshkind=threshkind,
+                           tol=0, returninfo=True, show=False)
+        assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5),
