@@ -1,3 +1,4 @@
+import logging
 import time
 import numpy as np
 
@@ -18,11 +19,15 @@ except Exception as e:
     spgl1_message = 'Failed to import spgl1 (error:%s).' % e
 
 
-def _softthreshold(x, thresh):
-    r"""Soft thresholding.
+def _hardthreshold(x, thresh):
+    r"""Hard thresholding.
 
-    Applies soft thresholding (proximity operator for :math:`||\mathbf{x}||_1`)
-    to vector ``x``.
+    Applies hard thresholding to vector ``x`` (equal to the proximity
+    operator for :math:`||\mathbf{x}||_0`) as shown in [1]_.
+
+    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
+       data reconstruction using a percentile-half-thresholding algorithm”,
+       Journal of Geophysics and Engineering, vol. 11. 2014.
 
     Parameters
     ----------
@@ -30,8 +35,157 @@ def _softthreshold(x, thresh):
         Vector
     thresh : :obj:`float`
         Threshold
+
+    Returns
+    -------
+    x1 : :obj:`numpy.ndarray`
+        Tresholded vector
+
     """
-    return np.maximum(np.abs(x)-thresh, 0.)*np.sign(x)
+    x1 = x.copy()
+    x1[np.abs(x) <= np.sqrt(2*thresh)] = 0
+    return x1
+
+def _softthreshold(x, thresh):
+    r"""Soft thresholding.
+
+    Applies soft thresholding to vector ``x`` (equal to the proximity
+    operator for :math:`||\mathbf{x}||_1`) as shown in [1]_.
+
+    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
+       data reconstruction using a percentile-half-thresholding algorithm”,
+       Journal of Geophysics and Engineering, vol. 11. 2014.
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Vector
+    thresh : :obj:`float`
+        Threshold
+
+    Returns
+    -------
+    x1 : :obj:`numpy.ndarray`
+        Tresholded vector
+
+    """
+    #if np.iscomplexobj(x):
+    #    # https://stats.stackexchange.com/questions/357339/soft-thresholding-
+    #    # for-the-lasso-with-complex-valued-data
+    #    x1 = np.maximum(np.abs(x) - thresh, 0.) * np.exp(1j * np.angle(x))
+    #else:
+    #    x1 = np.maximum(np.abs(x)-thresh, 0.) * np.sign(x)
+    x1 = x - thresh * x / np.abs(x)
+    x1[np.abs(x) <= thresh] = 0
+    return x1
+
+def _halfthreshold(x, thresh):
+    r"""Half thresholding.
+
+    Applies half thresholding to vector ``x`` (equal to the proximity
+    operator for :math:`||\mathbf{x}||_{1/2}^{1/2}`) as shown in [1]_.
+
+    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
+       data reconstruction using a percentile-half-thresholding algorithm”,
+       Journal of Geophysics and Engineering, vol. 11. 2014.
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Vector
+    thresh : :obj:`float`
+        Threshold
+
+    Returns
+    -------
+    x1 : :obj:`numpy.ndarray`
+        Tresholded vector
+
+    """
+    phi = 2. / 3. * np.arccos((thresh / 8.) * (np.abs(x) / 3.) ** (-1.5))
+    x1 = 2./3. * x * (1 + np.cos(2. * np.pi / 3. - phi))
+    #x1[np.abs(x) <= 1.5 * thresh ** (2. / 3.)] = 0
+    x1[np.abs(x) <= (54 ** (1. / 3.) / 4.) * thresh ** (2. / 3.)] = 0
+    return x1
+
+def _hardthreshold_percentile(x, perc):
+    r"""Percentile Hard thresholding.
+
+    Applies hard thresholding to vector ``x`` using a percentile to define
+    the amount of values in the input vector to be preserved as shown in [1]_.
+
+    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
+       data reconstruction using a percentile-half-thresholding algorithm”,
+       Journal of Geophysics and Engineering, vol. 11. 2014.
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Vector
+    thresh : :obj:`float`
+        Threshold
+
+    Returns
+    -------
+    x1 : :obj:`numpy.ndarray`
+        Tresholded vector
+
+    """
+    thresh = np.percentile(np.abs(x), perc)
+    return _halfthreshold(x, 0.5 * thresh ** 2)
+
+def _softthreshold_percentile(x, perc):
+    r"""Percentile Soft thresholding.
+
+    Applies soft thresholding to vector ``x`` using a percentile to define
+    the amount of values in the input vector to be preserved as shown in [1]_.
+
+    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
+       data reconstruction using a percentile-half-thresholding algorithm”,
+       Journal of Geophysics and Engineering, vol. 11. 2014.
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Vector
+    perc : :obj:`float`
+        Percentile
+
+    Returns
+    -------
+    x : :obj:`numpy.ndarray`
+        Tresholded vector
+
+    """
+    thresh = np.percentile(np.abs(x), perc)
+    return _softthreshold(x, thresh)
+
+def _halfthreshold_percentile(x, perc):
+    r"""Percentile Half thresholding.
+
+    Applies half thresholding to vector ``x`` using a percentile to define
+    the amount of values in the input vector to be preserved as shown in [1]_.
+
+    .. [1] Xu, Z., Xiangyu, C., Xu, F. and Zhang, H., “L1/2 Regularization: A
+       Thresholding Representation Theory and a Fast Solver”, IEEE Transactions
+       on Neural Networks and Learning Systems, vol. 23. 2012.
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Vector
+    perc : :obj:`float`
+        Percentile
+
+    Returns
+    -------
+    x : :obj:`numpy.ndarray`
+        Tresholded vector
+
+    """
+    thresh = np.percentile(np.abs(x), perc)
+    #return _halfthreshold(x, (2. / 3. * thresh) ** (1.5))
+    return _halfthreshold(x, (4. / 54 ** (1. / 3.) * thresh) ** 1.5)
 
 def _shrinkage(x, thresh):
     r"""Shrinkage.
@@ -227,8 +381,8 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
 
     See Also
     --------
-    ISTA: Iterative Soft Thresholding Algorithm (ISTA).
-    FISTA: Fast Iterative Soft Thresholding Algorithm (FISTA).
+    ISTA: Iterative Shrinkage-Thresholding Algorithm (ISTA).
+    FISTA: Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
     SPGL1: Spectral Projected-Gradient for L1 norm (SPGL1).
     SplitBregman: Split Bregman for mixed L2-L1 norms.
 
@@ -315,13 +469,14 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
 
 
 def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
-         tol=1e-10, monitorres=False, returninfo=False, show=False):
-    r"""Iterative Soft Thresholding Algorithm (ISTA).
+         tol=1e-10, monitorres=False, returninfo=False, show=False,
+         threshkind='soft', perc=None, callback=None):
+    r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
-    Solve an optimization problem with :math:`L1` regularization function given
-    the operator ``Op`` and data ``y``. The operator can be real or complex,
-    and should ideally be either square :math:`N=M` or underdetermined
-    :math:`N<M`.
+    Solve an optimization problem with :math:`Lp, \quad p=0, 1/2, 1`
+    regularization, given the operator ``Op`` and data ``y``. The operator
+    can be real or complex, and should ideally be either square :math:`N=M`
+    or underdetermined :math:`N<M`.
 
     Parameters
     ----------
@@ -335,8 +490,9 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         Sparsity damping
     alpha : :obj:`float`, optional
         Step size (:math:`\alpha \le 1/\lambda_{max}(\mathbf{Op}^H\mathbf{Op})`
-        guarantees convergence. If ``None``, estimated to satisfy the
-        condition, otherwise the condition will not be checked)
+        guarantees convergence. If ``None``, the maximum eigenvalue is
+        estimated and the optimal step size is chosen. If provided, the
+        condition will not be checked internally).
     eigsiter : :obj:`float`, optional
         Number of iterations for eigenvalue estimation if ``alpha=None``
     eigstol : :obj:`float`, optional
@@ -350,6 +506,15 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         Return info of CG solver
     show : :obj:`bool`, optional
         Display iterations log
+    threshkind : :obj:`str`, optional
+        Kind of thresholding ('hard', 'soft', 'half', 'hard-percentile',
+        'soft-percentile', or 'half-percentile' - 'soft' used as default)
+    perc : :obj:`float`, optional
+        Percentile, as percentage of values to be kept by thresholding (to be
+        provided when thresholding is soft-percentile or half-percentile)
+    callback : :obj:`callable`, optional
+        Function with signature (``callback(x)``) to call after each iteration
+        where ``x`` is the current model vector
 
     Returns
     -------
@@ -362,13 +527,19 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     Raises
     ------
+    NotImplementedError
+        If ``threshkind`` is different from hard, soft, half, soft-percentile,
+        or half-percentile
+    ValueError
+        If ``perc=None`` when ``threshkind`` is soft-percentile or
+        half-percentile
     ValueError
         If ``monitorres=True`` and residual increases
 
     See Also
     --------
     OMP: Orthogonal Matching Pursuit (OMP).
-    FISTA: Fast Iterative Soft Thresholding Algorithm (FISTA).
+    FISTA: Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
     SPGL1: Spectral Projected-Gradient for L1 norm (SPGL1).
     SplitBregman: Split Bregman for mixed L2-L1 norms.
 
@@ -379,29 +550,62 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     .. math::
         J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
-            \epsilon ||\mathbf{x}||_1
+            \epsilon ||\mathbf{x}||_p
 
-    using the Iterative Soft Thresholding Algorithm (ISTA) [1]_. This is a very
-    simple iterative algorithm which applies the following step:
+    using the Iterative Shrinkage-Thresholding Algorithms (ISTA) [1]_, where
+    :math:`p=0, 1, 1/2`. This is a very simple iterative algorithm which
+    applies the following step:
 
     .. math::
-        \mathbf{x}^{(i+1)} = soft (\mathbf{x}^{(i)} + \alpha \mathbf{Op}^H
-        (\mathbf{d} - \mathbf{Op} \mathbf{x}^{(i)})), \epsilon \alpha /2)
+        \mathbf{x}^{(i+1)} = T_{(\epsilon \alpha /2, p)} (\mathbf{x}^{(i)} +
+        \alpha \mathbf{Op}^H (\mathbf{d} - \mathbf{Op} \mathbf{x}^{(i)}))
 
-    where :math:`\epsilon \alpha /2` is the
-    threshold and :math:`soft()` is the so-called soft-thresholding rule.
+    where :math:`\epsilon \alpha /2` is the threshold and :math:`T_{(\tau, p)}`
+    is the thresholding rule. The most common variant of ISTA uses the
+    so-called soft-thresholding rule :math:`T(\tau, p=1)`. Alternatively an
+    hard-thresholding rule is used in the case of `p=0` or a half-thresholding
+    rule is used in the case of `p=1/2`. Finally, percentile bases thresholds
+    are also implemented: the damping factor is not used anymore an the
+    threshold changes at every iteration based on the computed percentile.
 
-    .. [1] Beck, A., and Teboulle, M., “A Fast Iterative Shrinkage-Thresholding
-       Algorithm for Linear Inverse Problems”, SIAM Journal on
-       Imaging Sciences, vol. 2, pp. 183-202. 2009.
+    .. [1] Daubechies, I., Defrise, M., and De Mol, C., “An iterative
+       thresholding algorithm for linear inverse problems with a sparsity
+       constraint”, Communications on pure and applied mathematics, vol. 57,
+       pp. 1413-1457. 2004.
 
     """
+    if not threshkind in ['hard', 'soft', 'half', 'hard-percentile',
+                          'soft-percentile', 'half-percentile']:
+        raise NotImplementedError('threshkind should be hard, soft, half,'
+                                  'hard-percentile, soft-percentile, '
+                                  'or half-percentile')
+    if threshkind in ['hard-percentile',
+                      'soft-percentile',
+                      'half-percentile'] and perc is None:
+        raise ValueError('Provide a percentile when choosing hard-percentile,'
+                         'soft-percentile, or half-percentile thresholding')
+
+    # choose thresholding function
+    if threshkind == 'soft':
+        threshf = _softthreshold
+    elif threshkind == 'hard':
+        threshf = _hardthreshold
+    elif threshkind == 'half':
+        threshf = _halfthreshold
+    elif threshkind == 'hard-percentile':
+        threshf = _hardthreshold_percentile
+    elif threshkind == 'soft-percentile':
+        threshf = _softthreshold_percentile
+    else:
+        threshf = _halfthreshold_percentile
+
     if show:
         tstart = time.time()
-        print('ISTA optimization\n'
+        print('ISTA optimization (%s thresholding)\n'
               '-----------------------------------------------------------\n'
               'The Operator Op has %d rows and %d cols\n'
-              'eps = %10e\ttol = %10e\tniter = %d' % (Op.shape[0],
+              'eps = %10e\ttol = %10e\tniter = %d' % (threshkind,
+                                                      Op.shape[0],
                                                       Op.shape[1],
                                                       eps, tol, niter))
     # step size
@@ -415,10 +619,13 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         alpha = 1./maxeig
 
     # define threshold
-    thresh = eps*alpha*0.5
+    thresh = eps * alpha * 0.5
 
     if show:
-        print('alpha = %10e\tthresh = %10e' % (alpha, thresh))
+        if perc is None:
+            print('alpha = %10e\tthresh = %10e' % (alpha, thresh))
+        else:
+            print('alpha = %10e\tperc = %.1f' % (alpha, perc))
         print('-----------------------------------------------------------\n')
         head1 = '   Itn       x[0]        r2norm     r12norm     xupdate'
         print(head1)
@@ -440,17 +647,20 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
             normres = np.linalg.norm(res)
             if  normres > normresold:
                 raise ValueError('ISTA stopped at iteration %d due to '
-                                 'residual increasing, consider modyfing '
+                                 'residual increasing, consider modifying '
                                  'eps and/or alpha...' % iiter)
             else:
                 normresold = normres
 
         # compute gradient
-        grad = alpha*Op.rmatvec(res)
+        grad = alpha * Op.rmatvec(res)
 
         # update inverted model
         xinv_unthesh = xinv + grad
-        xinv = _softthreshold(xinv_unthesh, thresh)
+        if perc is None:
+            xinv = threshf(xinv_unthesh, thresh)
+        else:
+            xinv = threshf(xinv_unthesh, 100 - perc)
 
         # model update
         xupdate = np.linalg.norm(xinv - xinvold)
@@ -461,6 +671,10 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         if returninfo:
             cost[iiter] = costdata + costreg
 
+        # run callback
+        if callback is not None:
+            callback(xinv)
+
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
                 msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
@@ -469,11 +683,14 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
         # check tolerance
         if xupdate < tol:
+            logging.warning('update smaller that tolerance for '
+                            'iteration %d' % iiter)
             niter = iiter
             break
 
     # get values pre-threshold at locations where xinv is different from zero
-    #xinv = np.where(xinv != 0, xinv_unthesh, xinv)
+    # xinv = np.where(xinv != 0, xinv_unthesh, xinv)
+
     if show:
         print('\nIterations = %d        Total time (s) = %.2f'
               % (niter, time.time() - tstart))
@@ -485,8 +702,9 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
 
 def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
-          tol=1e-10, returninfo=False, show=False):
-    r"""Fast Iterative Soft Thresholding Algorithm (FISTA).
+          tol=1e-10, returninfo=False, show=False, threshkind='soft',
+          perc=None, callback=None):
+    r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
     Solve an optimization problem with :math:`L1` regularization function given
     the operator ``Op`` and data ``y``. The operator can be real or complex,
@@ -505,8 +723,9 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         Sparsity damping
     alpha : :obj:`float`, optional
         Step size (:math:`\alpha \le 1/\lambda_{max}(\mathbf{Op}^H\mathbf{Op})`
-        guarantees convergence. If ``None``, estimated to satisfy the
-        condition, otherwise the condition will not be checked)
+        guarantees convergence. If ``None``, the maximum eigenvalue is
+        estimated and the optimal step size is chosen. If provided, the
+        condition will not be checked internally).
     eigsiter : :obj:`int`, optional
         Number of iterations for eigenvalue estimation if ``alpha=None``
     eigstol : :obj:`float`, optional
@@ -518,6 +737,15 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         Return info of FISTA solver
     show : :obj:`bool`, optional
         Display iterations log
+    threshkind : :obj:`str`, optional
+        Kind of thresholding ('hard', 'soft', 'half', 'soft-percentile', or
+        'half-percentile' - 'soft' used as default)
+    perc : :obj:`float`, optional
+        Percentile, as percentage of values to be kept by thresholding (to be
+        provided when thresholding is soft-percentile or half-percentile)
+    callback : :obj:`callable`, optional
+        Function with signature (``callback(x)``) to call after each iteration
+        where ``x`` is the current model vector
 
     Returns
     -------
@@ -528,10 +756,19 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     cost : :obj:`numpy.ndarray`, optional
         History of cost function
 
+    Raises
+    ------
+    NotImplementedError
+        If ``threshkind`` is different from hard, soft, half, soft-percentile,
+        or half-percentile
+    ValueError
+        If ``perc=None`` when ``threshkind`` is soft-percentile or
+        half-percentile
+
     See Also
     --------
     OMP: Orthogonal Matching Pursuit (OMP).
-    ISTA: Iterative Soft Thresholding Algorithm (FISTA).
+    ISTA: Iterative Shrinkage-Thresholding Algorithm (ISTA).
     SPGL1: Spectral Projected-Gradient for L1 norm (SPGL1).
     SplitBregman: Split Bregman for mixed L2-L1 norms.
 
@@ -542,23 +779,51 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     .. math::
         J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
-            \epsilon ||\mathbf{x}||_1
+            \epsilon ||\mathbf{x}||_p
 
-    using the Fast Iterative Soft Thresholding Algorithm (FISTA) [1]_. This is
-    a modified version of ISTA solver with improved convergence properties and
-    limitied additional computational cost.
+    using the Fast Iterative Shrinkage-Thresholding Algorithm (FISTA) [1]_,
+    where :math:`p=0, 1, 1/2`. This is a modified version of ISTA solver with
+    improved convergence properties and limited additional computational cost.
+    Similarly to the ISTA solver, the choice of the thresholding algorithm to
+    apply at every iteration is based on the choice of :math:`p`.
 
     .. [1] Beck, A., and Teboulle, M., “A Fast Iterative Shrinkage-Thresholding
        Algorithm for Linear Inverse Problems”, SIAM Journal on
        Imaging Sciences, vol. 2, pp. 183-202. 2009.
 
     """
+    if not threshkind in ['hard', 'soft', 'half', 'hard-percentile',
+                          'soft-percentile', 'half-percentile']:
+        raise NotImplementedError('threshkind should be hard, soft, half,'
+                                  'hard-percentile, soft-percentile, '
+                                  'or half-percentile')
+    if threshkind in ['hard-percentile',
+                      'soft-percentile',
+                      'half-percentile'] and perc is None:
+        raise ValueError('Provide a percentile when choosing hard-percentile,'
+                         'soft-percentile, or half-percentile thresholding')
+
+    # choose thresholding function
+    if threshkind == 'soft':
+        threshf = _softthreshold
+    elif threshkind == 'hard':
+        threshf = _hardthreshold
+    elif threshkind == 'half':
+        threshf = _halfthreshold
+    elif threshkind == 'hard-percentile':
+        threshf = _hardthreshold_percentile
+    elif threshkind == 'soft-percentile':
+        threshf = _softthreshold_percentile
+    else:
+        threshf = _halfthreshold_percentile
+
     if show:
         tstart = time.time()
-        print('FISTA optimization\n'
+        print('FISTA optimization (%s thresholding)\n'
               '-----------------------------------------------------------\n'
               'The Operator Op has %d rows and %d cols\n'
-              'eps = %10e\ttol = %10e\tniter = %d' % (Op.shape[0],
+              'eps = %10e\ttol = %10e\tniter = %d' % (threshkind,
+                                                      Op.shape[0],
                                                       Op.shape[1],
                                                       eps, tol, niter))
     # step size
@@ -572,10 +837,13 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         alpha = 1./maxeig
 
     # define threshold
-    thresh = eps*alpha*0.5
+    thresh = eps * alpha * 0.5
 
     if show:
-        print('alpha = %10e\tthresh = %10e' % (alpha, thresh))
+        if perc is None:
+            print('alpha = %10e\tthresh = %10e' % (alpha, thresh))
+        else:
+            print('alpha = %10e\tperc = %.1f' % (alpha, perc))
         print('-----------------------------------------------------------\n')
         head1 = '   Itn       x[0]        r2norm     r12norm     xupdate'
         print(head1)
@@ -595,11 +863,14 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         resz = data - Op.matvec(zinv)
 
         # compute gradient
-        grad = alpha*Op.rmatvec(resz)
+        grad = alpha * Op.rmatvec(resz)
 
         # update inverted model
         xinv_unthesh = zinv + grad
-        xinv = _softthreshold(xinv_unthesh, thresh)
+        if perc is None:
+            xinv = threshf(xinv_unthesh, thresh)
+        else:
+            xinv = threshf(xinv_unthesh, 100 - perc)
 
         # update auxiliary coefficients
         told = t
@@ -615,6 +886,10 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         if returninfo:
             cost[iiter] = costdata + costreg
 
+        # run callback
+        if callback is not None:
+            callback(xinv)
+
         if show:
             if iiter < 10 or niter-iiter < 10 or iiter % 10 == 0:
                 msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
@@ -627,7 +902,8 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
             break
 
     # get values pre-threshold  at locations where xinv is different from zero
-    #xinv = np.where(xinv != 0, xinv_unthesh, xinv)
+    # xinv = np.where(xinv != 0, xinv_unthesh, xinv)
+
     if show:
         print('\nIterations = %d        Total time (s) = %.2f'
               % (niter, time.time() - tstart))

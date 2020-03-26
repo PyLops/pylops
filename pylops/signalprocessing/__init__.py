@@ -13,4 +13,4 @@ from .Sliding3D import Sliding3D
 from .Fredholm1 import Fredholm1
 from .DWT import DWT
 from .DWT2D import DWT2D
-
+from .Seislet import Seislet
