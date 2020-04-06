@@ -52,9 +52,12 @@ NNop, iavann = pylops.signalprocessing.Interp(nt, iava + 0.4,
                                               kind='nearest', dtype='float64')
 LIop, iavali = pylops.signalprocessing.Interp(nt, iava+0.4,
                                               kind='linear', dtype='float64')
+SIop, iavasi = pylops.signalprocessing.Interp(nt, iava + 0.4,
+                                              kind='sinc', dtype='float64')
 y = Rop*x
 ynn = NNop*x
 yli = LIop*x
+ysi = SIop*x
 ymask = Rop.mask(x)
 
 # Visualize data
@@ -62,15 +65,17 @@ fig = plt.figure(figsize=(15, 5))
 plt.plot(isample, x, '.-k', lw=3, ms=10, label='all samples')
 plt.plot(isample, ymask, '.g', ms=35, label='available samples')
 plt.plot(iavann, ynn, '.r', ms=25, label='NN interp samples')
-plt.plot(iavali, yli, '.m', ms=15, label='Linear interp samples')
-plt.legend()
+plt.plot(iavali, yli, '.m', ms=20, label='Linear interp samples')
+plt.plot(iavasi, ysi, '.y', ms=15, label='Sinc interp samples')
+plt.legend(loc='right')
 plt.title('Data restriction')
 
 subax = fig.add_axes([0.2, 0.2, 0.15, 0.6])
 subax.plot(isample, x, '.-k', lw=3, ms=10)
 subax.plot(isample, ymask, '.g', ms=35)
 subax.plot(iavann, ynn, '.r', ms=25)
-subax.plot(iavali, yli, '.m', ms=15)
+subax.plot(iavali, yli, '.m', ms=20)
+subax.plot(iavasi, ysi, '.y', ms=15)
 subax.set_xlim([120, 127])
 subax.set_ylim([0.5, -0.5])
 
