@@ -207,3 +207,4 @@ When using ``pylops`` in scientific publications, please cite the following pape
 * Dieter Werthmüller, prisae
 * Tristan van Leeuwen, TristanvanLeeuwen
 * Leonardo Uieda, leouieda
+* Filippo Broggini, filippo82
