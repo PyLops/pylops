@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 from pylops import LinearOperator
-from pylops.basicoperators import Restriction, Diagonal
+from pylops.basicoperators import Restriction, Diagonal, MatrixMult, Transpose
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -46,28 +46,70 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype='float64'):
     weights = iava - iva_l
 
     # create operators
-    op = Diagonal(1 - weights, dims=dimsd, dir=dir, dtype=dtype) * \
+    Op = Diagonal(1 - weights, dims=dimsd, dir=dir, dtype=dtype) * \
          Restriction(M, iva_l, dims=dims, dir=dir, dtype=dtype) + \
          Diagonal(weights, dims=dimsd, dir=dir, dtype=dtype) * \
          Restriction(M, iva_r, dims=dims, dir=dir, dtype=dtype)
-    return op, iava
+    return Op, iava
+
+
+def _sincinterp(M, iava, dims=None, dir=0, dtype='float64'):
+    """Sinc interpolation.
+    """
+    _checkunique(iava)
+    # create sinc interpolation matrix
+    nreg = M if dims is None else dims[dir]
+    ireg = np.arange(nreg)
+    sinc = np.tile(iava, (nreg, 1)) - \
+           np.tile(ireg[:, np.newaxis], (1, len(iava)))
+    sinc = np.sinc(sinc).T
+
+    # identify additional dimensions and create MatrixMult operator
+    otherdims = None
+    if dims is not None:
+        otherdims = np.array(dims)
+        otherdims = np.roll(otherdims, -dir)
+        otherdims = otherdims[1:]
+        print('dims', dims)
+        print('otherdims', otherdims)
+    Op = MatrixMult(sinc, dims=otherdims, dtype=dtype)
+
+    # create Tranpose operator that brings dir to first dimension
+    if dir > 0:
+        axes = np.arange(len(dims), dtype=np.int)
+        axes = np.roll(axes, -dir)
+        dimsd =  list(dims)
+        dimsd[dir] = len(iava)
+        print('dimsd', dimsd)
+        print('axes', axes)
+
+        Top = Transpose(dims, axes=axes, dtype=dtype)
+        T1op = Transpose(dimsd, axes=axes, dtype=dtype)
+        Op = T1op.H * Op * Top
+    return Op
 
 
 def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
     r"""Interpolation operator.
 
     Apply interpolation along direction ``dir``
-    from regularly sampled input vector into fractionary positions ``iava``.
+    from regularly sampled input vector into fractionary positions ``iava``
+    using one of the following algorithms:
 
-    *Nearest neighbour* interpolation
-    is a thin wrapper around :obj:`pylops.Restriction` at ``np.round(iava)``
-    locations.
+    - *Nearest neighbour* interpolation
+      is a thin wrapper around :obj:`pylops.Restriction` at ``np.round(iava)``
+      locations.
 
-    *Linear interpolation* extracts values from input vector
-    at locations ``np.floor(iava)`` and ``np.floor(iava)+1`` and linearly
-    combines them in forward mode, places weighted versions of the
-    interpolated values at locations ``np.floor(iava)`` and
-    ``np.floor(iava)+1`` in an otherwise zero vector in adjoint mode.
+    - *Linear interpolation* extracts values from input vector
+      at locations ``np.floor(iava)`` and ``np.floor(iava)+1`` and linearly
+      combines them in forward mode, places weighted versions of the
+      interpolated values at locations ``np.floor(iava)`` and
+      ``np.floor(iava)+1`` in an otherwise zero vector in adjoint mode.
+
+    - *Sinc interpolation* performs sinc interpolation at locations ``iava``.
+      Note that this is the most accurate method but it has higher computational
+      cost as it involves multiplying the input data by a matrix of size
+      :math:`N \times M`.
 
     .. note:: The vector ``iava`` should contain unique values. If the same
       index is repeated twice an error will be raised. This also applies when
@@ -113,7 +155,7 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
 
     Notes
     -----
-    Linear interpolation of a subset of :math:`N` values at locations
+    *Linear interpolation* of a subset of :math:`N` values at locations
     ``iava`` from an input (or model) vector :math:`\mathbf{x}` of size
     :math:`M` can be expressed as:
 
@@ -129,16 +171,29 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
     of the original array at which samples are taken, and
     :math:`\mathbf{w}=[l_1 - \lfloor l_1 \rfloor, l_2 - \lfloor l_2 \rfloor,
     ..., l_N - \lfloor l_N \rfloor]` are the linear interpolation weights.
-
     This operator can be implemented by simply summing two
     :class:`pylops.Restriction` operators which are weighted
     using :class:`pylops.basicoperators.Diagonal` operators.
+
+    *Sinc interpolation* of a subset of :math:`N` values at locations
+    ``iava`` from an input (or model) vector :math:`\mathbf{x}` of size
+    :math:`M` can be expressed as:
+
+    .. math::
+
+        y_i = \sum_{j=0}^{M} x_j sinc(i-j) \quad \forall i=1,2,...,N
+
+    This operator can be implemented using the :class:`pylops.MatrixMult`
+    operator with a matrix containing the values of the sinc function at all
+    :math:`i,j` possible combinations.
 
     """
     if kind == 'nearest':
         interpop, iava = _nearestinterp(M, iava, dims=dims, dir=dir, dtype=dtype)
     elif kind == 'linear':
         interpop, iava = _linearinterp(M, iava, dims=dims, dir=dir, dtype=dtype)
+    elif kind == 'sinc':
+        interpop = _sincinterp(M, iava, dims=dims, dir=dir, dtype=dtype)
     else:
         raise NotImplementedError('kind is not correct...')
     return LinearOperator(interpop), iava

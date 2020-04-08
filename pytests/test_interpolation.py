@@ -14,16 +14,48 @@ par3 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 0,
         'dtype': 'float32', 'kind': 'linear'}  # real, linear
 par4 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 1j,
         'dtype': 'complex64', 'kind': 'linear'}  # complex, linear
+par5 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 0,
+        'dtype': 'float32', 'kind': 'sinc'}  # real, sinc
+par6 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 1j,
+        'dtype': 'complex64', 'kind': 'sinc'}  # complex, sinc
 
 # subsampling factor
 perc_subsampling = 0.4
-np.random.seed(1)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+def test_sincinterp():
+    """Check accuracy of sinc interpolation of subsampled version of input
+    signal
+    """
+    nt = 81
+    dt = 0.004
+    t = np.arange(nt) * dt
+
+    ntsub = 10
+    dtsub = dt / ntsub
+    tsub = np.arange(nt * ntsub) * dtsub
+    tsub = tsub[:np.where(tsub == t[-1])[0][0] + 1]
+
+    x = np.sin(2 * np.pi * 10 * t) + \
+        0.4 * np.sin(2 * np.pi * 20 * t) - \
+        2 * np.sin(2 * np.pi * 5 * t)
+    xsub = np.sin(2 * np.pi * 10 * tsub) + \
+           0.4 * np.sin(2 * np.pi * 20 * tsub) - \
+           2 * np.sin(2 * np.pi * 5 * tsub)
+
+    iava = tsub[20:-20] / (dtsub * ntsub) # exclude edges
+    SI1op, iava = Interp(nt, iava, kind='sinc', dtype='float64')
+    y = SI1op * x
+    print(np.max(np.abs(xsub[20:-20] - y)))
+    assert_array_almost_equal(xsub[20:-20], y, decimal=1)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3),
+                                 (par4), (par5), (par6)])
 def test_Interp_1dsignal(par):
     """Dot-test and forward for Interp operator for 1d signal
     """
+    np.random.seed(1)
     x = np.random.normal(0, 1, par['nx']) + \
         par['imag'] * np.random.normal(0, 1, par['nx'])
 
@@ -58,10 +90,12 @@ def test_Interp_1dsignal(par):
         assert_array_almost_equal(ydec, x[iava])
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3),
+                                 (par4), (par5), (par6)])
 def test_Interp_2dsignal(par):
     """Dot-test and forward for Restriction operator for 2d signal
     """
+    np.random.seed(1)
     x = np.random.normal(0, 1, (par['nx'], par['nt'])) + \
         par['imag'] * np.random.normal(0, 1, (par['nx'], par['nt']))
 
@@ -97,7 +131,6 @@ def test_Interp_2dsignal(par):
     if par['kind'] == 'nearest':
         assert_array_almost_equal(ydec, x[iava])
 
-
     # 2nd direction
     Nsub = int(np.round(par['nt'] * perc_subsampling))
     iava = np.sort(np.random.permutation(np.arange(par['nt']))[:Nsub])
@@ -124,10 +157,12 @@ def test_Interp_2dsignal(par):
         assert_array_almost_equal(ydec, x[:, iava])
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3),
+                                 (par4), (par5), (par6)])
 def test_Interp_3dsignal(par):
     """Dot-test and forward  for Interp operator for 3d signal
     """
+    np.random.seed(1)
     x = np.random.normal(0, 1, (par['ny'], par['nx'], par['nt'])) + \
         par['imag'] * np.random.normal(0, 1, (par['ny'], par['nx'], par['nt']))
 
@@ -226,6 +261,7 @@ def test_Interp_3dsignal(par):
 def test_Bilinear_2dsignal(par):
     """Dot-test and forward for Interp operator for 2d signal
     """
+    np.random.seed(1)
     x = np.random.normal(0, 1, (par['nx'], par['nt'])) + \
         par['imag'] * np.random.normal(0, 1, (par['nx'], par['nt']))
 
