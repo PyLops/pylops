@@ -22,6 +22,34 @@ par6 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 1j,
 # subsampling factor
 perc_subsampling = 0.4
 
+
+def test_sincinterp():
+    """Check accuracy of sinc interpolation of subsampled version of input
+    signal
+    """
+    nt = 81
+    dt = 0.004
+    t = np.arange(nt) * dt
+
+    ntsub = 10
+    dtsub = dt / ntsub
+    tsub = np.arange(nt * ntsub) * dtsub
+    tsub = tsub[:np.where(tsub == t[-1])[0][0] + 1]
+
+    x = np.sin(2 * np.pi * 10 * t) + \
+        0.4 * np.sin(2 * np.pi * 20 * t) - \
+        2 * np.sin(2 * np.pi * 5 * t)
+    xsub = np.sin(2 * np.pi * 10 * tsub) + \
+           0.4 * np.sin(2 * np.pi * 20 * tsub) - \
+           2 * np.sin(2 * np.pi * 5 * tsub)
+
+    iava = tsub[20:-20] / (dtsub * ntsub) # exclude edges
+    SI1op, iava = Interp(nt, iava, kind='sinc', dtype='float64')
+    y = SI1op * x
+    print(np.max(np.abs(xsub[20:-20] - y)))
+    assert_array_almost_equal(xsub[20:-20], y, decimal=1)
+
+
 @pytest.mark.parametrize("par", [(par1), (par2), (par3),
                                  (par4), (par5), (par6)])
 def test_Interp_1dsignal(par):
