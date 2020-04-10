@@ -45,6 +45,21 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d'):
         Direct arrival in time domain of size
         :math:`\lbrack nt \times nr \rbrack`
 
+    Notes
+    -----
+    The analytical Green's function in 2D [1]_ is :
+
+    .. math::
+        G^{2D}(\mathbf{r}) = -\frac{i}{4}H_0^{(1)}(k|\mathbf{r}|)
+
+    and in 3D [1]_ is:
+
+    .. math::
+        G^{3D}(\mathbf{r}) = -\frac{e^{-jk\mathbf{r}}}{4 \pi \mathbf{r}}
+
+    .. [1] Snieder, R. "A Guided Tour of Mathematical Methods for the
+    Physical Sciences", Cambridge University Press, pp. 302, 2004.
+
     """
     nr = len(trav)
     nfft = nt if nfft is None or nfft < nt else nfft
@@ -56,8 +71,7 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d'):
             #direct[it] = W[it] * 1j * f[it] * np.exp(-1j * ((f[it] * trav) \
             #             + np.sign(f[it]) * np.pi / 4)) / \
             #             np.sqrt(8 * np.pi * np.abs(f[it]) * trav + 1e-10)
-            direct[it] = W[it] * 1j * f[it] * (-1j) * \
-                         hankel2(0, f[it] * trav + 1e-10) / 4
+            direct[it] = - W[it] * 1j * hankel2(0, f[it] * trav + 1e-10) / 4.
         else:
             direct[it] = W[it] * np.exp(-1j * f[it] * trav) / (4 * np.pi * dist)
     direct = np.fft.irfft(direct, nfft, axis=0) / dt
