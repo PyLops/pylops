@@ -6,7 +6,7 @@ from pylops.waveeqprocessing.marchenko import directwave
 
 # Test data
 inputfile2d = 'testdata/marchenko/input.npz'
-inputfile3d = 'testdata/marchenko/direct3d.npz'
+inputfile3d = 'testdata/marchenko/direct3D.npz'
 
 # Parameters
 vel = 2400.0  # velocity
