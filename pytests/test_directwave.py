@@ -38,10 +38,9 @@ def test_direct2D():
 
     # Analytic GF
     trav = np.sqrt((vs[0] - r[0]) ** 2 + (vs[1] - r[1]) ** 2) / vel
-    G0ana = directwave(wav, trav, nt, dt, nfft=nt)
+    G0ana = directwave(wav, trav, nt, dt, nfft=nt, derivative=False)
 
-    # Differentiate to get same response as in FD modelling where we used
-    # a dipole source
+    # Differentiate to get same response as in FD modelling
     G0ana = np.diff(G0ana, axis=0)
     G0ana = np.vstack([G0ana, np.zeros(nr)])
 
@@ -78,10 +77,10 @@ def test_direct3D():
                    (vs[1] - r[:, 1]) ** 2 +
                    (vs[2] - r[:, 2]) ** 2)
     trav = dist / vel
-    G0ana = directwave(wav, trav, nt, dt, nfft=nt, dist=dist, kind='3d')
+    G0ana = directwave(wav, trav, nt, dt, nfft=nt, dist=dist,
+                       kind='3d', derivative=False)
 
-    # Differentiate to get same response as in FD modelling where we used
-    # a dipole source
+    # Differentiate to get same response as in FD modelling
     G0ana = np.diff(G0ana, axis=0)
     G0ana = np.vstack([G0ana, np.zeros(nr)])
 
