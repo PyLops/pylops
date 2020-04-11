@@ -132,7 +132,7 @@ def test_Marchenko_time_ana(par):
     ginvsub = (g_inv_minus + g_inv_plus)[:, nt-1:].T
     ginvsub_norm = ginvsub / ginvsub.max()
     gsub_norm = gsub / gsub.max()
-    assert np.linalg.norm(gsub_norm-ginvsub_norm) / \
+    assert np.linalg.norm(gsub_norm - ginvsub_norm) / \
            np.linalg.norm(gsub_norm) < 1e-1
 
 
