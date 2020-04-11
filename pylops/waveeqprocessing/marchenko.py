@@ -11,12 +11,13 @@ from pylops.waveeqprocessing.mdd import MDC
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
-def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d', derivative=True):
-    r"""Analytical direct wave
+def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d',
+               derivative=True):
+    r"""Analytical direct wave in acoustic media
 
-    Compute analytical 2d or 3d Green's function in frequency domain given
-    a wavelet ``wav``, traveltime curve ``trav`` and distance ``dist``
-    (for 3d case only).
+    Compute the analytical acoustic 2d or 3d Green's function in frequency
+    domain givena wavelet ``wav``, traveltime curve ``trav`` and distance
+    ``dist`` (for 3d case only).
 
     Parameters
     ----------
@@ -39,8 +40,7 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d', derivative=Tr
     kind : :obj:`str`, optional
         2-dimensional (``2d``) or 3-dimensional (``3d``)
     derivative : :obj:`bool`, optional
-        Apply time derivative to analytical response (``True``) or not
-        (``False``)
+        Apply time derivative (``True``) or not (``False``)
 
     Returns
     -------
@@ -58,11 +58,13 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d', derivative=Tr
     and in 3D [1]_ is:
 
     .. math::
-        G^{3D}(\mathbf{r}) = -\frac{e^{-jk\mathbf{r}}}{4 \pi \mathbf{r}}
+        G^{3D}(\mathbf{r}) = \frac{e^{-jk\mathbf{r}}}{4 \pi \mathbf{r}}
 
-    In both cases we further apply a :math:`j\omega` scaling (which is
-    equivalent to applying a first derivative in time domain) when
-    `derivative==True`
+    Note that these Green's functions represent the acoustic response to
+    a point source of volume injection. In case the response to a point source
+    of volume injection rate is desired, a :math:`j\omega` scaling (which is
+    equivalent to applying a first derivative in time domain) must be applied.
+    Here this is accomplished by setting ``derivative==True``.
 
     .. [1] Snieder, R. "A Guided Tour of Mathematical Methods for the
     Physical Sciences", Cambridge University Press, pp. 302, 2004.
