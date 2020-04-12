@@ -3,13 +3,38 @@
 Changelog
 =========
 
+Version 1.9.0
+-------------
+
+*Released on: 13/04/2020*
+
+* Added :class:`pylops.waveeqprocessing.Deghosting` and
+  :class:`pylops.signalprocessing.Seislet` operators
+* Added hard and half thresholds in :func:`pylops.optimization.sparsity.ISTA`
+  and :func:`pylops.optimization.sparsity.FISTA` solvers
+* Added ``prescaled`` input parameter to :class:`pylops.waveeqprocessing.MDC`
+  and :class:`pylops.waveeqprocessing.Marchenko`
+* Added sinc interpolation to :class:`pylops.signalprocessing.Interp`
+  (``kind == 'sinc'``)
+* Modified :func:`pylops.waveeqprocessing.marchenko.directwave` to
+  to model analytical responses from both sources of volume injection
+  (``derivative=False``) and source of volume injection rate
+  (``derivative=True``)
+* Added :func:`pylops.LinearOperator.asoperator` method to
+  :py:class:`pylops.LinearOperator`
+* Added :func:`pylops.utils.signalprocessing.slope_estimate` function
+* Fix bug in :class:`pylops.signalprocessing.Radon2D` and
+  :class:`pylops.signalprocessing.Radon3D` when ``onthefly=True`` returning the
+  same result as when ``onthefly=False``
+
+
 Version 1.8.0
 -------------
 
 *Released on: 12/01/2020*
 
 * Added :py:func:`pylops.LinearOperator.todense` method
-  to :py:func:`pylops.LinearOperator`
+  to :py:class:`pylops.LinearOperator`
 * Added :py:class:`pylops.signalprocessing.Bilinear`,
   :py:class:`pylops.signalprocessing.DWT`, and
   :py:class:`pylops.signalprocessing.DWT2` operators
