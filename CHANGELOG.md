@@ -1,3 +1,23 @@
+# 1.9.0
+* Added ``pylops.waveeqprocessing.Deghosting`` and
+  ``pylops.signalprocessing.Seislet`` operators
+* Added hard and half thresholds in ``pylops.optimization.sparsity.ISTA``
+  and ``pylops.optimization.sparsity.FISTA`` solvers
+* Added ``prescaled`` input parameter to ``pylops.waveeqprocessing.MDC``
+  and ``pylops.waveeqprocessing.Marchenko``
+* Added sinc interpolation to ``pylops.signalprocessing.Interp``
+  (``kind == 'sinc'``)
+* Modified ``pylops.waveeqprocessing.marchenko.directwave`` to
+  to model analytical responses from both sources of volume injection
+  (``derivative=False``) and source of volume injection rate
+  (``derivative=True``)
+* Added ``pylops.LinearOperator.asoperator`` method to
+  ``pylops.LinearOperator``
+* Added ``pylops.utils.signalprocessing.slope_estimate`` function
+* Fix bug in ``pylops.signalprocessing.Radon2D`` and
+ ``pylops.signalprocessing.Radon3D`` when ``onthefly=True`` returning the
+ same result as when ``onthefly=False``
+
 # 1.8.0
 * Added ``todense`` method to ``pylops.LinearOperator``
 * Added ``pylops.signalprocessing.Bilinear``,
