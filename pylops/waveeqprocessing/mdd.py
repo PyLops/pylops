@@ -36,6 +36,7 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
                   'operator with transpose=True, as this behaviour will '
                   'become default in version v2.0.0 and the behaviour with '
                   'transpose=False will be deprecated.', FutureWarning)
+
     if twosided and nt % 2 == 0:
         raise ValueError('nt must be odd number')
 
@@ -45,11 +46,12 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
 
     # find out dtype of G
     dtype = G[0, 0, 0].dtype
+    rdtype = np.real(np.ones(1, dtype=dtype)).dtype
 
     # create Fredholm operator
     if prescaled:
         Frop = _Fredholm1(G, nv, saveGt=saveGt,
-                          dtype=dtype,  **args_Fredholm1)
+                          dtype=dtype, **args_Fredholm1)
     else:
         Frop = _Fredholm1(dr * dt * np.sqrt(nt) * G, nv, saveGt=saveGt,
                           dtype=dtype, **args_Fredholm1)
@@ -65,9 +67,9 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
         logging.warning('nfmax set equal to ceil[(nt+1)/2=%d]' % nfmax)
 
     Fop = _FFT(dims=(nt, nr, nv), dir=0, real=True,
-               fftshift=twosided, dtype=dtype, **args_FFT)
+               fftshift=twosided, dtype=rdtype, **args_FFT)
     F1op = _FFT(dims=(nt, ns, nv), dir=0, real=True,
-                fftshift=False, dtype=dtype, **args_FFT1)
+                fftshift=False, dtype=rdtype, **args_FFT1)
 
     # create Identity operator to extract only relevant frequencies
     Iop = _Identity(N=nfmax * nr * nv, M=nfft * nr * nv,
