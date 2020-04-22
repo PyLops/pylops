@@ -20,7 +20,7 @@ class _FFT_numpy(LinearOperator):
     """One dimensional Fast-Fourier Transform using numpy
     """
     def __init__(self, dims, dir=0, nfft=None, sampling=1.,
-                 real=False, fftshift=False, dtype='complex128'):
+                 real=False, fftshift=False, dtype='float64'):
         if isinstance(dims, int):
             dims = (dims,)
         if dir > len(dims)-1:
@@ -45,7 +45,13 @@ class _FFT_numpy(LinearOperator):
                 self.real else self.nfft
             self.reshape = True
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
-        self.dtype = np.dtype(dtype)
+        # Find types to enforce to forward and adjoint outputs. This is
+        # required as np.fft.fft always returns complex128 even if input is
+        # float32 or less
+        self.rdtype = np.dtype(dtype)
+        self.cdtype = (np.ones(1, dtype=self.rdtype) +
+                       1j * np.ones(1, dtype=self.rdtype)).dtype
+        self.dtype = self.cdtype
         self.explicit = False
 
     def _matvec(self, x):
@@ -69,6 +75,7 @@ class _FFT_numpy(LinearOperator):
                 y = np.sqrt(1. / self.nfft) * np.fft.fft(x, n=self.nfft,
                                                          axis=self.dir)
             y = y.flatten()
+        y = y.astype(self.cdtype)
         return y
 
     def _rmatvec(self, x):
@@ -97,6 +104,7 @@ class _FFT_numpy(LinearOperator):
             if self.fftshift:
                 y = np.fft.fftshift(y, axes=self.dir)
             y = y.flatten()
+        y = y.astype(self.rdtype)
         return y
 
 
@@ -104,7 +112,7 @@ class _FFT_fftw(LinearOperator):
     """One dimensional Fast-Fourier Transform using pyffw
     """
     def __init__(self, dims, dir=0, nfft=None, sampling=1.,
-                 real=False, dtype='complex128', fftshift=False,
+                 real=False, dtype='float64', fftshift=False,
                  **kwargs_fftw):
         if isinstance(dims, int):
             dims = (dims,)
@@ -142,7 +150,10 @@ class _FFT_fftw(LinearOperator):
                 self.real else self.nfft
             self.reshape = True
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
-        self.dtype = np.dtype(dtype)
+        self.rdtype = np.dtype(dtype)
+        self.cdtype = (np.ones(1, dtype=self.rdtype) +
+                       1j * np.ones(1, dtype=self.rdtype)).dtype
+        self.dtype = self.cdtype
         self.explicit = False
 
         # define padding(fftw requires the user to provide padded input signal)
@@ -160,11 +171,10 @@ class _FFT_fftw(LinearOperator):
         self.dopad = True if np.sum(np.array(self.pad)) > 0 else False
 
         # create empty arrays and plans for fft/ifft
-        xtype = np.real(np.ones(1, dtype=self.dtype)).dtype # find model type
         self.x = pyfftw.empty_aligned(self.dims_t,
-                                      dtype=xtype if real else self.dtype)
+                                      dtype=self.rdtype if real else self.cdtype)
         self.y = pyfftw.empty_aligned(self.dims_fft,
-                                      dtype=self.dtype)
+                                      dtype=self.cdtype)
         self.fftplan = pyfftw.FFTW(self.x, self.y, axes=(self.dir,),
                                    direction='FFTW_FORWARD', **kwargs_fftw)
         self.ifftplan = pyfftw.FFTW(self.y, self.x, axes=(self.dir,),
@@ -212,7 +222,7 @@ class _FFT_fftw(LinearOperator):
 
 
 def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
-        fftshift=False, engine='numpy', dtype='complex128', **kwargs_fftw):
+        fftshift=False, engine='numpy', dtype='float64', **kwargs_fftw):
     r"""One dimensional Fast-Fourier Transform.
 
     Apply Fast-Fourier Transform (FFT) along a specific direction ``dir`` of a
@@ -257,7 +267,10 @@ def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
     engine : :obj:`str`, optional
         Engine used for fft computation (``numpy`` or ``fftw``)
     dtype : :obj:`str`, optional
-        Type of elements in input array.
+        Type of elements in input array. Note that the `dtype` of the operator
+        is the corresponding complex type even when a real type is provided.
+        Nevertheless, the provided dtype will be enforced on the vector
+        returned by the `rmatvec` method.
     **kwargs_fftw
             Arbitrary keyword arguments
             for :py:class:`pyfftw.FTTW`
@@ -309,5 +322,4 @@ def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
                        real=real, fftshift=fftshift, dtype=dtype)
     else:
         raise NotImplementedError('engine must be numpy or fftw')
-
     return f
