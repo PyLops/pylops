@@ -1,5 +1,5 @@
 r"""
-OMP, ISTA and FISTA
+MP, OMP, ISTA and FISTA
 ===================
 
 This example shows how to use the :py:class:`pylops.optimization.sparsity.OMP`,
@@ -7,7 +7,7 @@ This example shows how to use the :py:class:`pylops.optimization.sparsity.OMP`,
 :py:class:`pylops.optimization.sparsity.FISTA` solvers.
 
 These solvers can be used when the model to retrieve is supposed to have
-a sparse representation in a certain domain. OMP uses a L0 norm and
+a sparse representation in a certain domain. MP and OMP uses a L0 norm and
 mathematically translates to solving the following constrained problem:
 
 .. math::
@@ -36,27 +36,38 @@ np.random.seed(0)
 # the sparsity of our desired model is essential to be able to invert
 # such a system.
 
+
 N, M = 15, 20
-Aop = pylops.MatrixMult(np.random.randn(N, M))
+A = np.random.randn(N, M)
+A = A / np.linalg.norm(A, axis=0)
+Aop = pylops.MatrixMult(A)
 
 x = np.random.rand(M)
 x[x < 0.9] = 0
 y = Aop*x
 
 # ISTA
-eps = 0.5
-maxit = 1000
+eps = 1e-2
+maxit = 500
+x_mp = pylops.optimization.sparsity.OMP(Aop, y, maxit, niter_inner=0,
+                                        sigma=1e-4)[0]
 x_omp = pylops.optimization.sparsity.OMP(Aop, y, maxit, sigma=1e-4)[0]
 x_ista = pylops.optimization.sparsity.ISTA(Aop, y, maxit, eps=eps,
-                                           tol=0, returninfo=True)[0]
+                                           tol=1e-3, returninfo=True)[0]
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 3))
-ax.stem(x, linefmt='k', basefmt='k',
+m, s, b = ax.stem(x, linefmt='k', basefmt='k',
         markerfmt='ko', label='True')
-ax.stem(x_omp, linefmt='--g', basefmt='--g',
+plt.setp(m, markersize = 15)
+m, s, b = ax.stem(x_mp, linefmt='--c', basefmt='--c',
+        markerfmt='co', label='MP')
+plt.setp(m, markersize = 10)
+m, s, b = ax.stem(x_omp, linefmt='--g', basefmt='--g',
         markerfmt='go', label='OMP')
-ax.stem(x_ista, linefmt='--r',
+plt.setp(m, markersize = 7)
+m, s, b = ax.stem(x_ista, linefmt='--r',
         markerfmt='ro', label='ISTA')
+plt.setp(m, markersize = 3)
 ax.set_title('Model', size=15, fontweight='bold')
 ax.legend()
 plt.tight_layout()
