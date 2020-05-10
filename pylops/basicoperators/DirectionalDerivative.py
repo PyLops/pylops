@@ -16,7 +16,7 @@ def FirstDirectionalDerivative(dims, v, sampling=1, edge=False,
         Number of samples for each dimension.
     v : :obj:`np.ndarray`, optional
         Single direction (array of size :math:`n_{dims}`) or group of directions
-        (array of size :math:`[n_{dims} \times n_{d0} \times ... \times n_{n_{dims}}`)
+        (array of size :math:`[n_{dims} \times n_{d0} \times ... \times n_{d_{n_{dims}}}]`)
     sampling : :obj:`tuple`, optional
         Sampling steps for each direction.
     edge : :obj:`bool`, optional
@@ -34,7 +34,7 @@ def FirstDirectionalDerivative(dims, v, sampling=1, edge=False,
     -----
     The FirstDirectionalDerivative applies a first-order derivative
     to a multi-dimensional array along the direction defined by the unitary
-    vector \mathbf{v}:
+    vector :math:`\mathbf{v}`:
 
     .. math::
         df_\mathbf{v} =
@@ -51,7 +51,7 @@ def FirstDirectionalDerivative(dims, v, sampling=1, edge=False,
 
     This operator can be easily implemented as the concatenation of the
     :py:class:`pylops.Gradient` operator and the :py:class:`pylops.Diagonal`
-    operator with :math:\mathbf{v} along the main diagonal.
+    operator with :math:`\mathbf{v}` along the main diagonal.
 
     """
     Gop = Gradient(dims, sampling=sampling, edge=edge, dtype=dtype)
@@ -78,7 +78,7 @@ def SecondDirectionalDerivative(dims, v, sampling=1, edge=False,
         Number of samples for each dimension.
     v : :obj:`np.ndarray`, optional
         Single direction (array of size :math:`n_{dims}`) or group of directions
-        (array of size :math:`[n_{dims} \times n_{d0} \times ... \times n_{n_{dims}}`)
+        (array of size :math:`[n_{dims} \times n_{d0} \times ... \times n_{d_{n_{dims}}}]`)
     sampling : :obj:`tuple`, optional
         Sampling steps for each direction.
     edge : :obj:`bool`, optional
@@ -96,7 +96,7 @@ def SecondDirectionalDerivative(dims, v, sampling=1, edge=False,
     -----
     The SecondDirectionalDerivative applies a second-order derivative
     to a multi-dimensional array along the direction defined by the unitary
-    vector \mathbf{v}:
+    vector :math:`\mathbf{v}`:
 
     .. math::
         d^2f_\mathbf{v} =

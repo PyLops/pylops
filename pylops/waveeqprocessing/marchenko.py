@@ -77,10 +77,9 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d',
     direct = np.zeros((nfft // 2 + 1, nr), dtype=np.complex128)
     for it in range(len(W)):
         if kind == '2d':
-            #direct[it] = W[it] * 1j * f[it] * np.exp(-1j * ((f[it] * trav) \
+            #direct[it] = W[it] * np.exp(-1j * ((f[it] * trav) \
             #             + np.sign(f[it]) * np.pi / 4)) / \
             #             np.sqrt(8 * np.pi * np.abs(f[it]) * trav + 1e-10)
-            #direct[it] = W[it] * f[it] * hankel2(0, f[it] * trav + 1e-10) / 4
             direct[it] = - W[it] * 1j * hankel2(0, f[it] * trav + 1e-10) / 4.
         else:
             direct[it] = W[it] * np.exp(-1j * f[it] * trav) / (4 * np.pi * dist)
