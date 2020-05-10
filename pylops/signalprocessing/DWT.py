@@ -54,7 +54,7 @@ class DWT(LinearOperator):
     dims : :obj:`int` or :obj:`tuple`
         Number of samples for each dimension
     dir : :obj:`int`, optional
-        Direction along which FFT is applied.
+        Direction along which DWT is applied.
     wavelet : :obj:`str`, optional
         Name of wavelet type. Use :func:`pywt.wavelist(kind='discrete')` for
         a list of

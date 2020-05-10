@@ -8,7 +8,7 @@ any environment and has a very limited number of dependencies. However,
 since *Python2* will retire soon, we have decided to only focus on a
 *Python3* implementation. If you are still using *Python2*, hurry up!
 
-For this reason you will need **Python 3.5 or greater** to get started.
+For this reason you will need **Python 3.6 or greater** to get started.
 
 
 Dependencies

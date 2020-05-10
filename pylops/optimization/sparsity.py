@@ -355,13 +355,14 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         Operator to invert
     data : :obj:`numpy.ndarray`
         Data
-    niter_outer : :obj:`int`
+    niter_outer : :obj:`int`, optional
         Number of iterations of outer loop
-    niter_inner : :obj:`int`
-        Number of iterations of inner loop
+    niter_inner : :obj:`int`, optional
+        Number of iterations of inner loop. By choosing ``niter_inner=0``, the
+        Matching Pursuit (MP) algorithm is implemented.
     sigma : :obj:`list`
         Maximum L2 norm of residual. When smaller stop iterations.
-    normalizecols : :obj:`list`
+    normalizecols : :obj:`list`, optional
         Normalize columns (``True``) or not (``False``). Note that this can be
         expensive as it requires applying the forward operator
         :math:`n_{cols}` times to unit vectors (i.e., containing 1 at
@@ -404,11 +405,24 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         \mathbf{x}_k =  \{ arg min_{\mathbf{x}}
         ||\mathbf{Op}_{\Lambda_k} \mathbf{x} - \mathbf{b}||_2
 
+    Note that by choosing ``niter_inner=0`` the basic Matching Pursuit (MP)
+    algorithm is implemented instead. In other words, instead of solving an
+    optimization at each iteration to find the best :math:`\mathbf{x}` for the
+    currently selected basis functions, the vector :math:`\mathbf{x}` is just
+    updated at the new basis function by taking directly the value from
+    the inner product :math:`\mathbf{Op}_j^H \mathbf{r}_k`.
+
+    In this case it is highly reccomended to provide a normalized basis
+    function. If different basis have different norms, the solver is likely
+    to diverge. Similar observations apply to OMP, even though mild unbalancing
+    between the basis is generally properly handled.
+
     """
     Op = LinearOperator(Op)
     if show:
         tstart = time.time()
-        print('OMP optimization\n'
+        algname = 'OMP optimization\n' if niter_inner > 0 else 'MP optimization\n'
+        print(algname +
               '-----------------------------------------------------------------\n'
               'The Operator Op has %d rows and %d cols\n'
               'sigma = %.2e\tniter_outer = %d\tniter_inner = %d\n'
@@ -420,7 +434,7 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         ncols = Op.shape[1]
         norms = np.zeros(ncols)
         for icol in range(ncols):
-            unit = np.zeros(ncols)
+            unit = np.zeros(ncols, dtype=Op.dtype)
             unit[icol] = 1
             norms[icol] = np.linalg.norm(Op.matvec(unit))
     if show:
@@ -428,31 +442,49 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         head1 = '    Itn           r2norm'
         print(head1)
 
+    if niter_inner == 0:
+        x = []
     cols = []
     res = data.copy()
     cost = np.zeros(niter_outer + 1)
     cost[0] = np.linalg.norm(data)
     iiter = 0
     while iiter < niter_outer and cost[iiter] > sigma:
-        cres = np.abs(Op.rmatvec(res))
+        # compute inner products
+        cres = Op.rmatvec(res)
+        cres_abs = np.abs(cres)
         if normalizecols:
-            cres = cres / norms
-        # exclude columns already chosen by putting them negative
-        if iiter > 0:
-            cres[cols] = -1
+            cres_abs = cres_abs / norms
         # choose column with max cres
-        imax = np.argwhere(cres == np.max(cres)).ravel()
+        cres_max = np.max(cres_abs)
+        imax = np.argwhere(cres_abs == cres_max).ravel()
         nimax = len(imax)
         if nimax > 0:
             imax = imax[np.random.permutation(nimax)[0]]
         else:
             imax = imax[0]
-        cols.append(imax)
+        # update active set
+        if imax not in cols:
+            addnew = True
+            cols.append(imax)
+        else:
+            addnew = False
+            imax_in_cols = cols.index(imax)
 
         # estimate model for current set of columns
-        Opcol = Op.apply_columns(cols)
-        x = lsqr(Opcol, data, iter_lim=niter_inner)[0]
-        res = data - Opcol.matvec(x)
+        if niter_inner == 0:
+            # MP update
+            Opcol = Op.apply_columns([imax, ])
+            res -= Opcol.matvec([cres[imax], ])
+            if addnew:
+                x.append(cres[imax])
+            else:
+                x[imax_in_cols] += cres[imax]
+        else:
+            # OMP update
+            Opcol = Op.apply_columns(cols)
+            x = lsqr(Opcol, data, iter_lim=niter_inner)[0]
+            res = data - Opcol.matvec(x)
         iiter += 1
         cost[iiter] = np.linalg.norm(res)
         if show:
@@ -460,7 +492,7 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
                 msg = '%6g        %12.5e' % (iiter + 1, cost[iiter])
                 print(msg)
     xinv = np.zeros(Op.shape[1], dtype=Op.dtype)
-    xinv[cols] = x
+    xinv[cols] = np.array(x)
     if show:
         print('\nIterations = %d        Total time (s) = %.2f'
               % (iiter, time.time() - tstart))

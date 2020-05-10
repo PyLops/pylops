@@ -142,7 +142,7 @@ that can be tailored to our needs, and as contribution to the free software comm
    Contributing <contributing.rst>
    Changelog <changelog.rst>
    Roadmap <roadmap.rst>
-   Paper using PyLops <papers.rst>
+   Papers using PyLops <papers.rst>
    Citing <citing.rst>
    Credits <credits.rst>
 

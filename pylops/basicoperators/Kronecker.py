@@ -6,8 +6,8 @@ from pylops import LinearOperator
 class Kronecker(LinearOperator):
     r"""Kronecker operator.
 
-    Perform Krocker product of two operators. Note that the combined operator
-    is never created explicitely, rather the product of this operator with the
+    Perform Kronecker product of two operators. Note that the combined operator
+    is never created explicitly, rather the product of this operator with the
     model vector is performed in forward mode, or the product of the adjoint of
     this operator and the data vector in adjoint mode.
 
