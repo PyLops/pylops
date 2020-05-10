@@ -348,7 +348,7 @@ class _ColumnLinearOperator(LinearOperator):
         if self.explicit:
             y = self.Opcol @ x
         else:
-            y = np.zeros(self.Op.shape[1])
+            y = np.zeros(self.Op.shape[1], dtype=self.dtype)
             y[self.cols] = x
             y = self.Op._matvec(y)
         return y
