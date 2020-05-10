@@ -231,7 +231,7 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
             Pop = FFT2D(dims=dims, nffts=nffts,
                         sampling=sampling)
             Pop = Pop.H
-        SIop = Rop*Pop
+        SIop = Rop * Pop
     elif 'radon' in kind:
         prec = True
         dotcflag = 0
@@ -245,7 +245,7 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
             Pop = Radon2D(taxis, spataxis, paxis,
                           centeredh=centeredh, kind=kindradon, engine=engine)
             dimsp = (paxis.size, taxis.size)
-        SIop = Rop*Pop
+        SIop = Rop * Pop
     elif kind == 'sliding':
         prec = True
         dotcflag = 0

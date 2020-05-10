@@ -35,7 +35,8 @@ t0 = [0.2, 0.7, 1.6]
 theta = [40, 0, -60]
 amp = [1., 0.6, -2.]
 
-mlin, mlinwav = pylops.utils.seismicevents.linear2d(x, t, v, t0, theta, amp, wav)
+mlin, mlinwav = pylops.utils.seismicevents.linear2d(x, t, v, t0,
+                                                    theta, amp, wav)
 
 ############################################
 # We can also create a 2d data with a number of crossing parabolic events using the
@@ -43,32 +44,37 @@ mlin, mlinwav = pylops.utils.seismicevents.linear2d(x, t, v, t0, theta, amp, wav
 px = [0, 0, 0]
 pxx = [1e-5, 5e-6, 1e-6]
 
-mpar, mparwav = pylops.utils.seismicevents.parabolic2d(x, t, t0, px, pxx, amp, wav)
+mpar, mparwav = pylops.utils.seismicevents.parabolic2d(x, t, t0, px,
+                                                       pxx, amp, wav)
 
 ############################################
 # And similarly we can create a 2d data with a number of crossing hyperbolic
 # events using the :py:func:`pylops.utils.seismicevents.hyperbolic2d` routine.
 vrms = [500, 700, 1700]
 
-mhyp, mhypwav = pylops.utils.seismicevents.hyperbolic2d(x, t, t0, vrms, amp, wav)
+mhyp, mhypwav = pylops.utils.seismicevents.hyperbolic2d(x, t, t0,
+                                                        vrms, amp, wav)
 
 ############################################
 # We can now visualize the different events
 
 # sphinx_gallery_thumbnail_number = 2
 fig, axs = plt.subplots(1, 3, figsize=(9, 5))
-axs[0].imshow(mlinwav.T, aspect='auto', interpolation='nearest', vmin=-2, vmax=2,
-              cmap='gray', extent=(x.min(), x.max(), t.max(), t.min()))
+axs[0].imshow(mlinwav.T, aspect='auto', interpolation='nearest',
+              vmin=-2, vmax=2, cmap='gray',
+              extent=(x.min(), x.max(), t.max(), t.min()))
 axs[0].set_title('Linear events', fontsize=12, fontweight='bold')
 axs[0].set_xlabel(r'$x(m)$')
 axs[0].set_ylabel(r'$t(s)$')
-axs[1].imshow(mparwav.T, aspect='auto', interpolation='nearest', vmin=-2, vmax=2,
-              cmap='gray', extent=(x.min(), x.max(), t.max(), t.min()))
+axs[1].imshow(mparwav.T, aspect='auto', interpolation='nearest',
+              vmin=-2, vmax=2, cmap='gray',
+              extent=(x.min(), x.max(), t.max(), t.min()))
 axs[1].set_title('Parabolic events', fontsize=12, fontweight='bold')
 axs[1].set_xlabel(r'$x(m)$')
 axs[1].set_ylabel(r'$t(s)$')
-axs[2].imshow(mhypwav.T, aspect='auto', interpolation='nearest', vmin=-2, vmax=2,
-              cmap='gray', extent=(x.min(), x.max(), t.max(), t.min()))
+axs[2].imshow(mhypwav.T, aspect='auto', interpolation='nearest',
+              vmin=-2, vmax=2, cmap='gray',
+              extent=(x.min(), x.max(), t.max(), t.min()))
 axs[2].set_title('Hyperbolic events', fontsize=12, fontweight='bold')
 axs[2].set_xlabel(r'$x(m)$')
 axs[2].set_ylabel(r'$t(s)$')
@@ -84,7 +90,7 @@ mlin, mlinwav = \
 
 fig, axs = plt.subplots(1, 2, figsize=(7, 5), sharey=True)
 fig.suptitle('Linear events in 3d', fontsize=12,
-             fontweight='bold')
+             fontweight='bold', y=0.95)
 axs[0].imshow(mlinwav[par['ny']//2].T, aspect='auto',
               interpolation='nearest', vmin=-2, vmax=2,
               cmap='gray', extent=(x.min(), x.max(), t.max(), t.min()))
@@ -100,7 +106,7 @@ mhyp, mhypwav = \
 
 fig, axs = plt.subplots(1, 2, figsize=(7, 5), sharey=True)
 fig.suptitle('Hyperbolic events in 3d', fontsize=12,
-             fontweight='bold')
+             fontweight='bold', y=0.95)
 axs[0].imshow(mhypwav[par['ny']//2].T, aspect='auto',
               interpolation='nearest', vmin=-2, vmax=2,
               cmap='gray', extent=(x.min(), x.max(), t.max(), t.min()))
@@ -109,4 +115,4 @@ axs[0].set_ylabel(r'$t(s)$')
 axs[1].imshow(mhypwav[:, par['nx']//2].T, aspect='auto',
               interpolation='nearest', vmin=-2, vmax=2,
               cmap='gray', extent=(y.min(), y.max(), t.max(), t.min()))
-axs[1].set_xlabel(r'$y(m)$')
+axs[1].set_xlabel(r'$y(m)$');

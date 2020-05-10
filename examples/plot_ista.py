@@ -1,6 +1,6 @@
 r"""
 MP, OMP, ISTA and FISTA
-===================
+=======================
 
 This example shows how to use the :py:class:`pylops.optimization.sparsity.OMP`,
 :py:class:`pylops.optimization.sparsity.ISTA`, and
