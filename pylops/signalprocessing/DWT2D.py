@@ -30,11 +30,10 @@ class DWT2D(LinearOperator):
     dims : :obj:`tuple`
         Number of samples for each dimension
     dirs : :obj:`tuple`, optional
-        Direction along which FFT is applied.
+        Direction along which DWT2D is applied.
     wavelet : :obj:`str`, optional
         Name of wavelet type. Use :func:`pywt.wavelist(kind='discrete')` for
-        a list of
-        available wavelets.
+        a list of available wavelets.
     level : :obj:`int`, optional
         Number of scaling levels (must be >=0).
     dtype : :obj:`str`, optional
