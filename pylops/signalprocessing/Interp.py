@@ -60,9 +60,9 @@ def _sincinterp(M, iava, dims=None, dir=0, dtype='float64'):
     # create sinc interpolation matrix
     nreg = M if dims is None else dims[dir]
     ireg = np.arange(nreg)
-    sinc = np.tile(iava, (nreg, 1)) - \
-           np.tile(ireg[:, np.newaxis], (1, len(iava)))
-    sinc = np.sinc(sinc).T
+    sinc = np.tile(iava[:, np.newaxis], (1, nreg)) - \
+           np.tile(ireg, (len(iava), 1))
+    sinc = np.sinc(sinc)
 
     # identify additional dimensions and create MatrixMult operator
     otherdims = None
@@ -74,15 +74,12 @@ def _sincinterp(M, iava, dims=None, dir=0, dtype='float64'):
         print('otherdims', otherdims)
     Op = MatrixMult(sinc, dims=otherdims, dtype=dtype)
 
-    # create Tranpose operator that brings dir to first dimension
+    # create Transpose operator that brings dir to first dimension
     if dir > 0:
         axes = np.arange(len(dims), dtype=np.int)
         axes = np.roll(axes, -dir)
         dimsd =  list(dims)
         dimsd[dir] = len(iava)
-        print('dimsd', dimsd)
-        print('axes', axes)
-
         Top = Transpose(dims, axes=axes, dtype=dtype)
         T1op = Transpose(dimsd, axes=axes, dtype=dtype)
         Op = T1op.H * Op * Top
@@ -129,7 +126,7 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
     dir : :obj:`int`, optional
         Direction along which restriction is applied.
     kind : :obj:`str`, optional
-        Kind of interpolation (``nearest`` and ``linear`` are
+        Kind of interpolation (``nearest``, ``linear``, and ``sinc`` are
         currently supported)
     dtype : :obj:`str`, optional
         Type of elements in input array.
@@ -147,7 +144,7 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
     ValueError
         If the vector ``iava`` contains repeated values.
     NotImplementedError
-        If ``kind`` is not ``nearest`` or ``linear``
+        If ``kind`` is not ``nearest``, ``linear`` or ``sinc``
 
     See Also
     --------
