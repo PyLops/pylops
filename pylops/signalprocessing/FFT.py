@@ -20,7 +20,7 @@ class _FFT_numpy(LinearOperator):
     """One dimensional Fast-Fourier Transform using numpy
     """
     def __init__(self, dims, dir=0, nfft=None, sampling=1.,
-                 real=False, fftshift=False, dtype='float64'):
+                 real=False, fftshift=False, dtype='complex128'):
         if isinstance(dims, int):
             dims = (dims,)
         if dir > len(dims)-1:
@@ -47,8 +47,10 @@ class _FFT_numpy(LinearOperator):
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         # Find types to enforce to forward and adjoint outputs. This is
         # required as np.fft.fft always returns complex128 even if input is
-        # float32 or less
-        self.rdtype = np.dtype(dtype)
+        # float32 or less. Moreover, when choosing real=True, the type of the
+        # adjoint output is forced to be real even if the provided dtype
+        # is complex.
+        self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
         self.cdtype = (np.ones(1, dtype=self.rdtype) +
                        1j * np.ones(1, dtype=self.rdtype)).dtype
         self.dtype = self.cdtype
@@ -112,7 +114,7 @@ class _FFT_fftw(LinearOperator):
     """One dimensional Fast-Fourier Transform using pyffw
     """
     def __init__(self, dims, dir=0, nfft=None, sampling=1.,
-                 real=False, dtype='float64', fftshift=False,
+                 real=False, fftshift=False, dtype='complex128',
                  **kwargs_fftw):
         if isinstance(dims, int):
             dims = (dims,)
@@ -150,7 +152,7 @@ class _FFT_fftw(LinearOperator):
                 self.real else self.nfft
             self.reshape = True
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
-        self.rdtype = np.dtype(dtype)
+        self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
         self.cdtype = (np.ones(1, dtype=self.rdtype) +
                        1j * np.ones(1, dtype=self.rdtype)).dtype
         self.dtype = self.cdtype
@@ -222,7 +224,7 @@ class _FFT_fftw(LinearOperator):
 
 
 def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
-        fftshift=False, engine='numpy', dtype='float64', **kwargs_fftw):
+        fftshift=False, engine='numpy', dtype='complex128', **kwargs_fftw):
     r"""One dimensional Fast-Fourier Transform.
 
     Apply Fast-Fourier Transform (FFT) along a specific direction ``dir`` of a
