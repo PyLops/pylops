@@ -3,7 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pylops/badges/version.svg)](https://anaconda.org/conda-forge/pylops)
 [![Build Status](https://travis-ci.org/equinor/pylops.svg?branch=master)](https://travis-ci.org/equinor/pylops)
-[![AzureDevOps Status](https://dev.azure.com/MRAVA/PyLops/_apis/build/status/equinor.pylops?branchName=master)](https://dev.azure.com/MRAVA/PyLops/_build/latest?definitionId=1&branchName=master)
+[![AzureDevOps Status](https://dev.azure.com/matteoravasi/PyLops/_apis/build/status/equinor.pylops?branchName=master)](https://dev.azure.com/matteoravasi/PyLops/_build/latest?definitionId=2&branchName=master)
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=latest)](https://pylops.readthedocs.io/en/latest/?badge=latest)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=equinor/pylops&amp;utm_campaign=Badge_Grade)
 [![Codacy Coverage](https://api.codacy.com/project/badge/Coverage/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&utm_medium=referral&utm_content=equinor/pylops&utm_campaign=Badge_Coverage)
