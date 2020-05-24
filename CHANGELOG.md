@@ -1,3 +1,15 @@
+# 1.9.1
+* Changed internal behaviour of ``pylops.sparsity.OMP`` when
+  `niter_inner=0`. Automatically reverts to Matching Pursuit algorithm.
+* Changed handling of `dtype` in ``pylops.signalprocessing.FFT`` and
+  ``pylops.signalprocessing.FFT2D`` to ensure that the type of the input
+  vector is retained when applying forward and adjoint.
+* Added `dtype` parameter to the `FFT` calls in the definition of the
+  ``pylops.waveeqprocessing.MDD`` operation. This ensure that the type
+  of the real part of `G` input is enforced to the output vectors of the
+  forward and adjoint operations.
+
+
 # 1.9.0
 * Added ``pylops.waveeqprocessing.Deghosting`` and
   ``pylops.signalprocessing.Seislet`` operators
