@@ -160,7 +160,7 @@ class LinearOperator(spLinearOperator):
         """
 
         Op = aslinearoperator(self)
-        (m, n) = self.shape
+        (_, n) = self.shape
 
         # stores non-zero data for the sparse matrix creation
         entries = []
