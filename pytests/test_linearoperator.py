@@ -53,6 +53,18 @@ def test_dense(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
+def test_sparse(par):
+    """Sparse matrix representation
+    """
+    diag = np.arange(par['nx']) +\
+           par['imag'] * np.arange(par['nx'])
+    D = np.diag(diag)
+    Dop = Diagonal(diag, dtype=par['dtype'])
+    S = Dop.tosparse()
+    assert_array_equal(S.A, D)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
 def test_eigs(par):
     """Eigenvalues and condition number estimate with ARPACK
     """
