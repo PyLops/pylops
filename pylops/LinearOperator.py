@@ -8,6 +8,7 @@ from scipy.sparse.linalg import spsolve, lsqr
 from scipy.linalg import eigvals
 from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
+from scipy.sparse import csr_matrix
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -117,6 +118,54 @@ class LinearOperator(spLinearOperator):
         else:
             xest = lsqr(self, y, iter_lim=niter)[0]
         return xest
+
+    def tosparse(self):
+        r"""Return sparse matrix.
+
+        The operator in converted into its sparse (CSR) matrix equivalent. In order
+        to do so, the operator is applied to series of unit vectors with length equal
+        to the number of coloumns in the original operator.
+
+        Returns
+        -------
+        matrix : :obj:`scipy.sparse.csr_matrix`
+            Sparse matrix.
+
+        """
+
+        Op = aslinearoperator(self)
+        (m, n) = self.shape
+
+        # stores non-zero data for the sparse matrix creation
+        entries = []
+        indices = []
+
+        # loop through columns of self
+        for i in range(n):
+            
+            # make a unit vector for the ith column
+            unit_i = np.zeros(n)
+            unit_i[i] = 1
+            
+            # multiply unit vector to self and find the non-zeros
+            res_i = Op * unit_i
+            rows_nz = np.where(res_i != 0)[0]
+
+            # append the non-zero values and indices to the lists
+            for j in rows_nz:
+                indices.append([i, j])
+            entries_i = res_i[rows_nz]
+            for e in entries_i:
+                entries.append(e)
+        
+        # post process the entries / indices for scipy.sparse.csr_matrix
+        entries = np.array(entries)
+        indices = np.array(indices)
+        i, j = indices[:,0], indices[:,1]
+        
+        # construct a sparse, CSR matrix from the entries / indices data.
+        matrix = csr_matrix((entries, (j, i)), shape=Op.shape, dtype=Op.dtype)
+        return matrix
 
     def todense(self):
         r"""Return dense matrix.
