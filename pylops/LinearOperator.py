@@ -137,7 +137,7 @@ class LinearOperator(spLinearOperator):
         """
         # Wrap self into a LinearOperator. This is done for cases where self
         # is a _SumLinearOperator or _ProductLinearOperator, so that it regains
-        #the dense method
+        # the dense method
         Op = aslinearoperator(self)
 
         identity = np.eye(self.shape[1], dtype=self.dtype)
