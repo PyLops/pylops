@@ -33,6 +33,12 @@ def Sliding3D(Op, dims, dimsd, nwin, nover, nop,
        choice ``dims`` and use the number of windows printed on screen to
        define such input parameter.
 
+    .. warning:: Depending on the choice of `nwin` and `nover` as well as the
+       size of the data, sliding windows may not cover the entire first and/or
+       second dimensions. The start and end indeces of each window can be
+       displayed using ``design=True`` while defining the best sliding window
+       approach.
+
     Parameters
     ----------
     Op : :obj:`pylops.LinearOperator`
