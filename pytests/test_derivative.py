@@ -38,8 +38,8 @@ np.random.seed(10)
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
                                  (par1e), (par2e), (par3e), (par4e)])
-def test_FirstDerivative(par):
-    """Dot-test and forward for FirstDerivative operator
+def test_FirstDerivative_centered(par):
+    """Dot-test and forward for FirstDerivative operator (centered stencil)
     """
     # 1d
     D1op = FirstDerivative(par['nx'], sampling=par['dx'],
@@ -125,6 +125,57 @@ def test_FirstDerivative(par):
     y = D1op * x.flatten()
     y = y.reshape(par['nz'], par['ny'], par['nx'])
     assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+                                 (par1e), (par2e), (par3e), (par4e)])
+def test_FirstDerivative_forwaback(par):
+    """Dot-test for FirstDerivative operator (forward and backward
+    stencils). Note that the analytical expression cannot be validated in this
+    case
+    """
+    for kind in ('forward', 'backward'):
+        # 1d
+        D1op = FirstDerivative(par['nx'], sampling=par['dx'],
+                               edge=par['edge'], kind=kind, dtype='float32')
+        assert dottest(D1op, par['nx'], par['nx'], tol=1e-3)
+
+        # 2d - derivative on 1st direction
+        D1op = FirstDerivative(par['ny']*par['nx'], dims=(par['ny'], par['nx']),
+                               dir=0, sampling=par['dy'], edge=par['edge'],
+                               kind=kind, dtype='float32')
+        assert dottest(D1op, par['ny']*par['nx'], par['ny']*par['nx'], tol=1e-3)
+
+        # 2d - derivative on 2nd direction
+        D1op = FirstDerivative(par['ny'] * par['nx'], dims=(par['ny'], par['nx']),
+                               dir=1, sampling=par['dx'], edge=par['edge'],
+                               kind=kind, dtype='float32')
+        assert dottest(D1op, par['ny'] * par['nx'],
+                       par['ny'] * par['nx'], tol=1e-3)
+
+        # 3d - derivative on 1st direction
+        D1op = FirstDerivative(par['nz'] * par['ny'] * par['nx'],
+                               dims=(par['nz'], par['ny'], par['nx']),
+                               dir=0, sampling=par['dz'], edge=par['edge'],
+                               kind=kind, dtype='float32')
+        assert dottest(D1op, par['nz'] * par['ny'] * par['nx'],
+                       par['nz'] * par['ny'] * par['nx'], tol=1e-3)
+
+        # 3d - derivative on 2nd direction
+        D1op = FirstDerivative(par['nz'] * par['ny'] * par['nx'],
+                               dims=(par['nz'], par['ny'], par['nx']),
+                               dir=1, sampling=par['dy'], edge=par['edge'],
+                               kind=kind, dtype='float32')
+        assert dottest(D1op, par['nz']*par['ny']*par['nx'],
+                       par['nz']*par['ny']*par['nx'], tol=1e-3)
+
+        # 3d - derivative on 3rd direction
+        D1op = FirstDerivative(par['nz']*par['ny']*par['nx'],
+                               dims=(par['nz'], par['ny'], par['nx']),
+                               dir=2, sampling=par['dx'], edge=par['edge'],
+                               kind=kind, dtype='float32')
+        assert dottest(D1op, par['nz']*par['ny']*par['nx'],
+                       par['nz']*par['ny']*par['nx'], tol=1e-3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
@@ -274,18 +325,19 @@ def test_Laplacian(par):
 def test_Gradient(par):
     """Dot-test for Gradient operator
     """
-    # 2d
-    Gop = Gradient((par['ny'], par['nx']), sampling=(par['dy'], par['dx']),
-                   edge=par['edge'], dtype='float32')
-    assert dottest(Gop, 2 * par['ny'] * par['nx'], par['ny'] * par['nx'],
-                   tol=1e-3)
+    for kind in ('forward', 'centered', 'backward'):
+        # 2d
+        Gop = Gradient((par['ny'], par['nx']), sampling=(par['dy'], par['dx']),
+                       edge=par['edge'], kind=kind, dtype='float32')
+        assert dottest(Gop, 2 * par['ny'] * par['nx'], par['ny'] * par['nx'],
+                       tol=1e-3)
 
-    # 3d
-    Gop = Gradient((par['nz'], par['ny'], par['nx']),
-                   sampling=(par['dz'], par['dy'], par['dx']),
-                   edge=par['edge'], dtype='float32')
-    assert dottest(Gop, 3 * par['nz'] * par['ny'] * par['nx'],
-                   par['nz'] * par['ny'] * par['nx'], tol=1e-3)
+        # 3d
+        Gop = Gradient((par['nz'], par['ny'], par['nx']),
+                       sampling=(par['dz'], par['dy'], par['dx']),
+                       edge=par['edge'], kind=kind, dtype='float32')
+        assert dottest(Gop, 3 * par['nz'] * par['ny'] * par['nx'],
+                       par['nz'] * par['ny'] * par['nx'], tol=1e-3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
@@ -293,24 +345,26 @@ def test_Gradient(par):
 def test_FirstDirectionalDerivative(par):
     """Dot-test for FirstDirectionalDerivative operator
     """
-    # 2d
-    Fdop = \
-        FirstDirectionalDerivative((par['ny'], par['nx']),
-                                   v=np.sqrt(2.)/2. * np.ones(2),
-                                   sampling=(par['dy'], par['dx']),
-                                   edge=par['edge'],
-                                   dtype='float32')
-    assert dottest(Fdop, par['ny'] * par['nx'],
-                   par['ny'] * par['nx'], tol=1e-3)
+    for kind in ('forward', 'centered', 'backward'):
+        # 2d
+        Fdop = \
+            FirstDirectionalDerivative((par['ny'], par['nx']),
+                                       v=np.sqrt(2.)/2. * np.ones(2),
+                                       sampling=(par['dy'], par['dx']),
+                                       edge=par['edge'], kind=kind,
+                                       dtype='float32')
+        assert dottest(Fdop, par['ny'] * par['nx'],
+                       par['ny'] * par['nx'], tol=1e-3)
 
-    # 3d
-    Fdop = \
-        FirstDirectionalDerivative((par['nz'], par['ny'], par['nx']),
-                                   v=np.ones(3) / np.sqrt(3),
-                                   sampling=(par['dz'], par['dy'], par['dx']),
-                                   edge=par['edge'], dtype='float32')
-    assert dottest(Fdop, par['nz'] * par['ny'] * par['nx'],
-                   par['nz'] * par['ny'] * par['nx'], tol=1e-3)
+        # 3d
+        Fdop = \
+            FirstDirectionalDerivative((par['nz'], par['ny'], par['nx']),
+                                       v=np.ones(3) / np.sqrt(3),
+                                       sampling=(par['dz'], par['dy'], par['dx']),
+                                       edge=par['edge'], kind=kind,
+                                       dtype='float32')
+        assert dottest(Fdop, par['nz'] * par['ny'] * par['nx'],
+                       par['nz'] * par['ny'] * par['nx'], tol=1e-3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
