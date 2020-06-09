@@ -2,7 +2,7 @@ import numpy as np
 from pylops.basicoperators import FirstDerivative, VStack
 
 
-def Gradient(dims, sampling=1, edge=False, dtype='float64'):
+def Gradient(dims, sampling=1, edge=False, dtype='float64', kind='centered'):
     r"""Gradient.
 
     Apply gradient operator to a multi-dimensional
@@ -19,6 +19,8 @@ def Gradient(dims, sampling=1, edge=False, dtype='float64'):
         ignore them (``False``).
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    kind : :obj:`str`, optional
+        Derivative kind (``forward``, ``centered``, or ``backward``).
 
     Returns
     -------
@@ -31,7 +33,7 @@ def Gradient(dims, sampling=1, edge=False, dtype='float64'):
     a multi-dimensional array in forward mode.
 
     For simplicity, given a three dimensional array, the Gradient in forward
-    mode is:
+    mode using a centered stencil can be expressed as:
 
     .. math::
         \mathbf{g}_{i, j, k} =
@@ -59,6 +61,6 @@ def Gradient(dims, sampling=1, edge=False, dtype='float64'):
 
     gop = VStack([FirstDerivative(np.prod(dims), dims=dims, dir=idir,
                                   sampling=sampling[idir],
-                                  edge=edge, dtype=dtype)
+                                  edge=edge, kind=kind, dtype=dtype)
                   for idir in range(ndims)])
     return gop

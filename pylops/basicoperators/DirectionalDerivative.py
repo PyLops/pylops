@@ -3,7 +3,7 @@ from pylops.basicoperators import Gradient, Diagonal, Sum
 
 
 def FirstDirectionalDerivative(dims, v, sampling=1, edge=False,
-                               dtype='float64'):
+                               dtype='float64', kind='centered'):
     r"""First Directional derivative.
 
     Apply directional derivative operator to a multi-dimensional
@@ -24,6 +24,8 @@ def FirstDirectionalDerivative(dims, v, sampling=1, edge=False,
         ignore them (``False``).
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    kind : :obj:`str`, optional
+        Derivative kind (``forward``, ``centered``, or ``backward``).
 
     Returns
     -------
@@ -54,7 +56,7 @@ def FirstDirectionalDerivative(dims, v, sampling=1, edge=False,
     operator with :math:`\mathbf{v}` along the main diagonal.
 
     """
-    Gop = Gradient(dims, sampling=sampling, edge=edge, dtype=dtype)
+    Gop = Gradient(dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype)
     if v.ndim == 1:
         Dop = Diagonal(v, dims=[len(dims)]+list(dims), dir=0, dtype=dtype)
     else:

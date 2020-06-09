@@ -4,7 +4,8 @@ from numpy.testing import assert_array_almost_equal
 
 from pylops.utils import dottest
 from pylops.basicoperators import FunctionOperator
-from pylops.signalprocessing.Seislet import _predict_trace, _predict
+from pylops.signalprocessing.Seislet import _predict_trace, \
+    _predict_haar, _predict_lin
 from pylops.signalprocessing import Seislet
 
 par1 = {'nx': 16, 'nt': 30, 'dx': 10, 'dt': 0.004, 'level': None,
@@ -30,29 +31,33 @@ def test_predict_trace(par):
         dottest(Fop, par['nt'], par['nt'])
 
 
-
 @pytest.mark.parametrize("par", [(par1)])
 def test_predict(par):
     """Dot-test for _predict operator
     """
-    def _predict_reshape(traces, nt, nx, dt, dx, slopes, repeat=0,
+    def _predict_reshape(predictor, traces, nt, nx, dt, dx, slopes, repeat=0,
                          backward=False, adj=False):
-        return _predict(traces.reshape(nx, nt), dt, dx, slopes, repeat=repeat,
-                        backward=backward, adj=adj)
+        return predictor(traces.reshape(nx, nt), dt, dx, slopes,
+                             repeat=repeat, backward=backward, adj=adj)
 
-    for repeat in (0, 1, 2):
-        slope = \
-            np.random.normal(0, .1, (2 ** (repeat + 1) * par['nx'], par['nt']))
-        for backward in (False, True):
-            Fop = FunctionOperator(
-                lambda x: _predict_reshape(x, par['nt'], par['nx'],
-                                           par['dt'], par['dx'],
-                                           slope, backward=backward),
-                lambda x: _predict_reshape(x, par['nt'], par['nx'],
-                                           par['dt'], par['dx'],
-                                           slope, backward=backward, adj=True),
-                par['nt']*par['nx'], par['nt']*par['nx'])
-            dottest(Fop, par['nt']*par['nx'], par['nt']*par['nx'])
+    for predictor in (_predict_haar, _predict_lin):
+        for repeat in (0, 1, 2):
+            slope = \
+                np.random.normal(0, .1, (2 ** (repeat + 1) * par['nx'],
+                                         par['nt']))
+            for backward in (False, True):
+                Fop = FunctionOperator(
+                    lambda x: _predict_reshape(predictor, x,
+                                               par['nt'], par['nx'],
+                                               par['dt'], par['dx'],
+                                               slope, backward=backward),
+                    lambda x: _predict_reshape(predictor, x,
+                                               par['nt'], par['nx'],
+                                               par['dt'], par['dx'],
+                                               slope, backward=backward,
+                                               adj=True),
+                    par['nt']*par['nx'], par['nt']*par['nx'])
+                dottest(Fop, par['nt']*par['nx'], par['nt']*par['nx'])
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
@@ -61,13 +66,12 @@ def test_Seislet(par):
     """
     slope = np.random.normal(0, .1, (par['nx'], par['nt']))
 
-    Sop = Seislet(slope, sampling=(par['dx'], par['dt']), level=par['level'],
-                  dtype=par['dtype'])
-    print(Sop)
-    dottest(Sop, Sop.shape[0], par['nx']*par['nt'])
+    for kind in ('haar', 'linear'):
+        Sop = Seislet(slope, sampling=(par['dx'], par['dt']), level=par['level'],
+                      kind=kind, dtype=par['dtype'])
+        dottest(Sop, Sop.shape[0], par['nx']*par['nt'])
 
-    x = np.random.normal(0, .1, par['nx'] * par['nt'])
-    y = Sop * x
-    xinv = Sop.inverse(y)
-
-    assert_array_almost_equal(x, xinv)
+        x = np.random.normal(0, .1, par['nx'] * par['nt'])
+        y = Sop * x
+        xinv = Sop.inverse(y)
+        assert_array_almost_equal(x, xinv)

@@ -51,8 +51,8 @@ xadj_dir = np.dot(D.T, y_dir)
 
 ###############################################################################
 # Let's now do the same using the :py:class:`pylops.FirstDerivative` operator
-# and compare its
-# outputs after applying the forward and adjoint operators to those from the dense matrix.
+# and compare its outputs after applying the forward and adjoint operators
+# to those from the dense matrix.
 
 D1op = pylops.FirstDerivative(nx, dtype='float32')
 
@@ -207,7 +207,7 @@ plt.tight_layout()
 plt.subplots_adjust(top=0.8)
 
 ###############################################################################
-# Finally we use the Gradient operator to commpute directional derivatives.
+# Finally we use the Gradient operator to compute directional derivatives.
 # We create a model which has some layering in the horizontal and vertical
 # directions and show how the direction derivatives differs from standard
 # derivatives
