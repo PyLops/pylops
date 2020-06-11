@@ -78,8 +78,10 @@ fig.tight_layout()
 # Finally we take advantage of our different solvers and try to invert the
 # modelling operator both in a least-squares sense and using TV-reg.
 Dop = [
-    pylops.FirstDerivative(ny * nx, dims=(nx, ny), dir=0, edge=True, dtype=np.float),
-    pylops.FirstDerivative(ny * nx, dims=(nx, ny), dir=1, edge=True, dtype=np.float)]
+    pylops.FirstDerivative(ny * nx, dims=(nx, ny), dir=0, edge=True,
+                           kind='backward', dtype=np.float),
+    pylops.FirstDerivative(ny * nx, dims=(nx, ny), dir=1, edge=True,
+                           kind='backward', dtype=np.float)]
 D2op = pylops.Laplacian(dims=(nx, ny), edge=True, dtype=np.float)
 
 # L2
