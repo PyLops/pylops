@@ -3,17 +3,20 @@ MP, OMP, ISTA and FISTA
 =======================
 
 This example shows how to use the :py:class:`pylops.optimization.sparsity.OMP`,
+:py:class:`pylops.optimization.sparsity.IRLS`,
 :py:class:`pylops.optimization.sparsity.ISTA`, and
 :py:class:`pylops.optimization.sparsity.FISTA` solvers.
 
 These solvers can be used when the model to retrieve is supposed to have
-a sparse representation in a certain domain. MP and OMP uses a L0 norm and
+a sparse representation in a certain domain. MP and OMP use a L0 norm and
 mathematically translates to solving the following constrained problem:
 
 .. math::
-    ||\mathbf{x}||_0 \quad  subj. to \quad ||\mathbf{Op}\mathbf{x}-\mathbf{b}||_2 <= \sigma,
+    ||\mathbf{x}||_0 \quad  subj. to
+    \quad ||\mathbf{Op}\mathbf{x}-  \mathbf{b}||_2 <= \sigma,
 
-while ISTA and FISTA solve an uncostrained problem with a L1 regularization term:
+while IRLS, ISTA and FISTA solve an uncostrained problem with a L1
+regularization term:
 
 .. math::
     J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2 + \epsilon ||\mathbf{x}||_1
@@ -52,6 +55,9 @@ maxit = 500
 x_mp = pylops.optimization.sparsity.OMP(Aop, y, maxit, niter_inner=0,
                                         sigma=1e-4)[0]
 x_omp = pylops.optimization.sparsity.OMP(Aop, y, maxit, sigma=1e-4)[0]
+x_irls = pylops.optimization.sparsity.IRLS(Aop, y, 50,
+                                           epsI=1e-5, kind='model',
+                                           **dict(iter_lim=10))[0]
 x_ista = pylops.optimization.sparsity.ISTA(Aop, y, maxit, eps=eps,
                                            tol=1e-3, returninfo=True)[0]
 
@@ -65,8 +71,11 @@ plt.setp(m, markersize = 10)
 m, s, b = ax.stem(x_omp, linefmt='--g', basefmt='--g',
         markerfmt='go', label='OMP')
 plt.setp(m, markersize = 7)
-m, s, b = ax.stem(x_ista, linefmt='--r',
-        markerfmt='ro', label='ISTA')
+m, s, b = ax.stem(x_irls, linefmt='--m', basefmt='--m',
+                  markerfmt='mo', label='IRLS')
+plt.setp(m, markersize=7)
+m, s, b = ax.stem(x_ista, linefmt='--r', basefmt='--r',
+                  markerfmt='ro', label='ISTA')
 plt.setp(m, markersize = 3)
 ax.set_title('Model', size=15, fontweight='bold')
 ax.legend()

@@ -74,7 +74,7 @@ plt.title('L2 inversion')
 
 ###############################################################################
 # Now we impose blockiness in the solution using the Split Bregman solver
-Dop = pylops.FirstDerivative(nx, edge=True)
+Dop = pylops.FirstDerivative(nx, edge=True, kind='backward')
 mu = 0.01
 lamda = 0.3
 niter_out = 50
@@ -139,12 +139,11 @@ axs[2].axis('tight')
 #         + || \nabla_x \mathbf{x}||_1 + || \nabla_y \mathbf{x}||_1
 
 
-#Dop = \
-#    [pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=0, edge=False, dtype=np.complex) + \
-#     pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=1, edge=False, dtype=np.complex)]
 Dop = \
-    [pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=0, edge=False, dtype=np.complex),
-     pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=1, edge=False, dtype=np.complex)]
+    [pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=0, edge=False,
+                            kind='backward', dtype=np.complex),
+     pylops.FirstDerivative(ny * nx, dims=(ny, nx), dir=1, edge=False,
+                            kind='backward', dtype=np.complex)]
 
 # TV
 mu = 1.5

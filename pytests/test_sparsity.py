@@ -30,8 +30,8 @@ par5j = {'ny': 21, 'nx': 41, 'imag': 1j, 'x0': True,
 
 
 @pytest.mark.parametrize("par", [(par3), (par4), (par3j), (par4j)])
-def test_IRLS(par):
-    """Invert problem with IRLS
+def test_IRLS_data(par):
+    """Invert problem with outliers using data IRLS
     """
     np.random.seed(10)
     G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype('float32') + \
@@ -48,8 +48,28 @@ def test_IRLS(par):
 
     # normal equations with regularization
     xinv, _ = IRLS(Gop, y, 10, threshR=False, epsR=1e-2, epsI=0,
-                   x0=x0, tolIRLS=1e-3, returnhistory=False)
+                   x0=x0, tolIRLS=1e-3, returnhistory=False, kind='data')
     assert_array_almost_equal(x, xinv, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par3), (par5),
+                                 (par1j), (par3j), (par5j)])
+def test_IRLS_model(par):
+    """Invert problem with model IRLS
+    """
+    np.random.seed(42)
+    Aop = MatrixMult(np.random.randn(par['ny'], par['nx']))
+
+    x = np.zeros(par['nx'])
+    x[par['nx'] // 2] = 1
+    x[3] = 1
+    x[par['nx'] - 4] = -1
+    y = Aop * x
+
+    maxit = 100
+    xinv, _, = IRLS(Aop, y, maxit, tolIRLS=1e-3,
+                    returnhistory=False, kind='model')
+    assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5),
@@ -73,8 +93,7 @@ def test_OMP(par):
     assert_array_almost_equal(x, xinv, decimal=1)
 
 
-@pytest.mark.parametrize("par", [(par1)])
-def test_ISTA_FISTA_unknown_threshkind(par):
+def test_ISTA_FISTA_unknown_threshkind():
     """Check error is raised if unknown threshkind is passed
     """
     with pytest.raises(NotImplementedError):
@@ -83,8 +102,7 @@ def test_ISTA_FISTA_unknown_threshkind(par):
         _ = FISTA(Identity(5), np.ones(5), 10, threshkind='foo')
 
 
-@pytest.mark.parametrize("par", [(par1)])
-def test_ISTA_FISTA_missing_perc(par):
+def test_ISTA_FISTA_missing_perc():
     """Check error is raised if perc=None and threshkind is percentile based
     """
     with pytest.raises(ValueError):
