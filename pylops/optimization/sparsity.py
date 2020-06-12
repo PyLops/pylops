@@ -4,7 +4,7 @@ import numpy as np
 
 from scipy.sparse.linalg import lsqr
 from pylops import LinearOperator
-from pylops.basicoperators import Diagonal
+from pylops.basicoperators import Diagonal, Identity
 from pylops.optimization.leastsquares import NormalEquationsInversion, \
     RegularizedInversion
 
@@ -203,19 +203,124 @@ def _shrinkage(x, thresh):
     return x/(xabs+1e-10) * np.maximum(xabs - thresh, 0)
 
 
+def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
+               epsI=1e-10, x0=None, tolIRLS=1e-10,
+               returnhistory=False, **kwargs_solver):
+    r"""Iteratively reweighted least squares with L1 data term
+    """
+    if x0 is not None:
+        data = data - Op * x0
+    if returnhistory:
+        xinv_hist = np.zeros((nouter + 1, Op.shape[1]))
+        rw_hist = np.zeros((nouter + 1, Op.shape[0]))
+
+    # first iteration (unweighted least-squares)
+    xinv = NormalEquationsInversion(Op, None, data, epsI=epsI,
+                                    returninfo=False,
+                                    **kwargs_solver)
+    r = data - Op * xinv
+    if returnhistory:
+        xinv_hist[0] = xinv
+    for iiter in range(nouter):
+        # other iterations (weighted least-squares)
+        xinvold = xinv.copy()
+        if threshR:
+            rw = 1. / np.maximum(np.abs(r), epsR)
+        else:
+            rw = 1. / (np.abs(r) + epsR)
+        rw = rw / rw.max()
+        R = Diagonal(rw)
+        xinv = NormalEquationsInversion(Op, [], data, Weight=R,
+                                        epsI=epsI,
+                                        returninfo=False,
+                                        **kwargs_solver)
+        r = data - Op * xinv
+        # save history
+        if returnhistory:
+            rw_hist[iiter] = rw
+            xinv_hist[iiter + 1] = xinv
+        # check tolerance
+        if np.linalg.norm(xinv - xinvold) < tolIRLS:
+            nouter = iiter
+            break
+
+    # adding initial guess
+    if x0 is not None:
+        xinv = x0 + xinv
+        if returnhistory:
+            xinv_hist = x0 + xinv_hist
+
+    if returnhistory:
+        return xinv, nouter, xinv_hist[:nouter + 1], rw_hist[:nouter + 1]
+    else:
+        return xinv, nouter
+
+
+def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
+                epsI=1e-10, x0=None, tolIRLS=1e-10,
+                returnhistory=False, **kwargs_solver):
+    r"""Iteratively reweighted least squares with L1 model term
+    """
+    if x0 is not None:
+        data = data - Op * x0
+    if returnhistory:
+        xinv_hist = np.zeros((nouter + 1, Op.shape[1]))
+        rw_hist = np.zeros((nouter + 1, Op.shape[0]))
+
+    Iop = Identity(data.size, dtype=data.dtype)
+    # first iteration (unweighted least-squares)
+    xinv = Op.H @ lsqr(Op @ Op.H + (epsI**2) * Iop, data, **kwargs_solver)[0]
+    if returnhistory:
+        xinv_hist[0] = xinv
+    for iiter in range(nouter):
+        # other iterations (weighted least-squares)
+        xinvold = xinv.copy()
+        rw = np.abs(xinv)
+        rw = rw / rw.max()
+        R = Diagonal(rw)
+        xinv = R @ Op.H @ lsqr(Op @ R @ Op.H + epsI**2 * Iop,
+                               data, **kwargs_solver)[0]
+        # save history
+        if returnhistory:
+            rw_hist[iiter] = rw
+            xinv_hist[iiter + 1] = xinv
+        # check tolerance
+        if np.linalg.norm(xinv - xinvold) < tolIRLS:
+            nouter = iiter
+            break
+
+    # adding initial guess
+    if x0 is not None:
+        xinv = x0 + xinv
+        if returnhistory:
+            xinv_hist = x0 + xinv_hist
+
+    if returnhistory:
+        return xinv, nouter, xinv_hist[:nouter + 1], rw_hist[:nouter + 1]
+    else:
+        return xinv, nouter
+
+
+
 def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
          epsI=1e-10, x0=None, tolIRLS=1e-10,
-         returnhistory=False, **kwargs_cg):
+         returnhistory=False, kind='data',
+         **kwargs_solver):
     r"""Iteratively reweighted least squares.
 
-    Solve an optimization problem with :math:`L1` cost function given the
-    operator ``Op`` and data ``y``. The cost function is minimized by
-    iteratively solving a weighted least squares problem with the weight at
-    iteration :math:`i` being based on the data residual at iteration
-    :math:`i+1`.
+    Solve an optimization problem with :math:`L1` cost function (data IRLS)
+    or :math:`L1` regularization term (model IRLS) given the operator ``Op``
+    and data ``y``.
 
-    The IRLS solver is robust to *outliers* since the L1 norm given less
-    weight to large residuals than L2 norm does.
+    In the *data IRLS*, the cost function is minimized by iteratively solving a
+    weighted least squares problem with the weight at iteration :math:`i`
+    being based on the data residual at iteration :math:`i-1`. This IRLS solver
+    is robust to *outliers* since the L1 norm given less weight to large
+    residuals than L2 norm does.
+
+    Similarly in the *model IRLS*, the weight at at iteration :math:`i`
+    is based on the model at iteration :math:`i-1`. This IRLS solver inverts
+    for a sparse model vector.
 
     Parameters
     ----------
@@ -239,9 +344,12 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
         at subsequent iterations is smaller than ``tolIRLS``
     returnhistory : :obj:`bool`, optional
         Return history of inverted model for each outer iteration of IRLS
-    **kwargs_cg
+    kind : :obj:`str`, optional
+        Kind of solver (``data`` or ``model``)
+    **kwargs_solver
         Arbitrary keyword arguments for
-        :py:func:`scipy.sparse.linalg.cg` solver
+        :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
+        :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS
 
     Returns
     -------
@@ -256,13 +364,13 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
 
     Notes
     -----
-    Solves the following optimization problem for the operator
+    *Data IRLS* solves the following optimization problem for the operator
     :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
 
     .. math::
         J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_1
 
-    by a set of outer iterations which require to repeateadly solve a
+    by a set of outer iterations which require to repeatedly solve a
     weighted least squares problem of the form:
 
     .. math::
@@ -289,55 +397,42 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
     :math:`\epsilon_R` is the user-defined stabilization/thresholding
     factor [1]_.
 
+    Similarly *model IRLS* solves the following optimization problem for the
+    operator :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
+
+    .. math::
+        J = ||\mathbf{x}||_1 \quad s.t. \quad
+        \mathbf{d} = \mathbf{Op} \mathbf{x}
+
+    by a set of outer iterations which require to repeatedly solve a
+    weighted least squares problem of the form:
+
+    .. math::
+        \mathbf{x}^{(i+1)} = \operatorname*{arg\,min}_\mathbf{x}
+        ||\mathbf{x}||_{2, \mathbf{R}^{(i)}} \quad s.t. \quad
+        \mathbf{d} = \mathbf{Op} \mathbf{x}
+
+    where :math:`\mathbf{R}^{(i)}` is a diagonal weight matrix
+    whose diagonal elements at iteration :math:`i` are equal to the absolute
+    inverses of the model vector :math:`\mathbf{x}^{(i)}` at iteration
+    :math:`i`. More specifically the j-th element of the diagonal of
+    :math:`\mathbf{R}^{(i)}` is
+
+    .. math::
+        R^{(i)}_{j,j} = |x^{(i)}_j|
+
     .. [1] https://en.wikipedia.org/wiki/Iteratively_reweighted_least_squares
 
     """
-    if x0 is not None:
-        data = data - Op * x0
-    if returnhistory:
-        xinv_hist = np.zeros((nouter+1, Op.shape[1]))
-        rw_hist = np.zeros((nouter+1, Op.shape[0]))
-
-    # first iteration (unweighted least-squares)
-    xinv = NormalEquationsInversion(Op, None, data, epsI=epsI,
-                                    returninfo=False,
-                                    **kwargs_cg)
-    r = data-Op*xinv
-    if returnhistory:
-        xinv_hist[0] = xinv
-    for iiter in range(nouter):
-        # other iterations (weighted least-squares)
-        xinvold = xinv.copy()
-        if threshR:
-            rw = 1./np.maximum(np.abs(r), epsR)
-        else:
-            rw = 1./(np.abs(r)+epsR)
-        rw = rw / rw.max()
-        R = Diagonal(rw)
-        xinv = NormalEquationsInversion(Op, [], data, Weight=R,
-                                        epsI=epsI,
-                                        returninfo=False,
-                                        **kwargs_cg)
-        r = data-Op*xinv
-        # save history
-        if returnhistory:
-            rw_hist[iiter] = rw
-            xinv_hist[iiter+1] = xinv
-        # check tolerance
-        if np.linalg.norm(xinv - xinvold) < tolIRLS:
-            nouter = iiter
-            break
-
-    # adding initial guess
-    if x0 is not None:
-        xinv = x0 + xinv
-        if returnhistory:
-            xinv_hist = x0 + xinv_hist
-
-    if returnhistory:
-        return xinv, nouter, xinv_hist[:nouter+1], rw_hist[:nouter+1]
+    if kind == 'data':
+        solver = _IRLS_data
+    elif kind == 'model':
+        solver = _IRLS_model
     else:
-        return xinv, nouter
+        raise NotImplementedError('kind must be data or model')
+    return solver(Op, data, nouter, threshR=threshR, epsR=epsR,
+                  epsI=epsI, x0=x0, tolIRLS=tolIRLS,
+                  returnhistory=returnhistory, **kwargs_solver)
 
 
 def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
@@ -1088,7 +1183,10 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     niter_outer : :obj:`int`
         Number of iterations of outer loop
     niter_inner : :obj:`int`
-        Number of iterations of inner loop
+        Number of iterations of inner loop of first step of the Split Bregman
+        algorithm. A small number of iterations is generally sufficient and
+        for many applications optimal efficiency is obtained when only one
+        iteration is performed.
     RegsL2 : :obj:`list`
         Additional L2 regularization operators
         (if ``None``, L2 regularization is not added to the problem)
@@ -1118,7 +1216,8 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
         Display iterations log
     **kwargs_lsqr
         Arbitrary keyword arguments for
-        :py:func:`scipy.sparse.linalg.lsqr` solver
+        :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
+        subproblem in the first step of the Split Bregman algorithm.
 
     Returns
     -------
@@ -1136,25 +1235,45 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
 
     .. math::
         J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x} |||_2 +
-        \sum_i \epsilon_{{R}_{L2,i}} ||\mathbf{d_{{R}_{L2,i}}} -
+        \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
         \mathbf{R_{L2,i}} \textbf{x} |||_2 +
-        \sum_i \epsilon_{{R}_{L1,i}} || \mathbf{R_{L1,i}} \textbf{x} |||_1
+        \sum_i || \mathbf{R_{L1,i}} \textbf{x} |||_1
 
     where :math:`\mu` and :math:`\epsilon_{{R}_{L2,i}}` are the damping factors
-    used to weight the different terms of the cost function.
+    used to weight the different L2 regularization terms of the cost function.
 
     The generalized Split Bergman algorithm is used to solve such cost
     function: the algorithm is composed of a sequence of unconstrained
-    inverse problems and Bregman updates. Note that the L1 terms are not
-    weighted in the  original cost function but are first converted into
-    constraints and then re-inserted in the cost function with Lagrange
-    multipliers :math:`\epsilon_{{R}_{L1,i}}`, which effectively act as
-    damping factors for those terms. See [1]_ for detailed derivation.
+    inverse problems and Bregman updates.
+
+    The original system of equations is initially converted into a constrained
+    problem:
+
+    .. math::
+        J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x} |||_2 +
+        \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
+        \mathbf{R_{L2,i}} \textbf{x}||_2 +
+        \sum_i || \textbf{y}_i ||_1 \quad s.t \quad
+        \textbf{y}_i = \mathbf{R_{L1,i}} \textbf{x} \quad \forall i
+
+    and solved as follows:
+
+    .. math::
+        (\textbf{x}^{k+1}, \textbf{y}_i^{k+1}) =
+        \operatorname*{arg\,min}_{\mathbf{x}, \mathbf{y}_i}
+        ||\textbf{d} - \textbf{Op} \textbf{x} |||_2 +
+        \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
+        \mathbf{R_{L2,i}} \textbf{x}||_2 + \sum_i || \textbf{y}_i ||_1
+        \sum_i \epsilon_{{R}_{L1,i}}/2 ||\textbf{y}_i -
+        \mathbf{R_{L1,i}} \textbf{x} - \textbf{b}_i^k||_2
+
+    .. math::
+        \textbf{b}_i^{k+1}=\textbf{b}_i^k +
+        (\mathbf{R_{L1,i}} \textbf{x}^{k+1} - \textbf{y}^{k+1})
 
     The :py:func:`scipy.sparse.linalg.lsqr` solver and a fast shrinkage
-    algorithm are used within the inner loop to solve the unconstrained
-    inverse problem, and the same procedure is repeated ``niter_outer`` times
-    until convergence.
+    algorithm are used within a inner loop to solve the first step. The entire
+    procedure is repeated ``niter_outer`` times until convergence.
 
     .. [1] Goldstein T. and Osher S., "The Split Bregman Method for
        L1-Regularized Problems", SIAM J. on Scientific Computing, vol. 2(2),
