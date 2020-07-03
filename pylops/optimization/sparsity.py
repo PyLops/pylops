@@ -375,8 +375,8 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
 
     .. math::
         \mathbf{x}^{(i+1)} = \operatorname*{arg\,min}_\mathbf{x} ||\mathbf{d} -
-        \mathbf{Op} \mathbf{x}||_{2, \mathbf{R}^{(i)}} +
-        \epsilon_I^2 ||\mathbf{x}||
+        \mathbf{Op} \mathbf{x}||_{2, \mathbf{R}^{(i)}}^2 +
+        \epsilon_I^2 ||\mathbf{x}||_2^2
 
     where :math:`\mathbf{R}^{(i)}` is a diagonal weight matrix
     whose diagonal elements at iteration :math:`i` are equal to the absolute
@@ -409,7 +409,7 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
 
     .. math::
         \mathbf{x}^{(i+1)} = \operatorname*{arg\,min}_\mathbf{x}
-        ||\mathbf{x}||_{2, \mathbf{R}^{(i)}} \quad s.t. \quad
+        ||\mathbf{x}||_{2, \mathbf{R}^{(i)}}^2 \quad s.t. \quad
         \mathbf{d} = \mathbf{Op} \mathbf{x}
 
     where :math:`\mathbf{R}^{(i)}` is a diagonal weight matrix
@@ -489,7 +489,7 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
 
     .. math::
             ||\mathbf{x}||_0 \quad  subj. to \quad
-            ||\mathbf{Op}\mathbf{x}-\mathbf{b}||_2 <= \sigma,
+            ||\mathbf{Op}\mathbf{x}-\mathbf{b}||_2^2 <= \sigma,
 
     using Orthogonal Matching Pursuit (OMP). This is a very
     simple iterative algorithm which applies the following step:
@@ -498,7 +498,7 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         \Lambda_k = \Lambda_{k-1} \cup \{ arg max_j
         |\mathbf{Op}_j^H \mathbf{r}_k| \} \\
         \mathbf{x}_k =  \{ arg min_{\mathbf{x}}
-        ||\mathbf{Op}_{\Lambda_k} \mathbf{x} - \mathbf{b}||_2
+        ||\mathbf{Op}_{\Lambda_k} \mathbf{x} - \mathbf{b}||_2^2
 
     Note that by choosing ``niter_inner=0`` the basic Matching Pursuit (MP)
     algorithm is implemented instead. In other words, instead of solving an
@@ -1138,13 +1138,13 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
 
         .. math::
             ||\mathbf{x}||_1 \quad  subj. to \quad
-            ||\mathbf{Op}\mathbf{S}^H\mathbf{x}-\mathbf{b}||_2 <= \sigma,
+            ||\mathbf{Op}\mathbf{S}^H\mathbf{x}-\mathbf{b}||_2^2 <= \sigma,
 
     while the second problem is the *l1-regularized least-squares or LASSO*
     problem and its cost function is
 
         .. math::
-            ||\mathbf{Op}\mathbf{S}^H\mathbf{x}-\mathbf{b}||_2 \quad  subj.
+            ||\mathbf{Op}\mathbf{S}^H\mathbf{x}-\mathbf{b}||_2^2 \quad  subj.
             to \quad  ||\mathbf{x}||_1  <= \tau
 
     .. [1] van den Berg E., Friedlander M.P., "Probing the Pareto frontier
@@ -1234,9 +1234,9 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     :math:`\mathbf{R_{L1,i}}`, respectively:
 
     .. math::
-        J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x} |||_2 +
+        J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x} |||_2^2 +
         \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
-        \mathbf{R_{L2,i}} \textbf{x} |||_2 +
+        \mathbf{R_{L2,i}} \textbf{x} |||_2^2 +
         \sum_i || \mathbf{R_{L1,i}} \textbf{x} |||_1
 
     where :math:`\mu` and :math:`\epsilon_{{R}_{L2,i}}` are the damping factors
@@ -1250,9 +1250,9 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     problem:
 
     .. math::
-        J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x} |||_2 +
+        J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x} |||_2^2 +
         \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
-        \mathbf{R_{L2,i}} \textbf{x}||_2 +
+        \mathbf{R_{L2,i}} \textbf{x}||_2^2 +
         \sum_i || \textbf{y}_i ||_1 \quad s.t \quad
         \textbf{y}_i = \mathbf{R_{L1,i}} \textbf{x} \quad \forall i
 
@@ -1261,11 +1261,11 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     .. math::
         (\textbf{x}^{k+1}, \textbf{y}_i^{k+1}) =
         \operatorname*{arg\,min}_{\mathbf{x}, \mathbf{y}_i}
-        ||\textbf{d} - \textbf{Op} \textbf{x} |||_2 +
+        ||\textbf{d} - \textbf{Op} \textbf{x} |||_2^2 +
         \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
-        \mathbf{R_{L2,i}} \textbf{x}||_2 + \sum_i || \textbf{y}_i ||_1
+        \mathbf{R_{L2,i}} \textbf{x}||_2^2 + \sum_i || \textbf{y}_i ||_1
         \sum_i \epsilon_{{R}_{L1,i}}/2 ||\textbf{y}_i -
-        \mathbf{R_{L1,i}} \textbf{x} - \textbf{b}_i^k||_2
+        \mathbf{R_{L1,i}} \textbf{x} - \textbf{b}_i^k||_2^2
 
     .. math::
         \textbf{b}_i^{k+1}=\textbf{b}_i^k +
