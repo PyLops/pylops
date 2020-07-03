@@ -8,6 +8,7 @@ from scipy.sparse.linalg import spsolve, lsqr
 from scipy.linalg import eigvals
 from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
+from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse import csr_matrix
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
@@ -193,7 +194,8 @@ class LinearOperator(spLinearOperator):
         matrix = csr_matrix((entries, (j, i)), shape=self.shape, dtype=self.dtype)
         return matrix
 
-    def eigs(self, neigs=None, symmetric=False, niter=None, **kwargs_eig):
+    def eigs(self, neigs=None, symmetric=False, niter=None,
+             uselobpcg=False, **kwargs_eig):
         r"""Most significant eigenvalues of linear operator.
 
         Return an estimate of the most significant eigenvalues
@@ -215,24 +217,45 @@ class LinearOperator(spLinearOperator):
             operator is real-symmetric or complex-hermitian matrices
         niter : :obj:`int`, optional
             Number of iterations for eigenvalue estimation
+        uselobpcg : :obj:`bool`, optional
+            Use :func:`scipy.sparse.linalg.lobpcg`
         **kwargs_eig
-            Arbitrary keyword arguments for
-            :func:`scipy.sparse.linalg.eigs` or
-            :func:`scipy.sparse.linalg.eigsh`
+            Arbitrary keyword arguments for :func:`scipy.sparse.linalg.eigs`,
+            :func:`scipy.sparse.linalg.eigsh`, or
+            :func:`scipy.sparse.linalg.lobpcg`
 
         Returns
         -------
         eigenvalues : :obj:`numpy.ndarray`
             Operator eigenvalues.
 
+        Raises
+        -------
+        ValueError
+            If ``uselobpcg=True`` for a non-symmetric square matrix with
+            complex type
+
         Notes
         -----
-        Eigenvalues are estimated using :func:`scipy.sparse.linalg.eigs`
-        (``explicit=True``) or :func:`scipy.sparse.linalg.eigsh`
-        (``explicit=False``).
+        Depending on the size of the operator, whether it is explicit or not
+        and the number of eigenvalues requested, different algorithms are
+        used by this routine.
 
-        This is a port of ARPACK [1]_, a Fortran package which provides
-        routines for quickly finding eigenvalues/eigenvectors
+        More precisely, when only a limited number of eigenvalues is requested
+        the :func:`scipy.sparse.linalg.eigsh` method is used in case of
+        ``symmetric=True`` and the :func:`scipy.sparse.linalg.eigs` method
+        is used ``symmetric=False``. However, when the matrix is represented
+        explicitly within the linear operator (``explicit=True``) and all the
+        eigenvalues are requested the :func:`scipy.linalg.eigvals` is used
+        instead.
+
+        Finally, when only a limited number of eigenvalues is required,
+        it is also possible to explicitly choose to use the
+        ``scipy.sparse.linalg.lobpcg`` method via the ``uselobpcg`` input
+        parameter flag.
+
+        Most of these algorithms are a port of ARPACK [1]_, a Fortran package
+        which provides routines for quickly finding eigenvalues/eigenvectors
         of a matrix. As ARPACK requires only left-multiplication
         by the matrix in question, eigenvalues/eigenvectors can also be
         estimated for linear operators when the dense matrix is not available.
@@ -245,7 +268,16 @@ class LinearOperator(spLinearOperator):
                 if neigs is None or neigs == self.shape[1]:
                     eigenvalues = eigvals(self.A)
                 else:
-                    if symmetric:
+                    if not symmetric and np.iscomplexobj(self) and uselobpcg:
+                        raise ValueError('cannot use scipy.sparse.linalg.lobpcg '
+                                         'for non-symmetric square matrices of '
+                                         'complex type...')
+                    if symmetric and uselobpcg:
+                        X = np.random.rand(self.shape[0], neigs)
+                        eigenvalues = \
+                            sp_lobpcg(self.A, X=X, maxiter=niter,
+                                      **kwargs_eig)[0]
+                    elif symmetric:
                         eigenvalues = sp_eigsh(self.A, k=neigs, maxiter=niter,
                                                **kwargs_eig)[0]
                     else:
@@ -257,26 +289,46 @@ class LinearOperator(spLinearOperator):
                     eigenvalues = np.sqrt(eigvals(np.dot(np.conj(self.A.T),
                                                          self.A)))
                 else:
-                    eigenvalues = np.sqrt(sp_eigsh(
-                        np.dot(np.conj(self.A.T), self.A),
-                        k=neigs, maxiter=niter, **kwargs_eig)[0])
+                    if uselobpcg:
+                        X = np.random.rand(self.shape[1], neigs)
+                        eigenvalues = np.sqrt(sp_lobpcg(
+                            np.dot(np.conj(self.A.T), self.A),
+                            X=X, maxiter=niter, **kwargs_eig)[0])
+                    else:
+                        eigenvalues = np.sqrt(sp_eigsh(
+                            np.dot(np.conj(self.A.T), self.A),
+                            k=neigs, maxiter=niter, **kwargs_eig)[0])
         else:
             if neigs is None or neigs >= self.shape[1]:
-                neigs = self.shape[1]-2
+                neigs = self.shape[1] - 2
             if self.shape[0] == self.shape[1]:
-                if symmetric:
+                if not symmetric and np.iscomplexobj(self) and uselobpcg:
+                    raise ValueError('cannot use scipy.sparse.linalg.lobpcg for '
+                                     'non symmetric square matrices of '
+                                     'complex type...')
+                if symmetric and uselobpcg:
+                    X = np.random.rand(self.shape[0], neigs)
+                    eigenvalues = \
+                        sp_lobpcg(self, X=X, maxiter=niter, **kwargs_eig)[0]
+                elif symmetric:
                     eigenvalues = sp_eigsh(self, k=neigs, maxiter=niter,
                                            **kwargs_eig)[0]
                 else:
                     eigenvalues = sp_eigs(self, k=neigs, maxiter=niter,
                                           **kwargs_eig)[0]
             else:
-                eigenvalues = np.sqrt(sp_eigs(self.H * self,
-                                              k=neigs, maxiter=niter,
-                                              **kwargs_eig)[0])
+                if uselobpcg:
+                    X = np.random.rand(self.shape[1], neigs)
+                    eigenvalues = np.sqrt(sp_lobpcg(self.H * self, X=X,
+                                                    maxiter=niter,
+                                                    **kwargs_eig)[0])
+                else:
+                    eigenvalues = np.sqrt(sp_eigs(self.H * self, k=neigs,
+                                                  maxiter=niter,
+                                                  **kwargs_eig)[0])
         return -np.sort(-eigenvalues)
 
-    def cond(self, **kwargs_eig):
+    def cond(self, uselobpcg=False, **kwargs_eig):
         r"""Condition number of linear operator.
 
         Return an estimate of the condition number of the linear operator as
@@ -284,10 +336,12 @@ class LinearOperator(spLinearOperator):
 
         Parameters
         ----------
+        uselobpcg : :obj:`bool`, optional
+            Use :func:`scipy.sparse.linalg.lobpcg` to compute eigenvalues
         **kwargs_eig
-            Arbitrary keyword arguments for
-            :func:`scipy.sparse.linalg.eigs` or
-            :func:`scipy.sparse.linalg.eigsh`
+            Arbitrary keyword arguments for :func:`scipy.sparse.linalg.eigs`,
+            :func:`scipy.sparse.linalg.eigsh`, or
+            :func:`scipy.sparse.linalg.lobpcg`
 
         Returns
         -------
@@ -314,8 +368,16 @@ class LinearOperator(spLinearOperator):
         condition number is said to be *ill-conditioned*.
 
         """
-        cond = np.asscalar(self.eigs(neigs=1, which='LM', **kwargs_eig))/ \
-               np.asscalar(self.eigs(neigs=1, which='SM', **kwargs_eig))
+        if not uselobpcg:
+            cond = np.asscalar(self.eigs(neigs=1, which='LM', **kwargs_eig))/ \
+                   np.asscalar(self.eigs(neigs=1, which='SM', **kwargs_eig))
+        else:
+            print('here')
+            cond = np.asscalar(self.eigs(neigs=1, uselobpcg=True, largest=True,
+                                         **kwargs_eig)) / \
+                   np.asscalar(self.eigs(neigs=1, uselobpcg=True, largest=False,
+                                         **kwargs_eig))
+
         return cond
 
     def conj(self):
