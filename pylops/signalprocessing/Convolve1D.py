@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import convolve, fftconvolve
+from scipy.signal import convolve, fftconvolve, oaconvolve
 from pylops import LinearOperator
 
 
@@ -24,8 +24,10 @@ class Convolve1D(LinearOperator):
     dir : :obj:`int`, optional
         Direction along which convolution is applied
     method : :obj:`str`, optional
-        Method used to calculate the convolution (``direct`` or ``fft``).
-        Note that ``fft`` approach is always used if ``dims=None``.
+        Method used to calculate the convolution (``direct``, ``fft``,
+        or ``overlapadd``). Note that only ``direct`` and ``fft`` are allowed
+        when ``dims=None``, whilst ``fft`` and ``overlapadd`` are allowed
+        when ``dims`` is provided.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -41,6 +43,8 @@ class Convolve1D(LinearOperator):
     ------
     ValueError
         If ``offset`` is bigger than ``len(h) - 1``
+    NotImplementedError
+        If ``method`` provided is not allowed
 
     Notes
     -----
@@ -82,7 +86,7 @@ class Convolve1D(LinearOperator):
 
     """
     def __init__(self, N, h, offset=0, dims=None, dir=0, dtype='float64',
-                 method='direct'):
+                 method=None):
         if offset > len(h) - 1:
             raise ValueError('offset must be smaller than len(h) - 1')
         self.h = h
@@ -113,25 +117,41 @@ class Convolve1D(LinearOperator):
             else:
                 self.dims = np.array(dims)
                 self.reshape = True
+        # choose method
         self.method = method
+        if dims is None:
+            if method is None:
+                self.method = 'direct'
+            if self.method not in ('direct', 'fft'):
+                raise NotImplementedError('method must be direct or fft')
+            self.convfunc = convolve
+        else:
+            if method is None:
+                self.method = 'fft'
+            if self.method == 'fft':
+                self.convfunc = fftconvolve
+            elif self.method == 'overlapadd':
+                self.convfunc = oaconvolve
+            else:
+                raise NotImplementedError('method must be fft or overlapadd')
         self.shape = (np.prod(self.dims), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         if not self.reshape:
-            y = convolve(x.squeeze(), self.h, mode='same', method=self.method)
+            y = self.convfunc(x.squeeze(), self.h, mode='same', method=self.method)
         else:
             x = np.reshape(x, self.dims)
-            y = fftconvolve(x, self.h, mode='same', axes=self.dir)
+            y = self.convfunc(x, self.h, mode='same', axes=self.dir)
             y = y.ravel()
         return y
 
     def _rmatvec(self, x):
         if not self.reshape:
-            y = convolve(x.squeeze(), self.hstar, mode='same', method=self.method)
+            y = self.convfunc(x.squeeze(), self.hstar, mode='same', method=self.method)
         else:
             x = np.reshape(x, self.dims)
-            y = fftconvolve(x, self.hstar, mode='same', axes=self.dir)
+            y = self.convfunc(x, self.hstar, mode='same', axes=self.dir)
             y = y.ravel()
         return y
