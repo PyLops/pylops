@@ -7,32 +7,32 @@ from scipy.sparse.linalg import lsqr
 from pylops.utils import dottest
 from pylops.signalprocessing import FFT, FFT2D, FFTND
 
-par1 = {'nt': 101, 'nx': 31, 'ny': 10,
+par1 = {'nt': 41, 'nx': 31, 'ny': 10,
         'nfft': None, 'real': False, 'engine': 'numpy', 'ffthshift': False,
         'dtype':np.complex128} # nfft=nt, complex input, numpy engine
-par2 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': 128, 'real': False, 'engine': 'numpy', 'ffthshift': False,
+par2 = {'nt': 41, 'nx': 31, 'ny': 10,
+        'nfft': 64, 'real': False, 'engine': 'numpy', 'ffthshift': False,
         'dtype':np.complex64} # nfft>nt, complex input, numpy engine
-par3 = {'nt': 101, 'nx': 31, 'ny': 10,
+par3 = {'nt': 41, 'nx': 31, 'ny': 10,
         'nfft': None, 'real': True, 'engine': 'numpy', 'ffthshift': False,
         'dtype':np.float64} # nfft=nt, real input, numpy engine
-par4 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': 128, 'real': True, 'engine': 'numpy', 'ffthshift': False,
+par4 = {'nt': 41, 'nx': 31, 'ny': 10,
+        'nfft': 64, 'real': True, 'engine': 'numpy', 'ffthshift': False,
         'dtype':np.float64} # nfft>nt, real input, numpy engine
-par5 = {'nt': 101, 'nx': 31, 'ny': 10,
-        'nfft': 128, 'real': True, 'engine': 'numpy', 'ffthshift': True,
+par5 = {'nt': 41, 'nx': 31, 'ny': 10,
+        'nfft': 64, 'real': True, 'engine': 'numpy', 'ffthshift': True,
         'dtype':np.float32} # nfft>nt, real input and fftshift, numpy engine
-par1w = {'nt': 101, 'nx': 31, 'ny': 10,
+par1w = {'nt': 41, 'nx': 31, 'ny': 10,
          'nfft': None, 'real': False, 'engine': 'fftw', 'ffthshift': False,
          'dtype':np.complex128} # nfft=nt, complex input, fftw engine
-par2w = {'nt': 101, 'nx': 31, 'ny': 10,
-         'nfft': 128, 'real': False, 'engine': 'fftw', 'ffthshift': False,
+par2w = {'nt': 41, 'nx': 31, 'ny': 10,
+         'nfft': 64, 'real': False, 'engine': 'fftw', 'ffthshift': False,
          'dtype':np.complex128} # nfft>nt, complex input, fftw engine
-par3w = {'nt': 101, 'nx': 31, 'ny': 10,
+par3w = {'nt': 41, 'nx': 31, 'ny': 10,
          'nfft': None, 'real': True, 'engine': 'fftw', 'ffthshift': False,
          'dtype':np.float64} # nfft=nt, real input, fftw engine
-par4w = {'nt': 101, 'nx': 31, 'ny': 10,
-         'nfft': 128, 'real': True, 'engine': 'fftw', 'ffthshift': False,
+par4w = {'nt': 41, 'nx': 31, 'ny': 10,
+         'nfft': 64, 'real': True, 'engine': 'fftw', 'ffthshift': False,
          'dtype':np.float32} # nfft>nt, real input, fftw engine
 
 np.random.seed(5)

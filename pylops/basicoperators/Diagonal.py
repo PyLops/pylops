@@ -71,7 +71,7 @@ class Diagonal(LinearOperator):
 
     def _matvec(self, x):
         if not self.reshape:
-            y = self.diag * x
+            y = self.diag * x.ravel()
         else:
             x = x.reshape(self.dims)
             y = self.diag * x
@@ -83,7 +83,7 @@ class Diagonal(LinearOperator):
         else:
             diagadj = self.diag
         if not self.reshape:
-            y = diagadj * x
+            y = diagadj * x.ravel()
         else:
             x = x.reshape(self.dims)
             y = diagadj * x

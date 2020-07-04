@@ -207,7 +207,7 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
     itn : :obj:`int`
         Iteration number upon termination
     r1norm : :obj:`float`
-        :math:`||\mathbf{r}||_2`, where
+        :math:`||\mathbf{r}||_2^2`, where
         :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\mathbf{x}`
     r2norm : :obj:`float`
         :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
@@ -331,7 +331,7 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False,
     itn : :obj:`int`
         Iteration number upon termination
     r1norm : :obj:`float`
-        :math:`||\mathbf{r}||_2`, where :math:`\mathbf{r} = \mathbf{d} -
+        :math:`||\mathbf{r}||_2^2`, where :math:`\mathbf{r} = \mathbf{d} -
         \mathbf{Op}\mathbf{x}`
     r2norm : :obj:`float`
         :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +  \epsilon^2

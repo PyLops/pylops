@@ -58,6 +58,7 @@ class _FFT_numpy(LinearOperator):
 
     def _matvec(self, x):
         if not self.reshape:
+            x = x.ravel()
             if self.fftshift:
                 x = np.fft.ifftshift(x)
             if self.real:
@@ -82,6 +83,7 @@ class _FFT_numpy(LinearOperator):
 
     def _rmatvec(self, x):
         if not self.reshape:
+            x = x.ravel()
             if self.real:
                 y = np.sqrt(self.nfft)*np.fft.irfft(x, n=self.nfft, axis=-1)
                 y = np.real(y)
@@ -186,6 +188,7 @@ class _FFT_fftw(LinearOperator):
         if self.real:
             x = np.real(x)
         if not self.reshape:
+            x = x.ravel()
             if self.fftshift:
                 x = np.fft.ifftshift(x)
             if self.dopad:
@@ -204,6 +207,7 @@ class _FFT_fftw(LinearOperator):
 
     def _rmatvec(self, x):
         if not self.reshape:
+            x = x.ravel()
             y = np.sqrt(self.nfft) * self.ifftplan(x)
             if self.nfft != self.dims[self.dir]:
                 y = y[:self.dims[self.dir]]

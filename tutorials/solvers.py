@@ -96,7 +96,7 @@ plt.title('Data restriction')
 # without regularization*. We aim here to minimize the following cost function:
 #
 #   .. math::
-#        J = ||\mathbf{y} - \mathbf{R} \mathbf{x}||_2
+#        J = ||\mathbf{y} - \mathbf{R} \mathbf{x}||_2^2
 #
 # Depending on the choice of the operator :math:`\mathbf{R}`, such problem can
 # be solved using explicit matrix solvers as well as iterative solvers. In
@@ -222,7 +222,7 @@ xreg = \
 # We can also write a preconditioned problem, whose cost function is
 #
 #   .. math::
-#       J= ||\mathbf{y} - \mathbf{R} \mathbf{P} \mathbf{p}||_2
+#       J= ||\mathbf{y} - \mathbf{R} \mathbf{P} \mathbf{p}||_2^2
 #
 # where :math:`\mathbf{P}` is the precondioned operator, :math:`\mathbf{p}` is
 # the projected model in the preconditioned space, and
@@ -280,7 +280,7 @@ subax.set_xlim(0.05, 0.3)
 # (i.e., three spikes in the Fourier domain). Our new cost function is:
 #
 #   .. math::
-#        J_1 = ||\mathbf{y} - \mathbf{R} \mathbf{F} \mathbf{p}||_2 +
+#        J_1 = ||\mathbf{y} - \mathbf{R} \mathbf{F} \mathbf{p}||_2^2 +
 #              \epsilon ||\mathbf{p}||_1
 #
 # where :math:`\mathbf{F}` is the FFT operator. We will thus use the

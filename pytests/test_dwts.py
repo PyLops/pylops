@@ -7,9 +7,9 @@ from scipy.sparse.linalg import lsqr
 from pylops.utils import dottest
 from pylops.signalprocessing import DWT, DWT2D
 
-par1 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 0,
+par1 = {'ny': 7, 'nx': 9, 'nt': 10, 'imag': 0,
         'dtype': 'float32'}  # real
-par2 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 1j,
+par2 = {'ny': 7, 'nx': 9, 'nt': 10, 'imag': 1j,
         'dtype': 'complex64'}  # complex
 
 np.random.seed(10)

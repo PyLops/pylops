@@ -79,15 +79,25 @@ def test_eigs(par):
     cond = Op.cond()
     assert_array_almost_equal(np.real(cond), par['nx'], decimal=3)
 
-    #  explicit=False
+    # explicit=False
     Op = Diagonal(diag, dtype=par['dtype'])
     if par['ny'] > par['nx']:
         Op = VStack([Op, Zero(par['ny'] - par['nx'], par['nx'])])
     eigs = Op.eigs()
     assert_array_almost_equal(diag[:eigs.size], eigs, decimal=3)
 
+    # uselobpcg cannot be used for square non-symmetric complex matrices
+    if np.iscomplex(Op):
+        eigs1 = Op.eigs(uselobpcg=True)
+        assert_array_almost_equal(eigs, eigs1, decimal=3)
+
     cond = Op.cond()
     assert_array_almost_equal(np.real(cond), par['nx'], decimal=3)
+
+    # uselobpcg cannot be used for square non-symmetric complex matrices
+    if np.iscomplex(Op):
+        cond1 = Op.cond(uselobpcg=True, niter=100)
+        assert_array_almost_equal(np.real(cond), np.real(cond1), decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
