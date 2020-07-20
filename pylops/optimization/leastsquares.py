@@ -7,12 +7,13 @@ from pylops.basicoperators import VStack
 
 def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
                              epsI=0, epsRs=None, x0=None,
-                             returninfo=False, **kwargs_cg):
+                             returninfo=False, NRegs=None, epsNRs=None,
+                             **kwargs_cg):
     r"""Inversion of normal equations.
 
     Solve the regularized normal equations for a system of equations
     given the operator ``Op``, a data weighting operator ``Weight`` and
-    a list of regularization terms ``Regs``
+    optionally a list of regularization terms ``Regs`` and/or ``NRegs``.
 
     Parameters
     ----------
@@ -36,6 +37,15 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
         Initial guess
     returninfo : :obj:`bool`, optional
         Return info of CG solver
+    NRegs : :obj:`list`
+        Normal regularization operators (``None`` to avoid adding
+        regularization). Such operators must apply the chain of the
+        forward and the adjoint in one go. This can be convenient in
+        cases where a faster implementation is available compared to applying
+        the forward followed by the adjoint.
+    epsNRs : :obj:`list`, optional
+         Regularization dampings for normal operators (must have the same
+         number of elements as ``NRegs``)
     **kwargs_cg
         Arbitrary keyword arguments for
         :py:func:`scipy.sparse.linalg.cg` solver
@@ -62,16 +72,21 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
     -----
     Solve the following normal equations for a system of regularized equations
     given the operator :math:`\mathbf{Op}`, a data weighting operator
-    :math:`\mathbf{W}`, a list of regularization terms :math:`\mathbf{R_i}`,
-    the data :math:`\mathbf{d}` and regularization damping factors
-    :math:`\epsilon_I` and :math:`\epsilon_{{R}_i}`:
+    :math:`\mathbf{W}`, a list of regularization terms (:math:`\mathbf{R_i}`
+    and/or :math:`\mathbf{N_i}`), the data :math:`\mathbf{d}` and
+    regularization data :math:`\mathbf{d}_{R_i}`, and the damping factors
+    :math:`\epsilon_I`, :math:`\epsilon_{{R}_i}` and :math:`\epsilon_{{N}_i}`:
 
     .. math::
         ( \mathbf{Op}^T \mathbf{W} \mathbf{Op} +
         \sum_i \epsilon_{{R}_i}^2 \mathbf{R}_i^T \mathbf{R}_i +
+        \sum_i \epsilon_{{N}_i}^2 \mathbf{N}_i +
         \epsilon_I^2 \mathbf{I} )  \mathbf{x}
         = \mathbf{Op}^T \mathbf{W} \mathbf{d} +  \sum_i \epsilon_{{R}_i}^2
         \mathbf{R}_i^T \mathbf{d}_{R_i}
+
+    Note that the data term of the regularizations :math:`\mathbf{N_i}` is
+    implicitly assumed to be zero.
 
     """
     # store adjoint
@@ -103,6 +118,10 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
             RegH = Reg.H
             y_normal += epsR ** 2 * RegH * datareg
             Op_normal += epsR ** 2 * RegH * Reg
+
+    if NRegs is not None:
+        for epsNR, NReg in zip(epsNRs, NRegs):
+            Op_normal += epsNR ** 2 * NReg
 
     # CG solver
     if x0 is not None:
