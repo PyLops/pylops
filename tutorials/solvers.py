@@ -197,7 +197,24 @@ xne = \
                                                               **dict(maxiter=50))
 
 ###############################################################################
-# We can do the same while using :py:func:`pylops.optimization.leastsquares.RegularizedInversion`
+# Note that in case we have access to a fast implementation for the chain of
+# forward and adjoint for the regularization operator
+# (i.e., :math:`\nabla^T\nabla`), we can modify our call to
+# :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion` as
+# follows:
+ND2op = pylops.MatrixMult((D2op.H * D2op).tosparse()) # mimic fast D^T D
+
+xne1 = \
+    pylops.optimization.leastsquares.NormalEquationsInversion(Rop, [], y,
+                                                              NRegs=[ND2op],
+                                                              epsI=epsI,
+                                                              epsNRs=[epsR],
+                                                              returninfo=False,
+                                                              **dict(maxiter=50))
+
+###############################################################################
+# We can do the same while using
+# :py:func:`pylops.optimization.leastsquares.RegularizedInversion`
 # which solves the following augmented problem
 #
 #   .. math::
@@ -251,7 +268,8 @@ fig = plt.figure(figsize=(12, 4))
 plt.plot(t[iava], y, '.k', ms=20, label='available samples')
 plt.plot(t, x, 'k', lw=3, label='original')
 plt.plot(t, xne, 'b', lw=3, label='normal equations')
-plt.plot(t, xreg, '--r', lw=3, label='regularized')
+plt.plot(t, xne1, '--c', lw=3, label='normal equations (with direct D^T D)')
+plt.plot(t, xreg, '-.r', lw=3, label='regularized')
 plt.plot(t, xprec, '--g', lw=3, label='preconditioned equations')
 plt.legend()
 plt.title('Data reconstruction with regularization')
@@ -260,7 +278,8 @@ subax = fig.add_axes([0.7, 0.2, 0.15, 0.6])
 subax.plot(t[iava], y, '.k', ms=20)
 subax.plot(t, x, 'k', lw=3)
 subax.plot(t, xne, 'b', lw=3)
-subax.plot(t, xreg, '--r', lw=3)
+subax.plot(t, xne1, '--c', lw=3)
+subax.plot(t, xreg, '-.r', lw=3)
 subax.plot(t, xprec, '--g', lw=3)
 subax.set_xlim(0.05, 0.3)
 

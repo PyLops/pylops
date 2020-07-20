@@ -41,11 +41,12 @@ def test_NormalEquationsInversion(par):
     Gop = MatrixMult(G, dtype=par['dtype'])
 
     Reg = MatrixMult(np.eye(par['nx']), dtype=par['dtype'])
+    NReg = MatrixMult(np.eye(par['nx']), dtype=par['dtype'])
     Weigth = Diagonal(np.ones(par['ny']), dtype=par['dtype'])
     x = np.ones(par['nx']) + par['imag']*np.ones(par['nx'])
     x0 = np.random.normal(0, 10, par['nx']) + \
          par['imag']*np.random.normal(0, 10, par['nx']) if par['x0'] else None
-    y = Gop*x
+    y = Gop * x
 
     # normal equations with regularization
     xinv = NormalEquationsInversion(Gop, [Reg], y, epsI=0,
@@ -61,6 +62,12 @@ def test_NormalEquationsInversion(par):
     # normal equations with weight and small regularization
     xinv = NormalEquationsInversion(Gop, [Reg], y, Weight=Weigth, epsI=0,
                                     epsRs=[1e-8], x0=x0, returninfo=False,
+                                    **dict(maxiter=200, tol=1e-10))
+    assert_array_almost_equal(x, xinv, decimal=3)
+    # normal equations with weight and small normal regularization
+    xinv = NormalEquationsInversion(Gop, [], y, NRegs=[NReg],
+                                    Weight=Weigth, epsI=0,
+                                    epsNRs=[1e-8], x0=x0, returninfo=False,
                                     **dict(maxiter=200, tol=1e-10))
     assert_array_almost_equal(x, xinv, decimal=3)
 
