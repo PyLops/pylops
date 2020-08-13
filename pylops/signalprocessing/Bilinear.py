@@ -45,7 +45,7 @@ class Bilinear(LinearOperator):
 
     Notes
     -----
-    Bilnear interpolation of a subset of :math:`N` values at locations
+    Bilinear interpolation of a subset of :math:`N` values at locations
     ``iava`` from an input n-dimensional vector :math:`\mathbf{x}` of size
     :math:`[m_1 \times m_2 \times ... \times m_{ndim}]` can be expressed as:
 

@@ -216,7 +216,7 @@ def approx_zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     --------
     zoeppritz_scattering : Zoeppritz solution
     zoeppritz_element : Single reflectivity element of Zoeppritz solution
-    zoeppritz_PP : PP reflectivity element of Zoeppritz solution
+    zoeppritz_pp : PP reflectivity element of Zoeppritz solution
 
     """
     vp1, vs1, rho1 = np.array(vp1), np.array(vs1), np.array(rho1)
@@ -318,7 +318,7 @@ def akirichards(theta, vsvp, n=1):
 def fatti(theta, vsvp, n=1):
     r"""Three terms Fatti approximation.
 
-    Computes the coefficients of the of three terms Fatti approximation
+    Computes the coefficients of the three terms Fatti approximation
     for a set of angles and a constant or variable VS/VP ratio.
 
     Parameters

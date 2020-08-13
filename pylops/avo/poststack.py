@@ -93,7 +93,7 @@ def PoststackLinearModelling(wav, nt0, spatdims=None,
         and centered to zero). If 1d, assume stationary wavelet for the entire
         time axis. If 2d, use as non-stationary wavelet (user must provide
         one wavelet per time sample in an array of size
-        :math:`[n_{t0} \times n_{wav}]` where :math:`n_{wav}` is the lenght
+        :math:`[n_{t0} \times n_{wav}]` where :math:`n_{wav}` is the length
         of each wavelet)
     nt0 : :obj:`int`
         Number of samples along time axis
@@ -116,14 +116,14 @@ def PoststackLinearModelling(wav, nt0, spatdims=None,
     Raises
     ------
     ValueError
-        If ``wav`` is 2dimensional but does not contain ``nt0`` wavelets
+        If ``wav`` is two dimensional but does not contain ``nt0`` wavelets
 
     Notes
     -----
-    Post-stack seismic modelling is the process of constructing
-    seismic post-stack data from a profile of an elastic parameter of choice in
-    time (or depth) domain. This can be easily achieved using the
-    following forward model:
+    Post-stack seismic modelling is the process of constructing seismic
+    post-stack data from a profile of an elastic parameter of choice in time
+    (or depth) domain. This can be easily achieved using the following
+    forward model:
 
     .. math::
         d(t, \theta) =  w(t) * \frac{dln(m(t))}{dt}
