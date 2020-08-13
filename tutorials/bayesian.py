@@ -30,8 +30,9 @@ assuming gaussianity in our priors, the equation to obtain the posterion mean
 can be derived analytically:
 
 .. math::
-    \mathbf{x} = \mathbf{x_0} + (\mathbf{R} \mathbf{C}_x \mathbf{R}^T +
-    \mathbf{C}_y)^{-1} (\mathbf{y} - \mathbf{R} \mathbf{x_0})
+    \mathbf{x} = \mathbf{x_0} + \mathbf{C}_x \mathbf{R}^T
+    (\mathbf{R} \mathbf{C}_x \mathbf{R}^T + \mathbf{C}_y)^{-1} (\mathbf{y} -
+    \mathbf{R} \mathbf{x_0})
 
 """
 # sphinx_gallery_thumbnail_number = 2
@@ -84,12 +85,14 @@ nt = 200
 nfft = 2**11
 dt = 0.004
 t = np.arange(nt)*dt
-x = prior_realization(f0, a0, phi0, [0, 0, 0], [0, 0, 0],
-                      [0, 0, 0], dt, nt, nfft)
 xs = \
     np.array([prior_realization(f0, a0, phi0, sigmaf,
                                 sigmaa, sigmaphi, dt, nt, nfft)
               for _ in range(nreals)])
+
+# True model (taken as one possible realization)
+x = prior_realization(f0, a0, phi0, [0, 0, 0], [0, 0, 0],
+                      [0, 0, 0], dt, nt, nfft)
 
 ###############################################################################
 # We have now a set of prior models in time domain. We can easily use sample
@@ -155,10 +158,10 @@ xbayes = x0 + Cm_op * Rop.H * (lsqr(Rop * Cm_op * Rop.H + Cd_op,
 
 # Visualize
 fig, ax = plt.subplots(1, 1, figsize=(12, 5))
-ax.plot(t, x, 'k', lw=6)
+ax.plot(t, x, 'k', lw=6, label='true')
 ax.plot(t, ymask, '.k', ms=25, label='available samples')
 ax.plot(t, ynmask, '.r', ms=25, label='available noisy samples')
-ax.plot(t, xbayes, 'r', lw=3, label='Bayesian inverse')
+ax.plot(t, xbayes, 'r', lw=3, label='bayesian inverse')
 ax.legend()
 ax.set_title('Signal')
 ax.set_xlim(0, 0.8)
@@ -182,9 +185,9 @@ Cm_post = ((xpost - x0post).T @ (xpost - x0post)) / nreals
 
 # Visualize
 fig, ax = plt.subplots(1, 1, figsize=(12, 5))
+ax.plot(t, x, 'k', lw=6, label='true')
 ax.plot(t, xpost.T, '--r', lw=1)
 ax.plot(t, x0post, 'r', lw=3, label='bayesian inverse')
-ax.plot(t, x, 'k', lw=6)
 ax.plot(t, ymask, '.k', ms=25, label='available samples')
 ax.plot(t, ynmask, '.r', ms=25, label='available noisy samples')
 ax.legend()
@@ -196,3 +199,10 @@ im = ax.imshow(Cm_post, interpolation='nearest', cmap='seismic',
                extent=(t[0], t[-1], t[-1], t[0]))
 ax.set_title(r"$\mathbf{C}_m^{posterior}$")
 ax.axis('tight')
+
+###############################################################################
+# Note that here we have been able to compute a sample posterior covariance
+# from its estimated samples. By displaying it we can see  how both the overall
+# variances and the correlation between different parameters have become
+# narrower compared to their prior counterparts.
+

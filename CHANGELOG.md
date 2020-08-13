@@ -1,3 +1,19 @@
+# 1.10.0
+* Added ``tosparse`` method to ``pylops.LinearOperator``.
+* Added ``kind=linear`` in ``pylops.signalprocessing.Seislet`` operator.
+* Added ``kind`` to ``pylops.basicoperators.FirstDerivative``.
+  operator to perform forward and backward (as well as centered)
+  derivatives.
+* Added ``kind`` to ``pylops.optimization.sparsity.IRLS``
+  solver to choose between data or model sparsity.
+* Added possibility to use ``scipy.sparse.linalg.lobpcg`` in
+  ``pylops.LinearOperator.eigs`` and ``pylops.LinearOperator.cond``.
+* Added possibility to use ``scipy.signal.oaconvolve`` in
+  ``pylops.signalprocessing.Convolve1D``.
+* Added ``NRegs`` to ``pylops.optimization.leastsquares.NormalEquationsInversion``
+  to allow providing regularization terms directly in the form of ``H^T H``.
+
+
 # 1.9.1
 * Changed internal behaviour of ``pylops.sparsity.OMP`` when
   `niter_inner=0`. Automatically reverts to Matching Pursuit algorithm.
