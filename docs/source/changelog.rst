@@ -3,6 +3,25 @@
 Changelog
 =========
 
+Version 1.10.0
+--------------
+
+*Released on: 13/08/2020*
+
+* Added ``tosparse`` method to :class:`pylops.LinearOperator`.
+* Added ``kind=linear`` in :class:`pylops.signalprocessing.Seislet` operator.
+* Added ``kind`` to :class:`pylops.FirstDerivative`.
+  operator to perform forward and backward (as well as centered)
+  derivatives.
+* Added ``kind`` to :func:`pylops.optimization.sparsity.IRLS`
+  solver to choose between data or model sparsity.
+* Added possibility to use :func:`scipy.sparse.linalg.lobpcg` in
+  :func:`pylops.LinearOperator.eigs` and :func:`pylops.LinearOperator.cond`
+* Added possibility to use :func:`scipy.signal.oaconvolve` in
+  :class:`pylops.signalprocessing.Convolve1D`.
+* Added ``NRegs`` to :func:`pylops.optimization.leastsquares.NormalEquationsInversion`
+  to allow providing regularization terms directly in the form of ``H^T H``.
+
 
 Version 1.9.1
 -------------
@@ -18,7 +37,6 @@ Version 1.9.1
   :class:`pylops.waveeqprocessing.MDD` operation. This ensure that the type
   of the real part of ``G`` input is enforced to the output vectors of the
   forward and adjoint operations.
-
 
 
 Version 1.9.0
