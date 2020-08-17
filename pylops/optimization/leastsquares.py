@@ -271,7 +271,7 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
     """
     # create regularization data
     if dataregs is None and Regs is not None:
-        dataregs = [np.zeros(Op.shape[1])] * len(Regs)
+        dataregs = [np.zeros(Reg.shape[0]) for Reg in Regs]
 
     if epsRs is None and Regs is not None:
         epsRs = [1] * len(Regs)
