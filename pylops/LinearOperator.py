@@ -4,12 +4,14 @@ import logging
 import numpy as np
 from scipy.linalg import solve, lstsq
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
+from scipy.sparse.linalg.interface import _ProductLinearOperator, _ScaledLinearOperator
 from scipy.sparse.linalg import spsolve, lsqr
 from scipy.linalg import eigvals
 from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
 from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse import csr_matrix
+from scipy.sparse.sputils import asmatrix
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -84,6 +86,101 @@ class LinearOperator(spLinearOperator):
 
     def _adjoint(self):
         return aslinearoperator(super()._adjoint())
+
+    def matvec(self, x):
+        """Matrix-vector multiplication.
+
+        Modified version of scipy matvec which does not consider the case
+        where the input vector is ``np.matrix`` (the use ``np.matrix`` is now
+        discouraged in numpy's documentation).
+
+        Parameters
+        ----------
+        x : :obj:`numpy.ndarray`
+            Input array of shape (N,) or (N,1)
+
+        Returns
+        -------
+        y : :obj:`numpy.ndarray`
+            Output array of shape (M,) or (M,1)
+
+        """
+        M, N = self.shape
+
+        if x.shape != (N,) and x.shape != (N, 1):
+            raise ValueError('dimension mismatch')
+
+        y = self._matvec(x)
+
+        if x.ndim == 1:
+            y = y.reshape(M)
+        elif x.ndim == 2:
+            y = y.reshape(M, 1)
+        else:
+            raise ValueError('invalid shape returned by user-defined matvec()')
+        return y
+
+    def rmatvec(self, x):
+        """Adjoint matrix-vector multiplication.
+
+        Modified version of scipy rmatvec which does not consider the case
+        where the input vector is ``np.matrix`` (the use ``np.matrix`` is now
+        discouraged in numpy's documentation).
+
+        Parameters
+        ----------
+        y : :obj:`numpy.ndarray`
+            Input array of shape (M,) or (M,1)
+
+        Returns
+        -------
+        x : :obj:`numpy.ndarray`
+            Output array of shape (N,) or (N,1)
+
+        """
+        M, N = self.shape
+
+        if x.shape != (M,) and x.shape != (M, 1):
+            raise ValueError('dimension mismatch')
+
+        y = self._rmatvec(x)
+
+        if x.ndim == 1:
+            y = y.reshape(N)
+        elif x.ndim == 2:
+            y = y.reshape(N, 1)
+        else:
+            raise ValueError(
+                'invalid shape returned by user-defined rmatvec()')
+        return y
+
+    def dot(self, x):
+        """Matrix-matrix or matrix-vector multiplication.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Input array (or matrix)
+
+        Returns
+        -------
+        y : np.ndarray
+            Output array (or matrix) that represents
+            the result of applying the linear operator on x.
+
+        """
+        if isinstance(x, LinearOperator):
+            return _ProductLinearOperator(self, x)
+        elif np.isscalar(x):
+            return _ScaledLinearOperator(self, x)
+        else:
+            if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
+                return self.matvec(x)
+            elif x.ndim == 2:
+                return self.matmat(x)
+            else:
+                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
+                                 % x)
 
     def div(self, y, niter=100):
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
