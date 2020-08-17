@@ -1304,7 +1304,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     if nregsL2 > 0:
         Regs = RegsL2 + RegsL1
         if dataregsL2 is None:
-            dataregsL2 = [np.zeros(Op.shape[1])] * nregsL2
+            dataregsL2 = [np.zeros(Reg.shape[0]) for Reg in RegsL2]
     else:
         Regs = RegsL1
         dataregsL2 = []
