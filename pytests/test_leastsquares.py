@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import MatrixMult, Diagonal, Smoothing1D
-from pylops.optimization.leastsquares import NormalEquationsInversion, \
+from pylops.optimization.leastsquares import cgls, NormalEquationsInversion, \
     RegularizedInversion, PreconditionedInversion
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0,
@@ -27,6 +27,28 @@ par3j = {'ny': 31, 'nx': 11, 'imag': 1j, 'x0':False,
 par4j = {'ny': 31, 'nx': 11, 'imag': 1j, 'x0': True,
          'dtype': 'complex64'} # overdetermined complex with non-zero
                                # initial guess
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+                                 (par1j), (par2j), (par3j), (par4j)])
+def test_cgls(par):
+    """Solve least squares optimization using cgls
+    """
+    np.random.seed(10)
+    G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype('float32') + \
+        par['imag'] * np.random.normal(0, 10, (par['ny'], par['nx'])).astype(
+            'float32')
+    Gop = MatrixMult(G, dtype=par['dtype'])
+
+    x = np.ones(par['nx']) + par['imag'] * np.ones(par['nx'])
+    x0 = np.random.normal(0, 10, par['nx']) + \
+         par['imag'] * np.random.normal(0, 10, par['nx']) \
+        if par['x0'] else np.zeros(par['nx']) + par['imag'] * np.zeros(par['nx'])
+    y = Gop * x
+
+    # inverse
+    xinv = cgls(Gop, y, x0=x0, niter=par['nx'], tol=1e-10, show=False)[0]
+    assert_array_almost_equal(x, xinv, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),

@@ -140,6 +140,7 @@ Least-squares
 .. autosummary::
    :toctree: generated/
 
+    leastsquares.cgls
     leastsquares.NormalEquationsInversion
     leastsquares.RegularizedInversion
     leastsquares.PreconditionedInversion

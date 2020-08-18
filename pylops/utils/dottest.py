@@ -63,8 +63,6 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
     else:
         v = ncp.random.randn(nr) + 1j*ncp.random.randn(nr)
 
-    print(type(u), type(v))
-    
     y = Op.matvec(u)   # Op * u
     x = Op.rmatvec(v)  # Op'* v
 

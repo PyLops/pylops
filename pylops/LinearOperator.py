@@ -11,7 +11,7 @@ from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
 from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse import csr_matrix
-from scipy.sparse.sputils import asmatrix
+
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
