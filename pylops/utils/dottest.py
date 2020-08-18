@@ -1,12 +1,15 @@
 import numpy as np
+from pylops.utils.backend import get_module
 
 
-def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False):
+def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
+            backend='numpy'):
     r"""Dot test.
 
     Generate random vectors :math:`\mathbf{u}` and :math:`\mathbf{v}`
-    and perform dot-test to verify the validity of forward and adjoint operators.
-    This test can help to detect errors in the operator implementation.
+    and perform dot-test to verify the validity of forward and adjoint
+    operators. This test can help to detect errors in the operator
+    implementation.
 
     Parameters
     ----------
@@ -25,6 +28,9 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False):
         Raise error or simply return ``False`` when dottest fails
     verb : :obj:`bool`, optional
         Verbosity
+    backend : :obj:`str`, optional
+        Backend used for dot test computations (``numpy`` or ``cupy``). This
+        parameter will be used to choose how to create the random vectors.
 
     Raises
     ------
@@ -33,38 +39,44 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False):
 
     Notes
     -----
-    A dot-test is mathematical tool used in the development of numerical linear operators.
+    A dot-test is mathematical tool used in the development of numerical
+    linear operators.
 
     More specifically, a correct implementation of forward and adjoint for
     a linear operator should verify the following *equality*
     within a numerical tolerance:
 
     .. math::
-        (\mathbf{Op}*\mathbf{u})^H*\mathbf{v} = \mathbf{u}^H*(\mathbf{Op}^H*\mathbf{v})
+        (\mathbf{Op}*\mathbf{u})^H*\mathbf{v} =
+        \mathbf{u}^H*(\mathbf{Op}^H*\mathbf{v})
 
     """
+    ncp = get_module(backend)
+
     if complexflag in (0, 2):
-        u = np.random.randn(nc)
+        u = ncp.random.randn(nc)
     else:
-        u = np.random.randn(nc)+1j*np.random.randn(nc)
+        u = ncp.random.randn(nc) + 1j*ncp.random.randn(nc)
 
     if complexflag in (0, 1):
-        v = np.random.randn(nr)
+        v = ncp.random.randn(nr)
     else:
-        v = np.random.randn(nr)+1j*np.random.randn(nr)
+        v = ncp.random.randn(nr) + 1j*ncp.random.randn(nr)
 
+    print(type(u), type(v))
+    
     y = Op.matvec(u)   # Op * u
     x = Op.rmatvec(v)  # Op'* v
 
     if complexflag == 0:
-        yy = np.dot(y, v) # (Op  * u)' * v
-        xx = np.dot(u, x) # u' * (Op' * v)
+        yy = ncp.dot(y, v) # (Op  * u)' * v
+        xx = ncp.dot(u, x) # u' * (Op' * v)
     else:
-        yy = np.vdot(y, v) # (Op  * u)' * v
-        xx = np.vdot(u, x) # u' * (Op' * v)
+        yy = ncp.vdot(y, v) # (Op  * u)' * v
+        xx = ncp.vdot(u, x) # u' * (Op' * v)
 
     if complexflag == 0:
-        if np.abs((yy-xx)/((yy+xx+1e-15)/2)) < tol:
+        if ncp.abs((yy - xx) / ((yy + xx + 1e-15) / 2)) < tol:
             if verb: print('Dot test passed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
                            % (yy, xx))
             return True
@@ -76,10 +88,10 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False):
                            % (yy, xx))
             return False
     else:
-        checkreal = np.abs((np.real(yy) - np.real(xx)) /
-                           ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
-        checkimag = np.abs((np.real(yy) - np.real(xx)) /
-                           ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
+        checkreal = ncp.abs((ncp.real(yy) - ncp.real(xx)) /
+                           ((ncp.real(yy) + ncp.real(xx)+1e-15) / 2)) < tol
+        checkimag = ncp.abs((ncp.real(yy) - ncp.real(xx)) /
+                           ((ncp.real(yy) + ncp.real(xx)+1e-15) / 2)) < tol
         if checkreal and checkimag:
             if verb:
                 print('Dot test passed, v^T(Opu)=%f%+fi - u^T(Op^Tv)=%f%+fi'
