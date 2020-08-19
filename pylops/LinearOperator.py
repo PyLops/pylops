@@ -233,7 +233,8 @@ class LinearOperator(spLinearOperator):
             else:
                 # cupy backend
                 ncp = get_array_module(y)
-                xest = cgls(self, y, x0=ncp.zeros(self.shape[1]),
+                xest = cgls(self, y,
+                            x0=ncp.zeros(int(self.shape[1]), dtype=self.dtype),
                             niter=niter)[0]
         return xest
 
