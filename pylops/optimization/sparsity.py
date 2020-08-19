@@ -277,7 +277,7 @@ def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
         xinvold = xinv.copy()
         rw = np.abs(xinv)
         rw = rw / rw.max()
-        R = Diagonal(rw)
+        R = Diagonal(rw, dtype=rw.dtype)
         xinv = R @ Op.H @ lsqr(Op @ R @ Op.H + epsI**2 * Iop,
                                data, **kwargs_solver)[0]
         # save history
@@ -299,7 +299,6 @@ def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
         return xinv, nouter, xinv_hist[:nouter + 1], rw_hist[:nouter + 1]
     else:
         return xinv, nouter
-
 
 
 def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
@@ -570,7 +569,7 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         if niter_inner == 0:
             # MP update
             Opcol = Op.apply_columns([imax, ])
-            res -= Opcol.matvec([cres[imax], ])
+            res -= Opcol.matvec(cres[imax] * np.ones(1))
             if addnew:
                 x.append(cres[imax])
             else:
