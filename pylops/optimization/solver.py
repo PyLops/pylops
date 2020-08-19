@@ -75,23 +75,23 @@ def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
         r = Op.rmatvec(s) - damp * x
     c = r.copy()
     q = Op.matvec(c)
-    kold = r.dot(r.conj())
+    kold = ncp.abs(r.dot(r.conj()))
 
     cost = np.zeros(niter + 1)
-    cost[0] = kold + damp * x.dot(x.conj())
+    cost[0] = kold + damp * ncp.abs(x.dot(x.conj()))
     iiter = 0
-    while iiter < niter and ncp.abs(kold) > tol:
+    while iiter < niter and kold > tol:
         a = kold / (q.dot(q.conj()) + damp * c.dot(c.conj()))
         x = x + a * c
         s = s - a * q
         r = Op.rmatvec(s) - damp * x
-        k = r.dot(r.conj())
+        k = ncp.abs(r.dot(r.conj()))
         b = k / kold
         c = r + b * c
         q = Op.matvec(c)
         kold = k
         iiter += 1
-        cost[iiter] = kold + damp * x.dot(x.conj())
+        cost[iiter] = kold + damp * ncp.abs(x.dot(x.conj()))
 
         # run callback
         if callback is not None:
