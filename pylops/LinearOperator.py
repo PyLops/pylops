@@ -2,6 +2,7 @@ from __future__ import division
 
 import logging
 import numpy as np
+import scipy as sp
 from scipy.linalg import solve, lstsq
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
 from scipy.sparse.linalg.interface import _ProductLinearOperator, _ScaledLinearOperator
@@ -12,6 +13,8 @@ from scipy.sparse.linalg import eigsh as sp_eigsh
 from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse import csr_matrix
 
+from pylops.utils.backend import get_array_module
+from pylops.optimization.solver import cgls
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -206,15 +209,32 @@ class LinearOperator(spLinearOperator):
 
     def __truediv__(self, y, niter=100):
         if self.explicit is True:
-            if isinstance(self.A, np.ndarray):
+            if sp.sparse.issparse(self.A):
+                # use scipy solver for sparse matrices
+                xest = spsolve(self.A, y)
+            elif isinstance(self.A, np.ndarray):
+                # use scipy solvers for dense matrices (used for backward
+                # compatibility, could be switched to numpy equivalents)
                 if self.A.shape[0] == self.A.shape[1]:
                     xest = solve(self.A, y)
                 else:
                     xest = lstsq(self.A, y)[0]
             else:
-                xest = spsolve(self.A, y)
+                # use numpy/cupy solvers for dense matrices
+                ncp = get_array_module(y)
+                if self.A.shape[0] == self.A.shape[1]:
+                    xest = ncp.linalg.solve(self.A, y)
+                else:
+                    xest = ncp.linalg.lstsq(self.A, y)[0]
         else:
-            xest = lsqr(self, y, iter_lim=niter)[0]
+            if isinstance(y, np.ndarray):
+                # numpy backend
+                xest = lsqr(self, y, iter_lim=niter)[0]
+            else:
+                # cupy backend
+                ncp = get_array_module(y)
+                xest = clgs(self, y, x0=ncp.zeros(self.shape[1]),
+                            niter=niter)[0]
         return xest
 
     def todense(self):
