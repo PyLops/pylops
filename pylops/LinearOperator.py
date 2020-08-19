@@ -233,7 +233,7 @@ class LinearOperator(spLinearOperator):
             else:
                 # cupy backend
                 ncp = get_array_module(y)
-                xest = clgs(self, y, x0=ncp.zeros(self.shape[1]),
+                xest = cgls(self, y, x0=ncp.zeros(self.shape[1]),
                             niter=niter)[0]
         return xest
 
@@ -489,7 +489,6 @@ class LinearOperator(spLinearOperator):
             cond = np.asscalar(self.eigs(neigs=1, which='LM', **kwargs_eig))/ \
                    np.asscalar(self.eigs(neigs=1, which='SM', **kwargs_eig))
         else:
-            print('here')
             cond = np.asscalar(self.eigs(neigs=1, uselobpcg=True, largest=True,
                                          **kwargs_eig)) / \
                    np.asscalar(self.eigs(neigs=1, uselobpcg=True, largest=False,
