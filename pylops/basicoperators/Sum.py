@@ -1,5 +1,6 @@
 import numpy as np
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module
 
 
 class Sum(LinearOperator):
@@ -59,12 +60,14 @@ class Sum(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
+        ncp = get_array_module(x)
         y = x.reshape(self.dims)
-        y = np.sum(y, axis=self.dir)
+        y = ncp.sum(y, axis=self.dir)
         return y.flatten()
 
     def _rmatvec(self, x):
+        ncp = get_array_module(x)
         y = x.reshape(self.dims_d)
-        y = np.expand_dims(y, self.dir)
-        y = np.tile(y, self.tile)
+        y = ncp.expand_dims(y, self.dir)
+        y = ncp.tile(y, self.tile)
         return y.flatten()
