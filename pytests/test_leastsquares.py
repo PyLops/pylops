@@ -4,7 +4,8 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import MatrixMult, Diagonal, Smoothing1D
-from pylops.optimization.leastsquares import cgls, NormalEquationsInversion, \
+from pylops.optimization.solver import cgls
+from pylops.optimization.leastsquares import NormalEquationsInversion, \
     RegularizedInversion, PreconditionedInversion
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0,

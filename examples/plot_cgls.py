@@ -22,7 +22,6 @@ import pylops
 
 plt.close('all')
 warnings.filterwarnings('ignore')
-# sphinx_gallery_thumbnail_number = 2
 
 ###############################################################################
 # Let's define a matrix :math:`\mathbf{A}` or size (``N`` and ``M``) and
@@ -39,8 +38,8 @@ x = np.ones(M)
 
 y = Aop * x
 xest, nit, cost = \
-    pylops.optimization.leastsquares.cgls(Aop, y, x0=np.zeros_like(x),
-                                          niter=10, tol=1e-10, show=True)
+    pylops.optimization.solver.cgls(Aop, y, x0=np.zeros_like(x),
+                                    niter=10, tol=1e-10, show=True)
 
 
 print('x= %s' % x)
@@ -53,6 +52,3 @@ plt.title('Cost function')
 ###############################################################################
 # Note that while we used a dense matrix here, any other linear operator
 # can be fed to cgls as is the case for any other PyLops solver.
-
-
-

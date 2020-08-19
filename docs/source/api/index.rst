@@ -132,6 +132,16 @@ Geophysicical subsurface characterization
 Solvers
 -------
 
+Basic
+~~~~~
+
+.. currentmodule:: pylops.optimization
+
+.. autosummary::
+   :toctree: generated/
+
+    solver.cgls
+
 Least-squares
 ~~~~~~~~~~~~~
 
@@ -140,7 +150,6 @@ Least-squares
 .. autosummary::
    :toctree: generated/
 
-    leastsquares.cgls
     leastsquares.NormalEquationsInversion
     leastsquares.RegularizedInversion
     leastsquares.PreconditionedInversion
