@@ -75,7 +75,7 @@ class HStack(LinearOperator):
         \end{bmatrix}
 
     """
-    def __init__(self, ops, dtype='float64'):
+    def __init__(self, ops, dtype=None):
         self.ops = ops
         mops = np.zeros(len(ops), dtype=np.int)
         for iop, oper in enumerate(ops):
