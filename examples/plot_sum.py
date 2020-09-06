@@ -23,7 +23,6 @@ Sop = pylops.Sum(dims=(ny, nx), dir=0)
 
 y  = Sop * x.ravel()
 xadj = Sop.H * y
-xinv = Sop / y
 xadj = xadj.reshape(ny, nx)
 
 gs = pltgs.GridSpec(1, 7)
@@ -58,5 +57,5 @@ ax.axis('tight')
 
 ###############################################################################
 # Note that since the Sum operator creates and under-determined system of
-# equations (data has always lower dimensionality than the model, an exact
+# equations (data has always lower dimensionality than the model), an exact
 # inverse is not possible for this operator.

@@ -2,8 +2,10 @@ import logging
 
 import numpy as np
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+
 
 class Regression(LinearOperator):
     r"""Polynomial regression.
@@ -72,7 +74,8 @@ class Regression(LinearOperator):
 
     """
     def __init__(self, taxis, order, dtype='float64'):
-        if not isinstance(taxis, np.ndarray):
+        ncp = get_array_module(taxis)
+        if not isinstance(taxis, ncp.ndarray):
             logging.error('t must be numpy.ndarray...')
             raise TypeError('t must be numpy.ndarray...')
         else:
@@ -83,14 +86,17 @@ class Regression(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
-        y = np.zeros_like(self.taxis)
+        ncp = get_array_module(x)
+        y = ncp.zeros_like(self.taxis)
         for i in range(self.order+1):
             y += x[i]*self.taxis**i
         return y
 
     def _rmatvec(self, x):
-        return np.vstack([np.dot(self.taxis**i, x)
-                          for i in range(self.order+1)])
+        ncp = get_array_module(x)
+
+        return ncp.vstack([ncp.dot(self.taxis**i, x)
+                           for i in range(self.order+1)])
 
     def apply(self, t, x):
         """Return values along y-axis given certain ``t`` location(s) along

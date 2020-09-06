@@ -113,5 +113,4 @@ class Diagonal(LinearOperator):
         densemat : :obj:`numpy.ndarray`
             Dense matrix.
         """
-        print('here')
         return self.matrix()

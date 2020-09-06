@@ -1241,7 +1241,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     where :math:`\mu` and :math:`\epsilon_{{R}_{L2,i}}` are the damping factors
     used to weight the different L2 regularization terms of the cost function.
 
-    The generalized Split Bergman algorithm is used to solve such cost
+    The generalized Split-Bergman algorithm [1]_ is used to solve such cost
     function: the algorithm is composed of a sequence of unconstrained
     inverse problems and Bregman updates.
 

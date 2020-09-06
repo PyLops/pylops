@@ -49,15 +49,19 @@ x = np.random.rand(M)
 x[x < 0.9] = 0
 y = Aop*x
 
-# ISTA
+# MP/OMP
 eps = 1e-2
 maxit = 500
 x_mp = pylops.optimization.sparsity.OMP(Aop, y, maxit, niter_inner=0,
                                         sigma=1e-4)[0]
 x_omp = pylops.optimization.sparsity.OMP(Aop, y, maxit, sigma=1e-4)[0]
+
+# IRLS
 x_irls = pylops.optimization.sparsity.IRLS(Aop, y, 50,
                                            epsI=1e-5, kind='model',
                                            **dict(iter_lim=10))[0]
+
+# ISTA
 x_ista = pylops.optimization.sparsity.ISTA(Aop, y, maxit, eps=eps,
                                            tol=1e-3, returninfo=True)[0]
 
