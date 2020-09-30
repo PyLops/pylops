@@ -181,20 +181,6 @@ def _halfthreshold_percentile(x, perc):
     #return _halfthreshold(x, (2. / 3. * thresh) ** (1.5))
     return _halfthreshold(x, (4. / 54 ** (1. / 3.) * thresh) ** 1.5)
 
-def _shrinkage(x, thresh):
-    r"""Shrinkage.
-
-    Applies shrinkage to vector ``x``.
-
-    Parameters
-    ----------
-    x : :obj:`numpy.ndarray`
-        Vector
-    thresh : :obj:`float`
-        Threshold
-    """
-    return np.maximum(np.abs(x) - thresh, 0.) * np.exp(1j * np.angle(x))
-
 
 def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
                epsI=1e-10, x0=None, tolIRLS=1e-10,
@@ -1323,7 +1309,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
                                         x0=x0 if restart else xinv,
                                         **kwargs_lsqr)
             # Shrinkage
-            d = [_shrinkage(RegsL1[ireg] * xinv + b[ireg], epsRL1s[ireg])
+            d = [_softthreshold(RegsL1[ireg] * xinv + b[ireg], epsRL1s[ireg])
                  for ireg in range(nregsL1)]
         # Bregman update
         b = [b[ireg] + tau * (RegsL1[ireg] * xinv - d[ireg]) for ireg in
