@@ -75,7 +75,7 @@ def _softthreshold(x, thresh):
     #    x1 = np.maximum(np.abs(x) - thresh, 0.) * np.exp(1j * np.angle(x))
     #else:
     #    x1 = np.maximum(np.abs(x)-thresh, 0.) * np.sign(x)
-    x1 = x - thresh * x / np.abs(x)
+    x1 = x - thresh * np.sign(x)
     x1[np.abs(x) <= thresh] = 0
     return x1
 
@@ -200,7 +200,7 @@ def _shrinkage(x, thresh):
         Threshold
     """
     xabs = np.abs(x)
-    return x/(xabs+1e-10) * np.maximum(xabs - thresh, 0)
+    return np.sign(x) * np.maximum(xabs - thresh, 0)
 
 
 def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
