@@ -93,6 +93,10 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
     MDCop = F1opH * I1opH * Frop * Iop * Fop
     if transpose:
         MDCop = TopH * MDCop * Top
+
+    # force dtype to be real (as FFT operators assume real inputs and outputs)
+    MDCop.dtype = rdtype
+
     return MDCop
 
 
