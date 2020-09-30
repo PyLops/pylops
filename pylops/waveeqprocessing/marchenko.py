@@ -384,7 +384,6 @@ class Marchenko():
         if greens:
             # Create Green's functions
             g_inv = Gop * f1_inv_tot.flatten()
-            g_inv = np.real(g_inv) # cast to real as Gop is a complex operator
             g_inv = g_inv.reshape(2 * self.nt2, self.ns)
             g_inv_minus, g_inv_plus = -g_inv[:self.nt2].T, \
                                       np.fliplr(g_inv[self.nt2:].T)
@@ -529,7 +528,6 @@ class Marchenko():
         if greens:
             # Create Green's functions
             g_inv = Gop * f1_inv_tot.flatten()
-            g_inv = np.real(g_inv) # cast to real as Gop is a complex operator
             g_inv = g_inv.reshape(2 * self.nt2, self.ns, nvs)
             g_inv_minus = -g_inv[:self.nt2].transpose(1, 2, 0)
             g_inv_plus = np.flip(g_inv[self.nt2:], axis=0).transpose(1, 2, 0)
