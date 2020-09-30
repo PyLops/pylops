@@ -69,15 +69,9 @@ def _softthreshold(x, thresh):
         Tresholded vector
 
     """
-    #if np.iscomplexobj(x):
-    #    # https://stats.stackexchange.com/questions/357339/soft-thresholding-
-    #    # for-the-lasso-with-complex-valued-data
-    #    x1 = np.maximum(np.abs(x) - thresh, 0.) * np.exp(1j * np.angle(x))
-    #else:
-    #    x1 = np.maximum(np.abs(x)-thresh, 0.) * np.sign(x)
-    x1 = x - thresh * np.sign(x)
-    x1[np.abs(x) <= thresh] = 0
-    return x1
+    # https://stats.stackexchange.com/questions/357339/soft-thresholding-
+    # for-the-lasso-with-complex-valued-data
+    return np.maximum(np.abs(x) - thresh, 0.) * np.exp(1j * np.angle(x))
 
 def _halfthreshold(x, thresh):
     r"""Half thresholding.
@@ -199,8 +193,7 @@ def _shrinkage(x, thresh):
     thresh : :obj:`float`
         Threshold
     """
-    xabs = np.abs(x)
-    return np.sign(x) * np.maximum(xabs - thresh, 0)
+    return np.maximum(np.abs(x) - thresh, 0.) * np.exp(1j * np.angle(x))
 
 
 def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
