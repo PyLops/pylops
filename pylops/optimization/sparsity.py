@@ -69,14 +69,12 @@ def _softthreshold(x, thresh):
         Tresholded vector
 
     """
-    #if np.iscomplexobj(x):
-    #    # https://stats.stackexchange.com/questions/357339/soft-thresholding-
-    #    # for-the-lasso-with-complex-valued-data
-    #    x1 = np.maximum(np.abs(x) - thresh, 0.) * np.exp(1j * np.angle(x))
-    #else:
-    #    x1 = np.maximum(np.abs(x)-thresh, 0.) * np.sign(x)
-    x1 = x - thresh * x / np.abs(x)
-    x1[np.abs(x) <= thresh] = 0
+    if np.iscomplexobj(x):
+        # https://stats.stackexchange.com/questions/357339/soft-thresholding-
+        # for-the-lasso-with-complex-valued-data
+        x1 = np.maximum(np.abs(x) - thresh, 0.) * np.exp(1j * np.angle(x))
+    else:
+        x1 = np.maximum(np.abs(x)-thresh, 0.) * np.sign(x)
     return x1
 
 def _halfthreshold(x, thresh):
@@ -186,22 +184,6 @@ def _halfthreshold_percentile(x, perc):
     thresh = np.percentile(np.abs(x), perc)
     #return _halfthreshold(x, (2. / 3. * thresh) ** (1.5))
     return _halfthreshold(x, (4. / 54 ** (1. / 3.) * thresh) ** 1.5)
-
-def _shrinkage(x, thresh):
-    r"""Shrinkage.
-
-    Applies shrinkage to vector ``x``.
-
-    Parameters
-    ----------
-    x : :obj:`numpy.ndarray`
-        Vector
-    thresh : :obj:`float`
-        Threshold
-    """
-    xabs = np.abs(x)
-    return x/(xabs+1e-10) * np.maximum(xabs - thresh, 0)
-
 
 def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
                epsI=1e-10, x0=None, tolIRLS=1e-10,
@@ -1330,7 +1312,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
                                         x0=x0 if restart else xinv,
                                         **kwargs_lsqr)
             # Shrinkage
-            d = [_shrinkage(RegsL1[ireg] * xinv + b[ireg], epsRL1s[ireg])
+            d = [_softthreshold(RegsL1[ireg] * xinv + b[ireg], epsRL1s[ireg])
                  for ireg in range(nregsL1)]
         # Bregman update
         b = [b[ireg] + tau * (RegsL1[ireg] * xinv - d[ireg]) for ireg in
