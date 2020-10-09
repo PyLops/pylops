@@ -6,8 +6,9 @@ channels:
 dependencies:
   - python>=3.6.4
   - numpy>=1.15.0
-  - scipy
+  - scipy>=1.1.0
   - pyfftw
+  - pywavelets
   - matplotlib
   - ipython
   - pytest
@@ -16,6 +17,8 @@ dependencies:
   - numba
   - icc_rt
   - pip:
+    - scikit-fmm
+    - spgl1
     - pytest-runner
     - setuptools_scm
     - sphinx-rtd-theme

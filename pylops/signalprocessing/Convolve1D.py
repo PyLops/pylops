@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import convolve, correlate
+from scipy.signal import convolve, fftconvolve, oaconvolve
 from pylops import LinearOperator
 
 
@@ -23,6 +23,11 @@ class Convolve1D(LinearOperator):
         (``None`` if only one dimension is available)
     dir : :obj:`int`, optional
         Direction along which convolution is applied
+    method : :obj:`str`, optional
+        Method used to calculate the convolution (``direct``, ``fft``,
+        or ``overlapadd``). Note that only ``direct`` and ``fft`` are allowed
+        when ``dims=None``, whilst ``fft`` and ``overlapadd`` are allowed
+        when ``dims`` is provided.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -33,6 +38,13 @@ class Convolve1D(LinearOperator):
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved
         explicitly (``True``) or not (``False``)
+
+    Raises
+    ------
+    ValueError
+        If ``offset`` is bigger than ``len(h) - 1``
+    NotImplementedError
+        If ``method`` provided is not allowed
 
     Notes
     -----
@@ -53,7 +65,11 @@ class Convolve1D(LinearOperator):
         Y(f) = \mathscr{F} (h(t)) * \mathscr{F} (x(t))
 
     Convolve1D operator uses :py:func:`scipy.signal.convolve` that
-    automatically chooses the best domain for the operation to be carried out.
+    automatically chooses the best domain for the operation to be carried out
+    for one dimensional inputs. The fft implementation
+    :py:func:`scipy.signal.fftconvolve` is however enforced for signals in
+    2 or more dimensions as this routine efficently operates on
+    multi-dimensional arrays.
 
     As the adjoint of convolution is correlation, Convolve1D operator applies
     correlation in the adjoint mode.
@@ -69,9 +85,28 @@ class Convolve1D(LinearOperator):
         y(t) = \mathscr{F}^{-1} (H(f)^* * X(f))
 
     """
-    def __init__(self, N, h, offset=0, dims=None, dir=0, dtype='float64'):
-        self.offset = int(offset)
+    def __init__(self, N, h, offset=0, dims=None, dir=0, dtype='float64',
+                 method=None):
+        if offset > len(h) - 1:
+            raise ValueError('offset must be smaller than len(h) - 1')
         self.h = h
+        self.hstar = np.flip(self.h)
+        self.nh = len(h)
+        self.offset = 2*(self.nh // 2 - int(offset))
+        if self.nh % 2 == 0:
+            self.offset -= 1
+        if self.offset != 0:
+            self.h = \
+                np.pad(self.h, (self.offset if self.offset > 0 else 0,
+                                -self.offset if self.offset < 0 else 0),
+                       mode='constant')
+        self.hstar = np.flip(self.h)
+        if dims is not None:
+            # add dimensions to filter to match dimensions of model and data
+            hdims = [1] * len(dims)
+            hdims[dir] = len(self.h)
+            self.h = self.h.reshape(hdims)
+            self.hstar = self.hstar.reshape(hdims)
         self.dir = dir
         if dims is None:
             self.dims = np.array([N, 1])
@@ -82,39 +117,41 @@ class Convolve1D(LinearOperator):
             else:
                 self.dims = np.array(dims)
                 self.reshape = True
-        #self.shape  = ((self.dims[self.dir]+len(h)-1-2*self.offset)*
-        #                np.prod(np.delete(self.dims,self.dir)),
-        #                np.prod(self.dims))
+        # choose method
+        self.method = method
+        if dims is None:
+            if method is None:
+                self.method = 'direct'
+            if self.method not in ('direct', 'fft'):
+                raise NotImplementedError('method must be direct or fft')
+            self.convfunc = convolve
+        else:
+            if method is None:
+                self.method = 'fft'
+            if self.method == 'fft':
+                self.convfunc = fftconvolve
+            elif self.method == 'overlapadd':
+                self.convfunc = oaconvolve
+            else:
+                raise NotImplementedError('method must be fft or overlapadd')
         self.shape = (np.prod(self.dims), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         if not self.reshape:
-            y = convolve(x, self.h, mode='full')
-            y = y[self.offset:-self.h.size+self.offset+1]
+            y = self.convfunc(x.squeeze(), self.h, mode='same', method=self.method)
         else:
             x = np.reshape(x, self.dims)
-            if self.dir > 0:  # need to bring the dimension to convolve to first dimension
-                x = np.swapaxes(x, self.dir, 0)
-            y = np.apply_along_axis(convolve, 0, x, self.h, mode='full')
-            y = y[self.offset:-self.h.size+self.offset+1]
-            if self.dir > 0:
-                y = np.swapaxes(y, 0, self.dir)
-            y = np.ndarray.flatten(y)
+            y = self.convfunc(x, self.h, mode='same', axes=self.dir)
+            y = y.ravel()
         return y
 
     def _rmatvec(self, x):
         if not self.reshape:
-            y = correlate(x, self.h, mode='full')
-            y = y[self.h.size-self.offset-1:-self.offset]
+            y = self.convfunc(x.squeeze(), self.hstar, mode='same', method=self.method)
         else:
             x = np.reshape(x, self.dims)
-            if self.dir > 0:  # need to bring the dimension to derive to first dimension
-                x = np.swapaxes(x, self.dir, 0)
-            y = np.apply_along_axis(correlate, 0, x, self.h, mode='full')
-            y = y[self.h.size-self.offset-1:-self.offset]
-            if self.dir > 0:
-                y = np.swapaxes(y, 0, self.dir)
-            y = np.ndarray.flatten(y)
+            y = self.convfunc(x, self.hstar, mode='same', axes=self.dir)
+            y = y.ravel()
         return y

@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.sparse.linalg.interface import _get_dtype
+from scipy.sparse.linalg.interface import LinearOperator as spLinearOperator
 from pylops import LinearOperator
+from pylops.basicoperators import MatrixMult
 
 
 class VStack(LinearOperator):
@@ -11,7 +13,9 @@ class VStack(LinearOperator):
     Parameters
     ----------
     ops : :obj:`list`
-        Linear operators to be stacked
+        Linear operators to be stacked. Alternatively,
+        :obj:`numpy.ndarray` or :obj:`scipy.sparse` matrices can be passed
+        in place of one or more operators.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -22,6 +26,11 @@ class VStack(LinearOperator):
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly (``True``) or
         not (``False``)
+
+    Raises
+    ------
+    ValueError
+        If ``ops`` have different number of rows
 
     Notes
     -----
@@ -67,15 +76,20 @@ class VStack(LinearOperator):
     """
     def __init__(self, ops, dtype=None):
         self.ops = ops
-        nops = np.zeros(len(ops), dtype=np.int)
+        nops = np.zeros(len(self.ops), dtype=np.int)
         for iop, oper in enumerate(ops):
-            nops[iop] = oper.shape[0]
+            if not isinstance(oper, (LinearOperator, spLinearOperator)):
+                self.ops[iop] = MatrixMult(oper, dtype=oper.dtype)
+            nops[iop] = self.ops[iop].shape[0]
         self.nops = nops.sum()
-        self.mops = ops[0].shape[1]
+        mops = [oper.shape[1] for oper in self.ops]
+        if len(set(mops)) > 1:
+            raise ValueError('operators have different number of columns')
+        self.mops = mops[0]
         self.nnops = np.insert(np.cumsum(nops), 0, 0)
         self.shape = (self.nops, self.mops)
         if dtype is None:
-            self.dtype = _get_dtype(ops)
+            self.dtype = _get_dtype(self.ops)
         else:
             self.dtype = np.dtype(dtype)
         self.explicit = False
@@ -83,11 +97,11 @@ class VStack(LinearOperator):
     def _matvec(self, x):
         y = np.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            y[self.nnops[iop]:self.nnops[iop + 1]] = oper.matvec(x)
+            y[self.nnops[iop]:self.nnops[iop + 1]] = oper.matvec(x).squeeze()
         return y
 
     def _rmatvec(self, x):
         y = np.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            y += oper.rmatvec(x[self.nnops[iop]:self.nnops[iop + 1]])
+            y += oper.rmatvec(x[self.nnops[iop]:self.nnops[iop + 1]]).squeeze()
         return y

@@ -3,111 +3,24 @@ import numpy as np
 from pylops import LinearOperator
 
 try:
-    from numba import jit, prange
+    from numba import jit
+    from ._Spread_numba import _matvec_numba_table, _rmatvec_numba_table, \
+        _matvec_numba_onthefly, _rmatvec_numba_onthefly
 except ModuleNotFoundError:
     jit = None
+    jit_message = 'Numba not available, reverting to numpy.'
+except Exception as e:
+    jit = None
+    jit_message = 'Failed to import numba (error:%s), use numpy.' % e
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
-
-
-@jit(nopython=True, parallel=True, nogil=True)
-def _matvec_numba_table(x, y, dims, interp, table, dtable):
-    """numba implementation of forward mode with table.
-    See official documentation for description of variables
-    """
-    dim0, dim1 = dims
-    x = x.reshape(dims)
-    for isp in range(dim0):
-        for it in range(dim1):
-            indices = table[isp, it]
-            if interp:
-                dindices = dtable[isp, it]
-
-            for i, indexfloat in enumerate(indices):
-                index = int(indexfloat)
-                if index != -9223372036854775808: # =int(np.nan)
-                    if not interp:
-                        y[i, index] += x[isp, it]
-                    else:
-                        y[i, index] += (1 -dindices[i])*x[isp, it]
-                        y[i, index + 1] += dindices[i] * x[isp, it]
-    return y.ravel()
-
-@jit(nopython=True, parallel=True, nogil=True)
-def _rmatvec_numba_table(x, y, dims, dimsd, interp, table, dtable):
-    """numba implementation of adjoint mode with table.
-    See official documentation for description of variables
-    """
-    dim0, dim1 = dims
-    x = x.reshape(dimsd)
-    for isp in prange(dim0):
-        for it in range(dim1):
-            indices = table[isp, it]
-            if interp:
-                dindices = dtable[isp, it]
-
-            for i, indexfloat in enumerate(indices):
-                index = int(indexfloat)
-                if index != -9223372036854775808: # =int(np.nan)
-                    if not interp:
-                        y[isp, it] += x[i, index]
-                    else:
-                        y[isp, it] += x[i, index]*(1 - dindices[i]) + \
-                                      x[i, index + 1]*dindices[i]
-    return y.ravel()
-
-@jit(nopython=True, parallel=True, nogil=True)
-def _matvec_numba_onthefly(x, y, dims, interp, fh):
-    """numba implementation of forward mode with on-the-fly computations.
-    See official documentation for description of variables
-    """
-    dim0, dim1 = dims
-    x = x.reshape(dims)
-    for isp in range(dim0):
-        for it in range(dim1):
-            if interp:
-                indices, dindices = fh(isp, it)
-            else:
-                indices, dindices = fh(isp, it)
-            for i, indexfloat in enumerate(indices):
-                index = int(indexfloat)
-                if index != -9223372036854775808: # =int(np.nan)
-                    if not interp:
-                        y[i, index] += x[isp, it]
-                    else:
-                        y[i, index] += (1 -dindices[i])*x[isp, it]
-                        y[i, index + 1] += dindices[i] * x[isp, it]
-    return y.ravel()
-
-@jit(nopython=True, parallel=True, nogil=True)
-def _rmatvec_numba_onthefly(x, y, dims, dimsd, interp, fh):
-    """numba implementation of adjoint mode with on-the-fly computations.
-    See official documentation for description of variables
-    """
-    dim0, dim1 = dims
-    x = x.reshape(dimsd)
-    for isp in prange(dim0):
-        for it in range(dim1):
-            if interp:
-                indices, dindices = fh(isp, it)
-            else:
-                indices, dindices = fh(isp, it)
-            for i, indexfloat in enumerate(indices):
-                index = int(indexfloat)
-                if index != -9223372036854775808: # =int(np.nan)
-                    if not interp:
-                        y[isp, it] += x[i, index]
-                    else:
-                        y[isp, it] += x[i, index]*(1 - dindices[i]) + \
-                                      x[i, index + 1]*dindices[i]
-    return y.ravel()
 
 
 class Spread(LinearOperator):
     r"""Spread operator.
 
     Spread values from the input model vector arranged as a 2-dimensional
-    array of size :math:`[n_{sp} \times n_t]` into the data vector of size
+    array of size :math:`[n_{x0} \times n_{t0}]` into the data vector of size
     :math:`[n_x \times n_t]`. Spreading is performed along parametric curves
     provided as look-up table of pre-computed indices (``table``)
     or computed on-the-fly using a function handle (``fh``).
@@ -118,24 +31,24 @@ class Spread(LinearOperator):
     Parameters
     ----------
     dims : :obj:`tuple`
-        Dimensions of model vector (vector will be reshaped internal into
-        a two-dimensional array of size :math:`[n_{sp} \times n_t]`,
+        Dimensions of model vector (vector will be reshaped internally into
+        a two-dimensional array of size :math:`[n_{x0} \times n_{t0}]`,
         where the first dimension is the spreading/stacking direction)
     dimsd : :obj:`tuple`
         Dimensions of model vector (vector will be reshaped internal into
         a two-dimensional array of size :math:`[n_x \times n_t]`)
     table : :obj:`np.ndarray`, optional
         Look-up table of indeces of size
-        :math:`[n_{sp} \times n_t \times n_x]` (if ``None`` use function
+        :math:`[n_{x0} \times n_{t0} \times n_x]` (if ``None`` use function
         handle ``fh``)
     dtable : :obj:`np.ndarray`, optional
         Look-up table of decimals remainders for linear interpolation of size
-        :math:`[n_{sp} \times n_t \times n_x]` (if ``None`` use function
+        :math:`[n_{x0} \times n_{t0} \times n_x]` (if ``None`` use function
         handle ``fh``)
     fh : :obj:`np.ndarray`, optional
         Function handle that returns an index (and a fractional value in case
         of ``interp=True``) to be used for spreading/stacking given indices
-        in :math:`sp` and :math:`t` axes (if ``None`` use look-up table
+        in :math:`x0` and :math:`t` axes (if ``None`` use look-up table
         ``table``)
     interp : :obj:`bool`, optional
         Apply linear interpolation (``True``) or nearest interpolation
@@ -164,7 +77,7 @@ class Spread(LinearOperator):
         If both ``table`` and ``fh`` are not provided
     ValueError
         If ``table`` has shape different from
-        :math:`[n_{sp} \times n_t \times n_x]`
+        :math:`[n_{x0} \times n_t0 \times n_x]`
 
     Notes
     -----
@@ -173,16 +86,16 @@ class Spread(LinearOperator):
     :math:`[n_x \times n_t]`:
 
     .. math::
-        m(sp, t_0) \rightarrow d(x, t=f(sp, x, t_0))
+        m(x0, t_0) \rightarrow d(x, t=f(x0, x, t_0))
 
-    where :math:`f(sp, x, t)` is a mapping function that returns a value t
-    given values :math:`sp`, :math:`x`, and  :math:`t_0`.
+    where :math:`f(x0, x, t)` is a mapping function that returns a value t
+    given values :math:`x0`, :math:`x`, and  :math:`t_0`.
 
     In adjoint mode, the model is reconstructed by means of the following
     stacking operation:
 
     .. math::
-        m(sp, t_0) = \int{d(x, t=f(sp, x, t_0))} dx
+        m(x0, t_0) = \int{d(x, t=f(x0, x, t_0))} dx
 
     Note that ``table`` (or ``fh``)  must return integer numbers
     representing indices in the axis :math:`t`. However it also possible to
@@ -200,22 +113,26 @@ class Spread(LinearOperator):
             self.engine = 'numba'
         else:
             if engine == 'numba' and jit is None:
-                logging.warning('numba not available, revert to numpy...')
+                logging.warning(jit_message)
             self.engine = 'numpy'
 
         # axes
         self.dims, self.dimsd = dims, dimsd
-        self.nsp, self.nt, self.nx = self.dims[0], self.dims[1], self.dimsd[0]
+        self.nx0, self.nt0 = self.dims[0], self.dims[1]
+        self.nx, self.nt = self.dimsd[0], self.dimsd[1]
         self.table = table
         self.dtable = dtable
         self.fh = fh
+
         # find out if mapping is in table of function handle
         if table is None and fh is None:
             raise NotImplementedError('provide either table or fh...')
         elif table is not None:
-            if self.table.shape != (self.nsp, self.nt, self.nx):
-                raise ValueError('table must have shape [nsp x nt x nx]')
+            if self.table.shape != (self.nx0, self.nt0, self.nx):
+                raise ValueError('table must have shape [nx0 x nt0 x nx]')
             self.usetable = True
+            if np.any(self.table > self.nt):
+                raise ValueError('values in table must be smaller than nt')
         else:
             self.usetable = False
 
@@ -223,8 +140,8 @@ class Spread(LinearOperator):
         self.interp = False
         if self.usetable:
             if dtable is not None:
-                if self.dtable.shape != (self.nsp, self.nt, self.nx):
-                    raise ValueError('dtable must have shape [nsp x nt x nx]')
+                if self.dtable.shape != (self.nx0, self.nt0, self.nx):
+                    raise ValueError('dtable must have shape [nx0 x nt x nx]')
                 self.interp = True
         else:
             if self.engine == 'numba':
@@ -240,47 +157,47 @@ class Spread(LinearOperator):
         x = x.reshape(self.dims)
         y = np.zeros(self.dimsd, dtype=self.dtype)
         for it in range(self.dims[1]):
-            for isp in range(self.dims[0]):
+            for ix0 in range(self.dims[0]):
                 if self.usetable:
-                    indices = self.table[isp, it]
+                    indices = self.table[ix0, it]
                     if self.interp:
-                        dindices = self.dtable[isp, it]
+                        dindices = self.dtable[ix0, it]
                 else:
                     if self.interp:
-                        indices, dindices = self.fh(isp, it)
+                        indices, dindices = self.fh(ix0, it)
                     else:
-                        indices = self.fh(isp, it)
+                        indices = self.fh(ix0, it)
                 mask = np.argwhere(~np.isnan(indices))
                 if mask.size > 0:
                     indices = (indices[mask]).astype(np.int)
                     if not self.interp:
-                        y[mask, indices] += x[isp, it]
+                        y[mask, indices] += x[ix0, it]
                     else:
-                        y[mask, indices] += (1-dindices[mask])*x[isp, it]
-                        y[mask, indices + 1] += dindices[mask] * x[isp, it]
+                        y[mask, indices] += (1-dindices[mask])*x[ix0, it]
+                        y[mask, indices + 1] += dindices[mask] * x[ix0, it]
         return y.ravel()
 
     def _rmatvec_numpy(self, x):
         x = x.reshape(self.dimsd)
         y = np.zeros(self.dims, dtype=self.dtype)
         for it in range(self.dims[1]):
-            for isp in range(self.dims[0]):
+            for ix0 in range(self.dims[0]):
                 if self.usetable:
-                    indices = self.table[isp, it]
+                    indices = self.table[ix0, it]
                     if self.interp:
-                        dindices = self.dtable[isp, it]
+                        dindices = self.dtable[ix0, it]
                 else:
                     if self.interp:
-                        indices, dindices = self.fh(isp, it)
+                        indices, dindices = self.fh(ix0, it)
                     else:
-                        indices = self.fh(isp, it)
+                        indices = self.fh(ix0, it)
                 mask = np.argwhere(~np.isnan(indices))
                 if mask.size > 0:
                     indices = (indices[mask]).astype(np.int)
                     if not self.interp:
-                        y[isp, it] = np.sum(x[mask, indices])
+                        y[ix0, it] = np.sum(x[mask, indices])
                     else:
-                        y[isp, it] = \
+                        y[ix0, it] = \
                             np.sum(x[mask, indices]*(1-dindices[mask])) + \
                             np.sum(x[mask, indices+1]*dindices[mask])
         return y.ravel()

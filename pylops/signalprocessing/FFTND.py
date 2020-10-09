@@ -3,7 +3,7 @@ from pylops import LinearOperator
 
 
 class FFTND(LinearOperator):
-    r"""Three dimensional Fast-Fourier Transform.
+    r"""N-dimensional Fast-Fourier Transform.
 
     Apply n-dimensional Fast-Fourier Transform (FFT) to any n axes
     of a multi-dimensional array depending on the choice of ``dirs``.
@@ -68,10 +68,10 @@ class FFTND(LinearOperator):
                  sampling=(1., 1., 1.), dtype='complex128'):
         # checks
         if len(dims) < 3:
-            raise ValueError('provide at least three dimensions...')
+            raise ValueError('provide at least three dimensions')
         if len(dirs) < 3:
-            raise ValueError('provide at three directions along which '
-                             'fft is applie')
+            raise ValueError('provide at least three directions along which '
+                             'fft is applied')
         if len(nffts) != 3:
             raise ValueError('provide at least three fft dimensions')
         if len(sampling) != 3:
@@ -94,9 +94,7 @@ class FFTND(LinearOperator):
         self.dims_fft = self.dims.copy()
         for direction, nfft in zip(self.dirs, self.nffts):
             self.dims_fft[direction] = nfft
-        self.shape = (int(np.prod(dims)*np.prod(self.nffts)/
-                          (np.prod(self.dims[list(self.dirs)]))),
-                      int(np.prod(dims)))
+        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 

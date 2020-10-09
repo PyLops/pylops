@@ -8,7 +8,7 @@ any environment and has a very limited number of dependencies. However,
 since *Python2* will retire soon, we have decided to only focus on a
 *Python3* implementation. If you are still using *Python2*, hurry up!
 
-For this reason you will need **Python 3.5 or greater** to get started.
+For this reason you will need **Python 3.6 or greater** to get started.
 
 
 Dependencies
@@ -37,7 +37,7 @@ in our ``requirements.txt`` and ``environment.yml`` files and thus are not stric
 needed nor installed directly as part of a standar installation (see below for details)
 
 However, we sometimes implement additional back-ends (referred to as ``engine`` in the code)
-to some of our operators in order too improve their performance.
+for some of our operators in order to improve their performance.
 To do so, we rely on third-party libraries. Those libraries are generally added to the
 list of our optional dependencies.
 If you are not after code performance, you may simply stick to the mandatory dependencies
@@ -53,11 +53,22 @@ Step-by-step installation for users
 Python environment
 ~~~~~~~~~~~~~~~~~~
 
-Activate your Python environment, and simply type the following command in your terminal:
+Activate your Python environment, and simply type the following command in your terminal
+to install the PyPi distribution:
 
 .. code-block:: bash
 
    >> pip install pylops
+
+If using Conda, you can also install our conda-forge distribution via:
+
+.. code-block:: bash
+
+   >> conda install -c conda-forge pylops
+
+Note that using the ``conda-forge`` distribution is recommended as all the dependencies (both mandatory
+and optional) will be correctly installed for you, while only mandatory dependencies are installed
+using the ``pip`` distribution.
 
 Alternatively, to access the latest source from github:
 
@@ -95,6 +106,9 @@ This will give you an address that you can put in your browser and will open a j
 and other basic Python libraries installed. Here `/path/to/local/folder` is the absolute path of a local folder
 on your computer where you will create a notebook (or containing notebooks that you want to continue working on). Note that
 anything you do to the notebook(s) will be saved in your local folder.
+
+A larger image with Conda distribution is also available. Simply use `conda_notebook` instead of `notebook` in the
+previous command.
 
 
 Step-by-step installation for developers

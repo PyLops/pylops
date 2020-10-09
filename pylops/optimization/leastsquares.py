@@ -7,12 +7,13 @@ from pylops.basicoperators import VStack
 
 def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
                              epsI=0, epsRs=None, x0=None,
-                             returninfo=False, **kwargs_cg):
+                             returninfo=False, NRegs=None, epsNRs=None,
+                             **kwargs_cg):
     r"""Inversion of normal equations.
 
     Solve the regularized normal equations for a system of equations
     given the operator ``Op``, a data weighting operator ``Weight`` and
-    a list of regularization terms ``Regs``
+    optionally a list of regularization terms ``Regs`` and/or ``NRegs``.
 
     Parameters
     ----------
@@ -29,13 +30,22 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
         as ``Regs``)
     epsI : :obj:`float`, optional
         Tikhonov damping
-    epsRs : :obj:`list`
+    epsRs : :obj:`list`, optional
          Regularization dampings (must have the same number of elements
          as ``Regs``)
     x0 : :obj:`numpy.ndarray`, optional
         Initial guess
     returninfo : :obj:`bool`, optional
         Return info of CG solver
+    NRegs : :obj:`list`
+        Normal regularization operators (``None`` to avoid adding
+        regularization). Such operators must apply the chain of the
+        forward and the adjoint in one go. This can be convenient in
+        cases where a faster implementation is available compared to applying
+        the forward followed by the adjoint.
+    epsNRs : :obj:`list`, optional
+         Regularization dampings for normal operators (must have the same
+         number of elements as ``NRegs``)
     **kwargs_cg
         Arbitrary keyword arguments for
         :py:func:`scipy.sparse.linalg.cg` solver
@@ -62,16 +72,21 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
     -----
     Solve the following normal equations for a system of regularized equations
     given the operator :math:`\mathbf{Op}`, a data weighting operator
-    :math:`\mathbf{W}`, a list of regularization terms :math:`\mathbf{R_i}`,
-    the data :math:`\mathbf{d}` and regularization damping factors
-    :math:`\epsilon_I` and :math:`\epsilon_{{R}_i}`:
+    :math:`\mathbf{W}`, a list of regularization terms (:math:`\mathbf{R_i}`
+    and/or :math:`\mathbf{N_i}`), the data :math:`\mathbf{d}` and
+    regularization data :math:`\mathbf{d}_{R_i}`, and the damping factors
+    :math:`\epsilon_I`, :math:`\epsilon_{{R}_i}` and :math:`\epsilon_{{N}_i}`:
 
     .. math::
         ( \mathbf{Op}^T \mathbf{W} \mathbf{Op} +
         \sum_i \epsilon_{{R}_i}^2 \mathbf{R}_i^T \mathbf{R}_i +
+        \sum_i \epsilon_{{N}_i}^2 \mathbf{N}_i +
         \epsilon_I^2 \mathbf{I} )  \mathbf{x}
         = \mathbf{Op}^T \mathbf{W} \mathbf{d} +  \sum_i \epsilon_{{R}_i}^2
         \mathbf{R}_i^T \mathbf{d}_{R_i}
+
+    Note that the data term of the regularizations :math:`\mathbf{N_i}` is
+    implicitly assumed to be zero.
 
     """
     # store adjoint
@@ -79,7 +94,7 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
 
     # create dataregs and epsRs if not provided
     if dataregs is None and Regs is not None:
-        dataregs = [np.zeros(Op.shape[1])]*len(Regs)
+        dataregs = [np.zeros(Reg.shape[0]) for Reg in Regs]
 
     if epsRs is None and Regs is not None:
         epsRs = [1] * len(Regs)
@@ -103,6 +118,10 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
             RegH = Reg.H
             y_normal += epsR ** 2 * RegH * datareg
             Op_normal += epsR ** 2 * RegH * Reg
+
+    if NRegs is not None:
+        for epsNR, NReg in zip(epsNRs, NRegs):
+            Op_normal += epsNR ** 2 * NReg
 
     # CG solver
     if x0 is not None:
@@ -144,8 +163,8 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
     Notes
     -----
     Create a regularized operator by augumenting the problem operator
-    :math:`\mathbf{Op}`, by a set of regularization terms :math:`\mathbf{R_i}` and their
-    damping factors and :math:`\epsilon_{{R}_i}`:
+    :math:`\mathbf{Op}`, by a set of regularization terms :math:`\mathbf{R_i}`
+    and their damping factors and :math:`\epsilon_{{R}_i}`:
 
     .. math::
         \begin{bmatrix}
@@ -161,8 +180,8 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
     return OpReg
 
 
-def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
-                         x0=None, returninfo=False, **kwargs_lsqr):
+def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
+                         epsRs=None, x0=None, returninfo=False, **kwargs_lsqr):
     r"""Regularized inversion.
 
     Solve a system of regularized equations given the operator ``Op``,
@@ -180,7 +199,8 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
     Weight : :obj:`pylops.LinearOperator`, optional
         Weight operator
     dataregs : :obj:`list`, optional
-        Regularization data
+        Regularization data (if ``None`` a zero data will be used for every
+        regularization operator in ``Regs``)
     epsRs : :obj:`list`, optional
          Regularization dampings
     x0 : :obj:`numpy.ndarray`, optional
@@ -201,14 +221,16 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
         :math:`\mathbf{d} = \mathbf{Op}\mathbf{x}`
 
-        ``2`` means :math:`\mathbf{x}` approximately solves the least-squares problem
+        ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
+        problem
     itn : :obj:`int`
         Iteration number upon termination
     r1norm : :obj:`float`
-        :math:`||\mathbf{r}||_2`, where
+        :math:`||\mathbf{r}||_2^2`, where
         :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\mathbf{x}`
     r2norm : :obj:`float`
-        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +  \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
+        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
+        \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
         Equal to ``r1norm`` if :math:`\epsilon=0`
 
     See Also
@@ -239,28 +261,32 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
             \epsilon_{R_N} \mathbf{d}_{R_N} \\
         \end{bmatrix}
 
-    Note that the ``Weight`` provided here is equivalent to the
+    where the ``Weight`` provided here is equivalent to the
     square-root of the weight in
-    :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion`.
+    :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion`. Note
+    that this system is solved using the :py:func:`scipy.sparse.linalg.lsqr`
+    and an initial guess ``x0`` can be provided to this solver, despite the
+    original solver does not allow so.
 
     """
-    # regularized operator
-    if Regs is None and Weight is None:
-        raise ValueError('Regs and Weight are None, simply use lsqr')
+    # create regularization data
     if dataregs is None and Regs is not None:
-        dataregs = [np.zeros(Op.shape[1])] * len(Regs)
+        dataregs = [np.zeros(Reg.shape[0]) for Reg in Regs]
 
     if epsRs is None and Regs is not None:
         epsRs = [1] * len(Regs)
 
-    # operator
+    # create regularization operators
     if Weight is not None:
         if Regs is None:
             RegOp = Weight * Op
         else:
             RegOp = RegularizedOperator(Weight * Op, Regs, epsRs=epsRs)
     else:
-        RegOp = RegularizedOperator(Op, Regs, epsRs=epsRs)
+        if Regs is None:
+            RegOp = Op
+        else:
+            RegOp = RegularizedOperator(Op, Regs, epsRs=epsRs)
 
     # augumented data
     if Weight is not None:
@@ -268,6 +294,7 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
     else:
         datatot = data.copy()
 
+    # augumented operator
     if Regs is not None:
         for epsR, datareg in zip(epsRs, dataregs):
             datatot = np.hstack((datatot, epsR*datareg))
@@ -285,7 +312,8 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None, epsRs=None,
         return xinv
 
 
-def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_lsqr):
+def PreconditionedInversion(Op, P, data, x0=None, returninfo=False,
+                            **kwargs_lsqr):
     r"""Preconditioned inversion.
 
     Solve a system of preconditioned equations given the operator
@@ -311,22 +339,22 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_lsq
     -------
     xinv : :obj:`numpy.ndarray`
         Inverted model.
-    xinv : :obj:`numpy.ndarray`
-        Inverted model :math:`\mathbf{Op}`
     istop : :obj:`int`
         Gives the reason for termination
 
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
         :math:`\mathbf{d} = \mathbf{Op}\mathbf{x}`
 
-        ``2`` means :math:`\mathbf{x}` approximately solves the least-squares problem
+        ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
+        problem
     itn : :obj:`int`
         Iteration number upon termination
     r1norm : :obj:`float`
-        :math:`||\mathbf{r}||_2`, where :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\mathbf{x}`
+        :math:`||\mathbf{r}||_2^2`, where :math:`\mathbf{r} = \mathbf{d} -
+        \mathbf{Op}\mathbf{x}`
     r2norm : :obj:`float`
-        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +  \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
-        Equal to ``r1norm`` if :math:`\epsilon=0`
+        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +  \epsilon^2
+        \mathbf{x}^T\mathbf{x}}`. Equal to ``r1norm`` if :math:`\epsilon=0`
 
     See Also
     --------
@@ -343,7 +371,8 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_lsq
         \mathbf{d} = \mathbf{Op} (\mathbf{P} \mathbf{p})
 
     where :math:`\mathbf{p}` is the solution in the preconditioned space
-    and :math:`\mathbf{x} = \mathbf{P}\mathbf{p}` is the solution in the original space.
+    and :math:`\mathbf{x} = \mathbf{P}\mathbf{p}` is the solution in the
+    original space.
 
     """
     # Preconditioned operator

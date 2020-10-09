@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.sparse.linalg.interface import _get_dtype
+from scipy.sparse.linalg.interface import LinearOperator as spLinearOperator
 from pylops import LinearOperator
+from pylops.basicoperators import MatrixMult
 
 
 class BlockDiag(LinearOperator):
@@ -11,7 +13,9 @@ class BlockDiag(LinearOperator):
     Parameters
     ----------
     ops : :obj:`list`
-        Linear operators to be stacked
+        Linear operators to be stacked. Alternatively,
+        :obj:`numpy.ndarray` or :obj:`scipy.sparse` matrices can be passed
+        in place of one or more operators.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -30,10 +34,10 @@ class BlockDiag(LinearOperator):
 
     .. math::
         \begin{bmatrix}
-            \mathbf{L_1}  \quad \mathbf{0}     \quad  ... \quad  \mathbf{0}  \\
-            \mathbf{0}    \quad \mathbf{L_2}   \quad  ... \quad  \mathbf{0}  \\
-            ...           \quad ...            \quad  ... \quad  ...         \\
-            \mathbf{0}    \quad \mathbf{0}     \quad  ... \quad  \mathbf{L_N}
+            \mathbf{L_1}  & \mathbf{0}   &  ... &  \mathbf{0}  \\
+            \mathbf{0}    & \mathbf{L_2} &  ... &  \mathbf{0}  \\
+            ...           & ...          &  ... &  ...         \\
+            \mathbf{0}    & \mathbf{0}   &  ... &  \mathbf{L_N}
         \end{bmatrix}
         \begin{bmatrix}
             \mathbf{x}_{1}  \\
@@ -75,10 +79,11 @@ class BlockDiag(LinearOperator):
         self.ops = ops
         mops = np.zeros(len(ops), dtype=np.int)
         nops = np.zeros(len(ops), dtype=np.int)
-
         for iop, oper in enumerate(ops):
-            nops[iop] = oper.shape[0]
-            mops[iop] = oper.shape[1]
+            if not isinstance(oper, (LinearOperator, spLinearOperator)):
+                self.ops[iop] = MatrixMult(oper, dtype=oper.dtype)
+            nops[iop] = self.ops[iop].shape[0]
+            mops[iop] = self.ops[iop].shape[1]
         self.nops = nops.sum()
         self.mops = mops.sum()
         self.nnops = np.insert(np.cumsum(nops), 0, 0)
@@ -94,12 +99,12 @@ class BlockDiag(LinearOperator):
         y = np.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
             y[self.nnops[iop]:self.nnops[iop + 1]] = \
-                oper.matvec(x[self.mmops[iop]:self.mmops[iop + 1]])
+                oper.matvec(x[self.mmops[iop]:self.mmops[iop + 1]]).squeeze()
         return y
 
     def _rmatvec(self, x):
         y = np.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
             y[self.mmops[iop]:self.mmops[iop + 1]] = \
-                oper.rmatvec(x[self.nnops[iop]:self.nnops[iop + 1]])
+                oper.rmatvec(x[self.nnops[iop]:self.nnops[iop + 1]]).squeeze()
         return y

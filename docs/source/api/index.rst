@@ -12,7 +12,7 @@ as composed of a stack of three main layers:
   preconditioning term
 * *Applications*: high-level interfaces allowing users to easily setup and solve
   specific problems (while hiding the non-needed details - i.e., creation and
-  setup of linear operator and solver).
+  setup of linear operators and solvers).
 
 
 Linear operators
@@ -20,8 +20,6 @@ Linear operators
 
 Templates
 ~~~~~~~~~
-.. automodule:: pylops
-
 .. currentmodule:: pylops
 
 .. autosummary::
@@ -42,18 +40,22 @@ Basic operators
     Identity
     Zero
     Diagonal
+    Transpose
+    Flip
+    Roll
+    Pad
+    Sum
+    Symmetrize
     Restriction
     Regression
     LinearRegression
     CausalIntegration
     Spread
-    Flip
-    Symmetrize
     VStack
     HStack
     Block
     BlockDiag
-
+    Kronecker
 
 Smoothing and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -66,6 +68,9 @@ Smoothing and derivatives
    FirstDerivative
    SecondDerivative
    Laplacian
+   Gradient
+   FirstDirectionalDerivative
+   SecondDirectionalDerivative
 
 
 Signal processing
@@ -76,16 +81,22 @@ Signal processing
 .. autosummary::
    :toctree: generated/
 
+    Convolve1D
+    Convolve2D
+    ConvolveND
+    Interp
+    Bilinear
     FFT
     FFT2D
     FFTND
-    Convolve1D
-    Convolve2D
-    Interp
+    DWT
+    DWT2D
+    Seislet
     Radon2D
     Radon3D
     Sliding2D
     Sliding3D
+    Fredholm1
 
 
 Wave-Equation processing
@@ -96,8 +107,12 @@ Wave-Equation processing
 .. autosummary::
    :toctree: generated/
 
-    MDC
+    PressureToVelocity
     UpDownComposition2D
+    UpDownComposition3D
+    MDC
+    PhaseShift
+    Demigration
 
 
 Geophysicical subsurface characterization
@@ -137,8 +152,11 @@ Sparsity
    :toctree: generated/
 
     sparsity.IRLS
+    sparsity.OMP
     sparsity.ISTA
     sparsity.FISTA
+    sparsity.SPGL1
+    sparsity.SplitBregman
 
 
 
@@ -154,9 +172,11 @@ Wave-Equation processing
    :toctree: generated/
 
     SeismicInterpolation
+    Deghosting
     WavefieldDecomposition
     MDD
     Marchenko
+    LSM
 
 
 

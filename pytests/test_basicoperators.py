@@ -7,7 +7,7 @@ from scipy.sparse.linalg import lsqr
 
 from pylops.utils import dottest
 from pylops.basicoperators import Regression, LinearRegression, MatrixMult, \
-    Identity, Zero, Flip, Symmetrize
+    Identity, Zero, Flip, Symmetrize, Roll, Sum
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0,
         'dtype':'float32'}  # square real
@@ -32,7 +32,7 @@ def test_Regression(par):
     LRop = Regression(t, order=order, dtype=par['dtype'])
     assert dottest(LRop, par['ny'], order+1)
 
-    x = np.array([1., 2., 0. , 3., -1.], dtype=np.float32)
+    x = np.array([1., 2., 0., 3., -1.], dtype=np.float32)
     xlsqr = lsqr(LRop, LRop*x, damp=1e-10, iter_lim=300, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
@@ -115,11 +115,11 @@ def test_MatrixMult_repeated(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
-def test_Identity(par):
+def test_Identity_inplace(par):
     """Dot-test, forward and adjoint for Identity operator
     """
     np.random.seed(10)
-    Iop = Identity(par['ny'], par['nx'], dtype=par['dtype'])
+    Iop = Identity(par['ny'], par['nx'], dtype=par['dtype'], inplace=True)
     assert dottest(Iop, par['ny'], par['nx'],
                    complexflag=0 if par['imag'] == 0 else 3)
 
@@ -131,6 +131,29 @@ def test_Identity(par):
                               y[:min(par['ny'], par['nx'])], decimal=4)
     assert_array_almost_equal(x[:min(par['ny'], par['nx'])],
                               x1[:min(par['ny'], par['nx'])], decimal=4)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Identity_noinplace(par):
+    """Dot-test, forward and adjoint for Identity operator (not in place)
+    """
+    np.random.seed(10)
+    Iop = Identity(par['ny'], par['nx'], dtype=par['dtype'], inplace=False)
+    assert dottest(Iop, par['ny'], par['nx'],
+                   complexflag=0 if par['imag'] == 0 else 3)
+
+    x = np.ones(par['nx']) + par['imag'] * np.ones(par['nx'])
+    y = Iop*x
+    x1 = Iop.H*y
+
+    assert_array_almost_equal(x[:min(par['ny'], par['nx'])],
+                              y[:min(par['ny'], par['nx'])], decimal=4)
+    assert_array_almost_equal(x[:min(par['ny'], par['nx'])],
+                              x1[:min(par['ny'], par['nx'])], decimal=4)
+
+    # change value in x and check it doesn't change in y
+    x[0] = 10
+    assert x[0] != y[0]
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
@@ -259,7 +282,7 @@ def test_Symmetrize2D(par):
         assert dottest(Sop, y.size, par['ny']*par['nx'])
 
         xinv = Sop / y
-        assert_array_almost_equal(x[str(dir)].flatten(), xinv, decimal=3)
+        assert_array_almost_equal(x[str(dir)].ravel(), xinv, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
@@ -296,4 +319,105 @@ def test_Symmetrize3D(par):
         assert dottest(Sop, y.size, par['ny']*par['nx']*par['nx'])
 
         xinv = Sop / y
-        assert_array_almost_equal(x[str(dir)].flatten(), xinv, decimal=3)
+        assert_array_almost_equal(x[str(dir)].ravel(), xinv, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Roll1D(par):
+    """Dot-test, forward and adjoint for Roll operator on 1d signal
+    """
+    np.random.seed(10)
+    x = np.arange(par['ny']) + par['imag'] * np.arange(par['ny'])
+
+    Rop = Roll(par['ny'], shift=2, dtype=par['dtype'])
+    assert dottest(Rop, par['ny'], par['ny'])
+
+    y = Rop * x
+    xadj = Rop.H * y
+    assert_array_almost_equal(x, xadj, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Roll2D(par):
+    """Dot-test, forward and inverse for Roll operator on 2d signal
+    """
+    np.random.seed(10)
+    x = {}
+    x['0'] = np.outer(np.arange(par['ny']), np.ones(par['nx'])) + \
+             par['imag'] * np.outer(np.arange(par['ny']),
+                                    np.ones(par['nx']))
+    x['1'] = np.outer(np.ones(par['ny']), np.arange(par['nx'])) + \
+             par['imag'] * np.outer(np.ones(par['ny']),
+                                    np.arange(par['nx']))
+
+    for dir in [0, 1]:
+        Rop = Roll(par['ny'] * par['nx'],
+                   dims=(par['ny'], par['nx']),
+                   dir=dir, shift=-2, dtype=par['dtype'])
+        y = Rop * x[str(dir)].flatten()
+        assert dottest(Rop, par['ny'] * par['nx'], par['ny'] * par['nx'])
+
+        xadj = Rop.H * y
+        assert_array_almost_equal(x[str(dir)].ravel(), xadj, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Roll3D(par):
+    """Dot-test, forward and adjoint for Roll operator on 3d signal
+    """
+    np.random.seed(10)
+    x = {}
+    x['0'] = np.outer(np.arange(par['ny']),
+                      np.ones(par['nx']))[:, :, np.newaxis] * \
+             np.ones(par['nx']) + \
+             par['imag'] * np.outer(np.arange(par['ny']),
+                                    np.ones(par['nx']))[:, :, np.newaxis] * \
+             np.ones(par['nx'])
+
+    x['1'] = np.outer(np.ones(par['ny']),
+                      np.arange(par['nx']))[:, :, np.newaxis] * \
+             np.ones(par['nx']) + \
+             par['imag'] * np.outer(np.ones(par['ny']),
+                                    np.arange(par['nx']))[:, :, np.newaxis] * \
+             np.ones(par['nx'])
+    x['2'] = np.outer(np.ones(par['ny']),
+                      np.ones(par['nx']))[:, :, np.newaxis] * \
+             np.arange(par['nx']) + \
+             par['imag'] * np.outer(np.ones(par['ny']),
+                                    np.ones(par['nx']))[:, :, np.newaxis] * \
+             np.arange(par['nx'])
+
+    for dir in [0, 1, 2]:
+        Rop = Roll(par['ny'] * par['nx'] * par['nx'],
+                   dims=(par['ny'], par['nx'], par['nx']),
+                   dir=dir, shift=3, dtype=par['dtype'])
+        y = Rop * x[str(dir)].flatten()
+        assert dottest(Rop, par['ny'] * par['nx'] * par['nx'],
+                       par['ny'] * par['nx'] * par['nx'])
+
+        xinv = Rop.H * y
+        assert_array_almost_equal(x[str(dir)].ravel(), xinv, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Sum2D(par):
+    """Dot-test for Sum operator on 2d signal
+    """
+    for dir in [0, 1]:
+        dim_d = [par['ny'], par['nx']]
+        dim_d.pop(dir)
+        Sop = Sum(dims=(par['ny'], par['nx']),
+                  dir=dir,  dtype=par['dtype'])
+        assert dottest(Sop, np.prod(dim_d), par['ny'] * par['nx'])
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Sum3D(par):
+    """Dot-test, forward and adjoint for Sum operator on 3d signal
+    """
+    for dir in [0, 1, 2]:
+        dim_d = [par['ny'], par['nx'], par['nx']]
+        dim_d.pop(dir)
+        Sop = Sum(dims=(par['ny'], par['nx'], par['nx']),
+                  dir=dir, dtype=par['dtype'])
+        assert dottest(Sop, np.prod(dim_d), par['ny'] * par['nx'] * par['nx'])

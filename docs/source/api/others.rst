@@ -38,6 +38,14 @@ Synthetics
     seismicevents.linear3d
     seismicevents.hyperbolic3d
 
+.. currentmodule:: pylops.waveeqprocessing
+
+.. autosummary::
+   :toctree: generated/
+
+   marchenko.directwave
+
+
 
 Signal-processing
 ~~~~~~~~~~~~~~~~~
@@ -48,6 +56,8 @@ Signal-processing
    :toctree: generated/
 
     signalprocessing.convmtx
+    signalprocessing.nonstationary_convmtx
+    signalprocessing.slope_estimate
 
 
 Tapers

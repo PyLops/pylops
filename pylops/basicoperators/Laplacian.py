@@ -1,13 +1,14 @@
 import numpy as np
+from pylops.LinearOperator import aslinearoperator
 from pylops.basicoperators import SecondDerivative
 
 
 def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1),
-              dtype='float64'):
+              edge=False, dtype='float64'):
     r"""Laplacian.
 
-    Apply second-order centered laplacian operator to a multi-dimensional array
-    (at least 2 dimensions are required)
+    Apply second-order centered Laplacian operator to a multi-dimensional
+    array (at least 2 dimensions are required)
 
     Parameters
     ----------
@@ -19,7 +20,10 @@ def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1),
         Weight to apply to each direction (real laplacian operator if
         ``weights=[1,1]``)
     sampling : :obj:`tuple`, optional
-        Sampling steps ``dx`` and ``dy`` for each direction
+        Sampling steps for each direction
+    edge : :obj:`bool`, optional
+        Use reduced order derivative at edges (``True``) or
+        ignore them (``False``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -41,8 +45,9 @@ def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1),
 
     """
     l2op = weights[0]*SecondDerivative(np.prod(dims), dims=dims, dir=dirs[0],
-                                       sampling=sampling[0], dtype=dtype)
+                                       sampling=sampling[0],
+                                       edge=edge, dtype=dtype)
     l2op += weights[1]*SecondDerivative(np.prod(dims), dims=dims, dir=dirs[1],
-                                        sampling=sampling[1], dtype=dtype)
-
-    return l2op
+                                        sampling=sampling[1],
+                                        edge=edge, dtype=dtype)
+    return aslinearoperator(l2op)

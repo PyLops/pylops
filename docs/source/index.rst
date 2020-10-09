@@ -34,9 +34,9 @@ applied and inverted using numpy/scipy commands:
    D[0] = D[-1] = 0 # take away edge effects
 
    # y = Dx
-   y = np.dot(D,x)
+   y = np.dot(D, x)
    # x = D'y
-   xadj = np.dot(D.T,y)
+   xadj = np.dot(D.T, y)
    # xinv = D^-1 y
    xinv = lstsq(D, y)[0]
 
@@ -76,7 +76,7 @@ while its application to a data is referred to as **adjoint modelling (or operat
 where :math:`\mathbf{x}` is called *model* and :math:`\mathbf{y}` is called *data*.
 The *operator* :math:`\mathbf{A}:\mathbb{F}^m \to \mathbb{F}^n` effectively maps a
 vector of size :math:`m` in the *model space* to a vector of size :math:`n`
-in the *data space*, conversely the * adjoint operator*
+in the *data space*, conversely the *adjoint operator*
 :math:`\mathbf{A}^H:\mathbb{F}^n \to \mathbb{F}^m` maps a
 vector of size :math:`n` in the *data space* to a vector of size :math:`m`
 in the *model space*. As linear operators mimics the effect a matrix on a vector
@@ -121,6 +121,7 @@ that can be tailored to our needs, and as contribution to the free software comm
 
    installation.rst
    performance.rst
+   extensions.rst
    tutorials/index.rst
    FAQs <faq.rst>
 
@@ -141,5 +142,7 @@ that can be tailored to our needs, and as contribution to the free software comm
    Contributing <contributing.rst>
    Changelog <changelog.rst>
    Roadmap <roadmap.rst>
+   Papers using PyLops <papers.rst>
+   Citing <citing.rst>
    Credits <credits.rst>
 

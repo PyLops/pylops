@@ -43,9 +43,11 @@ def zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
 
     """
     # Create theta1 array of angles in radiants
-    theta1 = np.radians(np.array(theta1))
-    if theta1.size == 1:
-        theta1 = np.expand_dims(theta1, axis=1)
+    if isinstance(theta1, (int, float)):
+        theta1 = np.array([float(theta1), ])
+    elif isinstance(theta1, (list, tuple)):
+        theta1 = np.array(theta1)
+    theta1 = np.radians(theta1)
 
     # Set the ray parameter p
     p = sin(theta1) / vp1
@@ -214,7 +216,7 @@ def approx_zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     --------
     zoeppritz_scattering : Zoeppritz solution
     zoeppritz_element : Single reflectivity element of Zoeppritz solution
-    zoeppritz_PP : PP reflectivity element of Zoeppritz solution
+    zoeppritz_pp : PP reflectivity element of Zoeppritz solution
 
     """
     vp1, vs1, rho1 = np.array(vp1), np.array(vs1), np.array(rho1)
@@ -316,7 +318,7 @@ def akirichards(theta, vsvp, n=1):
 def fatti(theta, vsvp, n=1):
     r"""Three terms Fatti approximation.
 
-    Computes the coefficients of the of three terms Fatti approximation
+    Computes the coefficients of the three terms Fatti approximation
     for a set of angles and a constant or variable VS/VP ratio.
 
     Parameters

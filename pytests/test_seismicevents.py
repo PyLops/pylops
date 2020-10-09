@@ -94,7 +94,7 @@ def test_multilinear2d(par):
 
     # Assert correct position of event
     assert_array_equal(d[:, t0[0]],
-                       amp[0]*np.ones(par['nx']))
+                       amp[0] * np.ones(par['nx']))
     assert_array_equal(d[:, t0[1]],
                        amp[1] * np.ones(par['nx']))
 

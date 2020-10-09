@@ -4,6 +4,9 @@ from pylops.basicoperators import Spread
 
 try:
     from numba import jit
+    from ._Radon2D_numba import _linear_numba, _parabolic_numba, \
+        _hyperbolic_numba, _indices_2d_numba, _indices_2d_onthefly_numba, \
+        _create_table_numba
 except ModuleNotFoundError:
     jit = None
 
@@ -19,7 +22,7 @@ def _parabolic(x, t, px):
 def _hyperbolic(x, t, px):
     return np.sqrt(t**2 + (x/px)**2)
 
-def _indices_2d(f, x, px, it, nt, interp=True):
+def _indices_2d(f, x, px, t, nt, interp=True):
     """Compute time and space indices of parametric line in ``f`` function
 
     Parameters
@@ -30,10 +33,10 @@ def _indices_2d(f, x, px, it, nt, interp=True):
         Spatial axis (must be symmetrical around 0 and with sampling 1)
     px : :obj:`float`
         Slowness/curvature
-    it : :obj:`int`
-        Index of time axis
+    t : :obj:`int`
+        Time sample (time axis is assumed to have sampling 1)
     nt : :obj:`int`
-        Size scaof time axis
+        Size of time axis
     interp : :obj:`bool`, optional
         Apply linear interpolation (``True``) or nearest interpolation
         (``False``) during stacking/spreading along parametric curve
@@ -48,7 +51,7 @@ def _indices_2d(f, x, px, it, nt, interp=True):
         Decimal time variations for interpolation
 
     """
-    tdecscan = f(x, it, px)
+    tdecscan = f(x, t, px)
     if not interp:
         xscan = (tdecscan >= 0) & (tdecscan < nt)
     else:
@@ -60,10 +63,20 @@ def _indices_2d(f, x, px, it, nt, interp=True):
         dtscan = None
     return xscan, tscan, dtscan
 
-def _indices_2d_onthefly(f, x, px, ip, it, nt, interp=True):
+def _indices_2d_onthefly(f, x, px, ip, t, nt, interp=True):
     """Wrapper around _indices_2d to allow on-the-fly computation of
     parametric curves"""
-    return _indices_2d(f, x, px[ip], it, nt, interp=interp)
+    tscan = np.full(len(x), np.nan, dtype=np.float32)
+    if interp:
+        dtscan = np.full(len(x), np.nan)
+    else:
+        dtscan = None
+    xscan, tscan1, dtscan1 = \
+        _indices_2d(f, x, px[ip], t, nt, interp=interp)
+    tscan[xscan] = tscan1
+    if interp:
+        dtscan[xscan] = dtscan1
+    return xscan, tscan, dtscan
 
 def _create_table(f, x, pxaxis, nt, npx, nx, interp):
     """Create look up table
@@ -76,73 +89,11 @@ def _create_table(f, x, pxaxis, nt, npx, nx, interp):
 
     for ipx, px in enumerate(pxaxis):
         for it in range(nt):
-            xscan, tscan, dtscan = _indices_2d(f, x, px,
-                                               it, nt,
+            xscan, tscan, dtscan = _indices_2d(f, x, px, it, nt,
                                                interp=interp)
             table[ipx, it, xscan] = tscan
             if interp:
                 dtable[ipx, it, xscan] = dtscan
-    return table, dtable
-
-# numba
-@jit(nopython=True)
-def _linear_numba(x, t, px):
-    return t + px * x
-
-@jit(nopython=True)
-def _parabolic_numba(x, t, px):
-    return t + px*x**2
-
-@jit(nopython=True)
-def _hyperbolic_numba(x, t, px):
-    return np.sqrt(t**2 + (x/px)**2)
-
-@jit(nopython=True, nogil=True)
-def _indices_2d_numba(f, x, px, it, nt, interp=True):
-    """Compute time and space indices of parametric line in ``f`` function
-    using numba. Refer to ``_indices_2d`` for full documentation.
-
-    """
-    tdecscan = f(x, it, px)
-    if not interp:
-        xscan = (tdecscan >= 0) & (tdecscan < nt)
-    else:
-        xscan = (tdecscan >= 0) & (tdecscan < nt - 1)
-    tscanfs = tdecscan[xscan]
-    tscan = np.zeros(len(tscanfs))
-    dtscan = np.zeros(len(tscanfs))
-    for it, tscanf in enumerate(tscanfs):
-        tscan[it] = int(tscanf)
-        if interp:
-            dtscan[it] = tscanf - tscan[it]
-    return xscan, tscan, dtscan
-
-@jit(nopython=True, parallel=True, nogil=True)
-def _indices_2d_onthefly_numba(f, x, px, ip, it, nt, interp=True):
-    """Wrapper around _indices_2d to allow on-the-fly computation of
-    parametric curves using numba
-    """
-    return _indices_2d_numba(f, x, px[ip], it, nt, interp=interp)
-
-@jit(nopython=True, parallel=True, nogil=True)
-def _create_table_numba(f, x, pxaxis, nt, npx, nx, interp):
-    """Create look up table using numba
-    """
-    table = np.full((npx, nt, nx), np.nan, dtype=np.float32)
-    dtable = np.full((npx, nt, nx), np.nan)
-    for ipx in range(npx):
-        px = pxaxis[ipx]
-        for it in range(nt):
-            xscans, tscan, dtscan = _indices_2d_numba(f, x, px,
-                                                      it, nt,
-                                                      interp=interp)
-            itscan = 0
-            for ixscan, xscan in enumerate(xscans):
-                if xscan:
-                    table[ipx, it, ixscan] = tscan[itscan]
-                    if interp:
-                        dtable[ipx, it, ixscan] = dtscan[itscan]
-                    itscan += 1
     return table, dtable
 
 
@@ -169,7 +120,8 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
         Axis of scanning variable :math:`p_x` of parametric curve
     kind : :obj:`str`, optional
         Curve to be used for stacking/spreading (``linear``, ``parabolic``,
-        and ``hyperbolic`` are currently supported)
+        and ``hyperbolic`` are currently supported) or a function that takes
+        (x, t0, px) as input and returns t as output
     centeredh : :obj:`bool`, optional
         Assume centered spatial axis (``True``) or not (``False``)
     interp : :obj:`bool`, optional
@@ -235,6 +187,8 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
         f = _parabolic if engine == 'numpy' else _parabolic_numba
     elif kind == 'hyperbolic':
         f = _hyperbolic if engine == 'numpy' else _hyperbolic_numba
+    elif callable(kind):
+        f = kind
     else:
         raise NotImplementedError('kind must be linear, '
                                   'parabolic, or hyperbolic...')

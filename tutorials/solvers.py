@@ -96,7 +96,7 @@ plt.title('Data restriction')
 # without regularization*. We aim here to minimize the following cost function:
 #
 #   .. math::
-#        J = ||\mathbf{y} - \mathbf{R} \mathbf{x}||_2
+#        J = ||\mathbf{y} - \mathbf{R} \mathbf{x}||_2^2
 #
 # Depending on the choice of the operator :math:`\mathbf{R}`, such problem can
 # be solved using explicit matrix solvers as well as iterative solvers. In
@@ -197,7 +197,24 @@ xne = \
                                                               **dict(maxiter=50))
 
 ###############################################################################
-# We can do the same while using :py:func:`pylops.optimization.leastsquares.RegularizedInversion`
+# Note that in case we have access to a fast implementation for the chain of
+# forward and adjoint for the regularization operator
+# (i.e., :math:`\nabla^T\nabla`), we can modify our call to
+# :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion` as
+# follows:
+ND2op = pylops.MatrixMult((D2op.H * D2op).tosparse()) # mimic fast D^T D
+
+xne1 = \
+    pylops.optimization.leastsquares.NormalEquationsInversion(Rop, [], y,
+                                                              NRegs=[ND2op],
+                                                              epsI=epsI,
+                                                              epsNRs=[epsR],
+                                                              returninfo=False,
+                                                              **dict(maxiter=50))
+
+###############################################################################
+# We can do the same while using
+# :py:func:`pylops.optimization.leastsquares.RegularizedInversion`
 # which solves the following augmented problem
 #
 #   .. math::
@@ -222,7 +239,7 @@ xreg = \
 # We can also write a preconditioned problem, whose cost function is
 #
 #   .. math::
-#       J= ||\mathbf{y} - \mathbf{R} \mathbf{P} \mathbf{p}||_2
+#       J= ||\mathbf{y} - \mathbf{R} \mathbf{P} \mathbf{p}||_2^2
 #
 # where :math:`\mathbf{P}` is the precondioned operator, :math:`\mathbf{p}` is
 # the projected model in the preconditioned space, and
@@ -251,7 +268,8 @@ fig = plt.figure(figsize=(12, 4))
 plt.plot(t[iava], y, '.k', ms=20, label='available samples')
 plt.plot(t, x, 'k', lw=3, label='original')
 plt.plot(t, xne, 'b', lw=3, label='normal equations')
-plt.plot(t, xreg, '--r', lw=3, label='regularized')
+plt.plot(t, xne1, '--c', lw=3, label='normal equations (with direct D^T D)')
+plt.plot(t, xreg, '-.r', lw=3, label='regularized')
 plt.plot(t, xprec, '--g', lw=3, label='preconditioned equations')
 plt.legend()
 plt.title('Data reconstruction with regularization')
@@ -260,7 +278,8 @@ subax = fig.add_axes([0.7, 0.2, 0.15, 0.6])
 subax.plot(t[iava], y, '.k', ms=20)
 subax.plot(t, x, 'k', lw=3)
 subax.plot(t, xne, 'b', lw=3)
-subax.plot(t, xreg, '--r', lw=3)
+subax.plot(t, xne1, '--c', lw=3)
+subax.plot(t, xreg, '-.r', lw=3)
 subax.plot(t, xprec, '--g', lw=3)
 subax.set_xlim(0.05, 0.3)
 
@@ -280,7 +299,7 @@ subax.set_xlim(0.05, 0.3)
 # (i.e., three spikes in the Fourier domain). Our new cost function is:
 #
 #   .. math::
-#        J_1 = ||\mathbf{y} - \mathbf{R} \mathbf{F} \mathbf{p}||_2 +
+#        J_1 = ||\mathbf{y} - \mathbf{R} \mathbf{F} \mathbf{p}||_2^2 +
 #              \epsilon ||\mathbf{p}||_1
 #
 # where :math:`\mathbf{F}` is the FFT operator. We will thus use the
@@ -300,7 +319,7 @@ xfista = FFTop.H*pfista
 
 fig, axs = plt.subplots(2, 1, figsize=(12, 8))
 fig.suptitle('Data reconstruction with sparsity', fontsize=14,
-             fontweight='bold', y=0.95)
+             fontweight='bold', y=0.9)
 axs[0].plot(f, np.abs(X), 'k', lw=3)
 axs[0].plot(f, np.abs(pista), '--r', lw=3)
 axs[0].plot(f, np.abs(pfista), '--g', lw=3)
@@ -331,3 +350,41 @@ plt.tight_layout()
 # recovering the underlying densely sampled input signal. Moreover, FISTA
 # converges much faster than ISTA as expected and should be preferred when
 # using sparse solvers.
+#
+# Finally we consider a slightly different cost function (note that in this
+# case we try to solve a constrained problem):
+#
+#   .. math::
+#        J_1 = ||\mathbf{p}||_1
+#              \quad subj.to \quad  ||\mathbf{y} -
+#              \mathbf{R} \mathbf{F} \mathbf{p}||
+#
+# A very popular solver to solve such kind of cost function is called *spgl1*
+# and can be accessed via :py:class:`pylops.optimization.sparsity.SPGL1`.
+
+xspgl1, pspgl1, info = \
+    pylops.optimization.sparsity.SPGL1(Rop, y, FFTop, tau=3, iter_lim=200)
+
+fig, axs = plt.subplots(2, 1, figsize=(12, 8))
+fig.suptitle('Data reconstruction with SPGL1', fontsize=14,
+             fontweight='bold', y=0.9)
+axs[0].plot(f, np.abs(X), 'k', lw=3)
+axs[0].plot(f, np.abs(pspgl1), '--m', lw=3)
+axs[0].set_xlim(0, 30)
+axs[0].set_title('Frequency domain')
+axs[1].plot(t[iava], y, '.k', ms=20, label='available samples')
+axs[1].plot(t, x, 'k', lw=3, label='original')
+axs[1].plot(t, xspgl1, '--m', lw=3, label='SPGL1')
+axs[1].set_title('Time domain')
+axs[1].axis('tight')
+axs[1].legend()
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)
+
+fig, ax = plt.subplots(1, 1, figsize=(12, 3))
+ax.semilogy(info['rnorm2'], 'k', lw=2, label='ISTA')
+ax.set_title('Cost functions', size=15, fontweight='bold')
+ax.set_xlabel('Iteration')
+ax.legend()
+ax.grid(True)
+plt.tight_layout()

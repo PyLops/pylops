@@ -5,7 +5,7 @@ import datetime
 import sphinx_rtd_theme
 import sphinx_gallery
 from sphinx_gallery.sorting import ExampleTitleSortKey
-from pkg_resources import get_distribution
+from pylops import __version__
 
 # Sphinx needs to be able to import the package to use autodoc and get the version number
 sys.path.insert(0, os.path.abspath('../../pylops'))
@@ -35,6 +35,7 @@ intersphinx_mapping = {
     "pandas": ("http://pandas.pydata.org/pandas-docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "pyfftw": ("https://pyfftw.readthedocs.io/en/latest/", None),
+    "spgl1": ("https://spgl1.readthedocs.io/en/latest/", None),
 }
 
 ## Generate autodoc stubs with summaries from code
@@ -86,7 +87,7 @@ project = 'PyLops'
 copyright = '{}, Matteo Ravasi'.format(year)
 
 # Version
-version = get_distribution('pylops').version
+version = __version__
 if len(version.split('+')) > 1 or version == 'unknown':
     version = 'dev'
 
@@ -99,6 +100,7 @@ html_last_updated_fmt = '%b %d, %Y'
 html_title = 'PyLops'
 html_short_title = 'PyLops'
 html_logo = '_static/pylops.png'
+html_favicon = '_static/favicon.ico'
 html_static_path = ['_static']
 html_extra_path = []
 pygments_style = 'default'

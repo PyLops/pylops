@@ -3,21 +3,19 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from pylops.basicoperators import MatrixMult, Diagonal, Smoothing1D
+from pylops.basicoperators import MatrixMult, Diagonal, Smoothing1D, \
+    HStack, Identity
 from pylops.optimization.leastsquares import NormalEquationsInversion, \
     RegularizedInversion, PreconditionedInversion
 
-par1 = {'ny': 11, 'nx': 11, 'imag': 0,
-        'x0':False,
-        'dtype':'complex64'} # square real with zero initial guess
-par2 = {'ny': 11, 'nx': 11, 'imag': 0,
-        'x0':True,
-        'dtype':'complex64'} # square real with non-zero initial guess
-par3 = {'ny': 31, 'nx': 11, 'imag': 0,
-        'x0':False,
-        'dtype':'complex64'} # overdetermined real with zero initial guess
+par1 = {'ny': 11, 'nx': 11, 'imag': 0, 'x0':False,
+        'dtype':'float64'} # square real with zero initial guess
+par2 = {'ny': 11, 'nx': 11, 'imag': 0, 'x0':True,
+        'dtype':'float64'} # square real with non-zero initial guess
+par3 = {'ny': 31, 'nx': 11, 'imag': 0, 'x0':False,
+        'dtype':'float64'} # overdetermined real with zero initial guess
 par4 = {'ny': 31, 'nx': 11, 'imag': 0, 'x0': True,
-        'dtype': 'complex64'} # overdetermined real with non-zero initial guess
+        'dtype': 'float64'} # overdetermined real with non-zero initial guess
 par1j = {'ny': 11, 'nx': 11, 'imag': 1j, 'x0':False,
          'dtype':'complex64'} # square complex with zero initial guess
 par2j = {'ny': 11, 'nx': 11, 'imag': 1j, 'x0': True,
@@ -41,11 +39,12 @@ def test_NormalEquationsInversion(par):
     Gop = MatrixMult(G, dtype=par['dtype'])
 
     Reg = MatrixMult(np.eye(par['nx']), dtype=par['dtype'])
+    NReg = MatrixMult(np.eye(par['nx']), dtype=par['dtype'])
     Weigth = Diagonal(np.ones(par['ny']), dtype=par['dtype'])
     x = np.ones(par['nx']) + par['imag']*np.ones(par['nx'])
     x0 = np.random.normal(0, 10, par['nx']) + \
          par['imag']*np.random.normal(0, 10, par['nx']) if par['x0'] else None
-    y = Gop*x
+    y = Gop * x
 
     # normal equations with regularization
     xinv = NormalEquationsInversion(Gop, [Reg], y, epsI=0,
@@ -61,6 +60,12 @@ def test_NormalEquationsInversion(par):
     # normal equations with weight and small regularization
     xinv = NormalEquationsInversion(Gop, [Reg], y, Weight=Weigth, epsI=0,
                                     epsRs=[1e-8], x0=x0, returninfo=False,
+                                    **dict(maxiter=200, tol=1e-10))
+    assert_array_almost_equal(x, xinv, decimal=3)
+    # normal equations with weight and small normal regularization
+    xinv = NormalEquationsInversion(Gop, [], y, NRegs=[NReg],
+                                    Weight=Weigth, epsI=0,
+                                    epsNRs=[1e-8], x0=x0, returninfo=False,
                                     **dict(maxiter=200, tol=1e-10))
     assert_array_almost_equal(x, xinv, decimal=3)
 
@@ -150,4 +155,24 @@ def test_PreconditionedInversion(par):
     xinv = PreconditionedInversion(Gop, Pre, y, x0=x0,
                                    returninfo=False,
                                    **dict(damp=0, iter_lim=800, show=0))
+    assert_array_almost_equal(x, xinv, decimal=2)
+
+
+@pytest.mark.parametrize("par", [(par1)])
+def test_skinnyregularization(par):
+    """Solve inversion with a skinny regularization (rows are smaller than
+    the number of elements in the model vector)
+    """
+    np.random.seed(10)
+    d = np.arange(par['nx'] - 1).astype(par['dtype']) + 1.
+    Dop = Diagonal(d, dtype=par['dtype'])
+    Regop = HStack([Identity(par['nx'] // 2), Identity(par['nx'] // 2)])
+
+    x = np.arange(par['nx'] - 1)
+    y = Dop * x
+
+    xinv = NormalEquationsInversion(Dop, [Regop, ], y, epsRs=[1e-4, ])
+    assert_array_almost_equal(x, xinv, decimal=2)
+
+    xinv = RegularizedInversion(Dop, [Regop, ], y, epsRs=[1e-4, ])
     assert_array_almost_equal(x, xinv, decimal=2)

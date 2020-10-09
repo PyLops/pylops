@@ -117,7 +117,7 @@ wavn_est = Wavesop / dn.T.flatten()
 # Create regularization operator
 D2op = pylops.SecondDerivative(ntwav, dtype='float64')
 
-# Invert for interpolated signal
+# Invert for wavelet
 wavn_reg_est, istop, itn, r1norm, r2norm = \
     pylops.optimization.leastsquares.RegularizedInversion(Wavesop, [D2op], dn.T.flatten(),
                                                           epsRs=[np.sqrt(0.1)], returninfo=True,
@@ -158,7 +158,7 @@ Sop = pylops.Symmetrize((ntwav+1)//2)
 # Create smoothing operator
 Smop = pylops.Smoothing1D(5, dims=((ntwav+1)//2,), dtype='float64')
 
-# Invert for interpolated signal
+# Invert for wavelet
 wavn_prec_est = \
     pylops.optimization.leastsquares.PreconditionedInversion(Wavesop, Sop,
                                                              dn.T.flatten(),

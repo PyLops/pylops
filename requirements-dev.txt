@@ -1,7 +1,10 @@
 numpy>=1.15.0
-scipy
+scipy>=1.1.0
 numba
 pyfftw
+PyWavelets
+spgl1
+scikit-fmm
 matplotlib
 ipython
 pytest

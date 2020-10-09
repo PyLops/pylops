@@ -87,8 +87,8 @@ plt.plot(t1, 'k', label=' _matvec')
 plt.plot(t2, 'r', label='matvec')
 plt.plot(t3, 'g', label='@')
 plt.plot(t4, 'b', label='*')
-plt.legend()
 plt.axis('tight')
+plt.legend();
 
 ###############################################################################
 # Similarly we now consider the adjoint mode. This can be done in
@@ -135,43 +135,48 @@ plt.plot(t1, 'k', label=' _rmatvec')
 plt.plot(t2, 'r', label='rmatvec')
 plt.plot(t3, 'g', label='.H* (pre-computed H)')
 plt.plot(t4, 'b', label='.H*')
-plt.legend()
 plt.axis('tight')
+plt.legend();
 
 ###############################################################################
 # Just to reiterate once again, it is advised to call ``matvec``
 # and ``rmatvec`` unless PyLops linear operators are used for
 # teaching purposes.
 #
-# Finally we go through some other *methods* and *special methods* that
+# We now go through some other *methods* and *special methods* that
 # are implemented in :py:class:`scipy.sparse.linalg.LinearOperator` (and
 # :py:class:`pylops.LinearOperator`):
 #
 # * ``Op1+Op2``: maps the special method ``__add__`` and
-#   performs summation between two operators
+#   performs summation between two operators and
+#   returns a :py:class:`pylops.LinearOperator`
 # * ``-Op``: maps the special method ``__neg__`` and
-#   performs negation of an operators
+#   performs negation of an operators and
+#   returns a :py:class:`pylops.LinearOperator`
 # * ``Op1-Op2``: maps the special method ``__sub__`` and
-#   performs summation between two operators
+#   performs summation between two operators and
+#   returns a :py:class:`pylops.LinearOperator`
 # * ``Op1**N``: maps the special method ``__pow__`` and
-#   performs exponentiation of an operator
+#   performs exponentiation of an operator and
+#   returns a :py:class:`pylops.LinearOperator`
 # * ``Op/y`` (and ``Op.div(y)``): maps the special method ``__truediv__`` and
 #   performs inversion of an operator
 # * ``Op.eigs()``: estimates the eigenvalues of the operator
 # * ``Op.cond()``: estimates the condition number of the operator
+# * ``Op.conj()``: create complex conjugate operator
 
 # +
-print(Dop+Dop)
+print(Dop + Dop)
 
 # -
 print(-Dop)
-print(Dop-0.5*Dop)
+print(Dop - 0.5 * Dop)
 
 # **
-print(Dop**3)
+print(Dop ** 3)
 
 #* and /
-y = Dop*x
+y = Dop * x
 print(Dop/y)
 
 # eigs
@@ -179,6 +184,56 @@ print(Dop.eigs(neigs=3))
 
 # cond
 print(Dop.cond())
+
+# conj
+print(Dop.conj())
+
+###############################################################################
+# To understand the effect of ``conj`` we need to look into a problem with an
+# operator in the complex domain. Let's create again our
+# :py:class:`pylops.Diagonal` operator but this time we populate it with
+# complex numbers. We will see that the action of the operator and its complex
+# conjugate is different even if the model is real.
+n = 5
+d = 1j*(np.arange(n) + 1.)
+x = np.ones(n)
+Dop = pylops.Diagonal(d)
+
+print('y = Dx = ', Dop*x)
+print('y = conj(D)x = ', Dop.conj()*x)
+
+###############################################################################
+# At this point, the concept of linear operator may sound abstract.
+# The convinience method :func:`pylops.LinearOperator.todense` can be used to
+# create the equivalent dense matrix of any operator. In this case for example
+# we expect to see a diagonal matrix with ``d`` values along the main diagonal
+D = Dop.todense()
+
+plt.figure(figsize=(5, 5))
+plt.imshow(np.abs(D))
+plt.title('Dense representation of Diagonal operator')
+plt.axis('tight')
+plt.colorbar()
+
+###############################################################################
+# Finally it is worth reiterating that if two linear operators are combined by
+# means of the algebraical operations shown above, the resulting
+# operator is still a :py:class:`pylops.LinearOperator` operator. This means
+# that we can still apply any of the methods implemented in the original
+# scipy class definition like ``*``, as well as those in our class
+# definition like ``/``
+Dop1 = Dop - Dop.conj()
+
+y = Dop1 * x
+print('x = (Dop - conj(Dop))/y = ', Dop1 / y)
+
+D1 = Dop1.todense()
+
+plt.figure(figsize=(5, 5))
+plt.imshow(np.abs(D1))
+plt.title(r'Dense representation of $|D + D^*|$')
+plt.axis('tight')
+plt.colorbar()
 
 ###############################################################################
 # This first tutorial is completed. You have seen the basic operations that

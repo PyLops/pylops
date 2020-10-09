@@ -1,12 +1,13 @@
 ![PyLops](https://github.com/equinor/pylops/blob/master/docs/source/_static/pylops_b.png)
 
 [![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/pylops/badges/version.svg)](https://anaconda.org/conda-forge/pylops)
 [![Build Status](https://travis-ci.org/equinor/pylops.svg?branch=master)](https://travis-ci.org/equinor/pylops)
-[![AzureDevOps Status](https://dev.azure.com/MRAVA/PyLops/_apis/build/status/equinor.pylops?branchName=master)](https://dev.azure.com/MRAVA/PyLops/_build/latest?definitionId=1&branchName=master)
+[![AzureDevOps Status](https://dev.azure.com/matteoravasi/PyLops/_apis/build/status/equinor.pylops?branchName=master)](https://dev.azure.com/matteoravasi/PyLops/_build/latest?definitionId=2&branchName=master)
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=latest)](https://pylops.readthedocs.io/en/latest/?badge=latest)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=equinor/pylops&amp;utm_campaign=Badge_Grade)
 [![Codacy Coverage](https://api.codacy.com/project/badge/Coverage/f24504b617ad40f188b73afc0722b5b8)](https://www.codacy.com/app/mrava87/pylops?utm_source=github.com&utm_medium=referral&utm_content=equinor/pylops&utm_campaign=Badge_Coverage)
-[![OS-support](https://img.shields.io/badge/OS-linux,osx-850A8B.svg)](https://github.com/equinor/pylops)
+![OS-support](https://img.shields.io/badge/OS-linux,win,osx-850A8B.svg)
 [![Slack Status](https://img.shields.io/badge/chat-slack-green.svg)](https://pylops.slack.com)
 
 ## Objective
@@ -42,9 +43,9 @@ D = np.diag(0.5*np.ones(nx-1), k=1) - \
 D[0] = D[-1] = 0 # take away edge effects
 
 # y = Dx
-y = np.dot(D,x)
+y = np.dot(D, x)
 # x = D'y
-xadj = np.dot(D.T,y)
+xadj = np.dot(D.T, y)
 # xinv = D^-1 y
 xinv = lstsq(D, y)[0]
 ```
@@ -78,7 +79,7 @@ This repository is organized as follows:
 
 ## Getting started
 
-You need **Python 3.6.4 or greater**.
+You need **Python 3.6 or greater**.
 
 #### From PyPi
 
@@ -97,9 +98,25 @@ import pylops
 
 If you do not see any error, you should be good to go, enjoy!
 
-#### From Docker *(preview)*
+#### From Conda-forge
 
-Alternatively, if you simply want to try PyLops but do not have Python in your
+Alternatively, you can install PyLops using the conda-forge distribution by typing the following command in your terminal:
+
+```
+conda install -c conda-forge pylops
+```
+
+#### From Github
+
+You can also directly install from the master node (although this is not reccomended)
+
+```
+pip install git+https://git@github.com/equinor/pylops.git@master
+```
+
+#### From Docker
+
+Finally, if you simply want to try PyLops but do not have Python in your
 local machine, you can use our [Docker](https://www.docker.com) image. After installing Docker in your computer,
 type the following command in your terminal (note that this will take some time the first time
 you type it as you will download and install the docker image):
@@ -113,13 +130,15 @@ and other basic Python libraries installed. Here `/path/to/local/folder` is the 
 on your computer where you will create a notebook (or containing notebooks that you want to continue working on). Note that
 anything you do to the notebook(s) will be saved in your local folder.
 
+A larger image with Conda distribution is also available. Simply use `conda_notebook` instead of `notebook` in the
+previous command.
 
 ## Contributing
 
 *Feel like contributing to the project? Adding new operators or tutorial?*
 
 We advise using the [Anaconda Python distribution](https://www.anaconda.com/download)
-to ensure that all the dependencies are installed via the ``Conda`` package manager. Follow
+to ensure that all the dependencies are installed via the `Conda` package manager. Follow
 the following instructions and read carefully the [CONTRIBUTING](CONTRIBUTING.md) file before getting started.
 
 ### 1. Fork and clone the repository
@@ -174,9 +193,19 @@ PyLops was initially written and it is currently maintained by [Equinor](https:/
 It is a flexible and scalable python library for large-scale optimization with linear
 operators that can be tailored to our needs, and as contribution to the free software community.
 
+## Citing
+When using ``pylops`` in scientific publications, please cite the following paper:
+
+- Ravasi, M., and Vasconcelos I., *PyLops--A Linear-Operator Python Library for large scale optimization*,
+  SoftwareX, (2019). [link](https://www.sciencedirect.com/science/article/pii/S2352711019301086).
+
+
 
 ## Contributors
 * Matteo Ravasi, mrava87
 * Carlos da Costa, cako
 * Dieter Werthmüller, prisae
 * Tristan van Leeuwen, TristanvanLeeuwen
+* Leonardo Uieda, leouieda
+* Filippo Broggini, filippo82
+* Tyler Hughes, twhughes

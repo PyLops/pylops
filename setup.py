@@ -1,6 +1,5 @@
 import os
-from distutils.core import setup
-from setuptools import find_packages
+from setuptools import setup, find_packages
 
 def src(pth):
     return os.path.join(os.path.dirname(__file__), pth)
@@ -27,12 +26,15 @@ setup(
         'License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Scientific/Engineering :: Mathematics'
     ],
     author='mrava',
     author_email='mrava@equinor.com',
-    install_requires=['numpy', 'scipy'],
-    extras_require={'FFTW': ['pyfftw']},
+    install_requires=['numpy >= 1.15.0', 'scipy'],
+    extras_require={'advanced': ['llvmlite', 'numba',
+                                 'pyfftw', 'PyWavelets',
+                                 'scikit-fmm', 'spgl1']},
     packages=find_packages(exclude=['pytests']),
     use_scm_version=dict(root = '.',
                          relative_to = __file__,

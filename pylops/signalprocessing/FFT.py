@@ -6,6 +6,12 @@ try:
     import pyfftw
 except ModuleNotFoundError:
     pyfftw = None
+    pyfftw_message = 'Pyfftw not installed, use numpy or run ' \
+                     '"pip install pyFFTW" or ' \
+                     '"conda install -c conda-forge pyfftw".'
+except Exception as e:
+    pyfftw = None
+    pyfftw_message = 'Failed to import pyfftw (error:%s), use numpy.' % e
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -14,7 +20,7 @@ class _FFT_numpy(LinearOperator):
     """One dimensional Fast-Fourier Transform using numpy
     """
     def __init__(self, dims, dir=0, nfft=None, sampling=1.,
-                 real=False, dtype='complex128'):
+                 real=False, fftshift=False, dtype='complex128'):
         if isinstance(dims, int):
             dims = (dims,)
         if dir > len(dims)-1:
@@ -23,6 +29,7 @@ class _FFT_numpy(LinearOperator):
         self.dir = dir
         self.nfft = nfft if nfft is not None else dims[self.dir]
         self.real = real
+        self.fftshift = fftshift
         self.f = np.fft.rfftfreq(self.nfft, d=sampling) if real \
                  else np.fft.fftfreq(self.nfft, d=sampling)
         if len(dims) == 1:
@@ -37,48 +44,71 @@ class _FFT_numpy(LinearOperator):
             self.dims_fft[self.dir] = self.nfft // 2 + 1 if \
                 self.real else self.nfft
             self.reshape = True
-        self.shape = (int(np.prod(dims)*(self.nfft//2 + 1 if self.real
-                                         else self.nfft)/self.dims[dir]),
-                      int(np.prod(dims)))
-        self.dtype = np.dtype(dtype)
+        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
+        # Find types to enforce to forward and adjoint outputs. This is
+        # required as np.fft.fft always returns complex128 even if input is
+        # float32 or less. Moreover, when choosing real=True, the type of the
+        # adjoint output is forced to be real even if the provided dtype
+        # is complex.
+        self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
+        self.cdtype = (np.ones(1, dtype=self.rdtype) +
+                       1j * np.ones(1, dtype=self.rdtype)).dtype
+        self.dtype = self.cdtype
         self.explicit = False
 
     def _matvec(self, x):
         if not self.reshape:
+            x = x.ravel()
+            if self.fftshift:
+                x = np.fft.ifftshift(x)
             if self.real:
-                y = np.sqrt(1./self.nfft)*np.fft.rfft(x, n=self.nfft, axis=-1)
+                y = np.sqrt(1./self.nfft)*np.fft.rfft(np.real(x),
+                                                      n=self.nfft, axis=-1)
             else:
                 y = np.sqrt(1./self.nfft)*np.fft.fft(x, n=self.nfft, axis=-1)
         else:
             x = np.reshape(x, self.dims)
+            if self.fftshift:
+                x = np.fft.ifftshift(x, axes=self.dir)
             if self.real:
-                y = np.sqrt(1. / self.nfft) * np.fft.rfft(x, n=self.nfft,
+                y = np.sqrt(1. / self.nfft) * np.fft.rfft(np.real(x),
+                                                          n=self.nfft,
                                                           axis=self.dir)
             else:
                 y = np.sqrt(1. / self.nfft) * np.fft.fft(x, n=self.nfft,
                                                          axis=self.dir)
+            y = y.flatten()
+        y = y.astype(self.cdtype)
         return y
 
     def _rmatvec(self, x):
         if not self.reshape:
+            x = x.ravel()
             if self.real:
                 y = np.sqrt(self.nfft)*np.fft.irfft(x, n=self.nfft, axis=-1)
+                y = np.real(y)
             else:
                 y = np.sqrt(self.nfft)*np.fft.ifft(x, n=self.nfft, axis=-1)
             if self.nfft != self.dims[self.dir]:
                 y = y[:self.dims[self.dir]]
+            if self.fftshift:
+                y = np.fft.fftshift(y)
         else:
             x = np.reshape(x, self.dims_fft)
             if self.real:
                 y = np.sqrt(self.nfft) * np.fft.irfft(x, n=self.nfft,
                                                       axis=self.dir)
+                y = np.real(y)
             else:
                 y = np.sqrt(self.nfft) * np.fft.ifft(x, n=self.nfft,
                                                      axis=self.dir)
             if self.nfft != self.dims[self.dir]:
                 y = np.take(y, np.arange(0, self.dims[self.dir]),
                             axis=self.dir)
-            y = np.ndarray.flatten(y)
+            if self.fftshift:
+                y = np.fft.fftshift(y, axes=self.dir)
+            y = y.flatten()
+        y = y.astype(self.rdtype)
         return y
 
 
@@ -86,20 +116,25 @@ class _FFT_fftw(LinearOperator):
     """One dimensional Fast-Fourier Transform using pyffw
     """
     def __init__(self, dims, dir=0, nfft=None, sampling=1.,
-                 real=False, dtype='complex128', **kwargs_fftw):
+                 real=False, fftshift=False, dtype='complex128',
+                 **kwargs_fftw):
         if isinstance(dims, int):
             dims = (dims,)
         if dir > len(dims)-1:
             raise ValueError('dir=%d must be smaller than '
                              'number of dims=%d...' % (dir, len(dims)))
         self.dir = dir
-        if nfft is not None and nfft >= dims[self.dir]:
-            self.nfft = nfft
-        else:
-            logging.warning('nfft should be bigger or equal then dims[self.dir]'
-                            ' for engine=fftw, set to dims[self.dir]')
-            self.nfft = dims[self.dir]
+        if nfft is None:
+            nfft = dims[self.dir]
+        elif nfft < dims[self.dir]:
+            logging.warning('nfft should be bigger or equal then '
+                            ' dims[self.dir] for engine=fftw, set to '
+                            'dims[self.dir]')
+            nfft = dims[self.dir]
+        self.nfft = nfft
+
         self.real = real
+        self.fftshift = fftshift
         self.f = np.fft.rfftfreq(self.nfft, d=sampling) if real \
                  else np.fft.fftfreq(self.nfft, d=sampling)
         if len(dims) == 1:
@@ -118,10 +153,11 @@ class _FFT_fftw(LinearOperator):
             self.dims_fft[self.dir] = self.nfft//2 + 1 if \
                 self.real else self.nfft
             self.reshape = True
-        self.shape = (int(np.prod(dims)*(self.nfft//2 + 1 if self.real
-                                         else self.nfft)/self.dims[dir]),
-                      int(np.prod(dims)))
-        self.dtype = np.dtype(dtype)
+        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
+        self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
+        self.cdtype = (np.ones(1, dtype=self.rdtype) +
+                       1j * np.ones(1, dtype=self.rdtype)).dtype
+        self.dtype = self.cdtype
         self.explicit = False
 
         # define padding(fftw requires the user to provide padded input signal)
@@ -139,23 +175,30 @@ class _FFT_fftw(LinearOperator):
         self.dopad = True if np.sum(np.array(self.pad)) > 0 else False
 
         # create empty arrays and plans for fft/ifft
-        xtype = np.real(np.ones(1, dtype=self.dtype)).dtype # find model type
         self.x = pyfftw.empty_aligned(self.dims_t,
-                                      dtype=xtype if real else self.dtype)
+                                      dtype=self.rdtype if real else self.cdtype)
         self.y = pyfftw.empty_aligned(self.dims_fft,
-                                      dtype=self.dtype)
+                                      dtype=self.cdtype)
         self.fftplan = pyfftw.FFTW(self.x, self.y, axes=(self.dir,),
                                    direction='FFTW_FORWARD', **kwargs_fftw)
         self.ifftplan = pyfftw.FFTW(self.y, self.x, axes=(self.dir,),
                                     direction='FFTW_BACKWARD', **kwargs_fftw)
 
     def _matvec(self, x):
+        if self.real:
+            x = np.real(x)
         if not self.reshape:
+            x = x.ravel()
+            if self.fftshift:
+                x = np.fft.ifftshift(x)
             if self.dopad:
                 x = np.pad(x, self.pad, 'constant', constant_values=0)
+
             y = np.sqrt(1./self.nfft)*self.fftplan(x)
         else:
             x = np.reshape(x, self.dims)
+            if self.fftshift:
+                x = np.fft.ifftshift(x, axes=self.dir)
             if self.dopad:
                 x = np.pad(x, self.pad, 'constant', constant_values=0)
             y = np.sqrt(1. / self.nfft) * self.fftplan(x)
@@ -164,21 +207,28 @@ class _FFT_fftw(LinearOperator):
 
     def _rmatvec(self, x):
         if not self.reshape:
+            x = x.ravel()
             y = np.sqrt(self.nfft) * self.ifftplan(x)
             if self.nfft != self.dims[self.dir]:
                 y = y[:self.dims[self.dir]]
+            if self.fftshift:
+                y = np.fft.fftshift(y)
         else:
             x = np.reshape(x, self.dims_fft)
             y = np.sqrt(self.nfft) * self.ifftplan(x)
             if self.nfft != self.dims[self.dir]:
                 y = np.take(y, np.arange(0, self.dims[self.dir]),
                             axis=self.dir)
+            if self.fftshift:
+                y = np.fft.fftshift(y, axes=self.dir)
             y = np.ndarray.flatten(y)
+        if self.real:
+            y = np.real(y)
         return y
 
 
-def FFT(dims, dir=0, nfft=None, sampling=1.,
-        real=False, engine='numpy', dtype='complex128', **kwargs_fftw):
+def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
+        fftshift=False, engine='numpy', dtype='complex128', **kwargs_fftw):
     r"""One dimensional Fast-Fourier Transform.
 
     Apply Fast-Fourier Transform (FFT) along a specific direction ``dir`` of a
@@ -215,12 +265,18 @@ def FFT(dims, dir=0, nfft=None, sampling=1.,
     sampling : :obj:`float`, optional
         Sampling step ``dt``.
     real : :obj:`bool`, optional
-        Model to which fft is applied has real numbers (True) or not (False).
-        Used to enforce that the output of adjoint of a real model is real.
+        Model to which fft is applied has real numbers (``True``) or not
+        (``False``). Used to enforce that the output of adjoint of a real
+        model is real.
+    fftshift : :obj:`bool`, optional
+        Apply fftshift/ifftshift (``True``) or not (``False``)
     engine : :obj:`str`, optional
         Engine used for fft computation (``numpy`` or ``fftw``)
     dtype : :obj:`str`, optional
-        Type of elements in input array.
+        Type of elements in input array. Note that the `dtype` of the operator
+        is the corresponding complex type even when a real type is provided.
+        Nevertheless, the provided dtype will be enforced on the vector
+        returned by the `rmatvec` method.
     **kwargs_fftw
             Arbitrary keyword arguments
             for :py:class:`pyfftw.FTTW`
@@ -237,7 +293,7 @@ def FFT(dims, dir=0, nfft=None, sampling=1.,
     ------
     ValueError
         If ``dims`` is not provided and if ``dir`` is bigger than ``len(dims)``
-    KeyError
+    NotImplementedError
         If ``engine`` is neither ``numpy`` nor ``numba``
 
     Notes
@@ -263,15 +319,13 @@ def FFT(dims, dir=0, nfft=None, sampling=1.,
 
     """
     if engine == 'fftw' and pyfftw is not None:
-        f = _FFT_fftw(dims, dir=dir, nfft=nfft,
-                      sampling=sampling, real=real,
-                      dtype=dtype, **kwargs_fftw)
-    elif engine == 'numpy' or pyfftw is None:
-        if pyfftw is None:
-            logging.warning('use numpy, pyfftw not available...')
-        f = _FFT_numpy(dims, dir=dir, nfft=nfft,
-                       sampling=sampling, real=real, dtype=dtype)
+        f = _FFT_fftw(dims, dir=dir, nfft=nfft, sampling=sampling,
+                      real=real, fftshift=fftshift, dtype=dtype, **kwargs_fftw)
+    elif engine == 'numpy' or (engine == 'fftw' and pyfftw is None):
+        if engine == 'fftw' and pyfftw is None:
+            logging.warning(pyfftw_message)
+        f = _FFT_numpy(dims, dir=dir, nfft=nfft, sampling=sampling,
+                       real=real, fftshift=fftshift, dtype=dtype)
     else:
-        raise KeyError('engine must be numpy or fftw')
-
+        raise NotImplementedError('engine must be numpy or fftw')
     return f

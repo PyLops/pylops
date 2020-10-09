@@ -14,11 +14,15 @@ class Identity(LinearOperator):
     Parameters
     ----------
     N : :obj:`int`
-        Number of samples in data (and model in M is not provided).
+        Number of samples in data (and model, if ``M`` is not provided).
     M : :obj:`int`, optional
         Number of samples in model.
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    inplace : :obj:`bool`, optional
+        Work inplace (``True``) or make a new copy (``False``). By default,
+        data is a reference to the model (in forward) and model is a reference
+        to the data (in adjoint).
 
     Attributes
     ----------
@@ -68,13 +72,15 @@ class Identity(LinearOperator):
         x_i = 0 \quad \forall i=M+1,...,N
 
     """
-    def __init__(self, N, M=None, dtype='float64'):
+    def __init__(self, N, M=None, dtype='float64', inplace=True):
         M = N if M is None else M
+        self.inplace = inplace
         self.shape = (N, M)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
+        if not self.inplace: x = x.copy()
         if self.shape[0] == self.shape[1]:
             y = x
         elif self.shape[0] < self.shape[1]:
@@ -85,6 +91,7 @@ class Identity(LinearOperator):
         return y
 
     def _rmatvec(self, x):
+        if not self.inplace: x = x.copy()
         if self.shape[0] == self.shape[1]:
             y = x
         elif self.shape[0] < self.shape[1]:

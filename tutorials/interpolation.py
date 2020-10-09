@@ -1,5 +1,5 @@
 r"""
-05. 2D Interpolation
+06. 2D Interpolation
 ====================
 In the mathematical field of numerical analysis, interpolation is the problem of constructing new data
 points within the range of a discrete set of known data points. In signal and image processing,
@@ -28,8 +28,6 @@ with :math:`M>>N`.
 """
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import misc
-
 import pylops
 
 plt.close('all')
@@ -38,7 +36,8 @@ np.random.seed(0)
 ###############################################################################
 # To start we import a 2d image and define our restriction operator to irregularly and randomly
 # sample the image for 30% of the entire grid
-im = np.asarray(misc.imread('../testdata/python.png'))[:, :, 0]
+im = np.load('../testdata/python.npy')[:, :, 0]
+
 Nz, Nx = im.shape
 N = Nz * Nx
 

@@ -25,7 +25,10 @@ class FFT2D(LinearOperator):
     sampling : :obj:`tuple`, optional
         Sampling steps ``dy`` and ``dx``
     dtype : :obj:`str`, optional
-        Type of elements in input array
+        Type of elements in input array. Note that the `dtype` of the operator
+        is the corresponding complex type even when a real type is provided.
+        Nevertheless, the provided dtype will be enforced on the vector
+        returned by the `rmatvec` method.
 
     Attributes
     ----------
@@ -86,18 +89,20 @@ class FFT2D(LinearOperator):
         self.dims_fft[self.dirs[0]] = self.nffts[0]
         self.dims_fft[self.dirs[1]] = self.nffts[1]
 
-        self.shape = (int(np.prod(dims)*np.prod(self.nffts)/
-                          (self.dims[dirs[0]]*self.dims[dirs[1]])),
-                      int(np.prod(dims)))
-        self.dtype = np.dtype(dtype)
+        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
+        self.rdtype = np.dtype(dtype)
+        self.cdtype = (np.ones(1, dtype=self.rdtype) +
+                       1j * np.ones(1, dtype=self.rdtype)).dtype
+        self.dtype = self.cdtype
         self.explicit = False
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
-        y = np.sqrt(1./np.prod(self.nffts))*np.fft.fft2(x, s=self.nffts,
-                                                        axes=(self.dirs[0],
-                                                              self.dirs[1]))
-        y = np.ndarray.flatten(y)
+        y = np.sqrt(1./np.prod(self.nffts)) * np.fft.fft2(x, s=self.nffts,
+                                                          axes=(self.dirs[0],
+                                                                self.dirs[1]))
+        y = y.flatten()
+        y = y.astype(self.cdtype)
         return y
 
     def _rmatvec(self, x):
@@ -107,6 +112,7 @@ class FFT2D(LinearOperator):
                                                               self.dirs[1]))
         y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
         y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
-        y = np.ndarray.flatten(y)
+        y = y.flatten()
+        y = y.astype(self.rdtype)
         return y
     

@@ -1,17 +1,20 @@
 """
-09. Marchenko redatuming by inversion
+10. Marchenko redatuming by inversion
 =====================================
 This example shows how to set-up and run the
 :py:class:`pylops.waveeqprocessing.Marchenko` inversion using synthetic data.
 
 """
+# sphinx_gallery_thumbnail_number = 5
 # pylint: disable=C0103
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.signal import convolve
 from pylops.waveeqprocessing import Marchenko
 
+warnings.filterwarnings('ignore')
 plt.close('all')
 
 ###############################################################################
@@ -20,7 +23,6 @@ plt.close('all')
 # Input parameters
 inputfile = '../testdata/marchenko/input.npz'
 
-vs_zx = [1060, 1200] # virtual source z,x
 vel = 2400.0         # velocity
 toff = 0.045         # direct arrival time shift
 nsmooth = 10         # time window smoothing
@@ -46,9 +48,9 @@ vs = inputdata['vs']
 rho = inputdata['rho']
 z, x = inputdata['z'], inputdata['x']
 
-# Reflection data and subsurface fields
+# Reflection data (R[s, r, t]) and subsurface fields
 R = inputdata['R'][:, :, :-100]
-R = np.swapaxes(R, 0, 1)
+R = np.swapaxes(R, 0, 1) # just because of how the data was saved
 
 Gsub = inputdata['Gsub'][:-100]
 G0sub = inputdata['G0sub'][:-100]
@@ -74,7 +76,7 @@ plt.ylabel('y [m]')
 plt.title('Model and Geometry')
 plt.xlim(x[0], x[-1])
 
-fig, axs = plt.subplots(1, 3, sharey=True, figsize=(15, 9))
+fig, axs = plt.subplots(1, 3, sharey=True, figsize=(12, 7))
 axs[0].imshow(R[0].T, cmap='gray', vmin=-1e-2, vmax=1e-2,
               extent=(r[0, 0], r[0, -1], t[-1], t[0]))
 axs[0].set_title('R shot=0')
@@ -95,8 +97,9 @@ axs[2].set_title('R shot=%d' %ns)
 axs[2].set_xlabel(r'$x_R$')
 axs[2].axis('tight')
 axs[2].set_ylim(1.5, 0)
+fig.tight_layout()
 
-fig, axs = plt.subplots(1, 2, sharey=True, figsize=(12, 9))
+fig, axs = plt.subplots(1, 2, sharey=True, figsize=(8, 6))
 axs[0].imshow(Gsub, cmap='gray', vmin=-1e6, vmax=1e6,
               extent=(r[0, 0], r[0, -1], t[-1], t[0]))
 axs[0].set_title('G')
@@ -111,7 +114,7 @@ axs[1].set_xlabel(r'$x_R$')
 axs[1].set_ylabel(r'$t$')
 axs[1].axis('tight')
 axs[1].set_ylim(1.5, 0)
-
+fig.tight_layout()
 
 ##############################################################################
 # Let's now create an object of the
@@ -129,13 +132,10 @@ f1_inv_minus, f1_inv_plus, p0_minus, g_inv_minus, g_inv_plus = \
                                dottest=True, **dict(iter_lim=niter, show=True))
 g_inv_tot = g_inv_minus + g_inv_plus
 
-
 ##############################################################################
 # We can now compare the result of Marchenko redatuming via LSQR
 # with standard redatuming
-
-# sphinx_gallery_thumbnail_number = 5
-fig, axs = plt.subplots(1, 3, sharey=True, figsize=(16, 9))
+fig, axs = plt.subplots(1, 3, sharey=True, figsize=(12, 7))
 axs[0].imshow(p0_minus.T, cmap='gray', vmin=-5e5, vmax=5e5,
               extent=(r[0, 0], r[0, -1], t[-1], -t[-1]))
 axs[0].set_title(r'$p_0^-$')
@@ -157,8 +157,9 @@ axs[2].set_xlabel(r'$x_R$')
 axs[2].set_ylabel(r'$t$')
 axs[2].axis('tight')
 axs[2].set_ylim(1.2, 0)
+fig.tight_layout()
 
-fig = plt.figure(figsize=(15, 9))
+fig = plt.figure(figsize=(12, 7))
 ax1 = plt.subplot2grid((1, 5), (0, 0), colspan=2)
 ax2 = plt.subplot2grid((1, 5), (0, 2), colspan=2)
 ax3 = plt.subplot2grid((1, 5), (0, 4))
@@ -179,6 +180,7 @@ ax2.set_ylim(1.2, 0)
 ax3.plot(Gsub[:, nr//2]/Gsub.max(), t, 'r', lw=5)
 ax3.plot(g_inv_tot[nr//2, nt-1:]/g_inv_tot.max(), t, 'k', lw=3)
 ax3.set_ylim(1.2, 0)
+fig.tight_layout()
 
 ##############################################################################
 # Note that Marchenko redatuming can also be applied simultaneously

@@ -24,6 +24,10 @@ class Restriction(LinearOperator):
         Direction along which restriction is applied.
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    inplace : :obj:`bool`, optional
+        Work inplace (``True``) or make a new copy (``False``). By default,
+        data is a reference to the model (in forward) and model is a reference
+        to the data (in adjoint).
 
     Attributes
     ----------
@@ -45,9 +49,9 @@ class Restriction(LinearOperator):
 
     .. math::
 
-        y_i = x_{l_i}  \quad \forall i=1,2,...,M
+        y_i = x_{l_i}  \quad \forall i=1,2,...,N
 
-    where :math:`\mathbf{l}=[l_1, l_2,..., l_M]` is a vector containing the indeces
+    where :math:`\mathbf{l}=[l_1, l_2,..., l_N]` is a vector containing the indeces
     of the original array at which samples are taken.
 
     Conversely, in adjoint mode the available values in the data vector
@@ -56,13 +60,14 @@ class Restriction(LinearOperator):
 
     .. math::
 
-        x_{l_i} = y_i  \quad \forall i=1,2,...,M
+        x_{l_i} = y_i  \quad \forall i=1,2,...,N
 
     and :math:`x_{j}=0 j \neq l_i` (i.e., at all other locations in input
     vector).
 
     """
-    def __init__(self, M, iava, dims=None, dir=0, dtype='float64'):
+    def __init__(self, M, iava, dims=None, dir=0,
+                 dtype='float64', inplace=True):
         self.M = M
         self.dir = dir
         self.iava = iava
@@ -81,19 +86,23 @@ class Restriction(LinearOperator):
                                    [1] * (len(self.dims) - self.dir - 1)
                 self.N = np.prod(self.dimsd)
                 self.reshape = True
+        self.inplace = inplace
         self.shape = (self.N, self.M)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
+        if not self.inplace: x = x.copy()
         if not self.reshape:
             y = x[self.iava]
         else:
             x = np.reshape(x, self.dims)
             y = np.take(x, self.iava, axis=self.dir)
+            y = y.ravel()
         return y
 
     def _rmatvec(self, x):
+        if not self.inplace: x = x.copy()
         if not self.reshape:
             y = np.zeros(self.dims, dtype=self.dtype)
             y[self.iava] = x
@@ -102,6 +111,7 @@ class Restriction(LinearOperator):
             y = np.zeros(self.dims, dtype=self.dtype)
             np.put_along_axis(y, np.reshape(self.iava, self.iavareshape),
                               x, axis=self.dir)
+            y = y.ravel()
         return y
 
     def mask(self, x):

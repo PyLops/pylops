@@ -19,7 +19,7 @@ PyLops relies on the `numpy <http://www.numpy.org>`_ and
 link these to the most performant `BLAS <https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms>`_
 will ensure optimal performance of PyLops when using only *required dependencies*.
 
-As already mentioned in the  the :ref:`installation` page, we strongly encourage using
+As already mentioned in the :ref:`installation` page, we strongly encourage using
 the `Anaconda Python distribution <https://www.anaconda.com/download>`_ as
 *numpy* and *scipy* will be automatically linked to the ``Intel MKL``
 library, which is per today the most performant library for basic linear algebra
@@ -34,7 +34,7 @@ The best way to understand which ``BLAS`` library is currently linked to your
    import numpy as np
    import scipy as sp
    print(np.__config__.show())
-   print(scipy.__config__.show())
+   print(sp.__config__.show())
 
 
 You should be able to understand if your *numpy* and *scipy* are
@@ -99,11 +99,29 @@ control indipendently from the ``Intel MKL`` ones using ``OMP_NUM_THREADS``.
 
 Optional dependencies
 ---------------------
-
 To avoid increasing the number of *required* dependencies, which may lead to conflicts with
-other libraries that you may need to have in your system, we have decided to build some of the additional features
+other libraries that you have in your system, we have decided to build some of the additional features
 of PyLops in such a way that if an *optional* dependency is not present in your python environment,
 a safe fallback to one of the required dependencies will be enforced.
+
+When available in your system, we reccomend using the Conda package manager and install all the
+mandatory and optional dependencies of PyLops at once using the command:
+
+.. code-block:: bash
+
+   >> conda install -c conda-forge pylops
+
+in this case all dependencies will be installed from their conda distributions.
+
+Alternatively, from version ``1.4.0`` optional dependencies can also be installed as
+part of the pip installation via:
+
+.. code-block:: bash
+
+   >> pip install pylops[advanced]
+
+Dependencies are however installed from their PyPI wheels.
+
 
 numba
 ~~~~~
@@ -117,14 +135,7 @@ always available implementation to the numba implementation by simply providing 
 additional input parameter to the operator ``engine='numba'``. This is for example the case in the
 :py:class:`pylops.signalprocessing.Radon2D`.
 
-If interested to use ``numba`` backend, you will just need to manually install
-``numba`` with either pip:
-
-.. code-block:: bash
-
-   >> pip install numba
-
-or conda:
+If interested to use ``numba`` backend from conda, you will need to manually install it:
 
 .. code-block:: bash
 
@@ -137,13 +148,13 @@ Finally, it is also advised to install the additional package
 
    >> conda install -c numba icc_rt
 
-Similarly to ``Intel MKL``, you need to set the environment variable
-``NUMBA_NUM_THREADS`` to tell numba how many threads to use.
+or pip equivalent. Similarly to ``Intel MKL``, you need to set the environment variable
+``NUMBA_NUM_THREADS`` to tell numba how many threads to use. If this variable is not
+present in your environment, numba code will be compiled with ``parallel=False``.
 
 
 fft routines
 ~~~~~~~~~~~~
-
 Two different *engines* are provided by the :py:class:`pylops.signalprocessing.FFT` operator for
 ``fft`` and ``ifft`` routines in the forward and adjoint modes: ``engine='numpy'`` (default)
 and ``engine='fftw'``.
@@ -158,19 +169,57 @@ outperform the one from numpy in many cases, however it has not been inserted
 in the mandatory requirements of PyLops, meaning that when installing PyLops with
 ``pip``, :py:class:`pyfftw.FFTW` will *not* be installed automatically.
 
-If interested to use ``FFTW`` backend, you will just need to manually install
-``pyfftw`` with either pip:
-
-.. code-block:: bash
-
-   >> pip install pyfftw
-
-or conda:
+Again, if interested to use ``FFTW`` backend from conda, you will need to manually install it:
 
 .. code-block:: bash
 
    >> conda install -c conda-forge pyfftw
 
+or pip equivalent.
 
-.. note:: All the optional dependencies can also be installed automatically by cloning the repository and installing
+skfmm
+~~~~~
+This library is used to compute traveltime tables with the fast-marching method in the
+initialization of the :py:class:`pylops.waveeqprocessing.Demigration` operator
+when choosing ``mode == 'eikonal'``.
+
+As this may not be of interest for many users, this library has not been inserted
+in the mandatory requirements of PyLops. If interested to use ``skfmm``,
+you will need to manually install it:
+
+.. code-block:: bash
+
+   >> conda install -c conda-forge scikit-fmm
+
+or pip equivalent.
+
+
+spgl1
+~~~~~
+This library is used to solve sparsity-promoting BP, BPDN, and LASSO problems
+in :py:func:`pylops.optimization.sparsity.SPGL1` solver.
+
+If interested to use ``spgl1``, you can manually install it:
+
+.. code-block:: bash
+
+   >> pip install spgl1
+
+
+pywt
+~~~~
+This library is used to implement the Wavelet operators.
+
+If interested to use ``pywt``, you can manually install it:
+
+.. code-block:: bash
+
+   >> conda install pywavelets
+
+or pip equivalent.
+
+
+.. note:: If you are a developer, all the optional dependencies can also be
+   installed automatically by cloning the repository and installing
    pylops via ``make dev-install`` or ``make dev-install_conda``.
+

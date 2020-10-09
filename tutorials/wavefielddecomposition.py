@@ -1,10 +1,10 @@
 r"""
-12. Seismic wavefield decomposition
+14. Seismic wavefield decomposition
 ===================================
 Multi-component seismic data can be decomposed
-in their up- and down-going constituents. This task can be accurately achieved
-by linearly combining the input pressure and particle velocity data
-in the frequency-wavenumber described in details in
+in their up- and down-going constituents in a purely data driven fashion.
+This task can be accurately achieved by linearly combining the input pressure
+and particle velocity data in the frequency-wavenumber described in details in
 :func:`pylops.waveeqprocessing.UpDownComposition2D` and
 :func:`pylops.waveeqprocessing.WavefieldDecomposition`.
 
@@ -32,7 +32,7 @@ plt.close('all')
 
 ###############################################################################
 # Let's first the input up- and down-going wavefields
-par = {'ox':-220,  'dx':5, 'nx':89,
+par = {'ox':-220, 'dx':5, 'nx':89,
        'ot':0, 'dt':0.004, 'nt':200,
        'f0': 40}
 
@@ -58,7 +58,7 @@ _, p_plus = hyperbolic2d(x, t, t0_plus, vrms, amp, wav)
 # We can now combine them to create pressure and particle velocity data
 critical = 1.1
 ntaper = 51
-nfft=2**10
+nfft = 2**10
 
 # 2d fft operator
 FFTop = pylops.signalprocessing.FFT2D(dims=[par['nx'], par['nt']],
@@ -70,10 +70,10 @@ FFTop = pylops.signalprocessing.FFT2D(dims=[par['nx'], par['nt']],
 k = F/vel_sep
 Kz = np.sqrt((k**2-Kx**2).astype(np.complex))
 Kz[np.isnan(Kz)] = 0
-OBL=rho_sep*(np.abs(F)/Kz)
-OBL[Kz==0]=0
+OBL = rho_sep*(np.abs(F)/Kz)
+OBL[Kz == 0] = 0
 
-mask = np.abs(Kx)<critical*np.abs(F)/vel_sep
+mask = np.abs(Kx) < critical*np.abs(F)/vel_sep
 OBL *= mask
 OBL = filtfilt(np.ones(ntaper)/float(ntaper), 1, OBL, axis=0)
 OBL = filtfilt(np.ones(ntaper)/float(ntaper), 1, OBL, axis=1)
@@ -102,30 +102,27 @@ vz_obl = FFTop.H*VZ_obl.flatten()
 vz_obl = np.real(vz_obl.reshape(par['nx'], par['nt']))
 
 fig, axs = plt.subplots(1, 4, figsize=(10, 5))
-axs[0].imshow(p.T, aspect='auto',
+axs[0].imshow(p.T, aspect='auto', vmin=-1, vmax=1,
               interpolation='nearest', cmap='gray',
-              extent=(x.min(),x.max(),t2.max(),t2.min()),
-              vmin=-1, vmax=1)
+              extent=(x.min(), x.max(), t.max(), t.min()))
 axs[0].set_title(r'$p$', fontsize=15)
 axs[0].set_xlabel('x')
 axs[0].set_ylabel('t')
-axs[1].imshow(vz_obl.T, aspect='auto',
+axs[1].imshow(vz_obl.T, aspect='auto', vmin=-1, vmax=1,
               interpolation='nearest', cmap='gray',
-              extent=(x.min(), x.max(), t2.max(), t2.min()),
-              vmin=-1, vmax=1)
+              extent=(x.min(), x.max(), t.max(), t.min()))
 axs[1].set_title(r'$v_z^{obl}$', fontsize=15)
 axs[1].set_xlabel('x')
 axs[1].set_ylabel('t')
-axs[2].imshow(p_plus.T, aspect='auto',
+axs[2].imshow(p_plus.T, aspect='auto', vmin=-1, vmax=1,
               interpolation='nearest', cmap='gray',
-              extent=(x.min(), x.max(), t2.max(), t2.min()),
-              vmin=-1, vmax=1)
+              extent=(x.min(), x.max(), t.max(), t.min()))
 axs[2].set_title(r'$p^+$', fontsize=15)
 axs[2].set_xlabel('x')
 axs[2].set_ylabel('t')
 axs[3].imshow(p_minus.T, aspect='auto',
               interpolation='nearest', cmap='gray',
-              extent=(x.min(), x.max(), t2.max(), t2.min()),
+              extent=(x.min(), x.max(), t.max(), t.min()),
               vmin=-1, vmax=1)
 axs[3].set_title(r'$p^-$', fontsize=15)
 axs[3].set_xlabel('x')
@@ -150,14 +147,12 @@ axs0 = plt.subplot2grid((2, 5), (0, 0), rowspan=2)
 axs1 = plt.subplot2grid((2, 5), (0, 1), rowspan=2)
 axs2 = plt.subplot2grid((2, 5), (0, 2), colspan=3)
 axs3 = plt.subplot2grid((2, 5), (1, 2), colspan=3)
-axs0.imshow(pup_sep.T, cmap='gray',
-              extent=(x.min(),x.max(),t2.max(),t2.min()),
-              vmin=-1, vmax=1)
+axs0.imshow(pup_sep.T, cmap='gray', vmin=-1, vmax=1,
+            extent=(x.min(), x.max(), t.max(), t.min()))
 axs0.set_title(r'$p^-$ analytical')
 axs0.axis('tight')
-axs1.imshow(pdown_sep.T, cmap='gray',
-              extent=(x.min(),x.max(),t2.max(),t2.min()),
-              vmin=-1, vmax=1)
+axs1.imshow(pdown_sep.T, cmap='gray', vmin=-1, vmax=1,
+            extent=(x.min(), x.max(), t.max(), t.min()))
 axs1.set_title(r'$p^+$ analytical')
 axs1.axis('tight')
 axs2.plot(t, p[par['nx']//2], 'r', lw=2, label=r'$p$')
@@ -195,14 +190,12 @@ axs0 = plt.subplot2grid((2, 5), (0, 0), rowspan=2)
 axs1 = plt.subplot2grid((2, 5), (0, 1), rowspan=2)
 axs2 = plt.subplot2grid((2, 5), (0, 2), colspan=3)
 axs3 = plt.subplot2grid((2, 5), (1, 2), colspan=3)
-axs0.imshow(pup_inv.T, cmap='gray',
-              extent=(x.min(),x.max(),t2.max(),t2.min()),
-              vmin=-1, vmax=1)
+axs0.imshow(pup_inv.T, cmap='gray', vmin=-1, vmax=1,
+            extent=(x.min(), x.max(), t.max(), t.min()))
 axs0.set_title(r'$p^-$ inverse')
 axs0.axis('tight')
-axs1.imshow(pdown_inv.T, cmap='gray',
-              extent=(x.min(),x.max(),t2.max(),t2.min()),
-              vmin=-1, vmax=1)
+axs1.imshow(pdown_inv.T, cmap='gray', vmin=-1, vmax=1,
+            extent=(x.min(), x.max(), t.max(), t.min()))
 axs1.set_title(r'$p^+$ inverse')
 axs1.axis('tight')
 axs2.plot(t, p[par['nx']//2], 'r', lw=2, label=r'$p$')
@@ -219,11 +212,43 @@ axs3.set_ylim(-1, 1)
 axs3.legend()
 plt.tight_layout()
 
-
 ###############################################################################
 # The up- and down-going constituents have been succesfully separated in both
-# cases. To see more examples, including applying wavefield separation and
-# regularization simultaneously, head over to these companion notebooks:
+# cases. Finally, we use the
+# :func:`pylops.waveeqprocessing.UpDownComposition2D` operator to reconstruct
+# the particle velocity wavefield from its up- and down-going pressure
+# constituents
+
+PtoVop = \
+    pylops.waveeqprocessing.PressureToVelocity(par['nt'], par['nx'],
+                                               par['dt'], par['dx'],
+                                               rho_sep, vel_sep,
+                                               nffts=(nfft, nfft),
+                                               critical=critical * 100.,
+                                               ntaper=ntaper,
+                                               topressure=False)
+
+vdown_rec = (PtoVop * pdown_inv.ravel()).reshape(par['nx'], par['nt'])
+vup_rec = (PtoVop * pup_inv.ravel()).reshape(par['nx'], par['nt'])
+vz_rec = np.real(vdown_rec - vup_rec)
+
+fig, axs = plt.subplots(1, 3, figsize=(13, 6))
+axs[0].imshow(vz.T, cmap='gray', vmin=-1e-6, vmax=1e-6,
+              extent=(x.min(), x.max(), t.max(), t.min()))
+axs[0].set_title(r'$vz$')
+axs[0].axis('tight')
+axs[1].imshow(vz_rec.T, cmap='gray', vmin=-1e-6, vmax=1e-6,
+              extent=(x.min(), x.max(), t[-1], t[0]))
+axs[1].set_title(r'$vz rec$')
+axs[1].axis('tight')
+axs[2].imshow(vz.T - vz_rec.T, cmap='gray', vmin=-1e-6, vmax=1e-6,
+              extent=(x.min(), x.max(), t[-1], t[0]))
+axs[2].set_title(r'$error$')
+axs[2].axis('tight')
+
+###############################################################################
+# To see more examples, including applying wavefield separation and
+# regularization simultaneously, as well as 3D examples, head over to
+# the following notebooks:
 # `notebook1 <https://github.com/mrava87/pylops_notebooks/blob/master/developement/WavefieldSeparation.ipynb>`_
 # and `notebook2 <https://github.com/mrava87/pylops_notebooks/blob/master/developement/WavefieldSeparation-Synthetic.ipynb>`_
-

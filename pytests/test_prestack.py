@@ -58,49 +58,56 @@ wavoff = 10
 wav_phase = np.hstack((wav[wavoff:], np.zeros(wavoff)))
 
 
-# constant vsvp, aki-richards approx, unregularized
+# constant vsvp, aki-richards approx, unregularized, trace-by-trace
 par1 = {'vsvp': 0.5, 'linearization': 'akirich',
-        'epsR': None, 'epsI': None, 'simultaneous': False}
-# constant vsvp, fatti approx, unregularized
+        'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': False}
+# constant vsvp, fatti approx, unregularized, trace-by-trace
 par2 = {'vsvp': 0.5, 'linearization': 'fatti',
-        'epsR': None, 'epsI': None, 'simultaneous': False}
-# time-variant vsvp, aki-richards approx, unregularized
+        'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': False}
+# time-variant vsvp, aki-richards approx, unregularized, trace-by-trace
 par3 = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'akirich',
-        'epsR': None, 'epsI': None, 'simultaneous': False}
-# time-variant  vsvp, fatti approx, unregularized
+        'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': False}
+# time-variant  vsvp, fatti approx, unregularized, trace-by-trace
 par4 = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'fatti',
-        'epsR': None, 'epsI': None, 'simultaneous': False}
+        'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': False}
 
-# constant vsvp, aki-richards approx, regularized
-par1r = {'vsvp': 0.5, 'linearization': 'akirich',
-         'epsR': 1e-4, 'epsI': 1e-6, 'simultaneous': False}
-# constant vsvp, fatti approx, regularized
-par2r = {'vsvp': 0.5, 'linearization': 'fatti',
-         'epsR': 1e-4, 'epsI': 1e-6, 'simultaneous': False}
-# time-variant vsvp, aki-richards approx, regularized
-par3r = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'akirich',
-         'epsR': 1e-4, 'epsI': 1e-6, 'simultaneous': False}
-# time-variant  vsvp, fatti approx, regularized
-par4r = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'fatti',
-         'epsR': 1e-4, 'epsI': 1e-6, 'simultaneous': False}
+# constant vsvp, aki-richards approx, unregularized, simultaneous
+par1s = {'vsvp': 0.5, 'linearization': 'akirich',
+         'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': True}
+# constant vsvp, fatti approx, unregularized, simultaneous
+par2s = {'vsvp': 0.5, 'linearization': 'fatti',
+         'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': True}
+# time-variant vsvp, aki-richards approx, unregularized, simultaneous
+par3s = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'akirich',
+         'epsR': None, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
+# time-variant  vsvp, fatti approx, unregularized, simultaneous
+par4s = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'fatti',
+         'epsR': None, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
 
 # constant vsvp, aki-richards approx, regularized, simultaneous
-par1s = {'vsvp': 0.5, 'linearization': 'akirich',
-         'epsR': 1e-4, 'epsI': 1e-6, 'simultaneous': True}
+par1r = {'vsvp': 0.5, 'linearization': 'akirich',
+         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
 # constant vsvp, fatti approx, regularized, simultaneous
-par2s = {'vsvp': 0.5, 'linearization': 'fatti',
-         'epsR': 1e-4, 'epsI': 1e-6, 'simultaneous': True}
+par2r = {'vsvp': 0.5, 'linearization': 'fatti',
+         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
 # time-variant vsvp, aki-richards approx, regularized, simultaneous
-par3s = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'akirich',
-         'epsR': 1e-4, 'epsI': 1e-6, 'simultaneous': True}
+par3r = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'akirich',
+         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
 # time-variant  vsvp, fatti approx, regularized, simultaneous
-par4s = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'fatti',
-         'epsR': 1e-4, 'epsI': 1e-6, 'simultaneous': True}
+par4r = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'fatti',
+         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
 
+# constant vsvp, aki-richards approx, blocky, simultaneous
+par1b = {'vsvp': 0.5, 'linearization': 'akirich',
+         'epsR': 1e-4, 'epsRL1':1e-2, 'epsI': 1e-6, 'simultaneous': True}
+# time-variant vsvp, aki-richards approx, regularized, simultaneous
+par3b = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'akirich',
+         'epsR': 1e-4, 'epsRL1':1e-2, 'epsI': 1e-6, 'simultaneous': True}
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+                                 (par1s), (par2s), (par3s), (par4s),
                                  (par1r), (par2r), (par3r), (par4r),
-                                 (par1s), (par2s), (par3s), (par4s)])
+                                 (par1b), (par3b)])
 def test_PrestackLinearModelling(par):
     """Dot-test, comparison of dense vs lop implementation and
     inversion for PrestackLinearModelling
@@ -128,16 +135,21 @@ def test_PrestackLinearModelling(par):
 
     # Inversion
     for explicit in [True, False]:
-        if par['epsR'] is None:
+        dict_inv = dict(iter_lim=10)
+        if not par['simultaneous']:
             dict_inv = {}
-        else:
-            dict_inv = dict(damp=0 if par['epsI'] is None else par['epsI'],
-                            iter_lim=80)
-        minv = PrestackInversion(d, theta, wav, m0=mback, explicit=explicit,
-                                 epsR=par['epsR'], epsI=par['epsI'],
+        if not explicit:
+            dict_inv = dict(iter_lim=10)
+        if par['epsRL1'] is not None:
+            dict_inv = dict(mu=0.1, niter_outer=5,
+                            niter_inner=5, iter_lim=8)
+        minv = PrestackInversion(d, theta, wav, m0=mback,
+                                 explicit=explicit, epsI=par['epsI'],
+                                 epsR=par['epsR'], epsRL1=par['epsRL1'],
                                  simultaneous=par['simultaneous'],
                                  **dict_inv)
-        assert np.linalg.norm(m - minv) / np.linalg.norm(minv) < 1e-2
+        print(np.linalg.norm(m - minv) / np.linalg.norm(minv))
+        assert np.linalg.norm(m - minv) / np.linalg.norm(minv) < 4e-2
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
@@ -169,9 +181,10 @@ def test_PrestackWaveletModelling(par):
     assert_array_almost_equal(wav_phase, wav_phase_est, decimal=3)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
-                                 (par1r), (par2r), (par3r), (par4r),
-                                 (par1s), (par2s), (par3s), (par4s)])
+@pytest.mark.parametrize("par", [(par1), (par3),
+                                 (par2s), (par4s),
+                                 (par1r), (par3r),
+                                 (par1b), (par3b)])
 def test_PrestackLinearModelling2d(par):
     """Dot-test and inversion for PoststackLinearModelling in 2d
     """
@@ -198,19 +211,19 @@ def test_PrestackLinearModelling2d(par):
 
     # Inversion
     for explicit in [True, False]:
-        if explicit and not par['simultaneous'] and par['epsR'] is None:
+        dict_inv = dict(iter_lim=10)
+        if not par['simultaneous']:
             dict_inv = {}
-        elif explicit and not par['simultaneous'] \
-                and par['epsR'] is not None:
-            dict_inv = dict(damp=0 if par['epsI'] is None else par['epsI'],
-                            iter_lim=80)
-        else:
-            dict_inv = dict(damp=0 if par['epsI'] is None else par['epsI'],
-                            iter_lim=80)
-
-        minv2d = PrestackInversion(d, theta, wav, m0=mback2d,
-                                   explicit=explicit,
-                                   epsR=par['epsR'], epsI=par['epsI'],
-                                   simultaneous=par['simultaneous'],
-                                   **dict_inv)
+        if not explicit:
+            dict_inv = dict(iter_lim=10)
+        if par['epsRL1'] is not None:
+            dict_inv = dict(mu=0.1, niter_outer=3,
+                            niter_inner=3, iter_lim=5)
+        minv2d, dinv2d = \
+            PrestackInversion(d, theta, wav, m0=mback2d,
+                              explicit=explicit, epsI=par['epsI'],
+                              epsR=par['epsR'], epsRL1=par['epsRL1'],
+                              simultaneous=par['simultaneous'],
+                              returnres=True,
+                              **dict_inv)
         assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < 2e-1
