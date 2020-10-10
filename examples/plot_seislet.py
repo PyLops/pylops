@@ -150,7 +150,7 @@ dwt_strong = np.abs(dwt.ravel())[dwt_strong_idx]
 fig, ax = plt.subplots()
 ax.plot(range(1, len(seis_strong)+1),
         seis_strong / seis_strong[0], label='Seislet')
-ax.plot(range(1, len(seis_strong)+1),
+ax.plot(range(1, len(dwt_strong)+1),
         dwt_strong / dwt_strong[0], '--', label='Wavelet')
 ax.set(xlabel="n", ylabel="Coefficient strength [%]",
        title="Transform Coefficients")
@@ -199,4 +199,3 @@ plt.tight_layout()
 # also passes the dot-test pair that is. As shown below, this is the case
 # when using the implementation in the PyLops package.
 pylops.utils.dottest(Sop, nt*nx, nt*nx, verb=True)
-plt.show()
