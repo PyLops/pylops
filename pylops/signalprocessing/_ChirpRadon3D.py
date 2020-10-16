@@ -111,7 +111,7 @@ def _chirp_radon_3d_fftw(data, dt, dx1, dx2, pmax, mode='f', **kwargs_fftw):
         Mode of operation, 'f': forward, 'a': adjoint, and  'i': inverse
     **kwargs_fftw : :obj:`int`, optional
         Additional arguments to pass to pyFFTW computations
-        (recommended: ``flags=('FFTW_ESTIMATE', ), threads=ntHREADS``)
+        (recommended: ``flags=('FFTW_ESTIMATE', ), threads=NTHREADS``)
 
     """
     # define sign for mode

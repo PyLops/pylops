@@ -10,3 +10,4 @@ Contributors
 *  `Leonardo Uieda <https://www.leouieda.com>`_, leouieda
 *  `Filippo Broggini <https://github.com/filippo82>`_, filippo82
 *  `Tyler Hughes <https://github.com/twhughes>`_, twhughes
+*  `Lyubov Skopintseva <https://github.com/lskopintseva>`_, lskopintseva

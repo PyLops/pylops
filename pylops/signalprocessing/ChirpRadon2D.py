@@ -25,7 +25,7 @@ class ChirpRadon2D(LinearOperator):
     haxis : :obj:`np.ndarray`
         Spatial axis
     pmax : :obj:`np.ndarray`
-        Maximum slope defined as :math:`\tan` of maximum stacking angle
+        Maximum slope defined as :math:`\tan` of maximum stacking angle in
         :math:`x` direction :math:`p_{max} = \tan(\alpha_{x, max})`.
         If one operates in terms of minimum velocity :math:`c_0`, set
         :math:`p_{x, max}=c_0 dy/dt`.

@@ -56,9 +56,9 @@ from pylops import FirstDerivative
 Dlop = FirstDerivative(nx, dtype='float64')
 
 # y = Dx
-y = Dlop*x
+y = Dlop * x
 # x = D'y
-xadj = Dlop.H*y
+xadj = Dlop.H * y
 # xinv = D^-1 y
 xinv = Dlop / y
 ```
@@ -209,3 +209,4 @@ When using ``pylops`` in scientific publications, please cite the following pape
 * Leonardo Uieda, leouieda
 * Filippo Broggini, filippo82
 * Tyler Hughes, twhughes
+* Lyubov Skopintseva, lskopintseva
