@@ -45,23 +45,23 @@ RHop = pylops.signalprocessing.Radon2D(t, h, px, centeredh=True,
                                        engine='numpy')
 
 # forward
-yL = RLop * x.flatten()
-yP = RPop * x.flatten()
-yH = RHop * x.flatten()
+yL = RLop * x.ravel()
+yP = RPop * x.ravel()
+yH = RHop * x.ravel()
 yL = yL.reshape(nh, nt)
 yP = yP.reshape(nh, nt)
 yH = yH.reshape(nh, nt)
 
 # adjoint
-xadjL = RLop.H * yL.flatten()
-xadjP = RPop.H * yP.flatten()
-xadjH = RHop.H * yH.flatten()
+xadjL = RLop.H * yL.ravel()
+xadjP = RPop.H * yP.ravel()
+xadjH = RHop.H * yH.ravel()
 xadjL = xadjL.reshape(npx, nt)
 xadjP = xadjP.reshape(npx, nt)
 xadjH = xadjH.reshape(npx, nt)
 
 ###############################################################################
-# Let's finally visualize the input model in the Radon domain, the data, and
+# Let's now visualize the input model in the Radon domain, the data, and
 # the adjoint model the different parametric curves.
 
 fig, axs = plt.subplots(2, 4, figsize=(10, 6))
@@ -135,17 +135,17 @@ RHop = pylops.signalprocessing.Radon3D(t, hy, hx, py, px, centeredh=True,
                                        engine='numpy')
 
 # forward
-yL = RLop * x.flatten()
-yP = RPop * x.flatten()
-yH = RHop * x.flatten()
+yL = RLop * x.ravel()
+yP = RPop * x.ravel()
+yH = RHop * x.ravel()
 yL = yL.reshape(ny, nx, nt)
 yP = yP.reshape(ny, nx, nt)
 yH = yH.reshape(ny, nx, nt)
 
 # adjoint
-xadjL = RLop.H * yL.flatten()
-xadjP = RPop.H * yP.flatten()
-xadjH = RHop.H * yH.flatten()
+xadjL = RLop.H * yL.ravel()
+xadjP = RPop.H * yP.ravel()
+xadjH = RHop.H * yH.ravel()
 xadjL = xadjL.reshape(npy, npx, nt)
 xadjP = xadjP.reshape(npy, npx, nt)
 xadjH = xadjH.reshape(npy, npx, nt)

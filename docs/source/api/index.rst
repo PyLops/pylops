@@ -94,6 +94,8 @@ Signal processing
     Seislet
     Radon2D
     Radon3D
+    ChirpRadon2D
+    ChirpRadon3D
     Sliding2D
     Sliding3D
     Fredholm1
