@@ -14,3 +14,5 @@ from .Fredholm1 import Fredholm1
 from .DWT import DWT
 from .DWT2D import DWT2D
 from .Seislet import Seislet
+from .ChirpRadon2D import ChirpRadon2D
+from .ChirpRadon3D import ChirpRadon3D
