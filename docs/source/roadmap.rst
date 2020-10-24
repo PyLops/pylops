@@ -44,8 +44,8 @@ Code optimization
   `numba <http://numba.pydata.org>`_ ``@jit`` and ``@stencil`` decorators -
   `Issue #23 <https://github.com/Statoil/pylops/issues/23>`_.
 
-* Replace ``np.fft.*`` routines used in several submodules with double engine,
-  numpy and `pyFFTW <https://github.com/pyFFTW/pyFFTW>`_ -
+* :strike:`Replace np.fft.* routines used in several submodules with double engine,
+  numpy and pyFFTW` -
   `Issue #20 <https://github.com/Statoil/pylops/issues/20>`_.
 
 
@@ -70,7 +70,7 @@ basicoperators
 optimization
 ~~~~~~~~~~~~
 
-* Sparse solvers -
+* :strike:`Sparse solvers` -
   `Issue #44 <https://github.com/Statoil/pylops/issues/44>`_.
 
 
@@ -81,8 +81,7 @@ signalprocessing
   np.swap+np.fft.fft(..., axis=-1) versus np.fft.fft(..., axis=chosen)`
   - `Issue #33 <https://github.com/Statoil/pylops/issues/33>`_.
 
-* Add ``Wavelet`` operator performing the wavelet transform.
-  `pywavelets <https://pywavelets.readthedocs.io/en/latest/>`_ can be used as back-end -
+* :strike:`Add Wavelet operator performing the wavelet transform` -
   `Issue #21 <https://github.com/Statoil/pylops/issues/21>`_.
 
 * :strike:`Fredholm1 operator applying Fredholm integrals
@@ -101,7 +100,7 @@ waveeqprocessing
 ~~~~~~~~~~~~~~~~
 
 * :strike:`numpy.matmul as a way to speed up integral computation (i.e., inner for loop)
-  in ``MDC`` operator` - `Issue #32 <https://github.com/Statoil/pylops/issues/32>`_.
+  in MDC operator` - `Issue #32 <https://github.com/Statoil/pylops/issues/32>`_.
 
 * ``NMO`` operator performing NMO modelling -
   `Issue #29 <https://github.com/Statoil/pylops/issues/29>`_.

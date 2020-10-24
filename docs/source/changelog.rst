@@ -3,6 +3,25 @@
 Changelog
 =========
 
+Version 1.11.0
+--------------
+
+*Released on: 24/10/2020*
+
+* Added :class:`pylops.signalprocessing.ChirpRadon2D` and
+  :class:`pylops.signalprocessing.ChirpRadon3D` operators.
+* Fixed bug in the inferred dimensions for regularization data creation in
+  :func:`pylops.optimization.leastsquares.NormalEquationsInversion`,
+  :func:`pylops.optimization.leastsquares.RegularizedInversion`, and
+  :func:`pylops.optimization.sparsity.SplitBregman`.
+* Changed dtype of :class:`pylops.HStack` to allow automatic inference from
+  dtypes of input operator.
+* Modified dtype of :class:`pylops.waveeqprocessing.Marchenko` operator to
+  ensure that outputs of forward and adjoint are real arrays.
+* Reverted to previous complex-friendly implementation of
+  :func:`pylops.optimization.sparsity._softthreshold` to avoid division by 0.
+
+
 Version 1.10.0
 --------------
 
