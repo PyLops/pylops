@@ -2,7 +2,15 @@ import logging
 import numpy as np
 
 from pylops import LinearOperator
-from ._ChirpRadon3D import _chirp_radon_3d, _chirp_radon_3d_fftw
+
+try:
+    import pyfftw
+    from ._ChirpRadon3D import _chirp_radon_3d, _chirp_radon_3d_fftw
+except ModuleNotFoundError:
+    pyfftw = None
+    pyfftw_message = 'Pyfftw not installed, use numpy or run ' \
+                     '"pip install pyFFTW" or ' \
+                     '"conda install -c conda-forge pyfftw".'
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -63,19 +71,18 @@ class ChirpRadon3D(LinearOperator):
         self.dx = hxaxis[1] - hxaxis[0]
         self.nt, self.nx, self.ny = taxis.size, hxaxis.size, hyaxis.size
         self.pmax = pmax
-        if engine == 'numpy':
-            self.func = lambda x, mode: _chirp_radon_3d(x, self.dt,
-                                                        self.dy, self.dx,
-                                                        self.pmax, mode=mode)
-        elif engine == 'fftw':
+        if engine == 'fftw' and pyfftw is not None:
             self.func = lambda x, mode: _chirp_radon_3d_fftw(x, self.dt,
                                                              self.dy, self.dx,
                                                              self.pmax,
                                                              mode=mode,
                                                              **kwargs_fftw)
+        elif engine == 'numpy' or (engine == 'fftw' and pyfftw is None):
+            self.func = lambda x, mode: _chirp_radon_3d(x, self.dt,
+                                                        self.dy, self.dx,
+                                                        self.pmax, mode=mode)
         else:
             raise NotImplementedError('engine must be numpy or fftw')
-
         self.shape = (self.nt * self.nx * self.ny,
                       self.nt * self.nx * self.ny)
         self.dtype = np.dtype(dtype)

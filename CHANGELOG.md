@@ -1,3 +1,7 @@
+# 1.11.1
+* Fixed import of ``pyfttw`` when not available in
+  ``pylops.signalprocessing.ChirpRadon3D``
+
 # 1.11.0
 * Added ``pylops.signalprocessing.ChirpRadon2D`` and
   ``pylops.signalprocessing.ChirpRadon3D`` operators.

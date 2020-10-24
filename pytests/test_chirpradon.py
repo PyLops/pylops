@@ -50,7 +50,7 @@ def test_ChirpRadon2D(par):
 
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par1f), (par2f)])
 def test_ChirpRadon3D(par):
     """Dot-test, forward, analytical inverse and sparse inverse
     for ChirpRadon3D operator
