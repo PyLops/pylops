@@ -13,8 +13,7 @@ libraries are created to use third party softwares that cannot be included as
 dependencies to our main library for licensing issues but may be useful
 for academic purposes.
 
-Two spin-off projects aim at extending the capabilities of PyLops to
-such computational environments:
+Spin-off projects that aim at extending the capabilities of PyLops are:
 
 * `PyLops-GPU <https://github.com/equinor/pylops-gpu>`_
 * `PyLops-Distributed <https://github.com/equinor/pylops-distributed>`_
