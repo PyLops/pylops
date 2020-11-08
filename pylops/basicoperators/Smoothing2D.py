@@ -11,7 +11,7 @@ def Smoothing2D(nsmooth, dims, nodir=None, dtype='float64'):
     Parameters
     ----------
     nsmooth : :obj:`tuple` or :obj:`list`
-        Lenght of smoothing operatorin 1st and 2nd dimensions (must be odd)
+        Lenght of smoothing operator in 1st and 2nd dimensions (must be odd)
     dims : :obj:`tuple`
         Number of samples for each dimension
     nodir : :obj:`int`, optional
@@ -28,9 +28,9 @@ def Smoothing2D(nsmooth, dims, nodir=None, dtype='float64'):
         Operator contains a matrix that can be solved explicitly (``True``) or
         not (``False``)
 
-     See Also
+    See Also
     --------
-    lops.signalprocessing.Convolve2D : 2D convolution
+    pylops.signalprocessing.Convolve2D : 2D convolution
 
     Notes
     -----

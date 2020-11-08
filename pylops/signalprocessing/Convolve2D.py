@@ -74,7 +74,7 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype='float64',
     """
     if h.ndim != 2:
         raise ValueError('h must be 2-dimensional')
-    if nodir is None or h.ndim == 2:
+    if nodir is None:
         dirs = (0, 1)
     elif nodir == 0:
         dirs = (1, 2)
@@ -82,6 +82,7 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype='float64',
         dirs = (0, 2)
     else:
         dirs = (0, 1)
+
     cop = ConvolveND(N, h, dims, offset=offset, dirs=dirs, method=method,
                      dtype=dtype)
     return cop
