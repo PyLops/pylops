@@ -164,15 +164,22 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
         m(p_x, t_0) = \int{d(x, t = f(p_x, x, t))} dx
 
     where :math:`f(p_x, x, t) = t_0 + p_x * x` where
-    :math:`p_x = sin( \theta)/v` in linear mode,
+    :math:`p_x = sin(\theta)/v` in linear mode,
     :math:`f(p_x, x, t) = t_0 + p_x * x^2` in parabolic mode, and
-    :math:`f(p_x, x, t) = \sqrt{t_0^2 + x^2 / p_x^2}` in hyperbolic mode.
+    :math:`f(p_x, x, t) = \sqrt{t_0^2 + x^2 / p_x^2}` in hyperbolic mode. Note
+    that internally the :math:`p_x` axis will be normalized by the ratio of the
+    spatial and time axes and used alongside unitless axes. Whilst this makes
+    the linear mode fully unitless, users are required to apply additional
+    scalings to the :math:`p_x` axis for other relationships (e.g., :math:`p_x`
+    should be pre-multipled by :math:`(d_t/d_x)^2` for the hyperbolic
+    relationship).
 
     As the adjoint operator can be interpreted as a repeated summation of sets
     of elements of the model vector along chosen parametric curves, the
     forward is implemented as spreading of values in the data vector along the
     same parametric curves. This operator is actually a thin wrapper around
     the :class:`pylops.Spread` operator.
+
     """
     # engine
     if not engine in ['numpy', 'numba']:
