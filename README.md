@@ -2,7 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pylops/badges/version.svg)](https://anaconda.org/conda-forge/pylops)
-[![Build Status](https://travis-ci.org/PyLops/pylops.svg?branch=master)](https://travis-ci.org/PyLops/pylops)
+[![Build Status](https://travis-ci.com/PyLops/pylops.svg?branch=master)](https://travis-ci.com/PyLops/pylops)
 [![AzureDevOps Status](https://dev.azure.com/matteoravasi/PyLops/_apis/build/status/PyLops.pylops?branchName=master)](https://dev.azure.com/matteoravasi/PyLops/_build/latest?definitionId=2&branchName=master)
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=latest)](https://pylops.readthedocs.io/en/latest/?badge=latest)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/17fd60b4266347d8890dd6b64f2c0807)](https://www.codacy.com/gh/PyLops/pylops/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=PyLops/pylops&amp;utm_campaign=Badge_Grade)
