@@ -13,4 +13,4 @@ script:
   - python3 setup.py test
 
 after_success:
-  - 'if [ ! -z "${CODACY_PROJECT_TOKEN}" ]; then coverage run setup.py test; coverage xml; python-codacy-coverage -r coverage.xml; fi'
+  - 'if [ ! -z "${CODACY_PROJECT_TOKEN}" ]; then coverage run setup.py test; coverage xml; bash <(curl -Ls https://coverage.codacy.com/get.sh) report; fi'
