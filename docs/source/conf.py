@@ -118,8 +118,8 @@ html_theme_options = {
 html_context = {
     'menu_links_name': 'Repository',
     'menu_links': [
-        ('<i class="fa fa-github fa-fw"></i> Source Code', 'https://github.com/equinor/pylops'),
-        ('<i class="fa fa-users fa-fw"></i> Contributing', 'https://github.com/equinor/pylops/blob/master/CONTRIBUTING.md'),
+        ('<i class="fa fa-github fa-fw"></i> Source Code', 'https://github.com/PyLops/pylops'),
+        ('<i class="fa fa-users fa-fw"></i> Contributing', 'https://github.com/PyLops/pylops/blob/master/CONTRIBUTING.md'),
     ],
     # Custom variables to enable "Improve this page"" and "Download notebook"
     # links
@@ -127,7 +127,7 @@ html_context = {
     'galleries': sphinx_gallery_conf['gallery_dirs'],
     'gallery_dir': dict(zip(sphinx_gallery_conf['gallery_dirs'],
                             sphinx_gallery_conf['examples_dirs'])),
-    'github_project': 'equinor',
+    'github_project': 'PyLops',
     'github_repo': 'pylops',
     'github_version': 'master',
 }
