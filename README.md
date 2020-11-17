@@ -54,6 +54,9 @@ and similarly using PyLops commands:
 ```python
 from pylops import FirstDerivative
 
+nx = 7
+x = range(-(nx // 2), nx // 2 + (1 if nx % 2 else 0))
+
 Dlop = FirstDerivative(nx, dtype='float64')
 
 # y = Dx
