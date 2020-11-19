@@ -34,6 +34,7 @@ from .basicoperators import Smoothing2D
 from .avo.poststack import PoststackLinearModelling
 from .avo.prestack import PrestackWaveletModelling, PrestackLinearModelling
 
+from .optimization.solver import cg, cgls
 from .optimization.leastsquares import NormalEquationsInversion, RegularizedInversion
 from .optimization.leastsquares import PreconditionedInversion
 from .optimization.sparsity import IRLS, OMP, ISTA, FISTA, SPGL1, SplitBregman
