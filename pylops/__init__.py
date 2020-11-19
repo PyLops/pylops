@@ -42,6 +42,7 @@ from .utils.seismicevents import makeaxis, linear2d, parabolic2d
 from .utils.tapers import hanningtaper, cosinetaper, taper2d, taper3d
 from .utils.wavelets import ricker, gaussian
 from .utils.utils import Report
+from .utils.deps import *
 
 from . import avo
 from . import basicoperators
