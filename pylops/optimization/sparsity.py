@@ -7,6 +7,10 @@ from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, Identity
 from pylops.optimization.leastsquares import NormalEquationsInversion, \
     RegularizedInversion
+from pylops.optimization.solver import cgls
+from pylops.optimization.eigs import power_iteration
+from pylops.utils.backend import get_array_module, get_module_name, to_numpy
+
 
 try:
     from spgl1 import spgl1
@@ -185,16 +189,19 @@ def _halfthreshold_percentile(x, perc):
     #return _halfthreshold(x, (2. / 3. * thresh) ** (1.5))
     return _halfthreshold(x, (4. / 54 ** (1. / 3.) * thresh) ** 1.5)
 
+
 def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
                epsI=1e-10, x0=None, tolIRLS=1e-10,
                returnhistory=False, **kwargs_solver):
     r"""Iteratively reweighted least squares with L1 data term
     """
+    ncp = get_array_module(data)
+
     if x0 is not None:
         data = data - Op * x0
     if returnhistory:
-        xinv_hist = np.zeros((nouter + 1, Op.shape[1]))
-        rw_hist = np.zeros((nouter + 1, Op.shape[0]))
+        xinv_hist = ncp.zeros((nouter + 1, int(Op.shape[1])))
+        rw_hist = ncp.zeros((nouter + 1, int(Op.shape[0])))
 
     # first iteration (unweighted least-squares)
     xinv = NormalEquationsInversion(Op, None, data, epsI=epsI,
@@ -207,9 +214,9 @@ def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
         # other iterations (weighted least-squares)
         xinvold = xinv.copy()
         if threshR:
-            rw = 1. / np.maximum(np.abs(r), epsR)
+            rw = 1. / ncp.maximum(ncp.abs(r), epsR)
         else:
-            rw = 1. / (np.abs(r) + epsR)
+            rw = 1. / (ncp.abs(r) + epsR)
         rw = rw / rw.max()
         R = Diagonal(rw)
         xinv = NormalEquationsInversion(Op, [], data, Weight=R,
@@ -222,7 +229,7 @@ def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
             rw_hist[iiter] = rw
             xinv_hist[iiter + 1] = xinv
         # check tolerance
-        if np.linalg.norm(xinv - xinvold) < tolIRLS:
+        if ncp.linalg.norm(xinv - xinvold) < tolIRLS:
             nouter = iiter
             break
 
@@ -243,15 +250,23 @@ def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
                 returnhistory=False, **kwargs_solver):
     r"""Iteratively reweighted least squares with L1 model term
     """
+    ncp = get_array_module(data)
+
     if x0 is not None:
         data = data - Op * x0
     if returnhistory:
-        xinv_hist = np.zeros((nouter + 1, Op.shape[1]))
-        rw_hist = np.zeros((nouter + 1, Op.shape[0]))
+        xinv_hist = ncp.zeros((nouter + 1, int(Op.shape[1])))
+        rw_hist = ncp.zeros((nouter + 1, int(Op.shape[0])))
 
     Iop = Identity(data.size, dtype=data.dtype)
     # first iteration (unweighted least-squares)
-    xinv = Op.H @ lsqr(Op @ Op.H + (epsI**2) * Iop, data, **kwargs_solver)[0]
+    if ncp == np:
+        xinv = Op.H @ \
+               lsqr(Op @ Op.H + (epsI ** 2) * Iop, data, **kwargs_solver)[0]
+    else:
+        xinv = Op.H @ cgls(Op @ Op.H + (epsI ** 2) * Iop, data,
+                           ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
+                           **kwargs_solver)[0]
     if returnhistory:
         xinv_hist[0] = xinv
     for iiter in range(nouter):
@@ -259,9 +274,15 @@ def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
         xinvold = xinv.copy()
         rw = np.abs(xinv)
         rw = rw / rw.max()
-        R = Diagonal(rw)
-        xinv = R @ Op.H @ lsqr(Op @ R @ Op.H + epsI**2 * Iop,
-                               data, **kwargs_solver)[0]
+        R = Diagonal(rw, dtype=rw.dtype)
+        if ncp == np:
+            xinv = R @ Op.H @ lsqr(Op @ R @ Op.H + epsI ** 2 * Iop,
+                                   data, **kwargs_solver)[0]
+        else:
+            xinv = R @ Op.H @ cgls(Op @ R @ Op.H + epsI ** 2 * Iop,
+                                   data,
+                                   ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
+                                   **kwargs_solver)[0]
         # save history
         if returnhistory:
             rw_hist[iiter] = rw
@@ -281,7 +302,6 @@ def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
         return xinv, nouter, xinv_hist[:nouter + 1], rw_hist[:nouter + 1]
     else:
         return xinv, nouter
-
 
 
 def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
@@ -331,7 +351,9 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
     **kwargs_solver
         Arbitrary keyword arguments for
         :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
-        :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS
+        :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS when using
+        numpy data(or :py:func:`pylops.optimization.solver.cg` and
+        :py:func:`pylops.optimization.solver.cgls` when using cupy data)
 
     Returns
     -------
@@ -495,6 +517,8 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
     between the basis is generally properly handled.
 
     """
+    ncp = get_array_module(data)
+
     Op = LinearOperator(Op)
     if show:
         tstart = time.time()
@@ -509,9 +533,9 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
     # find normalization factor for each column
     if normalizecols:
         ncols = Op.shape[1]
-        norms = np.zeros(ncols)
+        norms = ncp.zeros(ncols)
         for icol in range(ncols):
-            unit = np.zeros(ncols, dtype=Op.dtype)
+            unit = ncp.zeros(ncols, dtype=Op.dtype)
             unit[icol] = 1
             norms[icol] = np.linalg.norm(Op.matvec(unit))
     if show:
@@ -523,7 +547,7 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         x = []
     cols = []
     res = data.copy()
-    cost = np.zeros(niter_outer + 1)
+    cost = ncp.zeros(niter_outer + 1)
     cost[0] = np.linalg.norm(data)
     iiter = 0
     while iiter < niter_outer and cost[iiter] > sigma:
@@ -543,7 +567,7 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         # update active set
         if imax not in cols:
             addnew = True
-            cols.append(imax)
+            cols.append(int(imax))
         else:
             addnew = False
             imax_in_cols = cols.index(imax)
@@ -551,8 +575,8 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         # estimate model for current set of columns
         if niter_inner == 0:
             # MP update
-            Opcol = Op.apply_columns([imax, ])
-            res -= Opcol.matvec([cres[imax], ])
+            Opcol = Op.apply_columns([int(imax), ])
+            res -= Opcol.matvec(cres[imax] * ncp.ones(1))
             if addnew:
                 x.append(cres[imax])
             else:
@@ -560,7 +584,12 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         else:
             # OMP update
             Opcol = Op.apply_columns(cols)
-            x = lsqr(Opcol, data, iter_lim=niter_inner)[0]
+            if ncp == np:
+                x = lsqr(Opcol, data, iter_lim=niter_inner)[0]
+            else:
+                x = cgls(Opcol, data, ncp.zeros(int(Opcol.shape[1]),
+                                                dtype=Opcol.dtype),
+                         niter=niter_inner)[0]
             res = data - Opcol.matvec(x)
         iiter += 1
         cost[iiter] = np.linalg.norm(res)
@@ -568,12 +597,13 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
             if iiter < 10 or niter_outer - iiter < 10 or iiter % 10 == 0:
                 msg = '%6g        %12.5e' % (iiter + 1, cost[iiter])
                 print(msg)
-    xinv = np.zeros(Op.shape[1], dtype=Op.dtype)
-    xinv[cols] = np.array(x)
+    xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
+    xinv[cols] = ncp.array(x)
     if show:
         print('\nIterations = %d        Total time (s) = %.2f'
               % (iiter, time.time() - tstart))
-        print('-----------------------------------------------------------------\n')
+        print(
+            '-----------------------------------------------------------------\n')
     return xinv, iiter, cost
 
 
@@ -708,6 +738,9 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     else:
         threshf = _halfthreshold_percentile
 
+    # identify backend to use
+    ncp = get_array_module(data)
+
     if show:
         tstart = time.time()
         print('ISTA optimization (%s thresholding)\n'
@@ -723,8 +756,13 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
             Op = LinearOperator(Op, explicit=False)
         # compute largest eigenvalues of Op^H * Op
         Op1 = LinearOperator(Op.H * Op, explicit=False)
-        maxeig = np.abs(Op1.eigs(neigs=1, symmetric=True, niter=eigsiter,
-                                 **dict(tol=eigstol, which='LM')))[0]
+        if get_module_name(ncp) == 'numpy':
+            maxeig = np.abs(Op1.eigs(neigs=1, symmetric=True, niter=eigsiter,
+                                     **dict(tol=eigstol, which='LM'))[0])
+        else:
+            maxeig = np.abs(power_iteration(Op1, niter=eigsiter,
+                                            tol=eigstol, dtype=Op1.dtype,
+                                            backend='cupy')[0])
         alpha = 1./maxeig
 
     # define threshold
@@ -740,7 +778,7 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         print(head1)
 
     # initialize model and cost function
-    xinv = np.zeros(Op.shape[1], dtype=Op.dtype)
+    xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
     if monitorres:
         normresold = np.inf
     if returninfo:
@@ -787,7 +825,8 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
                 msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
-                      (iiter+1, xinv[0], costdata, costdata+costreg, xupdate)
+                      (iiter+1, to_numpy(xinv[:2])[0], costdata,
+                       costdata + costreg, xupdate)
                 print(msg)
 
         # check tolerance
@@ -926,6 +965,9 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     else:
         threshf = _halfthreshold_percentile
 
+    # identify backend to use
+    ncp = get_array_module(data)
+
     if show:
         tstart = time.time()
         print('FISTA optimization (%s thresholding)\n'
@@ -941,9 +983,14 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
             Op = LinearOperator(Op, explicit=False)
         # compute largest eigenvalues of Op^H * Op
         Op1 = LinearOperator(Op.H * Op, explicit=False)
-        maxeig = np.abs(Op1.eigs(neigs=1, symmetric=True, niter=eigsiter,
-                                 **dict(tol=eigstol, which='LM')))[0]
-        alpha = 1./maxeig
+        if get_module_name(ncp) == 'numpy':
+            maxeig = np.abs(Op1.eigs(neigs=1, symmetric=True, niter=eigsiter,
+                                     **dict(tol=eigstol, which='LM')))[0]
+        else:
+            maxeig = np.abs(power_iteration(Op1, niter=eigsiter,
+                                            tol=eigstol, dtype=Op1.dtype,
+                                            backend='cupy')[0])
+        alpha = 1. / maxeig
 
     # define threshold
     thresh = eps * alpha * 0.5
@@ -958,11 +1005,11 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         print(head1)
 
     # initialize model and cost function
-    xinv = np.zeros(Op.shape[1], dtype=Op.dtype)
+    xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
     zinv = xinv.copy()
     t = 1
     if returninfo:
-        cost = np.zeros(niter+1)
+        cost = np.zeros(niter + 1)
 
     # iterate
     for iiter in range(niter):
@@ -990,8 +1037,8 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         xupdate = np.linalg.norm(xinv - xinvold)
 
         if returninfo or show:
-            costdata = 0.5*np.linalg.norm(data - Op.matvec(xinv))**2
-            costreg = eps*np.linalg.norm(xinv, ord=1)
+            costdata = 0.5 * np.linalg.norm(data - Op.matvec(xinv)) ** 2
+            costreg = eps * np.linalg.norm(xinv, ord=1)
         if returninfo:
             cost[iiter] = costdata + costreg
 
@@ -1000,9 +1047,10 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
             callback(xinv)
 
         if show:
-            if iiter < 10 or niter-iiter < 10 or iiter % 10 == 0:
+            if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
                 msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
-                      (iiter+1, xinv[0], costdata, costdata+costreg, xupdate)
+                      (iiter + 1, to_numpy(xinv[:2])[0], costdata,
+                       costdata + costreg, xupdate)
                 print(msg)
 
         # check tolerance
@@ -1224,7 +1272,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     where :math:`\mu` and :math:`\epsilon_{{R}_{L2,i}}` are the damping factors
     used to weight the different L2 regularization terms of the cost function.
 
-    The generalized Split Bergman algorithm is used to solve such cost
+    The generalized Split-Bergman algorithm [1]_ is used to solve such cost
     function: the algorithm is composed of a sequence of unconstrained
     inverse problems and Bregman updates.
 
@@ -1262,6 +1310,8 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
        pp. 323-343. 2008.
 
     """
+    ncp = get_array_module(data)
+
     if show:
         tstart = time.time()
         print('Split-Bregman optimization\n'
@@ -1278,7 +1328,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
 
     # L1 regularizations
     nregsL1 = len(RegsL1)
-    b = [np.zeros(RegL1.shape[0]) for RegL1 in RegsL1]
+    b = [ncp.zeros(RegL1.shape[0], dtype=Op.dtype) for RegL1 in RegsL1]
     d = b.copy()
 
     # L2 regularizations
@@ -1286,7 +1336,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     if nregsL2 > 0:
         Regs = RegsL2 + RegsL1
         if dataregsL2 is None:
-            dataregsL2 = [np.zeros(Reg.shape[0]) for Reg in RegsL2]
+            dataregsL2 = [ncp.zeros(Reg.shape[0], dtype=Op.dtype) for Reg in RegsL2]
     else:
         Regs = RegsL1
         dataregsL2 = []
@@ -1296,11 +1346,11 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
              range(nregsL2)] + \
             [np.sqrt(epsRL1s[ireg] / 2) / np.sqrt(mu / 2) for ireg in
              range(nregsL1)]
-    xinv = np.zeros_like(np.zeros(Op.shape[1])) if x0 is None else x0
-    xold = np.inf * np.ones_like(np.zeros(Op.shape[1]))
+    xinv = ncp.zeros(Op.shape[1], dtype=Op.dtype) if x0 is None else x0
+    xold = ncp.full(Op.shape[1], ncp.inf, dtype=Op.dtype)
 
     itn_out = 0
-    while np.linalg.norm(xinv - xold) > tol and itn_out < niter_outer:
+    while ncp.linalg.norm(xinv - xold) > tol and itn_out < niter_outer:
         xold = xinv
         for _ in range(niter_inner):
             # Regularized problem
@@ -1320,16 +1370,16 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
         itn_out += 1
 
         if show:
-            costdata = mu/2. * np.linalg.norm(data - Op.matvec(xinv)) ** 2
+            costdata = mu/2. * ncp.linalg.norm(data - Op.matvec(xinv)) ** 2
             costregL2 = 0 if RegsL2 is None else \
-                [epsRL2 * np.linalg.norm(dataregL2 - RegL2.matvec(xinv)) ** 2
+                [epsRL2 * ncp.linalg.norm(dataregL2 - RegL2.matvec(xinv)) ** 2
                  for epsRL2, RegL2, dataregL2 in zip(epsRL2s, RegsL2, dataregsL2)]
-            costregL1 = [np.linalg.norm(RegL1.matvec(xinv), ord=1)
+            costregL1 = [ncp.linalg.norm(RegL1.matvec(xinv), ord=1)
                          for epsRL1, RegL1 in zip(epsRL1s, RegsL1)]
-            cost = costdata + np.sum(np.array(costregL2)) + \
-                   np.sum(np.array(costregL1))
+            cost = costdata + ncp.sum(ncp.array(costregL2)) + \
+                   ncp.sum(ncp.array(costregL1))
             msg = '%6g  %12.5e       %10.3e        %9.3e' % \
-                  (np.abs(itn_out), xinv[0], costdata, cost)
+                  (ncp.abs(itn_out), ncp.real(xinv[0]), costdata, cost)
             print(msg)
 
     if show:
