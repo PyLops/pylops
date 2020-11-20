@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from pylops import LinearOperator
-from pylops.basicoperators import MatrixMult, VStack, Diagonal, Zero
+from pylops.basicoperators import MatrixMult, VStack, HStack, Diagonal, Zero
 
 par1 = {'ny': 11, 'nx': 11,
         'imag': 0, 'dtype':'float32'}  # square real
@@ -41,15 +41,47 @@ def test_overloads(par):
     assert isinstance(Dop **2, LinearOperator)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
-def test_dense(par):
-    """Dense matrix representation
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_scaled(par):
+    """Verify that _ScaledLinearOperator produces the correct type based
+    on its inputs types
     """
-    diag = np.arange(par['nx']) +\
-           par['imag'] * np.arange(par['nx'])
+    dtypes = [np.float32, np.float64]
+    for dtype in dtypes:
+        diag = np.arange(par['nx'], dtype=dtype) + \
+               par['imag'] * np.arange(par['nx'], dtype=dtype)
+        Dop = Diagonal(diag, dtype=dtype)
+        Sop = 3. * Dop
+        S1op = -3. * Dop
+        S2op = Dop * 3.
+        S3op = Dop * -3.
+        assert Sop.dtype == dtype
+        assert S1op.dtype == dtype
+        assert S2op.dtype == dtype
+        assert S3op.dtype == dtype
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_dense(par):
+    """Dense matrix representation of square matrix
+    """
+    diag = np.arange(par['nx']) + par['imag'] * np.arange(par['nx'])
     D = np.diag(diag)
     Dop = Diagonal(diag, dtype=par['dtype'])
     assert_array_equal(Dop.todense(), D)
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_dense_skinny(par):
+    """Dense matrix representation of skinny matrix
+    """
+    diag = np.arange(par['nx']) + par['imag'] * np.arange(par['nx'])
+    D = np.diag(diag)
+    Dop = Diagonal(diag, dtype=par['dtype'])
+    Zop = Zero(par['nx'], 3, dtype=par['dtype'])
+    Op = HStack([Dop, Zop])
+    O = np.hstack((D, np.zeros((par['nx'], 3))))
+    assert_array_equal(Op.todense(), O)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
@@ -69,7 +101,7 @@ def test_eigs(par):
     """Eigenvalues and condition number estimate with ARPACK
     """
     # explicit=True
-    diag = np.arange(par['nx'], 0, -1) +\
+    diag = np.arange(par['nx'], 0, -1) + \
            par['imag'] * np.arange(par['nx'], 0, -1)
     Op = MatrixMult(np.vstack((np.diag(diag),
                                np.zeros((par['ny'] - par['nx'], par['nx'])))))
@@ -94,7 +126,6 @@ def test_eigs(par):
     cond = Op.cond()
     assert_array_almost_equal(np.real(cond), par['nx'], decimal=3)
 
-    # uselobpcg cannot be used for square non-symmetric complex matrices
     if np.iscomplex(Op):
         cond1 = Op.cond(uselobpcg=True, niter=100)
         assert_array_almost_equal(np.real(cond), np.real(cond1), decimal=3)
