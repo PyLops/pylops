@@ -33,14 +33,14 @@ def test_FunctionOperator(par):
     """Dot-test and inversion for FunctionOperator operator.
     """
     np.random.seed(10)
-    G = np.matrix(np.random.normal(0, 1, (par['nr'], par['nc'])) +
-                  np.random.normal(0, 1, (par['nr'], par['nc']))*par['imag'],
-                  dtype=par['dtype'])
+    G = (np.random.normal(0, 1, (par['nr'], par['nc'])) +
+         np.random.normal(0, 1, (par['nr'], par['nc'])) *
+         par['imag']).astype(par['dtype'])
 
     def forward_f(x):
         return G @ x
     def adjoint_f(y):
-        return G.H @ y
+        return np.conj(G.T) @ y
 
     if par['nr'] == par['nc']:
         Fop = FunctionOperator(forward_f, adjoint_f, par['nr'],
@@ -60,8 +60,8 @@ def test_FunctionOperator(par):
     F_x = Fop @ x
     FH_y = Fop.H @ y
 
-    G_x = np.squeeze(np.asarray(G @ x))
-    GH_y = np.squeeze(np.asarray(G.H @ y))
+    G_x = np.asarray(G @ x)
+    GH_y = np.asarray(np.conj(G.T) @ y)
 
     assert_array_equal(F_x, G_x)
     assert_array_equal(FH_y, GH_y)
@@ -78,9 +78,9 @@ def test_FunctionOperator_NoAdjoint(par):
     is not implemented.
     """
     np.random.seed(10)
-    G = np.matrix(np.random.normal(0, 1, (par['nr'], par['nc'])) +
-                  np.random.normal(0, 1, (par['nr'], par['nc']))*par['imag'],
-                  dtype=par['dtype'])
+    G = (np.random.normal(0, 1, (par['nr'], par['nc'])) +
+         np.random.normal(0, 1, (par['nr'], par['nc'])) *
+         par['imag']).astype(par['dtype'])
 
     def forward_f(x):
         return G @ x
@@ -97,12 +97,9 @@ def test_FunctionOperator_NoAdjoint(par):
          np.ones(par['nr'])*par['imag']).astype(par['dtype'])
 
     F_x = Fop @ x
-    G_x = np.squeeze(np.asarray(G @ x))
+    G_x = np.asarray(G @ x)
     assert_array_equal(F_x, G_x)
 
-    try:
-        FH_x = Fop.H @ y
-        GH_x = G.H @ y
-        assert_array_equal(FH_x, GH_x)
-    except NotImplementedError:
-        pass
+    # check error is raised when applying the adjoint
+    with pytest.raises(NotImplementedError):
+        _ = Fop.H @ y
