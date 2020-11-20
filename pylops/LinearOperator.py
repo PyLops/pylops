@@ -2,14 +2,20 @@ from __future__ import division
 
 import logging
 import numpy as np
+import scipy as sp
+
 from scipy.linalg import solve, lstsq
-from scipy.sparse.linalg import LinearOperator as spLinearOperator
-from scipy.sparse.linalg import spsolve, lsqr
 from scipy.linalg import eigvals
+from scipy.sparse.linalg import LinearOperator as spLinearOperator
+from scipy.sparse.linalg.interface import _ProductLinearOperator
+from scipy.sparse.linalg import spsolve, lsqr
 from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
 from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse import csr_matrix
+
+from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
+from pylops.optimization.solver import cgls
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -59,6 +65,12 @@ class LinearOperator(spLinearOperator):
         Modified version of scipy _matmat to avoid having trailing dimension
         in col when provided to matvec
         """
+        if sp.sparse.issparse(X):
+            y = np.vstack([self.matvec(col.toarray().reshape(-1)) for col in X.T]).T
+        else:
+            y = np.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
+        return y
+
         return np.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
 
     def __mul__(self, x):
@@ -68,7 +80,10 @@ class LinearOperator(spLinearOperator):
         return y
 
     def __rmul__(self, x):
-        return aslinearoperator(super().__rmul__(x))
+        if np.isscalar(x):
+            return aslinearoperator(_ScaledLinearOperator(self, x))
+        else:
+            return NotImplemented
 
     def __pow__(self, p):
         return aslinearoperator(super().__pow__(p))
@@ -77,13 +92,165 @@ class LinearOperator(spLinearOperator):
         return aslinearoperator(super().__add__(x))
 
     def __neg__(self):
-        return aslinearoperator(super().__neg__())
+        return aslinearoperator(_ScaledLinearOperator(self, -1))
 
     def __sub__(self, x):
         return aslinearoperator(super().__sub__(x))
 
     def _adjoint(self):
         return aslinearoperator(super()._adjoint())
+
+    def _transpose(self):
+        return aslinearoperator(super()._transpose())
+
+    def matvec(self, x):
+        """Matrix-vector multiplication.
+
+        Modified version of scipy matvec which does not consider the case
+        where the input vector is ``np.matrix`` (the use ``np.matrix`` is now
+        discouraged in numpy's documentation).
+
+        Parameters
+        ----------
+        x : :obj:`numpy.ndarray`
+            Input array of shape (N,) or (N,1)
+
+        Returns
+        -------
+        y : :obj:`numpy.ndarray`
+            Output array of shape (M,) or (M,1)
+
+        """
+        M, N = self.shape
+
+        if x.shape != (N,) and x.shape != (N, 1):
+            raise ValueError('dimension mismatch')
+
+        y = self._matvec(x)
+
+        if x.ndim == 1:
+            y = y.reshape(M)
+        elif x.ndim == 2:
+            y = y.reshape(M, 1)
+        else:
+            raise ValueError('invalid shape returned by user-defined matvec()')
+        return y
+
+    def rmatvec(self, x):
+        """Adjoint matrix-vector multiplication.
+
+        Modified version of scipy rmatvec which does not consider the case
+        where the input vector is ``np.matrix`` (the use ``np.matrix`` is now
+        discouraged in numpy's documentation).
+
+        Parameters
+        ----------
+        y : :obj:`numpy.ndarray`
+            Input array of shape (M,) or (M,1)
+
+        Returns
+        -------
+        x : :obj:`numpy.ndarray`
+            Output array of shape (N,) or (N,1)
+
+        """
+        M, N = self.shape
+
+        if x.shape != (M,) and x.shape != (M, 1):
+            raise ValueError('dimension mismatch')
+
+        y = self._rmatvec(x)
+
+        if x.ndim == 1:
+            y = y.reshape(N)
+        elif x.ndim == 2:
+            y = y.reshape(N, 1)
+        else:
+            raise ValueError(
+                'invalid shape returned by user-defined rmatvec()')
+        return y
+
+    def matmat(self, X):
+        """Matrix-matrix multiplication.
+
+        Modified version of scipy matmat which does not consider the case
+        where the input vector is ``np.matrix`` (the use ``np.matrix`` is now
+        discouraged in numpy's documentation).
+
+        Parameters
+        ----------
+        x : :obj:`numpy.ndarray`
+            Input array of shape (N,K)
+
+        Returns
+        -------
+        y : :obj:`numpy.ndarray`
+            Output array of shape (M,K)
+
+        """
+        if X.ndim != 2:
+            raise ValueError('expected 2-d ndarray or matrix, '
+                             'not %d-d' % X.ndim)
+        if X.shape[0] != self.shape[1]:
+            raise ValueError('dimension mismatch: %r, %r'
+                             % (self.shape, X.shape))
+        Y = self._matmat(X)
+        return Y
+
+    def rmatmat(self, X):
+        """Matrix-matrix multiplication.
+
+        Modified version of scipy rmatmat which does not consider the case
+        where the input vector is ``np.matrix`` (the use ``np.matrix`` is now
+        discouraged in numpy's documentation).
+
+        Parameters
+        ----------
+        x : :obj:`numpy.ndarray`
+            Input array of shape (M,K)
+
+        Returns
+        -------
+        y : :obj:`numpy.ndarray`
+            Output array of shape (N,K)
+
+        """
+        if X.ndim != 2:
+            raise ValueError('expected 2-d ndarray or matrix, '
+                             'not %d-d' % X.ndim)
+        if X.shape[0] != self.shape[0]:
+            raise ValueError('dimension mismatch: %r, %r'
+                             % (self.shape, X.shape))
+        Y = self._rmatmat(X)
+        return Y
+
+    def dot(self, x):
+        """Matrix-matrix or matrix-vector multiplication.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Input array (or matrix)
+
+        Returns
+        -------
+        y : np.ndarray
+            Output array (or matrix) that represents
+            the result of applying the linear operator on x.
+
+        """
+        if isinstance(x, LinearOperator):
+            return _ProductLinearOperator(self, x)
+        elif np.isscalar(x):
+            return _ScaledLinearOperator(self, x)
+        else:
+            if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
+                return self.matvec(x)
+            elif x.ndim == 2:
+                return self.matmat(x)
+            else:
+                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
+                                 % x)
 
     def div(self, y, niter=100):
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
@@ -109,42 +276,85 @@ class LinearOperator(spLinearOperator):
 
     def __truediv__(self, y, niter=100):
         if self.explicit is True:
-            if isinstance(self.A, np.ndarray):
+            if sp.sparse.issparse(self.A):
+                # use scipy solver for sparse matrices
+                xest = spsolve(self.A, y)
+            elif isinstance(self.A, np.ndarray):
+                # use scipy solvers for dense matrices (used for backward
+                # compatibility, could be switched to numpy equivalents)
                 if self.A.shape[0] == self.A.shape[1]:
                     xest = solve(self.A, y)
                 else:
                     xest = lstsq(self.A, y)[0]
             else:
-                xest = spsolve(self.A, y)
+                # use numpy/cupy solvers for dense matrices
+                ncp = get_array_module(y)
+                if self.A.shape[0] == self.A.shape[1]:
+                    xest = ncp.linalg.solve(self.A, y)
+                else:
+                    xest = ncp.linalg.lstsq(self.A, y)[0]
         else:
-            xest = lsqr(self, y, iter_lim=niter)[0]
+            if isinstance(y, np.ndarray):
+                # numpy backend
+                xest = lsqr(self, y, iter_lim=niter)[0]
+            else:
+                # cupy backend
+                ncp = get_array_module(y)
+                xest = cgls(self, y,
+                            x0=ncp.zeros(int(self.shape[1]), dtype=self.dtype),
+                            niter=niter)[0]
         return xest
 
-    def todense(self):
+    def todense(self, backend='numpy'):
         r"""Return dense matrix.
 
-        The operator in converted into its dense matrix equivalent. In order
-        to do so, the operator is applied to an identity matrix whose number
-        of rows and columns is equivalent to the number of columns of the
-        operator. Note that this operation may be costly for very large
-        operators and it is only suggest it to use as a way to inspect the
-        structure of the matricial equivalent of the operator.
+        The operator is converted into its dense matrix equivalent. In order
+        to do so, square or tall operators are applied to an identity matrix
+        whose number of rows and columns is equivalent to the number of
+        columns of the operator. Conversely, for skinny operators, the
+        transpose operator is applied to an identity matrix
+        whose number of rows and columns is equivalent to the number of
+        rows of the operator and the resulting matrix is transposed
+        (and complex conjugated).
+
+        Note that this operation may be costly for operators with large number
+        of rows and columns and it should be used mostly as a way to inspect
+        the structure of the matricial equivalent of the operator.
+
+        Parameters
+        ----------
+        backend : :obj:`str`, optional
+            Backend used to densify matrix (``numpy`` or ``cupy``). Note that
+            this must be consistent with how the operator has been created.
 
         Returns
         -------
-        matrix : :obj:`numpy.ndarray`
+        matrix : :obj:`numpy.ndarray` or :obj:`cupy.ndarray`
             Dense matrix.
 
         """
+        ncp = get_module(backend)
+
         # Wrap self into a LinearOperator. This is done for cases where self
         # is a _SumLinearOperator or _ProductLinearOperator, so that it regains
         # the dense method
         Op = aslinearoperator(self)
 
-        identity = np.eye(self.shape[1], dtype=self.dtype)
-        matrix = Op.matmat(identity)
-        return matrix
+        # Create identity matrix
+        shapemin = min(Op.shape)
+        if shapemin <= 1e3:
+            # use numpy for small matrices (faster but heavier on memory)
+            identity = ncp.eye(shapemin, dtype=self.dtype)
+        else:
+            # use scipy for small matrices (slower but lighter on memory)
+            identity = get_sparse_eye(ncp.ones(1))(shapemin, dtype=self.dtype).tocsc()
 
+        # Apply operator
+        if Op.shape[1] == shapemin:
+            matrix = Op.matmat(identity)
+        else:
+            matrix = np.conj(Op.rmatmat(identity)).T
+        return matrix
 
     def tosparse(self):
         r"""Return sparse matrix.
@@ -159,7 +369,6 @@ class LinearOperator(spLinearOperator):
             Sparse matrix.
 
         """
-
         Op = aslinearoperator(self)
         (_, n) = self.shape
 
@@ -369,14 +578,13 @@ class LinearOperator(spLinearOperator):
 
         """
         if not uselobpcg:
-            cond = np.asscalar(self.eigs(neigs=1, which='LM', **kwargs_eig))/ \
-                   np.asscalar(self.eigs(neigs=1, which='SM', **kwargs_eig))
+            cond = self.eigs(neigs=1, which='LM', **kwargs_eig).item() / \
+                   self.eigs(neigs=1, which='SM', **kwargs_eig).item()
         else:
-            print('here')
-            cond = np.asscalar(self.eigs(neigs=1, uselobpcg=True, largest=True,
-                                         **kwargs_eig)) / \
-                   np.asscalar(self.eigs(neigs=1, uselobpcg=True, largest=False,
-                                         **kwargs_eig))
+            cond = self.eigs(neigs=1, uselobpcg=True, largest=True,
+                             **kwargs_eig).item() / \
+                   self.eigs(neigs=1, uselobpcg=True, largest=False,
+                             **kwargs_eig).item()
 
         return cond
 
@@ -421,6 +629,52 @@ class LinearOperator(spLinearOperator):
         return colop
 
 
+def _get_dtype(operators, dtypes=None):
+    if dtypes is None:
+        dtypes = []
+    opdtypes = []
+    for obj in operators:
+        if obj is not None and hasattr(obj, 'dtype'):
+            opdtypes.append(obj.dtype)
+    return np.find_common_type(opdtypes, dtypes)
+
+
+class _ScaledLinearOperator(spLinearOperator):
+    """
+    Sum Linear Operator
+
+    Modified version of scipy _ScaledLinearOperator which uses a modified
+    _get_dtype where the scalar and operator types are passed separately to
+    np.find_common_type. Passing them together does lead to problems when using
+    np.float32 operators which are casted to no.float64
+
+    """
+    def __init__(self, A, alpha):
+        if not isinstance(A, spLinearOperator):
+            raise ValueError('LinearOperator expected as A')
+        if not np.isscalar(alpha):
+            raise ValueError('scalar expected as alpha')
+        dtype = _get_dtype([A], [type(alpha)])
+        super(_ScaledLinearOperator, self).__init__(dtype, A.shape)
+        self.args = (A, alpha)
+
+    def _matvec(self, x):
+        return self.args[1] * self.args[0].matvec(x)
+
+    def _rmatvec(self, x):
+        return np.conj(self.args[1]) * self.args[0].rmatvec(x)
+
+    def _rmatmat(self, x):
+        return np.conj(self.args[1]) * self.args[0].rmatmat(x)
+
+    def _matmat(self, x):
+        return self.args[1] * self.args[0].matmat(x)
+
+    def _adjoint(self):
+        A, alpha = self.args
+        return A.H * np.conj(alpha)
+
+
 class _ConjLinearOperator(LinearOperator):
     """Complex conjugate linear operator
     """
@@ -457,10 +711,11 @@ class _ColumnLinearOperator(LinearOperator):
             self.Opcol = Op.A[:, cols]
 
     def _matvec(self, x):
+        ncp = get_array_module(x)
         if self.explicit:
             y = self.Opcol @ x
         else:
-            y = np.zeros(self.Op.shape[1], dtype=self.dtype)
+            y = ncp.zeros(int(self.Op.shape[1]), dtype=self.dtype)
             y[self.cols] = x
             y = self.Op._matvec(y)
         return y
