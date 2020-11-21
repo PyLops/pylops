@@ -1,5 +1,6 @@
 import numpy as np
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module, to_cupy_conditional
 
 
 class Diagonal(LinearOperator):
@@ -53,8 +54,9 @@ class Diagonal(LinearOperator):
 
     """
     def __init__(self, diag, dims=None, dir=0, dtype='float64'):
+        ncp = get_array_module(diag)
         self.diag = diag.flatten()
-        self.complex = True if np.iscomplexobj(self.diag) else False
+        self.complex = True if ncp.iscomplexobj(self.diag) else False
         if dims is None:
             self.shape = (len(self.diag), len(self.diag))
             self.dims = None
@@ -70,6 +72,8 @@ class Diagonal(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
+        if type(self.diag) != type(x):
+            self.diag = to_cupy_conditional(x, self.diag)
         if not self.reshape:
             y = self.diag * x.ravel()
         else:
@@ -78,6 +82,8 @@ class Diagonal(LinearOperator):
         return y.ravel()
 
     def _rmatvec(self, x):
+        if type(self.diag) != type(x):
+            self.diag = to_cupy_conditional(x, self.diag)
         if self.complex:
             diagadj = self.diag.conj()
         else:
@@ -93,10 +99,22 @@ class Diagonal(LinearOperator):
         """Return diagonal matrix as dense :obj:`numpy.ndarray`
 
         Returns
-        ----------
+        -------
         densemat : :obj:`numpy.ndarray`
             Dense matrix.
 
         """
-        densemat = np.diag(self.diag.squeeze())
+        ncp = get_array_module(self.diag)
+        densemat = ncp.diag(self.diag.squeeze())
         return densemat
+
+    def todense(self):
+        """Fast implementation of todense based on known structure of the
+        operator
+
+        Returns
+        -------
+        densemat : :obj:`numpy.ndarray`
+            Dense matrix.
+        """
+        return self.matrix()

@@ -1,5 +1,6 @@
 import numpy as np
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module
 
 
 class Zero(LinearOperator):
@@ -48,7 +49,9 @@ class Zero(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
-        return np.zeros(self.shape[0], dtype=self.dtype)
+        ncp = get_array_module(x)
+        return ncp.zeros(self.shape[0], dtype=self.dtype)
 
     def _rmatvec(self, x):
-        return np.zeros(self.shape[1], dtype=self.dtype)
+        ncp = get_array_module(x)
+        return ncp.zeros(self.shape[1], dtype=self.dtype)

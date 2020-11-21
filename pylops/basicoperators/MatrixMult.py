@@ -1,6 +1,8 @@
 import numpy as np
+import scipy as sp
 from scipy.sparse.linalg import inv
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module
 
 
 class MatrixMult(LinearOperator):
@@ -55,8 +57,9 @@ class MatrixMult(LinearOperator):
         self.dtype = np.dtype(dtype)
 
     def _matvec(self, x):
+        ncp = get_array_module(x)
         if self.reshape:
-            x = np.reshape(x, self.reshapedims[0])
+            x = ncp.reshape(x, self.reshapedims[0])
         y = self.A.dot(x)
         if self.reshape:
             return y.ravel()
@@ -64,8 +67,9 @@ class MatrixMult(LinearOperator):
             return y
 
     def _rmatvec(self, x):
+        ncp = get_array_module(x)
         if self.reshape:
-            x = np.reshape(x, self.reshapedims[1])
+            x = ncp.reshape(x, self.reshapedims[1])
         if self.complex:
             y = (self.A.T.dot(x.conj())).conj()
         else:
@@ -85,9 +89,9 @@ class MatrixMult(LinearOperator):
             Inverse matrix.
 
         """
-        if isinstance(self.A, np.ndarray):
-            Ainv = np.linalg.inv(self.A)
-        else:
+        if sp.sparse.issparse(self.A):
             Ainv = inv(self.A)
-
+        else:
+            ncp = get_array_module(self.A)
+            Ainv = ncp.linalg.inv(self.A)
         return Ainv

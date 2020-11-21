@@ -3,6 +3,7 @@ from scipy.sparse.linalg.interface import _get_dtype
 from scipy.sparse.linalg.interface import LinearOperator as spLinearOperator
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
+from pylops.utils.backend import get_array_module
 
 
 class BlockDiag(LinearOperator):
@@ -84,8 +85,8 @@ class BlockDiag(LinearOperator):
                 self.ops[iop] = MatrixMult(oper, dtype=oper.dtype)
             nops[iop] = self.ops[iop].shape[0]
             mops[iop] = self.ops[iop].shape[1]
-        self.nops = nops.sum()
-        self.mops = mops.sum()
+        self.nops = int(nops.sum())
+        self.mops = int(mops.sum())
         self.nnops = np.insert(np.cumsum(nops), 0, 0)
         self.mmops = np.insert(np.cumsum(mops), 0, 0)
         self.shape = (self.nops, self.mops)
@@ -96,14 +97,16 @@ class BlockDiag(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
-        y = np.zeros(self.nops, dtype=self.dtype)
+        ncp = get_array_module(x)
+        y = ncp.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
             y[self.nnops[iop]:self.nnops[iop + 1]] = \
                 oper.matvec(x[self.mmops[iop]:self.mmops[iop + 1]]).squeeze()
         return y
 
     def _rmatvec(self, x):
-        y = np.zeros(self.mops, dtype=self.dtype)
+        ncp = get_array_module(x)
+        y = ncp.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
             y[self.mmops[iop]:self.mmops[iop + 1]] = \
                 oper.rmatvec(x[self.nnops[iop]:self.nnops[iop + 1]]).squeeze()

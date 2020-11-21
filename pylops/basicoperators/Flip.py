@@ -62,7 +62,7 @@ class Flip(LinearOperator):
             x = np.reshape(x, self.dims)
         y = np.flip(x, axis=self.dir)
         if self.reshape:
-            y = np.ndarray.flatten(y)
+            y = y.ravel()
         return y
 
     def _rmatvec(self, x):

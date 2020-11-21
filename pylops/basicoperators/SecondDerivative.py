@@ -1,5 +1,6 @@
 import numpy as np
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module
 
 
 class SecondDerivative(LinearOperator):
@@ -15,7 +16,7 @@ class SecondDerivative(LinearOperator):
         Number of samples for each dimension
         (``None`` if only one dimension is available)
     dir : :obj:`int`, optional
-        Direction along which smoothing is applied.
+        Direction along which the derivative is applied.
     sampling : :obj:`float`, optional
         Sampling step ``dx``.
     edge : :obj:`bool`, optional
@@ -64,31 +65,33 @@ class SecondDerivative(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
+        ncp = get_array_module(x)
         if not self.reshape:
             x = x.squeeze()
-            y = np.zeros(self.N, self.dtype)
+            y = ncp.zeros(self.N, self.dtype)
             y[1:-1] = (x[2:] - 2*x[1:-1] + x[0:-2]) / self.sampling**2
             if self.edge:
                 y[0] = (x[0] - 2*x[1] + x[2]) / self.sampling**2
                 y[-1] = (x[-3] - 2*x[-2] + x[-1]) / self.sampling**2
         else:
-            x = np.reshape(x, self.dims)
+            x = ncp.reshape(x, self.dims)
             if self.dir > 0:  # need to bring the dim. to derive to first dim.
-                x = np.swapaxes(x, self.dir, 0)
-            y = np.zeros(x.shape, self.dtype)
+                x = ncp.swapaxes(x, self.dir, 0)
+            y = ncp.zeros(x.shape, self.dtype)
             y[1:-1] = (x[2:] - 2*x[1:-1] + x[0:-2])/self.sampling**2
             if self.edge:
                 y[0] = (x[0] - 2*x[1] + x[2]) / self.sampling ** 2
                 y[-1] = (x[-3] - 2*x[-2] + x[-1]) / self.sampling ** 2
             if self.dir > 0:
-                y = np.swapaxes(y, 0, self.dir)
+                y = ncp.swapaxes(y, 0, self.dir)
             y = y.ravel()
         return y
 
     def _rmatvec(self, x):
+        ncp = get_array_module(x)
         if not self.reshape:
             x = x.squeeze()
-            y = np.zeros(self.N, self.dtype)
+            y = ncp.zeros(self.N, self.dtype)
             y[0:-2] += (x[1:-1]) / self.sampling**2
             y[1:-1] -= (2*x[1:-1]) / self.sampling**2
             y[2:] += (x[1:-1]) / self.sampling**2
@@ -100,10 +103,10 @@ class SecondDerivative(LinearOperator):
                 y[-2] -= 2 * x[-1] / self.sampling**2
                 y[-1] += x[-1] / self.sampling**2
         else:
-            x = np.reshape(x, self.dims)
+            x = ncp.reshape(x, self.dims)
             if self.dir > 0:  # need to bring the dim. to derive to first dim.
-                x = np.swapaxes(x, self.dir, 0)
-            y = np.zeros(x.shape, self.dtype)
+                x = ncp.swapaxes(x, self.dir, 0)
+            y = ncp.zeros(x.shape, self.dtype)
             y[0:-2] += (x[1:-1]) / self.sampling**2
             y[1:-1] -= (2*x[1:-1]) / self.sampling**2
             y[2:] += (x[1:-1]) / self.sampling**2
@@ -115,6 +118,6 @@ class SecondDerivative(LinearOperator):
                 y[-2] -= 2 * x[-1] / self.sampling ** 2
                 y[-1] += x[-1] / self.sampling ** 2
             if self.dir > 0:
-                y = np.swapaxes(y, 0, self.dir)
+                y = ncp.swapaxes(y, 0, self.dir)
             y = y.ravel()
         return y

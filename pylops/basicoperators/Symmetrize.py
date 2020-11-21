@@ -1,5 +1,6 @@
 import numpy as np
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module
 
 
 class Symmetrize(LinearOperator):
@@ -75,29 +76,31 @@ class Symmetrize(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
-        y = np.zeros(self.dimsd, dtype=self.dtype)
+        ncp = get_array_module(x)
+        y = ncp.zeros(self.dimsd, dtype=self.dtype)
         if self.reshape:
-            x = np.reshape(x, self.dims)
+            x = ncp.reshape(x, self.dims)
         if self.dir > 0:# bring the dimension to symmetrize to first
-            x = np.swapaxes(x, self.dir, 0)
-            y = np.swapaxes(y, self.dir, 0)
+            x = ncp.swapaxes(x, self.dir, 0)
+            y = ncp.swapaxes(y, self.dir, 0)
         y[self.nsym-1:] = x
         y[:self.nsym-1] = x[-1:0:-1]
         if self.dir > 0:
-            y = np.swapaxes(y, 0, self.dir)
+            y = ncp.swapaxes(y, 0, self.dir)
         if self.reshape:
-            y = np.ndarray.flatten(y)
+            y = ncp.ndarray.flatten(y)
         return y
 
     def _rmatvec(self, x):
+        ncp = get_array_module(x)
         if self.reshape:
-            x = np.reshape(x, self.dimsd)
+            x = ncp.reshape(x, self.dimsd)
         if self.dir > 0:  # bring the dimension to symmetrize to first
-            x = np.swapaxes(x, self.dir, 0)
+            x = ncp.swapaxes(x, self.dir, 0)
         y = x[self.nsym-1:].copy()
         y[1:] += x[self.nsym-2::-1]
         if self.dir > 0:
-            y = np.swapaxes(y, 0, self.dir)
+            y = ncp.swapaxes(y, 0, self.dir)
         if self.reshape:
-            y = np.ndarray.flatten(y)
+            y = ncp.ndarray.flatten(y)
         return y
