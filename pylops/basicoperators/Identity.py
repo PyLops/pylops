@@ -1,5 +1,6 @@
 import numpy as np
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module
 
 
 class Identity(LinearOperator):
@@ -80,22 +81,26 @@ class Identity(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
-        if not self.inplace: x = x.copy()
+        ncp = get_array_module(x)
+        if not self.inplace:
+            x = x.copy()
         if self.shape[0] == self.shape[1]:
             y = x
         elif self.shape[0] < self.shape[1]:
             y = x[:self.shape[0]]
         else:
-            y = np.zeros(self.shape[0], dtype=self.dtype)
+            y = ncp.zeros(self.shape[0], dtype=self.dtype)
             y[:self.shape[1]] = x
         return y
 
     def _rmatvec(self, x):
-        if not self.inplace: x = x.copy()
+        ncp = get_array_module(x)
+        if not self.inplace:
+            x = x.copy()
         if self.shape[0] == self.shape[1]:
             y = x
         elif self.shape[0] < self.shape[1]:
-            y = np.zeros(self.shape[1], dtype=self.dtype)
+            y = ncp.zeros(self.shape[1], dtype=self.dtype)
             y[:self.shape[0]] = x
         else:
             y = x[:self.shape[1]]
