@@ -12,6 +12,10 @@ except ModuleNotFoundError:
     pyfftw_message = 'Pyfftw not installed, use numpy or run ' \
                      '"pip install pyFFTW" or ' \
                      '"conda install -c conda-forge pyfftw".'
+except Exception as e:
+    pyfftw = None
+    pyfftw_message = 'Failed to import pyfftw (error:%s), use numpy.' % e
+
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
