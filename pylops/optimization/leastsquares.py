@@ -1,14 +1,18 @@
+import time
 import numpy as np
-from scipy.sparse.linalg import cg, lsqr
+from scipy.sparse.linalg import lsqr
+from scipy.sparse.linalg import cg as sp_cg
 
 from pylops.basicoperators import Diagonal
 from pylops.basicoperators import VStack
+from pylops.optimization.solver import cg, cgls
+from pylops.utils.backend import get_array_module
 
 
 def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
                              epsI=0, epsRs=None, x0=None,
                              returninfo=False, NRegs=None, epsNRs=None,
-                             **kwargs_cg):
+                             **kwargs_solver):
     r"""Inversion of normal equations.
 
     Solve the regularized normal equations for a system of equations
@@ -46,9 +50,11 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
     epsNRs : :obj:`list`, optional
          Regularization dampings for normal operators (must have the same
          number of elements as ``NRegs``)
-    **kwargs_cg
-        Arbitrary keyword arguments for
-        :py:func:`scipy.sparse.linalg.cg` solver
+    **kwargs_solver
+        Arbitrary keyword arguments for chosen solver
+        (:py:func:`scipy.sparse.linalg.cg` and
+        :py:func:`pylops.optimization.solver.cg` are used as default for numpy
+        and cupy `data`, respectively)
 
     Returns
     -------
@@ -89,13 +95,14 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
     implicitly assumed to be zero.
 
     """
+    ncp = get_array_module(data)
+
     # store adjoint
     OpH = Op.H
 
     # create dataregs and epsRs if not provided
     if dataregs is None and Regs is not None:
-        dataregs = [np.zeros(Reg.shape[0]) for Reg in Regs]
-
+        dataregs = [ncp.zeros(int(Reg.shape[0]), dtype=Reg.dtype) for Reg in Regs]
     if epsRs is None and Regs is not None:
         epsRs = [1] * len(Regs)
 
@@ -111,7 +118,9 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
 
     # Add regularization terms
     if epsI > 0:
-        Op_normal += epsI ** 2 * Diagonal(np.ones(Op.shape[1]))
+        Op_normal += epsI ** 2 * Diagonal(ncp.ones(int(Op.shape[1]),
+                                                   dtype=Op.dtype),
+                                          dtype=Op.dtype)
 
     if Regs is not None:
         for epsR, Reg, datareg in zip(epsRs, Regs, dataregs):
@@ -123,10 +132,16 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
         for epsNR, NReg in zip(epsNRs, NRegs):
             Op_normal += epsNR ** 2 * NReg
 
-    # CG solver
+    # solver
     if x0 is not None:
-        y_normal = y_normal - Op_normal*x0
-    xinv, istop = cg(Op_normal, y_normal, **kwargs_cg)
+        y_normal = y_normal - Op_normal * x0
+    if ncp == np:
+        xinv, istop = sp_cg(Op_normal, y_normal, **kwargs_solver)
+    else:
+        xinv = cg(Op_normal, y_normal,
+                  ncp.zeros(int(Op_normal.shape[1]), dtype=Op_normal.dtype),
+                  **kwargs_solver)[0]
+        istop = None
     if x0 is not None:
         xinv = x0 + xinv
 
@@ -181,7 +196,8 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
 
 
 def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
-                         epsRs=None, x0=None, returninfo=False, **kwargs_lsqr):
+                         epsRs=None, x0=None, returninfo=False,
+                         **kwargs_solver):
     r"""Regularized inversion.
 
     Solve a system of regularized equations given the operator ``Op``,
@@ -207,14 +223,16 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
         Initial guess
     returninfo : :obj:`bool`, optional
         Return info of LSQR solver
-    **kwargs_lsqr
-        Arbitrary keyword arguments for
-        :py:func:`scipy.sparse.linalg.lsqr` solver
+    **kwargs_solver
+        Arbitrary keyword arguments for chosen solver
+        (:py:func:`scipy.sparse.linalg.lsqr` and
+        :py:func:`pylops.optimization.solver.cgls` are used as default for numpy
+        and cupy `data`, respectively)
 
     Returns
     -------
     xinv : :obj:`numpy.ndarray`
-        Inverted model :math:`\mathbf{Op}`
+        Inverted model.
     istop : :obj:`int`
         Gives the reason for termination
 
@@ -269,9 +287,11 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
     original solver does not allow so.
 
     """
+    ncp = get_array_module(data)
+
     # create regularization data
     if dataregs is None and Regs is not None:
-        dataregs = [np.zeros(Reg.shape[0]) for Reg in Regs]
+        dataregs = [ncp.zeros(int(Reg.shape[0]), dtype=Reg.dtype) for Reg in Regs]
 
     if epsRs is None and Regs is not None:
         epsRs = [1] * len(Regs)
@@ -299,13 +319,19 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
         for epsR, datareg in zip(epsRs, dataregs):
             datatot = np.hstack((datatot, epsR*datareg))
 
-    # LSQR solver
+    # solver
     if x0 is not None:
         datatot = datatot - RegOp * x0
-    xinv, istop, itn, r1norm, r2norm = lsqr(RegOp, datatot, **kwargs_lsqr)[0:5]
+
+    if ncp == np:
+        xinv, istop, itn, r1norm, r2norm = lsqr(RegOp, datatot,
+                                                **kwargs_solver)[0:5]
+    else:
+        xinv, istop, itn, r1norm, r2norm = \
+            cgls(RegOp, datatot, ncp.zeros(int(RegOp.shape[1]), dtype=RegOp.dtype),
+                 **kwargs_solver)[0:5]
     if x0 is not None:
         xinv = x0 + xinv
-
     if returninfo:
         return xinv, istop, itn, r1norm, r2norm
     else:
@@ -313,7 +339,7 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
 
 
 def PreconditionedInversion(Op, P, data, x0=None, returninfo=False,
-                            **kwargs_lsqr):
+                            **kwargs_solver):
     r"""Preconditioned inversion.
 
     Solve a system of preconditioned equations given the operator
@@ -331,10 +357,11 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False,
         Initial guess
     returninfo : :obj:`bool`
         Return info of LSQR solver
-    **kwargs_lsqr
-        Arbitrary keyword arguments for
-        :py:func:`scipy.sparse.linalg.lsqr` solver
-
+    **kwargs_solver
+        Arbitrary keyword arguments for chosen solver
+        (:py:func:`scipy.sparse.linalg.lsqr` and
+        :py:func:`pylops.optimization.solver.cgls` are used as default for numpy
+        and cupy `data`, respectively)
     Returns
     -------
     xinv : :obj:`numpy.ndarray`
@@ -375,14 +402,23 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False,
     original space.
 
     """
+    ncp = get_array_module(data)
+
     # Preconditioned operator
-    POp = Op*P
-    # LSQR solver
+    POp = Op * P
+
+    # Solver
     if x0 is not None:
         data = data - Op * x0
 
-    pinv, istop, itn, r1norm, r2norm = lsqr(POp, data, **kwargs_lsqr)[0:5]
-    xinv = P*pinv
+    if ncp == np:
+        pinv, istop, itn, r1norm, r2norm = \
+            lsqr(POp, data, **kwargs_solver)[0:5]
+    else:
+        pinv, istop, itn, r1norm, r2norm = \
+            cgls(POp, data, ncp.zeros(int(POp.shape[1]), dtype=POp.dtype),
+                 **kwargs_solver)[0:5]
+    xinv = P * pinv
     if x0 is not None:
         xinv = xinv + x0
 
