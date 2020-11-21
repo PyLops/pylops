@@ -1,7 +1,22 @@
 import numpy as np
 import numpy.ma as np_ma
-
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module, to_cupy_conditional
+
+
+def _compute_iavamask(dims, dir, iava, ncp):
+    """Compute restriction mask when using cupy arrays
+    """
+    otherdims = np.array(dims)
+    otherdims = np.delete(otherdims, dir)
+    iavamask = ncp.zeros(dims[dir], dtype=np.int)
+    iavamask[iava] = 1
+    iavamask = \
+        ncp.moveaxis(ncp.broadcast_to(iavamask,
+                                      list(otherdims) + [dims[dir]]),
+                     -1, dir)
+    iavamask = ncp.where(iavamask.ravel() == 1)[0]
+    return iavamask
 
 
 class Restriction(LinearOperator):
@@ -68,6 +83,7 @@ class Restriction(LinearOperator):
     """
     def __init__(self, M, iava, dims=None, dir=0,
                  dtype='float64', inplace=True):
+        ncp = get_array_module(iava)
         self.M = M
         self.dir = dir
         self.iava = iava
@@ -86,31 +102,49 @@ class Restriction(LinearOperator):
                                    [1] * (len(self.dims) - self.dir - 1)
                 self.N = np.prod(self.dimsd)
                 self.reshape = True
+
+                # currently cupy does not support put_along_axis, so we need to
+                # explicitely create a list of indices in the n-dimensional
+                # model space which will be used in _rmatvec to place the input
+                if ncp != np:
+                    self.iavamask = _compute_iavamask(dims, dir, iava, ncp)
         self.inplace = inplace
         self.shape = (self.N, self.M)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
-        if not self.inplace: x = x.copy()
+        ncp = get_array_module(x)
+        if not self.inplace:
+            x = x.copy()
         if not self.reshape:
             y = x[self.iava]
         else:
-            x = np.reshape(x, self.dims)
-            y = np.take(x, self.iava, axis=self.dir)
+            x = ncp.reshape(x, self.dims)
+            y = ncp.take(x, self.iava, axis=self.dir)
             y = y.ravel()
         return y
 
     def _rmatvec(self, x):
-        if not self.inplace: x = x.copy()
+        ncp = get_array_module(x)
+        if not self.inplace:
+            x = x.copy()
         if not self.reshape:
-            y = np.zeros(self.dims, dtype=self.dtype)
+            y = ncp.zeros(self.dims, dtype=self.dtype)
             y[self.iava] = x
         else:
-            x = np.reshape(x, self.dimsd)
-            y = np.zeros(self.dims, dtype=self.dtype)
-            np.put_along_axis(y, np.reshape(self.iava, self.iavareshape),
-                              x, axis=self.dir)
+            x = ncp.reshape(x, self.dimsd)
+            if ncp == np:
+                y = ncp.zeros(self.dims, dtype=self.dtype)
+                ncp.put_along_axis(y, ncp.reshape(self.iava, self.iavareshape),
+                                   x, axis=self.dir)
+            else:
+                if not hasattr(self, 'iavamask'):
+                    self.iava = to_cupy_conditional(x, self.iava)
+                    self.iavamask = _compute_iavamask(self.dims, self.dir,
+                                                      self.iava, ncp)
+                y = ncp.zeros(int(self.M), dtype=self.dtype)
+                y[self.iavamask] = x.ravel()
             y = y.ravel()
         return y
 
@@ -120,7 +154,7 @@ class Restriction(LinearOperator):
 
         Parameters
         ----------
-        x : :obj:`numpy.ndarray`
+        x : :obj:`numpy.ndarray` or :obj:`cupy.ndarray`
             Input array (can be either flattened or not)
 
         Returns
@@ -129,14 +163,23 @@ class Restriction(LinearOperator):
             Masked array.
 
         """
+        ncp = get_array_module(x)
+        if ncp != np:
+            iava = ncp.asnumpy(self.iava)
+        else:
+            iava = self.iava.copy()
+
         y = np_ma.array(np.zeros(self.dims), mask=np.ones(self.dims),
                         dtype=self.dtype)
         if self.reshape:
             x = np.reshape(x, self.dims)
             x = np.swapaxes(x, self.dir, 0)
             y = np.swapaxes(y, self.dir, 0)
-        y.mask[self.iava] = False
-        y[self.iava] = x[self.iava]
+        y.mask[iava] = False
+        if ncp == np:
+            y[iava] = x[self.iava]
+        else:
+            y[iava] = ncp.asnumpy(x)[iava]
         if self.reshape:
             y = np.swapaxes(y, 0, self.dir)
         return y
