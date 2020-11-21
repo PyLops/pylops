@@ -1,6 +1,8 @@
 import logging
 import numpy as np
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module, \
+    get_add_at, to_numpy
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -72,8 +74,10 @@ class Bilinear(LinearOperator):
 
     """
     def __init__(self, iava, dims, dtype='float64'):
-        # check non-unique pairs
-        _checkunique(iava)
+        ncp = get_array_module(iava)
+
+        # check non-unique pairs (works only with numpy arrays)
+        _checkunique(to_numpy(iava))
 
         # define dimension of data
         ndims = len(dims)
@@ -81,10 +85,10 @@ class Bilinear(LinearOperator):
         self.dimsd = [len(iava[1])] + list(dims[2:])
 
         # find indices and weights
-        self.iava_t = np.floor(iava[0]).astype(np.int)
+        self.iava_t = ncp.floor(iava[0]).astype(np.int)
         self.iava_b = self.iava_t + 1
         self.weights_tb = iava[0] - self.iava_t
-        self.iava_l = np.floor(iava[1]).astype(np.int)
+        self.iava_l = ncp.floor(iava[1]).astype(np.int)
         self.iava_r = self.iava_l + 1
         self.weights_lr = iava[1] - self.iava_l
 
@@ -92,9 +96,9 @@ class Bilinear(LinearOperator):
         if ndims > 2:
             for _ in range(ndims - 2):
                 self.weights_tb = \
-                    np.expand_dims(self.weights_tb, axis=-1)
+                    ncp.expand_dims(self.weights_tb, axis=-1)
                 self.weights_lr = \
-                    np.expand_dims(self.weights_lr, axis=-1)
+                    ncp.expand_dims(self.weights_lr, axis=-1)
 
         self.shape = (np.prod(np.array(self.dimsd)),
                       np.prod(np.array(self.dims)))
@@ -102,24 +106,25 @@ class Bilinear(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
-        x = np.reshape(x, self.dims)
+        ncp = get_array_module(x)
+        x = ncp.reshape(x, self.dims)
         y = x[self.iava_t, self.iava_l] * (1 - self.weights_tb) * (1 - self.weights_lr) + \
             x[self.iava_t, self.iava_r] * (1 - self.weights_tb) * self.weights_lr + \
             x[self.iava_b, self.iava_l] * self.weights_tb * (1 - self.weights_lr) + \
             x[self.iava_b, self.iava_r] * self.weights_tb * self.weights_lr
-
-        return y
+        return y.ravel()
 
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dimsd)
-        y = np.zeros(self.dims, dtype=self.dtype)
-        np.add.at(y, [self.iava_t, self.iava_l],
-                  x * (1 - self.weights_tb) * (1 - self.weights_lr))
-        np.add.at(y, [self.iava_t, self.iava_r],
-                  x * (1 - self.weights_tb) * self.weights_lr)
-        np.add.at(y, [self.iava_b, self.iava_l],
-                  x * self.weights_tb * (1 - self.weights_lr))
-        np.add.at(y, [self.iava_b, self.iava_r],
-                  x * self.weights_tb * self.weights_lr)
-        y = y.ravel()
-        return y
+        ncp = get_array_module(x)
+        ncp_add_at = get_add_at(x)
+        x = ncp.reshape(x, self.dimsd)
+        y = ncp.zeros(self.dims, dtype=self.dtype)
+        ncp_add_at(y, [self.iava_t, self.iava_l],
+                   x * (1 - self.weights_tb) * (1 - self.weights_lr))
+        ncp_add_at(y, [self.iava_t, self.iava_r],
+                   x * (1 - self.weights_tb) * self.weights_lr)
+        ncp_add_at(y, [self.iava_b, self.iava_l],
+                   x * self.weights_tb * (1 - self.weights_lr))
+        ncp_add_at(y, [self.iava_b, self.iava_r],
+                   x * self.weights_tb * self.weights_lr)
+        return y.ravel()
