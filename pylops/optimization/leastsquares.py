@@ -1,4 +1,3 @@
-import time
 import numpy as np
 from scipy.sparse.linalg import lsqr
 from scipy.sparse.linalg import cg as sp_cg
