@@ -2,8 +2,10 @@ import logging
 import numpy as np
 from pylops import LinearOperator
 from pylops.basicoperators import Restriction, Diagonal, MatrixMult, Transpose
+from pylops.utils.backend import get_array_module
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+
 
 def _checkunique(iava):
     _, count = np.unique(iava, return_counts=True)
@@ -20,6 +22,8 @@ def _nearestinterp(M, iava, dims=None, dir=0, dtype='float64'):
 def _linearinterp(M, iava, dims=None, dir=0, dtype='float64'):
     """Linear interpolation.
     """
+    ncp = get_array_module(iava)
+
     if np.issubdtype(iava.dtype, np.integer):
         iava = iava.astype(np.float)
     if dims is None:
@@ -41,7 +45,7 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype='float64'):
     _checkunique(iava)
 
     # find indices and weights
-    iva_l = np.floor(iava).astype(np.int)
+    iva_l = ncp.floor(iava).astype(np.int)
     iva_r = iva_l + 1
     weights = iava - iva_l
 
@@ -52,26 +56,26 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype='float64'):
          Restriction(M, iva_r, dims=dims, dir=dir, dtype=dtype)
     return Op, iava
 
-
 def _sincinterp(M, iava, dims=None, dir=0, dtype='float64'):
     """Sinc interpolation.
     """
+    ncp = get_array_module(iava)
+
     _checkunique(iava)
+
     # create sinc interpolation matrix
     nreg = M if dims is None else dims[dir]
-    ireg = np.arange(nreg)
-    sinc = np.tile(iava[:, np.newaxis], (1, nreg)) - \
-           np.tile(ireg, (len(iava), 1))
-    sinc = np.sinc(sinc)
+    ireg = ncp.arange(nreg)
+    sinc = ncp.tile(iava[:, np.newaxis], (1, nreg)) - \
+           ncp.tile(ireg, (len(iava), 1))
+    sinc = ncp.sinc(sinc)
 
     # identify additional dimensions and create MatrixMult operator
     otherdims = None
     if dims is not None:
-        otherdims = np.array(dims)
-        otherdims = np.roll(otherdims, -dir)
+        otherdims = ncp.array(dims)
+        otherdims = ncp.roll(otherdims, -dir)
         otherdims = otherdims[1:]
-        print('dims', dims)
-        print('otherdims', otherdims)
     Op = MatrixMult(sinc, dims=otherdims, dtype=dtype)
 
     # create Transpose operator that brings dir to first dimension

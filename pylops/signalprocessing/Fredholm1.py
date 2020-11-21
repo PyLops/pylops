@@ -1,6 +1,7 @@
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module
 
 
 class Fredholm1(LinearOperator):
@@ -90,34 +91,36 @@ class Fredholm1(LinearOperator):
         self.explicit = False
 
     def _matvec(self, x):
-        x = np.squeeze(x.reshape(self.nsl, self.ny, self.nz))
+        ncp = get_array_module(x)
+        x = ncp.squeeze(x.reshape(self.nsl, self.ny, self.nz))
         if self.usematmul:
             if self.nz == 1:
-                x = x[..., np.newaxis]
-            y = np.matmul(self.G, x)
+                x = x[..., ncp.newaxis]
+            y = ncp.matmul(self.G, x)
         else:
-            y = np.squeeze(np.zeros((self.nsl, self.nx, self.nz),
-                                    dtype=self.dtype))
+            y = ncp.squeeze(ncp.zeros((self.nsl, self.nx, self.nz),
+                                      dtype=self.dtype))
             for isl in range(self.nsl):
-                y[isl] = np.dot(self.G[isl], x[isl])
+                y[isl] = ncp.dot(self.G[isl], x[isl])
         return y.ravel()
 
     def _rmatvec(self, x):
-        x = np.squeeze(x.reshape(self.nsl, self.nx, self.nz))
+        ncp = get_array_module(x)
+        x = ncp.squeeze(x.reshape(self.nsl, self.nx, self.nz))
         if self.usematmul:
             if self.nz == 1:
-                x = x[..., np.newaxis]
+                x = x[..., ncp.newaxis]
             if hasattr(self, 'GT'):
-                y = np.matmul(self.GT, x)
+                y = ncp.matmul(self.GT, x)
             else:
-                y = np.matmul(self.G.transpose((0, 2, 1)).conj(), x)
+                y = ncp.matmul(self.G.transpose((0, 2, 1)).conj(), x)
         else:
-            y = np.squeeze(np.zeros((self.nsl, self.ny, self.nz),
-                                    dtype=self.dtype))
+            y = ncp.squeeze(ncp.zeros((self.nsl, self.ny, self.nz),
+                                      dtype=self.dtype))
             if hasattr(self, 'GT'):
                 for isl in range(self.nsl):
-                    y[isl] = np.dot(self.GT[isl], x[isl])
+                    y[isl] = ncp.dot(self.GT[isl], x[isl])
             else:
                 for isl in range(self.nsl):
-                    y[isl] = np.dot(self.G[isl].conj().T, x[isl])
+                    y[isl] = ncp.dot(self.G[isl].conj().T, x[isl])
         return y.ravel()

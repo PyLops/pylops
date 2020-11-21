@@ -1,6 +1,7 @@
 import numpy as np
-from scipy.signal import convolve, correlate
 from pylops import LinearOperator
+from pylops.utils.backend import get_array_module, get_convolve, \
+    get_correlate, to_cupy_conditional
 
 
 class ConvolveND(LinearOperator):
@@ -47,7 +48,8 @@ class ConvolveND(LinearOperator):
     """
     def __init__(self, N, h, dims, offset=None, dirs=None,
                  method='fft', dtype='float64'):
-        self.h = np.array(h)
+        ncp = get_array_module(h)
+        self.h = h
         self.nh = np.array(self.h.shape)
         self.dirs = np.arange(len(dims)) if dirs is None else np.array(dirs)
 
@@ -67,7 +69,7 @@ class ConvolveND(LinearOperator):
                             -self.offset[inh] if self.offset[inh] < 0 else 0]
                 dopad = True
         if dopad:
-            self.h = np.pad(self.h, pad, mode='constant')
+            self.h = ncp.pad(self.h, pad, mode='constant')
         self.nh = self.h.shape
 
         # find out which directions are used for convolution and define offsets
@@ -82,19 +84,34 @@ class ConvolveND(LinearOperator):
         else:
             self.dims = np.array(dims)
             self.reshape = True
-        self.shape = (np.prod(self.dims), np.prod(self.dims))
+
+        # convolve and correate functions
+        self.convolve = get_convolve(h)
+        self.correlate = get_correlate(h)
         self.method = method
+
+        self.shape = (np.prod(self.dims), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
+        # correct type of h if different from x and choose methods accordingly
+        if type(self.h) != type(x):
+            self.h = to_cupy_conditional(x, self.h)
+            self.convolve = get_convolve(self.h)
+            self.correlate = get_correlate(self.h)
         x = np.reshape(x, self.dims)
-        y = convolve(x, self.h, mode='same', method=self.method)
+        y = self.convolve(x, self.h, mode='same', method=self.method)
         y = y.ravel()
         return y
 
     def _rmatvec(self, x):
+        # correct type of h if different from x and choose methods accordingly
+        if type(self.h) != type(x):
+            self.h = to_cupy_conditional(x, self.h)
+            self.convolve = get_convolve(self.h)
+            self.correlate = get_correlate(self.h)
         x = np.reshape(x, self.dims)
-        y = correlate(x, self.h, mode='same', method=self.method)
+        y = self.correlate(x, self.h, mode='same', method=self.method)
         y = y.ravel()
         return y

@@ -1,6 +1,30 @@
 import numpy as np
-from scipy.signal import convolve, fftconvolve, oaconvolve
 from pylops import LinearOperator
+from pylops.utils.backend import get_convolve, \
+    get_fftconvolve, get_oaconvolve, to_cupy_conditional
+
+
+def _choose_convfunc(x, method, dims):
+    """Choose convolution function
+
+    Choose and return the function handle to be used for convolution
+    """
+    if dims is None:
+        if method is None:
+            method = 'direct'
+        if method not in ('direct', 'fft'):
+            raise NotImplementedError('method must be direct or fft')
+        convfunc = get_convolve(x)
+    else:
+        if method is None:
+            method = 'fft'
+        if method == 'fft':
+            convfunc = get_fftconvolve(x)
+        elif method == 'overlapadd':
+            convfunc = get_oaconvolve(x)
+        else:
+            raise NotImplementedError('method must be fft or overlapadd')
+    return convfunc, method
 
 
 class Convolve1D(LinearOperator):
@@ -90,9 +114,9 @@ class Convolve1D(LinearOperator):
         if offset > len(h) - 1:
             raise ValueError('offset must be smaller than len(h) - 1')
         self.h = h
-        self.hstar = np.flip(self.h)
+        self.hstar = np.flip(self.h, axis=-1)
         self.nh = len(h)
-        self.offset = 2*(self.nh // 2 - int(offset))
+        self.offset = 2 * (self.nh // 2 - int(offset))
         if self.nh % 2 == 0:
             self.offset -= 1
         if self.offset != 0:
@@ -100,7 +124,8 @@ class Convolve1D(LinearOperator):
                 np.pad(self.h, (self.offset if self.offset > 0 else 0,
                                 -self.offset if self.offset < 0 else 0),
                        mode='constant')
-        self.hstar = np.flip(self.h)
+        self.hstar = np.flip(self.h, axis=-1)
+        self.dimsorig = dims
         if dims is not None:
             # add dimensions to filter to match dimensions of model and data
             hdims = [1] * len(dims)
@@ -117,41 +142,36 @@ class Convolve1D(LinearOperator):
             else:
                 self.dims = np.array(dims)
                 self.reshape = True
-        # choose method
-        self.method = method
-        if dims is None:
-            if method is None:
-                self.method = 'direct'
-            if self.method not in ('direct', 'fft'):
-                raise NotImplementedError('method must be direct or fft')
-            self.convfunc = convolve
-        else:
-            if method is None:
-                self.method = 'fft'
-            if self.method == 'fft':
-                self.convfunc = fftconvolve
-            elif self.method == 'overlapadd':
-                self.convfunc = oaconvolve
-            else:
-                raise NotImplementedError('method must be fft or overlapadd')
+        # choose method and function handle
+        self.convfunc, self.method = _choose_convfunc(h, method, self.dimsorig)
         self.shape = (np.prod(self.dims), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
+        if type(self.h) != type(x):
+            self.h = to_cupy_conditional(x, self.h)
+            self.convfunc, self.method = \
+                _choose_convfunc(self.h, self.method, self.dimsorig)
         if not self.reshape:
-            y = self.convfunc(x.squeeze(), self.h, mode='same', method=self.method)
+            y = self.convfunc(x.squeeze(), self.h, mode='same',
+                              method=self.method)
         else:
             x = np.reshape(x, self.dims)
-            y = self.convfunc(x, self.h, mode='same', axes=self.dir)
+            y = self.convfunc(x, self.h, mode='same')
             y = y.ravel()
         return y
 
     def _rmatvec(self, x):
+        if type(self.hstar) != type(x):
+            self.hstar = to_cupy_conditional(x, self.hstar)
+            self.convfunc, self.method = \
+                _choose_convfunc(self.hstar, self.method, self.dimsorig)
         if not self.reshape:
-            y = self.convfunc(x.squeeze(), self.hstar, mode='same', method=self.method)
+            y = self.convfunc(x.squeeze(), self.hstar, mode='same',
+                              method=self.method)
         else:
             x = np.reshape(x, self.dims)
-            y = self.convfunc(x, self.hstar, mode='same', axes=self.dir)
+            y = self.convfunc(x, self.hstar, mode='same')
             y = y.ravel()
         return y

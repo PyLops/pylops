@@ -1,4 +1,4 @@
-import numpy as np
+from pylops.utils.backend import get_array_module
 
 
 def _chirp_radon_2d(data, dt, dx, pmax, mode='f'):
@@ -30,6 +30,8 @@ def _chirp_radon_2d(data, dt, dx, pmax, mode='f'):
         2D output of size :math:`[\times n_{x} \times n_t]`
 
     """
+    ncp = get_array_module(data)
+
     # define sign for mode
     sign = -1. if mode == 'f' else 1.
 
@@ -37,31 +39,31 @@ def _chirp_radon_2d(data, dt, dx, pmax, mode='f'):
     (nx, nt) = data.shape
 
     # find dtype of input
-    dtype = np.real(data).dtype
-    cdtype = (np.ones(1, dtype=dtype) + 1j * np.ones(1, dtype=dtype)).dtype
+    dtype = ncp.real(data).dtype
+    cdtype = (ncp.ones(1, dtype=dtype) + 1j * ncp.ones(1, dtype=dtype)).dtype
 
     # frequency axis
-    omega = (np.fft.fftfreq(nt, 1 / nt) / (nt*dt)).reshape((1, nt)).astype(dtype)
+    omega = (ncp.fft.fftfreq(nt, 1 / nt) / (nt*dt)).reshape((1, nt)).astype(dtype)
 
     # slowness sampling
     dp = 2 * dt * pmax / dx / nx
 
     # spatial axis
-    x = (np.fft.fftfreq(2*nx, 1 / (2*nx)) ** 2).reshape((2*nx, 1)).astype(dtype)
+    x = (ncp.fft.fftfreq(2*nx, 1 / (2*nx)) ** 2).reshape((2*nx, 1)).astype(dtype)
 
     # K coefficients
-    K0 = np.exp(sign * np.pi * 1j * dp * dx * omega * x).reshape((2*nx, nt))
+    K0 = ncp.exp(sign * ncp.pi * 1j * dp * dx * omega * x).reshape((2*nx, nt))
 
     # K conj coefficients
-    K = np.conj(np.fft.fftshift(K0, axes=(0,)))[nx//2:3*nx//2, :]
+    K = ncp.conj(ncp.fft.fftshift(K0, axes=(0,)))[nx//2:3*nx//2, :]
 
     # perform transform
-    h = np.zeros((2 * nx, nt)).astype(cdtype)
-    h[0:nx, :] = np.fft.fftn(data, axes=(1,)) * K
-    g = np.fft.ifftn(np.fft.fftn(h, axes=(0,)) *
-                     np.fft.fftn(K0, axes=(0,)), axes=(0,))
+    h = ncp.zeros((2 * nx, nt)).astype(cdtype)
+    h[0:nx, :] = ncp.fft.fftn(data, axes=(1,)) * K
+    g = ncp.fft.ifftn(ncp.fft.fftn(h, axes=(0,)) *
+                     ncp.fft.fftn(K0, axes=(0,)), axes=(0,))
     if mode == 'i':
-        g = np.fft.ifftn(g[0:nx, :] * K * abs(omega), axes=(1,)).real * dp * dx
+        g = ncp.fft.ifftn(g[0:nx, :] * K * abs(omega), axes=(1,)).real * dp * dx
     else:
-        g = np.fft.ifftn(g[0:nx, :] * K, axes=(1,)).real
+        g = ncp.fft.ifftn(g[0:nx, :] * K, axes=(1,)).real
     return g
