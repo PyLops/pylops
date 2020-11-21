@@ -237,8 +237,9 @@ def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
     Note that the FFT operator is an overload to either the numpy
     :py:func:`numpy.fft.fft` (or :py:func:`numpy.fft.rfft` for real models) in
     forward mode and to the numpy :py:func:`numpy.fft.ifft` (or
-    :py:func:`numpy.fft.irfft` for real models) in adjoint mode, or to the
-    :py:class:`pyfftw.FFTW` class.
+    :py:func:`numpy.fft.irfft` for real models) in adjoint mode, or their cupy
+    equivalents. Alternatively, the :py:class:`pyfftw.FFTW` class is used
+    when ``engine='fftw'`` is chosen.
 
     In both cases, scaling is properly taken into account to guarantee
     that the operator is passing the dot-test.
@@ -271,7 +272,8 @@ def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
     fftshift : :obj:`bool`, optional
         Apply fftshift/ifftshift (``True``) or not (``False``)
     engine : :obj:`str`, optional
-        Engine used for fft computation (``numpy`` or ``fftw``)
+        Engine used for fft computation (``numpy`` or ``fftw``). Choose
+        ``numpy`` when working with cupy arrays.
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the `dtype` of the operator
         is the corresponding complex type even when a real type is provided.

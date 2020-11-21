@@ -9,9 +9,9 @@ class FFT2D(LinearOperator):
     multi-dimensional array depending on the choice of ``dirs``.
     Note that the FFT2D operator is a simple overload to the numpy
     :py:func:`numpy.fft.fft2` in forward mode and to the numpy
-    :py:func:`numpy.fft.ifft2` in adjoint mode, however scaling is taken
-    into account differently to guarantee that the operator is passing the
-    dot-test.
+    :py:func:`numpy.fft.ifft2` in adjoint mode (or their cupy equivalents),
+    however scaling is taken into account differently to guarantee that the
+    operator is passing the dot-test.
 
     Parameters
     ----------
@@ -77,10 +77,10 @@ class FFT2D(LinearOperator):
             raise ValueError('provide two sampling steps')
 
         self.dirs = dirs
-        self.nffts = np.array([int(nffts[0]) if nffts[0] is not None
-                               else dims[self.dirs[0]],
-                               int(nffts[1]) if nffts[1] is not None
-                               else dims[self.dirs[1]]])
+        self.nffts = tuple([int(nffts[0]) if nffts[0] is not None
+                            else dims[self.dirs[0]],
+                            int(nffts[1]) if nffts[1] is not None
+                            else dims[self.dirs[1]]])
         self.f1 = np.fft.fftfreq(self.nffts[0], d=sampling[0])
         self.f2 = np.fft.fftfreq(self.nffts[1], d=sampling[1])
 

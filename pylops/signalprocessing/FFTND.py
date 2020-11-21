@@ -84,9 +84,9 @@ class FFTND(LinearOperator):
                              'have same number of elements')
         self.ndims = len(dirs)
         self.dirs = dirs
-        self.nffts = np.array([int(nffts[i]) if nffts[i] is not None
-                               else dims[self.dirs[i]]
-                               for i in range(self.ndims)])
+        self.nffts = tuple([int(nffts[i]) if nffts[i] is not None
+                            else dims[self.dirs[i]]
+                            for i in range(self.ndims)])
         self.fs = [np.fft.fftfreq(nfft, d=samp)
                    for nfft, samp in zip(self.nffts, sampling)]
 
