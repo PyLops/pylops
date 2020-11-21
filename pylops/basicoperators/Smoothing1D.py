@@ -58,11 +58,12 @@ def Smoothing1D(nsmooth, dims, dir=0, dtype='float64'):
     self-adjoint.
 
     """
+    n = np.prod(np.array(dims))
     if isinstance(dims, int):
-        dims = (dims,)
+        dims = None
     if nsmooth % 2 == 0:
         nsmooth += 1
 
-    return Convolve1D(np.prod(np.array(dims)), dims=dims, dir=dir,
-                      h=np.ones(nsmooth)/float(nsmooth), offset=(nsmooth-1)/2,
+    return Convolve1D(n, np.ones(nsmooth)/float(nsmooth),
+                      dims=dims, dir=dir, offset=(nsmooth-1)/2,
                       dtype=dtype)

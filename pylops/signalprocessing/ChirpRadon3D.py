@@ -2,10 +2,11 @@ import logging
 import numpy as np
 
 from pylops import LinearOperator
+from ._ChirpRadon3D import _chirp_radon_3d
 
 try:
     import pyfftw
-    from ._ChirpRadon3D import _chirp_radon_3d, _chirp_radon_3d_fftw
+    from ._ChirpRadon3D import _chirp_radon_3d_fftw
 except ModuleNotFoundError:
     pyfftw = None
     pyfftw_message = 'Pyfftw not installed, use numpy or run ' \
