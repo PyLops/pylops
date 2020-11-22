@@ -1,3 +1,10 @@
+# 1.12.0
+* Modified all operators and solvers to work with cupy arrays
+* Added ``eigs`` and ``solver`` submodules to ``optimization``
+* Added ``deps`` and ``backend`` submodules to ``utils``
+* Fixed bug in ``Convolve2D`` and ``ConvolveND`` when dealing with
+  filters that have less dimensions than the input vector.
+
 # 1.11.1
 * Fixed import of ``pyfttw`` when not available in
   ``pylops.signalprocessing.ChirpRadon3D``

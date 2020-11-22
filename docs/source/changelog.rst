@@ -3,6 +3,18 @@
 Changelog
 =========
 
+Version 1.12.0
+--------------
+
+*Released on: 22/11/2020*
+
+* Modified all operators and solvers to work with cupy arrays
+* Added ``eigs`` and ``solver`` submodules to :py:mod:`pylops.optimization`
+* Added ``deps`` and ``backend`` submodules to :py:mod:`pylops.utils`
+* Fixed bug in :py:class:`pylops.signalprocessing.Convolve2D`. and
+  :py:class:`pylops.signalprocessing.ConvolveND`. when dealing with
+  filters that have less dimensions than the input vector.
+
 
 Version 1.11.1
 --------------
@@ -10,7 +22,7 @@ Version 1.11.1
 *Released on: 24/10/2020*
 
 * Fixed import of ``pyfttw`` when not available in
-  :class:``pylops.signalprocessing.ChirpRadon3D`
+  :py:class:``pylops.signalprocessing.ChirpRadon3D`
 
 
 Version 1.11.0
@@ -18,18 +30,18 @@ Version 1.11.0
 
 *Released on: 24/10/2020*
 
-* Added :class:`pylops.signalprocessing.ChirpRadon2D` and
-  :class:`pylops.signalprocessing.ChirpRadon3D` operators.
+* Added :py:class:`pylops.signalprocessing.ChirpRadon2D` and
+  :py:class:`pylops.signalprocessing.ChirpRadon3D` operators.
 * Fixed bug in the inferred dimensions for regularization data creation in
-  :func:`pylops.optimization.leastsquares.NormalEquationsInversion`,
-  :func:`pylops.optimization.leastsquares.RegularizedInversion`, and
-  :func:`pylops.optimization.sparsity.SplitBregman`.
-* Changed dtype of :class:`pylops.HStack` to allow automatic inference from
+  :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion`,
+  :py:func:`pylops.optimization.leastsquares.RegularizedInversion`, and
+  :py:func:`pylops.optimization.sparsity.SplitBregman`.
+* Changed dtype of :py:class:`pylops.HStack` to allow automatic inference from
   dtypes of input operator.
-* Modified dtype of :class:`pylops.waveeqprocessing.Marchenko` operator to
+* Modified dtype of :py:class:`pylops.waveeqprocessing.Marchenko` operator to
   ensure that outputs of forward and adjoint are real arrays.
 * Reverted to previous complex-friendly implementation of
-  :func:`pylops.optimization.sparsity._softthreshold` to avoid division by 0.
+  :py:func:`pylops.optimization.sparsity._softthreshold` to avoid division by 0.
 
 
 Version 1.10.0
@@ -37,18 +49,18 @@ Version 1.10.0
 
 *Released on: 13/08/2020*
 
-* Added ``tosparse`` method to :class:`pylops.LinearOperator`.
-* Added ``kind=linear`` in :class:`pylops.signalprocessing.Seislet` operator.
-* Added ``kind`` to :class:`pylops.FirstDerivative`.
+* Added ``tosparse`` method to :py:class:`pylops.LinearOperator`.
+* Added ``kind=linear`` in :py:class:`pylops.signalprocessing.Seislet` operator.
+* Added ``kind`` to :py:class:`pylops.FirstDerivative`.
   operator to perform forward and backward (as well as centered)
   derivatives.
-* Added ``kind`` to :func:`pylops.optimization.sparsity.IRLS`
+* Added ``kind`` to :py:func:`pylops.optimization.sparsity.IRLS`
   solver to choose between data or model sparsity.
-* Added possibility to use :func:`scipy.sparse.linalg.lobpcg` in
-  :func:`pylops.LinearOperator.eigs` and :func:`pylops.LinearOperator.cond`
-* Added possibility to use :func:`scipy.signal.oaconvolve` in
-  :class:`pylops.signalprocessing.Convolve1D`.
-* Added ``NRegs`` to :func:`pylops.optimization.leastsquares.NormalEquationsInversion`
+* Added possibility to use :py:func:`scipy.sparse.linalg.lobpcg` in
+  :py:func:`pylops.LinearOperator.eigs` and :func:`pylops.LinearOperator.cond`
+* Added possibility to use :py:func:`scipy.signal.oaconvolve` in
+  :py:class:`pylops.signalprocessing.Convolve1D`.
+* Added ``NRegs`` to :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion`
   to allow providing regularization terms directly in the form of ``H^T H``.
 
 
@@ -57,13 +69,13 @@ Version 1.9.1
 
 *Released on: 25/05/2020*
 
-* Changed internal behaviour of :func:`pylops.sparsity.OMP` when
+* Changed internal behaviour of :py:func:`pylops.sparsity.OMP` when
   ``niter_inner=0``. Automatically reverts to Matching Pursuit algorithm.
-* Changed handling of ``dtype`` in :class:`pylops.signalprocessing.FFT` and
-  :class:`pylops.signalprocessing.FFT2D` to ensure that the type of the input
+* Changed handling of ``dtype`` in :py:class:`pylops.signalprocessing.FFT` and
+  :py:class:`pylops.signalprocessing.FFT2D` to ensure that the type of the input
   vector is retained when applying forward and adjoint.
 * Added ``dtype`` parameter to the ``FFT`` calls in the definition of the
-  :class:`pylops.waveeqprocessing.MDD` operation. This ensure that the type
+  :py:class:`pylops.waveeqprocessing.MDD` operation. This ensure that the type
   of the real part of ``G`` input is enforced to the output vectors of the
   forward and adjoint operations.
 
@@ -73,23 +85,23 @@ Version 1.9.0
 
 *Released on: 13/04/2020*
 
-* Added :class:`pylops.waveeqprocessing.Deghosting` and
-  :class:`pylops.signalprocessing.Seislet` operators
-* Added hard and half thresholds in :func:`pylops.optimization.sparsity.ISTA`
-  and :func:`pylops.optimization.sparsity.FISTA` solvers
-* Added ``prescaled`` input parameter to :class:`pylops.waveeqprocessing.MDC`
-  and :class:`pylops.waveeqprocessing.Marchenko`
-* Added sinc interpolation to :class:`pylops.signalprocessing.Interp`
+* Added :py:class:`pylops.waveeqprocessing.Deghosting` and
+  :py:class:`pylops.signalprocessing.Seislet` operators
+* Added hard and half thresholds in :py:func:`pylops.optimization.sparsity.ISTA`
+  and :py:func:`pylops.optimization.sparsity.FISTA` solvers
+* Added ``prescaled`` input parameter to :py:class:`pylops.waveeqprocessing.MDC`
+  and :py:class:`pylops.waveeqprocessing.Marchenko`
+* Added sinc interpolation to :py:class:`pylops.signalprocessing.Interp`
   (``kind == 'sinc'``)
 * Modified :func:`pylops.waveeqprocessing.marchenko.directwave` to
   to model analytical responses from both sources of volume injection
   (``derivative=False``) and source of volume injection rate
   (``derivative=True``)
-* Added :func:`pylops.LinearOperator.asoperator` method to
+* Added :py:func:`pylops.LinearOperator.asoperator` method to
   :py:class:`pylops.LinearOperator`
-* Added :func:`pylops.utils.signalprocessing.slope_estimate` function
-* Fix bug in :class:`pylops.signalprocessing.Radon2D` and
-  :class:`pylops.signalprocessing.Radon3D` when ``onthefly=True`` returning the
+* Added :py:func:`pylops.utils.signalprocessing.slope_estimate` function
+* Fix bug in :py:class:`pylops.signalprocessing.Radon2D` and
+  :py:class:`pylops.signalprocessing.Radon3D` when ``onthefly=True`` returning the
   same result as when ``onthefly=False``
 
 
