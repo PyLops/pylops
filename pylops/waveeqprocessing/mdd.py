@@ -4,14 +4,15 @@ import numpy as np
 
 from scipy.sparse.linalg import lsqr
 from scipy.signal import filtfilt
-from scipy.ndimage.filters import convolve1d as sp_convolve1d
 
 from pylops import Diagonal, Identity, Transpose
 from pylops.signalprocessing import FFT, Fredholm1
 from pylops.utils import dottest as Dottest
+from pylops.optimization.solver import cgls
 from pylops.optimization.leastsquares import PreconditionedInversion
 
-#logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+from pylops.utils.backend import get_array_module, get_module_name, \
+    get_fftconvolve, to_cupy_conditional
 
 
 def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
@@ -129,7 +130,8 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
         :math:`[n_s \times n_r \times n_{fmax}]` if ``transpose=True``
         or size :math:`[n_{fmax} \times n_s \times n_r]` if ``transpose=False``
     nt : :obj:`int`
-        Number of samples along time axis
+        Number of samples along time axis for model and data (note that this
+        must be equal to ``2*n_t-1`` when working with ``twosided=True``.
     nv : :obj:`int`
         Number of samples along virtual source axis
     dt : :obj:`float`, optional
@@ -221,7 +223,7 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
 def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         twosided=True, causality_precond=False, adjoint=False,
         psf=False, dtype='float64', dottest=False,
-        saveGt=True, add_negative=True, smooth_precond=0, **kwargs_lsqr):
+        saveGt=True, add_negative=True, smooth_precond=0, **kwargs_solver):
     r"""Multi-dimensional deconvolution.
 
     Solve multi-dimensional deconvolution problem using
@@ -238,10 +240,10 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         ``add_negative=False``
         (with both positive and negative times)
     d : :obj:`numpy.ndarray`
-        Data in time domain :math:`[n_s (\times n_vs) \times n_t]` if
+        Data in time domain :math:`[n_s (\times n_{vs}) \times n_t]` if
         ``twosided=False`` or ``twosided=True`` and ``add_negative=True``
         (with only positive times) or size
-        :math:`[n_s (\times n_vs) \times 2*n_t-1]` if ``twosided=True``
+        :math:`[n_s (\times n_{vs}) \times 2*n_t-1]` if ``twosided=True``
     dt : :obj:`float`, optional
         Sampling of time integration axis
     dr : :obj:`float`, optional
@@ -261,6 +263,8 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         and negative sides. To be used only with ``twosided=True``.
     causality_precond : :obj:`bool`, optional
         Apply causality mask (``True``) or not (``False``)
+    smooth_precond : :obj:`int`, optional
+        Lenght of smoothing to apply to causality preconditioner
     adjoint : :obj:`bool`, optional
         Compute and return adjoint(s)
     psf : :obj:`bool`, optional
@@ -274,9 +278,11 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
         ``G^H`` on-the-fly (``False``) Note that ``saveGt=True`` will be
         faster but double the amount of required memory
-    **kwargs_lsqr
-        Arbitrary keyword arguments for
-        :py:func:`scipy.sparse.linalg.lsqr` solver
+    **kwargs_solver
+        Arbitrary keyword arguments for chosen solver
+        (:py:func:`scipy.sparse.linalg.cg` and
+        :py:func:`pylops.optimization.solver.cg` are used as default for numpy
+        and cupy `data`, respectively)
 
     Returns
     -------
@@ -327,6 +333,8 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
        pp. 1335-1364. 2011.
 
     """
+    ncp = get_array_module(d)
+
     ns, nr, nt = G.shape
     if len(d.shape) == 2:
         nv = 1
@@ -350,10 +358,9 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
 
     # Add negative part to data and model
     if twosided and add_negative:
-        G = np.concatenate((np.zeros((ns, nr, nt - 1)), G), axis=-1)
+        G = np.concatenate((ncp.zeros((ns, nr, nt - 1)), G), axis=-1)
         d = np.concatenate((np.squeeze(np.zeros((ns, nv, nt - 1))), d),
                            axis=-1)
-
     # Bring kernel to frequency domain
     Gfft = np.fft.rfft(G, nt2, axis=-1)
     Gfft = Gfft[..., :nfmax]
@@ -371,9 +378,11 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         PSFop = MDC(Gfft, nt2, nv=nr, dt=dt, dr=dr, twosided=twosided,
                     transpose=False, saveGt=saveGt)
     if dottest:
-        Dottest(MDCop, nt2*ns*nv, nt2*nr*nv, verb=True)
+        Dottest(MDCop, nt2*ns*nv, nt2*nr*nv, verb=True,
+                backend=get_module_name(ncp))
         if psf:
-            Dottest(PSFop, nt2 * ns * nr, nt2 * nr * nr, verb=True)
+            Dottest(PSFop, nt2 * ns * nr, nt2 * nr * nr, verb=True,
+                    backend=get_module_name(ncp))
 
     # Adjoint
     if adjoint:
@@ -391,23 +400,40 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         P[:nt - 1] = 0
         if smooth_precond > 0:
             P = filtfilt(np.ones(smooth_precond)/smooth_precond, 1, P, axis=0)
+        P = to_cupy_conditional(d, P)
         Pop = Diagonal(P)
         minv = PreconditionedInversion(MDCop, Pop, d.flatten(),
-                                       returninfo=False, **kwargs_lsqr)
+                                       returninfo=False, **kwargs_solver)
     else:
-        minv = lsqr(MDCop, d.flatten(), **kwargs_lsqr)[0]
+        if ncp == np:
+            minv = lsqr(MDCop, d.flatten(), **kwargs_solver)[0]
+        else:
+            minv = cgls(MDCop, d.flatten(), ncp.zeros(int(MDCop.shape[1]),
+                                                      dtype=MDCop.dtype),
+                        **kwargs_solver)[0]
     minv = np.squeeze(minv.reshape(nt2, nr, nv))
     minv = np.moveaxis(minv, 0, -1)
+
     if wav is not None:
-        minv = sp_convolve1d(minv, wav, axis=-1)
+        wav1 = wav.copy()
+        for _ in range(minv.ndim-1):
+            wav1 = wav1[ncp.newaxis]
+        minv = get_fftconvolve(d)(minv, wav1, mode='same')
 
     if psf:
-        psfinv = lsqr(PSFop, G.flatten(), **kwargs_lsqr)[0]
+        if ncp == np:
+            psfinv = lsqr(PSFop, G.flatten(), **kwargs_solver)[0]
+        else:
+            psfinv = cgls(PSFop, G.flatten(), ncp.zeros(int(PSFop.shape[1]),
+                                                        dtype=PSFop.dtype),
+                          **kwargs_solver)[0]
         psfinv = np.squeeze(psfinv.reshape(nt2, nr, nr))
         psfinv = np.moveaxis(psfinv, 0, -1)
         if wav is not None:
-            psfinv = sp_convolve1d(psfinv, wav, axis=-1)
-
+            wav1 = wav.copy()
+            for _ in range(psfinv.ndim-1):
+                wav1 = wav1[np.newaxis]
+            psfinv = get_fftconvolve(d)(psfinv, wav1, mode='same')
     if adjoint and psf:
         return minv, madj, psfinv, psfadj
     elif adjoint:
