@@ -1,15 +1,16 @@
 import logging
 import numpy as np
-from scipy.linalg import lstsq
-from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import lsqr
 
 from pylops.signalprocessing import Convolve1D
 from pylops.utils.signalprocessing import convmtx, nonstationary_convmtx
 from pylops.utils import dottest as Dottest
 from pylops import MatrixMult, FirstDerivative, SecondDerivative, Laplacian
+from pylops.optimization.solver import cgls
 from pylops.optimization.leastsquares import RegularizedInversion
 from pylops.optimization.sparsity import SplitBregman
+from pylops.utils.backend import get_array_module, \
+    get_module_name, get_csc_matrix, get_lstsq
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
@@ -29,6 +30,11 @@ def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
     operator.
 
     """
+    ncp = get_array_module(wav)
+
+    # define dtype to be used
+    dtype = wav.dtype  # ensure wav.dtype rules that of operator
+
     if len(wav.shape) == 2 and wav.shape[0] != nt0:
         raise ValueError('Provide 1d wavelet or 2d wavelet composed of nt0 '
                          'wavelets')
@@ -45,8 +51,8 @@ def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
 
     if explicit:
         # Create derivative operator
-        D = np.diag(0.5 * np.ones(nt0 - 1), k=1) - \
-            np.diag(0.5 * np.ones(nt0 - 1), -1)
+        D = ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=1) - \
+            ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), -1)
         D[0] = D[-1] = 0
 
         # Create wavelet operator
@@ -56,24 +62,25 @@ def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
             C = nonstationary_convmtx(wav, nt0, hc=wav.shape[1] // 2,
                                       pad=(nt0, nt0))
         # Combine operators
-        M = np.dot(C, D)
+        M = ncp.dot(C, D)
         if sparse:
-            M = csc_matrix(M)
-        Pop = _MatrixMult(M, dims=spatdims, **args_MatrixMult)
+            M = get_csc_matrix(wav)(M)
+        Pop = _MatrixMult(M, dims=spatdims, dtype=dtype, **args_MatrixMult)
     else:
         # Create wavelet operator
         if len(wav.shape) == 1:
             Cop = _Convolve1D(np.prod(np.array(dims)), h=wav,
                               offset=len(wav) // 2, dir=0, dims=dims,
-                              **args_Convolve1D)
+                              dtype=dtype, **args_Convolve1D)
         else:
             Cop = _MatrixMult(nonstationary_convmtx(wav, nt0,
                                                     hc=wav.shape[1] // 2,
                                                     pad=(nt0, nt0)),
-                              dims=spatdims, **args_MatrixMult)
+                              dims=spatdims, dtype=dtype, **args_MatrixMult)
         # Create derivative operator
         Dop = _FirstDerivative(np.prod(np.array(dims)), dims=dims,
-                               dir=0, sampling=1., **args_FirstDerivative)
+                               dir=0, sampling=1., dtype=dtype,
+                               **args_FirstDerivative)
         Pop = Cop * Dop
     return Pop
 
@@ -94,7 +101,8 @@ def PoststackLinearModelling(wav, nt0, spatdims=None,
         time axis. If 2d, use as non-stationary wavelet (user must provide
         one wavelet per time sample in an array of size
         :math:`[n_{t0} \times n_{wav}]` where :math:`n_{wav}` is the length
-        of each wavelet)
+        of each wavelet). Note that the ``dtype`` of this variable will define
+        that of the operator
     nt0 : :obj:`int`
         Number of samples along time axis
     spatdims : :obj:`int` or :obj:`tuple`, optional
@@ -148,9 +156,9 @@ def PoststackLinearModelling(wav, nt0, spatdims=None,
                                      explicit=explicit, sparse=sparse)
 
 
-def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
-                       epsI=None, epsR=None, dottest=False, epsRL1=None,
-                       **kwargs_solver):
+def PoststackInversion(data, wav, m0=None, explicit=False,
+                       simultaneous=False, epsI=None, epsR=None,
+                       dottest=False, epsRL1=None, **kwargs_solver):
     r"""Post-stack linearized seismic inversion.
 
     Invert post-stack seismic operator to retrieve an elastic parameter of
@@ -235,6 +243,8 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     regularized global inversion using the outcome of the previous
     inversion as initial guess.
     """
+    ncp = get_array_module(wav)
+
     # check if background model and data have same shape
     if m0 is not None and data.shape != m0.shape:
         raise ValueError('data and m0 must have same shape')
@@ -248,20 +258,21 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
     elif data.ndim == 2:
         dims = 2
         nt0, nx = data.shape
-        nspat = (nx, )
+        nspat = (nx,)
         nspatprod = nx
     else:
         dims = 3
         nt0, nx, ny = data.shape
         nspat = (nx, ny)
-        nspatprod = nx*ny
+        nspatprod = nx * ny
         data = data.reshape(nt0, nspatprod)
 
     # create operator
     PPop = PoststackLinearModelling(wav, nt0=nt0,
                                     spatdims=nspat, explicit=explicit)
     if dottest:
-        Dottest(PPop, nt0*nspatprod, nt0*nspatprod, raiseerror=True, verb=True)
+        Dottest(PPop, nt0 * nspatprod, nt0 * nspatprod, raiseerror=True,
+                backend=get_module_name(ncp), verb=True)
 
     # create and remove background data from original data
     datar = data.flatten() if m0 is None else \
@@ -272,32 +283,56 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
         if explicit:
             if epsI is None and not simultaneous:
                 # solve unregularized equations indipendently trace-by-trace
-                minv = lstsq(PPop.A, datar.reshape(nt0, nspatprod).squeeze(),
-                             **kwargs_solver)[0]
+                minv = \
+                get_lstsq(data)(PPop.A, datar.reshape(nt0, nspatprod).squeeze(),
+                                **kwargs_solver)[0]
             elif epsI is None and simultaneous:
                 # solve unregularized equations simultaneously
-                minv = lsqr(PPop, datar, **kwargs_solver)[0]
+                if ncp == np:
+                    minv = lsqr(PPop, datar, **kwargs_solver)[0]
+                else:
+                    minv = \
+                        cgls(PPop, datar,
+                             x0=ncp.zeros(int(PPop.shape[1]), PPop.dtype),
+                             **kwargs_solver)[0]
             elif epsI is not None:
                 # create regularized normal equations
-                PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0)
-                datarn = np.dot(PPop.A.T, datar.reshape(nt0, nspatprod))
+                PP = ncp.dot(PPop.A.T, PPop.A) + \
+                     epsI * ncp.eye(nt0, dtype=PPop.A.dtype)
+                datarn = ncp.dot(PPop.A.T, datar.reshape(nt0, nspatprod))
                 if not simultaneous:
                     # solve regularized normal eqs. trace-by-trace
-                    minv = lstsq(PP, datarn,
-                                 **kwargs_solver)[0]
+                    minv = get_lstsq(data)(PP, datarn,
+                                           **kwargs_solver)[0]
                 else:
                     # solve regularized normal equations simultaneously
                     PPop_reg = MatrixMult(PP, dims=nspatprod)
-                    minv = lsqr(PPop_reg, datar.flatten(), **kwargs_solver)[0]
+                    if ncp == np:
+                        minv = lsqr(PPop_reg, datar.ravel(),
+                                    **kwargs_solver)[0]
+                    else:
+                        minv = cgls(PPop_reg, datar.ravel(),
+                                    x0=ncp.zeros(int(PPop_reg.shape[1]),
+                                                 PPop_reg.dtype),
+                                    **kwargs_solver)[0]
             else:
                 # create regularized normal eqs. and solve them simultaneously
-                PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0)
+                PP = ncp.dot(PPop.A.T, PPop.A) + \
+                     epsI * ncp.eye(nt0, dtype=PPop.A.dtype)
                 datarn = PPop.A.T * datar.reshape(nt0, nspatprod)
                 PPop_reg = MatrixMult(PP, dims=nspatprod)
-                minv = lstsq(PPop_reg.A, datarn.flatten(), **kwargs_solver)[0]
+                minv = \
+                    get_lstsq(data)(PPop_reg.A, datarn.flatten(),
+                                    **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
-            minv = lsqr(PPop, datar, **kwargs_solver)[0]
+            if ncp == np:
+                minv = lsqr(PPop, datar, **kwargs_solver)[0]
+            else:
+                minv = \
+                    cgls(PPop, datar,
+                         x0=ncp.zeros(int(PPop.shape[1]), PPop.dtype),
+                         **kwargs_solver)[0]
     else:
         if epsRL1 is None:
             # L2 inversion with spatial regularization
@@ -318,12 +353,12 @@ def PoststackInversion(data, wav, m0=None, explicit=False, simultaneous=False,
                 RegL1op = FirstDerivative(nt0, dtype=PPop.dtype)
                 RegL2op = None
             elif dims == 2:
-                RegL1op = FirstDerivative(nt0*nx, dims=(nt0, nx),
+                RegL1op = FirstDerivative(nt0 * nx, dims=(nt0, nx),
                                           dir=0, dtype=PPop.dtype)
-                RegL2op = SecondDerivative(nt0*nx, dims=(nt0, nx),
+                RegL2op = SecondDerivative(nt0 * nx, dims=(nt0, nx),
                                            dir=1, dtype=PPop.dtype)
             else:
-                RegL1op = FirstDerivative(nt0*nx*ny, dims=(nt0, nx, ny),
+                RegL1op = FirstDerivative(nt0 * nx * ny, dims=(nt0, nx, ny),
                                           dir=0, dtype=PPop.dtype)
                 RegL2op = Laplacian((nt0, nx, ny), dirs=(1, 2),
                                     dtype=PPop.dtype)

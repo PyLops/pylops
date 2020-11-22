@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.linalg import toeplitz
 from scipy.ndimage import gaussian_filter
+from pylops.utils.backend import get_array_module, get_toeplitz
 
 
 def convmtx(h, n):
@@ -28,13 +28,14 @@ def convmtx(h, n):
         (if :math:`len(h) \geq n`)
 
     """
+    ncp = get_array_module(h)
     if len(h) < n:
-        col_1 = np.r_[h[0], np.zeros(n-1)]
-        row_1 = np.r_[h, np.zeros(n-1)]
+        col_1 = ncp.r_[h[0], ncp.zeros(n-1, dtype=h.dtype)]
+        row_1 = ncp.r_[h, ncp.zeros(n-1, dtype=h.dtype)]
     else:
-        row_1 = np.r_[h[0], np.zeros(n - 1)]
-        col_1 = np.r_[h, np.zeros(n - 1)]
-    C = toeplitz(col_1, row_1)
+        row_1 = ncp.r_[h[0], ncp.zeros(n - 1, dtype=h.dtype)]
+        col_1 = ncp.r_[h, ncp.zeros(n - 1, dtype=h.dtype)]
+    C = get_toeplitz(h)(col_1, row_1)
     return C
 
 
@@ -66,8 +67,10 @@ def nonstationary_convmtx(H, n, hc=0, pad=(0, 0)):
         Convolution matrix
 
     """
-    H = np.pad(H, ((0, 0), pad), mode='constant')
-    C = np.array([np.roll(h, ih) for ih, h in enumerate(H)])
+    ncp = get_array_module(H)
+
+    H = ncp.pad(H, ((0, 0), pad), mode='constant')
+    C = ncp.array([ncp.roll(h, ih) for ih, h in enumerate(H)])
     C = C[:, pad[0] + hc:pad[0] + hc + n].T  # take away edges
     return C
 
@@ -130,20 +133,21 @@ def slope_estimate(d, dz, dx, smooth=20):
     gzz, gzx, gxx = gz * gz, gz * gx, gx * gx
 
     # smoothing
-    gzz = gaussian_filter(gzz, sigma=smooth)
-    gzx = gaussian_filter(gzx, sigma=smooth)
-    gxx = gaussian_filter(gxx, sigma=smooth)
+    if smooth > 0:
+        gzz = gaussian_filter(gzz, sigma=smooth)
+        gzx = gaussian_filter(gzx, sigma=smooth)
+        gxx = gaussian_filter(gxx, sigma=smooth)
 
     slopes = np.zeros((nz, nx))
     linearity = np.zeros((nz, nx))
     for iz in range(nz):
         for ix in range(nx):
-            l1 = 0.5 * (gzz[iz, ix] + gxx[iz, ix]) + \
-                 0.5 * np.sqrt((gzz[iz, ix] - gxx[iz, ix]) ** 2 +
-                               4 * gzx[iz, ix] ** 2)
-            l2 = 0.5 * (gzz[iz, ix] + gxx[iz, ix]) - \
-                 0.5 * np.sqrt((gzz[iz, ix] - gxx[iz, ix]) ** 2 +
-                               4 * gzx[iz, ix] ** 2)
+            lcommon1 = 0.5 * (gzz[iz, ix] + gxx[iz, ix]),
+            lcommon2 = 0.5 * np.sqrt((gzz[iz, ix] - gxx[iz, ix]) ** 2 +
+                                     4 * gzx[iz, ix] ** 2)
+            l1 = lcommon1 + lcommon2
+            l2 = lcommon1 - lcommon2
             slopes[iz, ix] = np.arctan((l1 - gzz[iz, ix]) / gzx[iz, ix])
             linearity[iz, ix] = 1 - l2/l1
+    slopes[np.isnan(slopes)] = 0.
     return slopes, linearity
