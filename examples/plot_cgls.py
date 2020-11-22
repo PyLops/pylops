@@ -12,11 +12,8 @@ solver to minimize the following cost function:
 
 import warnings
 import numpy as np
-from scipy.sparse import rand
-from scipy.sparse.linalg import lsqr
 
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as pltgs
 
 import pylops
 

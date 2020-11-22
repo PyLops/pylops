@@ -46,6 +46,9 @@ and similarly using PyLops commands:
 
    from pylops import FirstDerivative
 
+   nx = 7
+   x = range(-(nx // 2), nx // 2 + (1 if nx % 2 else 0))
+
    Dlop = FirstDerivative(nx, dtype='float64')
 
    # y = Dx
@@ -121,6 +124,7 @@ that can be tailored to our needs, and as contribution to the free software comm
 
    installation.rst
    performance.rst
+   gpu.rst
    extensions.rst
    tutorials/index.rst
    FAQs <faq.rst>
