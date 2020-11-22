@@ -5,6 +5,11 @@ Papers
 This section lists various conference abstracts and papers using the
 PyLops framework:
 
+- Nightingale J. W., and Hayes, R.G, et al.,
+  *PyAutoLens: Open-Source Strong Gravitational Lensing*, JOSS,
+  `link <https://joss.theoj.org/papers/d997cd03e4d9a3668bb1c6253381404c>`_
+  (2020).
+
 - Vargas, D., and Vasconcelos I., *Rayleigh-Marchenko Redatuming Using
   Scattered Fields in Highly Complex Media*, EAGE Technical Program Expanded
   Abstracts,
