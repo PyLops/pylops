@@ -7,14 +7,15 @@ from pylops.utils.tapers import taper2d, taper3d
 from pylops.utils import dottest as Dottest
 from pylops import Diagonal, Identity, Pad
 from pylops.signalprocessing import FFT
+from pylops.utils.backend import to_cupy_conditional
 
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
 def _phase_shift(phiin, freq, kx, vel, dz, ky=0, adj=False):
-    """Phase shift extrapolation for single depth level in 3d constant velocity
-    medium
+    """Phase shift extrapolation for single depth level in 2d/3d constant
+    velocity medium
 
     Parameters
     ----------
@@ -64,25 +65,36 @@ class _PhaseShift(LinearOperator):
     def __init__(self, vel, dz, freq, kx, ky=None, dtype='complex64'):
         self.vel = vel
         self.dz = dz
+        # define frequency and horizontal wavenumber axes
         if ky is None:
-            self.ky = 0
-            [self.freq, self.kx] = np.meshgrid(freq, kx, indexing='ij')
+            ky = 0
+            [freq, kx] = np.meshgrid(freq, kx, indexing='ij')
         else:
-            [self.freq, self.kx, self.ky] = \
+            [freq, kx, ky] = \
                 np.meshgrid(freq, kx, ky, indexing='ij')
-        self.dims = self.freq.shape
-        self.shape = (np.prod(self.freq.shape), np.prod(self.freq.shape))
+        # define vertical wavenumber axis
+        kz = ((freq / vel) ** 2 - kx ** 2 - ky ** 2)
+        kz = np.sqrt(kz.astype(dtype))
+        # ensure evanescent region is complex positive
+        kz = np.real(kz) - 1j * np.sign(dz) * np.abs(np.imag(kz))
+        # create propagator
+        self.gazx = np.exp(-1j * 2 * np.pi * dz * kz)
+
+        self.dims = freq.shape
+        self.shape = (np.prod(freq.shape), np.prod(freq.shape))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
-        y = _phase_shift(x.reshape(self.dims), self.freq,
-                         self.kx, self.vel, self.dz, self.ky, adj=False)
+        if not isinstance(self.gazx, type(x)):
+            self.gazx = to_cupy_conditional(x, self.gazx)
+        y = x.reshape(self.dims) * self.gazx
         return y.ravel()
 
     def _rmatvec(self, x):
-        y = _phase_shift(x.reshape(self.dims), self.freq,
-                         self.kx, self.vel, self.dz, self.ky, adj=True)
+        if not isinstance(self.gazx, type(x)):
+            self.gazx = to_cupy_conditional(x, self.gazx)
+        y = x.reshape(self.dims) * np.conj(self.gazx)
         return y.ravel()
 
 
@@ -154,7 +166,7 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype='float64'):
     else:
         dims = (nt, kx.size, ky.size)
         dimsfft = (freq.size, kx.size, ky.size)
-    Fop = FFT(dims, dir=0, nfft=nt, real=True, dtype=dtypefft)
+    Fop = FFT(dims, dir=0, nfft=nt, real=True, dtype=dtype)
     Kxop = FFT(dimsfft, dir=1, nfft=kx.size, real=False,
                fftshift=True, dtype=dtypefft)
     if ky is not None:
@@ -205,7 +217,7 @@ def Deghosting(p, nt, nr, dt, dr, vel, zrec, pd=None, win=None,
         Depth of receiver array
     pd : :obj:`np.ndarray`, optional
         Direct arrival to be subtracted from ``p``
-    pd : :obj:`np.ndarray`, optional
+    win : :obj:`np.ndarray`, optional
         Time window to be applied to ``p`` to remove the direct arrival
         (if ``pd=None``)
     ntaper : :obj:`float` or :obj:`tuple`, optional
@@ -224,7 +236,8 @@ def Deghosting(p, nt, nr, dt, dr, vel, zrec, pd=None, win=None,
     dottest : :obj:`bool`, optional
         Apply dot-test
     dtype : :obj:`str`, optional
-        Type of elements in input array.
+        Type of elements in input array. If ``None``, directly inferred
+        from ``p``
     **kwargs_solver
         Arbitrary keyword arguments for chosen ``solver``
 
@@ -291,9 +304,19 @@ def Deghosting(p, nt, nr, dt, dr, vel, zrec, pd=None, win=None,
           Padop * Diagonal(taper.ravel(), dtype=dtype)
 
     # Decomposition operator
-    Dupop = (Identity(nt * nrs) + Pop)
+    Dupop = (Identity(nt * nrs, dtype=p.dtype) + Pop)
     if dottest:
         Dottest(Dupop, nt * nrs, nt * nrs, verb=True)
+
+    # Add restriction
+    if restriction is not None:
+        Dupop_norestr = Dupop
+        Dupop = restriction * Dupop
+
+    # Add sparsify transform
+    if sptransf is not None:
+        Dupop_norestr = Dupop_norestr * sptransf
+        Dupop = Dupop * sptransf
 
     # Define data
     if pd is not None:
@@ -303,6 +326,14 @@ def Deghosting(p, nt, nr, dt, dr, vel, zrec, pd=None, win=None,
 
     # Inversion
     pup = solver(Dupop, d.ravel(), **kwargs_solver)[0]
+
+    # Apply sparse transform
+    if sptransf is not None:
+        p = Dupop_norestr * pup # reconstruct p at finely sampled spatial axes
+        pup = sptransf * pup
+        p = np.real(p).reshape(dims)
+
+    # Finalize estimates
     pup = np.real(pup).reshape(dims)
     pdown = p - pup
 
