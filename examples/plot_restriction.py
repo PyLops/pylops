@@ -77,7 +77,7 @@ subax.plot(iavann, ynn, '.r', ms=25)
 subax.plot(iavali, yli, '.m', ms=20)
 subax.plot(iavasi, ysi, '.y', ms=15)
 subax.set_xlim([120, 127])
-subax.set_ylim([0.5, -0.5])
+subax.set_ylim([-0.5, 0.5])
 
 ###############################################################################
 # Finally we show how the :py:class:`pylops.Restriction` is not limited to

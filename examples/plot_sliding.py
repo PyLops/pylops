@@ -71,7 +71,7 @@ radon = Slid.H * data.flatten()
 radon = radon.reshape(dims)
 
 ###############################################################################
-# We now create  a similar operator but we also add a taper to the overlapping
+# We now create a similar operator but we also add a taper to the overlapping
 # parts of the patches.
 Slid = pylops.signalprocessing.Sliding2D(Op, dims, dimsd,
                                          winsize, overlap,

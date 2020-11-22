@@ -122,6 +122,11 @@ part of the pip installation via:
 
 Dependencies are however installed from their PyPI wheels.
 
+An exception is however represented by ``cupy``. This library is NOT installed
+automatically. Users interested to accelerate their compuations with the aid
+of GPUs should install it prior to installing ``pylops`` (see below for more
+details).
+
 
 numba
 ~~~~~
@@ -219,7 +224,27 @@ If interested to use ``pywt``, you can manually install it:
 or pip equivalent.
 
 
-.. note:: If you are a developer, all the optional dependencies can also be
-   installed automatically by cloning the repository and installing
+.. note:: If you are a developer, all the above optional dependencies can also
+   be installed automatically by cloning the repository and installing
    pylops via ``make dev-install`` or ``make dev-install_conda``.
 
+
+cupy
+~~~~
+This library is used as a drop-in replacement to ``numpy`` for GPU-accelerated
+computations. Since many different versions of ``cupy`` exist (based on the
+CUDA drivers of the GPU), users must install ``cupy`` prior to installing
+``pylops``. PyLops will automatically check if ``cupy`` is
+installed and in that case use it any time the input vector passed to an
+operator is of ``cupy`` type. For more details of GPU-accelerated PyLops read
+the :ref:`gpu` section.
+
+
+cusignal
+~~~~~~~~
+This library is used as a drop-in replacement to ``scipy.signal`` for
+GPU-accelerated computations. Similar to ``cupy``, users must install
+``cusignal`` prior to installing ``pylops``. PyLops will automatically
+check if ``cusignal`` is installed and in that case use it any time the
+input vector passed to an operator is of ``cusignal`` type. For more details
+of GPU-accelerated PyLops read the :ref:`gpu` section.

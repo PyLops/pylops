@@ -17,6 +17,8 @@ from pylops.utils.seismicevents import makeaxis, hyperbolic2d
 warnings.filterwarnings('ignore')
 plt.close('all')
 
+# sphinx_gallery_thumbnail_number = 5
+
 ###############################################################################
 # Let's start by creating a set of hyperbolic events to be used as
 # our MDC kernel
@@ -175,7 +177,6 @@ minvprec = pylops.waveeqprocessing.MDD(Gwav, d[:, par['nt'] - 1:],
                                        dottest=False,
                                        **dict(damp=1e-4, iter_lim=50, show=0))
 
-# sphinx_gallery_thumbnail_number = 5
 fig = plt.figure(figsize=(8, 6))
 ax1 = plt.subplot2grid((1, 5), (0, 0), colspan=2)
 ax2 = plt.subplot2grid((1, 5), (0, 2), colspan=2)

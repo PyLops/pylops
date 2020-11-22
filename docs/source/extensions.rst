@@ -17,4 +17,4 @@ Spin-off projects that aim at extending the capabilities of PyLops are:
 
 * `PyLops-GPU <https://github.com/equinor/pylops-gpu>`_
 * `PyLops-Distributed <https://github.com/equinor/pylops-distributed>`_
-* `PyCurvelabLops <https://github.com/cako/PyCurvelabLops>`_
+* `curvelops <https://github.com/cako/curvelops>`_
