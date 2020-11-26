@@ -229,6 +229,9 @@ or pip equivalent.
    pylops via ``make dev-install`` or ``make dev-install_conda``.
 
 
+Optional Dependencies (GPU)
+---------------------------
+
 cupy
 ~~~~
 This library is used as a drop-in replacement to ``numpy`` for GPU-accelerated
@@ -236,7 +239,8 @@ computations. Since many different versions of ``cupy`` exist (based on the
 CUDA drivers of the GPU), users must install ``cupy`` prior to installing
 ``pylops``. PyLops will automatically check if ``cupy`` is
 installed and in that case use it any time the input vector passed to an
-operator is of ``cupy`` type. For more details of GPU-accelerated PyLops read
+operator is of ``cupy`` type. Users can however disabilitate this option
+even if cupy is installed. For more details of GPU-accelerated PyLops read
 the :ref:`gpu` section.
 
 
@@ -246,5 +250,6 @@ This library is used as a drop-in replacement to ``scipy.signal`` for
 GPU-accelerated computations. Similar to ``cupy``, users must install
 ``cusignal`` prior to installing ``pylops``. PyLops will automatically
 check if ``cusignal`` is installed and in that case use it any time the
-input vector passed to an operator is of ``cusignal`` type. For more details
+input vector passed to an operator is of ``cusignal`` type. Users can however
+disabilitate this option even if cupy is installed. For more details
 of GPU-accelerated PyLops read the :ref:`gpu` section.
