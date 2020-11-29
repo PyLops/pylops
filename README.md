@@ -200,8 +200,8 @@ operators that can be tailored to our needs, and as contribution to the free sof
 ## Citing
 When using ``pylops`` in scientific publications, please cite the following paper:
 
-- Ravasi, M., and Vasconcelos I., *PyLops--A Linear-Operator Python Library for large scale optimization*,
-  SoftwareX, (2019). [link](https://www.sciencedirect.com/science/article/pii/S2352711019301086).
+- Ravasi, M., and Vasconcelos I., *PyLops--A linear-operator Python library for scalable algebra and optimization*,
+  SoftwareX, (2020). [link](https://www.sciencedirect.com/science/article/pii/S2352711019301086).
 
 
 
