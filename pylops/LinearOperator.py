@@ -397,7 +397,7 @@ class LinearOperator(spLinearOperator):
         # post process the entries / indices for scipy.sparse.csr_matrix
         entries = np.array(entries)
         indices = np.array(indices)
-        i, j = indices[:,0], indices[:,1]
+        i, j = indices[:, 0], indices[:, 1]
 
         # construct a sparse, CSR matrix from the entries / indices data.
         matrix = csr_matrix((entries, (j, i)), shape=self.shape, dtype=self.dtype)
@@ -628,6 +628,44 @@ class LinearOperator(spLinearOperator):
         colop = _ColumnLinearOperator(self, cols)
         return colop
 
+    def toreal(self, forw=True, adj=True):
+        """Real operator
+
+        Parameters
+        ----------
+        forw : :obj:`bool`, optional
+            Apply real to output of forward pass
+        adj : :obj:`bool`, optional
+            Apply real to output of adjoint pass
+
+        Returns
+        -------
+        realop : :obj:`pylops.LinearOperator`
+            Real operator
+
+        """
+        realop = _RealImagLinearOperator(self, forw, adj, True)
+        return realop
+
+    def toimag(self, forw=True, adj=True):
+        """Imag operator
+
+        Parameters
+        ----------
+        forw : :obj:`bool`, optional
+            Apply imag to output of forward pass
+        adj : :obj:`bool`, optional
+            Apply imag to output of adjoint pass
+
+        Returns
+        -------
+        imagop : :obj:`pylops.LinearOperator`
+            Imag operator
+
+        """
+        imagop = _RealImagLinearOperator(self, forw, adj, False)
+        return imagop
+
 
 def _get_dtype(operators, dtypes=None):
     if dtypes is None:
@@ -726,6 +764,44 @@ class _ColumnLinearOperator(LinearOperator):
         else:
             y = self.Op._rmatvec(x)
             y = y[self.cols]
+        return y
+
+
+class _RealImagLinearOperator(LinearOperator):
+    """Real-Imag linear operator
+
+    Computes forward and adjoint passes of an operator Op and returns only
+    its real (or imaginary) component. Note that for the adjoint step the
+    output must be complex conjugated (i.e. opposite of the imaginary part is
+    returned)
+    """
+    def __init__(self, Op, forw=True, adj=True, real=True):
+        if not isinstance(Op, spLinearOperator):
+            raise TypeError('Op must be a LinearOperator')
+        super(_RealImagLinearOperator, self).__init__(Op, Op.shape)
+        self.Op = Op
+        self.real = real
+        self.forw = forw
+        self.adj = adj
+
+    def _matvec(self, x):
+        ncp = get_array_module(x)
+        y = self.Op._matvec(x)
+        if self.forw:
+            if self.real:
+                y = ncp.real(y)
+            else:
+                y = ncp.imag(y)
+        return y
+
+    def _rmatvec(self, x):
+        ncp = get_array_module(x)
+        y = self.Op._rmatvec(x)
+        if self.adj:
+            if self.real:
+                y = ncp.real(y)
+            else:
+                y = -ncp.imag(y)
         return y
 
 
