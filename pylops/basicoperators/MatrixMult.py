@@ -34,8 +34,9 @@ class MatrixMult(LinearOperator):
 
     """
     def __init__(self, A, dims=None, dtype='float64'):
+        ncp = get_array_module(A)
         self.A = A
-        if isinstance(A, np.ndarray):
+        if isinstance(A, ncp.ndarray):
             self.complex = np.iscomplexobj(A)
         else:
             self.complex = np.iscomplexobj(A.data)
