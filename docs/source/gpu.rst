@@ -35,9 +35,43 @@ Operators that are currently not available for GPU computations are:
 - :class:`pylops.signalprocessing.DWT2D`
 - :class:`pylops.signalprocessing.Seislet`
 - :class:`pylops.waveeqprocessing.Demigration`
-- :class:`pylops.signalprocessing.LSM`
+- :class:`pylops.waveeqprocessing.LSM`
 
 Solvers that are currently not available for GPU computations are:
 
 - :class:`pylops.optimization.sparsity.SPGL1`
 
+
+Example
+-------
+
+Finally, let's briefly look at an example. First we write a code snippet using
+``numpy`` arrays which PyLops will run on your CPU:
+
+.. code-block:: python
+
+   ny, nx = 400, 400
+   G = np.random.normal(0,1,(ny, nx)).astype(np.float32)
+   x = np.ones(nx, dtype=np.float32)
+
+   Gop = MatrixMult(G, dtype='float32')
+   y = Gop * x
+   xest = Gop / y
+
+
+Now we write a code snippet using ``cupy`` arrays which PyLops will run on 
+your GPU:
+
+.. code-block:: python
+
+   ny, nx = 400, 400
+   G = cp.random.normal(0,1,(ny, nx)).astype(np.float32)
+   x = cp.ones(nx, dtype=np.float32)
+
+   Gop = MatrixMult(G, dtype='float32')
+   y = Gop * x
+   xest = Gop / y
+
+The code is almost unchanged apart from the fact that we now use ``cupy`` arrays,
+PyLops will figure this out! For more examples head over to these
+`notebooks <https://github.com/PyLops/pylops_notebooks/tree/master/developement-cupy>`_.

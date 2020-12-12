@@ -133,7 +133,7 @@ def test_eigs(par):
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_conj(par):
-    """Complex conjugation
+    """Complex conjugation operator
     """
     M = 1j * np.ones((par['ny'], par['nx']))
     Op = MatrixMult(M, dtype=np.complex)
@@ -174,3 +174,33 @@ def test_apply_columns_explicit(par):
     # adjoint
     assert_array_almost_equal(Mcols.T @ y, Mcolsop.rmatvec(y))
     assert_array_almost_equal(Mcols.T @ y, M1colsop.rmatvec(y))
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_realimag(par):
+    """Real/imag operator
+    """
+    M = np.random.normal(0, 1, (par['ny'], par['nx'])) + \
+        1j * np.random.normal(0, 1, (par['ny'], par['nx']))
+    Op = MatrixMult(M, dtype=np.complex)
+
+    Opr = Op.toreal()
+    Opi = Op.toimag()
+
+    # forward
+    x = np.arange(par['nx'])
+    y = Op * x
+    yr = Opr * x
+    yi = Opi * x
+
+    assert_array_equal(np.real(y), yr)
+    assert_array_equal(np.imag(y), yi)
+
+    # adjoint
+    y = np.arange(par['ny']) + 1j * np.arange(par['ny'])
+    x = Op.H * y
+    xr = Opr.H * y
+    xi = Opi.H * y
+
+    assert_array_equal(np.real(x), xr)
+    assert_array_equal(np.imag(x), -xi)

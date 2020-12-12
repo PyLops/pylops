@@ -1,5 +1,5 @@
 import numpy as np
-from pylops.utils.backend import get_module
+from pylops.utils.backend import get_module, to_numpy
 
 
 def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
@@ -73,8 +73,14 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
         yy = ncp.vdot(y, v) # (Op  * u)' * v
         xx = ncp.vdot(u, x) # u' * (Op' * v)
 
+    # convert back to numpy (in case cupy arrays where used), make into a numpy
+    # array and extract the first element. This is ugly but allows to handle
+    # complex numbers in subsequent prints also when using cupy arrays.
+    xx, yy = np.array([to_numpy(xx)])[0], np.array([to_numpy(yy)])[0]
+
+    # evaluate if dot test is passed
     if complexflag == 0:
-        if ncp.abs((yy - xx) / ((yy + xx + 1e-15) / 2)) < tol:
+        if np.abs((yy - xx) / ((yy + xx + 1e-15) / 2)) < tol:
             if verb: print('Dot test passed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
                            % (yy, xx))
             return True
@@ -86,10 +92,10 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
                            % (yy, xx))
             return False
     else:
-        checkreal = ncp.abs((ncp.real(yy) - ncp.real(xx)) /
-                           ((ncp.real(yy) + ncp.real(xx)+1e-15) / 2)) < tol
-        checkimag = ncp.abs((ncp.real(yy) - ncp.real(xx)) /
-                           ((ncp.real(yy) + ncp.real(xx)+1e-15) / 2)) < tol
+        checkreal = np.abs((np.real(yy) - np.real(xx)) /
+                           ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
+        checkimag = np.abs((np.real(yy) - np.real(xx)) /
+                           ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
         if checkreal and checkimag:
             if verb:
                 print('Dot test passed, v^T(Opu)=%f%+fi - u^T(Op^Tv)=%f%+fi'

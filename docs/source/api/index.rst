@@ -27,6 +27,7 @@ Templates
 
     LinearOperator
     FunctionOperator
+    MemoizeOperator
 
 Basic operators
 ~~~~~~~~~~~~~~~

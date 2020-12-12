@@ -1,4 +1,5 @@
 from .FunctionOperator import FunctionOperator
+from .MemoizeOperator import MemoizeOperator
 from .Regression import Regression
 from .LinearRegression import LinearRegression
 from .MatrixMult import MatrixMult
