@@ -13,6 +13,7 @@ from .basicoperators import Roll
 from .basicoperators import Pad
 from .basicoperators import Sum
 from .basicoperators import FunctionOperator
+from .basicoperators import MemoizeOperator
 
 from .basicoperators import VStack
 from .basicoperators import HStack
