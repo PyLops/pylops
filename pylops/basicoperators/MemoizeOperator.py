@@ -41,20 +41,20 @@ class MemoizeOperator(LinearOperator):
         for xstored, ystored in self.store:
             if np.allclose(xstored, x):
                 return ystored
+        if len(self.store) + 1 > self.max_neval:
+            del self.store[0] # Delete oldest
         y = self.Op._matvec(x)
         self.neval += 1
         self.store.append((x.copy(), y.copy()))
-        if len(self.store) > self.max_neval:
-            del self.store[0] # Delete oldest
         return y
 
     def _rmatvec(self, y):
         for xstored, ystored in self.store:
             if np.allclose(ystored, y):
                 return xstored
+        if len(self.store) + 1 > self.max_neval:
+            del self.store[0] # Delete oldest
         x = self.Op._rmatvec(y)
         self.neval += 1
         self.store.append((x.copy(), y.copy()))
-        if len(self.store) > self.max_neval:
-            del self.store[0] # Delete oldest
         return x
