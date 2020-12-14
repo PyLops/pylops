@@ -2,7 +2,7 @@ import numpy as np
 from pylops.utils.backend import get_module
 
 
-def dottest(Op, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
+def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
             backend='numpy'):
     r"""Dot test.
 
@@ -15,6 +15,10 @@ def dottest(Op, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
     ----------
     Op : :obj:`pylops.LinearOperator`
         Linear operator to test.
+    nr : :obj:`int`
+        Number of rows of operator (i.e., elements in data)
+    nc : :obj:`int`
+        Number of columns of operator (i.e., elements in model)
     tol : :obj:`float`, optional
         Dottest tolerance
     complexflag : :obj:`bool`, optional
@@ -49,7 +53,12 @@ def dottest(Op, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
     """
     ncp = get_module(backend)
     
-    nr, nc = Op.shape
+    if nr is None:
+        nr = Op.shape[0]
+    if nc is None:
+        nc = Op.shape[1]
+
+    assert (nr, nc) = Op.shape, 'Provided nr and nc do not match with Op shape'
     
     if complexflag in (0, 2):
         u = ncp.random.randn(nc)
