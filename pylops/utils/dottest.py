@@ -59,7 +59,7 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
         nc = Op.shape[1]
 
     assert (nr, nc) == Op.shape, 'Provided nr and nc do not match operator shape'
-    
+
     if complexflag in (0, 2):
         u = ncp.random.randn(nc)
     else:
