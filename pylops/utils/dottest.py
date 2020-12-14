@@ -2,7 +2,7 @@ import numpy as np
 from pylops.utils.backend import get_module, to_numpy
 
 
-def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
+def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
             backend='numpy'):
     r"""Dot test.
 
@@ -53,6 +53,13 @@ def dottest(Op, nr, nc, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
     """
     ncp = get_module(backend)
 
+    if nr is None:
+        nr = Op.shape[0]
+    if nc is None:
+        nc = Op.shape[1]
+
+    assert (nr, nc) == Op.shape, 'Provided nr and nc do not match operator shape'
+    
     if complexflag in (0, 2):
         u = ncp.random.randn(nc)
     else:
