@@ -783,6 +783,7 @@ class _RealImagLinearOperator(LinearOperator):
         self.real = real
         self.forw = forw
         self.adj = adj
+        self.dtype = np.array(0, dtype=self.Op.dtype).real.dtype
 
     def _matvec(self, x):
         ncp = get_array_module(x)
