@@ -23,7 +23,7 @@ def Sliding3D(Op, dims, dimsd, nwin, nover, nop,
     array in the first and second dimensions (and the entire third dimension).
 
     This operator can be used to perform local, overlapping transforms (e.g.,
-    :obj:`pylops.signalprocessing.FFTN`
+    :obj:`pylops.signalprocessing.FFTND`
     or :obj:`pylops.signalprocessing.Radon3D`) of 3-dimensional arrays.
 
     .. note:: The shape of the model has to be consistent with

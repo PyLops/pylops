@@ -97,8 +97,10 @@ Signal processing
     Radon3D
     ChirpRadon2D
     ChirpRadon3D
+    Sliding1D
     Sliding2D
     Sliding3D
+    Patch2D
     Fredholm1
 
 

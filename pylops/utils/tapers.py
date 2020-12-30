@@ -64,20 +64,54 @@ def cosinetaper(nmask, ntap, square=False):
     return tpr_1d
 
 
+def taper(nmask, ntap, tapertype):
+    r"""1D taper
+
+    Create unitary mask of length ``nmask`` with tapering of choice
+    at edges of size ``ntap``
+
+    Parameters
+    ----------
+    nmask : :obj:`int`
+        Number of samples of mask
+    ntap : :obj:`int`
+        Number of samples of hanning tapering at edges
+    tapertype : :obj:`str`, optional
+        Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
+
+    Returns
+    -------
+    taper : :obj:`numpy.ndarray`
+        taper
+
+    """
+    if tapertype == 'hanning':
+        tpr_1d = hanningtaper(nmask, ntap)
+    elif tapertype == 'cosine':
+        tpr_1d = cosinetaper(nmask, ntap, False)
+    elif tapertype == 'cosinesquare':
+        tpr_1d = cosinetaper(nmask, ntap, True)
+    else:
+        tpr_1d = np.ones(nmask)
+    return tpr_1d
+
+
 def taper2d(nt, nmask, ntap, tapertype='hanning'):
     r"""2D taper
 
     Create 2d mask of size :math:`[n_{mask} \times n_t]`
-    with tapering of size ``ntap`` along the first dimension
+    with tapering of size ``ntap`` along the first (and possibly
+    second) dimensions
 
     Parameters
     ----------
     nt : :obj:`int`
-        Number of time samples of mask along second dimension
+        Number of samples along second dimension
     nmask : :obj:`int`
-        Number of space samples of mask along first dimension
-    ntap : :obj:`int`
-        Number of samples of tapering at edges of first dimension
+        Number of samples along first dimension
+    ntap : :obj:`int` or :obj:`list`
+        Number of samples of tapering at edges of first dimension (or
+        both dimensions).
     tapertype : :obj:`str`, optional
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
 
@@ -88,18 +122,22 @@ def taper2d(nt, nmask, ntap, tapertype='hanning'):
         of size :math:`[n_{mask} \times n_t]`
 
     """
-    # create 1d window
-    if tapertype == 'hanning':
-        tpr_1d = hanningtaper(nmask, ntap)
-    elif tapertype == 'cosine':
-        tpr_1d = cosinetaper(nmask, ntap, False)
-    elif tapertype == 'cosinesquare':
-        tpr_1d = cosinetaper(nmask, ntap, True)
-    else:
-        tpr_1d = np.ones(nmask)
+    # create 1d window along first dimension
+    tpr_x = taper(nmask, ntap[0] if isinstance(ntap, (list, tuple)) else ntap,
+                  tapertype)
 
-    # replicate taper to second dimension
-    tpr_2d = np.tile(tpr_1d[:, np.newaxis], (1, nt))
+    # create 1d window along second dimension
+    if isinstance(ntap, (list, tuple)):
+        tpr_t = taper(nt, ntap[1], tapertype)
+
+    # create 2d taper
+    if isinstance(ntap, (list, tuple)):
+        # replicate taper to second dimension
+        tpr_2d = np.outer(tpr_x, tpr_t)
+    else:
+        # replicate taper to second dimension
+        tpr_2d = np.tile(tpr_x[:, np.newaxis], (1, nt))
+
     return tpr_2d
 
 
