@@ -11,3 +11,4 @@ Contributors
 *  `Filippo Broggini <https://github.com/filippo82>`_, filippo82
 *  `Tyler Hughes <https://github.com/twhughes>`_, twhughes
 *  `Lyubov Skopintseva <https://github.com/lskopintseva>`_, lskopintseva
+*  `Francesco Picetti <https://github.com/fpicetti>`_, fpicetti
