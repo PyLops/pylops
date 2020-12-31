@@ -1,10 +1,17 @@
 r"""
-2D and 3D Sliding
-=================
-This example shows how to use the :py:class:`pylops.signalprocessing.Sliding2D`
+1D, 2D and 3D Sliding
+=====================
+This example shows how to use the
+:py:class:`pylops.signalprocessing.Sliding1D`,
+:py:class:`pylops.signalprocessing.Sliding2D`
 and  :py:class:`pylops.signalprocessing.Sliding3D` operators
-to perform repeated transforms over small patches of a 2- or 3-dimensional
-array. The transform that we apply in this example is the
+to perform repeated transforms over small strides of a 1-, 2- or 3-dimensional
+array.
+
+For the 1-d case, the transform that we apply in this example is the
+:py:class:`pylops.signalprocessing.FFT`.
+
+For the 2- and 3-d cases, the transform that we apply in this example is the
 :py:class:`pylops.signalprocessing.Radon2D`
 (and :py:class:`pylops.signalprocessing.Radon3D`) but this operator has been
 design to allow a variety of transforms as long as they operate with signals
@@ -18,8 +25,47 @@ import pylops
 
 plt.close('all')
 
+
 ###############################################################################
-# Let's start by creating an 2-dimensional array of size :math:`n_x \times n_t`
+# Let's start by creating a 1-dimensional array of size :math:`n_t` and create
+# a sliding operator to compute its transformed representation.
+nwins = 4
+nwin = 26
+nover = 3
+nop = 64
+dim = (nop + 2) // 2 * nwins
+dimd = nwin * nwins - 3 * nover
+
+t = np.arange(dimd) * 0.004
+data = np.sin(2*np.pi*20*t)
+
+Op = pylops.signalprocessing.FFT(nwin, nfft=nop, real=True)
+Slid = pylops.signalprocessing.Sliding1D(Op.H, dim, dimd, nwin, nover,
+                                         tapertype=None, design=False)
+
+x = Slid.H * data.flatten()
+
+###############################################################################
+# We now create a similar operator but we also add a taper to the overlapping
+# parts of the patches and use it to reconstruct the original signal.
+# This is done by simply using the adjoint of the
+# :py:class:`pylops.signalprocessing.Sliding1D` operator. Note that for non-
+# orthogonal operators, this must be replaced by an inverse.
+Slid = pylops.signalprocessing.Sliding1D(Op.H, dim, dimd, nwin, nover,
+                                         tapertype='cosine', design=False)
+
+reconstructed_data = Slid * x.flatten()
+
+fig, axs = plt.subplots(1, 2, figsize=(15, 3))
+axs[0].plot(data, 'k', label='Data')
+axs[0].plot(reconstructed_data, '--r', label='Rec Data')
+axs[1].set_title('Original domain')
+axs[1].plot(np.abs(x), 'k')
+axs[1].set_title('Transformed domain')
+plt.tight_layout()
+
+###############################################################################
+# We now create a 2-dimensional array of size :math:`n_x \times n_t`
 # composed of 3 parabolic events
 par = {'ox':-140, 'dx':2, 'nx':140,
        'ot':0, 'dt':0.004, 'nt':200,
@@ -201,7 +247,7 @@ radon = radon.reshape(nwins[0], nwins[1], npx, npx, par['nt'])
 
 Slid = pylops.signalprocessing.Sliding3D(Op, dims, dimsd,
                                          winsize, overlap, (npx, npx),
-                                         tapertype='cosine', design=True)
+                                         tapertype='cosine', design=False)
 
 reconstructed_data = Slid * radon.flatten()
 reconstructed_data = reconstructed_data.reshape(dimsd)
@@ -271,3 +317,4 @@ im = axs[1][2].imshow(reconstructed_datainv[:, :, 25],
 axs[1][2].set_title('Reconstruction from inverse')
 plt.colorbar(im, ax=axs[1][2])
 axs[1][2].axis('tight')
+plt.tight_layout()

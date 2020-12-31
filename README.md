@@ -214,3 +214,4 @@ When using ``pylops`` in scientific publications, please cite the following pape
 * Filippo Broggini, filippo82
 * Tyler Hughes, twhughes
 * Lyubov Skopintseva, lskopintseva
+* Francesco Picetti, fpicetti
