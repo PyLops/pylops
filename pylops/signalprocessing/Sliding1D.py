@@ -1,7 +1,7 @@
 import logging
+import numpy as np
 
-from pylops.basicoperators import Diagonal, BlockDiag, Restriction, \
-    HStack
+from pylops.basicoperators import Diagonal, BlockDiag, Restriction, HStack
 from pylops.utils.tapers import taper
 from pylops.signalprocessing.Sliding2D import _slidingsteps
 
@@ -103,7 +103,7 @@ def Sliding1D(Op, dim, dimd, nwin, nover,
         OOp = BlockDiag([Diagonal(taps[itap].flatten()) * Op
                          for itap in range(nwins)])
 
-    combining = HStack([Restriction(dimd, range(win_in, win_end)).H
+    combining = HStack([Restriction(dimd, np.arange(win_in, win_end)).H
                         for win_in, win_end in zip(dwin_ins, dwin_ends)])
     Sop = combining * OOp
     return Sop
