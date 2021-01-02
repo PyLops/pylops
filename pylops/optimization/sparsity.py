@@ -609,10 +609,10 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
 
 def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
          tol=1e-10, monitorres=False, returninfo=False, show=False,
-         threshkind='soft', perc=None, callback=None):
+         threshkind='soft', perc=None, callback=None, decay=None, SOp=None):
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
-    Solve an optimization problem with :math:`Lp, \quad p=0, 1/2, 1`
+    Solve an optimization problem with :math:`L_p, \; p=0, 1/2, 1`
     regularization, given the operator ``Op`` and data ``y``. The operator
     can be real or complex, and should ideally be either square :math:`N=M`
     or underdetermined :math:`N<M`.
@@ -654,7 +654,11 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
-
+    decay : :obj:`numpy.ndarray`, optional
+        Decay factor to be applied to thresholding during iterations
+    SOp : :obj:`pylops.LinearOperator`, optional
+        Regularization operator (use when solving the analysis problem)
+    
     Returns
     -------
     xinv : :obj:`numpy.ndarray`
@@ -684,20 +688,36 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     Notes
     -----
-    Solves the following optimization problem for the operator
+    Solves the following synthesis problem for the operator
     :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
 
     .. math::
         J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
             \epsilon ||\mathbf{x}||_p
 
-    using the Iterative Shrinkage-Thresholding Algorithms (ISTA) [1]_, where
+    or the analysis problem:
+
+    .. math::
+        J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
+            \epsilon ||\mathbf{SOp}^H\mathbf{x}||_p
+
+    if ``SOp`` is provided. Note that in the first case, ``SOp`` should be
+    assimilated in the modelling operator (i.e., ``Op=GOp * SOp``).
+
+    The Iterative Shrinkage-Thresholding Algorithms (ISTA) [1]_ is used, where
     :math:`p=0, 1, 1/2`. This is a very simple iterative algorithm which
     applies the following step:
 
     .. math::
         \mathbf{x}^{(i+1)} = T_{(\epsilon \alpha /2, p)} (\mathbf{x}^{(i)} +
         \alpha \mathbf{Op}^H (\mathbf{d} - \mathbf{Op} \mathbf{x}^{(i)}))
+
+    or
+
+    .. math::
+        \mathbf{x}^{(i+1)} = \mathbf{SOp}(T_{(\epsilon \alpha /2, p)}
+        (\mathbf{SOp}^H(\mathbf{x}^{(i)} + \alpha \mathbf{Op}^H (\mathbf{d} -
+        \mathbf{Op} \mathbf{x}^{(i)}))))
 
     where :math:`\epsilon \alpha /2` is the threshold and :math:`T_{(\tau, p)}`
     is the thresholding rule. The most common variant of ISTA uses the
@@ -740,6 +760,10 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     # identify backend to use
     ncp = get_array_module(data)
+
+    # prepare decay (if not passed)
+    if perc is None and decay is None:
+        decay = ncp.ones(niter)
 
     if show:
         tstart = time.time()
@@ -804,10 +828,14 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
         # update inverted model
         xinv_unthesh = xinv + grad
+        if SOp is not None:
+            xinv_unthesh = SOp.rmatvec(xinv_unthesh)
         if perc is None:
-            xinv = threshf(xinv_unthesh, thresh)
+            xinv = threshf(xinv_unthesh, decay[iiter] * thresh)
         else:
             xinv = threshf(xinv_unthesh, 100 - perc)
+        if SOp is not None:
+            xinv = SOp.matvec(xinv)
 
         # model update
         xupdate = np.linalg.norm(xinv - xinvold)
@@ -851,13 +879,13 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
 def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
           tol=1e-10, returninfo=False, show=False, threshkind='soft',
-          perc=None, callback=None):
+          perc=None, callback=None, decay=None, SOp=None):
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
-    Solve an optimization problem with :math:`L1` regularization function given
-    the operator ``Op`` and data ``y``. The operator can be real or complex,
-    and should ideally be either square :math:`N=M` or underdetermined
-    :math:`N<M`.
+    Solve an optimization problem with :math:`L_p, \; p=0, 1/2, 1`
+    regularization, given the operator ``Op`` and data ``y``.
+    The operator can be real or complex, and should ideally be either square
+    :math:`N=M` or underdetermined :math:`N<M`.
 
     Parameters
     ----------
@@ -894,6 +922,10 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    decay : :obj:`numpy.ndarray`, optional
+        Decay factor to be applied to thresholding during iterations
+    SOp : :obj:`pylops.LinearOperator`, optional
+        Regularization operator (use when solving the analysis problem)
 
     Returns
     -------
@@ -922,14 +954,22 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     Notes
     -----
-    Solves the following optimization problem for the operator
+    Solves the following synthesis problem for the operator
     :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
 
     .. math::
         J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
             \epsilon ||\mathbf{x}||_p
 
-    using the Fast Iterative Shrinkage-Thresholding Algorithm (FISTA) [1]_,
+    or the analysis problem:
+
+    .. math::
+        J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
+            \epsilon ||\mathbf{SOp}^H\mathbf{x}||_p
+
+    if ``SOp`` is provided.
+
+    The Fast Iterative Shrinkage-Thresholding Algorithm (FISTA) [1]_ is used,
     where :math:`p=0, 1, 1/2`. This is a modified version of ISTA solver with
     improved convergence properties and limited additional computational cost.
     Similarly to the ISTA solver, the choice of the thresholding algorithm to
@@ -967,6 +1007,10 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     # identify backend to use
     ncp = get_array_module(data)
+
+    # prepare decay (if not passed)
+    if perc is None and decay is None:
+        decay = ncp.ones(niter)
 
     if show:
         tstart = time.time()
@@ -1023,10 +1067,14 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
         # update inverted model
         xinv_unthesh = zinv + grad
+        if SOp is not None:
+            xinv_unthesh = SOp.rmatvec(xinv_unthesh)
         if perc is None:
-            xinv = threshf(xinv_unthesh, thresh)
+            xinv = threshf(xinv_unthesh, decay[iiter] * thresh)
         else:
             xinv = threshf(xinv_unthesh, 100 - perc)
+        if SOp is not None:
+            xinv = SOp.matvec(xinv)
 
         # update auxiliary coefficients
         told = t
