@@ -5,10 +5,8 @@ def src(pth):
     return os.path.join(os.path.dirname(__file__), pth)
 
 # Project description
-descr = """
-        Python library implementing linear operators to allow solving large-scale optimization
-        problems without requiring to explicitly create a dense (or sparse) matrix.
-        """
+descr = 'Python library implementing linear operators to allow solving large-scale optimization ' \
+        'problems without requiring to explicitly create a dense (or sparse) matrix.'
 
 # Setup
 setup(
