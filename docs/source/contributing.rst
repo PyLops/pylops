@@ -7,7 +7,7 @@ Contributions are welcome and greatly appreciated!
 
 The best way to get in touch with the core developers and mantainers is to
 join the `PyLops slack channel <https://pylops.slack.com/>`_ as well as
-open new *Issues* directly from the `github repo <https://github.com/equinor/pylops>`_.
+open new *Issues* directly from the `github repo <https://github.com/PyLops/pylops>`_.
 
 Moreover, take a look at the :ref:`roadmap` page for a list of current ideas
 for improvements and additions to the PyLops library.
@@ -19,7 +19,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/equinor/pylops/issues.
+Report bugs at https://github.com/PyLops/pylops/issues.
 
 If you are playing with the PyLops library and find a bug, please report it including:
 
@@ -30,7 +30,7 @@ If you are playing with the PyLops library and find a bug, please report it incl
 Propose New Operators or Features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Open an issue at https://github.com/equinor/pylops/issues with tag *enhancement*.
+Open an issue at https://github.com/PyLops/pylops/issues with tag *enhancement*.
 
 If you are proposing a new operator or a new feature:
 

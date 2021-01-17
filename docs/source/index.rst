@@ -113,7 +113,7 @@ a linear operator is created by subclassing the :py:class:`scipy.sparse.linalg.L
 
 History
 -------
-PyLops was initially written and it is currently maintained by `Equinor <https://www.equinor.com>`_
+PyLops was initially written by `Equinor <https://www.equinor.com>`_
 It is a flexible and scalable python library for large-scale optimization with linear operators
 that can be tailored to our needs, and as contribution to the free software community.
 
