@@ -193,7 +193,7 @@ you are required to rebuild the entire documentation before your changes will be
 
 
 ## History
-PyLops was initially written and it is currently maintained by [Equinor](https://www.equinor.com).
+PyLops was initially written by [Equinor](https://www.equinor.com).
 It is a flexible and scalable python library for large-scale optimization with linear
 operators that can be tailored to our needs, and as contribution to the free software community.
 

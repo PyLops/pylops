@@ -7,7 +7,7 @@ Contributions are welcome and greatly appreciated!
 
 ### Report Bugs
 
-Report bugs at https://github.com/equinor/pylops/issues
+Report bugs at https://github.com/PyLops/pylops/issues
 
 If you are playing with the PyLops library and find a bug, please
 reporting it including:
@@ -19,7 +19,7 @@ reporting it including:
 ### Propose New Operators or Features
 
 The best way to send feedback is to open an issue at
-https://github.com/equinor/pylops/issues
+https://github.com/PyLops/pylops/issues
 with tag *enhancement*.
 
 If you are proposing a new operator or a new feature:
