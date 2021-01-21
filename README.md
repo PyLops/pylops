@@ -203,6 +203,10 @@ When using ``pylops`` in scientific publications, please cite the following pape
 - Ravasi, M., and Vasconcelos I., *PyLops--A linear-operator Python library for scalable algebra and optimization*,
   SoftwareX, (2020). [link](https://www.sciencedirect.com/science/article/pii/S2352711019301086).
 
+## Tutorials
+A list of video tutorials to learn more about PyLops:
+
+- PyDataGlobal 2020: Youtube video [links](https://github.com/PyLops/pylops_pydata2020).
 
 
 ## Contributors
