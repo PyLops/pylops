@@ -9,11 +9,11 @@ from pylops.waveeqprocessing.seismicinterpolation import SeismicInterpolation
 
 np.random.seed(5)
 
-# avoid timeout in travis for numba
-if multiprocessing.cpu_count() >= 4:
-    engine = 'numba'
-else:
-    engine = 'numpy'
+# avoid timeout in travis and azure-pipeline(linux) for numba
+#if multiprocessing.cpu_count() >= 4:
+#    engine = 'numba'
+#else:
+engine = 'numpy'
 
 # params
 par = {'oy':0, 'dy':2, 'ny':30,
