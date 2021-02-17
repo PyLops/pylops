@@ -103,7 +103,7 @@ def test_SeismicInterpolation2d(par):
     assert np.linalg.norm(x2d - xinv) / np.linalg.norm(xinv) < 2e-1
 
 
-@pytest.mark.parametrize("par", [(par1_3d), (par2_3d), (par3_3d), (par4_3d)])
+@pytest.mark.parametrize("par", [(par1_3d), (par2_3d)]) #, (par3_3d), (par4_3d)])
 def test_SeismicInterpolation3d(par):
     """Dot-test and inversion for SeismicInterpolation in 3d
     """
