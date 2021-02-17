@@ -352,7 +352,7 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
         nt0, ntheta, nx, ny = data.shape
         nspat = (nx, ny)
         nspatprod = nx*ny
-        data = data.reshape(nt0, nm, nspatprod)
+        data = data.reshape(nt0, ntheta, nspatprod)
 
     # check if background model and data have same shape
     if m0 is not None:
