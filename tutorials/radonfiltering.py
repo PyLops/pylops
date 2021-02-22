@@ -139,9 +139,9 @@ axs[4].axis('tight')
 # with small curvature.
 #
 # On the other hand, it is important to note that we have not been able to
-# correctlypreserve the amplitudes of each event. This is because the sparse
+# correctly preserve the amplitudes of each event. This is because the sparse
 # Radon transform can only identify a sparsest response that explain the data
-# within a certain threshold. For this reason an more suitable approach for
+# within a certain threshold. For this reason a more suitable approach for
 # preserving amplitudes could be to apply a parabolic Raodn transform with the
 # aim of reconstructing only the unwanted event and apply an adaptive
-# subtractionbetween the input data and the reconstructed unwanted event.
+# subtraction between the input data and the reconstructed unwanted event.
