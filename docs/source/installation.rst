@@ -3,7 +3,7 @@
 Installation
 ============
 
-The PyLops project stives to create a library that is easy to install in
+The PyLops project strives to create a library that is easy to install in
 any environment and has a very limited number of dependencies. However,
 since *Python2* will retire soon, we have decided to only focus on a
 *Python3* implementation. If you are still using *Python2*, hurry up!
