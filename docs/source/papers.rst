@@ -5,11 +5,16 @@ Papers
 This section lists various conference abstracts and papers using the
 PyLops framework:
 
-- Nightingale J. W., and Hayes, R.G, et al.,
+- Ulrich, I. E., Zunino, A., Boehm, C., and Fichtner, *Sparsifying regularizations
+  for stochastic sample average minimization in ultrasound computed tomography.*
+  Medical Imaging 2021: Ultrasonic Imaging and Tomography.
+  International Society for Optics and Photonics,
+  `link <https://www.spiedigitallibrary.org/conference-proceedings-of-spie/11602/116020Y/Sparsifying-regularizations-for-stochastic-sample-average-minimization-in-ultrasound-computed/10.1117/12.2580926.full>`_ (2021).
+
+- Nightingale J. W., Hayes, R.G, et al.,
   *PyAutoLens: Open-Source Strong Gravitational Lensing*, JOSS,
   `link <https://joss.theoj.org/papers/d997cd03e4d9a3668bb1c6253381404c>`_
   - `code <https://github.com/Jammy2211/PyAutoLens>`_ (2020).
-
 
 - Zhang, M., *Marchenko Green’s functions from compressive sensing acquisition*
   SEG Technical Program Expanded Abstracts,
