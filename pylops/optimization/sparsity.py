@@ -1341,7 +1341,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
         \operatorname*{arg\,min}_{\mathbf{x}, \mathbf{y}_i}
         ||\textbf{d} - \textbf{Op} \textbf{x} |||_2^2 +
         \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
-        \mathbf{R_{L2,i}} \textbf{x}||_2^2 + \sum_i || \textbf{y}_i ||_1
+        \mathbf{R_{L2,i}} \textbf{x}||_2^2 + \sum_i || \textbf{y}_i ||_1 +
         \sum_i \epsilon_{{R}_{L1,i}}/2 ||\textbf{y}_i -
         \mathbf{R_{L1,i}} \textbf{x} - \textbf{b}_i^k||_2^2
 
