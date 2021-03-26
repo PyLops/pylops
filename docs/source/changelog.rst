@@ -3,6 +3,27 @@
 Changelog
 =========
 
+
+Version 1.13.0
+--------------
+
+*Released on: 26/03/2020*
+
+* Added :py:class:`pylops.signalprocessing.Sliding1D` and
+  :py:class:`pylops.signalprocessing.Patch2D` operators
+* Added :py:class:`pylops.basicoperators.MemoizeOperator` operator
+* Added decay and analysis option in :py:class:`pylops.optimization.sparsity.ISTA` and
+  :py:class:`pylops.optimization.sparsity.FISTA` solvers
+* Added `toreal` and `toimag` methods to :py:class:`pylops.LinearOperator`
+* Make `nr` and `nc` optional in :py:func:`pylops.utils.dottest.dottest`
+* Fixed complex check in :py:class:`pylops.basicoperators.MatrixMult`
+  when working with complex-valued cupy arrays
+* Fixed bug in data reshaping in check in
+  :py:class:`pylops.avo.prestack.PrestackInversion`
+* Fixed loading error when using old cupy and/or cusignal
+  (see `Issue #201 <https://github.com/PyLops/pylops/issues/201>`_)
+
+
 Version 1.12.0
 --------------
 
@@ -119,7 +140,7 @@ Version 1.8.0
   :py:class:`pylops.waveeqprocessing.UpDownComposition3Doperator`, and
   :py:class:`pylops.waveeqprocessing.PhaseShift` operators
 * Fix bug in :py:class:`pylops.basicoperators.Kronecker`
-  (see `Issue #125 <https://github.com/Statoil/pylops/issues/125>`_)
+  (see `Issue #125 <https://github.com/PyLops/pylops/issues/125>`_)
 
 
 Version 1.7.0

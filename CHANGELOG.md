@@ -1,8 +1,23 @@
+# 1.13.0
+* Added ``pylops.signalprocessing.Sliding1D`` and
+  ``pylops.signalprocessing.Patch2D`` operators
+* Added ``pylops.basicoperators.MemoizeOperator`` operator
+* Added decay and analysis option in ``pylops.optimization.sparsity.ISTA`` and
+  ``pylops.optimization.sparsity.FISTA`` solvers
+* Added `toreal` and `toimag` methods to ``pylops.LinearOperator``
+* Make `nr` and `nc` optional in ``pylops.utils.dottest.dottest``
+* Fixed complex check in ``pylops.basicoperators.MatrixMult``
+  when working with complex-valued cupy arrays
+* Fixed bug in data reshaping in check in
+  ``pylops.avo.prestack.PrestackInversion``
+* Fixed loading error when using old cupy and/or cusignal
+
 # 1.12.0
 * Modified all operators and solvers to work with cupy arrays
 * Added ``eigs`` and ``solver`` submodules to ``optimization``
 * Added ``deps`` and ``backend`` submodules to ``utils``
-* Fixed bug in ``Convolve2D`` and ``ConvolveND`` when dealing with
+* Fixed bug in ``pylops.signalprocessing.Convolve2D`` and 
+  ``pylops.signalprocessing.ConvolveND`` when dealing with
   filters that have less dimensions than the input vector.
 
 # 1.11.1
