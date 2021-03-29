@@ -11,6 +11,11 @@ These operators allow for different combinations of multiple linear operators
 in a single operator. Such functionalities are used within PyLops as the basis
 for the creation of complex operators as well as in the definition of various
 types of optimization problems with regularization or preconditioning.
+
+Some of this operators naturally lend to embarassingly parallel computations.
+Within PyLops we leverage the multiprocessing module to run multiple processes
+at the same time evaluating a subset of the operators involved in one of the
+stacking operations.
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -37,7 +42,7 @@ X = np.zeros((Nv, Nh))
 X[int(Nv/2), int(Nh/2)] = 1
 
 D2op = D2vop*D2hop
-Y = np.reshape(D2op*X.flatten(), (Nv, Nh))
+Y = np.reshape(D2op * X.ravel(), (Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('Chain', fontsize=14,
@@ -72,7 +77,7 @@ X = np.zeros((Nv, Nh))
 X[int(Nv/2), int(Nh/2)] = 1
 Dstack = pylops.VStack([D2vop, D2hop])
 
-Y = np.reshape(Dstack * X.flatten(), (Nv * 2, Nh))
+Y = np.reshape(Dstack * X.ravel(), (Nv * 2, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('Vertical stacking', fontsize=14,
@@ -106,7 +111,7 @@ X[int(Nv/2) + Nv, int(Nh/2)] = 1
 X[int(Nv/2) + 2*Nv, int(Nh/2)] = 1
 
 Hstackop = pylops.HStack([D2vop, 0.5 * D2vop, -1 * D2hop])
-Y = np.reshape(Hstackop*X.flatten(), (Nv, Nh))
+Y = np.reshape(Hstackop * X.ravel(), (Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('Horizontal stacking', fontsize=14,
@@ -141,7 +146,7 @@ plt.subplots_adjust(top=0.8)
 #        \end{bmatrix}
 Bop = pylops.Block([[D2vop, 0.5 * D2vop, -1 * D2hop],
                     [D2hop, 2 * D2hop, D2vop]])
-Y = np.reshape(Bop*X.flatten(), (2*Nv, Nh))
+Y = np.reshape(Bop * X.ravel(), (2*Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('Block', fontsize=14,
@@ -175,7 +180,34 @@ plt.subplots_adjust(top=0.8)
 #           -\mathbf{D_h}  \mathbf{x_3}
 #        \end{bmatrix}
 BD = pylops.BlockDiag([D2vop, 0.5 * D2vop, -1 * D2hop])
-Y = np.reshape(BD*np.ndarray.flatten(X), (11*3, 21))
+Y = np.reshape(BD * X.ravel(), (3 * Nv, Nh))
+
+fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+fig.suptitle('Block-diagonal', fontsize=14,
+             fontweight='bold', y=0.95)
+im = axs[0].imshow(X, interpolation='nearest')
+axs[0].axis('tight')
+axs[0].set_title(r'$x$')
+plt.colorbar(im, ax=axs[0])
+im = axs[1].imshow(Y, interpolation='nearest')
+axs[1].axis('tight')
+axs[1].set_title(r'$y$')
+plt.colorbar(im, ax=axs[1])
+plt.tight_layout()
+plt.subplots_adjust(top=0.8)
+
+###############################################################################
+# If we consider now the case of having a large number of operators inside a
+# blockdiagonal structure, it may be convenient to span multiple processes
+# handling subset of operators at the same time. This can be easily achieved
+# by simply defining the number of processes we want to use via ``nproc``.
+X = np.zeros((Nv*10, Nh))
+for iv in range(10):
+    X[int(Nv/2) + iv*Nv, int(Nh/2)] = 1
+
+BD = pylops.BlockDiag([D2vop] * 10, nproc=2)
+print('BD Operator multiprocessing pool', BD.pool)
+Y = np.reshape(BD * X.ravel(), (10 * Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('Block-diagonal', fontsize=14,
@@ -270,4 +302,3 @@ axs[1].set_title(r'$y$')
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
-

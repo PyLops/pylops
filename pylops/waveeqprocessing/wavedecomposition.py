@@ -214,7 +214,6 @@ def PressureToVelocity(nt, nr, dt, dr, rho, vel, nffts=(None, None, None),
         Percentage of angles to retain in obliquity factor. For example, if
         ``critical=100`` only angles below the critical angle
         :math:`\sqrt{k_y^2 + k_x^2} < \frac{\omega}{vel}` will be retained
-        will be retained
     ntaper : :obj:`float`, optional
         Number of samples of taper applied to obliquity factor around critical
         angle
@@ -283,7 +282,7 @@ def PressureToVelocity(nt, nr, dt, dr, rho, vel, nffts=(None, None, None),
                  int(nffts[2]) if nffts[2] is not None else nt)
 
     # create obliquity operator
-    FFTop, OBLop, = \
+    FFTop, OBLop = \
         obl(nt, nr, dt, dr, rho, vel, nffts=nffts,
             critical=critical, ntaper=ntaper, composition=not topressure,
             backend=backend, dtype=dtype)

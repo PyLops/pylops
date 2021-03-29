@@ -179,3 +179,93 @@ def test_BlockDiag(par):
                       dtype=par['dtype'])
     assert dottest(BD2op, 2 * par['ny'], 2 * par['nx'],
                    complexflag=0 if par['imag'] == 0 else 3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_VStack_multiproc(par):
+    """Single and multiprocess consistentcy for VStack operator
+    """
+    np.random.seed(0)
+    nproc = 2
+    G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype(par['dtype'])
+    x = np.ones(par['nx']) + par['imag']*np.ones(par['nx'])
+    y = np.ones(4*par['ny']) + par['imag']*np.ones(4*par['ny'])
+
+    Vop = VStack([MatrixMult(G, dtype=par['dtype'])] * 4,
+                  dtype=par['dtype'])
+    Vmultiop = VStack([MatrixMult(G, dtype=par['dtype'])] * 4, nproc=nproc,
+                       dtype=par['dtype'])
+    assert dottest(Vmultiop, 4 * par['ny'], par['nx'],
+                   complexflag=0 if par['imag'] == 0 else 3)
+    # forward
+    assert_array_almost_equal(Vop * x, Vmultiop * x, decimal=4)
+    # adjoint
+    assert_array_almost_equal(Vop.H * y, Vmultiop.H * y, decimal=4)
+
+
+@pytest.mark.parametrize("par", [(par2), (par2j)])
+def test_HStack_multiproc(par):
+    """Single and multiprocess consistentcy for HStack operator
+    """
+    np.random.seed(0)
+    nproc = 2
+    G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype(par['dtype'])
+    x = np.ones(4*par['nx']) + par['imag']*np.ones(4*par['nx'])
+    y = np.ones(par['ny']) + par['imag']*np.ones(par['ny'])
+
+    Hop = HStack([MatrixMult(G, dtype=par['dtype'])] * 4,
+                  dtype=par['dtype'])
+    Hmultiop = HStack([MatrixMult(G, dtype=par['dtype'])] * 4, nproc=nproc,
+                       dtype=par['dtype'])
+    assert dottest(Hmultiop, par['ny'], 4 * par['nx'],
+                   complexflag=0 if par['imag'] == 0 else 3)
+    # forward
+    assert_array_almost_equal(Hop * x, Hmultiop * x, decimal=4)
+    # adjoint
+    assert_array_almost_equal(Hop.H * y, Hmultiop.H * y, decimal=4)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_Block_multiproc(par):
+    """Single and multiprocess consistentcy for Block operator
+    """
+    np.random.seed(0)
+    nproc = 2
+    G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype(par['dtype'])
+    Gvert = [MatrixMult(G, dtype=par['dtype'])] * 2
+    Ghor = [Gvert] * 4
+    print(Ghor)
+    x = np.ones(2*par['nx']) + par['imag']*np.ones(2*par['nx'])
+    y = np.ones(4*par['ny']) + par['imag']*np.ones(4*par['ny'])
+
+    Bop = Block(Ghor, dtype=par['dtype'])
+    Bmultiop = Block(Ghor, nproc=nproc,
+                      dtype=par['dtype'])
+    assert dottest(Bmultiop, 4*par['ny'], 2*par['nx'],
+                   complexflag=0 if par['imag'] == 0 else 3)
+    # forward
+    assert_array_almost_equal(Bop * x, Bmultiop * x, decimal=3)
+    # adjoint
+    assert_array_almost_equal(Bop.H * y, Bmultiop.H * y, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_BlockDiag_multiproc(par):
+    """Single and multiprocess consistentcy for BlockDiag operator
+    """
+    np.random.seed(0)
+    nproc = 2
+    G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype(par['dtype'])
+    x = np.ones(4*par['nx']) + par['imag']*np.ones(4*par['nx'])
+    y = np.ones(4*par['ny']) + par['imag']*np.ones(4*par['ny'])
+
+    BDop = BlockDiag([MatrixMult(G, dtype=par['dtype'])] * 4,
+                     dtype=par['dtype'])
+    BDmultiop = BlockDiag([MatrixMult(G, dtype=par['dtype'])] * 4, nproc=nproc,
+                          dtype=par['dtype'])
+    assert dottest(BDmultiop, 4*par['ny'], 4*par['nx'],
+                   complexflag=0 if par['imag'] == 0 else 3)
+    # forward
+    assert_array_almost_equal(BDop * x, BDmultiop * x, decimal=4)
+    # adjoint
+    assert_array_almost_equal(BDop.H * y, BDmultiop.H * y, decimal=4)
