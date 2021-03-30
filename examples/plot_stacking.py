@@ -208,6 +208,7 @@ for iv in range(10):
 BD = pylops.BlockDiag([D2vop] * 10, nproc=2)
 print('BD Operator multiprocessing pool', BD.pool)
 Y = np.reshape(BD * X.ravel(), (10 * Nv, Nh))
+BD.pool.close()
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('Block-diagonal', fontsize=14,
