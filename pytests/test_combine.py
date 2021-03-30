@@ -202,6 +202,9 @@ def test_VStack_multiproc(par):
     # adjoint
     assert_array_almost_equal(Vop.H * y, Vmultiop.H * y, decimal=4)
 
+    # close pool
+    Vmultiop.pool.close()
+
 
 @pytest.mark.parametrize("par", [(par2), (par2j)])
 def test_HStack_multiproc(par):
@@ -224,6 +227,9 @@ def test_HStack_multiproc(par):
     # adjoint
     assert_array_almost_equal(Hop.H * y, Hmultiop.H * y, decimal=4)
 
+    # close pool
+    Hmultiop.pool.close()
+
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_Block_multiproc(par):
@@ -240,13 +246,16 @@ def test_Block_multiproc(par):
 
     Bop = Block(Ghor, dtype=par['dtype'])
     Bmultiop = Block(Ghor, nproc=nproc,
-                      dtype=par['dtype'])
+                     dtype=par['dtype'])
     assert dottest(Bmultiop, 4*par['ny'], 2*par['nx'],
                    complexflag=0 if par['imag'] == 0 else 3)
     # forward
     assert_array_almost_equal(Bop * x, Bmultiop * x, decimal=3)
     # adjoint
     assert_array_almost_equal(Bop.H * y, Bmultiop.H * y, decimal=3)
+
+    # close pool
+    Bmultiop.pool.close()
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
@@ -269,3 +278,6 @@ def test_BlockDiag_multiproc(par):
     assert_array_almost_equal(BDop * x, BDmultiop * x, decimal=4)
     # adjoint
     assert_array_almost_equal(BDop.H * y, BDmultiop.H * y, decimal=4)
+
+    # close pool
+    BDmultiop.pool.close()

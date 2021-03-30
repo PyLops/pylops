@@ -98,4 +98,4 @@ def Block(ops, nproc=1, dtype=None):
         \end{bmatrix}
 
     """
-    return _Block(ops, dtype=dtype, args_HStack={'nproc':nproc})
+    return _Block(ops, dtype=dtype, args_VStack={'nproc':nproc})
