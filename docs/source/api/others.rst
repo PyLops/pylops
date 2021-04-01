@@ -20,6 +20,16 @@ Dot-test
 
     dottest
 
+Scalability test
+~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.utils
+
+.. autosummary::
+   :toctree: generated/
+
+    scalability_test
+
 Others
 ------
 

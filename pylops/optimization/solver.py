@@ -21,7 +21,7 @@ def cg(Op, y, x0, niter=10, damp=0., tol=1e-4, show=False, callback=None):
     niter : :obj:`int`, optional
         Number of iterations
     damp : :obj:`float`, optional
-        Damping coefficient
+        *Deprecated*, will be removed in v2.0.0
     tol : :obj:`float`, optional
         Tolerance on residual norm
     show : :obj:`bool`, optional
@@ -37,7 +37,7 @@ def cg(Op, y, x0, niter=10, damp=0., tol=1e-4, show=False, callback=None):
     iit : :obj:`int`
         Number of executed iterations
     cost : :obj:`numpy.ndarray`, optional
-        History of cost function
+        History of the L2 norm of the residual
 
     Notes
     -----
@@ -52,9 +52,9 @@ def cg(Op, y, x0, niter=10, damp=0., tol=1e-4, show=False, callback=None):
         print('CGLS\n'
               '-----------------------------------------------------------\n'
               'The Operator Op has %d rows and %d cols\n'
-              'damp = %10e\ttol = %10e\tniter = %d' % (Op.shape[0],
-                                                       Op.shape[1],
-                                                       damp, tol, niter))
+              'tol = %10e\tniter = %d' % (Op.shape[0],
+                                          Op.shape[1],
+                                          tol, niter))
         print(
             '-----------------------------------------------------------------')
         head1 = '    Itn           x[0]              r2norm'
@@ -71,7 +71,7 @@ def cg(Op, y, x0, niter=10, damp=0., tol=1e-4, show=False, callback=None):
     kold = ncp.abs(r.dot(r.conj()))
 
     cost = np.zeros(niter + 1)
-    cost[0] = kold + damp * ncp.abs(x.dot(x.conj()))
+    cost[0] = np.sqrt(kold)
     iiter = 0
     while iiter < niter and kold > tol:
         Opc = Op.matvec(c)
@@ -84,7 +84,7 @@ def cg(Op, y, x0, niter=10, damp=0., tol=1e-4, show=False, callback=None):
         c = r + b * c
         kold = k
         iiter += 1
-        cost[iiter] = kold
+        cost[iiter] = np.sqrt(kold)
 
         # run callback
         if callback is not None:
@@ -181,7 +181,7 @@ def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
                                                        damp, tol, niter))
         print(
             '-----------------------------------------------------------------')
-        head1 = '    Itn           x[0]              r2norm'
+        head1 = '    Itn           x[0]              r1norm          r2norm'
         print(head1)
 
     damp = damp ** 2
@@ -198,7 +198,10 @@ def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
     kold = ncp.abs(r.dot(r.conj()))
 
     cost = np.zeros(niter + 1)
-    cost[0] = kold + damp * ncp.abs(x.dot(x.conj()))
+    cost1 = np.zeros(niter + 1)
+    cost[0] = ncp.linalg.norm(s)
+    cost1[0] = ncp.sqrt(cost[0] ** 2 + damp * ncp.abs(x.dot(x.conj())))
+
     iiter = 0
     while iiter < niter and kold > tol:
         a = kold / (q.dot(q.conj()) + damp * c.dot(c.conj()))
@@ -211,7 +214,8 @@ def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
         q = Op.matvec(c)
         kold = k
         iiter += 1
-        cost[iiter] = kold + damp * ncp.abs(x.dot(x.conj()))
+        cost[iiter] = ncp.linalg.norm(s)
+        cost1[iiter] = ncp.sqrt(cost[iiter] ** 2 + damp * ncp.abs(x.dot(x.conj())))
 
         # run callback
         if callback is not None:
@@ -220,11 +224,11 @@ def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
                 if not np.iscomplex(x[0]):
-                    msg = '%6g        %11.4e        %11.4e' % \
-                          (iiter, x[0], cost[iiter])
+                    msg = '%6g        %11.4e        %11.4e     %11.4e' % \
+                          (iiter, x[0], cost[iiter], cost1[iiter])
                 else:
-                    msg = '%6g     %4.1e+%4.1ej     %11.4e' % \
-                          (iiter, np.real(x[0]), np.imag(x[0]), cost[iiter])
+                    msg = '%6g     %4.1e+%4.1ej     %11.4e     %11.4e' % \
+                          (iiter, np.real(x[0]), np.imag(x[0]), cost[iiter], cost1[iiter])
                 print(msg)
     if show:
         print('\nIterations = %d        Total time (s) = %.2f'
