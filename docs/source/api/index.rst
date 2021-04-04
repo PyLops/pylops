@@ -147,6 +147,7 @@ Basic
 
     solver.cg
     solver.cgls
+    solver.lsqr
 
 Least-squares
 ~~~~~~~~~~~~~
