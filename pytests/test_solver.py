@@ -1,9 +1,10 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
+from scipy.sparse.linalg import lsqr as sp_lsqr
 
 from pylops.basicoperators import MatrixMult
-from pylops.optimization.solver import cg, cgls
+from pylops.optimization.solver import cg, cgls, lsqr
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0, 'x0': False,
         'dtype': 'float64'}  # square real, zero initial guess
@@ -33,7 +34,7 @@ def test_cg(par):
     A = np.random.normal(0, 10, (par['ny'], par['nx'])) + \
         par['imag'] * np.random.normal(0, 10, (par['ny'], par['nx']))
     A = np.conj(A).T @ A # to ensure definite positive matrix
-    Aop = MatrixMult(A, dtype='float64')
+    Aop = MatrixMult(A, dtype=par['dtype'])
 
     x = np.ones(par['nx']) + par['imag'] * np.ones(par['nx'])
     if par['x0']:
@@ -56,7 +57,7 @@ def test_cgls(par):
 
     A = np.random.normal(0, 10, (par['ny'], par['nx'])) + \
         par['imag'] * np.random.normal(0, 10, (par['ny'], par['nx']))
-    Aop = MatrixMult(A, dtype='float64')
+    Aop = MatrixMult(A, dtype=par['dtype'])
 
     x = np.ones(par['nx']) + par['imag'] * np.ones(par['nx'])
     if par['x0']:
@@ -68,3 +69,32 @@ def test_cgls(par):
     y = Aop * x
     xinv = cgls(Aop, y, x0=x0, niter=par['nx'], tol=1e-5, show=True)[0]
     assert_array_almost_equal(x, xinv, decimal=4)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
+                                 (par1j), (par2j), (par3j), (par3j)])
+def test_lsqr(par):
+    """Compare local Pylops and scipy LSQR
+    """
+    np.random.seed(10)
+
+    A = np.random.normal(0, 10, (par['ny'], par['nx'])) + \
+        par['imag'] * np.random.normal(0, 10, (par['ny'], par['nx']))
+    Aop = MatrixMult(A, dtype=par['dtype'])
+
+    x = np.ones(par['nx']) + par['imag'] * np.ones(par['nx'])
+    if par['x0']:
+        x0 = np.random.normal(0, 10, par['nx']) + \
+             par['imag'] * np.random.normal(0, 10, par['nx'])
+    else:
+        x0 = np.zeros_like(x)
+
+    y = Aop * x
+
+    xinv = lsqr(Aop, y, x0, niter=par['nx'])[0]
+
+    xinv_sp = sp_lsqr(Aop, y - Aop * x0, iter_lim=par['nx'])[0]
+    xinv_sp += x0
+
+    assert_array_almost_equal(xinv, x, decimal=4)
+    assert_array_almost_equal(xinv_sp, x, decimal=4)
