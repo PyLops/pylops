@@ -264,15 +264,16 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
         have fewer correct digits, depending on cond(A) and the size of damp.)
     conlim : :obj:`float`, optional
         Stopping tolerance on :math:`cond(\mathbf{Op})`
-        exceeds conlim. For square, conlim could be as large as 1.0e+12.
-        For least-squares problems, conlim should be less than 1.0e+8.
-        Maximum precision can be obtained by setting atol = btol = conlim = 0,
-        but the number of iterations may then be excessive.
+        exceeds conlim. For square, ``conlim`` could be as large as 1.0e+12.
+        For least-squares problems, ``conlim`` should be less than 1.0e+8.
+        Maximum precision can be obtained by setting
+        ``atol = btol = conlim = 0``, but the number of iterations may
+        then be excessive.
     niter : :obj:`int`, optional
         Number of iterations
     calc_var : :obj:`bool`, optional
         Estimate diagonals of :math:`(\mathbf{Op}^H\mathbf{Op} +
-        \epsilon'^2*\mathbf{I})^{-1}`.
+        \epsilon^2\mathbf{I})^{-1}`.
     show : :obj:`bool`, optional
         Display iterations log
     callback : :obj:`callable`, optional
@@ -294,7 +295,7 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
         ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
         problem
 
-        ``3`` means the estimate of :math:`cond\bar{\mathbf{Op}}`
+        ``3`` means the estimate of :math:`cond(\bar{\mathbf{Op}})`
         has exceeded conlim
 
         ``4`` means :math:`\mathbf{y} - \mathbf{Op}\mathbf{x}` is small enough
@@ -316,19 +317,16 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
         Equal to ``r1norm`` if :math:`\epsilon=0`
     anorm : :obj:`float`
         Estimate of Frobenius norm of :math:`\bar{\mathbf{Op}} =
-        [\mathbf{A} \; \epsilon \mathbf{I}]`
+        [\mathbf{Op} \; \epsilon \mathbf{I}]`
     acond : :obj:`float`
-        Estimate of cond(Abar).:math:`cond(\bar{\mathbf{Op}})`
+        Estimate of :math:`cond(\bar{\mathbf{Op}})`
     arnorm : :obj:`float`
         Estimate of norm of :math:`cond(\mathbf{Op}^H\mathbf{r}-
         \epsilon^2\mathbf{x})`
     var : :obj:`float`
-        Diagonals of :math:`(\mathbf{Op}^H\mathbf{Op})^{-1}` (if damp=0)
+        Diagonals of :math:`(\mathbf{Op}^H\mathbf{Op})^{-1}` (if ``damp=0``)
         or more generally :math:`(\mathbf{Op}^H\mathbf{Op} +
         \epsilon^2\mathbf{I})^{-1}`.
-        This is well defined if :math:`(\mathbf{Op}` has full column rank or
-        :math:` \epsilon > 0`.
-        (Not sure what var means if rank(A) < n and damp = 0.)
     cost : :obj:`numpy.ndarray`, optional
         History of r1norm through iterations
 
@@ -343,8 +341,8 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
     where :math:`\epsilon` is the damping coefficient.
 
     .. [1] Paige, C. C., and Saunders, M. A. "LSQR: An algorithm for sparse
-    linear equations and sparse least squares", ACM TOMS, vol. 8, pp. 43-71,
-    1982.
+        linear equations and sparse least squares", ACM TOMS, vol. 8, pp. 43-71,
+        1982.
 
     """
     # Return messages.
