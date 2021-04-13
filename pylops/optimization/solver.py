@@ -61,8 +61,7 @@ def cg(Op, y, x0, niter=10, damp=0., tol=1e-4, show=False, callback=None):
 
     if x0 is None:
         x = ncp.zeros(Op.shape[1], dtype=y.dtype)
-        s = y.copy()
-        r = Op.rmatvec(s)
+        r = y.copy()
     else:
         x = x0.copy()
         r = y - Op.matvec(x)
