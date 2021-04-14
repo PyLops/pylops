@@ -45,7 +45,7 @@ def cg(Op, y, x0, niter=10, damp=0., tol=1e-4, show=False, callback=None):
     using conjugate gradient iterations.
 
     """
-    ncp = get_array_module(x0)
+    ncp = get_array_module(y)
 
     if show:
         tstart = time.time()
@@ -167,7 +167,7 @@ def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
     where :math:`\epsilon` is the damping coefficient.
 
     """
-    ncp = get_array_module(x0)
+    ncp = get_array_module(y)
 
     if show:
         tstart = time.time()
@@ -354,7 +354,7 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
            'Cond(Opbar) seems to be too large for this machine         ',
            'The iteration limit has been reached                      ')
 
-    ncp = get_array_module(x0)
+    ncp = get_array_module(y)
     m, n = Op.shape
 
     var = None
