@@ -41,7 +41,7 @@ def test_cg(par):
         x0 = np.random.normal(0, 10, par['nx']) + \
              par['imag'] * np.random.normal(0, 10, par['nx'])
     else:
-        x0 = np.zeros_like(x)
+        x0 = None
 
     y = Aop * x
     xinv = cg(Aop, y, x0=x0, niter=par['nx'], tol=1e-5, show=True)[0]
@@ -64,7 +64,7 @@ def test_cgls(par):
         x0 = np.random.normal(0, 10, par['nx']) + \
              par['imag'] * np.random.normal(0, 10, par['nx'])
     else:
-        x0 = np.zeros_like(x)
+        x0 = None
 
     y = Aop * x
     xinv = cgls(Aop, y, x0=x0, niter=par['nx'], tol=1e-5, show=True)[0]
@@ -87,14 +87,16 @@ def test_lsqr(par):
         x0 = np.random.normal(0, 10, par['nx']) + \
              par['imag'] * np.random.normal(0, 10, par['nx'])
     else:
-        x0 = np.zeros_like(x)
-
+        x0 = None
     y = Aop * x
-
+    if par['x0']:
+        y_sp = y - Aop * x0
+    else:
+        y_sp = y.copy()
     xinv = lsqr(Aop, y, x0, niter=par['nx'])[0]
-
-    xinv_sp = sp_lsqr(Aop, y - Aop * x0, iter_lim=par['nx'])[0]
-    xinv_sp += x0
+    xinv_sp = sp_lsqr(Aop, y_sp, iter_lim=par['nx'])[0]
+    if par['x0']:
+        xinv_sp += x0
 
     assert_array_almost_equal(xinv, x, decimal=4)
     assert_array_almost_equal(xinv_sp, x, decimal=4)
