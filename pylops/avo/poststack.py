@@ -350,16 +350,19 @@ def PoststackInversion(data, wav, m0=None, explicit=False,
         else:
             # Blockiness-promoting inversion with spatial regularization
             if dims == 1:
-                RegL1op = FirstDerivative(nt0, dtype=PPop.dtype)
+                RegL1op = FirstDerivative(nt0, kind='forward',
+                                          dtype=PPop.dtype)
                 RegL2op = None
             elif dims == 2:
                 RegL1op = FirstDerivative(nt0 * nx, dims=(nt0, nx),
-                                          dir=0, dtype=PPop.dtype)
+                                          dir=0, kind='forward',
+                                          dtype=PPop.dtype)
                 RegL2op = SecondDerivative(nt0 * nx, dims=(nt0, nx),
                                            dir=1, dtype=PPop.dtype)
             else:
                 RegL1op = FirstDerivative(nt0 * nx * ny, dims=(nt0, nx, ny),
-                                          dir=0, dtype=PPop.dtype)
+                                          dir=0, kind='forward',
+                                          dtype=PPop.dtype)
                 RegL2op = Laplacian((nt0, nx, ny), dirs=(1, 2),
                                     dtype=PPop.dtype)
 
