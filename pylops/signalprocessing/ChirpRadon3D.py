@@ -25,7 +25,7 @@ class ChirpRadon3D(LinearOperator):
 
     Apply Radon forward (and adjoint) transform using Fast Fourier Transform
     and Chirp functions to a 3-dimensional array of size
-    :math:`[n_x \times n_t]` (and :math:`[n_{x} \times n_t]`).
+    :math:`[n_y \times n_x \times n_t]` (both in forward and adjoint mode).
 
     Note that forward and adjoint are swapped compared to the time-space
     implementation in :class:`pylops.signalprocessing.Radon3D` and a direct
@@ -76,18 +76,10 @@ class ChirpRadon3D(LinearOperator):
         self.dx = hxaxis[1] - hxaxis[0]
         self.nt, self.nx, self.ny = taxis.size, hxaxis.size, hyaxis.size
         self.pmax = pmax
-        if engine == 'fftw' and pyfftw is not None:
-            self.func = lambda x, mode: _chirp_radon_3d_fftw(x, self.dt,
-                                                             self.dy, self.dx,
-                                                             self.pmax,
-                                                             mode=mode,
-                                                             **kwargs_fftw)
-        elif engine == 'numpy' or (engine == 'fftw' and pyfftw is None):
-            self.func = lambda x, mode: _chirp_radon_3d(x, self.dt,
-                                                        self.dy, self.dx,
-                                                        self.pmax, mode=mode)
-        else:
+        self.engine = engine
+        if self.engine not in ['fftw', 'numpy']:
             raise NotImplementedError('engine must be numpy or fftw')
+        self.kwargs_fftw = kwargs_fftw
         self.shape = (self.nt * self.nx * self.ny,
                       self.nt * self.nx * self.ny)
         self.dtype = np.dtype(dtype)
@@ -95,15 +87,39 @@ class ChirpRadon3D(LinearOperator):
 
     def _matvec(self, x):
         x = x.reshape(self.ny, self.nx, self.nt)
-        y = self.func(x, mode='f', )
+        if self.engine == 'fftw' and pyfftw is not None:
+            y = _chirp_radon_3d_fftw(x, self.dt,
+                                     self.dy, self.dx,
+                                     self.pmax, mode='f',
+                                     **self.kwargs_fftw)
+        else:
+            y = _chirp_radon_3d(x, self.dt,
+                                self.dy, self.dx,
+                                self.pmax, mode='f')
         return y.ravel()
 
     def _rmatvec(self, x):
         x = x.reshape(self.ny, self.nx, self.nt)
-        y = self.func(x, mode='a')
+        if self.engine == 'fftw' and pyfftw is not None:
+            y = _chirp_radon_3d_fftw(x, self.dt,
+                                     self.dy, self.dx,
+                                     self.pmax, mode='a',
+                                     **self.kwargs_fftw)
+        else:
+            y = _chirp_radon_3d(x, self.dt,
+                                self.dy, self.dx,
+                                self.pmax, mode='a')
         return y.ravel()
 
     def inverse(self, x):
         x = x.reshape(self.ny, self.nx, self.nt)
-        y = self.func(x, mode='i')
+        if self.engine == 'fftw' and pyfftw is not None:
+            y = _chirp_radon_3d_fftw(x, self.dt,
+                                     self.dy, self.dx,
+                                     self.pmax, mode='i',
+                                     **self.kwargs_fftw)
+        else:
+            y = _chirp_radon_3d(x, self.dt,
+                                self.dy, self.dx,
+                                self.pmax, mode='i')
         return y.ravel()
