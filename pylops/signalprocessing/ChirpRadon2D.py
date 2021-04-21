@@ -12,7 +12,7 @@ class ChirpRadon2D(LinearOperator):
 
     Apply Radon forward (and adjoint) transform using Fast
     Fourier Transform and Chirp functions to a 2-dimensional array of size
-    :math:`[n_x \times n_t]` (and :math:`[n_{x} \times n_t]`).
+    :math:`[n_x \times n_t]` (both in forward and adjoint mode).
 
     Note that forward and adjoint are swapped compared to the time-space
     implementation in :class:`pylops.signalprocessing.Radon2D` and a direct
