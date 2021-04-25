@@ -10,7 +10,7 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
 def Sliding3D(Op, dims, dimsd, nwin, nover, nop,
-              tapertype='hanning', design=False):
+              tapertype='hanning', design=False, nproc=1):
     """3D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to patches of the model
@@ -112,10 +112,10 @@ def Sliding3D(Op, dims, dimsd, nwin, nover, nop,
                             nwins1 * Op.shape[1]//(nop[0]*dims[2])))
     # transform to apply
     if tapertype is None:
-        OOp = BlockDiag([Op for _ in range(nwins)])
+        OOp = BlockDiag([Op for _ in range(nwins)], nproc=nproc)
     else:
         OOp = BlockDiag([Diagonal(tap.flatten()) * Op
-                         for _ in range(nwins)])
+                         for _ in range(nwins)], nproc=nproc)
 
     hstack = HStack([Restriction(dimsd[1] * dimsd[2] * nwin[0],
                                  range(win_in, win_end),
