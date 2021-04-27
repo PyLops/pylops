@@ -6,7 +6,7 @@ This section lists various conference abstracts and papers using the
 PyLops framework:
 
 
--  Vakalis, S.Chen, D., Yan, M., and Nanzer, J. A.,
+- Vakalis, S.Chen, D., Yan, M., and Nanzer, J. A.,
   *Image enhancement in active incoherent millimeter-wave imaging*.
   Passive and Active Millimeter-Wave Imaging XXIV 11745
   `link <https://www.spiedigitallibrary.org/conference-proceedings-of-spie/11745/1174507/Image-enhancement-in-active-incoherent-millimeter-wave-imaging/10.1117/12.2585650.short>`_ (2021).
