@@ -6,7 +6,12 @@ This section lists various conference abstracts and papers using the
 PyLops framework:
 
 
-- X Li, X., Becker, T., Ravasi,  M., Robertsson, J., van Manen D.J.,
+-  Vakalis, S.Chen, D., Yan, M., and Nanzer, J. A.,
+  *Image enhancement in active incoherent millimeter-wave imaging*.
+  Passive and Active Millimeter-Wave Imaging XXIV 11745
+  `link <https://www.spiedigitallibrary.org/conference-proceedings-of-spie/11745/1174507/Image-enhancement-in-active-incoherent-millimeter-wave-imaging/10.1117/12.2585650.short>`_ (2021).
+
+- Li, X., Becker, T., Ravasi,  M., Robertsson, J., and van Manen D.J.,
   *Closed-aperture unbounded acoustics experimentation using multidimensional deconvolution*.
   The Journal of the Acoustical Society of America 149 (3), 1813-1828
   `link <https://asa.scitation.org/doi/abs/10.1121/10.0003706>`_ (2021).
@@ -15,12 +20,12 @@ PyLops framework:
   seismic data using Deep Learning.* arXiv,
   `link <https://arxiv.org/abs/2101.09554>`_ (2021).
 
-- Ravasi, M., and, Birnie, C., *A Joint Inversion-Segmentation approach to Assisted Seismic Interpretation.*
+- Ravasi, M., and Birnie, C., *A Joint Inversion-Segmentation approach to Assisted Seismic Interpretation.*
   arXiv,
   `link <https://arxiv.org/abs/2102.03860>`_
   - `code <https://github.com/DIG-Kaust/HTracker>`_ (2021).
 
-- Haindl, C., Ravasi, M., Broggini, F., *Handling gaps in acquisition geometries —
+- Haindl, C., Ravasi, M., and Broggini, F., *Handling gaps in acquisition geometries —
   Improving Marchenko-based imaging using sparsity-promoting inversion and joint inversion
   of time-lapse data.* Geophysics, 86 (2), S143-S154
   `link <https://library.seg.org/doi/abs/10.1190/geo2020-0036.1>`_
@@ -32,7 +37,7 @@ PyLops framework:
   International Society for Optics and Photonics,
   `link <https://www.spiedigitallibrary.org/conference-proceedings-of-spie/11602/116020Y/Sparsifying-regularizations-for-stochastic-sample-average-minimization-in-ultrasound-computed/10.1117/12.2580926.full>`_ (2021).
 
-- R Feng, R., Mejer Hansen, T., Grana, D., Balling, N., *An unsupervised
+- R Feng, R., Mejer Hansen, T., Grana, D., and Balling, N., *An unsupervised
   deep-learning method for porosity estimation based on poststack seismic data.*
   Geophysics, 85 (6), M97-M105.
   `link <https://library.seg.org/doi/full/10.1190/geo2020-0121.1>`_ (2020).
