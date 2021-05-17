@@ -7,17 +7,17 @@ from pylops.utils import dottest
 from pylops.signalprocessing import Interp, Bilinear
 
 par1 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 0,
-        'dtype':'float32', 'kind': 'nearest'}  # real, nearest
+        'dtype':'float64', 'kind': 'nearest'}  # real, nearest
 par2 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 1j,
-        'dtype':'complex64', 'kind': 'nearest'} # complex, nearest
+        'dtype':'complex128', 'kind': 'nearest'} # complex, nearest
 par3 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 0,
-        'dtype': 'float32', 'kind': 'linear'}  # real, linear
+        'dtype': 'float64', 'kind': 'linear'}  # real, linear
 par4 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 1j,
-        'dtype': 'complex64', 'kind': 'linear'}  # complex, linear
+        'dtype': 'complex128', 'kind': 'linear'}  # complex, linear
 par5 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 0,
-        'dtype': 'float32', 'kind': 'sinc'}  # real, sinc
+        'dtype': 'float64', 'kind': 'sinc'}  # real, sinc
 par6 = {'ny': 21, 'nx': 11, 'nt': 20, 'imag': 1j,
-        'dtype': 'complex64', 'kind': 'sinc'}  # complex, sinc
+        'dtype': 'complex128', 'kind': 'sinc'}  # complex, sinc
 
 # subsampling factor
 perc_subsampling = 0.4
@@ -297,6 +297,7 @@ def test_Bilinear_2dsignal(par):
 def test_Bilinear_3dsignal(par):
     """Dot-test and forward for Interp operator for 3d signal
     """
+    np.random.seed(1)
     x = np.random.normal(0, 1, (par['ny'], par['nx'], par['nt'])) + \
         par['imag'] * np.random.normal(0, 1, (par['ny'], par['nx'], par['nt']))
 

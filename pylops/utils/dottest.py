@@ -101,8 +101,8 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
     else:
         checkreal = np.abs((np.real(yy) - np.real(xx)) /
                            ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
-        checkimag = np.abs((np.real(yy) - np.real(xx)) /
-                           ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
+        checkimag = np.abs((np.imag(yy) - np.imag(xx)) /
+                           ((np.imag(yy) + np.imag(xx)+1e-15) / 2)) < tol
         if checkreal and checkimag:
             if verb:
                 print('Dot test passed, v^T(Opu)=%f%+fi - u^T(Op^Tv)=%f%+fi'
