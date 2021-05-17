@@ -73,12 +73,8 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
     y = Op.matvec(u)   # Op * u
     x = Op.rmatvec(v)  # Op'* v
 
-    if complexflag == 0:
-        yy = ncp.dot(y, v) # (Op  * u)' * v
-        xx = ncp.dot(u, x) # u' * (Op' * v)
-    else:
-        yy = ncp.vdot(y, v) # (Op  * u)' * v
-        xx = ncp.vdot(u, x) # u' * (Op' * v)
+    yy = ncp.vdot(y, v) # (Op  * u)' * v
+    xx = ncp.vdot(u, x) # u' * (Op' * v)
 
     # convert back to numpy (in case cupy arrays where used), make into a numpy
     # array and extract the first element. This is ugly but allows to handle
