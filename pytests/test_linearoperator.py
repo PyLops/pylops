@@ -4,16 +4,17 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from pylops import LinearOperator
-from pylops.basicoperators import MatrixMult, VStack, HStack, Diagonal, Zero
+from pylops.utils import dottest
+from pylops.basicoperators import MatrixMult, VStack, HStack, Diagonal, Zero, Real
 
 par1 = {'ny': 11, 'nx': 11,
-        'imag': 0, 'dtype':'float32'}  # square real
+        'imag': 0, 'dtype':'float64'}  # square real
 par2 = {'ny': 21, 'nx': 11,
-        'imag': 0, 'dtype':'float32'}  # overdetermined real
+        'imag': 0, 'dtype':'float64'}  # overdetermined real
 par1j = {'ny': 11, 'nx': 11,
-         'imag': 1j, 'dtype':'complex64'} # square imag
+         'imag': 1j, 'dtype':'complex128'} # square imag
 par2j = {'ny': 21, 'nx': 11,
-         'imag': 1j, 'dtype': 'complex64'}  # overdetermined imag
+         'imag': 1j, 'dtype': 'complex128'}  # overdetermined imag
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
@@ -204,3 +205,42 @@ def test_realimag(par):
 
     assert_array_equal(np.real(x), xr)
     assert_array_equal(np.imag(x), -xi)
+
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_rlinear(par):
+    """R-linear
+    """
+    np.random.seed(123)
+    if np.dtype(par['dtype']).kind == 'c':
+        M = ((np.random.randn(par['ny'], par['nx'])
+              + 1j * np.random.randn(par['ny'], par['nx']))
+             .astype(par['dtype']))
+    else:
+        M = np.random.randn(par['ny'], par['nx']).astype(par['dtype'])
+
+    OpM = MatrixMult(M, dtype=par['dtype'])
+    OpR_left = Real(par['ny'], dtype=par['dtype'])
+    OpR_right = Real(par['nx'], dtype=par['dtype'])
+
+    Op_left = OpR_left * OpM
+    Op_right = OpM * OpR_right
+
+    assert Op_left.clinear == False
+    assert Op_right.clinear == False
+
+    # forward
+    x = np.random.randn(par['nx'])
+    y_left = Op_left * x
+    y_right = Op_right * x
+
+    assert_array_equal(np.real(M @ x), y_left)
+    assert_array_equal(M @ np.real(x), y_right)
+
+    # adjoint (dot product test)
+    for complexflag in range(4):
+        assert dottest(Op_left, par['ny'], par['nx'],
+                       complexflag=complexflag)
+        assert dottest(Op_right, par['ny'], par['nx'],
+                       complexflag=complexflag)

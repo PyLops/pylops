@@ -111,6 +111,8 @@ class BlockDiag(LinearOperator):
         else:
             self.dtype = np.dtype(dtype)
         self.explicit = False
+        self.clinear = all([getattr(oper, 'clinear', True)
+                            for oper in self.ops])
 
     @property
     def nproc(self):

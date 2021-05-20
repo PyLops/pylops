@@ -7,7 +7,7 @@ from scipy.sparse.linalg import lsqr
 
 from pylops.utils import dottest
 from pylops.basicoperators import MatrixMult, VStack, \
-    HStack, Block, BlockDiag
+    HStack, Block, BlockDiag, Real
 
 par1 = {'ny': 101, 'nx': 101,
         'imag': 0, 'dtype':'float32'}  # square real
@@ -281,3 +281,76 @@ def test_BlockDiag_multiproc(par):
 
     # close pool
     BDmultiop.pool.close()
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_VStack_rlinear(par):
+    """VStack operator applied to mix of R-linear and C-linear operators
+    """
+    np.random.seed(0)
+    if np.dtype(par['dtype']).kind == 'c':
+        G = ((np.random.normal(0, 10, (par['ny'], par['nx']))
+              + 1j * np.random.normal(0, 10, (par['ny'], par['nx'])))
+             .astype(par['dtype']))
+    else:
+        G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype(par['dtype'])
+    Rop = Real(dims=(par['nx'],), dtype=par['dtype'])
+
+    VSop = VStack([Rop, MatrixMult(G, dtype=par['dtype'])],
+                   dtype=par['dtype'])
+    assert VSop.clinear == False
+    assert dottest(VSop, par['nx'] + par['ny'], par['nx'],
+                   complexflag=0 if par['imag'] == 0 else 3)
+    # forward
+    x = np.random.randn(par['nx']) + par['imag']*np.random.randn(par['nx'])
+    expected = np.concatenate([np.real(x), G @ x])
+    assert_array_almost_equal(expected, VSop * x, decimal=4)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_HStack_rlinear(par):
+    """HStack operator applied to mix of R-linear and C-linear operators
+    """
+    np.random.seed(0)
+    if np.dtype(par['dtype']).kind == 'c':
+        G = ((np.random.normal(0, 10, (par['ny'], par['nx']))
+              + 1j * np.random.normal(0, 10, (par['ny'], par['nx'])))
+             .astype(par['dtype']))
+    else:
+        G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype(par['dtype'])
+    Rop = Real(dims=(par['ny'],), dtype=par['dtype'])
+
+    HSop = HStack([Rop, MatrixMult(G, dtype=par['dtype'])],
+                   dtype=par['dtype'])
+    assert HSop.clinear == False
+    assert dottest(HSop, par['ny'], par['nx'] + par['ny'],
+                   complexflag=0 if par['imag'] == 0 else 3)
+    # forward
+    x = (np.random.randn(par['nx'] + par['ny'])
+         + par['imag']*np.random.randn(par['nx'] + par['ny']))
+    expected = np.sum([np.real(x[:par['ny']]), G @ x[par['ny']:]], axis=0)
+    assert_array_almost_equal(expected, HSop * x, decimal=4)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_BlockDiag_rlinear(par):
+    """BlockDiag operator applied to mix of R-linear and C-linear operators
+    """
+    np.random.seed(0)
+    if np.dtype(par['dtype']).kind == 'c':
+        G = ((np.random.normal(0, 10, (par['ny'], par['nx']))
+              + 1j * np.random.normal(0, 10, (par['ny'], par['nx'])))
+             .astype(par['dtype']))
+    else:
+        G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype(par['dtype'])
+    Rop = Real(dims=(par['nx'],), dtype=par['dtype'])
+
+    BDop = BlockDiag([Rop, MatrixMult(G, dtype=par['dtype'])],
+                     dtype=par['dtype'])
+    assert BDop.clinear == False
+    assert dottest(BDop, par['nx'] + par['ny'], 2*par['nx'],
+                   complexflag=0 if par['imag'] == 0 else 3)
+    # forward
+    x = np.random.randn(2*par['nx']) + par['imag']*np.random.randn(2*par['nx'])
+    expected = np.concatenate([np.real(x[:par['nx']]), G @ x[par['nx']:]])
+    assert_array_almost_equal(expected, BDop * x, decimal=4)

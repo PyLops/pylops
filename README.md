@@ -220,3 +220,4 @@ A list of video tutorials to learn more about PyLops:
 * Tyler Hughes, twhughes
 * Lyubov Skopintseva, lskopintseva
 * Francesco Picetti, fpicetti
+* Alan Richardson, ar4

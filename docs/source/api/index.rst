@@ -57,6 +57,9 @@ Basic operators
     Block
     BlockDiag
     Kronecker
+    Real
+    Imag
+    Conj
 
 Smoothing and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~

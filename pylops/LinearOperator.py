@@ -44,12 +44,15 @@ class LinearOperator(spLinearOperator):
         (``True``) or not (``False``)
 
     """
-    def __init__(self, Op=None, explicit=False):
+    def __init__(self, Op=None, explicit=False, clinear=None):
         self.explicit = explicit
         if Op is not None:
             self.Op = Op
             self.shape = self.Op.shape
             self.dtype = self.Op.dtype
+            self.clinear = getattr(self.Op, 'clinear', True)
+        if clinear is not None:
+          self.clinear = clinear
 
     def _matvec(self, x):
         if callable(self.Op._matvec):
@@ -240,7 +243,11 @@ class LinearOperator(spLinearOperator):
 
         """
         if isinstance(x, LinearOperator):
-            return _ProductLinearOperator(self, x)
+            Op = _ProductLinearOperator(self, x)
+            # Output is C-Linear only if both operators are
+            Op.clinear = (getattr(self, 'clinear', True)
+                          and getattr(x, 'clinear', True))
+            return Op
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:

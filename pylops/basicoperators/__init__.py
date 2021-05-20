@@ -14,6 +14,9 @@ from .Transpose import Transpose
 from .Roll import Roll
 from .Pad import Pad
 from .Sum import Sum
+from .Real import Real
+from .Imag import Imag
+from .Conj import Conj
 
 from .VStack import VStack
 from .HStack import HStack
