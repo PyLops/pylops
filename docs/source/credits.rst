@@ -12,3 +12,4 @@ Contributors
 *  `Tyler Hughes <https://github.com/twhughes>`_, twhughes
 *  `Lyubov Skopintseva <https://github.com/lskopintseva>`_, lskopintseva
 *  `Francesco Picetti <https://github.com/fpicetti>`_, fpicetti
+*  `Alan Richardson <https://github.com/ar4>`_, ar4

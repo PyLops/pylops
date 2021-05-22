@@ -31,25 +31,26 @@ class Real(LinearOperator):
 
     .. math::
 
-        y_{i} = \Re{x_{i}} \quad \forall i=0,...,N
+        y_{i} = \Re\{x_{i}\} \quad \forall i=0,...,N
 
     In adjoint mode:
 
     .. math::
 
-        x_{i} = \Re{y_{i}} + 0i \quad \forall i=0,...,N
+        x_{i} = \Re\{y_{i}\} + 0i \quad \forall i=0,...,N
 
     """
     def __init__(self, dims, dtype='complex128'):
         self.shape = (np.prod(np.array(dims)),
                       np.prod(np.array(dims)))
         self.dtype = np.dtype(dtype)
+        self.rdtype = np.real(np.ones(1, self.dtype)).dtype
         self.explicit = False
         self.clinear = False
 
     def _matvec(self, x):
         ncp = get_array_module(x)
-        return ncp.real(x).astype(self.dtype)
+        return ncp.real(x).astype(self.rdtype)
 
     def _rmatvec(self, x):
         ncp = get_array_module(x)

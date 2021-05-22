@@ -179,7 +179,7 @@ def test_apply_columns_explicit(par):
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_realimag(par):
-    """Real/imag operator
+    """Real/imag extraction
     """
     M = np.random.normal(0, 1, (par['ny'], par['nx'])) + \
         1j * np.random.normal(0, 1, (par['ny'], par['nx']))
@@ -205,7 +205,6 @@ def test_realimag(par):
 
     assert_array_equal(np.real(x), xr)
     assert_array_equal(np.imag(x), -xi)
-
 
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
