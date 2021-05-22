@@ -44,12 +44,15 @@ class LinearOperator(spLinearOperator):
         (``True``) or not (``False``)
 
     """
-    def __init__(self, Op=None, explicit=False):
+    def __init__(self, Op=None, explicit=False, clinear=None):
         self.explicit = explicit
         if Op is not None:
             self.Op = Op
             self.shape = self.Op.shape
             self.dtype = self.Op.dtype
+            self.clinear = getattr(self.Op, 'clinear', True)
+        if clinear is not None:
+          self.clinear = clinear
 
     def _matvec(self, x):
         if callable(self.Op._matvec):
@@ -240,7 +243,11 @@ class LinearOperator(spLinearOperator):
 
         """
         if isinstance(x, LinearOperator):
-            return _ProductLinearOperator(self, x)
+            Op = _ProductLinearOperator(self, x)
+            # Output is C-Linear only if both operators are
+            Op.clinear = (getattr(self, 'clinear', True)
+                          and getattr(x, 'clinear', True))
+            return Op
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
@@ -768,12 +775,16 @@ class _ColumnLinearOperator(LinearOperator):
 
 
 class _RealImagLinearOperator(LinearOperator):
-    """Real-Imag linear operator
+    """Real-Imag extraction
 
     Computes forward and adjoint passes of an operator Op and returns only
     its real (or imaginary) component. Note that for the adjoint step the
     output must be complex conjugated (i.e. opposite of the imaginary part is
-    returned)
+    returned). In general this is neither a C-linear nor R-linear operator as
+    the operations are not swapped in the adjoint step. It should be used only
+    when we want to transform a complex system of equations with real-valued
+    model in a system of two sets of equations, one for the real component and
+    one for the imaginary component (see associated Tutorial).
     """
     def __init__(self, Op, forw=True, adj=True, real=True):
         if not isinstance(Op, spLinearOperator):

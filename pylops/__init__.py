@@ -20,6 +20,9 @@ from .basicoperators import HStack
 from .basicoperators import Block
 from .basicoperators import BlockDiag
 from .basicoperators import Kronecker
+from .basicoperators import Real
+from .basicoperators import Imag
+from .basicoperators import Conj
 
 from .basicoperators import CausalIntegration
 from .basicoperators import FirstDerivative

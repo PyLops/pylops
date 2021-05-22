@@ -7,18 +7,18 @@ from scipy.sparse.linalg import lsqr
 
 from pylops.utils import dottest
 from pylops.basicoperators import Regression, LinearRegression, MatrixMult, \
-    Identity, Zero, Flip, Symmetrize, Roll, Sum
+    Identity, Zero, Flip, Symmetrize, Roll, Sum, Real, Imag, Conj
 
 par1 = {'ny': 11, 'nx': 11, 'imag': 0,
-        'dtype':'float32'}  # square real
+        'dtype':'float64'}  # square real
 par2 = {'ny': 21, 'nx': 11, 'imag': 0,
-        'dtype':'float32'}  # overdetermined real
+        'dtype':'float64'}  # overdetermined real
 par1j = {'ny': 11, 'nx': 11, 'imag': 1j,
-         'dtype':'complex64'} # square complex
+         'dtype':'complex128'} # square complex
 par2j = {'ny': 21, 'nx': 11, 'imag': 1j,
-         'dtype':'complex64'} # overdetermined complex
+         'dtype':'complex128'} # overdetermined complex
 par3 = {'ny': 11, 'nx': 21, 'imag': 0,
-        'dtype':'float32'}  # underdetermined real
+        'dtype':'float64'}  # underdetermined real
 
 np.random.seed(10)
 
@@ -421,3 +421,74 @@ def test_Sum3D(par):
         Sop = Sum(dims=(par['ny'], par['nx'], par['nx']),
                   dir=dir, dtype=par['dtype'])
         assert dottest(Sop, np.prod(dim_d), par['ny'] * par['nx'] * par['nx'])
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Real(par):
+    """Dot-test, forward and adjoint for Real operator
+    """
+    Rop = Real(dims=(par['ny'], par['nx']), dtype=par['dtype'])
+    if np.dtype(par['dtype']).kind == 'c':
+      complexflag = 3
+    else:
+      complexflag = 0
+    assert dottest(Rop, par['ny'] * par['nx'], par['ny'] * par['nx'],
+                   complexflag=complexflag)
+
+    np.random.seed(10)
+    x = (np.random.randn(par['nx'] * par['ny'])
+         + par['imag'] * np.random.randn(par['nx'] * par['ny']))
+    y = Rop * x
+    assert_array_equal(y, np.real(x))
+    y = (np.random.randn(par['nx'] * par['ny'])
+         + par['imag'] * np.random.randn(par['nx'] * par['ny']))
+    x = Rop.H * y
+    assert_array_equal(x, np.real(y) + 0j)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Imag(par):
+    """Dot-test, forward and adjoint for Imag operator
+    """
+    Iop = Imag(dims=(par['ny'], par['nx']), dtype=par['dtype'])
+    if np.dtype(par['dtype']).kind == 'c':
+      complexflag = 3
+    else:
+      complexflag = 0
+    assert dottest(Iop, par['ny'] * par['nx'], par['ny'] * par['nx'],
+                   complexflag=complexflag)
+
+    np.random.seed(10)
+    x = (np.random.randn(par['nx'] * par['ny'])
+         + par['imag'] * np.random.randn(par['nx'] * par['ny']))
+    y = Iop * x
+    assert_array_equal(y, np.imag(x))
+    y = (np.random.randn(par['nx'] * par['ny'])
+         + par['imag'] * np.random.randn(par['nx'] * par['ny']))
+    x = Iop.H * y
+    if np.dtype(par['dtype']).kind == 'c':
+      assert_array_equal(x, 0 + 1j*np.real(y))
+    else:
+      assert_array_equal(x, 0)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Conj(par):
+    """Dot-test, forward and adjoint for Conj operator
+    """
+    Cop = Conj(dims=(par['ny'], par['nx']), dtype=par['dtype'])
+    if np.dtype(par['dtype']).kind == 'c':
+      complexflag = 3
+    else:
+      complexflag = 0
+    assert dottest(Cop, par['ny'] * par['nx'], par['ny'] * par['nx'],
+                   complexflag=complexflag)
+
+    np.random.seed(10)
+    x = (np.random.randn(par['nx'] * par['ny'])
+         + par['imag'] * np.random.randn(par['nx'] * par['ny']))
+    y = Cop * x
+    xadj = Cop.H * y
+    assert_array_equal(x, xadj)
+    assert_array_equal(y, np.conj(x))
+    assert_array_equal(xadj, np.conj(y))

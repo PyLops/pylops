@@ -73,10 +73,15 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
     y = Op.matvec(u)   # Op * u
     x = Op.rmatvec(v)  # Op'* v
 
-    yy = ncp.vdot(y, v) # (Op  * u)' * v
-    xx = ncp.vdot(u, x) # u' * (Op' * v)
+    if getattr(Op, 'clinear', True):
+      yy = ncp.vdot(y, v) # (Op  * u)' * v
+      xx = ncp.vdot(u, x) # u' * (Op' * v)
+    else:
+      # Op is only R-linear, so treat complex numbers as elements of R^2
+      yy = ncp.dot(y.real, v.real) + ncp.dot(y.imag, v.imag)
+      xx = ncp.dot(u.real, x.real) + ncp.dot(u.imag, x.imag)
 
-    # convert back to numpy (in case cupy arrays where used), make into a numpy
+    # convert back to numpy (in case cupy arrays were used), make into a numpy
     # array and extract the first element. This is ugly but allows to handle
     # complex numbers in subsequent prints also when using cupy arrays.
     xx, yy = np.array([to_numpy(xx)])[0], np.array([to_numpy(yy)])[0]
