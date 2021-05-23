@@ -52,7 +52,7 @@ class LinearOperator(spLinearOperator):
             self.dtype = self.Op.dtype
             self.clinear = getattr(self.Op, 'clinear', True)
         if clinear is not None:
-          self.clinear = clinear
+            self.clinear = clinear
 
     def _matvec(self, x):
         if callable(self.Op._matvec):
@@ -73,8 +73,6 @@ class LinearOperator(spLinearOperator):
         else:
             y = np.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
         return y
-
-        return np.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
 
     def __mul__(self, x):
         y = super().__mul__(x)
@@ -489,7 +487,7 @@ class LinearOperator(spLinearOperator):
                                          'for non-symmetric square matrices of '
                                          'complex type...')
                     if symmetric and uselobpcg:
-                        X = np.random.rand(self.shape[0], neigs)
+                        X = np.random.rand(self.shape[0], neigs).astype(self.dtype)
                         eigenvalues = \
                             sp_lobpcg(self.A, X=X, maxiter=niter,
                                       **kwargs_eig)[0]
@@ -506,7 +504,7 @@ class LinearOperator(spLinearOperator):
                                                          self.A)))
                 else:
                     if uselobpcg:
-                        X = np.random.rand(self.shape[1], neigs)
+                        X = np.random.rand(self.shape[1], neigs).astype(self.dtype)
                         eigenvalues = np.sqrt(sp_lobpcg(
                             np.dot(np.conj(self.A.T), self.A),
                             X=X, maxiter=niter, **kwargs_eig)[0])
@@ -523,7 +521,7 @@ class LinearOperator(spLinearOperator):
                                      'non symmetric square matrices of '
                                      'complex type...')
                 if symmetric and uselobpcg:
-                    X = np.random.rand(self.shape[0], neigs)
+                    X = np.random.rand(self.shape[0], neigs).astype(self.dtype)
                     eigenvalues = \
                         sp_lobpcg(self, X=X, maxiter=niter, **kwargs_eig)[0]
                 elif symmetric:
@@ -534,7 +532,7 @@ class LinearOperator(spLinearOperator):
                                           **kwargs_eig)[0]
             else:
                 if uselobpcg:
-                    X = np.random.rand(self.shape[1], neigs)
+                    X = np.random.rand(self.shape[1], neigs).astype(self.dtype)
                     eigenvalues = np.sqrt(sp_lobpcg(self.H * self, X=X,
                                                     maxiter=niter,
                                                     **kwargs_eig)[0])
@@ -775,16 +773,12 @@ class _ColumnLinearOperator(LinearOperator):
 
 
 class _RealImagLinearOperator(LinearOperator):
-    """Real-Imag extraction
+    """Real-Imag linear operator
 
     Computes forward and adjoint passes of an operator Op and returns only
     its real (or imaginary) component. Note that for the adjoint step the
     output must be complex conjugated (i.e. opposite of the imaginary part is
-    returned). In general this is neither a C-linear nor R-linear operator as
-    the operations are not swapped in the adjoint step. It should be used only
-    when we want to transform a complex system of equations with real-valued
-    model in a system of two sets of equations, one for the real component and
-    one for the imaginary component (see associated Tutorial).
+    returned)
     """
     def __init__(self, Op, forw=True, adj=True, real=True):
         if not isinstance(Op, spLinearOperator):
