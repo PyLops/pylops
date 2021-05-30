@@ -9,13 +9,13 @@ from pylops.basicoperators import MatrixMult, Identity, \
     Kronecker, FirstDerivative
 
 par1 = {'ny': 11, 'nx': 11,
-        'imag': 0, 'dtype':'float32'}  # square real
+        'imag': 0, 'dtype':'float64'}  # square real
 par2 = {'ny': 21, 'nx': 11,
-        'imag': 0, 'dtype':'float32'}  # overdetermined real
+        'imag': 0, 'dtype':'float64'}  # overdetermined real
 par1j = {'ny': 11, 'nx': 11,
-         'imag': 1j, 'dtype':'complex64'} # square imag
+         'imag': 1j, 'dtype':'complex128'} # square imag
 par2j = {'ny': 21, 'nx': 11,
-         'imag': 1j, 'dtype':'complex64'} # overdetermined imag
+         'imag': 1j, 'dtype':'complex128'} # overdetermined imag
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])

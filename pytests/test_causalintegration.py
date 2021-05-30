@@ -10,22 +10,21 @@ from pylops.optimization.leastsquares import \
     RegularizedInversion, PreconditionedInversion
 
 par1 = {'nt': 20, 'nx': 101, 'dt': 1., 'imag': 0,
-        'dtype':'float32'}  # even samples, real, unitary step
+        'dtype':'float64'}  # even samples, real, unitary step
 par2 = {'nt': 21, 'nx': 101, 'dt': 1., 'imag': 0,
-        'dtype': 'float32'}  # odd samples, real, unitary step
+        'dtype': 'float64'}  # odd samples, real, unitary step
 par3 = {'nt': 20, 'nx': 101, 'dt': .3, 'imag': 0,
-        'dtype': 'float32'}  # even samples, real, non-unitary step
+        'dtype': 'float64'}  # even samples, real, non-unitary step
 par4 = {'nt': 21, 'nx': 101, 'dt': .3,
         'imag': 0, 'dtype': 'float32'}  # odd samples, real, non-unitary step
 par1j = {'nt': 20, 'nx': 101, 'dt': 1., 'imag': 1j,
-         'dtype': 'complex64'}  # even samples, complex, unitary step
+         'dtype': 'complex128'}  # even samples, complex, unitary step
 par2j = {'nt': 21, 'nx': 101, 'dt': 1., 'imag': 1j,
-         'dtype': 'complex64'}  # odd samples, complex, unitary step
+         'dtype': 'complex128'}  # odd samples, complex, unitary step
 par3j = {'nt': 20, 'nx': 101, 'dt': .3, 'imag': 1j,
-         'dtype': 'complex64'}  # even samples, complex, non-unitary step
+         'dtype': 'complex128'}  # even samples, complex, non-unitary step
 par4j = {'nt': 21, 'nx': 101, 'dt': .3,
-        'imag': 1j,
-         'dtype': 'complex64'}  # odd samples, complex, non-unitary step
+        'imag': 1j, 'dtype': 'complex128'}  # odd samples, complex, non-unitary step
 
 
 @pytest.mark.parametrize("par", [(par1), (par2),

@@ -60,26 +60,32 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
 
     assert (nr, nc) == Op.shape, 'Provided nr and nc do not match operator shape'
 
+    # make u and v vectors
+    if complexflag != 0:
+        rdtype = np.real(np.ones(1, Op.dtype)).dtype
+
     if complexflag in (0, 2):
-        u = ncp.random.randn(nc)
+        u = ncp.random.randn(nc).astype(Op.dtype)
     else:
-        u = ncp.random.randn(nc) + 1j*ncp.random.randn(nc)
+        u = ncp.random.randn(nc).astype(rdtype) + \
+            1j * ncp.random.randn( nc).astype(rdtype)
 
     if complexflag in (0, 1):
-        v = ncp.random.randn(nr)
+        v = ncp.random.randn(nr).astype(Op.dtype)
     else:
-        v = ncp.random.randn(nr) + 1j*ncp.random.randn(nr)
+        v = ncp.random.randn(nr).astype(rdtype) + \
+            1j * ncp.random.randn(nr).astype(rdtype)
 
     y = Op.matvec(u)   # Op * u
     x = Op.rmatvec(v)  # Op'* v
 
     if getattr(Op, 'clinear', True):
-      yy = ncp.vdot(y, v) # (Op  * u)' * v
-      xx = ncp.vdot(u, x) # u' * (Op' * v)
+        yy = ncp.vdot(y, v) # (Op  * u)' * v
+        xx = ncp.vdot(u, x) # u' * (Op' * v)
     else:
-      # Op is only R-linear, so treat complex numbers as elements of R^2
-      yy = ncp.dot(y.real, v.real) + ncp.dot(y.imag, v.imag)
-      xx = ncp.dot(u.real, x.real) + ncp.dot(u.imag, x.imag)
+        # Op is only R-linear, so treat complex numbers as elements of R^2
+        yy = ncp.dot(y.real, v.real) + ncp.dot(y.imag, v.imag)
+        xx = ncp.dot(u.real, x.real) + ncp.dot(u.imag, x.imag)
 
     # convert back to numpy (in case cupy arrays were used), make into a numpy
     # array and extract the first element. This is ugly but allows to handle

@@ -42,7 +42,7 @@ def test_Smoothing1D(par):
     D1op = Smoothing1D(nsmooth=5, dims=(par['nz'], par['ny'], par['nx']),
                        dir=par['dir'], dtype='float32')
     assert dottest(D1op, par['nz'] * par['ny'] * par['nx'],
-                   par['nz'] * par['ny'] * par['nx'])
+                   par['nz'] * par['ny'] * par['nx'], tol=1e-3)
 
     x = np.random.normal(0, 1, (par['nz'], par['ny'], par['nx'])).flatten()
     y = D1op*x
@@ -59,7 +59,7 @@ def test_Smoothing2D(par):
     if par['dir'] < 2:
         D2op = Smoothing2D(nsmooth=(5, 5), dims=(par['ny'], par['nx']),
                            dtype='float32')
-        assert dottest(D2op, par['ny']*par['nx'], par['ny']*par['nx'])
+        assert dottest(D2op, par['ny']*par['nx'], par['ny']*par['nx'], tol=1e-3)
 
         # forward
         x = np.zeros((par['ny'], par['nx']))

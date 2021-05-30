@@ -7,13 +7,13 @@ from pylops.utils import dottest
 from pylops.basicoperators import Restriction
 
 par1 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 0,
-        'dtype':'float32', 'inplace':'True'}  # real, inplace
+        'dtype':'float64', 'inplace':'True'}  # real, inplace
 par2 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 1j,
-        'dtype':'complex64', 'inplace':'True'} # complex, inplace
+        'dtype':'complex128', 'inplace':'True'} # complex, inplace
 par3 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 0,
-        'dtype':'float32', 'inplace':'False'}  # real, out of place
+        'dtype':'float64', 'inplace':'False'}  # real, out of place
 par4 = {'ny': 21, 'nx': 11, 'nt':20, 'imag': 1j,
-        'dtype':'complex64', 'inplace':'False'} # complex, out of place
+        'dtype':'complex128', 'inplace':'False'} # complex, out of place
 
 # subsampling factor
 perc_subsampling = 0.4

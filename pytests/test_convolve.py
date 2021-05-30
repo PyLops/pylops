@@ -66,7 +66,7 @@ def test_Convolve1D(par):
     # 1D
     if par['dir'] == 0:
         Cop = Convolve1D(par['nx'], h=h1, offset=par['offset'],
-                         dtype='float32')
+                         dtype='float64')
         assert dottest(Cop, par['nx'], par['nx'])
 
         x = np.zeros((par['nx']))
@@ -78,7 +78,7 @@ def test_Convolve1D(par):
     if par['dir'] < 2:
         Cop = Convolve1D(par['ny'] * par['nx'], h=h1, offset=par['offset'],
                         dims=(par['ny'], par['nx']), dir=par['dir'],
-                        dtype='float32')
+                        dtype='float64')
         assert dottest(Cop, par['ny'] * par['nx'], par['ny'] * par['nx'])
 
         x = np.zeros((par['ny'], par['nx']))
@@ -92,7 +92,7 @@ def test_Convolve1D(par):
     Cop = Convolve1D(par['nz'] * par['ny'] * par['nx'], h=h1,
                      offset=par['offset'],
                      dims=(par['nz'], par['ny'], par['nx']), dir=par['dir'],
-                     dtype='float32')
+                     dtype='float64')
     assert dottest(Cop, par['nz'] * par['ny'] * par['nx'],
                    par['nz'] * par['ny'] * par['nx'])
 
@@ -113,7 +113,7 @@ def test_Convolve2D(par):
     # 2D on 2D
     if par['dir'] == 2:
         Cop = Convolve2D(par['ny'] * par['nx'], h=h2, offset=par['offset'],
-                         dims=(par['ny'], par['nx']), dtype='float32')
+                         dims=(par['ny'], par['nx']), dtype='float64')
         assert dottest(Cop, par['ny'] * par['nx'], par['ny'] * par['nx'])
 
         x = np.zeros((par['ny'], par['nx']))
@@ -127,7 +127,7 @@ def test_Convolve2D(par):
     Cop = Convolve2D(par['nz'] * par['ny'] * par['nx'], h=h2,
                      offset=par['offset'],
                      dims=[par['nz'], par['ny'], par['nx']],
-                     nodir=par['dir'], dtype='float32')
+                     nodir=par['dir'], dtype='float64')
     assert dottest(Cop, par['nz'] * par['ny'] * par['nx'],
                    par['nz'] * par['ny'] * par['nx'])
 
@@ -149,7 +149,7 @@ def test_Convolve3D(par):
     Cop = ConvolveND(par['nz'] * par['ny'] * par['nx'], h=h3,
                      offset=par['offset'],
                      dims=[par['nz'], par['ny'], par['nx']],
-                     dtype='float32')
+                     dtype='float64')
     assert dottest(Cop, par['nz'] * par['ny'] * par['nx'],
                    par['nz'] * par['ny'] * par['nx'])
 
@@ -168,6 +168,6 @@ def test_Convolve3D(par):
                      offset=par['offset'],
                      dims=[par['nz'], par['ny'], par['nx'], par['nt']],
                      dirs=[0, 1, 2],
-                     dtype='float32')
+                     dtype='float64')
     assert dottest(Cop, par['nz'] * par['ny'] * par['nx'] * par['nt'],
                    par['nz'] * par['ny'] * par['nx'] * par['nt'])

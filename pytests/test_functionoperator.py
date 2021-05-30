@@ -25,13 +25,15 @@ for nr, nc, dtype in itertools.product(*PARS_LISTS):
     PARS += [{'nr': nr,
               'nc': nc,
               'imag': 0 if dtype.startswith('float') else 1j,
-              'dtype': dtype}]
+              'dtype': dtype,
+              'tol':1e-3 if dtype in ['float32', 'complex64'] else 1e-6}]
 
 
 @pytest.mark.parametrize("par", PARS)
 def test_FunctionOperator(par):
     """Dot-test and inversion for FunctionOperator operator.
     """
+    print(par)
     np.random.seed(10)
     G = (np.random.normal(0, 1, (par['nr'], par['nc'])) +
          np.random.normal(0, 1, (par['nr'], par['nc'])) *
@@ -50,7 +52,8 @@ def test_FunctionOperator(par):
                                dtype=par['dtype'])
 
     assert dottest(Fop, par['nr'], par['nc'],
-                   complexflag=0 if par['imag'] == 0 else 3)
+                   complexflag=0 if par['imag'] == 0 else 3,
+                   tol=par['tol'])
 
     x = (np.ones(par['nc']) +
          np.ones(par['nc'])*par['imag']).astype(par['dtype'])

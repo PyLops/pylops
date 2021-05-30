@@ -10,13 +10,13 @@ from pylops.basicoperators import MatrixMult, VStack, \
     HStack, Block, BlockDiag, Real
 
 par1 = {'ny': 101, 'nx': 101,
-        'imag': 0, 'dtype':'float32'}  # square real
+        'imag': 0, 'dtype':'float64'}  # square real
 par2 = {'ny': 301, 'nx': 101,
-        'imag': 0, 'dtype':'float32'}  # overdetermined real
+        'imag': 0, 'dtype':'float64'}  # overdetermined real
 par1j = {'ny': 101, 'nx': 101,
-         'imag': 1j, 'dtype':'complex64'} # square imag
+         'imag': 1j, 'dtype':'complex128'} # square imag
 par2j = {'ny': 301, 'nx': 101,
-         'imag': 1j, 'dtype':'complex64'} # overdetermined imag
+         'imag': 1j, 'dtype':'complex128'} # overdetermined imag
 
 
 @pytest.mark.parametrize("par", [(par1)])
@@ -240,7 +240,6 @@ def test_Block_multiproc(par):
     G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype(par['dtype'])
     Gvert = [MatrixMult(G, dtype=par['dtype'])] * 2
     Ghor = [Gvert] * 4
-    print(Ghor)
     x = np.ones(2*par['nx']) + par['imag']*np.ones(2*par['nx'])
     y = np.ones(4*par['ny']) + par['imag']*np.ones(4*par['ny'])
 
