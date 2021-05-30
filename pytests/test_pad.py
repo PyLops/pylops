@@ -7,9 +7,9 @@ from pylops.utils import dottest
 from pylops.basicoperators import Pad
 
 par1 = {'ny': 11, 'nx': 11, 'pad':((0, 2), (4, 5)),
-        'dtype':'float32'}  # square
+        'dtype':'float64'}  # square
 par2 = {'ny': 21, 'nx': 11, 'pad':((3, 1), (0, 3)),
-        'dtype':'float32'}  # rectangular
+        'dtype':'float64'}  # rectangular
 
 np.random.seed(10)
 
