@@ -45,6 +45,21 @@ vsvp_z = np.linspace(0.4, 0.6, nt0)
 # Model
 m = np.stack((np.log(vp), np.log(vs), np.log(rho)), axis=1)
 
+fig, axs = plt.subplots(1, 3, figsize=(9, 7), sharey=True)
+axs[0].plot(m[:, 0], t0, 'k', lw=6)
+axs[0].set_title('Vp')
+axs[0].set_ylabel(r'$t(s)$')
+axs[0].invert_yaxis()
+axs[0].grid()
+axs[1].plot(m[:, 1], t0, 'k', lw=6)
+axs[1].set_title('Vs')
+axs[1].invert_yaxis()
+axs[1].grid()
+axs[2].plot(m[:, 2], t0, 'k', lw=6, label='true')
+axs[2].set_title('Rho')
+axs[2].invert_yaxis()
+axs[2].grid()
+axs[2].legend()
 
 ###############################################################################
 # We create now the operators to model the AVO responses for a set of
@@ -65,42 +80,50 @@ PPop_variant = \
 ###############################################################################
 # We can then apply those operators to the elastic model and
 # create some synthetic reflection responses
-dPP_const = PPop_const *m.flatten()
+dPP_const = PPop_const * m.ravel()
 dPP_const = dPP_const.reshape(nt0, ntheta)
 
-dPP_variant = PPop_variant *m.flatten()
+dPP_variant = PPop_variant * m.ravel()
 dPP_variant = dPP_variant.reshape(nt0, ntheta)
+
+fig, axs = plt.subplots(1, 2, figsize=(10, 5), sharey=True)
+axs[0].imshow(dPP_const, cmap='gray',
+              extent=(theta[0], theta[-1], t0[-1], t0[0]),
+              vmin=dPP_const.min(), vmax=dPP_const.max())
+axs[0].set_title('Data with constant VP/VS')
+axs[0].axis('tight')
+axs[1].imshow(dPP_variant, cmap='gray',
+              extent=(theta[0], theta[-1], t0[-1], t0[0]),
+              vmin=dPP_variant.min(), vmax=dPP_variant.max())
+axs[1].set_title('Data with variable VP/VS')
+axs[1].axis('tight')
+plt.tight_layout()
 
 
 ###############################################################################
-# Finally we invert these data and estimate the underlying elastic profiles
+# Finally we can also model the PS response by simply changing the
+# ``linearization`` choice as follows
 
-# from constant vsvp
-mest = PPop_const / dPP_const.flatten()
-mest = mest.reshape(nt0, 3)
+PSop = \
+    pylops.avo.avo.AVOLinearModelling(theta, vsvp=vsvp,
+                                      nt0=nt0, linearization='ps',
+                                      dtype=np.float64)
 
-# from depth-variant vsvp
-mest1 = PPop_const / dPP_const.flatten()
-mest1 = mest.reshape(nt0, 3)
+###############################################################################
+# We can then apply those operators to the elastic model and
+# create some synthetic reflection responses
+dPS = PSop * m.ravel()
+dPS = dPS.reshape(nt0, ntheta)
 
-fig, axs = plt.subplots(1, 3, figsize=(9, 7), sharey=True)
-axs[0].plot(m[:, 0], t0, 'k', lw=6)
-axs[0].plot(mest[:, 0], t0, '--r', lw=4)
-axs[0].plot(mest1[:, 0], t0, '-.g', lw=2)
-axs[0].set_title('Vp')
-axs[0].set_ylabel(r'$t(s)$')
-axs[0].invert_yaxis()
-axs[0].grid()
-axs[1].plot(m[:, 1], t0, 'k', lw=6)
-axs[1].plot(mest[:, 1], t0, '--r', lw=4)
-axs[1].plot(mest1[:, 1], t0, '-.g', lw=2)
-axs[1].set_title('Vs')
-axs[1].invert_yaxis()
-axs[1].grid()
-axs[2].plot(m[:, 2], t0, 'k', lw=6, label='true')
-axs[2].plot(mest[:, 2], t0, '--r', lw=4, label='est (const vsvp)')
-axs[2].plot(mest1[:, 2], t0, '-.g', lw=2, label='est (variable vsvp)')
-axs[2].set_title('Rho')
-axs[2].invert_yaxis()
-axs[2].grid()
-axs[2].legend()
+fig, axs = plt.subplots(1, 2, figsize=(10, 5), sharey=True)
+axs[0].imshow(dPP_const, cmap='gray',
+              extent=(theta[0], theta[-1], t0[-1], t0[0]),
+              vmin=dPP_const.min(), vmax=dPP_const.max())
+axs[0].set_title('PP Data')
+axs[0].axis('tight')
+axs[1].imshow(dPS, cmap='gray',
+              extent=(theta[0], theta[-1], t0[-1], t0[0]),
+              vmin=dPS.min(), vmax=dPS.max())
+axs[1].set_title('PS Data')
+axs[1].axis('tight')
+plt.tight_layout();

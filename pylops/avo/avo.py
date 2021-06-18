@@ -290,7 +290,7 @@ def akirichards(theta, vsvp, n=1):
 
     Notes
     -----
-    The three terms Aki-Richards approximation is used to compute the
+    The three terms Aki-Richards approximation [1]_ is used to compute the
     reflection coefficient as linear combination of contrasts in
     :math:`V_P`, :math:`V_S`, and :math:`\rho`. More specifically:
 
@@ -305,6 +305,8 @@ def akirichards(theta, vsvp, n=1):
     :math:`\frac{\Delta V_P}{\bar{V_P}} = 2 \frac{V_{P,2}-V_{P,1}}{V_{P,2}+V_{P,1}}`,
     :math:`\frac{\Delta V_S}{\bar{V_S}} = 2 \frac{V_{S,2}-V_{S,1}}{V_{S,2}+V_{S,1}}`, and
     :math:`\frac{\Delta \rho}{\bar{\rho}} = 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}`.
+
+    .. [1] https://wiki.seg.org/wiki/AVO_equations
 
     """
     ncp = get_array_module(theta)
@@ -335,7 +337,7 @@ def fatti(theta, vsvp, n=1):
     vsvp : :obj:`np.ndarray` or :obj:`float`
         VS/VP ratio
     n : :obj:`int`, optional
-        number of samples (if ``vsvp`` is a scalare)
+        number of samples (if ``vsvp`` is a scalar)
 
     Returns
     -------
@@ -351,7 +353,7 @@ def fatti(theta, vsvp, n=1):
 
     Notes
     -----
-    The three terms Fatti approximation is used to compute the reflection
+    The three terms Fatti approximation [1]_ is used to compute the reflection
     coefficient as linear combination of contrasts in :math:`AI`,
     :math:`SI`, and :math:`\rho`. More specifically:
 
@@ -367,6 +369,8 @@ def fatti(theta, vsvp, n=1):
     :math:`\frac{\Delta SI}{\bar{SI}} = 2 \frac{SI_2-SI_1}{SI_2+SI_1}`.
     :math:`\frac{\Delta \rho}{\bar{\rho}} = 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}`.
 
+    .. [1] https://www.subsurfwiki.org/wiki/Fatti_equation
+
     """
     ncp = get_array_module(theta)
 
@@ -379,6 +383,74 @@ def fatti(theta, vsvp, n=1):
     G1 = 0.5 * (1 + np.tan(theta) ** 2) + 0 * vsvp
     G2 = -4 * vsvp ** 2 * np.sin(theta)** 2
     G3 = 0.5 * (4 * vsvp ** 2 * np.sin(theta) ** 2 - tan(theta) ** 2)
+
+    return G1, G2, G3
+
+
+def ps(theta, vsvp, n=1):
+    r"""PS reflection coefficient
+
+    Computes the coefficients for the PS approximation
+    for a set of angles and a constant or variable VS/VP ratio.
+
+    Parameters
+    ----------
+    theta : :obj:`np.ndarray`
+        Incident angles in degrees
+    vsvp : :obj:`np.ndarray` or :obj:`float`
+        VS/VP ratio
+    n : :obj:`int`, optional
+        number of samples (if ``vsvp`` is a scalar)
+
+    Returns
+    -------
+    G1 : :obj:`np.ndarray`
+        first coefficient for VP :math:`[n_{theta}  \times  n_{vsvp}]`
+    G2 : :obj:`np.ndarray`
+        second coefficient for VS :math:`[n_{theta}  \times  n_{vsvp}]`
+    G3 : :obj:`np.ndarray`
+        third coefficient for density :math:`[n_{theta}  \times  n_{vsvp}]`
+
+    Notes
+    -----
+    The approximation in [1]_ is used to compute the PS
+    reflection coefficient as linear combination of contrasts in
+    :math:`V_P`, :math:`V_S`, and :math:`\rho`. More specifically:
+
+    .. math::
+        R(\theta) = G_2(\theta) \frac{\Delta V_S}{\bar{V_S}} + G_3(\theta)
+        \frac{\Delta \rho}{\bar{\rho}}
+
+    where :math:`G_2(\theta) = tan \theta / 2 [4 (V_S/V_P)^2 sin^2 \theta -
+    4(V_S/V_P) cos \theta cos \phi]`,
+    :math:`G_3(\theta) = -tan \theta / 2 [1 - 2 (V_S/V_P)^2 sin^2 \theta +
+    2(V_S/V_P) cos \theta cos \phi]`,
+    :math:`\frac{\Delta V_S}{\bar{V_S}} = 2 \frac{V_{S,2}-V_{S,1}}{V_{S,2}+V_{S,1}}`, and
+    :math:`\frac{\Delta \rho}{\bar{\rho}} = 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}`.
+    Note that :math:`\theta` is the P-incidence angle whilst :math:`\phi` is
+    the S-reflected angle which is computed using Snell's law and the average
+    :math:`VS/VP` ratio.
+
+    .. [1] Xu, Y., and Bancroft, J.C., "Joint AVO analysis of PP and PS
+        seismic data", CREWES Report, vol. 9. 1997.
+
+    """
+    ncp = get_array_module(theta)
+
+    theta = ncp.deg2rad(theta)
+    vsvp = vsvp * np.ones(n) if not isinstance(vsvp, np.ndarray) else vsvp
+
+    theta = theta[:, np.newaxis] if vsvp.size > 1 else theta
+    vsvp = vsvp[:, np.newaxis].T if vsvp.size > 1 else vsvp
+
+    phi = np.arcsin(vsvp * np.sin(theta))
+    #G1 = 0.0 * np.sin(theta) + 0 * vsvp
+    #G2 = (np.tan(phi) / vsvp) * (4 * np.sin(phi) ** 2 - 4 * vsvp * np.cos(theta) * np.cos(phi)) + 0 * vsvp
+    #G3 = -((np.tan(phi)) / (2 * vsvp)) * (1 + 2 * np.sin(phi) - 2 * vsvp * np.cos(theta) * np.cos(phi)) + 0 * vsvp
+
+    G1 = 0.0 * np.sin(theta) + 0 * vsvp
+    G2 = (np.tan(phi) / 2) * (4 * (vsvp * np.sin(phi)) ** 2 - 4 * vsvp * np.cos(theta) * np.cos(phi)) + 0 * vsvp
+    G3 = -(np.tan(phi) / 2) * (1 - 2 * (vsvp * np.sin(phi)) ** 2 + 2 * vsvp * np.cos(theta) * np.cos(phi)) + 0 * vsvp
 
     return G1, G2, G3
 
@@ -401,8 +473,8 @@ class AVOLinearModelling(LinearOperator):
         Number of samples along spatial axis (or axes)
         (``None`` if only one dimension is available)
     linearization : :obj:`str`, optional
-        choice of linearization, ``akirich``: Aki-Richards,
-        ``fatti``: Fatti
+        choice of linearization: ``akirich``: PP Aki-Richards,
+        ``fatti``: PP Fatti, ``ps``: PS reflection,
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -454,6 +526,8 @@ class AVOLinearModelling(LinearOperator):
             Gs = akirichards(theta, vsvp, n=self.nt0)
         elif linearization == 'fatti':
             Gs = fatti(theta, vsvp, n=self.nt0)
+        elif linearization == 'ps':
+            Gs = ps(theta, vsvp, n=self.nt0)
         else:
             logging.error('%s not an available '
                           'linearization...', linearization)

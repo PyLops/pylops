@@ -7,7 +7,7 @@ from pylops.utils.signalprocessing import convmtx
 from pylops.utils import dottest as Dottest
 from pylops import MatrixMult, FirstDerivative, Diagonal, Identity, VStack,\
     SecondDerivative, Laplacian
-from pylops.avo.avo import AVOLinearModelling, akirichards, fatti
+from pylops.avo.avo import AVOLinearModelling, akirichards, fatti, ps
 from pylops.optimization.solver import cgls
 from pylops.optimization.leastsquares import RegularizedInversion
 from pylops.optimization.sparsity import SplitBregman
@@ -16,7 +16,7 @@ from pylops.utils.backend import get_array_module, get_module_name,\
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
-_linearizations = {'akirich': 3, 'fatti': 3}
+_linearizations = {'akirich': 3, 'fatti': 3, 'ps': 3}
 
 
 def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
@@ -25,7 +25,13 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
 
     Create operator to be applied to elastic property profiles
     for generation of band-limited seismic angle gathers from a
-    linearized version of the Zoeppritz equation.
+    linearized version of the Zoeppritz equation. The input model must
+    be arranged in a vector of size :math:`n_m \times n_{t0} (\times n_x \times n_y)`
+    for ``explicit=True`` and :math:`n_{t0} \times n_m  (\times n_x \times n_y)`
+    for ``explicit=False``. Similarly the output data is arranged in a
+    vector of size :math:`n_{theta} \times n_{t0}  (\times n_x \times n_y)`
+    for ``explicit=True`` and :math:`n_{t0} \times n_{theta} (\times n_x \times n_y)`
+    for ``explicit=False``.
 
     Parameters
     ----------
@@ -43,8 +49,10 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
     spatdims : :obj:`int` or :obj:`tuple`, optional
         Number of samples along spatial axis (or axes)
         (``None`` if only one dimension is available)
-    linearization : :obj:`str`, optional
-        choice of linearization, ``akirich``: Aki-Richards, ``fatti``: Fatti
+    linearization : :obj:`str` or :obj:`func`, optional
+        choice of linearization, ``akirich``: Aki-Richards, ``fatti``: Fatti,
+        ``ps``: PS or any function on the form of
+        ``pylops.avo.avo.akirichards``
     explicit : :obj:`bool`, optional
         Create a chained linear operator (``False``, preferred for large data)
         or a ``MatrixMult`` linear operator with dense matrix
@@ -64,12 +72,11 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
     -----
     Pre-stack seismic modelling is the process of constructing seismic
     pre-stack data from three (or two) profiles of elastic parameters in time
-    (or depth) domain arranged in an input vector :math:`\mathbf{m}` of size
-    :math:`nt0 \times n\theta`. This can be easily achieved using the following
+    (or depth) domain. This can be easily achieved using the following
     forward model:
 
     .. math::
-        d(t, \theta) = w(t) * \sum_{i=1}^N G_i(t, \theta) m_i(t)
+        d(t, \theta) = w(t) * \sum_{i=1}^{n_m} G_i(t, \theta) m_i(t)
 
     where :math:`w(t)` is the time domain seismic wavelet. In compact form:
 
@@ -104,27 +111,30 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
         dims = (nt0, ntheta) + spatdims
 
     if explicit:
-        # Create derivative operator
-        D = ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=1) - \
-            ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=-1)
-        D[0] = D[-1] = 0
-        D = get_block_diag(theta)(*([D] * 3))
-
         # Create AVO operator
         if linearization == 'akirich':
-            G1, G2, G3 = akirichards(theta, vsvp, n=nt0)
+            G = akirichards(theta, vsvp, n=nt0)
         elif linearization == 'fatti':
-            G1, G2, G3 = fatti(theta, vsvp, n=nt0)
+            G = fatti(theta, vsvp, n=nt0)
+        elif linearization == 'ps':
+            G = ps(theta, vsvp, n=nt0)
+        elif callable(linearization):
+            G = linearization(theta, vsvp, n=nt0)
         else:
             logging.error('%s not an available linearization...',
                           linearization)
             raise NotImplementedError('%s not an available linearization...'
                                       % linearization)
-        G = [ncp.hstack((ncp.diag(G1[itheta] * ncp.ones(nt0, dtype=dtype)),
-                         ncp.diag(G2[itheta] * ncp.ones(nt0, dtype=dtype)),
-                         ncp.diag(G3[itheta] * ncp.ones(nt0, dtype=dtype))))
-             for itheta in range(ntheta)]
-        G = ncp.vstack(G).reshape(ntheta * nt0, 3 * nt0)
+        nG = len(G)
+        G = [ncp.hstack([ncp.diag(G_[itheta] * ncp.ones(nt0, dtype=dtype))
+                         for G_ in G]) for itheta in range(ntheta)]
+        G = ncp.vstack(G).reshape(ntheta * nt0, nG * nt0)
+
+        # Create derivative operator
+        D = ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=1) - \
+            ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=-1)
+        D[0] = D[-1] = 0
+        D = get_block_diag(theta)(*([D] * nG))
 
         # Create wavelet operator
         C = convmtx(wav, nt0)[:, len(wav) // 2:-len(wav) // 2 + 1]
@@ -178,7 +188,8 @@ def PrestackWaveletModelling(m, theta, nwav, wavc=None,
         VS/VP ratio
     linearization : :obj:`str`, optional
         choice of linearization, ``akirich``: Aki-Richards,
-        ``fatti``: Fatti
+        ``fatti``: Fatti, ``ps``: PS, or any function on the form of
+        ``pylops.avo.avo.akirichards``
 
     Returns
     -------
@@ -224,28 +235,30 @@ def PrestackWaveletModelling(m, theta, nwav, wavc=None,
     nt0 = len(vsvp)
     ntheta = len(theta)
 
-    # Create derivative operator
-    D = ncp.diag(0.5 * np.ones(nt0 - 1, dtype=dtype), k=1) - \
-        ncp.diag(0.5 * np.ones(nt0 - 1, dtype=dtype), k=-1)
-    D[0] = D[-1] = 0
-    D = get_block_diag(theta)(*([D] * 3))
-
     # Create AVO operator
     if linearization == 'akirich':
-        G1, G2, G3 = akirichards(theta, vsvp, n=nt0)
+        G = akirichards(theta, vsvp, n=nt0)
     elif linearization == 'fatti':
-        G1, G2, G3 = fatti(theta, vsvp, n=nt0)
+        G = fatti(theta, vsvp, n=nt0)
+    elif linearization == 'ps':
+        G = ps(theta, vsvp, n=nt0)
+    elif callable(linearization):
+        G = linearization(theta, vsvp, n=nt0)
     else:
         logging.error('%s not an available linearization...',
                       linearization)
         raise NotImplementedError('%s not an available linearization...'
                                   % linearization)
+    nG = len(G)
+    G = [ncp.hstack([ncp.diag(G_[itheta] * ncp.ones(nt0, dtype=dtype))
+                     for G_ in G]) for itheta in range(ntheta)]
+    G = ncp.vstack(G).reshape(ntheta * nt0, nG * nt0)
 
-    G = [ncp.hstack((ncp.diag(G1[itheta] * ncp.ones(nt0, dtype=dtype)),
-                     ncp.diag(G2[itheta] * ncp.ones(nt0, dtype=dtype)),
-                     ncp.diag(G3[itheta] * ncp.ones(nt0, dtype=dtype))))
-         for itheta in range(ntheta)]
-    G = ncp.vstack(G).reshape(ntheta * nt0, 3 * nt0)
+    # Create derivative operator
+    D = ncp.diag(0.5 * np.ones(nt0 - 1, dtype=dtype), k=1) - \
+        ncp.diag(0.5 * np.ones(nt0 - 1, dtype=dtype), k=-1)
+    D[0] = D[-1] = 0
+    D = get_block_diag(theta)(*([D] * nG))
 
     # Create infinite-reflectivity data
     M = ncp.dot(G, ncp.dot(D, m.T.flatten())).reshape(ntheta, nt0)
@@ -270,7 +283,7 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
     ----------
     data : :obj:`np.ndarray`
         Band-limited seismic post-stack data of size
-        :math:`[n_{t0} \times n_{\theta} (\times n_x \times n_y)]`
+        :math:`[(n_{lins} \times) n_{t0} \times n_{\theta} (\times n_x \times n_y)]`
     theta : :obj:`np.ndarray`
         Incident angles in degrees
     wav : :obj:`np.ndarray`
@@ -279,9 +292,10 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
     m0 : :obj:`np.ndarray`, optional
         Background model of size :math:`[n_{t0} \times n_{m}
         (\times n_x \times n_y)]`
-    linearization : :obj:`str`, optional
+    linearization : :obj:`str` or :obj:`list`, optional
         choice of linearization, ``akirich``: Aki-Richards, ``fatti``: Fatti
-        (required only when ``m0`` is ``None``)
+        ``PS``: PS or a combination of them (required only when ``m0``
+        is ``None``).
     explicit : :obj:`bool`, optional
         Create a chained linear operator (``False``, preferred for large data)
         or a ``MatrixMult`` linear operator with dense matrix
@@ -334,24 +348,38 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
         raise NotImplementedError('either m0 or linearization '
                                   'must be provided')
     elif m0 is None:
-        nm = _linearizations[linearization]
+        if isinstance(linearization, str):
+            nm = _linearizations[linearization]
+        else:
+            nm = _linearizations[linearization[0]]
     else:
         nm = m0.shape[1]
-    if data.ndim == 2:
+
+    data_shape = data.shape
+    data_ndim = data.ndim
+    n_lins = 1
+    multi = 0
+    if not isinstance(linearization, str):
+        n_lins = data_shape[0]
+        data_shape = data_shape[1:]
+        data_ndim -= 1
+        multi = 1
+
+    if data_ndim == 2:
         dims = 1
-        nt0, ntheta = data.shape
+        nt0, ntheta = data_shape
         nspat = None
         nspatprod = nx = 1
-    elif data.ndim == 3:
+    elif data_ndim == 3:
         dims = 2
-        nt0, ntheta, nx = data.shape
+        nt0, ntheta, nx = data_shape
         nspat = (nx, )
         nspatprod = nx
     else:
         dims = 3
-        nt0, ntheta, nx, ny = data.shape
+        nt0, ntheta, nx, ny = data_shape
         nspat = (nx, ny)
-        nspatprod = nx*ny
+        nspatprod = nx * ny
         data = data.reshape(nt0, ntheta, nspatprod)
 
     # check if background model and data have same shape
@@ -362,17 +390,32 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
             raise ValueError('data and m0 must have same time and space axes')
 
     # create operator
-    PPop = PrestackLinearModelling(wav, theta, nt0=nt0, spatdims=nspat,
-                                   linearization=linearization,
-                                   explicit=explicit)
+    if isinstance(linearization, str):
+        # single operator
+        PPop = PrestackLinearModelling(wav, theta, nt0=nt0, spatdims=nspat,
+                                       linearization=linearization,
+                                       explicit=explicit)
+    else:
+        # multiple operators
+        if not isinstance(wav, (list, tuple)):
+            wav = [wav,] * n_lins
+        PPop = [PrestackLinearModelling(w, theta, nt0=nt0, spatdims=nspat,
+                                       linearization=lin, explicit=explicit)
+                for w, lin in zip(wav, linearization)]
+        if explicit:
+            PPop = MatrixMult(np.vstack([Op.A for Op in PPop]), dims=nspat,
+                              dtype=PPop[0].A.dtype)
+        else:
+            PPop = VStack(PPop)
+
     if dottest:
-        Dottest(PPop, nt0*ntheta*nspatprod,
-                nt0*nm*nspatprod, raiseerror=True, verb=True,
+        Dottest(PPop, n_lins * nt0 * ntheta * nspatprod,
+                nt0 * nm * nspatprod, raiseerror=True, verb=True,
                 backend=get_module_name(ncp))
 
     # swap axes for explicit operator
     if explicit:
-        data = data.swapaxes(0, 1)
+        data = data.swapaxes(0 + multi, 1 + multi)
         if m0 is not None:
             m0 = m0.swapaxes(0, 1)
 
@@ -387,7 +430,7 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
                 # solve unregularized equations indipendently trace-by-trace
                 minv = \
                     get_lstsq(data)(PPop.A,
-                                    datar.reshape(nt0*ntheta, nspatprod).squeeze(),
+                                    datar.reshape(n_lins*nt0*ntheta, nspatprod).squeeze(),
                                     **kwargs_solver)[0]
             elif epsI is None and simultaneous:
                 # solve unregularized equations simultaneously
@@ -532,29 +575,29 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
         if explicit:
             minv = minv.reshape(nm, nt0).swapaxes(0, 1)
             if returnres:
-                datar = datar.reshape(ntheta, nt0).swapaxes(0, 1)
+                datar = datar.reshape(n_lins, ntheta, nt0).squeeze().swapaxes(0 + multi, 1 + multi)
         else:
             minv = minv.reshape(nt0, nm)
             if returnres:
-                datar = datar.reshape(nt0, ntheta)
+                datar = datar.reshape(n_lins, nt0, ntheta).squeeze()
     elif dims == 2:
         if explicit:
             minv = minv.reshape(nm, nt0, nx).swapaxes(0, 1)
             if returnres:
-                datar = datar.reshape(ntheta, nt0, nx).swapaxes(0, 1)
+                datar = datar.reshape(n_lins, ntheta, nt0, nx).squeeze().swapaxes(0 + multi, 1 + multi)
         else:
             minv = minv.reshape(nt0, nm, nx)
             if returnres:
-                datar = datar.reshape(nt0, ntheta, nx)
+                datar = datar.reshape(n_lins, nt0, ntheta, nx).squeeze()
     else:
         if explicit:
             minv = minv.reshape(nm, nt0, nx, ny).swapaxes(0, 1)
             if returnres:
-                datar = datar.reshape(ntheta, nt0, nx, ny).swapaxes(0, 1)
+                datar = datar.reshape(n_lins, ntheta, nt0, nx, ny).squeeze().swapaxes(0 + multi, 1 + multi)
         else:
             minv = minv.reshape(nt0, nm, nx, ny)
             if returnres:
-                datar = datar.reshape(nt0, ntheta, nx, ny)
+                datar = datar.reshape(n_lins, nt0, ntheta, nx, ny).squeeze()
 
     if m0 is not None and epsR is None:
         minv = minv + m0
