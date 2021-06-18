@@ -134,7 +134,7 @@ def PoststackLinearModelling(wav, nt0, spatdims=None,
     forward model:
 
     .. math::
-        d(t, \theta) =  w(t) * \frac{dln(m(t))}{dt}
+        d(t, \theta=0) =  w(t) * \frac{dln(m(t))}{dt}
 
     where :math:`m(t)` is the elastic parameter profile and
     :math:`w(t)` is the time domain seismic wavelet. In compact form:

@@ -108,3 +108,4 @@ Geophysicical Reservoir characterization
     avo.approx_zoeppritz_pp
     avo.akirichards
     avo.fatti
+    avo.ps

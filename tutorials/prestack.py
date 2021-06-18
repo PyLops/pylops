@@ -97,11 +97,11 @@ PPop_dense = \
                                                 explicit=True)
 
 # data lop
-dPP = PPop*m.flatten()
+dPP = PPop * m.flatten()
 dPP = dPP.reshape(nt0, ntheta)
 
 # data dense
-dPP_dense = PPop_dense*m.T.flatten()
+dPP_dense = PPop_dense * m.T.flatten()
 dPP_dense = dPP_dense.reshape(ntheta, nt0).T
 
 # noisy data
@@ -109,7 +109,7 @@ dPPn_dense = dPP_dense + np.random.normal(0, 1e-2, dPP_dense.shape)
 
 
 ###############################################################################
-# We can now invert our data and retreive elastic profiles for both noise-free
+# We can now invert our data and retrieve elastic profiles for both noise-free
 # and noisy data using :py:class:`pylops.avo.prestack.PrestackInversion`.
 
 # dense
@@ -144,7 +144,7 @@ minv_noise, dPPn_res = \
 ###############################################################################
 # The data, inverted models and residuals are now displayed.
 
-# Data and model
+# data and model
 fig, (axd, axdn, axvp, axvs, axrho) = \
     plt.subplots(1, 5, figsize=(8, 5), sharey=True)
 axd.imshow(dPP_dense, cmap='gray',
@@ -183,7 +183,7 @@ axrho.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 axd.axis('tight')
 plt.tight_layout()
 
-# Residuals
+# residuals
 fig, axs = plt.subplots(1, 4, figsize=(8, 5), sharey=True)
 fig.suptitle('Residuals', fontsize=14,
              fontweight='bold', y=0.95)
@@ -214,6 +214,63 @@ axs[3].set_xlabel(r'$\theta$')
 axs[3].axis('tight')
 plt.tight_layout()
 plt.subplots_adjust(top=0.85)
+
+###############################################################################
+# Finally before moving to the 2d example, we consider the case when both PP
+# and PS data are available. A joint PP-PS inversion can be easily solved
+# as follows.
+PSop = \
+    pylops.avo.prestack.PrestackLinearModelling(2 * wav, theta,
+                                                vsvp=vsvp, nt0=nt0,
+                                                linearization='ps')
+PPPSop = pylops.VStack((PPop, PSop))
+
+# data
+dPPPS = PPPSop * m.flatten()
+dPPPS = dPPPS.reshape(2, nt0, ntheta)
+
+dPPPSn = dPPPS + np.random.normal(0, 1e-2, dPPPS.shape)
+
+# Invert
+minvPPSP, dPPPS_res = \
+    pylops.avo.prestack.PrestackInversion(dPPPS, theta,
+                                          [wav, 2 * wav], m0=mback,
+                                          linearization=['fatti', 'ps'],
+                                          epsR=5e-1, returnres=True,
+                                          **dict(damp=1e-1, iter_lim=100))
+
+# Data and model
+fig, (axd, axdn, axvp, axvs, axrho) = \
+    plt.subplots(1, 5, figsize=(8, 5), sharey=True)
+axd.imshow(dPPPSn[0], cmap='gray',
+           extent=(theta[0], theta[-1], t0[-1], t0[0]),
+           vmin=-np.abs(dPPPSn[0]).max(), vmax=np.abs(dPPPSn[0]).max())
+axd.set_title('PP Data')
+axd.axis('tight')
+axdn.imshow(dPPPSn[1], cmap='gray',
+            extent=(theta[0], theta[-1], t0[-1], t0[0]),
+            vmin=-np.abs(dPPPSn[1]).max(), vmax=np.abs(dPPPSn[1]).max())
+axdn.set_title('PS Data')
+axdn.axis('tight')
+axvp.plot(vp, t0, 'k', lw=4, label='True')
+axvp.plot(np.exp(mback[:, 0]), t0, '--r', lw=4, label='Back')
+axvp.plot(np.exp(minv_noise[:, 0]), t0, '--g', lw=2, label='PP')
+axvp.plot(np.exp(minvPPSP[:, 0]), t0, '--b', lw=2, label='PP+PS')
+axvp.set_title(r'$V_P$')
+axvs.plot(vs, t0, 'k', lw=4, label='True')
+axvs.plot(np.exp(mback[:, 1]), t0, '--r', lw=4, label='Back')
+axvs.plot(np.exp(minv_noise[:, 1]), t0, '--g', lw=2, label='PP')
+axvs.plot(np.exp(minvPPSP[:, 1]), t0, '--b', lw=2, label='PP+PS')
+axvs.set_title(r'$V_S$')
+axrho.plot(rho, t0, 'k', lw=4, label='True')
+axrho.plot(np.exp(mback[:, 2]), t0, '--r', lw=4, label='Back')
+axrho.plot(np.exp(minv_noise[:, 2]), t0, '--g', lw=2, label='PP')
+axrho.plot(np.exp(minvPPSP[:, 2]), t0, '--b', lw=2, label='PP+PS')
+axrho.set_title(r'$\rho$')
+axrho.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+axd.axis('tight')
+plt.tight_layout()
+
 
 ###############################################################################
 # We move now to a 2d example. First of all the model is loaded and
