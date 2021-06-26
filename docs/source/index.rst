@@ -115,7 +115,9 @@ History
 -------
 PyLops was initially written by `Equinor <https://www.equinor.com>`_
 It is a flexible and scalable python library for large-scale optimization with linear operators
-that can be tailored to our needs, and as contribution to the free software community.
+that can be tailored to our needs, and as contribution to the free software community. Since June 2021,
+PyLops is a `NUMFOCUS <https://numfocus.org/sponsored-projects/affiliated-projects>`_ Affiliated Project.
+
 
 .. toctree::
    :maxdepth: 1
