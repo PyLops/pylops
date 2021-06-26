@@ -10,6 +10,7 @@
 ![OS-support](https://img.shields.io/badge/OS-linux,win,osx-850A8B.svg)
 [![Slack Status](https://img.shields.io/badge/chat-slack-green.svg)](https://pylops.slack.com)
 
+A [NUMFOCUS](https://numfocus.org/sponsored-projects/affiliated-projects) Affiliated Project.
 
 ## Objective
 This Python library is inspired by the MATLAB [Spot – A Linear-Operator Toolbox](http://www.cs.ubc.ca/labs/scl/spot/) project.
@@ -196,6 +197,8 @@ you are required to rebuild the entire documentation before your changes will be
 PyLops was initially written by [Equinor](https://www.equinor.com).
 It is a flexible and scalable python library for large-scale optimization with linear
 operators that can be tailored to our needs, and as contribution to the free software community.
+Since June 2021, PyLops is a [NUMFOCUS](https://numfocus.org/sponsored-projects/affiliated-projects) 
+Affiliated Project.
 
 ## Citing
 When using ``pylops`` in scientific publications, please cite the following paper:

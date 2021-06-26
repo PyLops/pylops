@@ -1328,7 +1328,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     problem:
 
     .. math::
-        J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x} |||_2^2 +
+        J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x}||_2^2 +
         \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
         \mathbf{R_{L2,i}} \textbf{x}||_2^2 +
         \sum_i || \textbf{y}_i ||_1 \quad s.t \quad
@@ -1339,7 +1339,7 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
     .. math::
         (\textbf{x}^{k+1}, \textbf{y}_i^{k+1}) =
         \operatorname*{arg\,min}_{\mathbf{x}, \mathbf{y}_i}
-        ||\textbf{d} - \textbf{Op} \textbf{x} |||_2^2 +
+        ||\textbf{d} - \textbf{Op} \textbf{x}||_2^2 +
         \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
         \mathbf{R_{L2,i}} \textbf{x}||_2^2 + \sum_i || \textbf{y}_i ||_1 +
         \sum_i \epsilon_{{R}_{L1,i}}/2 ||\textbf{y}_i -
