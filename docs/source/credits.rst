@@ -13,3 +13,4 @@ Contributors
 *  `Lyubov Skopintseva <https://github.com/lskopintseva>`_, lskopintseva
 *  `Francesco Picetti <https://github.com/fpicetti>`_, fpicetti
 *  `Alan Richardson <https://github.com/ar4>`_, ar4
+*  `BurningKarl <https://github.com/BurningKarl>`_, BurningKarl

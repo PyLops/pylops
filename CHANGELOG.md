@@ -1,3 +1,29 @@
+# 1.14.0
+* Added ``pylops.optimization.solver.lsqr`` solver
+* Added utility routine ``pylops.utils.scalability_test`` for scalability
+  tests when using ``multiprocessing``
+* Added ``pylops.avo.avo.ps`` AVO modelling option and restructured
+  ``pylops.avo.prestack.PrestackLinearModelling`` to allow passing any
+  function handle that can perform AVO modelling apart from those directly
+  available
+* Added R-linear operators (when setting the property `clinear=False` of a
+  linear operator). ``pylops.basicoperators.Real``,
+  ``pylops.basicoperators.Imag``, and ``pylops.basicoperators.Conj``
+* Added possibility to run operators ``pylops.basicoperators.HStack``,
+  ``pylops.basicoperators.VStack``, ``pylops.basicoperators.Block``
+  ``pylops.basicoperators.BlockDiag``,
+  and ``pylops.signalprocessing.Sliding3D`` using ``multiprocessing``
+* Added dtype to vector `X` when using ``scipy.sparse.linalg.lobpcg`` in
+  `eigs` method of ``pylops.LinearOperator``
+* Use `kind=forward` fot FirstDerivative  in
+  ``pylops.avo.poststack.PoststackInversion`` inversion when dealing
+  with L1 regularized inversion as it makes the inverse problem more stable
+  (no ringing in solution)
+* Changed `cost` in ``pylops.optimization.solver.cg``
+  and ``pylops.optimization.solver.cgls`` to be L2 norms of residuals
+* Fixed ``pylops.utils.dottest.dottest`` for imaginary vectors and to
+  ensure `u` and `v` vectors are of same dtype of the operator
+
 # 1.13.0
 * Added ``pylops.signalprocessing.Sliding1D`` and
   ``pylops.signalprocessing.Patch2D`` operators

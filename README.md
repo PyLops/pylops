@@ -113,7 +113,7 @@ conda install -c conda-forge pylops
 
 #### From Github
 
-You can also directly install from the master node (although this is not reccomended)
+You can also directly install from the main repository (although this is not reccomended)
 
 ```
 pip install git+https://git@github.com/PyLops/pylops.git@master
@@ -224,3 +224,4 @@ A list of video tutorials to learn more about PyLops:
 * Lyubov Skopintseva, lskopintseva
 * Francesco Picetti, fpicetti
 * Alan Richardson, ar4
+* BurningKarl, BurningKarl
