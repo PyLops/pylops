@@ -3,11 +3,40 @@
 Changelog
 =========
 
+Version 1.14.0
+--------------
+
+*Released on: 09/07/2021*
+
+* Added :py:func:`pylops.optimization.solver.lsqr` solver
+* Added utility routine :py:func:`pylops.utils.scalability_test` for scalability
+  tests when using ``multiprocessing``
+* Added :func:`pylops.avo.avo.ps` AVO modelling option and restructured
+  :func:`pylops.avo.prestack.PrestackLinearModelling` to allow passing any
+  function handle that can perform AVO modelling apart from those directly
+  available
+* Added R-linear operators (when setting the property `clinear=False` of a
+  linear operator). :py:class:`pylops.basicoperators.Real`,
+  :py:class:`pylops.basicoperators.Imag`, and :py:class:`pylops.basicoperators.Conj`
+* Added possibility to run operators :py:class:`pylops.basicoperators.HStack`,
+  :py:class:`pylops.basicoperators.VStack`, :py:class:`pylops.basicoperators.Block`
+  :py:class:`pylops.basicoperators.BlockDiag`,
+  and :py:class:`pylops.signalprocessing.Sliding3D` using ``multiprocessing``
+* Added dtype to vector `X` when using :func:`scipy.sparse.linalg.lobpcg` in
+  `eigs` method of :class:`pylops.LinearOperator`
+* Use `kind=forward` fot FirstDerivative  in
+  :py:class:`pylops.avo.poststack.PoststackInversion` inversion when dealing
+  with L1 regularized inversion as it makes the inverse problem more stable
+  (no ringing in solution)
+* Changed `cost` in :py:func:`pylops.optimization.solver.cg`
+  and :py:func:`pylops.optimization.solver.cgls` to be L2 norms of residuals
+* Fixed :py:func:`pylops.utils.dottest.dottest` for imaginary vectors and to
+  ensure `u` and `v` vectors are of same dtype of the operator
 
 Version 1.13.0
 --------------
 
-*Released on: 26/03/2020*
+*Released on: 26/03/2021*
 
 * Added :py:class:`pylops.signalprocessing.Sliding1D` and
   :py:class:`pylops.signalprocessing.Patch2D` operators
