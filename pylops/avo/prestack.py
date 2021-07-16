@@ -20,7 +20,7 @@ _linearizations = {'akirich': 3, 'fatti': 3, 'ps': 3}
 
 
 def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
-                            linearization='akirich', explicit=False):
+                            linearization='akirich', explicit=False, kind='centered'):
     r"""Pre-stack linearized seismic modelling operator.
 
     Create operator to be applied to elastic property profiles
@@ -57,6 +57,8 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
         Create a chained linear operator (``False``, preferred for large data)
         or a ``MatrixMult`` linear operator with dense matrix
         (``True``, preferred for small data)
+    kind : :obj:`str`, optional
+        Derivative kind (``forward`` or ``centered``).
 
     Returns
     -------
@@ -67,6 +69,8 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
     ------
     NotImplementedError
         If ``linearization`` is not an implemented linearization
+    NotImplementedError
+        If ``kind`` is not ``forward`` nor ``centered``
 
     Notes
     -----
@@ -90,6 +94,10 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
     """
     ncp = get_array_module(wav)
 
+    # check kind is correctly selected
+    if kind not in ['forward', 'centered']:
+        raise NotImplementedError('%s not an available derivative kind...'
+                                  % kind)
     # define dtype to be used
     dtype = theta.dtype # ensure theta.dtype rules that of operator
     theta = theta.astype(dtype)
@@ -131,9 +139,14 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
         G = ncp.vstack(G).reshape(ntheta * nt0, nG * nt0)
 
         # Create derivative operator
-        D = ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=1) - \
-            ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=-1)
-        D[0] = D[-1] = 0
+        if kind == 'centered':
+            D = ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=1) - \
+                ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=-1)
+            D[0] = D[-1] = 0
+        else:
+            D = ncp.diag(ncp.ones(nt0 - 1, dtype=dtype), k=1) - \
+                ncp.diag(ncp.ones(nt0, dtype=dtype), k=0)
+            D[-1] = 0
         D = get_block_diag(theta)(*([D] * nG))
 
         # Create wavelet operator
@@ -158,7 +171,7 @@ def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
         dimsm = list(dims)
         dimsm[1] = AVOop.npars
         Dop = FirstDerivative(np.prod(np.array(dimsm)), dims=dimsm,
-                              dir=0, sampling=1., dtype=dtype)
+                              dir=0, sampling=1., kind=kind, dtype=dtype)
         Preop = Cop * AVOop * Dop
     return Preop
 
