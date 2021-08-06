@@ -30,18 +30,10 @@ thetamin, thetamax = 0, 40
 theta = np.linspace(thetamin, thetamax, ntheta)
 
 # Parameters
-par1 = {'vsvp': 0.5, 'linearization': 'akirich',
-        'kind':'centered'} # constant vsvp with centered deriv
-par2 = {'vsvp': 0.5, 'linearization': 'fatti',
-        'kind':'centered'}  # constant vsvp with centered deriv
-par3 = {'vsvp': vs/vp, 'linearization': 'akirich',
-        'kind':'centered'} # time-variant vsvp with centered deriv
-par4 = {'vsvp': vs/vp, 'linearization': 'fatti',
-        'kind':'centered'}  # time-variant vsvp with centered deriv
-par5 = {'vsvp': 0.5, 'linearization': 'akirich',
-        'kind':'forward'} # constant vsvp with forward deriv
-par6 = {'vsvp': 0.5, 'linearization': 'fatti',
-        'kind':'forward'}  # constant vsvp with forward deriv
+par1 = {'vsvp': 0.5, 'linearization': 'akirich'} # constant vsvp
+par2 = {'vsvp': 0.5, 'linearization': 'fatti'}  # constant vsvp
+par3 = {'vsvp': vs/vp, 'linearization': 'akirich'} # time-variant vsvp
+par4 = {'vsvp': vs/vp, 'linearization': 'fatti'}  # time-variant  vsvp
 
 
 def test_zoeppritz():
@@ -122,8 +114,7 @@ def test_zoeppritz_and_approx_multipleangles():
     assert_array_almost_equal(rpp_zoep, rpp_fatti, decimal=3)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3),
-                                 (par4), (par5), (par6)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_AVOLinearModelling(par):
     """Dot-test and inversion for AVOLinearModelling
     """

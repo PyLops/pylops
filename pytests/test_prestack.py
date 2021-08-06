@@ -60,49 +60,63 @@ wav_phase = np.hstack((wav[wavoff:], np.zeros(wavoff)))
 
 # constant vsvp, aki-richards approx, unregularized, trace-by-trace
 par1 = {'vsvp': 0.5, 'linearization': 'akirich',
-        'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': False}
+        'epsR': None, 'epsRL1':None, 'epsI': None,
+        'simultaneous': False, 'kind': 'centered'}
 # constant vsvp, fatti approx, unregularized, trace-by-trace
 par2 = {'vsvp': 0.5, 'linearization': 'fatti',
-        'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': False}
+        'epsR': None, 'epsRL1':None, 'epsI': None,
+        'simultaneous': False, 'kind': 'forward'}
 # time-variant vsvp, aki-richards approx, unregularized, trace-by-trace
 par3 = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'akirich',
-        'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': False}
+        'epsR': None, 'epsRL1':None, 'epsI': None,
+        'simultaneous': False, 'kind': 'centered'}
 # time-variant  vsvp, fatti approx, unregularized, trace-by-trace
 par4 = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'fatti',
-        'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': False}
+        'epsR': None, 'epsRL1':None, 'epsI': None,
+        'simultaneous': False, 'kind': 'forward'}
 
 # constant vsvp, aki-richards approx, unregularized, simultaneous
 par1s = {'vsvp': 0.5, 'linearization': 'akirich',
-         'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': True}
+         'epsR': None, 'epsRL1':None, 'epsI': None,
+         'simultaneous': True, 'kind': 'centered'}
 # constant vsvp, fatti approx, unregularized, simultaneous
 par2s = {'vsvp': 0.5, 'linearization': 'fatti',
-         'epsR': None, 'epsRL1':None, 'epsI': None, 'simultaneous': True}
+         'epsR': None, 'epsRL1':None, 'epsI': None,
+         'simultaneous': True, 'kind': 'forward'}
 # time-variant vsvp, aki-richards approx, unregularized, simultaneous
 par3s = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'akirich',
-         'epsR': None, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
+         'epsR': None, 'epsRL1':None, 'epsI': 1e-6,
+         'simultaneous': True, 'kind': 'centered'}
 # time-variant  vsvp, fatti approx, unregularized, simultaneous
 par4s = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'fatti',
-         'epsR': None, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
+         'epsR': None, 'epsRL1':None, 'epsI': 1e-6,
+         'simultaneous': True, 'kind': 'forward'}
 
 # constant vsvp, aki-richards approx, regularized, simultaneous
 par1r = {'vsvp': 0.5, 'linearization': 'akirich',
-         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
+         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6,
+         'simultaneous': True, 'kind': 'centered'}
 # constant vsvp, fatti approx, regularized, simultaneous
 par2r = {'vsvp': 0.5, 'linearization': 'fatti',
-         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
+         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6,
+         'simultaneous': True, 'kind': 'forward'}
 # time-variant vsvp, aki-richards approx, regularized, simultaneous
 par3r = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'akirich',
-         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
+         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6,
+         'simultaneous': True, 'kind': 'centered'}
 # time-variant  vsvp, fatti approx, regularized, simultaneous
 par4r = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'fatti',
-         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6, 'simultaneous': True}
+         'epsR': 1e-4, 'epsRL1':None, 'epsI': 1e-6,
+         'simultaneous': True, 'kind': 'forward'}
 
 # constant vsvp, aki-richards approx, blocky, simultaneous
 par1b = {'vsvp': 0.5, 'linearization': 'akirich',
-         'epsR': 1e-4, 'epsRL1':1e-2, 'epsI': 1e-6, 'simultaneous': True}
+         'epsR': 1e-4, 'epsRL1':1e-2, 'epsI': 1e-6,
+         'simultaneous': True, 'kind': 'centered'}
 # time-variant vsvp, aki-richards approx, regularized, simultaneous
 par3b = {'vsvp': np.linspace(0.4, 0.6, nt0), 'linearization': 'akirich',
-         'epsR': 1e-4, 'epsRL1':1e-2, 'epsI': 1e-6, 'simultaneous': True}
+         'epsR': 1e-4, 'epsRL1':1e-2, 'epsI': 1e-6,
+         'simultaneous': True, 'kind': 'forward'}
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4),
                                  (par1s), (par2s), (par3s), (par4s),
@@ -115,14 +129,14 @@ def test_PrestackLinearModelling(par):
     #Dense
     PPop_dense = PrestackLinearModelling(wav, theta, vsvp=par['vsvp'], nt0=nt0,
                                          linearization=par['linearization'],
-                                         explicit=True)
+                                         explicit=True, kind=par['kind'])
     assert dottest(PPop_dense, nt0*ntheta,
                    nt0*_linearizations[par['linearization']])
 
     # Linear operator
     PPop = PrestackLinearModelling(wav, theta, vsvp=par['vsvp'], nt0=nt0,
                                    linearization=par['linearization'],
-                                   explicit=False)
+                                   explicit=False, kind=par['kind'])
     assert dottest(PPop, nt0*ntheta,
                    nt0*_linearizations[par['linearization']])
 
@@ -147,7 +161,7 @@ def test_PrestackLinearModelling(par):
                                  explicit=explicit, epsI=par['epsI'],
                                  epsR=par['epsR'], epsRL1=par['epsRL1'],
                                  simultaneous=par['simultaneous'],
-                                 **dict_inv)
+                                 kind=par['kind'], **dict_inv)
         print(np.linalg.norm(m - minv) / np.linalg.norm(minv))
         assert np.linalg.norm(m - minv) / np.linalg.norm(minv) < 4e-2
 
