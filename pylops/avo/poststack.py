@@ -16,7 +16,8 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
 def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
-                              sparse=False, _MatrixMult=MatrixMult,
+                              sparse=False, kind='centered',
+                              _MatrixMult=MatrixMult,
                               _Convolve1D=Convolve1D,
                               _FirstDerivative=FirstDerivative,
                               args_MatrixMult={}, args_Convolve1D={},
@@ -31,6 +32,11 @@ def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
 
     """
     ncp = get_array_module(wav)
+
+    # check kind is correctly selected
+    if kind not in ['forward', 'centered']:
+        raise NotImplementedError('%s not an available derivative kind...'
+                                  % kind)
 
     # define dtype to be used
     dtype = wav.dtype  # ensure wav.dtype rules that of operator
@@ -51,9 +57,14 @@ def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
 
     if explicit:
         # Create derivative operator
-        D = ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=1) - \
-            ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), -1)
-        D[0] = D[-1] = 0
+        if kind == 'centered':
+            D = ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=1) - \
+                ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), -1)
+            D[0] = D[-1] = 0
+        else:
+            D = ncp.diag(ncp.ones(nt0 - 1, dtype=dtype), k=1) - \
+                ncp.diag(ncp.ones(nt0, dtype=dtype), k=0)
+            D[-1] = 0
 
         # Create wavelet operator
         if len(wav.shape) == 1:
@@ -79,14 +90,15 @@ def _PoststackLinearModelling(wav, nt0, spatdims=None, explicit=False,
                               dims=spatdims, dtype=dtype, **args_MatrixMult)
         # Create derivative operator
         Dop = _FirstDerivative(np.prod(np.array(dims)), dims=dims,
-                               dir=0, sampling=1., dtype=dtype,
+                               dir=0, sampling=1., kind=kind, dtype=dtype,
                                **args_FirstDerivative)
         Pop = Cop * Dop
     return Pop
 
 
 def PoststackLinearModelling(wav, nt0, spatdims=None,
-                             explicit=False, sparse=False):
+                             explicit=False, sparse=False,
+                             kind='centered'):
     r"""Post-stack linearized seismic modelling operator.
 
     Create operator to be applied to an elastic parameter trace (or stack of
@@ -153,7 +165,8 @@ def PoststackLinearModelling(wav, nt0, spatdims=None,
 
     """
     return _PoststackLinearModelling(wav, nt0, spatdims=spatdims,
-                                     explicit=explicit, sparse=sparse)
+                                     explicit=explicit, sparse=sparse,
+                                     kind=kind)
 
 
 def PoststackInversion(data, wav, m0=None, explicit=False,

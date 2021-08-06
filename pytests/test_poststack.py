@@ -47,12 +47,16 @@ wavc = np.argmax(wavs[0])
 par1 = {'epsR': None, 'epsRL1': None, 'epsI': None,
         'simultaneous': False} # unregularized
 par2 = {'epsR': 1e-4, 'epsRL1': None, 'epsI': 1e-6,
-        'simultaneous': False} # regularized
-par3 = {'epsR': None, 'epsRL1': None, 'epsI': None,
+        'simultaneous': False, 'kind': 'centered'} # regularized, centered
+par3 = {'epsR': 1e-4, 'epsRL1': None, 'epsI': 1e-6,
+        'simultaneous': False, 'kind': 'forward'} # regularized, forward
+par4 = {'epsR': None, 'epsRL1': None, 'epsI': None,
         'simultaneous': True} # unregularized, simultaneous
-par4 = {'epsR': 1e-4, 'epsRL1': None, 'epsI': 1e-6,
-        'simultaneous': True} # regularized, simultaneous
-par5 = {'epsR': 1e-4, 'epsRL1': 1e-1, 'epsI': 1e-6,
+par5 = {'epsR': 1e-4, 'epsRL1': None, 'epsI': 1e-6, 'simultaneous': True,
+        'kind': 'centered'} # regularized, simultaneous, centered
+par6 = {'epsR': 1e-4, 'epsRL1': None, 'epsI': 1e-6, 'simultaneous': True,
+        'kind': 'forward'} # regularized, simultaneous, forward
+par7 = {'epsR': 1e-4, 'epsRL1': 1e-1, 'epsI': 1e-6,
         'simultaneous': True}  # blocky, simultaneous
 
 
@@ -120,7 +124,8 @@ def test_PoststackLinearModelling1d_nonstationary(par):
         assert np.linalg.norm(m-minv) / np.linalg.norm(minv) < 1e-2
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3),
+                                 (par4), (par5), (par6), (par7)])
 def test_PoststackLinearModelling2d(par):
     """Dot-test and inversion for PoststackLinearModelling in 2d
     """

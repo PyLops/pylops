@@ -20,7 +20,8 @@ _linearizations = {'akirich': 3, 'fatti': 3, 'ps': 3}
 
 
 def PrestackLinearModelling(wav, theta, vsvp=0.5, nt0=1, spatdims=None,
-                            linearization='akirich', explicit=False, kind='centered'):
+                            linearization='akirich', explicit=False,
+                            kind='centered'):
     r"""Pre-stack linearized seismic modelling operator.
 
     Create operator to be applied to elastic property profiles
@@ -283,7 +284,8 @@ def PrestackWaveletModelling(m, theta, nwav, wavc=None,
 def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
                       explicit=False, simultaneous=False,
                       epsI=None, epsR=None, dottest=False,
-                      returnres=False, epsRL1=None, **kwargs_solver):
+                      returnres=False, epsRL1=None, kind='centered',
+                      **kwargs_solver):
     r"""Pre-stack linearized seismic inversion.
 
     Invert pre-stack seismic operator to retrieve a set of elastic property
@@ -330,6 +332,8 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
         Return residuals
     epsRL1 : :obj:`float`, optional
         Damping factor for additional blockiness regularization term
+    kind : :obj:`str`, optional
+        Derivative kind (``forward`` or ``centered``).
     **kwargs_solver
         Arbitrary keyword arguments for :py:func:`scipy.linalg.lstsq`
         solver (if ``explicit=True`` and  ``epsR=None``)
@@ -407,7 +411,7 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
         # single operator
         PPop = PrestackLinearModelling(wav, theta, nt0=nt0, spatdims=nspat,
                                        linearization=linearization,
-                                       explicit=explicit)
+                                       explicit=explicit, kind=kind)
     else:
         # multiple operators
         if not isinstance(wav, (list, tuple)):
