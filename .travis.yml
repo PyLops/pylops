@@ -1,12 +1,13 @@
 language: python
 
 python:
-  - "3.6"
+  - "3.8"
 
 os:
   - linux
 
 script:
+  - pip3 install --upgrade setuptools
   - pip3 install -r requirements-dev.txt
   - pip3 install coverage codacy-coverage
   - pip3 install .
