@@ -493,7 +493,7 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
 
     .. math::
             ||\mathbf{x}||_0 \quad  subj. to \quad
-            ||\mathbf{Op}\mathbf{x}-\mathbf{b}||_2^2 <= \sigma,
+            ||\mathbf{Op}\mathbf{x}-\mathbf{b}||_2^2 <= \sigma^2,
 
     using Orthogonal Matching Pursuit (OMP). This is a very
     simple iterative algorithm which applies the following step:
@@ -501,7 +501,7 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
     .. math::
         \Lambda_k = \Lambda_{k-1} \cup \{ arg max_j
         |\mathbf{Op}_j^H \mathbf{r}_k| \} \\
-        \mathbf{x}_k =  \{ arg min_{\mathbf{x}}
+        \mathbf{x}_k = arg min_{\mathbf{x}}
         ||\mathbf{Op}_{\Lambda_k} \mathbf{x} - \mathbf{b}||_2^2
 
     Note that by choosing ``niter_inner=0`` the basic Matching Pursuit (MP)
