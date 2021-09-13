@@ -113,7 +113,8 @@ class Fredholm1(LinearOperator):
             if hasattr(self, 'GT'):
                 y = ncp.matmul(self.GT, x)
             else:
-                y = ncp.matmul(self.G.transpose((0, 2, 1)).conj(), x)
+                #y = ncp.matmul(self.G.transpose((0, 2, 1)).conj(), x)
+                y = ncp.matmul(x.transpose(0, 2, 1).conj(), self.G).transpose(0, 2, 1).conj()
         else:
             y = ncp.squeeze(ncp.zeros((self.nsl, self.ny, self.nz),
                                       dtype=self.dtype))
@@ -122,5 +123,6 @@ class Fredholm1(LinearOperator):
                     y[isl] = ncp.dot(self.GT[isl], x[isl])
             else:
                 for isl in range(self.nsl):
-                    y[isl] = ncp.dot(self.G[isl].conj().T, x[isl])
+                    #y[isl] = ncp.dot(self.G[isl].conj().T, x[isl])
+                    y[isl] = ncp.dot(x[isl].T.conj(), self.G[isl]).T.conj()
         return y.ravel()

@@ -273,7 +273,8 @@ class Marchenko():
         self.Rtwosided_fft = self.Rtwosided_fft.transpose(2, 0, 1)
 
     def apply_onepoint(self, trav, G0=None, nfft=None, rtm=False, greens=False,
-                       dottest=False, fast=None, **kwargs_solver):
+                       dottest=False, fast=None, usematmul=False,
+                       **kwargs_solver):
         r"""Marchenko redatuming for one point
 
         Solve the Marchenko redatuming inverse problem for a single point
@@ -298,6 +299,10 @@ class Marchenko():
             Apply dot-test
         fast : :obj:`bool`
             *Deprecated*, will be removed in v2.0.0
+        usematmul : :obj:`bool`, optional
+            Use :func:`numpy.matmul` (``True``) or for-loop with :func:`numpy.dot`
+            (``False``) in :py:class:`pylops.signalprocessing.Fredholm1` operator.
+            Refer to Fredholm1 documentation for details.
         **kwargs_solver
             Arbitrary keyword arguments for chosen solver
             (:py:func:`scipy.sparse.linalg.lsqr` and
@@ -338,11 +343,11 @@ class Marchenko():
         Rop = MDC(self.Rtwosided_fft, self.nt2, nv=1, dt=self.dt, dr=self.dr,
                   twosided=True, conj=False, transpose=False,
                   saveGt=self.saveRt, prescaled=self.prescaled,
-                  dtype=self.dtype)
+                  usematmul=usematmul, dtype=self.dtype)
         R1op = MDC(self.Rtwosided_fft, self.nt2, nv=1, dt=self.dt, dr=self.dr,
                    twosided=True, conj=True, transpose=False,
                    saveGt=self.saveRt, prescaled=self.prescaled,
-                   dtype=self.dtype)
+                   usematmul=usematmul, dtype=self.dtype)
         Rollop = Roll(self.nt2 * self.ns,
                       dims=(self.nt2, self.ns),
                       dir=0, shift=-1, dtype=self.dtype)
@@ -421,7 +426,7 @@ class Marchenko():
 
     def apply_multiplepoints(self, trav, G0=None, nfft=None,
                              rtm=False, greens=False,
-                             dottest=False, **kwargs_solver):
+                             dottest=False, usematmul=False, **kwargs_solver):
         r"""Marchenko redatuming for multiple points
 
         Solve the Marchenko redatuming inverse problem for multiple
@@ -445,6 +450,10 @@ class Marchenko():
             Compute and return Green's functions
         dottest : :obj:`bool`, optional
             Apply dot-test
+        usematmul : :obj:`bool`, optional
+            Use :func:`numpy.matmul` (``True``) or for-loop with :func:`numpy.dot`
+            (``False``) in :py:class:`pylops.signalprocessing.Fredholm1` operator.
+            Refer to Fredholm1 documentation for details.
         **kwargs_solver
             Arbitrary keyword arguments for chosen solver
             (:py:func:`scipy.sparse.linalg.lsqr` and
@@ -490,11 +499,11 @@ class Marchenko():
         Rop = MDC(self.Rtwosided_fft, self.nt2, nv=nvs,
                   dt=self.dt, dr=self.dr, twosided=True,
                   conj=False, transpose=False, prescaled=self.prescaled,
-                  dtype=self.dtype)
+                  usematmul=usematmul, dtype=self.dtype)
         R1op = MDC(self.Rtwosided_fft, self.nt2, nv=nvs,
                    dt=self.dt, dr=self.dr, twosided=True,
                    conj=True, transpose=False, prescaled=self.prescaled,
-                   dtype=self.dtype)
+                   usematmul=usematmul, dtype=self.dtype)
         Rollop = Roll(self.ns * nvs * self.nt2,
                       dims=(self.nt2, self.ns, nvs),
                       dir=0, shift=-1, dtype=self.dtype)

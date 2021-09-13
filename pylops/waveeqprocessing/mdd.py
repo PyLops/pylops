@@ -405,7 +405,7 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         minv = PreconditionedInversion(MDCop, Pop, d.flatten(),
                                        returninfo=False, **kwargs_solver)
     else:
-        if ncp == np:
+        if ncp == np and 'callback' not in kwargs_solver:
             minv = lsqr(MDCop, d.flatten(), **kwargs_solver)[0]
         else:
             minv = cgls(MDCop, d.flatten(), ncp.zeros(int(MDCop.shape[1]),
