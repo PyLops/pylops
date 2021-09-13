@@ -236,7 +236,7 @@ def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
     # reason for termination
     istop = 1 if kold < tol else 2
     r1norm = kold
-    r2norm = cost[iiter]
+    r2norm = cost1[iiter]
     return x, istop, iiter, r1norm, r2norm, cost[:iiter]
 
 
