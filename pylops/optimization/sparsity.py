@@ -134,7 +134,7 @@ def _hardthreshold_percentile(x, perc):
 
     """
     thresh = np.percentile(np.abs(x), perc)
-    return _halfthreshold(x, 0.5 * thresh ** 2)
+    return _hardthreshold(x, 0.5 * thresh ** 2)
 
 def _softthreshold_percentile(x, perc):
     r"""Percentile Soft thresholding.
