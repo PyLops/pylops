@@ -15,7 +15,11 @@ PAR = {'ny': 10, 'nx': 12, 'nz': 20, 'nt': 50,
 # Check if skfmm is available and by-pass tests using it otherwise. This is
 # currently required for Travis as since we moved to Python3.8 it has
 # stopped working
-skfmm_enabled = util.find_spec("skfmm")
+try:
+    import skfmm
+    skfmm_enabled = True
+except:
+    skfmm_enabled = False
 
 v0 = 500
 y = np.arange(PAR['ny']) * PAR['dy']
