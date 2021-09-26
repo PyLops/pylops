@@ -294,9 +294,9 @@ def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
     Raises
     ------
     ValueError
-        If ``dims`` is not provided and if ``dir`` is bigger than ``len(dims)``
+        If ``dims`` is provided and ``dir`` is bigger than ``len(dims)``
     NotImplementedError
-        If ``engine`` is neither ``numpy`` nor ``numba``
+        If ``engine`` is neither ``numpy`` nor ``fftw``
 
     Notes
     -----

@@ -93,6 +93,7 @@ Signal processing
     FFT
     FFT2D
     FFTND
+    Shift
     DWT
     DWT2D
     Seislet
