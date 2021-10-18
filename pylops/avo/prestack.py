@@ -285,7 +285,7 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
                       explicit=False, simultaneous=False,
                       epsI=None, epsR=None, dottest=False,
                       returnres=False, epsRL1=None, kind='centered',
-                      **kwargs_solver):
+                      vsvp=0.5, **kwargs_solver):
     r"""Pre-stack linearized seismic inversion.
 
     Invert pre-stack seismic operator to retrieve a set of elastic property
@@ -334,6 +334,8 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
         Damping factor for additional blockiness regularization term
     kind : :obj:`str`, optional
         Derivative kind (``forward`` or ``centered``).
+    vsvp : :obj:`float` or :obj:`np.ndarray`
+        VS/VP ratio (constant or time/depth variant)
     **kwargs_solver
         Arbitrary keyword arguments for :py:func:`scipy.linalg.lstsq`
         solver (if ``explicit=True`` and  ``epsR=None``)
@@ -409,15 +411,16 @@ def PrestackInversion(data, theta, wav, m0=None, linearization='akirich',
     # create operator
     if isinstance(linearization, str):
         # single operator
-        PPop = PrestackLinearModelling(wav, theta, nt0=nt0, spatdims=nspat,
+        PPop = PrestackLinearModelling(wav, theta, vsvp=vsvp, nt0=nt0, spatdims=nspat,
                                        linearization=linearization,
                                        explicit=explicit, kind=kind)
     else:
         # multiple operators
         if not isinstance(wav, (list, tuple)):
             wav = [wav,] * n_lins
-        PPop = [PrestackLinearModelling(w, theta, nt0=nt0, spatdims=nspat,
-                                       linearization=lin, explicit=explicit)
+        PPop = [PrestackLinearModelling(w, theta, vsvp=vsvp, nt0=nt0,
+                                        spatdims=nspat, linearization=lin,
+                                        explicit=explicit)
                 for w, lin in zip(wav, linearization)]
         if explicit:
             PPop = MatrixMult(np.vstack([Op.A for Op in PPop]), dims=nspat,
