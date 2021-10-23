@@ -6,6 +6,28 @@ Changelog
 Version 1.14.0
 --------------
 
+*Released on: 23/10/2021*
+
+* Added :py:class:`pylops.signalprocessing.Shift` operator.
+* Added option to choose derivative kind in
+  :py:class:`pylops.avo.poststack.PoststackInversion` and
+  :py:class:`pylops.avo.prestack.PrestackInversion`.
+* Improved efficiency of adjoint of
+  :py:class:`pylops.signalprocessing.Fredholm1` by applying complex conjugation
+  to the vectors.
+* Added `vsvp` to :py:class:`pylops.avo.prestack.PrestackInversion` allowing
+  to use user defined VS/VP ratio.
+* Added `kind` to :py:class:`pylops.basicoperators.CausalIntegration` allowing
+  ``full``, ``half``, or ``trapezoidal`` integration.
+* Fixed `_hardthreshold_percentile` in
+  :py:mod:`pylops.optimization.sparsity`
+  - `Issue #249 <https://github.com/Statoil/pylops/issues/249>`_.
+* Fixed r2norm in :py:func:`pylops.optimization.solver.cgls`.
+
+
+Version 1.14.0
+--------------
+
 *Released on: 09/07/2021*
 
 * Added :py:func:`pylops.optimization.solver.lsqr` solver
