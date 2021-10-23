@@ -1,3 +1,19 @@
+# 1.15.0
+* Added ``pylops.signalprocessing.Shift`` operator.
+* Added option to choose derivative kind in 
+  ``pylops.avo.poststack.PoststackInversion`` and 
+  ``pylops.avo.prestack.PrestackInversion``
+* Improved efficiency of adjoint of
+  ``pylops.signalprocessing.Fredholm1`` by applying complex conjugation
+  to the vectors.
+* Added `vsvp` to ``pylops.avo.prestack.PrestackInversion`` allowing
+  to use user defined VS/VP ratio.
+* Added `kind` to ``pylops.basicoperators.CausalIntegration`` allowing 
+  ``full``, ``half``, or ``trapezoidal`` integration
+* Fixed `_hardthreshold_percentile` in 
+  ``pylops.optimization.sparsity`` - Issue #249.
+* Fixed r2norm in ``pylops.optimization.solver.cgls``
+
 # 1.14.0
 * Added ``pylops.optimization.solver.lsqr`` solver
 * Added utility routine ``pylops.utils.scalability_test`` for scalability
