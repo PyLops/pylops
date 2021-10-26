@@ -765,7 +765,7 @@ class _ColumnLinearOperator(LinearOperator):
 
     def _rmatvec(self, x):
         if self.explicit:
-            y = self.Opcol.T @ x
+            y = self.Opcol.T.conj() @ x
         else:
             y = self.Op._rmatvec(x)
             y = y[self.cols]
