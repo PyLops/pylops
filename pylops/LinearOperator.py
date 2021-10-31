@@ -15,6 +15,11 @@ from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse import csr_matrix
 
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
+from pylops.utils.estimators import (
+    trace_hutchinson,
+    trace_hutchpp,
+    trace_nahutchpp,
+)
 from pylops.optimization.solver import cgls
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -725,6 +730,82 @@ class LinearOperator(spLinearOperator):
         """
         imagop = _RealImagLinearOperator(self, forw, adj, False)
         return imagop
+
+    def trace(
+        self,
+        neval=None,
+        method=None,
+        backend="numpy",
+        **kwargs_trace,
+    ):
+        r"""Trace of linear operator.
+
+        Returns the trace (or its estimate) of the linear operator.
+
+        Parameters
+        ----------
+        neval : :obj:`int`, optional
+            Maximum number of matrix-vector products compute. Default depends
+            ``method``.
+        method : :obj:`str`, optional
+            Should be one of the following:
+
+                - **explicit**: If the operator is not explicit, will convert to
+                  dense first.
+                - **hutchinson**: see :obj:`pylops.utils.trace_hutchinson`
+                - **hutch++**: see :obj:`pylops.utils.trace_hutchpp`
+                - **na-hutch++**: see :obj:`pylops.utils.trace_nahutchpp`
+
+            Defaults to 'explicit' for explicit operators, and 'Hutch++' for
+            the rest.
+        backend : :obj:`str`, optional
+            Backend used to densify matrix (``numpy`` or ``cupy``). Note that
+            this must be consistent with how the operator has been created.
+        **kwargs_trace
+            Arbitrary keyword arguments passed to
+            :obj:`pylops.utils.trace_hutchinson`,
+            :obj:`pylops.utils.trace_hutchpp`, or
+            :obj:`pylops.utils.trace_nahutchpp`
+
+        Returns
+        -------
+        trace : :obj:`self.dtype`
+            Operator trace.
+
+        Raises
+        -------
+        ValueError
+             If the operator has rectangular shape (``shape[0] != shape[1]``)
+
+        NotImplementedError
+            If the ``method`` is not one of the available methods.
+        """
+        if self.shape[0] != self.shape[1]:
+            raise ValueError("operator is not square.")
+
+        ncp = get_module(backend)
+
+        if method is None:
+            method = "explicit" if self.explicit else "hutch++"
+
+        method_l = method.lower()
+        if method_l == "explicit":
+            A = self.A if self.explicit else self.todense(backend=backend)
+            return ncp.trace(A)
+        elif method_l == "hutchinson":
+            return trace_hutchinson(
+                self, neval=neval, backend=backend, **kwargs_trace
+            )
+        elif method_l == "hutch++":
+            return trace_hutchpp(
+                self, neval=neval, backend=backend, **kwargs_trace
+            )
+        elif method_l == "na-hutch++":
+            return trace_nahutchpp(
+                self, neval=neval, backend=backend, **kwargs_trace
+            )
+        else:
+            raise NotImplementedError(f"method {method} not available.")
 
 
 def _get_dtype(operators, dtypes=None):

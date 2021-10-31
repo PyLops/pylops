@@ -20,6 +20,18 @@ Dot-test
 
     dottest
 
+Estimators
+~~~~~~~~
+
+.. currentmodule:: pylops.utils
+
+.. autosummary::
+   :toctree: generated/
+
+    trace_hutchinson
+    trace_hutchpp
+    trace_nahutchpp
+
 Scalability test
 ~~~~~~~~~~~~~~~~
 
