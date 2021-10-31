@@ -1,4 +1,3 @@
-from matplotlib import backend_bases
 import numpy
 
 from itertools import chain
