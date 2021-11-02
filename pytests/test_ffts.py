@@ -52,7 +52,7 @@ def test_unknown_engine(par):
 def test_FFT_1dsignal(par):
     """Dot-test and inversion for FFT operator for 1d signal
     """
-    decimal = 4 if np.real(np.ones(1, par['dtype'])).dtype == np.float32 else 8
+    decimal = 3 if np.real(np.ones(1, par['dtype'])).dtype == np.float32 else 8
 
     dt = 0.005
     t = np.arange(par['nt']) * dt
@@ -90,7 +90,7 @@ def test_FFT_2dsignal(par):
     """Dot-test and inversion for fft operator for 2d signal
     (fft on single dimension)
     """
-    decimal = 4 if np.real(np.ones(1, par['dtype'])).dtype == np.float32 else 8
+    decimal = 3 if np.real(np.ones(1, par['dtype'])).dtype == np.float32 else 8
 
     dt = 0.005
     nt, nx = par['nt'], par['nx']
@@ -160,7 +160,7 @@ def test_FFT_3dsignal(par):
     """Dot-test and inversion for fft operator for 3d signal
     (fft on single dimension)
     """
-    decimal = 4 if np.real(np.ones(1, par['dtype'])).dtype == np.float32 else 8
+    decimal = 3 if np.real(np.ones(1, par['dtype'])).dtype == np.float32 else 8
 
     dt = 0.005
     nt, nx, ny = par['nt'], par['nx'], par['ny']
@@ -256,7 +256,7 @@ def test_FFT_3dsignal(par):
 def test_FFT2D(par):
     """Dot-test and inversion for FFT2D operator for 2d signal
     """
-    decimal = 4 if np.real(np.ones(1, par['dtype'])).dtype == np.float32 else 8
+    decimal = 3 if np.real(np.ones(1, par['dtype'])).dtype == np.float32 else 8
 
     dt, dx = 0.005, 5
     t = np.arange(par['nt']) * dt
@@ -286,7 +286,7 @@ def test_FFT2D(par):
 def test_FFT3D(par):
     """Dot-test and inversion for FFTND operator for 3d signal
     """
-    decimal = 4 if np.real(np.ones(1, par['dtype'])).dtype == np.float32 else 8
+    decimal = 3 if np.real(np.ones(1, par['dtype'])).dtype == np.float32 else 8
 
     dt, dx, dy = 0.005, 5, 2
     t = np.arange(par['nt']) * dt
