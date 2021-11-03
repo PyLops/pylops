@@ -133,7 +133,8 @@ def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
         Curve to be used for stacking/spreading (``linear``, ``parabolic``,
         and ``hyperbolic`` are currently supported)
     centeredh : :obj:`bool`, optional
-        Assume centered spatial axis (``True``) or not (``False``)
+        Assume centered spatial axis (``True``) or not (``False``). If ``True``
+        the original ``haxis`` is ignored and a new axis is created.
     interp : :obj:`bool`, optional
         Apply linear interpolation (``True``) or nearest interpolation
         (``False``) during stacking/spreading along parametric curve
@@ -181,8 +182,12 @@ def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
     axes will be normalized by the ratio of the spatial and time axes and
     used alongside unitless axes. Whilst this makes the linear mode fully
     unitless, users are required to apply additional scalings to the :math:`p_x`
-    axis for other relationships (e.g., :math:`p_x` should be pre-multipled by
-    :math:`(d_t/d_x)^2` for the hyperbolic relationship).
+    axis for other relationships
+
+    - :math:`p_x` should be pre-multipled by :math:`d_x / d_y` for the parabolic
+      relationship;
+    - :math:`p_x` should be pre-multipled by :math:`(d_t/d_x)^2 / (d_t/d_y)^2`
+      for the hyperbolic relationship.
 
     As the adjoint operator can be interpreted as a repeated summation of sets
     of elements of the model vector along chosen parametric curves, the
@@ -210,14 +215,14 @@ def Radon3D(taxis, hyaxis, hxaxis, pyaxis, pxaxis, kind='linear',
         raise NotImplementedError('kind must be linear, '
                                   'parabolic, or hyperbolic...')
     # make axes unitless
-    dpy = (np.abs(hyaxis[1] - hyaxis[0]) /
-           np.abs(taxis[1] - taxis[0]))
+    dhy, dhx = np.abs(hyaxis[1] - hyaxis[0]), np.abs(hxaxis[1] - hxaxis[0])
+    dt = np.abs(taxis[1] - taxis[0])
+    dpy = dhy / dt
     pyaxis = pyaxis * dpy
-    hyaxisunitless = np.arange(nhy)
-    dpx = (np.abs(hxaxis[1] - hxaxis[0]) /
-           np.abs(taxis[1] - taxis[0]))
+    hyaxisunitless = hyaxis // dhy
+    dpx = dhx / dt
     pxaxis = pxaxis * dpx
-    hxaxisunitless = np.arange(nhx)
+    hxaxisunitless = hxaxis // dhx
     if centeredh:
         hyaxisunitless -= nhy // 2
         hxaxisunitless -= nhx // 2

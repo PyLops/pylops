@@ -107,7 +107,7 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
 
     In forward mode this entails to spreading the model vector
     along parametric curves (lines, parabolas, or hyperbolas depending on the
-    choice of ``kind``), while  stacking values in the data vector
+    choice of ``kind``), while stacking values in the data vector
     along the same parametric curves is performed in adjoint mode.
 
     Parameters
@@ -123,7 +123,8 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
         and ``hyperbolic`` are currently supported) or a function that takes
         (x, t0, px) as input and returns t as output
     centeredh : :obj:`bool`, optional
-        Assume centered spatial axis (``True``) or not (``False``)
+        Assume centered spatial axis (``True``) or not (``False``). If ``True``
+        the original ``haxis`` is ignored and a new axis is created.
     interp : :obj:`bool`, optional
         Apply linear interpolation (``True``) or nearest interpolation
         (``False``) during stacking/spreading along parametric curve
@@ -170,9 +171,12 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
     that internally the :math:`p_x` axis will be normalized by the ratio of the
     spatial and time axes and used alongside unitless axes. Whilst this makes
     the linear mode fully unitless, users are required to apply additional
-    scalings to the :math:`p_x` axis for other relationships (e.g., :math:`p_x`
-    should be pre-multipled by :math:`(d_t/d_x)^2` for the hyperbolic
-    relationship).
+    scalings to the :math:`p_x` axis for other relationships:
+
+    - :math:`p_x` should be pre-multipled by :math:`d_x` for the parabolic
+      relationship;
+    - :math:`p_x` should be pre-multipled by :math:`(d_t/d_x)^2` for the
+      hyperbolic relationship.
 
     As the adjoint operator can be interpreted as a repeated summation of sets
     of elements of the model vector along chosen parametric curves, the
@@ -200,10 +204,10 @@ def Radon2D(taxis, haxis, pxaxis, kind='linear', centeredh=True,
         raise NotImplementedError('kind must be linear, '
                                   'parabolic, or hyperbolic...')
     # make axes unitless
-    dpx = (np.abs(haxis[1] - haxis[0]) /
-           np.abs(taxis[1] - taxis[0]))
+    dh, dt = np.abs(haxis[1] - haxis[0]), np.abs(taxis[1] - taxis[0])
+    dpx = dh / dt
     pxaxis = pxaxis * dpx
-    haxisunitless = np.arange(nh)
+    haxisunitless = haxis // dh
     if centeredh:
         haxisunitless -= nh // 2
     dims = (npx, nt)
