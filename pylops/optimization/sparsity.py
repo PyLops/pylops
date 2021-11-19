@@ -409,7 +409,7 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
         \mathbf{d} = \mathbf{Op} \mathbf{x}
 
     by a set of outer iterations which require to repeatedly solve a
-    weighted least squares problem of the form:
+    weighted least squares problem of the form [2]_:
 
     .. math::
         \mathbf{x}^{(i+1)} = \operatorname*{arg\,min}_\mathbf{x}
@@ -804,7 +804,11 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         print(head1)
 
     # initialize model and cost function
-    xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
+    if data.ndim == 1:
+        xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
+    else:
+        xinv = ncp.zeros((int(Op.shape[1]), data.shape[1]), dtype=Op.dtype)
+
     if monitorres:
         normresold = np.inf
     if returninfo:
@@ -815,7 +819,7 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         xinvold = xinv.copy()
 
         # compute residual
-        res = data - Op.matvec(xinv)
+        res = data - Op @ xinv
         if monitorres:
             normres = np.linalg.norm(res)
             if  normres > normresold:
@@ -826,18 +830,18 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
                 normresold = normres
 
         # compute gradient
-        grad = alpha * Op.rmatvec(res)
+        grad = alpha * Op.H @ res
 
         # update inverted model
         xinv_unthesh = xinv + grad
         if SOp is not None:
-            xinv_unthesh = SOp.rmatvec(xinv_unthesh)
+            xinv_unthesh = SOp.H @ xinv_unthesh
         if perc is None:
             xinv = threshf(xinv_unthesh, decay[iiter] * thresh)
         else:
             xinv = threshf(xinv_unthesh, 100 - perc)
         if SOp is not None:
-            xinv = SOp.matvec(xinv)
+            xinv = SOp @ xinv
 
         # model update
         xupdate = np.linalg.norm(xinv - xinvold)
@@ -1051,7 +1055,11 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         print(head1)
 
     # initialize model and cost function
-    xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
+    if data.ndim == 1:
+        xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
+    else:
+        xinv = ncp.zeros((int(Op.shape[1]), data.shape[1]), dtype=Op.dtype)
+
     zinv = xinv.copy()
     t = 1
     if returninfo:
@@ -1062,21 +1070,21 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         xinvold = xinv.copy()
 
         # compute residual
-        resz = data - Op.matvec(zinv)
+        resz = data - Op @ zinv
 
         # compute gradient
-        grad = alpha * Op.rmatvec(resz)
+        grad = alpha * Op.H @ resz
 
         # update inverted model
         xinv_unthesh = zinv + grad
         if SOp is not None:
-            xinv_unthesh = SOp.rmatvec(xinv_unthesh)
+            xinv_unthesh = SOp.H @ xinv_unthesh
         if perc is None:
             xinv = threshf(xinv_unthesh, decay[iiter] * thresh)
         else:
             xinv = threshf(xinv_unthesh, 100 - perc)
         if SOp is not None:
-            xinv = SOp.matvec(xinv)
+            xinv = SOp @ xinv
 
         # update auxiliary coefficients
         told = t
@@ -1087,7 +1095,7 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         xupdate = np.linalg.norm(xinv - xinvold)
 
         if returninfo or show:
-            costdata = 0.5 * np.linalg.norm(data - Op.matvec(xinv)) ** 2
+            costdata = 0.5 * np.linalg.norm(data - Op @ xinv) ** 2
             costreg = eps * np.linalg.norm(xinv, ord=1)
         if returninfo:
             cost[iiter] = costdata + costreg
