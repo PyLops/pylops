@@ -161,6 +161,50 @@ def test_ISTA_FISTA(par):
         assert_array_almost_equal(x, xinv, decimal=1)
 
 
+@pytest.mark.parametrize("par", [(par1), (par3), (par5),
+                                 (par1j), (par3j), (par5j)])
+def test_ISTA_FISTA_multiplerhs(par):
+    """Invert problem with ISTA/FISTA with multiple RHS
+    """
+    np.random.seed(42)
+    Aop = MatrixMult(np.random.randn(par['ny'], par['nx']))
+
+    x = np.zeros(par['nx'])
+    x[par['nx'] // 2] = 1
+    x[3] = 1
+    x[par['nx'] - 4] = -1
+    x = np.outer(x, np.ones(3))
+    y = Aop * x
+
+    eps = 0.5
+    perc = 30
+    maxit = 2000
+
+    # Regularization based ISTA and FISTA
+    for threshkind in ['hard', 'soft', 'half']:
+        # ISTA
+        xinv, _, _ = ISTA(Aop, y, maxit, eps=eps, threshkind=threshkind,
+                          tol=0, returninfo=True, show=False)
+        assert_array_almost_equal(x, xinv, decimal=1)
+
+        # FISTA
+        xinv, _, _ = FISTA(Aop, y, maxit, eps=eps, threshkind=threshkind,
+                           tol=0, returninfo=True, show=False)
+        assert_array_almost_equal(x, xinv, decimal=1)
+
+    # Percentile based ISTA and FISTA
+    for threshkind in ['hard-percentile', 'soft-percentile', 'half-percentile']:
+        # ISTA
+        xinv, _, _ = ISTA(Aop, y, maxit, perc=perc, threshkind=threshkind,
+                          tol=0, returninfo=True, show=False)
+        assert_array_almost_equal(x, xinv, decimal=1)
+
+        # FISTA
+        xinv, _, _ = FISTA(Aop, y, maxit, perc=perc, threshkind=threshkind,
+                           tol=0, returninfo=True, show=False)
+        assert_array_almost_equal(x, xinv, decimal=1)
+
+
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5),
                                  (par1j), (par3j)])
 def test_SPGL1(par):
