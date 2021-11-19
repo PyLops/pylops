@@ -256,7 +256,7 @@ def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
         data = data - Op * x0
     if returnhistory:
         xinv_hist = ncp.zeros((nouter + 1, int(Op.shape[1])))
-        rw_hist = ncp.zeros((nouter + 1, int(Op.shape[0])))
+        rw_hist = ncp.zeros((nouter + 1, int(Op.shape[1])))
 
     Iop = Identity(data.size, dtype=data.dtype)
     # first iteration (unweighted least-squares)
@@ -417,8 +417,8 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
         \mathbf{d} = \mathbf{Op} \mathbf{x}
 
     where :math:`\mathbf{R}^{(i)}` is a diagonal weight matrix
-    whose diagonal elements at iteration :math:`i` are equal to the absolute
-    inverses of the model vector :math:`\mathbf{x}^{(i)}` at iteration
+    whose diagonal elements at iteration :math:`i` are equal to the absolutes
+    of the model vector :math:`\mathbf{x}^{(i)}` at iteration
     :math:`i`. More specifically the j-th element of the diagonal of
     :math:`\mathbf{R}^{(i)}` is
 
@@ -426,6 +426,8 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
         R^{(i)}_{j,j} = |x^{(i)}_j|
 
     .. [1] https://en.wikipedia.org/wiki/Iteratively_reweighted_least_squares
+    .. [2] Chartrand, R., and Yin, W. "Iteratively reweighted algorithms for
+       compressive sensing", IEEE. 2008.
 
     """
     if kind == 'data':
