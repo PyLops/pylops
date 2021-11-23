@@ -611,7 +611,7 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
 
 def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
          tol=1e-10, monitorres=False, returninfo=False, show=False,
-         threshkind='soft', perc=None, callback=None, decay=None, SOp=None):
+         threshkind='soft', perc=None, callback=None, decay=None, SOp=None, x0=None):
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
     Solve an optimization problem with :math:`L_p, \; p=0, 1/2, 1`
@@ -804,10 +804,20 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         print(head1)
 
     # initialize model and cost function
-    if data.ndim == 1:
-        xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
+    if x0 is None:
+        if data.ndim == 1:
+            xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
+        else:
+            xinv = ncp.zeros((int(Op.shape[1]), data.shape[1]), dtype=Op.dtype)
     else:
-        xinv = ncp.zeros((int(Op.shape[1]), data.shape[1]), dtype=Op.dtype)
+        if data.ndim != x0.ndim:
+            # error for wrong dimensions
+            raise ValueError('Number of columns of x0 and data are not the same')
+        elif x0.shape[0] != Op.shape[1]:
+            # error for wrong dimensions
+            raise ValueError('Operator and input vector have different dimensions')
+        else:
+            xinv = x0.copy()
 
     if monitorres:
         normresold = np.inf
@@ -885,7 +895,7 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
 def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
           tol=1e-10, returninfo=False, show=False, threshkind='soft',
-          perc=None, callback=None, decay=None, SOp=None):
+          perc=None, callback=None, decay=None, SOp=None, x0=None):
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
     Solve an optimization problem with :math:`L_p, \; p=0, 1/2, 1`
@@ -932,6 +942,8 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         Decay factor to be applied to thresholding during iterations
     SOp : :obj:`pylops.LinearOperator`, optional
         Regularization operator (use when solving the analysis problem)
+    x0: :obj:`numpy.ndarray`, optional
+        Initial guess
 
     Returns
     -------
@@ -1055,10 +1067,20 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         print(head1)
 
     # initialize model and cost function
-    if data.ndim == 1:
-        xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
+    if x0 is None:
+        if data.ndim == 1:
+            xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
+        else:
+            xinv = ncp.zeros((int(Op.shape[1]), data.shape[1]), dtype=Op.dtype)
     else:
-        xinv = ncp.zeros((int(Op.shape[1]), data.shape[1]), dtype=Op.dtype)
+        if data.ndim != x0.ndim:
+            # error for wrong dimensions
+            raise ValueError('Number of columns of x0 and data are not the same')
+        elif x0.shape[0] != Op.shape[1]:
+            # error for wrong dimensions
+            raise ValueError('Operator and input vector have different dimensions')
+        else:
+            xinv = x0.copy()
 
     zinv = xinv.copy()
     t = 1
