@@ -226,3 +226,4 @@ A list of video tutorials to learn more about PyLops:
 * Francesco Picetti, fpicetti
 * Alan Richardson, ar4
 * BurningKarl, BurningKarl
+* Nick Luiken, NickLuiken

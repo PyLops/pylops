@@ -3,7 +3,21 @@
 Changelog
 =========
 
-Version 1.14.0
+Version 1.16.0
+--------------
+
+*Released on: 11/12/2021*
+
+* Added `pylops.utils.estimators` module for trace estimation
+* Added `x0` in `pylops.optimization.sparsity.ISTA` and
+  `pylops.optimization.sparsity.FISTA` to handle non-zero initial guess
+* Modified `pylops.optimization.sparsity.ISTA` and
+  `pylops.optimization.sparsity.FISTA` to handle multiple right hand sides
+* Modified creation of `haxis` in `pylops.signalprocessing.Radon2D` and
+  `pylops.signalprocessing.Radon3D` to allow for uncentered spatial axes
+* Fixed `_rmatvec` for explicit in `pylops.LinearOperator._ColumnLinearOperator`
+
+Version 1.15.0
 --------------
 
 *Released on: 23/10/2021*

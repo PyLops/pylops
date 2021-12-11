@@ -46,7 +46,7 @@ jobs:
   displayName: 'Mac'
 
   pool:
-    vmImage: 'macOS-10.14'
+    vmImage: 'macOS-latest'
 
   variables:
     NUMBA_NUM_THREADS: 1

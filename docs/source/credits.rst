@@ -14,3 +14,4 @@ Contributors
 *  `Francesco Picetti <https://github.com/fpicetti>`_, fpicetti
 *  `Alan Richardson <https://github.com/ar4>`_, ar4
 *  `BurningKarl <https://github.com/BurningKarl>`_, BurningKarl
+*  `Nick Luiken <https://github.com/NickLuiken>`_, NickLuiken
