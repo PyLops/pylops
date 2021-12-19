@@ -105,7 +105,8 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
             if verb: print('Dot test failed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
                            % (yy, xx))
             return False
-    else:
+    elif complexflag == 3:
+        # Check both real and imag parts
         checkreal = np.abs((np.real(yy) - np.real(xx)) /
                            ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
         checkimag = np.abs((np.imag(yy) - np.imag(xx)) /
@@ -123,4 +124,22 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
             if verb:
                 print('Dot test failed, v^H(Opu)=%f%+fi - u^H(Op^Hv)=%f%+fi'
                       % (yy.real, yy.imag, xx.real, xx.imag))
+            return False
+    else:
+        # Check only real part (as either model or data are purely real)
+        checkreal = np.abs((np.real(yy) - np.real(xx)) /
+                           ((np.real(yy) + np.real(xx) + 1e-15) / 2)) < tol
+        if checkreal:
+            if verb:
+                print('Dot test passed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
+                      % (yy.real, xx.real))
+            return True
+        else:
+            if raiseerror:
+                raise ValueError('Dot test failed, v^H(Opu)=%f '
+                                 '- u^H(Op^Hv)=%f'
+                                 % (yy.real, xx.real))
+            if verb:
+                print('Dot test failed, v^H(Opu)=%f - u^H(Op^Hv)=%f'
+                      % (yy.real, xx.real))
             return False

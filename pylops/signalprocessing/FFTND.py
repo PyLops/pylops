@@ -24,6 +24,12 @@ class FFTND(LinearOperator):
         input if ``nffts=(None, None, None, ..., None)``)
     sampling : :obj:`tuple`, optional
         Sampling steps in each direction
+    real : :obj:`bool`, optional
+        Model to which fft is applied has real numbers (``True``) or not
+        (``False``). Used to enforce that the output of adjoint of a real
+        model is real. Note that the real FFT is applied only to the first
+        dimension to which the FFTND operator is applied (last element of
+        `dirs`)
     dtype : :obj:`str`, optional
         Type of elements in input array
 
@@ -65,7 +71,7 @@ class FFTND(LinearOperator):
 
     """
     def __init__(self, dims, dirs=(0, 1, 2), nffts=(None, None, None),
-                 sampling=(1., 1., 1.), dtype='complex128'):
+                 sampling=(1., 1., 1.), dtype='complex128', real=False):
         # checks
         if len(dims) < 3:
             raise ValueError('provide at least three dimensions')
@@ -89,25 +95,47 @@ class FFTND(LinearOperator):
                             for i in range(self.ndims)])
         self.fs = [np.fft.fftfreq(nfft, d=samp)
                    for nfft, samp in zip(self.nffts, sampling)]
+        self.real = real
 
         self.dims = np.array(dims)
         self.dims_fft = self.dims.copy()
         for direction, nfft in zip(self.dirs, self.nffts):
             self.dims_fft[direction] = nfft
+        self.dims_fft[self.dirs[-1]] = self.nffts[-1] // 2 + 1 if \
+                self.real else self.nffts[-1]
+        print(self.dims_fft)
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
-        self.dtype = np.dtype(dtype)
+        self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
+        self.cdtype = (np.ones(1, dtype=self.rdtype) +
+                       1j * np.ones(1, dtype=self.rdtype)).dtype
+        self.dtype = self.cdtype
         self.explicit = False
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
-        y = np.sqrt(1./np.prod(self.nffts))*np.fft.fftn(x, s=self.nffts,
-                                                        axes=self.dirs)
+        if self.real:
+            y = np.sqrt(1. / np.prod(self.nffts)) * \
+                np.fft.rfftn(x, s=self.nffts, axes=self.dirs)
+            # Apply scaling to obtain a correct adjoint for this operator
+            y[..., 1:1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+        else:
+            y = np.sqrt(1./np.prod(self.nffts))*np.fft.fftn(x, s=self.nffts,
+                                                            axes=self.dirs)
+        y = y.astype(self.cdtype)
         return y.ravel()
 
     def _rmatvec(self, x):
         x = np.reshape(x, self.dims_fft)
-        y = np.sqrt(np.prod(self.nffts)) * np.fft.ifftn(x, s=self.nffts,
-                                                        axes=self.dirs)
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x[..., 1:1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
+            y = np.sqrt(np.prod(self.nffts)) * np.fft.irfftn(x, s=self.nffts,
+                                                             axes=self.dirs)
+        else:
+            y = np.sqrt(np.prod(self.nffts)) * np.fft.ifftn(x, s=self.nffts,
+                                                            axes=self.dirs)
         for direction in self.dirs:
             y = np.take(y, range(self.dims[direction]), axis=direction)
+        y = y.astype(self.rdtype)
         return y.ravel()

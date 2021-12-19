@@ -24,6 +24,12 @@ class FFT2D(LinearOperator):
         input if ``nffts=(None, None)``)
     sampling : :obj:`tuple`, optional
         Sampling steps ``dy`` and ``dx``
+    real : :obj:`bool`, optional
+        Model to which fft is applied has real numbers (``True``) or not
+        (``False``). Used to enforce that the output of adjoint of a real
+        model is real. Note that the real FFT is applied only to the first
+        dimension to which the FFT2D operator is applied (last element of
+        `dirs`)
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the `dtype` of the operator
         is the corresponding complex type even when a real type is provided.
@@ -65,7 +71,7 @@ class FFT2D(LinearOperator):
 
     """
     def __init__(self, dims, dirs=(0, 1), nffts=(None, None),
-                 sampling=(1., 1.), dtype='complex128'):
+                 sampling=(1., 1.), dtype='complex128', real=False):
         # checks
         if len(dims) < 2:
             raise ValueError('provide at least two dimensions')
@@ -83,14 +89,16 @@ class FFT2D(LinearOperator):
                             else dims[self.dirs[1]]])
         self.f1 = np.fft.fftfreq(self.nffts[0], d=sampling[0])
         self.f2 = np.fft.fftfreq(self.nffts[1], d=sampling[1])
+        self.real = real
 
         self.dims = np.array(dims)
         self.dims_fft = self.dims.copy()
         self.dims_fft[self.dirs[0]] = self.nffts[0]
-        self.dims_fft[self.dirs[1]] = self.nffts[1]
+        self.dims_fft[self.dirs[1]] = self.nffts[1] // 2 + 1 if \
+                self.real else self.nffts[1]
 
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
-        self.rdtype = np.dtype(dtype)
+        self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
         self.cdtype = (np.ones(1, dtype=self.rdtype) +
                        1j * np.ones(1, dtype=self.rdtype)).dtype
         self.dtype = self.cdtype
@@ -98,21 +106,35 @@ class FFT2D(LinearOperator):
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
-        y = np.sqrt(1./np.prod(self.nffts)) * np.fft.fft2(x, s=self.nffts,
-                                                          axes=(self.dirs[0],
-                                                                self.dirs[1]))
-        y = y.flatten()
+        if self.real:
+            y = np.sqrt(1. / np.prod(self.nffts)) * np.fft.rfft2(x,
+                                                                 s=self.nffts,
+                                                                 axes=(self.dirs[0],
+                                                                       self.dirs[1]))
+            # Apply scaling to obtain a correct adjoint for this operator
+            y[..., 1:1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+        else:
+            y = np.sqrt(1./np.prod(self.nffts)) * np.fft.fft2(x, s=self.nffts,
+                                                              axes=(self.dirs[0],
+                                                                    self.dirs[1]))
         y = y.astype(self.cdtype)
-        return y
+        return y.ravel()
 
     def _rmatvec(self, x):
         x = np.reshape(x, self.dims_fft)
-        y = np.sqrt(np.prod(self.nffts)) * np.fft.ifft2(x, s=self.nffts,
-                                                        axes=(self.dirs[0],
-                                                              self.dirs[1]))
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x[..., 1:1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
+            y = np.sqrt(np.prod(self.nffts)) * np.fft.irfft2(x, s=self.nffts,
+                                                             axes=(self.dirs[0],
+                                                                   self.dirs[1]))
+        else:
+            y = np.sqrt(np.prod(self.nffts)) * np.fft.ifft2(x, s=self.nffts,
+                                                            axes=(self.dirs[0],
+                                                                  self.dirs[1]))
         y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
         y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
-        y = y.flatten()
         y = y.astype(self.rdtype)
-        return y
+        return y.ravel()
     
