@@ -64,17 +64,14 @@ def test_FFT_1dsignal(par):
     FFTop = FFT(dims=[par['nt']], nfft=nfft, sampling=dt,
                 real=par['real'], engine=par['engine'], dtype=par['dtype'])
 
-    # FFT with real=True cannot pass dot-test neither be inverted correctly,
-    # see FFT documentation for a detailed explanation. We thus test FFT.H*FFT
     if par['real']:
-        FFTop = FFTop.H * FFTop
-        assert dottest(FFTop, par['nt'], par['nt'],
-                       complexflag=0, tol=10**(-decimal), verb=True)
+        assert dottest(FFTop, nfft // 2 + 1, par['nt'], complexflag=2,
+                       tol=10**(-decimal))
     else:
         assert dottest(FFTop, nfft, par['nt'],
-                       complexflag=2, tol=10**(-decimal), verb=True)
+                       complexflag=2, tol=10**(-decimal))
         assert dottest(FFTop, nfft, par['nt'],
-                       complexflag=3, tol=10**(-decimal), verb=True)
+                       complexflag=3, tol=10**(-decimal))
 
     y = FFTop * x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
@@ -104,12 +101,9 @@ def test_FFT_2dsignal(par):
     FFTop = FFT(dims=(nt, nx), dir=0, nfft=nfft, sampling=dt,
                 real=par['real'], engine=par['engine'], dtype=par['dtype'])
 
-    # FFT with real=True cannot pass dot-test neither be inverted correctly,
-    # see FFT documentation for a detailed explanation. We thus test FFT.H*FFT
     if par['real']:
-        FFTop = FFTop.H * FFTop
-        assert dottest(FFTop, nt * nx, nt * nx,
-                       complexflag=0, tol=10**(-decimal))
+        assert dottest(FFTop, (nfft // 2 + 1) * nx, nt * nx,
+                       complexflag=2, tol=10**(-decimal))
     else:
         assert dottest(FFTop, nfft * nx, nt * nx,
                        complexflag=2, tol=10**(-decimal))
@@ -117,7 +111,7 @@ def test_FFT_2dsignal(par):
                        complexflag=3, tol=10**(-decimal))
 
     D = FFTop * d.flatten()
-    dadj = FFTop.H*D # adjoint is same as inverse for fft
+    dadj = FFTop.H * D # adjoint is same as inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx))
@@ -131,12 +125,9 @@ def test_FFT_2dsignal(par):
     FFTop = FFT(dims=(nt, nx), dir=1, nfft=nfft, sampling=dt,
                 real=par['real'], engine=par['engine'], dtype=par['dtype'])
 
-    # FFT with real=True cannot pass dot-test neither be inverted correctly,
-    # see FFT documentation for a detailed explanation. We thus test FFT.H*FFT
     if par['real']:
-        FFTop = FFTop.H * FFTop
-        assert dottest(FFTop, nt * nx, nt * nx,
-                       complexflag=0, tol=10**(-decimal))
+        assert dottest(FFTop, nt * (nfft // 2 + 1), nt * nx,
+                       complexflag=2, tol=10**(-decimal))
     else:
         assert dottest(FFTop, nt * nfft, nt * nx,
                        complexflag=2, tol=10**(-decimal))
@@ -175,12 +166,9 @@ def test_FFT_3dsignal(par):
     FFTop = FFT(dims=(nt, nx, ny), dir=0, nfft=nfft, sampling=dt,
                 real=par['real'], engine=par['engine'], dtype=par['dtype'])
 
-    # FFT with real=True cannot pass dot-test neither be inverted correctly,
-    # see FFT documentation for a detailed explanation. We thus test FFT.H*FFT
     if par['real']:
-        FFTop = FFTop.H * FFTop
-        assert dottest(FFTop, nt * nx * ny, nt * nx * ny,
-                       complexflag=0, tol=10**(-decimal))
+        assert dottest(FFTop, (nfft//2 + 1) * nx * ny, nt * nx * ny,
+                       complexflag=2, tol=10**(-decimal))
     else:
         assert dottest(FFTop, nfft * nx * ny, nt * nx * ny,
                        complexflag=2, tol=10**(-decimal))
@@ -202,12 +190,9 @@ def test_FFT_3dsignal(par):
     FFTop = FFT(dims=(nt, nx, ny), dir=1, nfft=nfft, sampling=dt,
                 real=par['real'], engine=par['engine'], dtype=par['dtype'])
 
-    # FFT with real=True cannot pass dot-test neither be inverted correctly,
-    # see FFT documentation for a detailed explanation. We thus test FFT.H*FFT
     if par['real']:
-        FFTop = FFTop.H * FFTop
-        assert dottest(FFTop, nt * nx * ny, nt * nx * ny,
-                       complexflag=0, tol=10**(-decimal))
+        assert dottest(FFTop, nt * (nfft//2 + 1) * ny, nt * nx * ny,
+                       complexflag=2, tol=10**(-decimal))
     else:
         assert dottest(FFTop, nt * nfft * ny, nt * nx * ny,
                        complexflag=2, tol=10**(-decimal))
@@ -229,12 +214,9 @@ def test_FFT_3dsignal(par):
     FFTop = FFT(dims=(nt, nx, ny), dir=2, nfft=nfft, sampling=dt,
                 real=par['real'], engine=par['engine'], dtype=par['dtype'])
 
-    # FFT with real=True cannot pass dot-test neither be inverted correctly,
-    # see FFT documentation for a detailed explanation. We thus test FFT.H*FFT
     if par['real']:
-        FFTop = FFTop.H * FFTop
-        assert dottest(FFTop, nt * nx * ny, nt * nx * ny,
-                       complexflag=0, tol=10**(-decimal))
+        assert dottest(FFTop, nt * nx * (nfft//2 + 1) , nt * nx * ny,
+                       complexflag=2, tol=10**(-decimal))
     else:
         assert dottest(FFTop, nt * nx * nfft, nt * nx * ny,
                        complexflag=2, tol=10**(-decimal))
@@ -252,7 +234,7 @@ def test_FFT_3dsignal(par):
     assert_array_almost_equal(d, dinv, decimal=decimal)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_FFT2D(par):
     """Dot-test and inversion for FFT2D operator for 2d signal
     """
@@ -266,13 +248,44 @@ def test_FFT2D(par):
     d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(par['nx']) + 1)
     d = d.astype(par['dtype'])
 
+    # first fft on dir 1
     FFTop = FFT2D(dims=(par['nt'], par['nx']), nffts=(nfft1, nfft2),
-                  sampling=(dt, dx))
-    assert dottest(FFTop, nfft1*nfft2, par['nt']*par['nx'],
-                   complexflag=2, tol=10**(-decimal))
+                  sampling=(dt, dx), real=par['real'], dirs=(0, 1))
+
+    if par['real']:
+        assert dottest(FFTop, nfft1*(nfft2 //2 + 1), par['nt']*par['nx'],
+                       complexflag=2, tol=10**(-decimal))
+    else:
+        assert dottest(FFTop, nfft1*nfft2, par['nt']*par['nx'],
+                       complexflag=2, tol=10**(-decimal))
+        assert dottest(FFTop, nfft1 * nfft2, par['nt'] * par['nx'],
+                       complexflag=3, tol=10 ** (-decimal))
 
     D = FFTop * d.flatten()
-    dadj = FFTop.H*D # adjoint is inverse for fft
+    dadj = FFTop.H * D # adjoint is inverse for fft
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+
+    dadj = np.real(dadj).reshape(par['nt'], par['nx'])
+    dinv = np.real(dinv).reshape(par['nt'], par['nx'])
+
+    assert_array_almost_equal(d, dadj, decimal=decimal)
+    assert_array_almost_equal(d, dinv, decimal=decimal)
+
+    # first fft on dir 0
+    FFTop = FFT2D(dims=(par['nt'], par['nx']), nffts=(nfft2, nfft1),
+                  sampling=(dx, dt), real=par['real'], dirs=(1, 0))
+
+    if par['real']:
+        assert dottest(FFTop, nfft2 * (nfft1 // 2 + 1), par['nt'] * par['nx'],
+                       complexflag=2, tol=10 ** (-decimal))
+    else:
+        assert dottest(FFTop, nfft1 * nfft2, par['nt'] * par['nx'],
+                       complexflag=2, tol=10 ** (-decimal))
+        assert dottest(FFTop, nfft1 * nfft2, par['nt'] * par['nx'],
+                       complexflag=3, tol=10 ** (-decimal))
+
+    D = FFTop * d.flatten()
+    dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
 
     dadj = np.real(dadj).reshape(par['nt'], par['nx'])
@@ -282,7 +295,7 @@ def test_FFT2D(par):
     assert_array_almost_equal(d, dinv, decimal=decimal)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_FFT3D(par):
     """Dot-test and inversion for FFTND operator for 3d signal
     """
@@ -298,15 +311,25 @@ def test_FFT3D(par):
     d = np.tile(d[:, :, np.newaxis], [1, 1, par['ny']])
     d = d.astype(par['dtype'])
 
+    # first fft on dir 2
     FFTop = FFTND(dims=(par['nt'], par['nx'], par['ny']),
-                  nffts=(nfft1, nfft2, nfft3),
-                  sampling=(dt, dx, dy))
-    assert dottest(FFTop, nfft1*nfft2*nfft3,
-                   par['nt']*par['nx']*par['ny'],
-                   complexflag=2, tol=10**(-decimal))
+                  nffts=(nfft1, nfft2, nfft3), dirs=(0, 1, 2),
+                  sampling=(dt, dx, dy), real=par['real'])
+
+    if par['real']:
+        assert dottest(FFTop, nfft1*nfft2*(nfft3//2 + 1),
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=2, tol=10**(-decimal))
+    else:
+        assert dottest(FFTop, nfft1 * nfft2 * nfft3,
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=2, tol=10 ** (-decimal))
+        assert dottest(FFTop, nfft1 * nfft2 * nfft3,
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=3, tol=10 ** (-decimal))
 
     D = FFTop * d.flatten()
-    dadj = FFTop.H*D # adjoint is inverse for fft
+    dadj = FFTop.H * D # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
 
     dadj = np.real(dadj).reshape(par['nt'], par['nx'], par['ny'])
@@ -315,3 +338,56 @@ def test_FFT3D(par):
     assert_array_almost_equal(d, dadj, decimal=decimal)
     assert_array_almost_equal(d, dinv, decimal=decimal)
 
+    # first fft on dir 1
+    FFTop = FFTND(dims=(par['nt'], par['nx'], par['ny']),
+                  nffts=(nfft1, nfft3, nfft2), dirs=(0, 2, 1),
+                  sampling=(dt, dy, dx), real=par['real'])
+
+    if par['real']:
+        assert dottest(FFTop, nfft1 * nfft3 * (nfft2 // 2 + 1),
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=2, tol=10 ** (-decimal))
+    else:
+        assert dottest(FFTop, nfft1 * nfft2 * nfft3,
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=2, tol=10 ** (-decimal))
+        assert dottest(FFTop, nfft1 * nfft2 * nfft3,
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=3, tol=10 ** (-decimal))
+
+    D = FFTop * d.flatten()
+    dadj = FFTop.H * D  # adjoint is inverse for fft
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+
+    dadj = np.real(dadj).reshape(par['nt'], par['nx'], par['ny'])
+    dinv = np.real(dinv).reshape(par['nt'], par['nx'], par['ny'])
+
+    assert_array_almost_equal(d, dadj, decimal=decimal)
+    assert_array_almost_equal(d, dinv, decimal=decimal)
+
+    # first fft on dir 0
+    FFTop = FFTND(dims=(par['nt'], par['nx'], par['ny']),
+                  nffts=(nfft2, nfft3, nfft1), dirs=(1, 2, 0),
+                  sampling=(dx, dy, dt), real=par['real'])
+
+    if par['real']:
+        assert dottest(FFTop, nfft2 * nfft3 * (nfft1 // 2 + 1),
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=2, tol=10 ** (-decimal))
+    else:
+        assert dottest(FFTop, nfft1 * nfft2 * nfft3,
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=2, tol=10 ** (-decimal))
+        assert dottest(FFTop, nfft1 * nfft2 * nfft3,
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=3, tol=10 ** (-decimal))
+
+    D = FFTop * d.flatten()
+    dadj = FFTop.H * D  # adjoint is inverse for fft
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+
+    dadj = np.real(dadj).reshape(par['nt'], par['nx'], par['ny'])
+    dinv = np.real(dinv).reshape(par['nt'], par['nx'], par['ny'])
+
+    assert_array_almost_equal(d, dadj, decimal=decimal)
+    assert_array_almost_equal(d, dinv, decimal=decimal)

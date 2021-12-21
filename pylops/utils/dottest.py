@@ -106,6 +106,7 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
                            % (yy, xx))
             return False
     else:
+        # Check both real and imag parts
         checkreal = np.abs((np.real(yy) - np.real(xx)) /
                            ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
         checkimag = np.abs((np.imag(yy) - np.imag(xx)) /

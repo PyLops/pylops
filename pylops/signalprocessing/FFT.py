@@ -54,6 +54,7 @@ class _FFT_numpy(LinearOperator):
         self.cdtype = (np.ones(1, dtype=self.rdtype) +
                        1j * np.ones(1, dtype=self.rdtype)).dtype
         self.dtype = self.cdtype
+        self.clinear = False if real else True
         self.explicit = False
 
     def _matvec(self, x):
@@ -62,21 +63,25 @@ class _FFT_numpy(LinearOperator):
             if self.fftshift:
                 x = np.fft.ifftshift(x)
             if self.real:
-                y = np.sqrt(1./self.nfft)*np.fft.rfft(np.real(x),
-                                                      n=self.nfft, axis=-1)
+                y = np.fft.rfft(np.real(x), n=self.nfft, axis=-1, norm='ortho')
+                # Apply scaling to obtain a correct adjoint for this operator
+                y[..., 1:1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             else:
-                y = np.sqrt(1./self.nfft)*np.fft.fft(x, n=self.nfft, axis=-1)
+                y = np.fft.fft(x, n=self.nfft, axis=-1, norm='ortho')
         else:
             x = np.reshape(x, self.dims)
             if self.fftshift:
                 x = np.fft.ifftshift(x, axes=self.dir)
             if self.real:
-                y = np.sqrt(1. / self.nfft) * np.fft.rfft(np.real(x),
-                                                          n=self.nfft,
-                                                          axis=self.dir)
+                y = np.fft.rfft(np.real(x), n=self.nfft,
+                                axis=self.dir, norm='ortho')
+                # Apply scaling to obtain a correct adjoint for this operator
+                y = np.swapaxes(y, -1, self.dir)
+                y[..., 1:1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+                y = np.swapaxes(y, self.dir, -1)
             else:
-                y = np.sqrt(1. / self.nfft) * np.fft.fft(x, n=self.nfft,
-                                                         axis=self.dir)
+                y = np.fft.fft(x, n=self.nfft,
+                               axis=self.dir, norm='ortho')
             y = y.flatten()
         y = y.astype(self.cdtype)
         return y
@@ -85,10 +90,12 @@ class _FFT_numpy(LinearOperator):
         if not self.reshape:
             x = x.ravel()
             if self.real:
-                y = np.sqrt(self.nfft)*np.fft.irfft(x, n=self.nfft, axis=-1)
-                y = np.real(y)
+                # Apply scaling to obtain a correct adjoint for this operator
+                x = x.copy()
+                x[..., 1:1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+                y = np.fft.irfft(x, n=self.nfft, axis=-1, norm='ortho')
             else:
-                y = np.sqrt(self.nfft)*np.fft.ifft(x, n=self.nfft, axis=-1)
+                y = np.fft.ifft(x, n=self.nfft, axis=-1, norm='ortho')
             if self.nfft != self.dims[self.dir]:
                 y = y[:self.dims[self.dir]]
             if self.fftshift:
@@ -96,12 +103,14 @@ class _FFT_numpy(LinearOperator):
         else:
             x = np.reshape(x, self.dims_fft)
             if self.real:
-                y = np.sqrt(self.nfft) * np.fft.irfft(x, n=self.nfft,
-                                                      axis=self.dir)
-                y = np.real(y)
+                # Apply scaling to obtain a correct adjoint for this operator
+                x = x.copy()
+                x = np.swapaxes(x, -1, self.dir)
+                x[..., 1:1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+                x = np.swapaxes(x, self.dir, -1)
+                y = np.fft.irfft(x, n=self.nfft, axis=self.dir, norm='ortho')
             else:
-                y = np.sqrt(self.nfft) * np.fft.ifft(x, n=self.nfft,
-                                                     axis=self.dir)
+                y = np.fft.ifft(x, n=self.nfft, axis=self.dir, norm='ortho')
             if self.nfft != self.dims[self.dir]:
                 y = np.take(y, np.arange(0, self.dims[self.dir]),
                             axis=self.dir)
@@ -158,6 +167,7 @@ class _FFT_fftw(LinearOperator):
         self.cdtype = (np.ones(1, dtype=self.rdtype) +
                        1j * np.ones(1, dtype=self.rdtype)).dtype
         self.dtype = self.cdtype
+        self.clinear = False if real else True
         self.explicit = False
 
         # define padding(fftw requires the user to provide padded input signal)
@@ -193,8 +203,9 @@ class _FFT_fftw(LinearOperator):
                 x = np.fft.ifftshift(x)
             if self.dopad:
                 x = np.pad(x, self.pad, 'constant', constant_values=0)
-
-            y = np.sqrt(1./self.nfft)*self.fftplan(x)
+            y = np.sqrt(1. / self.nfft) * self.fftplan(x)
+            if self.real:
+                y[..., 1:1 + (self.nfft - 1) // 2] *= np.sqrt(2)
         else:
             x = np.reshape(x, self.dims)
             if self.fftshift:
@@ -202,12 +213,20 @@ class _FFT_fftw(LinearOperator):
             if self.dopad:
                 x = np.pad(x, self.pad, 'constant', constant_values=0)
             y = np.sqrt(1. / self.nfft) * self.fftplan(x)
-            y = np.ndarray.flatten(y)
-        return y
+            if self.real:
+                # Apply scaling to obtain a correct adjoint for this operator
+                y = np.swapaxes(y, -1, self.dir)
+                y[..., 1:1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+                y = np.swapaxes(y, self.dir, -1)
+        return y.ravel()
 
     def _rmatvec(self, x):
         if not self.reshape:
             x = x.ravel()
+            if self.real:
+                # Apply scaling to obtain a correct adjoint for this operator
+                x = x.copy()
+                x[..., 1:1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             y = np.sqrt(self.nfft) * self.ifftplan(x)
             if self.nfft != self.dims[self.dir]:
                 y = y[:self.dims[self.dir]]
@@ -215,16 +234,21 @@ class _FFT_fftw(LinearOperator):
                 y = np.fft.fftshift(y)
         else:
             x = np.reshape(x, self.dims_fft)
+            if self.real:
+                # Apply scaling to obtain a correct adjoint for this operator
+                x = x.copy()
+                x = np.swapaxes(x, -1, self.dir)
+                x[..., 1:1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+                x = np.swapaxes(x, self.dir, -1)
             y = np.sqrt(self.nfft) * self.ifftplan(x)
             if self.nfft != self.dims[self.dir]:
                 y = np.take(y, np.arange(0, self.dims[self.dir]),
                             axis=self.dir)
             if self.fftshift:
                 y = np.fft.fftshift(y, axes=self.dir)
-            y = np.ndarray.flatten(y)
         if self.real:
             y = np.real(y)
-        return y
+        return y.ravel()
 
 
 def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
@@ -242,18 +266,12 @@ def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
     when ``engine='fftw'`` is chosen.
 
     In both cases, scaling is properly taken into account to guarantee
-    that the operator is passing the dot-test.
-
-    .. note:: For a real valued input signal, it is possible to store the
-      values of the Fourier transform at positive frequencies only as values
-      at negative frequencies are simply their complex conjugates.
-      However as the operation of removing the negative part of the frequency
-      axis in forward mode and adding the complex conjugates in adjoint mode
-      is nonlinear, the Linear Operator FTT with ``real=True`` is not expected
-      to pass the dot-test. It is thus *only* advised to use this flag when a
-      forward and adjoint FFT is used in the same chained operator
-      (e.g., ``FFT.H*Op*FFT``) such as in
-      :py:func:`pylops.waveeqprocessing.mdd.MDC`.
+    that the operator is passing the dot-test. If a user is interested to use
+    the unscaled forward FFT, it must pre-multiply the operator by an
+    appropriate correction factor. Moreover, for a real valued
+    input signal, it is advised to use the flag `real=True` as it stores
+    the values of the Fourier transform at positive frequencies only as
+    values at negative frequencies are simply their complex conjugates.
 
     Parameters
     ----------
@@ -270,7 +288,9 @@ def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
         (``False``). Used to enforce that the output of adjoint of a real
         model is real.
     fftshift : :obj:`bool`, optional
-        Apply fftshift/ifftshift (``True``) or not (``False``)
+        Apply ifftshift/fftshift (``True``) or not (``False``) to model vector.
+        This is required when the model is arranged over a symmetric time axis
+        such that it is first rearranged before applying the Fourier Transform.
     engine : :obj:`str`, optional
         Engine used for fft computation (``numpy`` or ``fftw``). Choose
         ``numpy`` when working with cupy arrays.
@@ -304,20 +324,20 @@ def FFT(dims, dir=0, nfft=None, sampling=1., real=False,
     :math:`d(t)` in forward mode:
 
     .. math::
-        D(f) = \mathscr{F} (d) = \int d(t) e^{-j2\pi ft} dt
+        D(f) = \mathscr{F} (d) = \frac{1}{\sqrt{N_F}} \int d(t) e^{-j2\pi ft} dt
 
     Similarly, the inverse Fourier transform is applied to the Fourier spectrum
     :math:`D(f)` in adjoint mode:
 
     .. math::
-        d(t) = \mathscr{F}^{-1} (D) = \int D(f) e^{j2\pi ft} df
+        d(t) = \mathscr{F}^{-1} (D) = \sqrt{N_F} \int D(f) e^{j2\pi ft} df
 
+    where :math:`N_F` is the number of samples in the Fourier domain `nfft`.
     Both operators are effectively discretized and solved by a fast iterative
-    algorithm known as Fast Fourier Transform.
-
-    Note that the FFT operator is a special operator in that the adjoint is
-    also the inverse of the forward mode. Moreover, in case of real signal
-    in time domain, the Fourier transform in Hermitian.
+    algorithm known as Fast Fourier Transform. Note that the FFT operator is a
+    special operator in that the adjoint is also the inverse of the forward mode.
+    Moreover, in case of real signal in time domain, the Fourier transform in
+    Hermitian.
 
     """
     if engine == 'fftw' and pyfftw is not None:
