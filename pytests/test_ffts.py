@@ -66,12 +66,12 @@ def test_FFT_1dsignal(par):
 
     if par['real']:
         assert dottest(FFTop, nfft // 2 + 1, par['nt'], complexflag=2,
-                       tol=10**(-decimal), verb=True)
+                       tol=10**(-decimal))
     else:
         assert dottest(FFTop, nfft, par['nt'],
-                       complexflag=2, tol=10**(-decimal), verb=True)
+                       complexflag=2, tol=10**(-decimal))
         assert dottest(FFTop, nfft, par['nt'],
-                       complexflag=3, tol=10**(-decimal), verb=True)
+                       complexflag=3, tol=10**(-decimal))
 
     y = FFTop * x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
@@ -248,8 +248,9 @@ def test_FFT2D(par):
     d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(par['nx']) + 1)
     d = d.astype(par['dtype'])
 
+    # first fft on dir 1
     FFTop = FFT2D(dims=(par['nt'], par['nx']), nffts=(nfft1, nfft2),
-                  sampling=(dt, dx), real=par['real'])
+                  sampling=(dt, dx), real=par['real'], dirs=(0, 1))
 
     if par['real']:
         assert dottest(FFTop, nfft1*(nfft2 //2 + 1), par['nt']*par['nx'],
@@ -262,6 +263,29 @@ def test_FFT2D(par):
 
     D = FFTop * d.flatten()
     dadj = FFTop.H * D # adjoint is inverse for fft
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+
+    dadj = np.real(dadj).reshape(par['nt'], par['nx'])
+    dinv = np.real(dinv).reshape(par['nt'], par['nx'])
+
+    assert_array_almost_equal(d, dadj, decimal=decimal)
+    assert_array_almost_equal(d, dinv, decimal=decimal)
+
+    # first fft on dir 0
+    FFTop = FFT2D(dims=(par['nt'], par['nx']), nffts=(nfft2, nfft1),
+                  sampling=(dx, dt), real=par['real'], dirs=(1, 0))
+
+    if par['real']:
+        assert dottest(FFTop, nfft2 * (nfft1 // 2 + 1), par['nt'] * par['nx'],
+                       complexflag=2, tol=10 ** (-decimal))
+    else:
+        assert dottest(FFTop, nfft1 * nfft2, par['nt'] * par['nx'],
+                       complexflag=2, tol=10 ** (-decimal))
+        assert dottest(FFTop, nfft1 * nfft2, par['nt'] * par['nx'],
+                       complexflag=3, tol=10 ** (-decimal))
+
+    D = FFTop * d.flatten()
+    dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
 
     dadj = np.real(dadj).reshape(par['nt'], par['nx'])
@@ -287,8 +311,9 @@ def test_FFT3D(par):
     d = np.tile(d[:, :, np.newaxis], [1, 1, par['ny']])
     d = d.astype(par['dtype'])
 
+    # first fft on dir 2
     FFTop = FFTND(dims=(par['nt'], par['nx'], par['ny']),
-                  nffts=(nfft1, nfft2, nfft3),
+                  nffts=(nfft1, nfft2, nfft3), dirs=(0, 1, 2),
                   sampling=(dt, dx, dy), real=par['real'])
 
     if par['real']:
@@ -305,6 +330,60 @@ def test_FFT3D(par):
 
     D = FFTop * d.flatten()
     dadj = FFTop.H * D # adjoint is inverse for fft
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+
+    dadj = np.real(dadj).reshape(par['nt'], par['nx'], par['ny'])
+    dinv = np.real(dinv).reshape(par['nt'], par['nx'], par['ny'])
+
+    assert_array_almost_equal(d, dadj, decimal=decimal)
+    assert_array_almost_equal(d, dinv, decimal=decimal)
+
+    # first fft on dir 1
+    FFTop = FFTND(dims=(par['nt'], par['nx'], par['ny']),
+                  nffts=(nfft1, nfft3, nfft2), dirs=(0, 2, 1),
+                  sampling=(dt, dy, dx), real=par['real'])
+
+    if par['real']:
+        assert dottest(FFTop, nfft1 * nfft3 * (nfft2 // 2 + 1),
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=2, tol=10 ** (-decimal))
+    else:
+        assert dottest(FFTop, nfft1 * nfft2 * nfft3,
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=2, tol=10 ** (-decimal))
+        assert dottest(FFTop, nfft1 * nfft2 * nfft3,
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=3, tol=10 ** (-decimal))
+
+    D = FFTop * d.flatten()
+    dadj = FFTop.H * D  # adjoint is inverse for fft
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+
+    dadj = np.real(dadj).reshape(par['nt'], par['nx'], par['ny'])
+    dinv = np.real(dinv).reshape(par['nt'], par['nx'], par['ny'])
+
+    assert_array_almost_equal(d, dadj, decimal=decimal)
+    assert_array_almost_equal(d, dinv, decimal=decimal)
+
+    # first fft on dir 0
+    FFTop = FFTND(dims=(par['nt'], par['nx'], par['ny']),
+                  nffts=(nfft2, nfft3, nfft1), dirs=(1, 2, 0),
+                  sampling=(dx, dy, dt), real=par['real'])
+
+    if par['real']:
+        assert dottest(FFTop, nfft2 * nfft3 * (nfft1 // 2 + 1),
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=2, tol=10 ** (-decimal))
+    else:
+        assert dottest(FFTop, nfft1 * nfft2 * nfft3,
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=2, tol=10 ** (-decimal))
+        assert dottest(FFTop, nfft1 * nfft2 * nfft3,
+                       par['nt'] * par['nx'] * par['ny'],
+                       complexflag=3, tol=10 ** (-decimal))
+
+    D = FFTop * d.flatten()
+    dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
 
     dadj = np.real(dadj).reshape(par['nt'], par['nx'], par['ny'])

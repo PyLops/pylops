@@ -78,9 +78,9 @@ class FFTND(LinearOperator):
         if len(dirs) < 3:
             raise ValueError('provide at least three directions along which '
                              'fft is applied')
-        if len(nffts) != 3:
+        if len(nffts) < 3:
             raise ValueError('provide at least three fft dimensions')
-        if len(sampling) != 3:
+        if len(sampling) < 3:
             raise ValueError('provide at least three sampling steps')
 
         if len(dirs) != len(nffts) \
@@ -99,28 +99,28 @@ class FFTND(LinearOperator):
 
         self.dims = np.array(dims)
         self.dims_fft = self.dims.copy()
-        for direction, nfft in zip(self.dirs, self.nffts):
-            self.dims_fft[direction] = nfft
+        for idir, direction in enumerate(self.dirs):
+            self.dims_fft[direction] = self.nffts[idir]
         self.dims_fft[self.dirs[-1]] = self.nffts[-1] // 2 + 1 if \
                 self.real else self.nffts[-1]
-        print(self.dims_fft)
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
         self.cdtype = (np.ones(1, dtype=self.rdtype) +
                        1j * np.ones(1, dtype=self.rdtype)).dtype
         self.dtype = self.cdtype
+        self.clinear = False if real else True
         self.explicit = False
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.real:
-            y = np.sqrt(1. / np.prod(self.nffts)) * \
-                np.fft.rfftn(x, s=self.nffts, axes=self.dirs)
+            y = np.fft.rfftn(x, s=self.nffts, axes=self.dirs, norm='ortho')
             # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.dirs[-1])
             y[..., 1:1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.dirs[-1], -1)
         else:
-            y = np.sqrt(1./np.prod(self.nffts))*np.fft.fftn(x, s=self.nffts,
-                                                            axes=self.dirs)
+            y = np.fft.fftn(x, s=self.nffts, axes=self.dirs, norm='ortho')
         y = y.astype(self.cdtype)
         return y.ravel()
 
@@ -129,12 +129,12 @@ class FFTND(LinearOperator):
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
+            x = np.swapaxes(x, -1, self.dirs[-1])
             x[..., 1:1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
-            y = np.sqrt(np.prod(self.nffts)) * np.fft.irfftn(x, s=self.nffts,
-                                                             axes=self.dirs)
+            x = np.swapaxes(x, self.dirs[-1], -1)
+            y = np.fft.irfftn(x, s=self.nffts, axes=self.dirs, norm='ortho')
         else:
-            y = np.sqrt(np.prod(self.nffts)) * np.fft.ifftn(x, s=self.nffts,
-                                                            axes=self.dirs)
+            y = np.fft.ifftn(x, s=self.nffts, axes=self.dirs, norm='ortho')
         for direction in self.dirs:
             y = np.take(y, range(self.dims[direction]), axis=direction)
         y = y.astype(self.rdtype)

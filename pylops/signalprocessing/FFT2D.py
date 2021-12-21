@@ -21,7 +21,8 @@ class FFT2D(LinearOperator):
         Pair of directions along which FFT2D is applied
     nffts : :obj:`tuple`, optional
         Number of samples in Fourier Transform for each direction (same as
-        input if ``nffts=(None, None)``)
+        input if ``nffts=(None, None)``). Note that the order must agree with
+        ``dirs``.
     sampling : :obj:`tuple`, optional
         Sampling steps ``dy`` and ``dx``
     real : :obj:`bool`, optional
@@ -102,21 +103,21 @@ class FFT2D(LinearOperator):
         self.cdtype = (np.ones(1, dtype=self.rdtype) +
                        1j * np.ones(1, dtype=self.rdtype)).dtype
         self.dtype = self.cdtype
+        self.clinear = False if real else True
         self.explicit = False
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.real:
-            y = np.sqrt(1. / np.prod(self.nffts)) * np.fft.rfft2(x,
-                                                                 s=self.nffts,
-                                                                 axes=(self.dirs[0],
-                                                                       self.dirs[1]))
+            y = np.fft.rfft2(x, s=self.nffts, axes=self.dirs,
+                             norm='ortho')
             # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.dirs[-1])
             y[..., 1:1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.dirs[-1], -1)
         else:
-            y = np.sqrt(1./np.prod(self.nffts)) * np.fft.fft2(x, s=self.nffts,
-                                                              axes=(self.dirs[0],
-                                                                    self.dirs[1]))
+            y = np.fft.fft2(x, s=self.nffts, axes=self.dirs,
+                            norm='ortho')
         y = y.astype(self.cdtype)
         return y.ravel()
 
@@ -125,16 +126,15 @@ class FFT2D(LinearOperator):
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
+            x = np.swapaxes(x, -1, self.dirs[-1])
             x[..., 1:1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
-            y = np.sqrt(np.prod(self.nffts)) * np.fft.irfft2(x, s=self.nffts,
-                                                             axes=(self.dirs[0],
-                                                                   self.dirs[1]))
+            x = np.swapaxes(x, self.dirs[-1], -1)
+            y = np.fft.irfft2(x, s=self.nffts, axes=self.dirs,
+                             norm='ortho')
         else:
-            y = np.sqrt(np.prod(self.nffts)) * np.fft.ifft2(x, s=self.nffts,
-                                                            axes=(self.dirs[0],
-                                                                  self.dirs[1]))
+            y = np.fft.ifft2(x, s=self.nffts, axes=self.dirs,
+                             norm='ortho')
         y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
         y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
         y = y.astype(self.rdtype)
         return y.ravel()
-    
