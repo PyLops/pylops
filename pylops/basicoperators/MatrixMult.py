@@ -1,8 +1,11 @@
+import logging
 import numpy as np
 import scipy as sp
 from scipy.sparse.linalg import inv
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
+
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
 
 
 class MatrixMult(LinearOperator):
@@ -56,6 +59,11 @@ class MatrixMult(LinearOperator):
                           A.shape[1]*np.prod(self.dims))
             self.explicit = False
         self.dtype = np.dtype(dtype)
+        # Check dtype for correctness (upcast to complex when A is complex)
+        if np.iscomplexobj(A) and not np.iscomplexobj(np.ones(1, dtype=self.dtype)):
+            self.dtype = A.dtype
+            logging.warning('Matrix A is a complex object, dtype '
+                            'casted to %s' % self.dtype)
 
     def _matvec(self, x):
         ncp = get_array_module(x)
