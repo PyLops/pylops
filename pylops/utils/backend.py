@@ -1,7 +1,8 @@
 import numpy as np
+from scipy.linalg import block_diag, lstsq, toeplitz
 from scipy.signal import convolve, correlate, fftconvolve, oaconvolve
-from scipy.linalg import block_diag, toeplitz, lstsq
 from scipy.sparse import csc_matrix, eye
+
 from pylops.utils import deps
 
 if deps.cupy_enabled:
@@ -15,14 +16,14 @@ if deps.cupy_enabled:
 if deps.cusignal_enabled:
     import cusignal
 
-cu_message = 'cupy package not installed. Use numpy arrays of ' \
-             'install cupy.'
+cu_message = "cupy package not installed. Use numpy arrays of " "install cupy."
 
-cusignal_message = 'cusignal package not installed. Use numpy arrays of' \
-                   'install cusignal.'
+cusignal_message = (
+    "cusignal package not installed. Use numpy arrays of" "install cusignal."
+)
 
 
-def get_module(backend='numpy'):
+def get_module(backend="numpy"):
     """Returns correct numerical module based on backend string
 
     Parameters
@@ -37,12 +38,12 @@ def get_module(backend='numpy'):
         Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
 
     """
-    if backend == 'numpy':
+    if backend == "numpy":
         ncp = np
-    elif backend == 'cupy':
+    elif backend == "cupy":
         ncp = cp
     else:
-        raise ValueError('backend must be numpy or cupy')
+        raise ValueError("backend must be numpy or cupy")
     return ncp
 
 
@@ -62,11 +63,11 @@ def get_module_name(mod):
 
     """
     if mod == np:
-        backend = 'numpy'
+        backend = "numpy"
     elif mod == cp:
-        backend = 'cupy'
+        backend = "cupy"
     else:
-        raise ValueError('module must be numpy or cupy')
+        raise ValueError("module must be numpy or cupy")
     return backend
 
 
@@ -162,9 +163,11 @@ def get_oaconvolve(x):
     if cp.get_array_module(x) == np:
         return oaconvolve
     else:
-        raise NotImplementedError('oaconvolve not implemented in '
-                                  'cupy/cusignal. Consider using a different'
-                                  'option...')
+        raise NotImplementedError(
+            "oaconvolve not implemented in "
+            "cupy/cusignal. Consider using a different"
+            "option..."
+        )
 
 
 def get_correlate(x):

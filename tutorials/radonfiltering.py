@@ -17,26 +17,24 @@ separation. We can thus devise a simple workflow that takes our data as input,
 applies a Radon transform, filters some of the events out and goes back to the
 original domain.
 """
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 import pylops
 from pylops.utils.wavelets import ricker
 
-plt.close('all')
+plt.close("all")
 np.random.seed(0)
 
 ###############################################################################
 # Let's first create a data composed on 3 linear events and a parabolic event.
-par = {'ox':0, 'dx':2, 'nx':121,
-       'ot':0, 'dt':0.004, 'nt':100,
-       'f0': 30}
+par = {"ox": 0, "dx": 2, "nx": 121, "ot": 0, "dt": 0.004, "nt": 100, "f0": 30}
 
 # linear events
 v = 1500
 t0 = [0.1, 0.2, 0.3]
 theta = [0, 0, 0]
-amp = [1., -2, 0.5]
+amp = [1.0, -2, 0.5]
 
 # parabolic event
 tp0 = [0.13]
@@ -48,13 +46,13 @@ ampp = [0.7]
 taxis, taxis2, xaxis, yaxis = pylops.utils.seismicevents.makeaxis(par)
 
 # create wavelet
-wav = ricker(taxis[:41], f0=par['f0'])[0]
+wav = ricker(taxis[:41], f0=par["f0"])[0]
 
 # generate model
-y = pylops.utils.seismicevents.linear2d(xaxis, taxis, v, t0,
-                                        theta, amp, wav)[1] + \
-    pylops.utils.seismicevents.parabolic2d(xaxis, taxis, tp0,
-                                           px, pxx, ampp, wav)[1]
+y = (
+    pylops.utils.seismicevents.linear2d(xaxis, taxis, v, t0, theta, amp, wav)[1]
+    + pylops.utils.seismicevents.parabolic2d(xaxis, taxis, tp0, px, pxx, ampp, wav)[1]
+)
 
 ###############################################################################
 # We can now create the :py:class:`pylops.signalprocessing.Radon2D` operator.
@@ -72,66 +70,86 @@ npx = 61
 pxmax = 5e-4
 px = np.linspace(-pxmax, pxmax, npx)
 
-Rop = pylops.signalprocessing.Radon2D(taxis, xaxis, px, kind='linear',
-                                      interp='nearest',  centeredh=False,
-                                      dtype='float64')
+Rop = pylops.signalprocessing.Radon2D(
+    taxis, xaxis, px, kind="linear", interp="nearest", centeredh=False, dtype="float64"
+)
 
 # adjoint Radon transform
 xadj = Rop.H * y.flatten()
-xadj = xadj.reshape(npx, par['nt'])
+xadj = xadj.reshape(npx, par["nt"])
 
 # sparse Radon transform
-xinv, niter, cost = \
-    pylops.optimization.sparsity.FISTA(Rop, y.flatten(), 15,
-                                       eps=1e1, returninfo=True)
-xinv = xinv.reshape(npx, par['nt'])
+xinv, niter, cost = pylops.optimization.sparsity.FISTA(
+    Rop, y.flatten(), 15, eps=1e1, returninfo=True
+)
+xinv = xinv.reshape(npx, par["nt"])
 
 # filtering
 xfilt = np.zeros_like(xadj)
-xfilt[npx//2-3:npx//2+4] = xadj[npx//2-3:npx//2+4]
+xfilt[npx // 2 - 3 : npx // 2 + 4] = xadj[npx // 2 - 3 : npx // 2 + 4]
 
 yfilt = Rop * xfilt.flatten()
-yfilt = yfilt.reshape(par['nx'], par['nt'])
+yfilt = yfilt.reshape(par["nx"], par["nt"])
 
 # filtering on sparse transform
 xinvfilt = np.zeros_like(xinv)
-xinvfilt[npx//2-3:npx//2+4] = xinv[npx//2-3:npx//2+4]
+xinvfilt[npx // 2 - 3 : npx // 2 + 4] = xinv[npx // 2 - 3 : npx // 2 + 4]
 
 yinvfilt = Rop * xinvfilt.flatten()
-yinvfilt = yinvfilt.reshape(par['nx'], par['nt'])
+yinvfilt = yinvfilt.reshape(par["nx"], par["nt"])
 
 ###############################################################################
 # Finally we visualize our results.
 fig, axs = plt.subplots(1, 5, sharey=True, figsize=(12, 5))
-axs[0].imshow(y.T, cmap='gray',
-              vmin=-np.abs(y).max(), vmax=np.abs(y).max(),
-              extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
-axs[0].set_title('Data')
-axs[0].axis('tight')
-axs[1].imshow(xadj.T, cmap='gray',
-              vmin=-np.abs(xadj).max(), vmax=np.abs(xadj).max(),
-              extent=(px[0], px[-1], taxis[-1], taxis[0]))
-axs[1].axvline(px[npx//2-3], color='r', linestyle='--')
-axs[1].axvline(px[npx//2+3], color='r', linestyle='--')
-axs[1].set_title('Radon')
-axs[1].axis('tight')
-axs[2].imshow(yfilt.T, cmap='gray',
-              vmin=-np.abs(yfilt).max(), vmax=np.abs(yfilt).max(),
-              extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
-axs[2].set_title('Filtered data')
-axs[2].axis('tight')
-axs[3].imshow(xinv.T, cmap='gray',
-              vmin=-np.abs(xinv).max(), vmax=np.abs(xinv).max(),
-              extent=(px[0], px[-1], taxis[-1], taxis[0]))
-axs[3].axvline(px[npx//2-3], color='r', linestyle='--')
-axs[3].axvline(px[npx//2+3], color='r', linestyle='--')
-axs[3].set_title('Sparse Radon')
-axs[3].axis('tight')
-axs[4].imshow(yinvfilt.T, cmap='gray',
-              vmin=-np.abs(y).max(), vmax=np.abs(y).max(),
-              extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]))
-axs[4].set_title('Sparse filtered data')
-axs[4].axis('tight')
+axs[0].imshow(
+    y.T,
+    cmap="gray",
+    vmin=-np.abs(y).max(),
+    vmax=np.abs(y).max(),
+    extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]),
+)
+axs[0].set_title("Data")
+axs[0].axis("tight")
+axs[1].imshow(
+    xadj.T,
+    cmap="gray",
+    vmin=-np.abs(xadj).max(),
+    vmax=np.abs(xadj).max(),
+    extent=(px[0], px[-1], taxis[-1], taxis[0]),
+)
+axs[1].axvline(px[npx // 2 - 3], color="r", linestyle="--")
+axs[1].axvline(px[npx // 2 + 3], color="r", linestyle="--")
+axs[1].set_title("Radon")
+axs[1].axis("tight")
+axs[2].imshow(
+    yfilt.T,
+    cmap="gray",
+    vmin=-np.abs(yfilt).max(),
+    vmax=np.abs(yfilt).max(),
+    extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]),
+)
+axs[2].set_title("Filtered data")
+axs[2].axis("tight")
+axs[3].imshow(
+    xinv.T,
+    cmap="gray",
+    vmin=-np.abs(xinv).max(),
+    vmax=np.abs(xinv).max(),
+    extent=(px[0], px[-1], taxis[-1], taxis[0]),
+)
+axs[3].axvline(px[npx // 2 - 3], color="r", linestyle="--")
+axs[3].axvline(px[npx // 2 + 3], color="r", linestyle="--")
+axs[3].set_title("Sparse Radon")
+axs[3].axis("tight")
+axs[4].imshow(
+    yinvfilt.T,
+    cmap="gray",
+    vmin=-np.abs(y).max(),
+    vmax=np.abs(y).max(),
+    extent=(xaxis[0], xaxis[-1], taxis[-1], taxis[0]),
+)
+axs[4].set_title("Sparse filtered data")
+axs[4].axis("tight")
 
 ###############################################################################
 # As expected, the Radon domain is a suitable domain for this type of filtering

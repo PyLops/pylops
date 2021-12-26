@@ -1,4 +1,5 @@
 from numbers import Integral
+
 from pylops import LinearOperator
 
 
@@ -58,11 +59,12 @@ class FunctionOperator(LinearOperator):
     >>> A @ np.ones(2)
     array([2.,  3.])
     """
+
     def __init__(self, f, *args, **kwargs):
         try:
-            self.dtype = kwargs['dtype']
+            self.dtype = kwargs["dtype"]
         except KeyError:
-            self.dtype = 'float64'
+            self.dtype = "float64"
         self.explicit = False
 
         super().__init__()

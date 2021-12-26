@@ -1,10 +1,11 @@
 import logging
 
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class Regression(LinearOperator):
@@ -73,30 +74,30 @@ class Regression(LinearOperator):
         \end{bmatrix}
 
     """
-    def __init__(self, taxis, order, dtype='float64'):
+
+    def __init__(self, taxis, order, dtype="float64"):
         ncp = get_array_module(taxis)
         if not isinstance(taxis, ncp.ndarray):
-            logging.error('t must be numpy.ndarray...')
-            raise TypeError('t must be numpy.ndarray...')
+            logging.error("t must be numpy.ndarray...")
+            raise TypeError("t must be numpy.ndarray...")
         else:
             self.taxis = taxis
         self.order = order
-        self.shape = (len(self.taxis), self.order+1)
+        self.shape = (len(self.taxis), self.order + 1)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         ncp = get_array_module(x)
         y = ncp.zeros_like(self.taxis)
-        for i in range(self.order+1):
-            y += x[i]*self.taxis**i
+        for i in range(self.order + 1):
+            y += x[i] * self.taxis ** i
         return y
 
     def _rmatvec(self, x):
         ncp = get_array_module(x)
 
-        return ncp.vstack([ncp.dot(self.taxis**i, x)
-                           for i in range(self.order+1)])
+        return ncp.vstack([ncp.dot(self.taxis ** i, x) for i in range(self.order + 1)])
 
     def apply(self, t, x):
         """Return values along y-axis given certain ``t`` location(s) along

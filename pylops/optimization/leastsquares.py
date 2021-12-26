@@ -1,17 +1,26 @@
 import numpy as np
-from scipy.sparse.linalg import lsqr
 from scipy.sparse.linalg import cg as sp_cg
+from scipy.sparse.linalg import lsqr
 
-from pylops.basicoperators import Diagonal
-from pylops.basicoperators import VStack
+from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.solver import cg, cgls
 from pylops.utils.backend import get_array_module
 
 
-def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
-                             epsI=0, epsRs=None, x0=None,
-                             returninfo=False, NRegs=None, epsNRs=None,
-                             **kwargs_solver):
+def NormalEquationsInversion(
+    Op,
+    Regs,
+    data,
+    Weight=None,
+    dataregs=None,
+    epsI=0,
+    epsRs=None,
+    x0=None,
+    returninfo=False,
+    NRegs=None,
+    epsNRs=None,
+    **kwargs_solver
+):
     r"""Inversion of normal equations.
 
     Solve the regularized normal equations for a system of equations
@@ -117,9 +126,9 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
 
     # Add regularization terms
     if epsI > 0:
-        Op_normal += epsI ** 2 * Diagonal(ncp.ones(int(Op.shape[1]),
-                                                   dtype=Op.dtype),
-                                          dtype=Op.dtype)
+        Op_normal += epsI ** 2 * Diagonal(
+            ncp.ones(int(Op.shape[1]), dtype=Op.dtype), dtype=Op.dtype
+        )
 
     if Regs is not None:
         for epsR, Reg, datareg in zip(epsRs, Regs, dataregs):
@@ -137,9 +146,12 @@ def NormalEquationsInversion(Op, Regs, data, Weight=None, dataregs=None,
     if ncp == np:
         xinv, istop = sp_cg(Op_normal, y_normal, **kwargs_solver)
     else:
-        xinv = cg(Op_normal, y_normal,
-                  ncp.zeros(int(Op_normal.shape[1]), dtype=Op_normal.dtype),
-                  **kwargs_solver)[0]
+        xinv = cg(
+            Op_normal,
+            y_normal,
+            ncp.zeros(int(Op_normal.shape[1]), dtype=Op_normal.dtype),
+            **kwargs_solver
+        )[0]
         istop = None
     if x0 is not None:
         xinv = x0 + xinv
@@ -189,14 +201,23 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
         \end{bmatrix}
 
     """
-    OpReg = VStack([Op] + [epsR * Reg for epsR, Reg in zip(epsRs, Regs)],
-                   dtype=Op.dtype)
+    OpReg = VStack(
+        [Op] + [epsR * Reg for epsR, Reg in zip(epsRs, Regs)], dtype=Op.dtype
+    )
     return OpReg
 
 
-def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
-                         epsRs=None, x0=None, returninfo=False,
-                         **kwargs_solver):
+def RegularizedInversion(
+    Op,
+    Regs,
+    data,
+    Weight=None,
+    dataregs=None,
+    epsRs=None,
+    x0=None,
+    returninfo=False,
+    **kwargs_solver
+):
     r"""Regularized inversion.
 
     Solve a system of regularized equations given the operator ``Op``,
@@ -309,26 +330,28 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
 
     # augumented data
     if Weight is not None:
-        datatot = Weight*data.copy()
+        datatot = Weight * data.copy()
     else:
         datatot = data.copy()
 
     # augumented operator
     if Regs is not None:
         for epsR, datareg in zip(epsRs, dataregs):
-            datatot = np.hstack((datatot, epsR*datareg))
+            datatot = np.hstack((datatot, epsR * datareg))
 
     # solver
     if x0 is not None:
         datatot = datatot - RegOp * x0
 
     if ncp == np:
-        xinv, istop, itn, r1norm, r2norm = lsqr(RegOp, datatot,
-                                                **kwargs_solver)[0:5]
+        xinv, istop, itn, r1norm, r2norm = lsqr(RegOp, datatot, **kwargs_solver)[0:5]
     else:
-        xinv, istop, itn, r1norm, r2norm = \
-            cgls(RegOp, datatot, ncp.zeros(int(RegOp.shape[1]), dtype=RegOp.dtype),
-                 **kwargs_solver)[0:5]
+        xinv, istop, itn, r1norm, r2norm = cgls(
+            RegOp,
+            datatot,
+            ncp.zeros(int(RegOp.shape[1]), dtype=RegOp.dtype),
+            **kwargs_solver
+        )[0:5]
     if x0 is not None:
         xinv = x0 + xinv
     if returninfo:
@@ -337,8 +360,7 @@ def RegularizedInversion(Op, Regs, data, Weight=None, dataregs=None,
         return xinv
 
 
-def PreconditionedInversion(Op, P, data, x0=None, returninfo=False,
-                            **kwargs_solver):
+def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_solver):
     r"""Preconditioned inversion.
 
     Solve a system of preconditioned equations given the operator
@@ -411,12 +433,11 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False,
         data = data - Op * x0
 
     if ncp == np:
-        pinv, istop, itn, r1norm, r2norm = \
-            lsqr(POp, data, **kwargs_solver)[0:5]
+        pinv, istop, itn, r1norm, r2norm = lsqr(POp, data, **kwargs_solver)[0:5]
     else:
-        pinv, istop, itn, r1norm, r2norm = \
-            cgls(POp, data, ncp.zeros(int(POp.shape[1]), dtype=POp.dtype),
-                 **kwargs_solver)[0:5]
+        pinv, istop, itn, r1norm, r2norm = cgls(
+            POp, data, ncp.zeros(int(POp.shape[1]), dtype=POp.dtype), **kwargs_solver
+        )[0:5]
     xinv = P * pinv
     if x0 is not None:
         xinv = xinv + x0

@@ -1,26 +1,27 @@
 import logging
 import time
-import numpy as np
 
+import numpy as np
 from scipy.sparse.linalg import lsqr
+
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, Identity
-from pylops.optimization.leastsquares import NormalEquationsInversion, \
-    RegularizedInversion
-from pylops.optimization.solver import cgls
 from pylops.optimization.eigs import power_iteration
+from pylops.optimization.leastsquares import (
+    NormalEquationsInversion,
+    RegularizedInversion,
+)
+from pylops.optimization.solver import cgls
 from pylops.utils.backend import get_array_module, get_module_name, to_numpy
-
 
 try:
     from spgl1 import spgl1
 except ModuleNotFoundError:
     spgl1 = None
-    spgl1_message = 'Spgl1 not installed. ' \
-                    'Run "pip install spgl1".'
+    spgl1_message = "Spgl1 not installed. " 'Run "pip install spgl1".'
 except Exception as e:
     spgl1 = None
-    spgl1_message = 'Failed to import spgl1 (error:%s).' % e
+    spgl1_message = "Failed to import spgl1 (error:%s)." % e
 
 
 def _hardthreshold(x, thresh):
@@ -47,8 +48,9 @@ def _hardthreshold(x, thresh):
 
     """
     x1 = x.copy()
-    x1[np.abs(x) <= np.sqrt(2*thresh)] = 0
+    x1[np.abs(x) <= np.sqrt(2 * thresh)] = 0
     return x1
+
 
 def _softthreshold(x, thresh):
     r"""Soft thresholding.
@@ -76,10 +78,11 @@ def _softthreshold(x, thresh):
     if np.iscomplexobj(x):
         # https://stats.stackexchange.com/questions/357339/soft-thresholding-
         # for-the-lasso-with-complex-valued-data
-        x1 = np.maximum(np.abs(x) - thresh, 0.) * np.exp(1j * np.angle(x))
+        x1 = np.maximum(np.abs(x) - thresh, 0.0) * np.exp(1j * np.angle(x))
     else:
-        x1 = np.maximum(np.abs(x)-thresh, 0.) * np.sign(x)
+        x1 = np.maximum(np.abs(x) - thresh, 0.0) * np.sign(x)
     return x1
+
 
 def _halfthreshold(x, thresh):
     r"""Half thresholding.
@@ -104,11 +107,12 @@ def _halfthreshold(x, thresh):
         Tresholded vector
 
     """
-    phi = 2. / 3. * np.arccos((thresh / 8.) * (np.abs(x) / 3.) ** (-1.5))
-    x1 = 2./3. * x * (1 + np.cos(2. * np.pi / 3. - phi))
-    #x1[np.abs(x) <= 1.5 * thresh ** (2. / 3.)] = 0
-    x1[np.abs(x) <= (54 ** (1. / 3.) / 4.) * thresh ** (2. / 3.)] = 0
+    phi = 2.0 / 3.0 * np.arccos((thresh / 8.0) * (np.abs(x) / 3.0) ** (-1.5))
+    x1 = 2.0 / 3.0 * x * (1 + np.cos(2.0 * np.pi / 3.0 - phi))
+    # x1[np.abs(x) <= 1.5 * thresh ** (2. / 3.)] = 0
+    x1[np.abs(x) <= (54 ** (1.0 / 3.0) / 4.0) * thresh ** (2.0 / 3.0)] = 0
     return x1
+
 
 def _hardthreshold_percentile(x, perc):
     r"""Percentile Hard thresholding.
@@ -136,6 +140,7 @@ def _hardthreshold_percentile(x, perc):
     thresh = np.percentile(np.abs(x), perc)
     return _hardthreshold(x, 0.5 * thresh ** 2)
 
+
 def _softthreshold_percentile(x, perc):
     r"""Percentile Soft thresholding.
 
@@ -162,6 +167,7 @@ def _softthreshold_percentile(x, perc):
     thresh = np.percentile(np.abs(x), perc)
     return _softthreshold(x, thresh)
 
+
 def _halfthreshold_percentile(x, perc):
     r"""Percentile Half thresholding.
 
@@ -186,15 +192,23 @@ def _halfthreshold_percentile(x, perc):
 
     """
     thresh = np.percentile(np.abs(x), perc)
-    #return _halfthreshold(x, (2. / 3. * thresh) ** (1.5))
-    return _halfthreshold(x, (4. / 54 ** (1. / 3.) * thresh) ** 1.5)
+    # return _halfthreshold(x, (2. / 3. * thresh) ** (1.5))
+    return _halfthreshold(x, (4.0 / 54 ** (1.0 / 3.0) * thresh) ** 1.5)
 
 
-def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
-               epsI=1e-10, x0=None, tolIRLS=1e-10,
-               returnhistory=False, **kwargs_solver):
-    r"""Iteratively reweighted least squares with L1 data term
-    """
+def _IRLS_data(
+    Op,
+    data,
+    nouter,
+    threshR=False,
+    epsR=1e-10,
+    epsI=1e-10,
+    x0=None,
+    tolIRLS=1e-10,
+    returnhistory=False,
+    **kwargs_solver
+):
+    r"""Iteratively reweighted least squares with L1 data term"""
     ncp = get_array_module(data)
 
     if x0 is not None:
@@ -204,9 +218,9 @@ def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
         rw_hist = ncp.zeros((nouter + 1, int(Op.shape[0])))
 
     # first iteration (unweighted least-squares)
-    xinv = NormalEquationsInversion(Op, None, data, epsI=epsI,
-                                    returninfo=False,
-                                    **kwargs_solver)
+    xinv = NormalEquationsInversion(
+        Op, None, data, epsI=epsI, returninfo=False, **kwargs_solver
+    )
     r = data - Op * xinv
     if returnhistory:
         xinv_hist[0] = xinv
@@ -214,15 +228,14 @@ def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
         # other iterations (weighted least-squares)
         xinvold = xinv.copy()
         if threshR:
-            rw = 1. / ncp.maximum(ncp.abs(r), epsR)
+            rw = 1.0 / ncp.maximum(ncp.abs(r), epsR)
         else:
-            rw = 1. / (ncp.abs(r) + epsR)
+            rw = 1.0 / (ncp.abs(r) + epsR)
         rw = rw / rw.max()
         R = Diagonal(rw)
-        xinv = NormalEquationsInversion(Op, [], data, Weight=R,
-                                        epsI=epsI,
-                                        returninfo=False,
-                                        **kwargs_solver)
+        xinv = NormalEquationsInversion(
+            Op, [], data, Weight=R, epsI=epsI, returninfo=False, **kwargs_solver
+        )
         r = data - Op * xinv
         # save history
         if returnhistory:
@@ -240,16 +253,24 @@ def _IRLS_data(Op, data, nouter, threshR=False, epsR=1e-10,
             xinv_hist = x0 + xinv_hist
 
     if returnhistory:
-        return xinv, nouter, xinv_hist[:nouter + 1], rw_hist[:nouter + 1]
+        return xinv, nouter, xinv_hist[: nouter + 1], rw_hist[: nouter + 1]
     else:
         return xinv, nouter
 
 
-def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
-                epsI=1e-10, x0=None, tolIRLS=1e-10,
-                returnhistory=False, **kwargs_solver):
-    r"""Iteratively reweighted least squares with L1 model term
-    """
+def _IRLS_model(
+    Op,
+    data,
+    nouter,
+    threshR=False,
+    epsR=1e-10,
+    epsI=1e-10,
+    x0=None,
+    tolIRLS=1e-10,
+    returnhistory=False,
+    **kwargs_solver
+):
+    r"""Iteratively reweighted least squares with L1 model term"""
     ncp = get_array_module(data)
 
     if x0 is not None:
@@ -261,12 +282,17 @@ def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
     Iop = Identity(data.size, dtype=data.dtype)
     # first iteration (unweighted least-squares)
     if ncp == np:
-        xinv = Op.H @ \
-               lsqr(Op @ Op.H + (epsI ** 2) * Iop, data, **kwargs_solver)[0]
+        xinv = Op.H @ lsqr(Op @ Op.H + (epsI ** 2) * Iop, data, **kwargs_solver)[0]
     else:
-        xinv = Op.H @ cgls(Op @ Op.H + (epsI ** 2) * Iop, data,
-                           ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
-                           **kwargs_solver)[0]
+        xinv = (
+            Op.H
+            @ cgls(
+                Op @ Op.H + (epsI ** 2) * Iop,
+                data,
+                ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
+                **kwargs_solver
+            )[0]
+        )
     if returnhistory:
         xinv_hist[0] = xinv
     for iiter in range(nouter):
@@ -276,13 +302,22 @@ def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
         rw = rw / rw.max()
         R = Diagonal(rw, dtype=rw.dtype)
         if ncp == np:
-            xinv = R @ Op.H @ lsqr(Op @ R @ Op.H + epsI ** 2 * Iop,
-                                   data, **kwargs_solver)[0]
+            xinv = (
+                R
+                @ Op.H
+                @ lsqr(Op @ R @ Op.H + epsI ** 2 * Iop, data, **kwargs_solver)[0]
+            )
         else:
-            xinv = R @ Op.H @ cgls(Op @ R @ Op.H + epsI ** 2 * Iop,
-                                   data,
-                                   ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
-                                   **kwargs_solver)[0]
+            xinv = (
+                R
+                @ Op.H
+                @ cgls(
+                    Op @ R @ Op.H + epsI ** 2 * Iop,
+                    data,
+                    ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
+                    **kwargs_solver
+                )[0]
+            )
         # save history
         if returnhistory:
             rw_hist[iiter] = rw
@@ -299,15 +334,24 @@ def _IRLS_model(Op, data, nouter, threshR=False, epsR=1e-10,
             xinv_hist = x0 + xinv_hist
 
     if returnhistory:
-        return xinv, nouter, xinv_hist[:nouter + 1], rw_hist[:nouter + 1]
+        return xinv, nouter, xinv_hist[: nouter + 1], rw_hist[: nouter + 1]
     else:
         return xinv, nouter
 
 
-def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
-         epsI=1e-10, x0=None, tolIRLS=1e-10,
-         returnhistory=False, kind='data',
-         **kwargs_solver):
+def IRLS(
+    Op,
+    data,
+    nouter,
+    threshR=False,
+    epsR=1e-10,
+    epsI=1e-10,
+    x0=None,
+    tolIRLS=1e-10,
+    returnhistory=False,
+    kind="data",
+    **kwargs_solver
+):
     r"""Iteratively reweighted least squares.
 
     Solve an optimization problem with :math:`L1` cost function (data IRLS)
@@ -430,19 +474,35 @@ def IRLS(Op, data, nouter, threshR=False, epsR=1e-10,
        compressive sensing", IEEE. 2008.
 
     """
-    if kind == 'data':
+    if kind == "data":
         solver = _IRLS_data
-    elif kind == 'model':
+    elif kind == "model":
         solver = _IRLS_model
     else:
-        raise NotImplementedError('kind must be data or model')
-    return solver(Op, data, nouter, threshR=threshR, epsR=epsR,
-                  epsI=epsI, x0=x0, tolIRLS=tolIRLS,
-                  returnhistory=returnhistory, **kwargs_solver)
+        raise NotImplementedError("kind must be data or model")
+    return solver(
+        Op,
+        data,
+        nouter,
+        threshR=threshR,
+        epsR=epsR,
+        epsI=epsI,
+        x0=x0,
+        tolIRLS=tolIRLS,
+        returnhistory=returnhistory,
+        **kwargs_solver
+    )
 
 
-def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
-        normalizecols=False, show=False):
+def OMP(
+    Op,
+    data,
+    niter_outer=10,
+    niter_inner=40,
+    sigma=1e-4,
+    normalizecols=False,
+    show=False,
+):
     r"""Orthogonal Matching Pursuit (OMP).
 
     Solve an optimization problem with :math:`L0` regularization function given
@@ -524,14 +584,15 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
     Op = LinearOperator(Op)
     if show:
         tstart = time.time()
-        algname = 'OMP optimization\n' if niter_inner > 0 else 'MP optimization\n'
-        print(algname +
-              '-----------------------------------------------------------------\n'
-              'The Operator Op has %d rows and %d cols\n'
-              'sigma = %.2e\tniter_outer = %d\tniter_inner = %d\n'
-              'normalization=%s' %
-              (Op.shape[0], Op.shape[1], sigma, niter_outer,
-               niter_inner, normalizecols))
+        algname = "OMP optimization\n" if niter_inner > 0 else "MP optimization\n"
+        print(
+            algname
+            + "-----------------------------------------------------------------\n"
+            "The Operator Op has %d rows and %d cols\n"
+            "sigma = %.2e\tniter_outer = %d\tniter_inner = %d\n"
+            "normalization=%s"
+            % (Op.shape[0], Op.shape[1], sigma, niter_outer, niter_inner, normalizecols)
+        )
     # find normalization factor for each column
     if normalizecols:
         ncols = Op.shape[1]
@@ -541,8 +602,8 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
             unit[icol] = 1
             norms[icol] = np.linalg.norm(Op.matvec(unit))
     if show:
-        print('-----------------------------------------------------------------')
-        head1 = '    Itn           r2norm'
+        print("-----------------------------------------------------------------")
+        head1 = "    Itn           r2norm"
         print(head1)
 
     if niter_inner == 0:
@@ -577,7 +638,11 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
         # estimate model for current set of columns
         if niter_inner == 0:
             # MP update
-            Opcol = Op.apply_columns([int(imax), ])
+            Opcol = Op.apply_columns(
+                [
+                    int(imax),
+                ]
+            )
             res -= Opcol.matvec(cres[imax] * ncp.ones(1))
             if addnew:
                 x.append(cres[imax])
@@ -589,29 +654,49 @@ def OMP(Op, data, niter_outer=10, niter_inner=40, sigma=1e-4,
             if ncp == np:
                 x = lsqr(Opcol, data, iter_lim=niter_inner)[0]
             else:
-                x = cgls(Opcol, data, ncp.zeros(int(Opcol.shape[1]),
-                                                dtype=Opcol.dtype),
-                         niter=niter_inner)[0]
+                x = cgls(
+                    Opcol,
+                    data,
+                    ncp.zeros(int(Opcol.shape[1]), dtype=Opcol.dtype),
+                    niter=niter_inner,
+                )[0]
             res = data - Opcol.matvec(x)
         iiter += 1
         cost[iiter] = np.linalg.norm(res)
         if show:
             if iiter < 10 or niter_outer - iiter < 10 or iiter % 10 == 0:
-                msg = '%6g        %12.5e' % (iiter + 1, cost[iiter])
+                msg = "%6g        %12.5e" % (iiter + 1, cost[iiter])
                 print(msg)
     xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
     xinv[cols] = ncp.array(x)
     if show:
-        print('\nIterations = %d        Total time (s) = %.2f'
-              % (iiter, time.time() - tstart))
         print(
-            '-----------------------------------------------------------------\n')
+            "\nIterations = %d        Total time (s) = %.2f"
+            % (iiter, time.time() - tstart)
+        )
+        print("-----------------------------------------------------------------\n")
     return xinv, iiter, cost
 
 
-def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
-         tol=1e-10, monitorres=False, returninfo=False, show=False,
-         threshkind='soft', perc=None, callback=None, decay=None, SOp=None, x0=None):
+def ISTA(
+    Op,
+    data,
+    niter,
+    eps=0.1,
+    alpha=None,
+    eigsiter=None,
+    eigstol=0,
+    tol=1e-10,
+    monitorres=False,
+    returninfo=False,
+    show=False,
+    threshkind="soft",
+    perc=None,
+    callback=None,
+    decay=None,
+    SOp=None,
+    x0=None,
+):
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
     Solve an optimization problem with :math:`L_p, \; p=0, 1/2, 1`
@@ -660,7 +745,7 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         Decay factor to be applied to thresholding during iterations
     SOp : :obj:`pylops.LinearOperator`, optional
         Regularization operator (use when solving the analysis problem)
-    
+
     Returns
     -------
     xinv : :obj:`numpy.ndarray`
@@ -735,27 +820,38 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
        pp. 1413-1457. 2004.
 
     """
-    if not threshkind in ['hard', 'soft', 'half', 'hard-percentile',
-                          'soft-percentile', 'half-percentile']:
-        raise NotImplementedError('threshkind should be hard, soft, half,'
-                                  'hard-percentile, soft-percentile, '
-                                  'or half-percentile')
-    if threshkind in ['hard-percentile',
-                      'soft-percentile',
-                      'half-percentile'] and perc is None:
-        raise ValueError('Provide a percentile when choosing hard-percentile,'
-                         'soft-percentile, or half-percentile thresholding')
+    if not threshkind in [
+        "hard",
+        "soft",
+        "half",
+        "hard-percentile",
+        "soft-percentile",
+        "half-percentile",
+    ]:
+        raise NotImplementedError(
+            "threshkind should be hard, soft, half,"
+            "hard-percentile, soft-percentile, "
+            "or half-percentile"
+        )
+    if (
+        threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]
+        and perc is None
+    ):
+        raise ValueError(
+            "Provide a percentile when choosing hard-percentile,"
+            "soft-percentile, or half-percentile thresholding"
+        )
 
     # choose thresholding function
-    if threshkind == 'soft':
+    if threshkind == "soft":
         threshf = _softthreshold
-    elif threshkind == 'hard':
+    elif threshkind == "hard":
         threshf = _hardthreshold
-    elif threshkind == 'half':
+    elif threshkind == "half":
         threshf = _halfthreshold
-    elif threshkind == 'hard-percentile':
+    elif threshkind == "hard-percentile":
         threshf = _hardthreshold_percentile
-    elif threshkind == 'soft-percentile':
+    elif threshkind == "soft-percentile":
         threshf = _softthreshold_percentile
     else:
         threshf = _halfthreshold_percentile
@@ -769,38 +865,46 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     if show:
         tstart = time.time()
-        print('ISTA optimization (%s thresholding)\n'
-              '-----------------------------------------------------------\n'
-              'The Operator Op has %d rows and %d cols\n'
-              'eps = %10e\ttol = %10e\tniter = %d' % (threshkind,
-                                                      Op.shape[0],
-                                                      Op.shape[1],
-                                                      eps, tol, niter))
+        print(
+            "ISTA optimization (%s thresholding)\n"
+            "-----------------------------------------------------------\n"
+            "The Operator Op has %d rows and %d cols\n"
+            "eps = %10e\ttol = %10e\tniter = %d"
+            % (threshkind, Op.shape[0], Op.shape[1], eps, tol, niter)
+        )
     # step size
     if alpha is None:
         if not isinstance(Op, LinearOperator):
             Op = LinearOperator(Op, explicit=False)
         # compute largest eigenvalues of Op^H * Op
         Op1 = LinearOperator(Op.H * Op, explicit=False)
-        if get_module_name(ncp) == 'numpy':
-            maxeig = np.abs(Op1.eigs(neigs=1, symmetric=True, niter=eigsiter,
-                                     **dict(tol=eigstol, which='LM'))[0])
+        if get_module_name(ncp) == "numpy":
+            maxeig = np.abs(
+                Op1.eigs(
+                    neigs=1,
+                    symmetric=True,
+                    niter=eigsiter,
+                    **dict(tol=eigstol, which="LM")
+                )[0]
+            )
         else:
-            maxeig = np.abs(power_iteration(Op1, niter=eigsiter,
-                                            tol=eigstol, dtype=Op1.dtype,
-                                            backend='cupy')[0])
-        alpha = 1./maxeig
+            maxeig = np.abs(
+                power_iteration(
+                    Op1, niter=eigsiter, tol=eigstol, dtype=Op1.dtype, backend="cupy"
+                )[0]
+            )
+        alpha = 1.0 / maxeig
 
     # define threshold
     thresh = eps * alpha * 0.5
 
     if show:
         if perc is None:
-            print('alpha = %10e\tthresh = %10e' % (alpha, thresh))
+            print("alpha = %10e\tthresh = %10e" % (alpha, thresh))
         else:
-            print('alpha = %10e\tperc = %.1f' % (alpha, perc))
-        print('-----------------------------------------------------------\n')
-        head1 = '   Itn       x[0]        r2norm     r12norm     xupdate'
+            print("alpha = %10e\tperc = %.1f" % (alpha, perc))
+        print("-----------------------------------------------------------\n")
+        head1 = "   Itn       x[0]        r2norm     r12norm     xupdate"
         print(head1)
 
     # initialize model and cost function
@@ -812,17 +916,17 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     else:
         if data.ndim != x0.ndim:
             # error for wrong dimensions
-            raise ValueError('Number of columns of x0 and data are not the same')
+            raise ValueError("Number of columns of x0 and data are not the same")
         elif x0.shape[0] != Op.shape[1]:
             # error for wrong dimensions
-            raise ValueError('Operator and input vector have different dimensions')
+            raise ValueError("Operator and input vector have different dimensions")
         else:
             xinv = x0.copy()
 
     if monitorres:
         normresold = np.inf
     if returninfo:
-        cost = np.zeros(niter+1)
+        cost = np.zeros(niter + 1)
 
     # iterate
     for iiter in range(niter):
@@ -832,10 +936,12 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
         res = data - Op @ xinv
         if monitorres:
             normres = np.linalg.norm(res)
-            if  normres > normresold:
-                raise ValueError('ISTA stopped at iteration %d due to '
-                                 'residual increasing, consider modifying '
-                                 'eps and/or alpha...' % iiter)
+            if normres > normresold:
+                raise ValueError(
+                    "ISTA stopped at iteration %d due to "
+                    "residual increasing, consider modifying "
+                    "eps and/or alpha..." % iiter
+                )
             else:
                 normresold = normres
 
@@ -868,15 +974,18 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
-                msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
-                      (iiter+1, to_numpy(xinv[:2])[0], costdata,
-                       costdata + costreg, xupdate)
+                msg = "%6g  %12.5e  %10.3e   %9.3e  %10.3e" % (
+                    iiter + 1,
+                    to_numpy(xinv[:2])[0],
+                    costdata,
+                    costdata + costreg,
+                    xupdate,
+                )
                 print(msg)
 
         # check tolerance
         if xupdate < tol:
-            logging.warning('update smaller that tolerance for '
-                            'iteration %d' % iiter)
+            logging.warning("update smaller that tolerance for " "iteration %d" % iiter)
             niter = iiter
             break
 
@@ -884,18 +993,35 @@ def ISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     # xinv = np.where(xinv != 0, xinv_unthesh, xinv)
 
     if show:
-        print('\nIterations = %d        Total time (s) = %.2f'
-              % (niter, time.time() - tstart))
-        print('---------------------------------------------------------\n')
+        print(
+            "\nIterations = %d        Total time (s) = %.2f"
+            % (niter, time.time() - tstart)
+        )
+        print("---------------------------------------------------------\n")
     if returninfo:
         return xinv, niter, cost[:niter]
     else:
         return xinv, niter
 
 
-def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
-          tol=1e-10, returninfo=False, show=False, threshkind='soft',
-          perc=None, callback=None, decay=None, SOp=None, x0=None):
+def FISTA(
+    Op,
+    data,
+    niter,
+    eps=0.1,
+    alpha=None,
+    eigsiter=None,
+    eigstol=0,
+    tol=1e-10,
+    returninfo=False,
+    show=False,
+    threshkind="soft",
+    perc=None,
+    callback=None,
+    decay=None,
+    SOp=None,
+    x0=None,
+):
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
     Solve an optimization problem with :math:`L_p, \; p=0, 1/2, 1`
@@ -998,27 +1124,38 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
        Imaging Sciences, vol. 2, pp. 183-202. 2009.
 
     """
-    if not threshkind in ['hard', 'soft', 'half', 'hard-percentile',
-                          'soft-percentile', 'half-percentile']:
-        raise NotImplementedError('threshkind should be hard, soft, half,'
-                                  'hard-percentile, soft-percentile, '
-                                  'or half-percentile')
-    if threshkind in ['hard-percentile',
-                      'soft-percentile',
-                      'half-percentile'] and perc is None:
-        raise ValueError('Provide a percentile when choosing hard-percentile,'
-                         'soft-percentile, or half-percentile thresholding')
+    if not threshkind in [
+        "hard",
+        "soft",
+        "half",
+        "hard-percentile",
+        "soft-percentile",
+        "half-percentile",
+    ]:
+        raise NotImplementedError(
+            "threshkind should be hard, soft, half,"
+            "hard-percentile, soft-percentile, "
+            "or half-percentile"
+        )
+    if (
+        threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]
+        and perc is None
+    ):
+        raise ValueError(
+            "Provide a percentile when choosing hard-percentile,"
+            "soft-percentile, or half-percentile thresholding"
+        )
 
     # choose thresholding function
-    if threshkind == 'soft':
+    if threshkind == "soft":
         threshf = _softthreshold
-    elif threshkind == 'hard':
+    elif threshkind == "hard":
         threshf = _hardthreshold
-    elif threshkind == 'half':
+    elif threshkind == "half":
         threshf = _halfthreshold
-    elif threshkind == 'hard-percentile':
+    elif threshkind == "hard-percentile":
         threshf = _hardthreshold_percentile
-    elif threshkind == 'soft-percentile':
+    elif threshkind == "soft-percentile":
         threshf = _softthreshold_percentile
     else:
         threshf = _halfthreshold_percentile
@@ -1032,38 +1169,46 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
     if show:
         tstart = time.time()
-        print('FISTA optimization (%s thresholding)\n'
-              '-----------------------------------------------------------\n'
-              'The Operator Op has %d rows and %d cols\n'
-              'eps = %10e\ttol = %10e\tniter = %d' % (threshkind,
-                                                      Op.shape[0],
-                                                      Op.shape[1],
-                                                      eps, tol, niter))
+        print(
+            "FISTA optimization (%s thresholding)\n"
+            "-----------------------------------------------------------\n"
+            "The Operator Op has %d rows and %d cols\n"
+            "eps = %10e\ttol = %10e\tniter = %d"
+            % (threshkind, Op.shape[0], Op.shape[1], eps, tol, niter)
+        )
     # step size
     if alpha is None:
         if not isinstance(Op, LinearOperator):
             Op = LinearOperator(Op, explicit=False)
         # compute largest eigenvalues of Op^H * Op
         Op1 = LinearOperator(Op.H * Op, explicit=False)
-        if get_module_name(ncp) == 'numpy':
-            maxeig = np.abs(Op1.eigs(neigs=1, symmetric=True, niter=eigsiter,
-                                     **dict(tol=eigstol, which='LM')))[0]
+        if get_module_name(ncp) == "numpy":
+            maxeig = np.abs(
+                Op1.eigs(
+                    neigs=1,
+                    symmetric=True,
+                    niter=eigsiter,
+                    **dict(tol=eigstol, which="LM")
+                )
+            )[0]
         else:
-            maxeig = np.abs(power_iteration(Op1, niter=eigsiter,
-                                            tol=eigstol, dtype=Op1.dtype,
-                                            backend='cupy')[0])
-        alpha = 1. / maxeig
+            maxeig = np.abs(
+                power_iteration(
+                    Op1, niter=eigsiter, tol=eigstol, dtype=Op1.dtype, backend="cupy"
+                )[0]
+            )
+        alpha = 1.0 / maxeig
 
     # define threshold
     thresh = eps * alpha * 0.5
 
     if show:
         if perc is None:
-            print('alpha = %10e\tthresh = %10e' % (alpha, thresh))
+            print("alpha = %10e\tthresh = %10e" % (alpha, thresh))
         else:
-            print('alpha = %10e\tperc = %.1f' % (alpha, perc))
-        print('-----------------------------------------------------------\n')
-        head1 = '   Itn       x[0]        r2norm     r12norm     xupdate'
+            print("alpha = %10e\tperc = %.1f" % (alpha, perc))
+        print("-----------------------------------------------------------\n")
+        head1 = "   Itn       x[0]        r2norm     r12norm     xupdate"
         print(head1)
 
     # initialize model and cost function
@@ -1075,10 +1220,10 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     else:
         if data.ndim != x0.ndim:
             # error for wrong dimensions
-            raise ValueError('Number of columns of x0 and data are not the same')
+            raise ValueError("Number of columns of x0 and data are not the same")
         elif x0.shape[0] != Op.shape[1]:
             # error for wrong dimensions
-            raise ValueError('Operator and input vector have different dimensions')
+            raise ValueError("Operator and input vector have different dimensions")
         else:
             xinv = x0.copy()
 
@@ -1110,8 +1255,8 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
         # update auxiliary coefficients
         told = t
-        t = (1. + np.sqrt(1. + 4. * t ** 2)) / 2.
-        zinv = xinv + ((told - 1.) / t) * (xinv - xinvold)
+        t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
+        zinv = xinv + ((told - 1.0) / t) * (xinv - xinvold)
 
         # model update
         xupdate = np.linalg.norm(xinv - xinvold)
@@ -1128,9 +1273,13 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
 
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
-                msg = '%6g  %12.5e  %10.3e   %9.3e  %10.3e' % \
-                      (iiter + 1, to_numpy(xinv[:2])[0], costdata,
-                       costdata + costreg, xupdate)
+                msg = "%6g  %12.5e  %10.3e   %9.3e  %10.3e" % (
+                    iiter + 1,
+                    to_numpy(xinv[:2])[0],
+                    costdata,
+                    costdata + costreg,
+                    xupdate,
+                )
                 print(msg)
 
         # check tolerance
@@ -1142,9 +1291,11 @@ def FISTA(Op, data, niter, eps=0.1, alpha=None, eigsiter=None, eigstol=0,
     # xinv = np.where(xinv != 0, xinv_unthesh, xinv)
 
     if show:
-        print('\nIterations = %d        Total time (s) = %.2f'
-              % (niter, time.time() - tstart))
-        print('---------------------------------------------------------\n')
+        print(
+            "\nIterations = %d        Total time (s) = %.2f"
+            % (niter, time.time() - tstart)
+        )
+        print("---------------------------------------------------------\n")
     if returninfo:
         return xinv, niter, cost[:niter]
     else:
@@ -1264,18 +1415,37 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
     """
     if spgl1 is None:
         raise ModuleNotFoundError(spgl1_message)
-    pinv, _, _, info = \
-        spgl1(Op if SOp is None else Op*SOp.H, data,
-              tau=tau, sigma=sigma, x0=x0, **kwargs_spgl1)
+    pinv, _, _, info = spgl1(
+        Op if SOp is None else Op * SOp.H,
+        data,
+        tau=tau,
+        sigma=sigma,
+        x0=x0,
+        **kwargs_spgl1
+    )
 
     xinv = pinv.copy() if SOp is None else SOp.H * pinv
     return xinv, pinv, info
 
 
-def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
-                 dataregsL2=None, mu=1., epsRL1s=None, epsRL2s=None,
-                 tol=1e-10, tau=1., x0=None, restart=False,
-                 show=False, **kwargs_lsqr):
+def SplitBregman(
+    Op,
+    RegsL1,
+    data,
+    niter_outer=3,
+    niter_inner=5,
+    RegsL2=None,
+    dataregsL2=None,
+    mu=1.0,
+    epsRL1s=None,
+    epsRL2s=None,
+    tol=1e-10,
+    tau=1.0,
+    x0=None,
+    restart=False,
+    show=False,
+    **kwargs_lsqr
+):
     r"""Split Bregman for mixed L2-L1 norms.
 
     Solve an unconstrained system of equations with mixed L2-L1 regularization
@@ -1394,16 +1564,25 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
 
     if show:
         tstart = time.time()
-        print('Split-Bregman optimization\n'
-              '---------------------------------------------------------\n'
-              'The Operator Op has %d rows and %d cols\n'
-              'niter_outer = %3d     niter_inner = %3d   tol = %2.2e\n'
-              'mu = %2.2e         epsL1 = %s\t  epsL2 = %s     '
-              % (Op.shape[0], Op.shape[1],
-                 niter_outer, niter_inner, tol,
-                 mu, str(epsRL1s), str(epsRL2s)))
-        print('---------------------------------------------------------\n')
-        head1 = '   Itn          x[0]           r2norm          r12norm'
+        print(
+            "Split-Bregman optimization\n"
+            "---------------------------------------------------------\n"
+            "The Operator Op has %d rows and %d cols\n"
+            "niter_outer = %3d     niter_inner = %3d   tol = %2.2e\n"
+            "mu = %2.2e         epsL1 = %s\t  epsL2 = %s     "
+            % (
+                Op.shape[0],
+                Op.shape[1],
+                niter_outer,
+                niter_inner,
+                tol,
+                mu,
+                str(epsRL1s),
+                str(epsRL2s),
+            )
+        )
+        print("---------------------------------------------------------\n")
+        head1 = "   Itn          x[0]           r2norm          r12norm"
         print(head1)
 
     # L1 regularizations
@@ -1422,10 +1601,9 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
         dataregsL2 = []
 
     # Rescale dampings
-    epsRs = [np.sqrt(epsRL2s[ireg] / 2) / np.sqrt(mu / 2) for ireg in
-             range(nregsL2)] + \
-            [np.sqrt(epsRL1s[ireg] / 2) / np.sqrt(mu / 2) for ireg in
-             range(nregsL1)]
+    epsRs = [
+        np.sqrt(epsRL2s[ireg] / 2) / np.sqrt(mu / 2) for ireg in range(nregsL2)
+    ] + [np.sqrt(epsRL1s[ireg] / 2) / np.sqrt(mu / 2) for ireg in range(nregsL1)]
     xinv = ncp.zeros(Op.shape[1], dtype=Op.dtype) if x0 is None else x0
     xold = ncp.full(Op.shape[1], ncp.inf, dtype=Op.dtype)
 
@@ -1434,36 +1612,54 @@ def SplitBregman(Op, RegsL1, data, niter_outer=3, niter_inner=5, RegsL2=None,
         xold = xinv
         for _ in range(niter_inner):
             # Regularized problem
-            dataregs = \
-                dataregsL2 + [d[ireg] - b[ireg] for ireg in range(nregsL1)]
-            xinv = RegularizedInversion(Op, Regs, data,
-                                        dataregs=dataregs,
-                                        epsRs=epsRs,
-                                        x0=x0 if restart else xinv,
-                                        **kwargs_lsqr)
+            dataregs = dataregsL2 + [d[ireg] - b[ireg] for ireg in range(nregsL1)]
+            xinv = RegularizedInversion(
+                Op,
+                Regs,
+                data,
+                dataregs=dataregs,
+                epsRs=epsRs,
+                x0=x0 if restart else xinv,
+                **kwargs_lsqr
+            )
             # Shrinkage
-            d = [_softthreshold(RegsL1[ireg] * xinv + b[ireg], epsRL1s[ireg])
-                 for ireg in range(nregsL1)]
+            d = [
+                _softthreshold(RegsL1[ireg] * xinv + b[ireg], epsRL1s[ireg])
+                for ireg in range(nregsL1)
+            ]
         # Bregman update
-        b = [b[ireg] + tau * (RegsL1[ireg] * xinv - d[ireg]) for ireg in
-             range(nregsL1)]
+        b = [b[ireg] + tau * (RegsL1[ireg] * xinv - d[ireg]) for ireg in range(nregsL1)]
         itn_out += 1
 
         if show:
-            costdata = mu/2. * ncp.linalg.norm(data - Op.matvec(xinv)) ** 2
-            costregL2 = 0 if RegsL2 is None else \
-                [epsRL2 * ncp.linalg.norm(dataregL2 - RegL2.matvec(xinv)) ** 2
-                 for epsRL2, RegL2, dataregL2 in zip(epsRL2s, RegsL2, dataregsL2)]
-            costregL1 = [ncp.linalg.norm(RegL1.matvec(xinv), ord=1)
-                         for epsRL1, RegL1 in zip(epsRL1s, RegsL1)]
-            cost = costdata + ncp.sum(ncp.array(costregL2)) + \
-                   ncp.sum(ncp.array(costregL1))
-            msg = '%6g  %12.5e       %10.3e        %9.3e' % \
-                  (ncp.abs(itn_out), ncp.real(xinv[0]), costdata, cost)
+            costdata = mu / 2.0 * ncp.linalg.norm(data - Op.matvec(xinv)) ** 2
+            costregL2 = (
+                0
+                if RegsL2 is None
+                else [
+                    epsRL2 * ncp.linalg.norm(dataregL2 - RegL2.matvec(xinv)) ** 2
+                    for epsRL2, RegL2, dataregL2 in zip(epsRL2s, RegsL2, dataregsL2)
+                ]
+            )
+            costregL1 = [
+                ncp.linalg.norm(RegL1.matvec(xinv), ord=1)
+                for epsRL1, RegL1 in zip(epsRL1s, RegsL1)
+            ]
+            cost = (
+                costdata + ncp.sum(ncp.array(costregL2)) + ncp.sum(ncp.array(costregL1))
+            )
+            msg = "%6g  %12.5e       %10.3e        %9.3e" % (
+                ncp.abs(itn_out),
+                ncp.real(xinv[0]),
+                costdata,
+                cost,
+            )
             print(msg)
 
     if show:
-        print('\nIterations = %d        Total time (s) = %.2f'
-              % (itn_out, time.time() - tstart))
-        print('---------------------------------------------------------\n')
+        print(
+            "\nIterations = %d        Total time (s) = %.2f"
+            % (itn_out, time.time() - tstart)
+        )
+        print("---------------------------------------------------------\n")
     return xinv, itn_out

@@ -1,8 +1,9 @@
 import os
+
 from numba import jit, prange
 
 # detect whether to use parallel or not
-numba_threads = int(os.getenv('NUMBA_NUM_THREADS', '1'))
+numba_threads = int(os.getenv("NUMBA_NUM_THREADS", "1"))
 parallel = True if numba_threads != 1 else False
 
 
@@ -21,13 +22,14 @@ def _matvec_numba_table(x, y, dims, interp, table, dtable):
 
             for i, indexfloat in enumerate(indices):
                 index = int(indexfloat)
-                if index != -9223372036854775808: # =int(np.nan)
+                if index != -9223372036854775808:  # =int(np.nan)
                     if not interp:
                         y[i, index] += x[ix0, it]
                     else:
-                        y[i, index] += (1 -dindices[i])*x[ix0, it]
+                        y[i, index] += (1 - dindices[i]) * x[ix0, it]
                         y[i, index + 1] += dindices[i] * x[ix0, it]
     return y.ravel()
+
 
 @jit(nopython=True, parallel=parallel, nogil=True)
 def _rmatvec_numba_table(x, y, dims, dimsd, interp, table, dtable):
@@ -44,13 +46,16 @@ def _rmatvec_numba_table(x, y, dims, dimsd, interp, table, dtable):
 
             for i, indexfloat in enumerate(indices):
                 index = int(indexfloat)
-                if index != -9223372036854775808: # =int(np.nan)
+                if index != -9223372036854775808:  # =int(np.nan)
                     if not interp:
                         y[ix0, it] += x[i, index]
                     else:
-                        y[ix0, it] += x[i, index]*(1 - dindices[i]) + \
-                                      x[i, index + 1]*dindices[i]
+                        y[ix0, it] += (
+                            x[i, index] * (1 - dindices[i])
+                            + x[i, index + 1] * dindices[i]
+                        )
     return y.ravel()
+
 
 @jit(nopython=True, parallel=parallel, nogil=True)
 def _matvec_numba_onthefly(x, y, dims, interp, fh):
@@ -67,13 +72,14 @@ def _matvec_numba_onthefly(x, y, dims, interp, fh):
                 indices, dindices = fh(ix0, it)
             for i, indexfloat in enumerate(indices):
                 index = int(indexfloat)
-                if index != -9223372036854775808: # =int(np.nan)
+                if index != -9223372036854775808:  # =int(np.nan)
                     if not interp:
                         y[i, index] += x[ix0, it]
                     else:
-                        y[i, index] += (1 -dindices[i])*x[ix0, it]
+                        y[i, index] += (1 - dindices[i]) * x[ix0, it]
                         y[i, index + 1] += dindices[i] * x[ix0, it]
     return y.ravel()
+
 
 @jit(nopython=True, parallel=parallel, nogil=True)
 def _rmatvec_numba_onthefly(x, y, dims, dimsd, interp, fh):
@@ -90,10 +96,12 @@ def _rmatvec_numba_onthefly(x, y, dims, dimsd, interp, fh):
                 indices, dindices = fh(ix0, it)
             for i, indexfloat in enumerate(indices):
                 index = int(indexfloat)
-                if index != -9223372036854775808: # =int(np.nan)
+                if index != -9223372036854775808:  # =int(np.nan)
                     if not interp:
                         y[ix0, it] += x[i, index]
                     else:
-                        y[ix0, it] += x[i, index]*(1 - dindices[i]) + \
-                                      x[i, index + 1]*dindices[i]
+                        y[ix0, it] += (
+                            x[i, index] * (1 - dindices[i])
+                            + x[i, index + 1] * dindices[i]
+                        )
     return y.ravel()

@@ -1,8 +1,9 @@
 import numpy as np
+
 from pylops.utils.backend import get_module
 
 
-def power_iteration(Op, niter=10, tol=1e-5, dtype='float32', backend='numpy'):
+def power_iteration(Op, niter=10, tol=1e-5, dtype="float32", backend="numpy"):
     """Power iteration algorithm.
 
     Power iteration algorithm, used to compute the largest eigenvector and
@@ -45,12 +46,13 @@ def power_iteration(Op, niter=10, tol=1e-5, dtype='float32', backend='numpy'):
 
     # Choose a random vector to decrease the chance that vector
     # is orthogonal to the eigenvector
-    b_k = ncp.random.rand(Op.shape[1]).astype(dtype) + \
-          cmpx * ncp.random.rand(Op.shape[1]).astype(dtype)
+    b_k = ncp.random.rand(Op.shape[1]).astype(dtype) + cmpx * ncp.random.rand(
+        Op.shape[1]
+    ).astype(dtype)
     b_k = b_k / ncp.linalg.norm(b_k)
 
     niter = 10 if niter is None else niter
-    maxeig_old = 0.
+    maxeig_old = 0.0
     for iiter in range(niter):
         # compute largest eigenvector
         b1_k = Op.matvec(b_k)

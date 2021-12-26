@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
@@ -44,9 +45,10 @@ class Sum(LinearOperator):
         x_{i, j} = y_j   \quad \forall i=0, N-1
 
     """
-    def __init__(self, dims, dir, dtype='float64'):
+
+    def __init__(self, dims, dir, dtype="float64"):
         if len(dims) == 1:
-            dims = (dims[0], 1) # to avoid reducing matvec to a scalar
+            dims = (dims[0], 1)  # to avoid reducing matvec to a scalar
         self.dims = dims
         self.dir = dir
         # data dimensions

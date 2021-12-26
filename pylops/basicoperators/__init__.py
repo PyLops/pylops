@@ -1,36 +1,35 @@
-from .FunctionOperator import FunctionOperator
-from .MemoizeOperator import MemoizeOperator
-from .Regression import Regression
-from .LinearRegression import LinearRegression
-from .MatrixMult import MatrixMult
-from .Diagonal import Diagonal
-from .Zero import Zero
-from .Identity import Identity
-from .Restriction import Restriction
-from .Flip import Flip
-from .Symmetrize import Symmetrize
-from .Spread import Spread
-from .Transpose import Transpose
-from .Roll import Roll
-from .Pad import Pad
-from .Sum import Sum
-from .Real import Real
-from .Imag import Imag
-from .Conj import Conj
-
-from .VStack import VStack
-from .HStack import HStack
 from .Block import Block
 from .BlockDiag import BlockDiag
+from .CausalIntegration import CausalIntegration
+from .Conj import Conj
+from .Diagonal import Diagonal
+from .DirectionalDerivative import (
+    FirstDirectionalDerivative,
+    SecondDirectionalDerivative,
+)
+from .FirstDerivative import FirstDerivative
+from .Flip import Flip
+from .FunctionOperator import FunctionOperator
+from .Gradient import Gradient
+from .HStack import HStack
+from .Identity import Identity
+from .Imag import Imag
 from .Kronecker import Kronecker
-
+from .Laplacian import Laplacian
+from .LinearRegression import LinearRegression
+from .MatrixMult import MatrixMult
+from .MemoizeOperator import MemoizeOperator
+from .Pad import Pad
+from .Real import Real
+from .Regression import Regression
+from .Restriction import Restriction
+from .Roll import Roll
+from .SecondDerivative import SecondDerivative
 from .Smoothing1D import Smoothing1D
 from .Smoothing2D import Smoothing2D
-
-from .CausalIntegration import CausalIntegration
-from .FirstDerivative import FirstDerivative
-from .SecondDerivative import SecondDerivative
-from .Laplacian import Laplacian
-from .Gradient import Gradient
-from .DirectionalDerivative import FirstDirectionalDerivative
-from .DirectionalDerivative import SecondDirectionalDerivative
+from .Spread import Spread
+from .Sum import Sum
+from .Symmetrize import Symmetrize
+from .Transpose import Transpose
+from .VStack import VStack
+from .Zero import Zero

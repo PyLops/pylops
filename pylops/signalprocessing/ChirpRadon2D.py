@@ -1,10 +1,12 @@
 import logging
+
 import numpy as np
 
 from pylops import LinearOperator
+
 from ._ChirpRadon2D import _chirp_radon_2d
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class ChirpRadon2D(LinearOperator):
@@ -48,28 +50,28 @@ class ChirpRadon2D(LinearOperator):
         chirp modulation", Geophysics, vol 84, NO.1, pp. A13-A17, 2019.
 
     """
-    def __init__(self, taxis, haxis, pmax, dtype='float64'):
+
+    def __init__(self, taxis, haxis, pmax, dtype="float64"):
         self.dt = taxis[1] - taxis[0]
         self.dh = haxis[1] - haxis[0]
         self.nt, self.nh = taxis.size, haxis.size
         self.pmax = pmax
 
-        self.shape = (self.nt * self.nh,
-                      self.nt * self.nh)
+        self.shape = (self.nt * self.nh, self.nt * self.nh)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         x = x.reshape(self.nh, self.nt)
-        y = _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode='f')
+        y = _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="f")
         return y.ravel()
 
     def _rmatvec(self, x):
         x = x.reshape(self.nh, self.nt)
-        y = _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode='a')
+        y = _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="a")
         return y.ravel()
 
     def inverse(self, x):
         x = x.reshape(self.nh, self.nt)
-        y = _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode='i')
+        y = _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="i")
         return y.ravel()

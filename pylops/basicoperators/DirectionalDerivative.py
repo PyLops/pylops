@@ -1,9 +1,10 @@
 from pylops import LinearOperator
-from pylops.basicoperators import Gradient, Diagonal, Sum
+from pylops.basicoperators import Diagonal, Gradient, Sum
 
 
-def FirstDirectionalDerivative(dims, v, sampling=1, edge=False,
-                               dtype='float64', kind='centered'):
+def FirstDirectionalDerivative(
+    dims, v, sampling=1, edge=False, dtype="float64", kind="centered"
+):
     r"""First Directional derivative.
 
     Apply directional derivative operator to a multi-dimensional
@@ -58,16 +59,15 @@ def FirstDirectionalDerivative(dims, v, sampling=1, edge=False,
     """
     Gop = Gradient(dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype)
     if v.ndim == 1:
-        Dop = Diagonal(v, dims=[len(dims)]+list(dims), dir=0, dtype=dtype)
+        Dop = Diagonal(v, dims=[len(dims)] + list(dims), dir=0, dtype=dtype)
     else:
         Dop = Diagonal(v.ravel(), dtype=dtype)
-    Sop = Sum(dims=[len(dims)]+list(dims), dir=0, dtype=dtype)
+    Sop = Sum(dims=[len(dims)] + list(dims), dir=0, dtype=dtype)
     ddop = Sop * Dop * Gop
     return LinearOperator(ddop)
 
 
-def SecondDirectionalDerivative(dims, v, sampling=1, edge=False,
-                                dtype='float64'):
+def SecondDirectionalDerivative(dims, v, sampling=1, edge=False, dtype="float64"):
     r"""Second Directional derivative.
 
     Apply second directional derivative operator to a multi-dimensional
@@ -110,7 +110,6 @@ def SecondDirectionalDerivative(dims, v, sampling=1, edge=False,
     This operator is sometimes also referred to as directional Laplacian
     in the literature.
     """
-    Dop = FirstDirectionalDerivative(dims, v, sampling=sampling,
-                                     edge=edge, dtype=dtype)
-    ddop = - Dop.H * Dop
+    Dop = FirstDirectionalDerivative(dims, v, sampling=sampling, edge=edge, dtype=dtype)
+    ddop = -Dop.H * Dop
     return LinearOperator(ddop)

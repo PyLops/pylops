@@ -54,13 +54,16 @@ class Kronecker(LinearOperator):
     each operator is used.
 
     """
-    def __init__(self, Op1, Op2, dtype='float64'):
+
+    def __init__(self, Op1, Op2, dtype="float64"):
         self.Op1 = Op1
         self.Op2 = Op2
         self.Op1H = self.Op1.H
         self.Op2H = self.Op2.H
-        self.shape = (self.Op1.shape[0]*self.Op2.shape[0],
-                      self.Op1.shape[1] * self.Op2.shape[1])
+        self.shape = (
+            self.Op1.shape[0] * self.Op2.shape[0],
+            self.Op1.shape[1] * self.Op2.shape[1],
+        )
         self.dtype = np.dtype(dtype)
         self.explicit = False
 

@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
@@ -40,9 +41,9 @@ class Real(LinearOperator):
         x_{i} = \Re\{y_{i}\} + 0i \quad \forall i=0,...,N
 
     """
-    def __init__(self, dims, dtype='complex128'):
-        self.shape = (np.prod(np.array(dims)),
-                      np.prod(np.array(dims)))
+
+    def __init__(self, dims, dtype="complex128"):
+        self.shape = (np.prod(np.array(dims)), np.prod(np.array(dims)))
         self.dtype = np.dtype(dtype)
         self.rdtype = np.real(np.ones(1, self.dtype)).dtype
         self.explicit = False

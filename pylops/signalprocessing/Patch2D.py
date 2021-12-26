@@ -1,16 +1,15 @@
 import logging
+
 import numpy as np
 
-from pylops.basicoperators import Diagonal, BlockDiag, Restriction, \
-    HStack
-from pylops.utils.tapers import taper2d
+from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.Sliding2D import _slidingsteps
+from pylops.utils.tapers import taper2d
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def Patch2D(Op, dims, dimsd, nwin, nover, nop,
-            tapertype='hanning', design=False):
+def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False):
     """2D Patch transform operator.
 
     Apply a transform operator ``Op`` repeatedly to patches of the model
@@ -83,89 +82,116 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop,
     dwin1_ins, dwin1_ends = _slidingsteps(dimsd[1], nwin[1], nover[1])
     nwins0 = len(dwin0_ins)
     nwins1 = len(dwin1_ins)
-    nwins = nwins0*nwins1
+    nwins = nwins0 * nwins1
 
     # create tapers
     if tapertype is not None:
         tap = taper2d(nwin[1], nwin[0], nover, tapertype=tapertype).astype(Op.dtype)
-        taps = {itap:tap for itap in range(nwins)}
+        taps = {itap: tap for itap in range(nwins)}
         # topmost tapers
         taptop = tap.copy()
-        taptop[:nover[0]] = tap[nwin[0]//2]
+        taptop[: nover[0]] = tap[nwin[0] // 2]
         for itap in range(0, nwins1):
             taps[itap] = taptop
         # bottommost tapers
         tapbottom = tap.copy()
-        tapbottom[-nover[0]:] = tap[nwin[0] // 2]
-        for itap in range(nwins-nwins1, nwins):
+        tapbottom[-nover[0] :] = tap[nwin[0] // 2]
+        for itap in range(nwins - nwins1, nwins):
             taps[itap] = tapbottom
         # leftmost tapers
         tapleft = tap.copy()
-        tapleft[:, :nover[1]] = tap[:, nwin[1]//2][:, np.newaxis]
+        tapleft[:, : nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis]
         for itap in range(0, nwins, nwins1):
             taps[itap] = tapleft
         # rightmost tapers
         tapright = tap.copy()
-        tapright[:, -nover[1]:] = tap[:, nwin[1]//2][:, np.newaxis]
-        for itap in range(nwins1-1, nwins, nwins1):
+        tapright[:, -nover[1] :] = tap[:, nwin[1] // 2][:, np.newaxis]
+        for itap in range(nwins1 - 1, nwins, nwins1):
             taps[itap] = tapright
         # lefttopcorner taper
         taplefttop = tap.copy()
-        taplefttop[:, :nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis]
-        taplefttop[:nover[0]] = taplefttop[nwin[0]//2]
+        taplefttop[:, : nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis]
+        taplefttop[: nover[0]] = taplefttop[nwin[0] // 2]
         taps[0] = taplefttop
         # righttopcorner taper
         taprighttop = tap.copy()
-        taprighttop[:, -nover[1]:] = tap[:, nwin[1]//2][:, np.newaxis]
-        taprighttop[:nover[0]] = taprighttop[nwin[0] // 2]
-        taps[nwins1-1] = taprighttop
+        taprighttop[:, -nover[1] :] = tap[:, nwin[1] // 2][:, np.newaxis]
+        taprighttop[: nover[0]] = taprighttop[nwin[0] // 2]
+        taps[nwins1 - 1] = taprighttop
         # leftbottomcorner taper
         tapleftbottom = tap.copy()
-        tapleftbottom[:, :nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis]
-        tapleftbottom[-nover[0]:] = tapleftbottom[nwin[0] // 2]
-        taps[nwins-nwins1] = tapleftbottom
+        tapleftbottom[:, : nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis]
+        tapleftbottom[-nover[0] :] = tapleftbottom[nwin[0] // 2]
+        taps[nwins - nwins1] = tapleftbottom
         # rightbottomcorner taper
         taprightbottom = tap.copy()
-        taprightbottom[:, -nover[1]:] = tap[:, nwin[1] // 2][:, np.newaxis]
-        taprightbottom[-nover[0]:] = taprightbottom[nwin[0] // 2]
-        taps[nwins-1] = taprightbottom
+        taprightbottom[:, -nover[1] :] = tap[:, nwin[1] // 2][:, np.newaxis]
+        taprightbottom[-nover[0] :] = taprightbottom[nwin[0] // 2]
+        taps[nwins - 1] = taprightbottom
 
     # check that identified number of windows agrees with mode size
     if design:
-        logging.warning('%d-%d windows required...', nwins0, nwins1)
-        logging.warning('model wins - start:%s, end:%s / start:%s, end:%s',
-                        str(mwin0_ins), str(mwin0_ends),
-                        str(mwin1_ins), str(mwin1_ends))
-        logging.warning('data wins - start:%s, end:%s / start:%s, end:%s',
-                        str(dwin0_ins), str(dwin0_ends),
-                        str(dwin1_ins), str(dwin1_ends))
-    if nwins0*nop[0] != dims[0] or nwins1*nop[1] != dims[1]:
-        raise ValueError('Model shape (dims=%s) is not consistent with chosen '
-                         'number of windows. Choose dims[0]=%d and '
-                         'dims[1]=%d for the operator to work with '
-                         'estimated number of windows, or create '
-                         'the operator with design=True to find out the'
-                         'optimal number of windows for the current '
-                         'model size...'
-                         % (str(dims), nwins0*nop[0], nwins1*nop[1]))
+        logging.warning("%d-%d windows required...", nwins0, nwins1)
+        logging.warning(
+            "model wins - start:%s, end:%s / start:%s, end:%s",
+            str(mwin0_ins),
+            str(mwin0_ends),
+            str(mwin1_ins),
+            str(mwin1_ends),
+        )
+        logging.warning(
+            "data wins - start:%s, end:%s / start:%s, end:%s",
+            str(dwin0_ins),
+            str(dwin0_ends),
+            str(dwin1_ins),
+            str(dwin1_ends),
+        )
+    if nwins0 * nop[0] != dims[0] or nwins1 * nop[1] != dims[1]:
+        raise ValueError(
+            "Model shape (dims=%s) is not consistent with chosen "
+            "number of windows. Choose dims[0]=%d and "
+            "dims[1]=%d for the operator to work with "
+            "estimated number of windows, or create "
+            "the operator with design=True to find out the"
+            "optimal number of windows for the current "
+            "model size..." % (str(dims), nwins0 * nop[0], nwins1 * nop[1])
+        )
     # transform to apply
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)])
     else:
-        OOp = BlockDiag([Diagonal(taps[itap].flatten(), dtype=Op.dtype) * Op
-                         for itap in range(nwins)])
+        OOp = BlockDiag(
+            [
+                Diagonal(taps[itap].flatten(), dtype=Op.dtype) * Op
+                for itap in range(nwins)
+            ]
+        )
 
-    hstack = HStack([Restriction(dimsd[1] * nwin[0],
-                                 range(win_in, win_end),
-                                 dims=(nwin[0], dimsd[1]),
-                                 dir=1, dtype=Op.dtype).H
-                     for win_in, win_end in zip(dwin1_ins,
-                                                dwin1_ends)])
+    hstack = HStack(
+        [
+            Restriction(
+                dimsd[1] * nwin[0],
+                range(win_in, win_end),
+                dims=(nwin[0], dimsd[1]),
+                dir=1,
+                dtype=Op.dtype,
+            ).H
+            for win_in, win_end in zip(dwin1_ins, dwin1_ends)
+        ]
+    )
 
-    combining1 = BlockDiag([hstack]*nwins0)
-    combining0 = HStack([Restriction(np.prod(dimsd),
-                                     range(win_in, win_end),
-                                     dims=dimsd, dir=0, dtype=Op.dtype).H
-                         for win_in, win_end in zip(dwin0_ins, dwin0_ends)])
+    combining1 = BlockDiag([hstack] * nwins0)
+    combining0 = HStack(
+        [
+            Restriction(
+                np.prod(dimsd),
+                range(win_in, win_end),
+                dims=dimsd,
+                dir=0,
+                dtype=Op.dtype,
+            ).H
+            for win_in, win_end in zip(dwin0_ins, dwin0_ends)
+        ]
+    )
     Pop = combining0 * combining1 * OOp
     return Pop

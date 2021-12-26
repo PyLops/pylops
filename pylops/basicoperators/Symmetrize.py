@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
@@ -55,20 +56,21 @@ class Symmetrize(LinearOperator):
 
     apart from the central sample where :math:`x[0] = y[N]`.
     """
-    def __init__(self, N, dims=None, dir=0, dtype='float64'):
+
+    def __init__(self, N, dims=None, dir=0, dtype="float64"):
         self.N = N
         self.dir = dir
         if dims is None:
             self.dims = (self.N,)
-            self.dimsd = (self.N*2-1,)
+            self.dimsd = (self.N * 2 - 1,)
             self.reshape = False
         else:
             if np.prod(dims) != self.N:
-                raise ValueError('product of dims must equal N')
+                raise ValueError("product of dims must equal N")
             else:
                 self.dims = dims
                 self.dimsd = list(dims)
-                self.dimsd[self.dir] = dims[self.dir]*2-1
+                self.dimsd[self.dir] = dims[self.dir] * 2 - 1
                 self.reshape = True
         self.nsym = self.dims[self.dir]
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
@@ -80,11 +82,11 @@ class Symmetrize(LinearOperator):
         y = ncp.zeros(self.dimsd, dtype=self.dtype)
         if self.reshape:
             x = ncp.reshape(x, self.dims)
-        if self.dir > 0:# bring the dimension to symmetrize to first
+        if self.dir > 0:  # bring the dimension to symmetrize to first
             x = ncp.swapaxes(x, self.dir, 0)
             y = ncp.swapaxes(y, self.dir, 0)
-        y[self.nsym-1:] = x
-        y[:self.nsym-1] = x[-1:0:-1]
+        y[self.nsym - 1 :] = x
+        y[: self.nsym - 1] = x[-1:0:-1]
         if self.dir > 0:
             y = ncp.swapaxes(y, 0, self.dir)
         if self.reshape:
@@ -97,8 +99,8 @@ class Symmetrize(LinearOperator):
             x = ncp.reshape(x, self.dimsd)
         if self.dir > 0:  # bring the dimension to symmetrize to first
             x = ncp.swapaxes(x, self.dir, 0)
-        y = x[self.nsym-1:].copy()
-        y[1:] += x[self.nsym-2::-1]
+        y = x[self.nsym - 1 :].copy()
+        y[1:] += x[self.nsym - 2 :: -1]
         if self.dir > 0:
             y = ncp.swapaxes(y, 0, self.dir)
         if self.reshape:

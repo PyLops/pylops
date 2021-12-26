@@ -1,27 +1,29 @@
 import logging
+
 import numpy as np
+
 from pylops import LinearOperator
-from pylops.basicoperators import Restriction, Diagonal, MatrixMult, Transpose
+from pylops.basicoperators import Diagonal, MatrixMult, Restriction, Transpose
 from pylops.utils.backend import get_array_module
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _checkunique(iava):
     _, count = np.unique(iava, return_counts=True)
     if np.any(count > 1):
-        raise ValueError('Repeated values in iava array')
+        raise ValueError("Repeated values in iava array")
 
-def _nearestinterp(M, iava, dims=None, dir=0, dtype='float64'):
-    """Nearest neighbour interpolation.
-    """
+
+def _nearestinterp(M, iava, dims=None, dir=0, dtype="float64"):
+    """Nearest neighbour interpolation."""
     iava = np.round(iava).astype(np.int)
     _checkunique(iava)
     return Restriction(M, iava, dims=dims, dir=dir, dtype=dtype), iava
 
-def _linearinterp(M, iava, dims=None, dir=0, dtype='float64'):
-    """Linear interpolation.
-    """
+
+def _linearinterp(M, iava, dims=None, dir=0, dtype="float64"):
+    """Linear interpolation."""
     ncp = get_array_module(iava)
 
     if np.issubdtype(iava.dtype, np.integer):
@@ -37,10 +39,12 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype='float64'):
 
     # ensure that samples are not beyond the last sample, in that case set to
     # penultimate sample and raise a warning
-    outside = (iava >= lastsample - 1)
+    outside = iava >= lastsample - 1
     if sum(outside) > 0:
-        logging.warning('at least one value is beyond penultimate sample, '
-                        'forced to be at penultimate sample')
+        logging.warning(
+            "at least one value is beyond penultimate sample, "
+            "forced to be at penultimate sample"
+        )
     iava[outside] = lastsample - 1 - 1e-10
     _checkunique(iava)
 
@@ -50,15 +54,16 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype='float64'):
     weights = iava - iva_l
 
     # create operators
-    Op = Diagonal(1 - weights, dims=dimsd, dir=dir, dtype=dtype) * \
-         Restriction(M, iva_l, dims=dims, dir=dir, dtype=dtype) + \
-         Diagonal(weights, dims=dimsd, dir=dir, dtype=dtype) * \
-         Restriction(M, iva_r, dims=dims, dir=dir, dtype=dtype)
+    Op = Diagonal(1 - weights, dims=dimsd, dir=dir, dtype=dtype) * Restriction(
+        M, iva_l, dims=dims, dir=dir, dtype=dtype
+    ) + Diagonal(weights, dims=dimsd, dir=dir, dtype=dtype) * Restriction(
+        M, iva_r, dims=dims, dir=dir, dtype=dtype
+    )
     return Op, iava
 
-def _sincinterp(M, iava, dims=None, dir=0, dtype='float64'):
-    """Sinc interpolation.
-    """
+
+def _sincinterp(M, iava, dims=None, dir=0, dtype="float64"):
+    """Sinc interpolation."""
     ncp = get_array_module(iava)
 
     _checkunique(iava)
@@ -66,8 +71,7 @@ def _sincinterp(M, iava, dims=None, dir=0, dtype='float64'):
     # create sinc interpolation matrix
     nreg = M if dims is None else dims[dir]
     ireg = ncp.arange(nreg)
-    sinc = ncp.tile(iava[:, np.newaxis], (1, nreg)) - \
-           ncp.tile(ireg, (len(iava), 1))
+    sinc = ncp.tile(iava[:, np.newaxis], (1, nreg)) - ncp.tile(ireg, (len(iava), 1))
     sinc = ncp.sinc(sinc)
 
     # identify additional dimensions and create MatrixMult operator
@@ -82,7 +86,7 @@ def _sincinterp(M, iava, dims=None, dir=0, dtype='float64'):
     if dir > 0:
         axes = np.arange(len(dims), dtype=np.int)
         axes = np.roll(axes, -dir)
-        dimsd =  list(dims)
+        dimsd = list(dims)
         dimsd[dir] = len(iava)
         Top = Transpose(dims, axes=axes, dtype=dtype)
         T1op = Transpose(dimsd, axes=axes, dtype=dtype)
@@ -90,7 +94,7 @@ def _sincinterp(M, iava, dims=None, dir=0, dtype='float64'):
     return Op
 
 
-def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
+def Interp(M, iava, dims=None, dir=0, kind="linear", dtype="float64"):
     r"""Interpolation operator.
 
     Apply interpolation along direction ``dir``
@@ -189,12 +193,12 @@ def Interp(M, iava, dims=None, dir=0, kind='linear', dtype='float64'):
     :math:`i,j` possible combinations.
 
     """
-    if kind == 'nearest':
+    if kind == "nearest":
         interpop, iava = _nearestinterp(M, iava, dims=dims, dir=dir, dtype=dtype)
-    elif kind == 'linear':
+    elif kind == "linear":
         interpop, iava = _linearinterp(M, iava, dims=dims, dir=dir, dtype=dtype)
-    elif kind == 'sinc':
+    elif kind == "sinc":
         interpop = _sincinterp(M, iava, dims=dims, dir=dir, dtype=dtype)
     else:
-        raise NotImplementedError('kind is not correct...')
+        raise NotImplementedError("kind is not correct...")
     return LinearOperator(interpop), iava

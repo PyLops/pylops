@@ -23,12 +23,12 @@ regularization term:
 
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 import pylops
 
-plt.close('all')
+plt.close("all")
 np.random.seed(0)
 
 ###############################################################################
@@ -47,41 +47,36 @@ Aop = pylops.MatrixMult(A)
 
 x = np.random.rand(M)
 x[x < 0.9] = 0
-y = Aop*x
+y = Aop * x
 
 # MP/OMP
 eps = 1e-2
 maxit = 500
-x_mp = pylops.optimization.sparsity.OMP(Aop, y, maxit, niter_inner=0,
-                                        sigma=1e-4)[0]
+x_mp = pylops.optimization.sparsity.OMP(Aop, y, maxit, niter_inner=0, sigma=1e-4)[0]
 x_omp = pylops.optimization.sparsity.OMP(Aop, y, maxit, sigma=1e-4)[0]
 
 # IRLS
-x_irls = pylops.optimization.sparsity.IRLS(Aop, y, 50,
-                                           epsI=1e-5, kind='model',
-                                           **dict(iter_lim=10))[0]
+x_irls = pylops.optimization.sparsity.IRLS(
+    Aop, y, 50, epsI=1e-5, kind="model", **dict(iter_lim=10)
+)[0]
 
 # ISTA
-x_ista = pylops.optimization.sparsity.ISTA(Aop, y, maxit, eps=eps,
-                                           tol=1e-3, returninfo=True)[0]
+x_ista = pylops.optimization.sparsity.ISTA(
+    Aop, y, maxit, eps=eps, tol=1e-3, returninfo=True
+)[0]
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 3))
-m, s, b = ax.stem(x, linefmt='k', basefmt='k',
-        markerfmt='ko', label='True')
-plt.setp(m, markersize = 15)
-m, s, b = ax.stem(x_mp, linefmt='--c', basefmt='--c',
-        markerfmt='co', label='MP')
-plt.setp(m, markersize = 10)
-m, s, b = ax.stem(x_omp, linefmt='--g', basefmt='--g',
-        markerfmt='go', label='OMP')
-plt.setp(m, markersize = 7)
-m, s, b = ax.stem(x_irls, linefmt='--m', basefmt='--m',
-                  markerfmt='mo', label='IRLS')
+m, s, b = ax.stem(x, linefmt="k", basefmt="k", markerfmt="ko", label="True")
+plt.setp(m, markersize=15)
+m, s, b = ax.stem(x_mp, linefmt="--c", basefmt="--c", markerfmt="co", label="MP")
+plt.setp(m, markersize=10)
+m, s, b = ax.stem(x_omp, linefmt="--g", basefmt="--g", markerfmt="go", label="OMP")
 plt.setp(m, markersize=7)
-m, s, b = ax.stem(x_ista, linefmt='--r', basefmt='--r',
-                  markerfmt='ro', label='ISTA')
-plt.setp(m, markersize = 3)
-ax.set_title('Model', size=15, fontweight='bold')
+m, s, b = ax.stem(x_irls, linefmt="--m", basefmt="--m", markerfmt="mo", label="IRLS")
+plt.setp(m, markersize=7)
+m, s, b = ax.stem(x_ista, linefmt="--r", basefmt="--r", markerfmt="ro", label="ISTA")
+plt.setp(m, markersize=3)
+ax.set_title("Model", size=15, fontweight="bold")
 ax.legend()
 plt.tight_layout()
 
@@ -101,73 +96,69 @@ plt.tight_layout()
 
 nt = 61
 dt = 0.004
-t = np.arange(nt)*dt
+t = np.arange(nt) * dt
 x = np.zeros(nt)
-x[10] = -.4
-x[int(nt/2)] = 1
-x[nt-20] = 0.5
+x[10] = -0.4
+x[int(nt / 2)] = 1
+x[nt - 20] = 0.5
 
 h, th, hcenter = pylops.utils.wavelets.ricker(t[:101], f0=20)
 
-Cop = pylops.signalprocessing.Convolve1D(nt, h=h, offset=hcenter,
-                                         dtype='float32')
-y = Cop*x
+Cop = pylops.signalprocessing.Convolve1D(nt, h=h, offset=hcenter, dtype="float32")
+y = Cop * x
 yn = y + np.random.normal(0, 0.1, y.shape)
 
 # noise free
 xls = Cop / y
 
-xomp, nitero, costo = \
-    pylops.optimization.sparsity.OMP(Cop, y, niter_outer=200, sigma=1e-8)
+xomp, nitero, costo = pylops.optimization.sparsity.OMP(
+    Cop, y, niter_outer=200, sigma=1e-8
+)
 
-xista, niteri, costi = \
-    pylops.optimization.sparsity.ISTA(Cop, y, niter=400, eps=5e-1,
-                                      tol=1e-8, returninfo=True)
+xista, niteri, costi = pylops.optimization.sparsity.ISTA(
+    Cop, y, niter=400, eps=5e-1, tol=1e-8, returninfo=True
+)
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 3))
-ax.plot(t, x, 'k', lw=8, label=r'$x$')
-ax.plot(t, y, 'r', lw=4, label=r'$y=Ax$')
-ax.plot(t, xls, '--g', lw=4, label=r'$x_{LS}$')
-ax.plot(t, xomp, '--b', lw=4, label=r'$x_{OMP} (niter=%d)$' % nitero)
-ax.plot(t, xista, '--m', lw=4, label=r'$x_{ISTA} (niter=%d)$' % niteri)
+ax.plot(t, x, "k", lw=8, label=r"$x$")
+ax.plot(t, y, "r", lw=4, label=r"$y=Ax$")
+ax.plot(t, xls, "--g", lw=4, label=r"$x_{LS}$")
+ax.plot(t, xomp, "--b", lw=4, label=r"$x_{OMP} (niter=%d)$" % nitero)
+ax.plot(t, xista, "--m", lw=4, label=r"$x_{ISTA} (niter=%d)$" % niteri)
 
-ax.set_title('Noise-free deconvolution', fontsize=14, fontweight='bold')
+ax.set_title("Noise-free deconvolution", fontsize=14, fontweight="bold")
 ax.legend()
 plt.tight_layout()
 
 # noisy
-xls = \
-    pylops.optimization.leastsquares.RegularizedInversion(Cop, [], yn,
-                                                          returninfo=False,
-                                                          **dict(damp=1e-1,
-                                                                 atol=1e-3,
-                                                                 iter_lim=100,
-                                                                 show=0))
+xls = pylops.optimization.leastsquares.RegularizedInversion(
+    Cop, [], yn, returninfo=False, **dict(damp=1e-1, atol=1e-3, iter_lim=100, show=0)
+)
 
-xista, niteri, costi = \
-    pylops.optimization.sparsity.ISTA(Cop, yn, niter=100, eps=5e-1,
-                                      tol=1e-5, returninfo=True)
+xista, niteri, costi = pylops.optimization.sparsity.ISTA(
+    Cop, yn, niter=100, eps=5e-1, tol=1e-5, returninfo=True
+)
 
-xfista, niterf, costf = \
-    pylops.optimization.sparsity.FISTA(Cop, yn, niter=100, eps=5e-1,
-                                       tol=1e-5, returninfo=True)
+xfista, niterf, costf = pylops.optimization.sparsity.FISTA(
+    Cop, yn, niter=100, eps=5e-1, tol=1e-5, returninfo=True
+)
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 3))
-ax.plot(t, x, 'k', lw=8, label=r'$x$')
-ax.plot(t, y, 'r', lw=4, label=r'$y=Ax$')
-ax.plot(t, yn, '--b', lw=4, label=r'$y_n$')
-ax.plot(t, xls, '--g', lw=4, label=r'$x_{LS}$')
-ax.plot(t, xista, '--m', lw=4, label=r'$x_{ISTA} (niter=%d)$' % niteri)
-ax.plot(t, xfista, '--y', lw=4, label=r'$x_{FISTA} (niter=%d)$' % niterf)
-ax.set_title('Noisy deconvolution', fontsize=14, fontweight='bold')
+ax.plot(t, x, "k", lw=8, label=r"$x$")
+ax.plot(t, y, "r", lw=4, label=r"$y=Ax$")
+ax.plot(t, yn, "--b", lw=4, label=r"$y_n$")
+ax.plot(t, xls, "--g", lw=4, label=r"$x_{LS}$")
+ax.plot(t, xista, "--m", lw=4, label=r"$x_{ISTA} (niter=%d)$" % niteri)
+ax.plot(t, xfista, "--y", lw=4, label=r"$x_{FISTA} (niter=%d)$" % niterf)
+ax.set_title("Noisy deconvolution", fontsize=14, fontweight="bold")
 ax.legend()
 plt.tight_layout()
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 3))
-ax.semilogy(costi, 'm', lw=2, label=r'$x_{ISTA} (niter=%d)$' % niteri)
-ax.semilogy(costf, 'y', lw=2, label=r'$x_{FISTA} (niter=%d)$' % niterf)
-ax.set_title('Cost function', size=15, fontweight='bold')
-ax.set_xlabel('Iteration')
+ax.semilogy(costi, "m", lw=2, label=r"$x_{ISTA} (niter=%d)$" % niteri)
+ax.semilogy(costf, "y", lw=2, label=r"$x_{FISTA} (niter=%d)$" % niterf)
+ax.set_title("Cost function", size=15, fontweight="bold")
+ax.set_xlabel("Iteration")
 ax.legend()
-ax.grid(True, which='both')
+ax.grid(True, which="both")
 plt.tight_layout()

@@ -96,4 +96,3 @@ jobs:
       python setup.py test
     condition: succeededOrFailed()
     displayName: 'Run tests'
-

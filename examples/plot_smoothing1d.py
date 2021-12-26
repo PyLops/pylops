@@ -13,12 +13,12 @@ A smoothing operator is a simple compact filter on lenght :math:`n_{smooth}`
 and each elements is equal to :math:`1/n_{smooth}`.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 import pylops
 
-plt.close('all')
+plt.close("all")
 
 ###############################################################################
 # Define the input parameters: number of samples of input signal (``N``) and
@@ -27,17 +27,17 @@ plt.close('all')
 N = 31
 nsmooth = 7
 x = np.zeros(N)
-x[int(N/2)] = 1
+x[int(N / 2)] = 1
 
-Sop = pylops.Smoothing1D(nsmooth=nsmooth, dims=[N], dtype='float32')
+Sop = pylops.Smoothing1D(nsmooth=nsmooth, dims=[N], dtype="float32")
 
-y = Sop*x
-xadj = Sop.H*y
+y = Sop * x
+xadj = Sop.H * y
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 3))
-ax.plot(x, 'k', lw=2, label=r'$x$')
-ax.plot(y, 'r', lw=2, label=r'$y=Ax$')
-ax.set_title('Smoothing in 1st direction', fontsize=14, fontweight='bold')
+ax.plot(x, "k", lw=2, label=r"$x$")
+ax.plot(y, "r", lw=2, label=r"$y=Ax$")
+ax.set_title("Smoothing in 1st direction", fontsize=14, fontweight="bold")
 ax.legend()
 
 ###############################################################################
@@ -46,17 +46,16 @@ ax.legend()
 N = 120
 nsmooth = 13
 x = np.random.normal(0, 1, N)
-Sop = pylops.Smoothing1D(nsmooth=13, dims=(N), dtype='float32')
+Sop = pylops.Smoothing1D(nsmooth=13, dims=(N), dtype="float32")
 
-y = Sop*x
-xest = Sop/y
+y = Sop * x
+xest = Sop / y
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 3))
-ax.plot(x, 'k', lw=2, label=r'$x$')
-ax.plot(y, 'r', lw=2, label=r'$y=Ax$')
-ax.plot(xest, '--g', lw=2, label=r'$x_{ext}$')
-ax.set_title('Smoothing in 1st direction',
-             fontsize=14, fontweight='bold')
+ax.plot(x, "k", lw=2, label=r"$x$")
+ax.plot(y, "r", lw=2, label=r"$y=Ax$")
+ax.plot(xest, "--g", lw=2, label=r"$x_{ext}$")
+ax.set_title("Smoothing in 1st direction", fontsize=14, fontweight="bold")
 ax.legend()
 
 ###############################################################################
@@ -65,19 +64,20 @@ ax.legend()
 A = np.zeros((11, 21))
 A[5, 10] = 1
 
-Sop = pylops.Smoothing1D(nsmooth=5, dims=(11, 21), dir=0, dtype='float64')
-B = np.reshape(Sop*np.ndarray.flatten(A), (11, 21))
+Sop = pylops.Smoothing1D(nsmooth=5, dims=(11, 21), dir=0, dtype="float64")
+B = np.reshape(Sop * np.ndarray.flatten(A), (11, 21))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Smoothing in 1st direction for 2d data', fontsize=14,
-             fontweight='bold', y=0.95)
-im = axs[0].imshow(A, interpolation='nearest', vmin=0, vmax=1)
-axs[0].axis('tight')
-axs[0].set_title('Model')
+fig.suptitle(
+    "Smoothing in 1st direction for 2d data", fontsize=14, fontweight="bold", y=0.95
+)
+im = axs[0].imshow(A, interpolation="nearest", vmin=0, vmax=1)
+axs[0].axis("tight")
+axs[0].set_title("Model")
 plt.colorbar(im, ax=axs[0])
-im = axs[1].imshow(B, interpolation='nearest', vmin=0, vmax=1)
-axs[1].axis('tight')
-axs[1].set_title('Data')
+im = axs[1].imshow(B, interpolation="nearest", vmin=0, vmax=1)
+axs[1].axis("tight")
+axs[1].set_title("Data")
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)

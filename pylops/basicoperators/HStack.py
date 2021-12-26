@@ -1,16 +1,16 @@
 import multiprocessing as mp
-import numpy as np
 
-from scipy.sparse.linalg.interface import _get_dtype
+import numpy as np
 from scipy.sparse.linalg.interface import LinearOperator as spLinearOperator
+from scipy.sparse.linalg.interface import _get_dtype
+
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
 from pylops.utils.backend import get_array_module
 
 
 def _matvec_rmatvec_map(op, x):
-    """matvec/rmatvec for multiprocessing
-    """
+    """matvec/rmatvec for multiprocessing"""
     return op(x).squeeze()
 
 
@@ -86,6 +86,7 @@ class HStack(LinearOperator):
         \end{bmatrix}
 
     """
+
     def __init__(self, ops, nproc=1, dtype=None):
         self.ops = ops
         mops = np.zeros(len(ops), dtype=np.int)
@@ -96,7 +97,7 @@ class HStack(LinearOperator):
         self.mops = int(mops.sum())
         nops = [oper.shape[0] for oper in self.ops]
         if len(set(nops)) > 1:
-            raise ValueError('operators have different number of rows')
+            raise ValueError("operators have different number of rows")
         self.nops = int(nops[0])
         self.mmops = np.insert(np.cumsum(mops), 0, 0)
         # create pool for multiprocessing
@@ -110,8 +111,7 @@ class HStack(LinearOperator):
         else:
             self.dtype = np.dtype(dtype)
         self.explicit = False
-        self.clinear = all([getattr(oper, 'clinear', True)
-                            for oper in self.ops])
+        self.clinear = all([getattr(oper, "clinear", True) for oper in self.ops])
 
     @property
     def nproc(self):
@@ -129,26 +129,32 @@ class HStack(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            y += oper.matvec(x[self.mmops[iop]:self.mmops[iop + 1]]).squeeze()
+            y += oper.matvec(x[self.mmops[iop] : self.mmops[iop + 1]]).squeeze()
         return y
 
     def _rmatvec_serial(self, x):
         ncp = get_array_module(x)
         y = ncp.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            y[self.mmops[iop]:self.mmops[iop + 1]] = oper.rmatvec(x).squeeze()
+            y[self.mmops[iop] : self.mmops[iop + 1]] = oper.rmatvec(x).squeeze()
         return y
 
     def _matvec_multiproc(self, x):
-        ys = self.pool.starmap(_matvec_rmatvec_map,
-                               [(oper._matvec, x[self.mmops[iop]:self.mmops[iop + 1]])
-                                for iop, oper in enumerate(self.ops)])
+        ys = self.pool.starmap(
+            _matvec_rmatvec_map,
+            [
+                (oper._matvec, x[self.mmops[iop] : self.mmops[iop + 1]])
+                for iop, oper in enumerate(self.ops)
+            ],
+        )
         y = np.sum(ys, axis=0)
         return y
 
     def _rmatvec_multiproc(self, x):
-        ys = self.pool.starmap(_matvec_rmatvec_map,
-                               [(oper._rmatvec, x) for iop, oper in enumerate(self.ops)])
+        ys = self.pool.starmap(
+            _matvec_rmatvec_map,
+            [(oper._rmatvec, x) for iop, oper in enumerate(self.ops)],
+        )
         y = np.hstack(ys)
         return y
 

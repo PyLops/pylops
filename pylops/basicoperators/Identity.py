@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
@@ -73,7 +74,8 @@ class Identity(LinearOperator):
         x_i = 0 \quad \forall i=M+1,...,N
 
     """
-    def __init__(self, N, M=None, dtype='float64', inplace=True):
+
+    def __init__(self, N, M=None, dtype="float64", inplace=True):
         M = N if M is None else M
         self.inplace = inplace
         self.shape = (N, M)
@@ -87,10 +89,10 @@ class Identity(LinearOperator):
         if self.shape[0] == self.shape[1]:
             y = x
         elif self.shape[0] < self.shape[1]:
-            y = x[:self.shape[0]]
+            y = x[: self.shape[0]]
         else:
             y = ncp.zeros(self.shape[0], dtype=self.dtype)
-            y[:self.shape[1]] = x
+            y[: self.shape[1]] = x
         return y
 
     def _rmatvec(self, x):
@@ -101,7 +103,7 @@ class Identity(LinearOperator):
             y = x
         elif self.shape[0] < self.shape[1]:
             y = ncp.zeros(self.shape[1], dtype=self.dtype)
-            y[:self.shape[0]] = x
+            y[: self.shape[0]] = x
         else:
-            y = x[:self.shape[1]]
+            y = x[: self.shape[1]]
         return y

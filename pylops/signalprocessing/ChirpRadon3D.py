@@ -1,23 +1,28 @@
 import logging
+
 import numpy as np
 
 from pylops import LinearOperator
+
 from ._ChirpRadon3D import _chirp_radon_3d
 
 try:
     import pyfftw
+
     from ._ChirpRadon3D import _chirp_radon_3d_fftw
 except ModuleNotFoundError:
     pyfftw = None
-    pyfftw_message = 'Pyfftw not installed, use numpy or run ' \
-                     '"pip install pyFFTW" or ' \
-                     '"conda install -c conda-forge pyfftw".'
+    pyfftw_message = (
+        "Pyfftw not installed, use numpy or run "
+        '"pip install pyFFTW" or '
+        '"conda install -c conda-forge pyfftw".'
+    )
 except Exception as e:
     pyfftw = None
-    pyfftw_message = 'Failed to import pyfftw (error:%s), use numpy.' % e
+    pyfftw_message = "Failed to import pyfftw (error:%s), use numpy." % e
 
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class ChirpRadon3D(LinearOperator):
@@ -69,57 +74,56 @@ class ChirpRadon3D(LinearOperator):
         chirp modulation", Geophysics, vol 84, NO.1, pp. A13-A17, 2019.
 
     """
-    def __init__(self, taxis, hyaxis, hxaxis, pmax, engine='numpy',
-                 dtype='float64', **kwargs_fftw):
+
+    def __init__(
+        self,
+        taxis,
+        hyaxis,
+        hxaxis,
+        pmax,
+        engine="numpy",
+        dtype="float64",
+        **kwargs_fftw
+    ):
         self.dt = taxis[1] - taxis[0]
         self.dy = hyaxis[1] - hyaxis[0]
         self.dx = hxaxis[1] - hxaxis[0]
         self.nt, self.nx, self.ny = taxis.size, hxaxis.size, hyaxis.size
         self.pmax = pmax
         self.engine = engine
-        if self.engine not in ['fftw', 'numpy']:
-            raise NotImplementedError('engine must be numpy or fftw')
+        if self.engine not in ["fftw", "numpy"]:
+            raise NotImplementedError("engine must be numpy or fftw")
         self.kwargs_fftw = kwargs_fftw
-        self.shape = (self.nt * self.nx * self.ny,
-                      self.nt * self.nx * self.ny)
+        self.shape = (self.nt * self.nx * self.ny, self.nt * self.nx * self.ny)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         x = x.reshape(self.ny, self.nx, self.nt)
-        if self.engine == 'fftw' and pyfftw is not None:
-            y = _chirp_radon_3d_fftw(x, self.dt,
-                                     self.dy, self.dx,
-                                     self.pmax, mode='f',
-                                     **self.kwargs_fftw)
+        if self.engine == "fftw" and pyfftw is not None:
+            y = _chirp_radon_3d_fftw(
+                x, self.dt, self.dy, self.dx, self.pmax, mode="f", **self.kwargs_fftw
+            )
         else:
-            y = _chirp_radon_3d(x, self.dt,
-                                self.dy, self.dx,
-                                self.pmax, mode='f')
+            y = _chirp_radon_3d(x, self.dt, self.dy, self.dx, self.pmax, mode="f")
         return y.ravel()
 
     def _rmatvec(self, x):
         x = x.reshape(self.ny, self.nx, self.nt)
-        if self.engine == 'fftw' and pyfftw is not None:
-            y = _chirp_radon_3d_fftw(x, self.dt,
-                                     self.dy, self.dx,
-                                     self.pmax, mode='a',
-                                     **self.kwargs_fftw)
+        if self.engine == "fftw" and pyfftw is not None:
+            y = _chirp_radon_3d_fftw(
+                x, self.dt, self.dy, self.dx, self.pmax, mode="a", **self.kwargs_fftw
+            )
         else:
-            y = _chirp_radon_3d(x, self.dt,
-                                self.dy, self.dx,
-                                self.pmax, mode='a')
+            y = _chirp_radon_3d(x, self.dt, self.dy, self.dx, self.pmax, mode="a")
         return y.ravel()
 
     def inverse(self, x):
         x = x.reshape(self.ny, self.nx, self.nt)
-        if self.engine == 'fftw' and pyfftw is not None:
-            y = _chirp_radon_3d_fftw(x, self.dt,
-                                     self.dy, self.dx,
-                                     self.pmax, mode='i',
-                                     **self.kwargs_fftw)
+        if self.engine == "fftw" and pyfftw is not None:
+            y = _chirp_radon_3d_fftw(
+                x, self.dt, self.dy, self.dx, self.pmax, mode="i", **self.kwargs_fftw
+            )
         else:
-            y = _chirp_radon_3d(x, self.dt,
-                                self.dy, self.dx,
-                                self.pmax, mode='i')
+            y = _chirp_radon_3d(x, self.dt, self.dy, self.dx, self.pmax, mode="i")
         return y.ravel()
