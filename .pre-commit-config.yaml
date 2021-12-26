@@ -23,4 +23,4 @@ repos:
     hooks:
       - id: black
         args: # arguments to configure black
-          - --line-length=120
+          - --line-length=88
