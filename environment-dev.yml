@@ -16,6 +16,10 @@ dependencies:
   - numpydoc
   - numba
   - icc_rt
+  - pre-commit
+  - autopep8
+  - isort
+  - black
   - pip:
     - scikit-fmm
     - spgl1
