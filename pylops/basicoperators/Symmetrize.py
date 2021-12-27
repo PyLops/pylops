@@ -88,7 +88,7 @@ class Symmetrize(LinearOperator):
         if self.dir > 0:
             y = ncp.swapaxes(y, 0, self.dir)
         if self.reshape:
-            y = ncp.ndarray.flatten(y)
+            y = y.ravel()
         return y
 
     def _rmatvec(self, x):
@@ -102,5 +102,5 @@ class Symmetrize(LinearOperator):
         if self.dir > 0:
             y = ncp.swapaxes(y, 0, self.dir)
         if self.reshape:
-            y = ncp.ndarray.flatten(y)
+            y = y.ravel()
         return y

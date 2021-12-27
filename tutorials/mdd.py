@@ -71,7 +71,7 @@ MDCop = pylops.waveeqprocessing.MDC(Gwav_fft, nt=2 * par['nt']-1, nv=1,
                                     dt=0.004, dr=1., dtype='float32')
 
 # Create data
-d = MDCop*m.flatten()
+d = MDCop*m.ravel()
 d = d.reshape(par['ny'], 2*par['nt']-1)
 
 ###############################################################################

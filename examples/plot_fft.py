@@ -80,7 +80,7 @@ d = np.outer(np.sin(2*np.pi*f0*t), np.arange(nx)+1)
 
 FFTop = pylops.signalprocessing.FFT(dims=(nt, nx), dir=0,
                                     nfft=nfft, sampling=dt)
-D = FFTop*d.flatten()
+D = FFTop*d.ravel()
 
 # Adjoint = inverse for FFT
 dinv = FFTop.H*D
@@ -114,7 +114,7 @@ d = np.outer(np.sin(2*np.pi*f0*t), np.arange(nx)+1)
 
 FFTop = pylops.signalprocessing.FFT2D(dims=(nt, nx),
                                       nffts=(nfft, nfft), sampling=(dt, dx))
-D = FFTop*d.flatten()
+D = FFTop*d.ravel()
 
 dinv = FFTop.H*D
 dinv = FFTop / D
@@ -154,7 +154,7 @@ d = np.tile(d[:, :, np.newaxis], [1, 1, ny])
 FFTop = pylops.signalprocessing.FFTND(dims=(nt, nx, ny),
                                       nffts=(nfft, nfftk, nfftk),
                                       sampling=(dt, dx, dy))
-D = FFTop*d.flatten()
+D = FFTop*d.ravel()
 
 dinv = FFTop.H*D
 dinv = FFTop / D

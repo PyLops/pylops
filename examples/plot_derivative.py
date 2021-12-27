@@ -86,7 +86,7 @@ A = np.zeros((nx, ny))
 A[nx//2, ny//2] = 1.
 
 D1op = pylops.FirstDerivative(nx * ny, dims=(nx, ny), dir=0, dtype='float64')
-B = np.reshape(D1op * A.flatten(), (nx, ny))
+B = np.reshape(D1op * A.ravel(), (nx, ny))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('First Derivative in 1st direction', fontsize=12,
@@ -108,7 +108,7 @@ A = np.zeros((nx, ny))
 A[nx//2, ny//2] = 1.
 
 D2op = pylops.SecondDerivative(nx * ny, dims=(nx, ny), dir=0, dtype='float64')
-B = np.reshape(D2op * A.flatten(), (nx, ny))
+B = np.reshape(D2op * A.ravel(), (nx, ny))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle('Second Derivative in 1st direction', fontsize=12,
@@ -157,8 +157,8 @@ L2symop = pylops.Laplacian(dims=(nx, ny), weights=(1, 1), dtype='float64')
 # asymmetrical
 L2asymop = pylops.Laplacian(dims=(nx, ny), weights=(3, 1), dtype='float64')
 
-Bsym = np.reshape(L2symop * A.flatten(), (nx, ny))
-Basym = np.reshape(L2asymop * A.flatten(), (nx, ny))
+Bsym = np.reshape(L2symop * A.ravel(), (nx, ny))
+Basym = np.reshape(L2asymop * A.ravel(), (nx, ny))
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 3))
 fig.suptitle('Laplacian', fontsize=12,
@@ -185,8 +185,8 @@ plt.subplots_adjust(top=0.8)
 # concatenates them.
 Gop = pylops.Gradient(dims=(nx, ny), dtype='float64')
 
-B = np.reshape(Gop * A.flatten(), (2*nx, ny))
-C = np.reshape(Gop.H * B.flatten(), (nx, ny))
+B = np.reshape(Gop * A.ravel(), (2*nx, ny))
+C = np.reshape(Gop.H * B.ravel(), (nx, ny))
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 3))
 fig.suptitle('Gradient', fontsize=12,

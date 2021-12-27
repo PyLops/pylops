@@ -39,10 +39,10 @@ def test_Sliding1D(par):
     assert dottest(Slid, par['npy'],
                    par['ny']*par['winsy'])
     x = np.ones(par['ny']*par['winsy'])
-    y = Slid * x.flatten()
+    y = Slid * x.ravel()
 
     xinv = LinearOperator(Slid) / y
-    assert_array_almost_equal(x.flatten(), xinv)
+    assert_array_almost_equal(x.ravel(), xinv)
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_Sliding2D(par):
@@ -57,10 +57,10 @@ def test_Sliding2D(par):
     assert dottest(Slid, par['npy']*par['nt'],
                    par['ny']*par['nt']*par['winsy'])
     x = np.ones((par['ny']*par['winsy'], par['nt']))
-    y = Slid * x.flatten()
+    y = Slid * x.ravel()
 
     xinv = LinearOperator(Slid) / y
-    assert_array_almost_equal(x.flatten(), xinv)
+    assert_array_almost_equal(x.ravel(), xinv)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
@@ -81,7 +81,7 @@ def test_Sliding3D(par):
     assert dottest(Slid, par['npy']*par['npx']*par['nt'],
                    par['ny']*par['nx']*par['nt']*par['winsy']*par['winsx'])
     x = np.ones((par['ny']*par['nx']*par['winsy']*par['winsx'], par['nt']))
-    y = Slid * x.flatten()
+    y = Slid * x.ravel()
 
     xinv = LinearOperator(Slid) / y
-    assert_array_almost_equal(x.flatten(), xinv)
+    assert_array_almost_equal(x.ravel(), xinv)

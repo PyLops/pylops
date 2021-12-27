@@ -22,7 +22,7 @@ t0 = np.arange(nt0)*dt0
 vp = 1200 + np.arange(nt0) + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 80, nt0))
 vs = 600 + vp/2 + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 20, nt0))
 rho = 1000 + vp + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 30, nt0))
-m = (np.stack((np.log(vp), np.log(vs), np.log(rho)), axis=1)).flatten()
+m = (np.stack((np.log(vp), np.log(vs), np.log(rho)), axis=1)).ravel()
 
 # Angles
 ntheta = 21

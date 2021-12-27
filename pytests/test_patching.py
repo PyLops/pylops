@@ -43,7 +43,7 @@ def test_Patch2D(par):
     assert dottest(Pop, par['npy'] * par['nt'],
                    par['ny'] * par['nt'] * par['winsy'] * par['winst'])
     x = np.ones((par['ny'] * par['winsy'], par['nt'] * par['winst']))
-    y = Pop * x.flatten()
+    y = Pop * x.ravel()
 
     xinv = LinearOperator(Pop) / y
-    assert_array_almost_equal(x.flatten(), xinv)
+    assert_array_almost_equal(x.ravel(), xinv)

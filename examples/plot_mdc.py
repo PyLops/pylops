@@ -74,11 +74,11 @@ MDCop = pylops.waveeqprocessing.MDC(Gwav_fft, nt=2 * par['nt'] - 1, nv=1,
                                     dtype='float32')
 
 # Create data
-d = MDCop*m.flatten()
+d = MDCop*m.ravel()
 d = d.reshape(2*par['nt']-1, par['ny'])
 
 # Apply adjoint operator to data
-madj = MDCop.H*d.flatten()
+madj = MDCop.H*d.ravel()
 madj = madj.reshape(2*par['nt']-1, par['nx'])
 
 ###############################################################################

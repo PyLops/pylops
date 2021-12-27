@@ -60,7 +60,7 @@ Op = \
     pylops.signalprocessing.FFT2D(nwin, nffts=nop)
 Slid = pylops.signalprocessing.Patch2D(Op.H, dims, dimsd, nwin, nover, nop,
                                        tapertype=None, design=False)
-fftdata = Slid.H * data.flatten()
+fftdata = Slid.H * data.ravel()
 
 ###############################################################################
 # We now create a similar operator but we also add a taper to the overlapping
@@ -69,7 +69,7 @@ fftdata = Slid.H * data.flatten()
 Slid = pylops.signalprocessing.Patch2D(Op.H, dims, dimsd, nwin, nover, nop,
                                        tapertype='hanning', design=False)
 
-reconstructed_data = Slid * fftdata.flatten()
+reconstructed_data = Slid * fftdata.ravel()
 reconstructed_data = np.real(reconstructed_data.reshape(dimsd))
 
 ###############################################################################

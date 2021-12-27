@@ -59,7 +59,7 @@ def test_FirstDerivative_centered(par):
 
     x = np.outer((par['dy']*np.arange(par['ny']))**2, np.ones(par['nx']))
     yana = np.outer(2*par['dy']*np.arange(par['ny']), np.ones(par['nx']))
-    y = D1op * x.flatten()
+    y = D1op * x.ravel()
     y = y.reshape(par['ny'], par['nx'])
     assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
 
@@ -72,7 +72,7 @@ def test_FirstDerivative_centered(par):
 
     x = np.outer((par['dy'] * np.arange(par['ny'])) ** 2, np.ones(par['nx']))
     yana = np.zeros((par['ny'], par['nx']))
-    y = D1op * x.flatten()
+    y = D1op * x.ravel()
     y = y.reshape(par['ny'], par['nx'])
     assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
 
@@ -92,7 +92,7 @@ def test_FirstDerivative_centered(par):
                     np.ones((par['ny'], par['nx']))).reshape(par['nz'],
                                                              par['ny'],
                                                              par['nx'])
-    y = D1op * x.flatten()
+    y = D1op * x.ravel()
     y = y.reshape(par['nz'], par['ny'], par['nx'])
     assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
 
@@ -109,7 +109,7 @@ def test_FirstDerivative_centered(par):
                                                           par['ny'],
                                                           par['nx'])
     yana = np.zeros((par['nz'], par['ny'], par['nx']))
-    y = D1op * x.flatten()
+    y = D1op * x.ravel()
     y = y.reshape(par['nz'], par['ny'], par['nx'])
     assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
 
@@ -122,7 +122,7 @@ def test_FirstDerivative_centered(par):
                    par['nz']*par['ny']*par['nx'], tol=1e-3)
 
     yana = np.zeros((par['nz'], par['ny'], par['nx']))
-    y = D1op * x.flatten()
+    y = D1op * x.ravel()
     y = y.reshape(par['nz'], par['ny'], par['nx'])
     assert_array_almost_equal(y[1:-1], yana[1:-1], decimal=1)
 
@@ -215,7 +215,7 @@ def test_SecondDerivative(par):
     # polynomial f(x,y) = y^3, f_{yy}(x,y) = 6y
     f = yy**3
     dfana = 6*yy
-    df = D2op * f.flatten()
+    df = D2op * f.ravel()
     df = df.reshape(par['ny'], par['nx'])
     assert_array_almost_equal(df[1:-1,:], dfana[1:-1,:], decimal=1)
 
@@ -231,7 +231,7 @@ def test_SecondDerivative(par):
     # polynomial f(x,y) = x^3, f_{xx}(x,y) = 6x
     f = xx**3
     dfana = 6*xx
-    df = D2op * f.flatten()
+    df = D2op * f.ravel()
     df = df.reshape(par['ny'], par['nx'])
     assert_array_almost_equal(df[:,1:-1], dfana[:,1:-1], decimal=1)
 
@@ -248,7 +248,7 @@ def test_SecondDerivative(par):
     # polynomial f(x,y,z) = y^3, f_{yy}(x,y,z) = 6y
     f = yyy**3
     dfana = 6*yyy
-    df = D2op * f.flatten()
+    df = D2op * f.ravel()
     df = df.reshape(par['ny'], par['nx'], par['nz'])
 
     assert_array_almost_equal(df[1:-1,:,:], dfana[1:-1,:,:], decimal=1)
@@ -265,7 +265,7 @@ def test_SecondDerivative(par):
     # polynomial f(x,y,z) = x^3, f_{xx}(x,y,z) = 6x
     f = xxx**3
     dfana = 6*xxx
-    df = D2op * f.flatten()
+    df = D2op * f.ravel()
     df = df.reshape(par['ny'], par['nx'], par['nz'])
 
     assert_array_almost_equal(df[:,1:-1,:], dfana[:,1:-1,:], decimal=1)
@@ -282,7 +282,7 @@ def test_SecondDerivative(par):
     # polynomial f(x,y,z) = z^3, f_{zz}(x,y,z) = 6z
     f = zzz**3
     dfana = 6*zzz
-    df = D2op * f.flatten()
+    df = D2op * f.ravel()
     df = df.reshape(par['ny'], par['nx'], par['nz'])
 
     assert_array_almost_equal(df[:,:,1:-1], dfana[:,:,1:-1], decimal=1)

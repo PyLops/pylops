@@ -35,7 +35,7 @@ def test_Smoothing1D(par):
                        dir=par['dir'], dtype='float64')
     assert dottest(D1op, par['ny']*par['nx'], par['ny']*par['nx'])
 
-    x = np.random.normal(0, 1, (par['ny'], par['nx'])).flatten()
+    x = np.random.normal(0, 1, (par['ny'], par['nx'])).ravel()
     y = D1op*x
     xlsqr = lsqr(D1op, y, damp=1e-10, iter_lim=100, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
@@ -46,7 +46,7 @@ def test_Smoothing1D(par):
     assert dottest(D1op, par['nz'] * par['ny'] * par['nx'],
                    par['nz'] * par['ny'] * par['nx'], tol=1e-3)
 
-    x = np.random.normal(0, 1, (par['nz'], par['ny'], par['nx'])).flatten()
+    x = np.random.normal(0, 1, (par['nz'], par['ny'], par['nx'])).ravel()
     y = D1op*x
     xlsqr = lsqr(D1op, y, damp=1e-10, iter_lim=100, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
@@ -66,7 +66,7 @@ def test_Smoothing2D(par):
         # forward
         x = np.zeros((par['ny'], par['nx']))
         x[par['ny']//2, par['nx']//2] = 1.
-        x = x.flatten()
+        x = x.ravel()
         y = D2op * x
         y = y.reshape(par['ny'], par['nx'])
         assert_array_almost_equal(y[par['ny'] // 2 - 2:par['ny'] // 2 + 3:,
@@ -87,7 +87,7 @@ def test_Smoothing2D(par):
     # forward
     x = np.zeros((par['nz'], par['ny'], par['nx']))
     x[par['nz']//2, par['ny']//2, par['nx']//2] = 1.
-    x = x.flatten()
+    x = x.ravel()
     y = D2op * x
     y = y.reshape(par['nz'], par['ny'], par['nx'])
 

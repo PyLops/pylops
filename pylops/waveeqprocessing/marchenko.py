@@ -351,7 +351,7 @@ class Marchenko():
         Rollop = Roll(self.nt2 * self.ns,
                       dims=(self.nt2, self.ns),
                       dir=0, shift=-1, dtype=self.dtype)
-        Wop = Diagonal(w.T.flatten())
+        Wop = Diagonal(w.T.ravel())
         Iop = Identity(self.nr * self.nt2)
         Mop = Block([[Iop, -1 * Wop * Rop],
                      [-1 * Wop * Rollop * R1op, Iop]]) * BlockDiag([Wop, Wop])
@@ -386,19 +386,19 @@ class Marchenko():
 
         # Run standard redatuming as benchmark
         if rtm:
-            p0_minus = Rop * fd_plus.flatten()
+            p0_minus = Rop * fd_plus.ravel()
             p0_minus = p0_minus.reshape(self.nt2, self.ns).T
 
         # Create data and inverse focusing functions
-        d = Wop * Rop * fd_plus.flatten()
+        d = Wop * Rop * fd_plus.ravel()
         d = np.concatenate((d.reshape(self.nt2, self.ns),
                             self.ncp.zeros((self.nt2, self.ns), self.dtype)))
 
         # Invert for focusing functions
         if self.ncp == np:
-            f1_inv = lsqr(Mop, d.flatten(), **kwargs_solver)[0]
+            f1_inv = lsqr(Mop, d.ravel(), **kwargs_solver)[0]
         else:
-            f1_inv = cgls(Mop, d.flatten(),
+            f1_inv = cgls(Mop, d.ravel(),
                           x0=self.ncp.zeros(2*(2*self.nt-1)*self.nr, dtype=self.dtype),
                           **kwargs_solver)[0]
 
@@ -411,7 +411,7 @@ class Marchenko():
         f1_inv_plus = f1_inv_tot[self.nt2:].T
         if greens:
             # Create Green's functions
-            g_inv = Gop * f1_inv_tot.flatten()
+            g_inv = Gop * f1_inv_tot.ravel()
             g_inv = g_inv.reshape(2 * self.nt2, self.ns)
             g_inv_minus, g_inv_plus = -g_inv[:self.nt2].T, \
                                       np.fliplr(g_inv[self.nt2:].T)
@@ -507,7 +507,7 @@ class Marchenko():
         Rollop = Roll(self.ns * nvs * self.nt2,
                       dims=(self.nt2, self.ns, nvs),
                       dir=0, shift=-1, dtype=self.dtype)
-        Wop = Diagonal(w.transpose(2, 0, 1).flatten())
+        Wop = Diagonal(w.transpose(2, 0, 1).ravel())
         Iop = Identity(self.nr * nvs * self.nt2)
         Mop = Block([[Iop, -1 * Wop * Rop],
                      [-1 * Wop * Rollop * R1op, Iop]]) * BlockDiag([Wop, Wop])
@@ -545,21 +545,21 @@ class Marchenko():
 
         # Run standard redatuming as benchmark
         if rtm:
-            p0_minus = Rop * fd_plus.flatten()
+            p0_minus = Rop * fd_plus.ravel()
             p0_minus = p0_minus.reshape(self.nt2, self.ns,
                                         nvs).transpose(1, 2, 0)
 
         # Create data and inverse focusing functions
-        d = Wop * Rop * fd_plus.flatten()
+        d = Wop * Rop * fd_plus.ravel()
         d = np.concatenate((d.reshape(self.nt2, self.ns, nvs),
                             self.ncp.zeros((self.nt2, self.ns, nvs),
                                            dtype=self.dtype)))
 
         # Invert for focusing functions
         if self.ncp == np:
-            f1_inv = lsqr(Mop, d.flatten(), **kwargs_solver)[0]
+            f1_inv = lsqr(Mop, d.ravel(), **kwargs_solver)[0]
         else:
-            f1_inv = cgls(Mop, d.flatten(),
+            f1_inv = cgls(Mop, d.ravel(),
                           x0=self.ncp.zeros(2 * (2 * self.nt - 1) *
                                             self.nr * nvs,
                                             dtype=self.dtype),
@@ -574,7 +574,7 @@ class Marchenko():
 
         if greens:
             # Create Green's functions
-            g_inv = Gop * f1_inv_tot.flatten()
+            g_inv = Gop * f1_inv_tot.ravel()
             g_inv = g_inv.reshape(2 * self.nt2, self.ns, nvs)
             g_inv_minus = -g_inv[:self.nt2].transpose(1, 2, 0)
             g_inv_plus = np.flip(g_inv[self.nt2:], axis=0).transpose(1, 2, 0)

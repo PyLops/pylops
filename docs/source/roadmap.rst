@@ -28,7 +28,7 @@ Library structure
 Code cleaning
 -------------
 
-* Change all ``np.flatten()`` into ``np.ravel()`` -
+* Change all ``np.ravel()`` into ``np.ravel()`` -
   `Issue #24 <https://github.com/Statoil/pylops/issues/24>`_.
 * Fix all ``if: return ... else: ...`` statements to enforce a single return
   with the same number of outputs

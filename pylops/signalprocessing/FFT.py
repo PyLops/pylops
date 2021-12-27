@@ -82,7 +82,7 @@ class _FFT_numpy(LinearOperator):
             else:
                 y = np.fft.fft(x, n=self.nfft,
                                axis=self.dir, norm='ortho')
-            y = y.flatten()
+            y = y.ravel()
         y = y.astype(self.cdtype)
         return y
 
@@ -116,7 +116,7 @@ class _FFT_numpy(LinearOperator):
                             axis=self.dir)
             if self.fftshift:
                 y = np.fft.fftshift(y, axes=self.dir)
-            y = y.flatten()
+            y = y.ravel()
         y = y.astype(self.rdtype)
         return y
 

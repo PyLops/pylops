@@ -109,11 +109,11 @@ Rop = pylops.Restriction(ny*nx, iava, dtype=np.complex)
 Fop = pylops.signalprocessing.FFT2D(dims=(ny, nx))
 
 n = np.random.normal(0, 0., (ny, nx))
-y = Rop*Fop*(x.flatten() + n.flatten())
-yfft = Fop*(x.flatten() + n.flatten())
+y = Rop*Fop*(x.ravel() + n.ravel())
+yfft = Fop*(x.ravel() + n.ravel())
 yfft = np.fft.fftshift(yfft.reshape(ny, nx))
 
-ymask = Rop.mask(Fop*(x.flatten()) + n.flatten())
+ymask = Rop.mask(Fop*(x.ravel()) + n.ravel())
 ymask = ymask.reshape(ny, nx)
 ymask.data[:] = np.fft.fftshift(ymask.data)
 ymask.mask[:] = np.fft.fftshift(ymask.mask)
@@ -152,7 +152,7 @@ niter = 20
 niterinner = 10
 
 xinv, niter = \
-    pylops.optimization.sparsity.SplitBregman(Rop * Fop, Dop, y.flatten(),
+    pylops.optimization.sparsity.SplitBregman(Rop * Fop, Dop, y.ravel(),
                                               niter, niterinner,
                                               mu=mu, epsRL1s=lamda,
                                               tol=1e-4, tau=1., show=False,

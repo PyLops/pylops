@@ -337,7 +337,7 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
     # inversion
     if kind == 'spatial':
         recdata = \
-            RegularizedInversion(SIop, [Regop], data.flatten(),
+            RegularizedInversion(SIop, [Regop], data.ravel(),
                                  **kwargs_solver)
         if isinstance(recdata, tuple):
             recdata = recdata[0]
@@ -345,7 +345,7 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
         recprec = None
         cost = None
     else:
-        recprec = FISTA(SIop, data.flatten(), **kwargs_solver)
+        recprec = FISTA(SIop, data.ravel(), **kwargs_solver)
         if len(recprec) == 3:
             cost = recprec[2]
         else:

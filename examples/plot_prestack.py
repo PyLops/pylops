@@ -76,10 +76,10 @@ PPop_variant = \
 ###############################################################################
 # Let's apply those operators to the elastic model and create some
 # synthetic data
-dPP_const = PPop_const *m.flatten()
+dPP_const = PPop_const *m.ravel()
 dPP_const = dPP_const.reshape(nt0, ntheta)
 
-dPP_variant = PPop_variant *m.flatten()
+dPP_variant = PPop_variant *m.ravel()
 dPP_variant = dPP_variant.reshape(nt0, ntheta)
 
 ###############################################################################

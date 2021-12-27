@@ -110,16 +110,16 @@ axs[2].set_xlabel(r'$\Theta$')
 # We can invert the data. First we will consider noise-free data, subsequently
 # we will add some noise and add a regularization terms in the inversion
 # process to obtain a well-behaved wavelet also under noise conditions.
-wav_est = Wavesop / d.T.flatten()
-wav_phase_est = Wavesop_phase / d_phase.T.flatten()
-wavn_est = Wavesop / dn.T.flatten()
+wav_est = Wavesop / d.T.ravel()
+wav_phase_est = Wavesop_phase / d_phase.T.ravel()
+wavn_est = Wavesop / dn.T.ravel()
 
 # Create regularization operator
 D2op = pylops.SecondDerivative(ntwav, dtype='float64')
 
 # Invert for wavelet
 wavn_reg_est, istop, itn, r1norm, r2norm = \
-    pylops.optimization.leastsquares.RegularizedInversion(Wavesop, [D2op], dn.T.flatten(),
+    pylops.optimization.leastsquares.RegularizedInversion(Wavesop, [D2op], dn.T.ravel(),
                                                           epsRs=[np.sqrt(0.1)], returninfo=True,
                                                           **dict(damp=np.sqrt(1e-4),
                                                                  iter_lim=200, show=0))
@@ -161,7 +161,7 @@ Smop = pylops.Smoothing1D(5, dims=((ntwav+1)//2,), dtype='float64')
 # Invert for wavelet
 wavn_prec_est = \
     pylops.optimization.leastsquares.PreconditionedInversion(Wavesop, Sop,
-                                                             dn.T.flatten(),
+                                                             dn.T.ravel(),
                                                              returninfo=False,
                                                              **dict(damp=np.sqrt(1e-4),
                                                                     iter_lim=200,
@@ -169,7 +169,7 @@ wavn_prec_est = \
 
 wavn_smooth_est = \
     pylops.optimization.leastsquares.PreconditionedInversion(Wavesop, Sop*Smop,
-                                                             dn.T.flatten(),
+                                                             dn.T.ravel(),
                                                              returninfo=False,
                                                              **dict(damp=np.sqrt(1e-4),
                                                                     iter_lim=200,

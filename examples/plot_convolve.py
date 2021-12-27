@@ -95,7 +95,7 @@ h = np.ones((nh[0], nh[1]))
 Cop = pylops.signalprocessing.Convolve2D(nt * nx, h=h,
                                          offset=(int(nh[0])/2, int(nh[1])/2),
                                          dims=(nt, nx), dtype='float32')
-y = Cop*x.flatten()
+y = Cop*x.ravel()
 xinv = Cop / y
 
 y = y.reshape(nt, nx)
@@ -145,7 +145,7 @@ offset = [1, 2, 1]
 Cop = pylops.signalprocessing.ConvolveND(nx*ny*nz, h=h, offset=offset,
                                          dims=[ny, nx, nz], dirs=[0, 1, 2],
                                          dtype='float32')
-y = Cop*x.flatten()
+y = Cop*x.ravel()
 xinv = lsqr(Cop, y, damp=0, iter_lim=300, show=0)[0]
 
 y = y.reshape(ny, nx, nz)

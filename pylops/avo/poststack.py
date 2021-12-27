@@ -288,8 +288,8 @@ def PoststackInversion(data, wav, m0=None, explicit=False,
                 backend=get_module_name(ncp), verb=True)
 
     # create and remove background data from original data
-    datar = data.flatten() if m0 is None else \
-        data.flatten() - PPop * m0.flatten()
+    datar = data.ravel() if m0 is None else \
+        data.ravel() - PPop * m0.ravel()
     # invert model
     if epsR is None:
         # inversion without spatial regularization
@@ -335,7 +335,7 @@ def PoststackInversion(data, wav, m0=None, explicit=False,
                 datarn = PPop.A.T * datar.reshape(nt0, nspatprod)
                 PPop_reg = MatrixMult(PP, dims=nspatprod)
                 minv = \
-                    get_lstsq(data)(PPop_reg.A, datarn.flatten(),
+                    get_lstsq(data)(PPop_reg.A, datarn.ravel(),
                                     **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
@@ -356,8 +356,8 @@ def PoststackInversion(data, wav, m0=None, explicit=False,
             else:
                 Regop = Laplacian((nt0, nx, ny), dirs=(1, 2), dtype=PPop.dtype)
 
-            minv = RegularizedInversion(PPop, [Regop], data.flatten(),
-                                        x0=None if m0 is None else m0.flatten(),
+            minv = RegularizedInversion(PPop, [Regop], data.ravel(),
+                                        x0=None if m0 is None else m0.ravel(),
                                         epsRs=[epsR], returninfo=False,
                                         **kwargs_solver)
         else:
@@ -403,7 +403,7 @@ def PoststackInversion(data, wav, m0=None, explicit=False,
                                 epsRL2s=epsR, mu=mu,
                                 niter_outer=niter_outer,
                                 niter_inner=niter_inner,
-                                x0=None if m0 is None else m0.flatten(),
+                                x0=None if m0 is None else m0.ravel(),
                                 **kwargs_solver)[0]
 
     # compute residual

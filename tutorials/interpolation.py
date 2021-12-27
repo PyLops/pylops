@@ -51,7 +51,7 @@ iava = np.sort(np.random.permutation(np.arange(N))[:Nsub2d])
 Rop = pylops.Restriction(N, iava, dtype='float64')
 D2op = pylops.Laplacian((Nz, Nx), weights=(1, 1), dtype='float64')
 
-x = im.flatten()
+x = im.ravel()
 y = Rop * x
 y1 = Rop.mask(x)
 

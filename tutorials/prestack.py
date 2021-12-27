@@ -97,11 +97,11 @@ PPop_dense = \
                                                 explicit=True)
 
 # data lop
-dPP = PPop * m.flatten()
+dPP = PPop * m.ravel()
 dPP = dPP.reshape(nt0, ntheta)
 
 # data dense
-dPP_dense = PPop_dense * m.T.flatten()
+dPP_dense = PPop_dense * m.T.ravel()
 dPP_dense = dPP_dense.reshape(ntheta, nt0).T
 
 # noisy data
@@ -226,7 +226,7 @@ PSop = \
 PPPSop = pylops.VStack((PPop, PSop))
 
 # data
-dPPPS = PPPSop * m.flatten()
+dPPPS = PPPSop * m.ravel()
 dPPPS = dPPPS.reshape(2, nt0, ntheta)
 
 dPPPSn = dPPPS + np.random.normal(0, 1e-2, dPPPS.shape)
@@ -307,7 +307,7 @@ PPop = pylops.avo.prestack.PrestackLinearModelling(wav, theta, vsvp=vsvp,
                                                    linearization='akirich')
 
 # data
-dPP = PPop_dense*m.swapaxes(0, 1).flatten()
+dPP = PPop_dense*m.swapaxes(0, 1).ravel()
 dPP = dPP.reshape(ntheta, nz, nx).swapaxes(0, 1)
 dPPn = dPP + np.random.normal(0, 5e-2, dPP.shape)
 

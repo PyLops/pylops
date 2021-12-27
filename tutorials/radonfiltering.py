@@ -77,12 +77,12 @@ Rop = pylops.signalprocessing.Radon2D(taxis, xaxis, px, kind='linear',
                                       dtype='float64')
 
 # adjoint Radon transform
-xadj = Rop.H * y.flatten()
+xadj = Rop.H * y.ravel()
 xadj = xadj.reshape(npx, par['nt'])
 
 # sparse Radon transform
 xinv, niter, cost = \
-    pylops.optimization.sparsity.FISTA(Rop, y.flatten(), 15,
+    pylops.optimization.sparsity.FISTA(Rop, y.ravel(), 15,
                                        eps=1e1, returninfo=True)
 xinv = xinv.reshape(npx, par['nt'])
 
@@ -90,14 +90,14 @@ xinv = xinv.reshape(npx, par['nt'])
 xfilt = np.zeros_like(xadj)
 xfilt[npx//2-3:npx//2+4] = xadj[npx//2-3:npx//2+4]
 
-yfilt = Rop * xfilt.flatten()
+yfilt = Rop * xfilt.ravel()
 yfilt = yfilt.reshape(par['nx'], par['nt'])
 
 # filtering on sparse transform
 xinvfilt = np.zeros_like(xinv)
 xinvfilt[npx//2-3:npx//2+4] = xinv[npx//2-3:npx//2+4]
 
-yinvfilt = Rop * xinvfilt.flatten()
+yinvfilt = Rop * xinvfilt.ravel()
 yinvfilt = yinvfilt.reshape(par['nx'], par['nt'])
 
 ###############################################################################
