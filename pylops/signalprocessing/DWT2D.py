@@ -1,17 +1,19 @@
 import logging
-from math import log, ceil
+from math import ceil, log
 
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.basicoperators import Pad
-from .DWT import _checkwavelet, _adjointwavelet
+
+from .DWT import _adjointwavelet, _checkwavelet
 
 try:
     import pywt
 except ModuleNotFoundError:
     pywt = None
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class DWT2D(LinearOperator):
@@ -61,18 +63,19 @@ class DWT2D(LinearOperator):
     Inverse Discrete Wavelet Transform (IDWT2) in adjoint mode.
 
     """
-    def __init__(self, dims, dirs=(0, 1), wavelet='haar',
-                 level=1, dtype='float64'):
+
+    def __init__(self, dims, dirs=(0, 1), wavelet="haar", level=1, dtype="float64"):
         if pywt is None:
-            raise ModuleNotFoundError('The wavelet operator requires '
-                                      'the pywt package t be installed. '
-                                      'Run "pip install PyWavelets" or '
-                                      '"conda install pywavelets".')
+            raise ModuleNotFoundError(
+                "The wavelet operator requires "
+                "the pywt package t be installed. "
+                'Run "pip install PyWavelets" or '
+                '"conda install pywavelets".'
+            )
         _checkwavelet(wavelet)
 
         # define padding for length to be power of 2
-        ndimpow2 = [max(2 ** ceil(log(dims[dir], 2)), 2 ** level)
-                    for dir in dirs]
+        ndimpow2 = [max(2 ** ceil(log(dims[dir], 2)), 2 ** level) for dir in dirs]
         pad = [(0, 0)] * len(dims)
         for i, dir in enumerate(dirs):
             pad[dir] = (0, ndimpow2[i] - dims[dir])
@@ -84,13 +87,16 @@ class DWT2D(LinearOperator):
             self.dimsd[dir] = ndimpow2[i]
 
         # apply transform once again to find out slices
-        _, self.sl = \
-            pywt.coeffs_to_array(pywt.wavedec2(np.ones(self.dimsd),
-                                               wavelet=wavelet,
-                                               level=level,
-                                               mode='periodization',
-                                               axes=self.dirs),
-                                 axes=self.dirs)
+        _, self.sl = pywt.coeffs_to_array(
+            pywt.wavedec2(
+                np.ones(self.dimsd),
+                wavelet=wavelet,
+                level=level,
+                mode="periodization",
+                axes=self.dirs,
+            ),
+            axes=self.dirs,
+        )
         self.wavelet = wavelet
         self.waveletadj = _adjointwavelet(wavelet)
         self.level = level
@@ -101,17 +107,23 @@ class DWT2D(LinearOperator):
     def _matvec(self, x):
         x = self.pad.matvec(x)
         x = np.reshape(x, self.dimsd)
-        y = pywt.coeffs_to_array(pywt.wavedec2(x, wavelet=self.wavelet,
-                                               level=self.level,
-                                               mode='periodization',
-                                               axes=self.dirs),
-                                 axes=(self.dirs))[0]
+        y = pywt.coeffs_to_array(
+            pywt.wavedec2(
+                x,
+                wavelet=self.wavelet,
+                level=self.level,
+                mode="periodization",
+                axes=self.dirs,
+            ),
+            axes=(self.dirs),
+        )[0]
         return y.ravel()
 
     def _rmatvec(self, x):
         x = np.reshape(x, self.dimsd)
-        x = pywt.array_to_coeffs(x, self.sl, output_format='wavedec2')
-        y = pywt.waverec2(x, wavelet=self.waveletadj, mode='periodization',
-                          axes=self.dirs)
+        x = pywt.array_to_coeffs(x, self.sl, output_format="wavedec2")
+        y = pywt.waverec2(
+            x, wavelet=self.waveletadj, mode="periodization", axes=self.dirs
+        )
         y = self.pad.rmatvec(y.ravel())
         return y

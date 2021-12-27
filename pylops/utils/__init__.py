@@ -1,6 +1,7 @@
-from .utils import Report
-from .dottest import dottest
-from .deps import *
+# isort: skip_file
 from .backend import *
-from .multiproc import *
+from .deps import *
+from .dottest import dottest
 from .estimators import *
+from .multiproc import *
+from .utils import Report

@@ -23,12 +23,14 @@ chaining, etc. multiple operators in very easy and expressive way.
 # its implementation is discussed in more details in the :ref:`addingoperator`
 # page.
 import timeit
+
 import matplotlib.pyplot as plt
 import numpy as np
+
 import pylops
 
 n = 10
-d = np.arange(n) + 1.
+d = np.arange(n) + 1.0
 x = np.ones(n)
 Dop = pylops.Diagonal(d)
 
@@ -50,7 +52,7 @@ Dop = pylops.Diagonal(d)
 # ``_matvec`` (or ``matvec``) for efficient implementations.
 
 # setup command
-cmd_setup ="""\
+cmd_setup = """\
 import numpy as np
 import pylops
 n = 10
@@ -61,34 +63,30 @@ DopH = Dop.H
 """
 
 # _matvec
-cmd1 = 'Dop._matvec(x)'
+cmd1 = "Dop._matvec(x)"
 
 # matvec
-cmd2 = 'Dop.matvec(x)'
+cmd2 = "Dop.matvec(x)"
 
 # @
-cmd3 = 'Dop@x'
+cmd3 = "Dop@x"
 
 # *
-cmd4 = 'Dop*x'
+cmd4 = "Dop*x"
 
 # timing
-t1 = 1.e3 * np.array(timeit.repeat(cmd1, setup=cmd_setup,
-                                   number=500, repeat=5))
-t2 = 1.e3 * np.array(timeit.repeat(cmd2, setup=cmd_setup,
-                                   number=500, repeat=5))
-t3 = 1.e3 * np.array(timeit.repeat(cmd3, setup=cmd_setup,
-                                   number=500, repeat=5))
-t4 = 1.e3 * np.array(timeit.repeat(cmd4, setup=cmd_setup,
-                                   number=500, repeat=5))
+t1 = 1.0e3 * np.array(timeit.repeat(cmd1, setup=cmd_setup, number=500, repeat=5))
+t2 = 1.0e3 * np.array(timeit.repeat(cmd2, setup=cmd_setup, number=500, repeat=5))
+t3 = 1.0e3 * np.array(timeit.repeat(cmd3, setup=cmd_setup, number=500, repeat=5))
+t4 = 1.0e3 * np.array(timeit.repeat(cmd4, setup=cmd_setup, number=500, repeat=5))
 
 plt.figure(figsize=(7, 2))
-plt.plot(t1, 'k', label=' _matvec')
-plt.plot(t2, 'r', label='matvec')
-plt.plot(t3, 'g', label='@')
-plt.plot(t4, 'b', label='*')
-plt.axis('tight')
-plt.legend();
+plt.plot(t1, "k", label=" _matvec")
+plt.plot(t2, "r", label="matvec")
+plt.plot(t3, "g", label="@")
+plt.plot(t4, "b", label="*")
+plt.axis("tight")
+plt.legend()
 
 ###############################################################################
 # Similarly we now consider the adjoint mode. This can be done in
@@ -109,34 +107,30 @@ plt.legend();
 # actually use ``matvec`` and ``rmatvec`` when dealing with linear operators.
 
 # _rmatvec
-cmd1 = 'Dop._rmatvec(x)'
+cmd1 = "Dop._rmatvec(x)"
 
 # rmatvec
-cmd2 = 'Dop.rmatvec(x)'
+cmd2 = "Dop.rmatvec(x)"
 
 # .H* (pre-computed H)
-cmd3 = 'DopH*x'
+cmd3 = "DopH*x"
 
 # .H*
-cmd4 = 'Dop.H*x'
+cmd4 = "Dop.H*x"
 
 # timing
-t1 = 1.e3 * np.array(timeit.repeat(cmd1, setup=cmd_setup,
-                                   number=500, repeat=5))
-t2 = 1.e3 * np.array(timeit.repeat(cmd2, setup=cmd_setup,
-                                   number=500, repeat=5))
-t3 = 1.e3 * np.array(timeit.repeat(cmd3, setup=cmd_setup,
-                                   number=500, repeat=5))
-t4 = 1.e3 * np.array(timeit.repeat(cmd4, setup=cmd_setup,
-                                   number=500, repeat=5))
+t1 = 1.0e3 * np.array(timeit.repeat(cmd1, setup=cmd_setup, number=500, repeat=5))
+t2 = 1.0e3 * np.array(timeit.repeat(cmd2, setup=cmd_setup, number=500, repeat=5))
+t3 = 1.0e3 * np.array(timeit.repeat(cmd3, setup=cmd_setup, number=500, repeat=5))
+t4 = 1.0e3 * np.array(timeit.repeat(cmd4, setup=cmd_setup, number=500, repeat=5))
 
 plt.figure(figsize=(7, 2))
-plt.plot(t1, 'k', label=' _rmatvec')
-plt.plot(t2, 'r', label='rmatvec')
-plt.plot(t3, 'g', label='.H* (pre-computed H)')
-plt.plot(t4, 'b', label='.H*')
-plt.axis('tight')
-plt.legend();
+plt.plot(t1, "k", label=" _rmatvec")
+plt.plot(t2, "r", label="rmatvec")
+plt.plot(t3, "g", label=".H* (pre-computed H)")
+plt.plot(t4, "b", label=".H*")
+plt.axis("tight")
+plt.legend()
 
 ###############################################################################
 # Just to reiterate once again, it is advised to call ``matvec``
@@ -175,9 +169,9 @@ print(Dop - 0.5 * Dop)
 # **
 print(Dop ** 3)
 
-#* and /
+# * and /
 y = Dop * x
-print(Dop/y)
+print(Dop / y)
 
 # eigs
 print(Dop.eigs(neigs=3))
@@ -195,12 +189,12 @@ print(Dop.conj())
 # complex numbers. We will see that the action of the operator and its complex
 # conjugate is different even if the model is real.
 n = 5
-d = 1j*(np.arange(n) + 1.)
+d = 1j * (np.arange(n) + 1.0)
 x = np.ones(n)
 Dop = pylops.Diagonal(d)
 
-print('y = Dx = ', Dop*x)
-print('y = conj(D)x = ', Dop.conj()*x)
+print("y = Dx = ", Dop * x)
+print("y = conj(D)x = ", Dop.conj() * x)
 
 ###############################################################################
 # At this point, the concept of linear operator may sound abstract.
@@ -211,8 +205,8 @@ D = Dop.todense()
 
 plt.figure(figsize=(5, 5))
 plt.imshow(np.abs(D))
-plt.title('Dense representation of Diagonal operator')
-plt.axis('tight')
+plt.title("Dense representation of Diagonal operator")
+plt.axis("tight")
 plt.colorbar()
 
 ###############################################################################
@@ -225,14 +219,14 @@ plt.colorbar()
 Dop1 = Dop - Dop.conj()
 
 y = Dop1 * x
-print('x = (Dop - conj(Dop))/y = ', Dop1 / y)
+print("x = (Dop - conj(Dop))/y = ", Dop1 / y)
 
 D1 = Dop1.todense()
 
 plt.figure(figsize=(5, 5))
 plt.imshow(np.abs(D1))
-plt.title(r'Dense representation of $|D + D^*|$')
-plt.axis('tight')
+plt.title(r"Dense representation of $|D + D^*|$")
+plt.axis("tight")
 plt.colorbar()
 
 ###############################################################################

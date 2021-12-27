@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 
 
@@ -71,23 +72,33 @@ class FFT2D(LinearOperator):
     algorithm known as Fast Fourier Transform.
 
     """
-    def __init__(self, dims, dirs=(0, 1), nffts=(None, None),
-                 sampling=(1., 1.), dtype='complex128', real=False):
+
+    def __init__(
+        self,
+        dims,
+        dirs=(0, 1),
+        nffts=(None, None),
+        sampling=(1.0, 1.0),
+        dtype="complex128",
+        real=False,
+    ):
         # checks
         if len(dims) < 2:
-            raise ValueError('provide at least two dimensions')
+            raise ValueError("provide at least two dimensions")
         if len(dirs) != 2:
-            raise ValueError('provide at two directions along which fft is applied')
+            raise ValueError("provide at two directions along which fft is applied")
         if len(nffts) != 2:
-            raise ValueError('provide at two nfft dimensions')
+            raise ValueError("provide at two nfft dimensions")
         if len(sampling) != 2:
-            raise ValueError('provide two sampling steps')
+            raise ValueError("provide two sampling steps")
 
         self.dirs = dirs
-        self.nffts = tuple([int(nffts[0]) if nffts[0] is not None
-                            else dims[self.dirs[0]],
-                            int(nffts[1]) if nffts[1] is not None
-                            else dims[self.dirs[1]]])
+        self.nffts = tuple(
+            [
+                int(nffts[0]) if nffts[0] is not None else dims[self.dirs[0]],
+                int(nffts[1]) if nffts[1] is not None else dims[self.dirs[1]],
+            ]
+        )
         self.f1 = np.fft.fftfreq(self.nffts[0], d=sampling[0])
         self.f2 = np.fft.fftfreq(self.nffts[1], d=sampling[1])
         self.real = real
@@ -95,13 +106,15 @@ class FFT2D(LinearOperator):
         self.dims = np.array(dims)
         self.dims_fft = self.dims.copy()
         self.dims_fft[self.dirs[0]] = self.nffts[0]
-        self.dims_fft[self.dirs[1]] = self.nffts[1] // 2 + 1 if \
-                self.real else self.nffts[1]
+        self.dims_fft[self.dirs[1]] = (
+            self.nffts[1] // 2 + 1 if self.real else self.nffts[1]
+        )
 
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
-        self.cdtype = (np.ones(1, dtype=self.rdtype) +
-                       1j * np.ones(1, dtype=self.rdtype)).dtype
+        self.cdtype = (
+            np.ones(1, dtype=self.rdtype) + 1j * np.ones(1, dtype=self.rdtype)
+        ).dtype
         self.dtype = self.cdtype
         self.clinear = False if real else True
         self.explicit = False
@@ -109,15 +122,13 @@ class FFT2D(LinearOperator):
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.real:
-            y = np.fft.rfft2(x, s=self.nffts, axes=self.dirs,
-                             norm='ortho')
+            y = np.fft.rfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.dirs[-1])
-            y[..., 1:1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.dirs[-1], -1)
         else:
-            y = np.fft.fft2(x, s=self.nffts, axes=self.dirs,
-                            norm='ortho')
+            y = np.fft.fft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
         y = y.astype(self.cdtype)
         return y.ravel()
 
@@ -127,13 +138,11 @@ class FFT2D(LinearOperator):
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
             x = np.swapaxes(x, -1, self.dirs[-1])
-            x[..., 1:1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
+            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.dirs[-1], -1)
-            y = np.fft.irfft2(x, s=self.nffts, axes=self.dirs,
-                             norm='ortho')
+            y = np.fft.irfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
         else:
-            y = np.fft.ifft2(x, s=self.nffts, axes=self.dirs,
-                             norm='ortho')
+            y = np.fft.ifft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
         y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
         y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
         y = y.astype(self.rdtype)

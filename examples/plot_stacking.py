@@ -17,18 +17,18 @@ Within PyLops we leverage the multiprocessing module to run multiple processes
 at the same time evaluating a subset of the operators involved in one of the
 stacking operations.
 """
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 import pylops
 
-plt.close('all')
+plt.close("all")
 
 ###############################################################################
 # Let's start by defining two second derivatives :py:class:`pylops.SecondDerivative`
 # that we will be using in this example.
-D2hop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=1, dtype='float32')
-D2vop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=0, dtype='float32')
+D2hop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=1, dtype="float32")
+D2vop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=0, dtype="float32")
 
 ###############################################################################
 # Chaining of operators represents the simplest concatenation that
@@ -39,21 +39,20 @@ D2vop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=0, dtype='float32')
 #       \mathbf{D_{cat}}=  \mathbf{D_v} \mathbf{D_h}
 Nv, Nh = 11, 21
 X = np.zeros((Nv, Nh))
-X[int(Nv/2), int(Nh/2)] = 1
+X[int(Nv / 2), int(Nh / 2)] = 1
 
-D2op = D2vop*D2hop
+D2op = D2vop * D2hop
 Y = np.reshape(D2op * X.ravel(), (Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Chain', fontsize=14,
-             fontweight='bold', y=0.95)
-im = axs[0].imshow(X, interpolation='nearest')
-axs[0].axis('tight')
-axs[0].set_title(r'$x$')
+fig.suptitle("Chain", fontsize=14, fontweight="bold", y=0.95)
+im = axs[0].imshow(X, interpolation="nearest")
+axs[0].axis("tight")
+axs[0].set_title(r"$x$")
 plt.colorbar(im, ax=axs[0])
-im = axs[1].imshow(Y, interpolation='nearest')
-axs[1].axis('tight')
-axs[1].set_title(r'$y=(D_x+D_y) x$')
+im = axs[1].imshow(Y, interpolation="nearest")
+axs[1].axis("tight")
+axs[1].set_title(r"$y=(D_x+D_y) x$")
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
@@ -74,21 +73,20 @@ plt.subplots_adjust(top=0.8)
 #        \end{bmatrix}
 Nv, Nh = 11, 21
 X = np.zeros((Nv, Nh))
-X[int(Nv/2), int(Nh/2)] = 1
+X[int(Nv / 2), int(Nh / 2)] = 1
 Dstack = pylops.VStack([D2vop, D2hop])
 
 Y = np.reshape(Dstack * X.ravel(), (Nv * 2, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Vertical stacking', fontsize=14,
-             fontweight='bold', y=0.95)
-im = axs[0].imshow(X, interpolation='nearest')
-axs[0].axis('tight')
-axs[0].set_title(r'$x$')
+fig.suptitle("Vertical stacking", fontsize=14, fontweight="bold", y=0.95)
+im = axs[0].imshow(X, interpolation="nearest")
+axs[0].axis("tight")
+axs[0].set_title(r"$x$")
 plt.colorbar(im, ax=axs[0])
-im = axs[1].imshow(Y, interpolation='nearest')
-axs[1].axis('tight')
-axs[1].set_title(r'$y$')
+im = axs[1].imshow(Y, interpolation="nearest")
+axs[1].axis("tight")
+axs[1].set_title(r"$y$")
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
@@ -105,24 +103,23 @@ plt.subplots_adjust(top=0.8)
 #        \mathbf{D_v}\mathbf{x}_1 + 0.5*\mathbf{D_v}\mathbf{x}_2 -
 #        \mathbf{D_h}\mathbf{x}_3
 Nv, Nh = 11, 21
-X = np.zeros((Nv*3, Nh))
-X[int(Nv/2), int(Nh/2)] = 1
-X[int(Nv/2) + Nv, int(Nh/2)] = 1
-X[int(Nv/2) + 2*Nv, int(Nh/2)] = 1
+X = np.zeros((Nv * 3, Nh))
+X[int(Nv / 2), int(Nh / 2)] = 1
+X[int(Nv / 2) + Nv, int(Nh / 2)] = 1
+X[int(Nv / 2) + 2 * Nv, int(Nh / 2)] = 1
 
 Hstackop = pylops.HStack([D2vop, 0.5 * D2vop, -1 * D2hop])
 Y = np.reshape(Hstackop * X.ravel(), (Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Horizontal stacking', fontsize=14,
-             fontweight='bold', y=0.95)
-im = axs[0].imshow(X, interpolation='nearest')
-axs[0].axis('tight')
-axs[0].set_title(r'$x$')
+fig.suptitle("Horizontal stacking", fontsize=14, fontweight="bold", y=0.95)
+im = axs[0].imshow(X, interpolation="nearest")
+axs[0].axis("tight")
+axs[0].set_title(r"$x$")
 plt.colorbar(im, ax=axs[0])
-im = axs[1].imshow(Y, interpolation='nearest')
-axs[1].axis('tight')
-axs[1].set_title(r'$y$')
+im = axs[1].imshow(Y, interpolation="nearest")
+axs[1].axis("tight")
+axs[1].set_title(r"$y$")
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
@@ -144,20 +141,18 @@ plt.subplots_adjust(top=0.8)
 #           \mathbf{D_h} \mathbf{x_1} + 2*\mathbf{D_h} \mathbf{x_2} +
 #           \mathbf{D_v} \mathbf{x_3}
 #        \end{bmatrix}
-Bop = pylops.Block([[D2vop, 0.5 * D2vop, -1 * D2hop],
-                    [D2hop, 2 * D2hop, D2vop]])
-Y = np.reshape(Bop * X.ravel(), (2*Nv, Nh))
+Bop = pylops.Block([[D2vop, 0.5 * D2vop, -1 * D2hop], [D2hop, 2 * D2hop, D2vop]])
+Y = np.reshape(Bop * X.ravel(), (2 * Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Block', fontsize=14,
-             fontweight='bold', y=0.95)
-im = axs[0].imshow(X, interpolation='nearest')
-axs[0].axis('tight')
-axs[0].set_title(r'$x$')
+fig.suptitle("Block", fontsize=14, fontweight="bold", y=0.95)
+im = axs[0].imshow(X, interpolation="nearest")
+axs[0].axis("tight")
+axs[0].set_title(r"$x$")
 plt.colorbar(im, ax=axs[0])
-im = axs[1].imshow(Y, interpolation='nearest')
-axs[1].axis('tight')
-axs[1].set_title(r'$y$')
+im = axs[1].imshow(Y, interpolation="nearest")
+axs[1].axis("tight")
+axs[1].set_title(r"$y$")
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
@@ -183,15 +178,14 @@ BD = pylops.BlockDiag([D2vop, 0.5 * D2vop, -1 * D2hop])
 Y = np.reshape(BD * X.ravel(), (3 * Nv, Nh))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Block-diagonal', fontsize=14,
-             fontweight='bold', y=0.95)
-im = axs[0].imshow(X, interpolation='nearest')
-axs[0].axis('tight')
-axs[0].set_title(r'$x$')
+fig.suptitle("Block-diagonal", fontsize=14, fontweight="bold", y=0.95)
+im = axs[0].imshow(X, interpolation="nearest")
+axs[0].axis("tight")
+axs[0].set_title(r"$x$")
 plt.colorbar(im, ax=axs[0])
-im = axs[1].imshow(Y, interpolation='nearest')
-axs[1].axis('tight')
-axs[1].set_title(r'$y$')
+im = axs[1].imshow(Y, interpolation="nearest")
+axs[1].axis("tight")
+axs[1].set_title(r"$y$")
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
@@ -201,25 +195,24 @@ plt.subplots_adjust(top=0.8)
 # blockdiagonal structure, it may be convenient to span multiple processes
 # handling subset of operators at the same time. This can be easily achieved
 # by simply defining the number of processes we want to use via ``nproc``.
-X = np.zeros((Nv*10, Nh))
+X = np.zeros((Nv * 10, Nh))
 for iv in range(10):
-    X[int(Nv/2) + iv*Nv, int(Nh/2)] = 1
+    X[int(Nv / 2) + iv * Nv, int(Nh / 2)] = 1
 
 BD = pylops.BlockDiag([D2vop] * 10, nproc=2)
-print('BD Operator multiprocessing pool', BD.pool)
+print("BD Operator multiprocessing pool", BD.pool)
 Y = np.reshape(BD * X.ravel(), (10 * Nv, Nh))
 BD.pool.close()
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Block-diagonal', fontsize=14,
-             fontweight='bold', y=0.95)
-im = axs[0].imshow(X, interpolation='nearest')
-axs[0].axis('tight')
-axs[0].set_title(r'$x$')
+fig.suptitle("Block-diagonal", fontsize=14, fontweight="bold", y=0.95)
+im = axs[0].imshow(X, interpolation="nearest")
+axs[0].axis("tight")
+axs[0].set_title(r"$x$")
 plt.colorbar(im, ax=axs[0])
-im = axs[1].imshow(Y, interpolation='nearest')
-axs[1].axis('tight')
-axs[1].set_title(r'$y$')
+im = axs[1].imshow(Y, interpolation="nearest")
+axs[1].axis("tight")
+axs[1].set_title(r"$y$")
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
@@ -254,18 +247,18 @@ Aop = pylops.MatrixMult(A)
 Bop = pylops.MatrixMult(B)
 
 ABop = pylops.Kronecker(Aop, Bop)
-x = np.ones(m1*m2)
+x = np.ones(m1 * m2)
 
 y = AB.dot(x)
-yop = ABop*x
+yop = ABop * x
 xinv = ABop / yop
 
-print('AB = \n', AB)
+print("AB = \n", AB)
 
-print('x = ', x)
-print('y = ', y)
-print('yop = ', yop)
-print('xinv = ', x)
+print("x = ", x)
+print("y = ", y)
+print("yop = ", yop)
+print("xinv = ", x)
 
 ###############################################################################
 # We can also use :py:class:`pylops.Kronecker` to do something more
@@ -280,26 +273,25 @@ print('xinv = ', x)
 # any other operator to be applied to a single dimension.
 Nv, Nh = 11, 21
 
-Iop = pylops.Identity(Nv, dtype='float32')
-D2hop = pylops.FirstDerivative(Nh, dtype='float32')
+Iop = pylops.Identity(Nv, dtype="float32")
+D2hop = pylops.FirstDerivative(Nh, dtype="float32")
 
 X = np.zeros((Nv, Nh))
-X[Nv//2, Nh//2] = 1
+X[Nv // 2, Nh // 2] = 1
 D2hop = pylops.Kronecker(Iop, D2hop)
 
-Y = D2hop*X.ravel()
+Y = D2hop * X.ravel()
 Y = Y.reshape(Nv, Nh)
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-fig.suptitle('Kronecker', fontsize=14,
-             fontweight='bold', y=0.95)
-im = axs[0].imshow(X, interpolation='nearest')
-axs[0].axis('tight')
-axs[0].set_title(r'$x$')
+fig.suptitle("Kronecker", fontsize=14, fontweight="bold", y=0.95)
+im = axs[0].imshow(X, interpolation="nearest")
+axs[0].axis("tight")
+axs[0].set_title(r"$x$")
 plt.colorbar(im, ax=axs[0])
-im = axs[1].imshow(Y, interpolation='nearest')
-axs[1].axis('tight')
-axs[1].set_title(r'$y$')
+im = axs[1].imshow(Y, interpolation="nearest")
+axs[1].axis("tight")
+axs[1].set_title(r"$y$")
 plt.colorbar(im, ax=axs[1])
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)

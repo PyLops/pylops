@@ -1,27 +1,31 @@
-import pytest
-
 import numpy as np
+import pytest
 from numpy.testing import assert_array_almost_equal
 from scipy.signal import filtfilt
 from scipy.sparse.linalg import lsqr
 
-from pylops.utils import dottest
-from pylops.avo.avo import zoeppritz_scattering, zoeppritz_pp, zoeppritz_element
-from pylops.avo.avo import approx_zoeppritz_pp, akirichards, fatti
+from pylops.avo.avo import (
+    akirichards,
+    approx_zoeppritz_pp,
+    fatti,
+    zoeppritz_element,
+    zoeppritz_pp,
+    zoeppritz_scattering,
+)
 from pylops.avo.prestack import AVOLinearModelling
-
+from pylops.utils import dottest
 
 # Create medium parameters for single contrast
-vp1, vs1, rho1 = 2200., 1300., 2000  # upper medium
-vp0, vs0, rho0 = 2300., 1400., 2100  # lower medium
+vp1, vs1, rho1 = 2200.0, 1300.0, 2000  # upper medium
+vp0, vs0, rho0 = 2300.0, 1400.0, 2100  # lower medium
 
 # Create medium parameters for multiple contrasts
 nt0 = 501
 dt0 = 0.004
-t0 = np.arange(nt0)*dt0
-vp = 1200 + np.arange(nt0) + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 80, nt0))
-vs = 600 + vp/2 + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 20, nt0))
-rho = 1000 + vp + filtfilt(np.ones(5)/5., 1, np.random.normal(0, 30, nt0))
+t0 = np.arange(nt0) * dt0
+vp = 1200 + np.arange(nt0) + filtfilt(np.ones(5) / 5.0, 1, np.random.normal(0, 80, nt0))
+vs = 600 + vp / 2 + filtfilt(np.ones(5) / 5.0, 1, np.random.normal(0, 20, nt0))
+rho = 1000 + vp + filtfilt(np.ones(5) / 5.0, 1, np.random.normal(0, 30, nt0))
 m = (np.stack((np.log(vp), np.log(vs), np.log(rho)), axis=1)).flatten()
 
 # Angles
@@ -30,10 +34,10 @@ thetamin, thetamax = 0, 40
 theta = np.linspace(thetamin, thetamax, ntheta)
 
 # Parameters
-par1 = {'vsvp': 0.5, 'linearization': 'akirich'} # constant vsvp
-par2 = {'vsvp': 0.5, 'linearization': 'fatti'}  # constant vsvp
-par3 = {'vsvp': vs/vp, 'linearization': 'akirich'} # time-variant vsvp
-par4 = {'vsvp': vs/vp, 'linearization': 'fatti'}  # time-variant  vsvp
+par1 = {"vsvp": 0.5, "linearization": "akirich"}  # constant vsvp
+par2 = {"vsvp": 0.5, "linearization": "fatti"}  # constant vsvp
+par3 = {"vsvp": vs / vp, "linearization": "akirich"}  # time-variant vsvp
+par4 = {"vsvp": vs / vp, "linearization": "fatti"}  # time-variant  vsvp
 
 
 def test_zoeppritz():
@@ -42,7 +46,9 @@ def test_zoeppritz():
     as benchmark
     """
     r_zoep = zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta[0])
-    rpp_zoep = zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta[0], element='PdPu')
+    rpp_zoep = zoeppritz_element(
+        vp1, vs1, rho1, vp0, vs0, rho0, theta[0], element="PdPu"
+    )
     rpp_zoep1 = zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta[0])
 
     assert r_zoep.shape == (4, 4, 1)
@@ -52,9 +58,8 @@ def test_zoeppritz():
 
 
 def test_zoeppritz_and_approx_zeroangle():
-    """Validate zoeppritz and approximations at zero incident angle
-    """
-    #Create composite parameters
+    """Validate zoeppritz and approximations at zero incident angle"""
+    # Create composite parameters
     ai0, si0, vpvs0 = vp0 * rho0, vs0 * rho0, vp0 / vs0
     ai1, si1, vpvs1 = vp1 * rho1, vs1 * rho1, vp1 / vs1
 
@@ -83,8 +88,7 @@ def test_zoeppritz_and_approx_zeroangle():
 
 
 def test_zoeppritz_and_approx_multipleangles():
-    """Validate zoeppritz and approximations for set of angles from 0 to 40 degress
-    """
+    """Validate zoeppritz and approximations for set of angles from 0 to 40 degress"""
 
     # Create composite parameters
     ai0, si0 = vp0 * rho0, vs0 * rho0
@@ -116,12 +120,11 @@ def test_zoeppritz_and_approx_multipleangles():
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_AVOLinearModelling(par):
-    """Dot-test and inversion for AVOLinearModelling
-    """
-    AVOop = AVOLinearModelling(theta, vsvp=par['vsvp'],
-                               nt0=nt0, linearization=par['linearization'])
+    """Dot-test and inversion for AVOLinearModelling"""
+    AVOop = AVOLinearModelling(
+        theta, vsvp=par["vsvp"], nt0=nt0, linearization=par["linearization"]
+    )
     assert dottest(AVOop, ntheta * nt0, 3 * nt0)
 
-    minv = lsqr(AVOop, AVOop*m, damp=1e-20,
-                iter_lim=1000, show=0)[0]
+    minv = lsqr(AVOop, AVOop * m, damp=1e-20, iter_lim=1000, show=0)[0]
     assert_array_almost_equal(m, minv, decimal=3)

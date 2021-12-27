@@ -1,3 +1,4 @@
+# isort: skip_file
 from .FFT import FFT
 from .FFT2D import FFT2D
 from .FFTND import FFTND

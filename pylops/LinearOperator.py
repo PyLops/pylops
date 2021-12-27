@@ -1,28 +1,23 @@
 from __future__ import division
 
 import logging
+
 import numpy as np
 import scipy as sp
-
-from scipy.linalg import solve, lstsq
-from scipy.linalg import eigvals
+from scipy.linalg import eigvals, lstsq, solve
+from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
-from scipy.sparse.linalg.interface import _ProductLinearOperator
-from scipy.sparse.linalg import spsolve, lsqr
 from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
 from scipy.sparse.linalg import lobpcg as sp_lobpcg
-from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import lsqr, spsolve
+from scipy.sparse.linalg.interface import _ProductLinearOperator
 
-from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
-from pylops.utils.estimators import (
-    trace_hutchinson,
-    trace_hutchpp,
-    trace_nahutchpp,
-)
 from pylops.optimization.solver import cgls
+from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
+from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class LinearOperator(spLinearOperator):
@@ -49,13 +44,14 @@ class LinearOperator(spLinearOperator):
         (``True``) or not (``False``)
 
     """
+
     def __init__(self, Op=None, explicit=False, clinear=None):
         self.explicit = explicit
         if Op is not None:
             self.Op = Op
             self.shape = self.Op.shape
             self.dtype = self.Op.dtype
-            self.clinear = getattr(self.Op, 'clinear', True)
+            self.clinear = getattr(self.Op, "clinear", True)
         if clinear is not None:
             self.clinear = clinear
 
@@ -130,7 +126,7 @@ class LinearOperator(spLinearOperator):
         M, N = self.shape
 
         if x.shape != (N,) and x.shape != (N, 1):
-            raise ValueError('dimension mismatch')
+            raise ValueError("dimension mismatch")
 
         y = self._matvec(x)
 
@@ -139,7 +135,7 @@ class LinearOperator(spLinearOperator):
         elif x.ndim == 2:
             y = y.reshape(M, 1)
         else:
-            raise ValueError('invalid shape returned by user-defined matvec()')
+            raise ValueError("invalid shape returned by user-defined matvec()")
         return y
 
     def rmatvec(self, x):
@@ -163,7 +159,7 @@ class LinearOperator(spLinearOperator):
         M, N = self.shape
 
         if x.shape != (M,) and x.shape != (M, 1):
-            raise ValueError('dimension mismatch')
+            raise ValueError("dimension mismatch")
 
         y = self._rmatvec(x)
 
@@ -172,8 +168,7 @@ class LinearOperator(spLinearOperator):
         elif x.ndim == 2:
             y = y.reshape(N, 1)
         else:
-            raise ValueError(
-                'invalid shape returned by user-defined rmatvec()')
+            raise ValueError("invalid shape returned by user-defined rmatvec()")
         return y
 
     def matmat(self, X):
@@ -195,11 +190,9 @@ class LinearOperator(spLinearOperator):
 
         """
         if X.ndim != 2:
-            raise ValueError('expected 2-d ndarray or matrix, '
-                             'not %d-d' % X.ndim)
+            raise ValueError("expected 2-d ndarray or matrix, " "not %d-d" % X.ndim)
         if X.shape[0] != self.shape[1]:
-            raise ValueError('dimension mismatch: %r, %r'
-                             % (self.shape, X.shape))
+            raise ValueError("dimension mismatch: %r, %r" % (self.shape, X.shape))
         Y = self._matmat(X)
         return Y
 
@@ -222,11 +215,9 @@ class LinearOperator(spLinearOperator):
 
         """
         if X.ndim != 2:
-            raise ValueError('expected 2-d ndarray or matrix, '
-                             'not %d-d' % X.ndim)
+            raise ValueError("expected 2-d ndarray or matrix, " "not %d-d" % X.ndim)
         if X.shape[0] != self.shape[0]:
-            raise ValueError('dimension mismatch: %r, %r'
-                             % (self.shape, X.shape))
+            raise ValueError("dimension mismatch: %r, %r" % (self.shape, X.shape))
         Y = self._rmatmat(X)
         return Y
 
@@ -248,19 +239,17 @@ class LinearOperator(spLinearOperator):
         if isinstance(x, LinearOperator):
             Op = _ProductLinearOperator(self, x)
             # Output is C-Linear only if both operators are
-            Op.clinear = (getattr(self, 'clinear', True)
-                          and getattr(x, 'clinear', True))
+            Op.clinear = getattr(self, "clinear", True) and getattr(x, "clinear", True)
             return Op
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            if x.ndim == 1:# or x.ndim == 2 and x.shape[1] == 1:
+            if x.ndim == 1:  # or x.ndim == 2 and x.shape[1] == 1:
                 return self.matvec(x)
             elif x.ndim == 2:
                 return self.matmat(x)
             else:
-                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
-                                 % x)
+                raise ValueError("expected 1-d or 2-d array or matrix, got %r" % x)
 
     def div(self, y, niter=100):
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
@@ -310,12 +299,15 @@ class LinearOperator(spLinearOperator):
             else:
                 # cupy backend
                 ncp = get_array_module(y)
-                xest = cgls(self, y,
-                            x0=ncp.zeros(int(self.shape[1]), dtype=self.dtype),
-                            niter=niter)[0]
+                xest = cgls(
+                    self,
+                    y,
+                    x0=ncp.zeros(int(self.shape[1]), dtype=self.dtype),
+                    niter=niter,
+                )[0]
         return xest
 
-    def todense(self, backend='numpy'):
+    def todense(self, backend="numpy"):
         r"""Return dense matrix.
 
         The operator is converted into its dense matrix equivalent. In order
@@ -413,8 +405,9 @@ class LinearOperator(spLinearOperator):
         matrix = csr_matrix((entries, (j, i)), shape=self.shape, dtype=self.dtype)
         return matrix
 
-    def eigs(self, neigs=None, symmetric=False, niter=None,
-             uselobpcg=False, **kwargs_eig):
+    def eigs(
+        self, neigs=None, symmetric=False, niter=None, uselobpcg=False, **kwargs_eig
+    ):
         r"""Most significant eigenvalues of linear operator.
 
         Return an estimate of the most significant eigenvalues
@@ -488,63 +481,77 @@ class LinearOperator(spLinearOperator):
                     eigenvalues = eigvals(self.A)
                 else:
                     if not symmetric and np.iscomplexobj(self) and uselobpcg:
-                        raise ValueError('cannot use scipy.sparse.linalg.lobpcg '
-                                         'for non-symmetric square matrices of '
-                                         'complex type...')
+                        raise ValueError(
+                            "cannot use scipy.sparse.linalg.lobpcg "
+                            "for non-symmetric square matrices of "
+                            "complex type..."
+                        )
                     if symmetric and uselobpcg:
                         X = np.random.rand(self.shape[0], neigs).astype(self.dtype)
-                        eigenvalues = \
-                            sp_lobpcg(self.A, X=X, maxiter=niter,
-                                      **kwargs_eig)[0]
+                        eigenvalues = sp_lobpcg(
+                            self.A, X=X, maxiter=niter, **kwargs_eig
+                        )[0]
                     elif symmetric:
-                        eigenvalues = sp_eigsh(self.A, k=neigs, maxiter=niter,
-                                               **kwargs_eig)[0]
+                        eigenvalues = sp_eigsh(
+                            self.A, k=neigs, maxiter=niter, **kwargs_eig
+                        )[0]
                     else:
-                        eigenvalues = sp_eigs(self.A, k=neigs, maxiter=niter,
-                                              **kwargs_eig)[0]
+                        eigenvalues = sp_eigs(
+                            self.A, k=neigs, maxiter=niter, **kwargs_eig
+                        )[0]
 
             else:
                 if neigs is None or neigs == self.shape[1]:
-                    eigenvalues = np.sqrt(eigvals(np.dot(np.conj(self.A.T),
-                                                         self.A)))
+                    eigenvalues = np.sqrt(eigvals(np.dot(np.conj(self.A.T), self.A)))
                 else:
                     if uselobpcg:
                         X = np.random.rand(self.shape[1], neigs).astype(self.dtype)
-                        eigenvalues = np.sqrt(sp_lobpcg(
-                            np.dot(np.conj(self.A.T), self.A),
-                            X=X, maxiter=niter, **kwargs_eig)[0])
+                        eigenvalues = np.sqrt(
+                            sp_lobpcg(
+                                np.dot(np.conj(self.A.T), self.A),
+                                X=X,
+                                maxiter=niter,
+                                **kwargs_eig,
+                            )[0]
+                        )
                     else:
-                        eigenvalues = np.sqrt(sp_eigsh(
-                            np.dot(np.conj(self.A.T), self.A),
-                            k=neigs, maxiter=niter, **kwargs_eig)[0])
+                        eigenvalues = np.sqrt(
+                            sp_eigsh(
+                                np.dot(np.conj(self.A.T), self.A),
+                                k=neigs,
+                                maxiter=niter,
+                                **kwargs_eig,
+                            )[0]
+                        )
         else:
             if neigs is None or neigs >= self.shape[1]:
                 neigs = self.shape[1] - 2
             if self.shape[0] == self.shape[1]:
                 if not symmetric and np.iscomplexobj(self) and uselobpcg:
-                    raise ValueError('cannot use scipy.sparse.linalg.lobpcg for '
-                                     'non symmetric square matrices of '
-                                     'complex type...')
+                    raise ValueError(
+                        "cannot use scipy.sparse.linalg.lobpcg for "
+                        "non symmetric square matrices of "
+                        "complex type..."
+                    )
                 if symmetric and uselobpcg:
                     X = np.random.rand(self.shape[0], neigs).astype(self.dtype)
-                    eigenvalues = \
-                        sp_lobpcg(self, X=X, maxiter=niter, **kwargs_eig)[0]
+                    eigenvalues = sp_lobpcg(self, X=X, maxiter=niter, **kwargs_eig)[0]
                 elif symmetric:
-                    eigenvalues = sp_eigsh(self, k=neigs, maxiter=niter,
-                                           **kwargs_eig)[0]
+                    eigenvalues = sp_eigsh(self, k=neigs, maxiter=niter, **kwargs_eig)[
+                        0
+                    ]
                 else:
-                    eigenvalues = sp_eigs(self, k=neigs, maxiter=niter,
-                                          **kwargs_eig)[0]
+                    eigenvalues = sp_eigs(self, k=neigs, maxiter=niter, **kwargs_eig)[0]
             else:
                 if uselobpcg:
                     X = np.random.rand(self.shape[1], neigs).astype(self.dtype)
-                    eigenvalues = np.sqrt(sp_lobpcg(self.H * self, X=X,
-                                                    maxiter=niter,
-                                                    **kwargs_eig)[0])
+                    eigenvalues = np.sqrt(
+                        sp_lobpcg(self.H * self, X=X, maxiter=niter, **kwargs_eig)[0]
+                    )
                 else:
-                    eigenvalues = np.sqrt(sp_eigs(self.H * self, k=neigs,
-                                                  maxiter=niter,
-                                                  **kwargs_eig)[0])
+                    eigenvalues = np.sqrt(
+                        sp_eigs(self.H * self, k=neigs, maxiter=niter, **kwargs_eig)[0]
+                    )
         return -np.sort(-eigenvalues)
 
     def cond(self, uselobpcg=False, **kwargs_eig):
@@ -588,13 +595,15 @@ class LinearOperator(spLinearOperator):
 
         """
         if not uselobpcg:
-            cond = self.eigs(neigs=1, which='LM', **kwargs_eig).item() / \
-                   self.eigs(neigs=1, which='SM', **kwargs_eig).item()
+            cond = (
+                self.eigs(neigs=1, which="LM", **kwargs_eig).item()
+                / self.eigs(neigs=1, which="SM", **kwargs_eig).item()
+            )
         else:
-            cond = self.eigs(neigs=1, uselobpcg=True, largest=True,
-                             **kwargs_eig).item() / \
-                   self.eigs(neigs=1, uselobpcg=True, largest=False,
-                             **kwargs_eig).item()
+            cond = (
+                self.eigs(neigs=1, uselobpcg=True, largest=True, **kwargs_eig).item()
+                / self.eigs(neigs=1, uselobpcg=True, largest=False, **kwargs_eig).item()
+            )
 
         return cond
 
@@ -738,17 +747,11 @@ class LinearOperator(spLinearOperator):
             A = self.A if self.explicit else self.todense(backend=backend)
             return ncp.trace(A)
         elif method_l == "hutchinson":
-            return trace_hutchinson(
-                self, neval=neval, backend=backend, **kwargs_trace
-            )
+            return trace_hutchinson(self, neval=neval, backend=backend, **kwargs_trace)
         elif method_l == "hutch++":
-            return trace_hutchpp(
-                self, neval=neval, backend=backend, **kwargs_trace
-            )
+            return trace_hutchpp(self, neval=neval, backend=backend, **kwargs_trace)
         elif method_l == "na-hutch++":
-            return trace_nahutchpp(
-                self, neval=neval, backend=backend, **kwargs_trace
-            )
+            return trace_nahutchpp(self, neval=neval, backend=backend, **kwargs_trace)
         else:
             raise NotImplementedError(f"method {method} not available.")
 
@@ -758,7 +761,7 @@ def _get_dtype(operators, dtypes=None):
         dtypes = []
     opdtypes = []
     for obj in operators:
-        if obj is not None and hasattr(obj, 'dtype'):
+        if obj is not None and hasattr(obj, "dtype"):
             opdtypes.append(obj.dtype)
     return np.find_common_type(opdtypes, dtypes)
 
@@ -773,11 +776,12 @@ class _ScaledLinearOperator(spLinearOperator):
     np.float32 operators which are casted to no.float64
 
     """
+
     def __init__(self, A, alpha):
         if not isinstance(A, spLinearOperator):
-            raise ValueError('LinearOperator expected as A')
+            raise ValueError("LinearOperator expected as A")
         if not np.isscalar(alpha):
-            raise ValueError('scalar expected as alpha')
+            raise ValueError("scalar expected as alpha")
         dtype = _get_dtype([A], [type(alpha)])
         super(_ScaledLinearOperator, self).__init__(dtype, A.shape)
         self.args = (A, alpha)
@@ -800,11 +804,11 @@ class _ScaledLinearOperator(spLinearOperator):
 
 
 class _ConjLinearOperator(LinearOperator):
-    """Complex conjugate linear operator
-    """
+    """Complex conjugate linear operator"""
+
     def __init__(self, Op):
         if not isinstance(Op, spLinearOperator):
-            raise TypeError('Op must be a LinearOperator')
+            raise TypeError("Op must be a LinearOperator")
         super(_ConjLinearOperator, self).__init__(Op, Op.shape)
         self.Op = Op
 
@@ -824,9 +828,10 @@ class _ColumnLinearOperator(LinearOperator):
     Produces the forward and adjoint passes with a subset of columns of the
     original operator
     """
+
     def __init__(self, Op, cols):
         if not isinstance(Op, spLinearOperator):
-            raise TypeError('Op must be a LinearOperator')
+            raise TypeError("Op must be a LinearOperator")
         super(_ColumnLinearOperator, self).__init__(Op, Op.explicit)
         self.Op = Op
         self.cols = cols
@@ -861,9 +866,10 @@ class _RealImagLinearOperator(LinearOperator):
     output must be complex conjugated (i.e. opposite of the imaginary part is
     returned)
     """
+
     def __init__(self, Op, forw=True, adj=True, real=True):
         if not isinstance(Op, spLinearOperator):
-            raise TypeError('Op must be a LinearOperator')
+            raise TypeError("Op must be a LinearOperator")
         super(_RealImagLinearOperator, self).__init__(Op, Op.shape)
         self.Op = Op
         self.real = real

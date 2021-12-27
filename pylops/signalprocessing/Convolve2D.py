@@ -1,8 +1,7 @@
 from pylops.signalprocessing import ConvolveND
 
 
-def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype='float64',
-               method='fft'):
+def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype="float64", method="fft"):
     r"""2D convolution operator.
 
     Apply two-dimensional convolution with a compact filter to model
@@ -73,7 +72,7 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype='float64',
 
     """
     if h.ndim != 2:
-        raise ValueError('h must be 2-dimensional')
+        raise ValueError("h must be 2-dimensional")
     if nodir is None:
         dirs = (0, 1)
     elif nodir == 0:
@@ -83,6 +82,5 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype='float64',
     else:
         dirs = (0, 1)
 
-    cop = ConvolveND(N, h, dims, offset=offset, dirs=dirs, method=method,
-                     dtype=dtype)
+    cop = ConvolveND(N, h, dims, offset=offset, dirs=dirs, method=method, dtype=dtype)
     return cop

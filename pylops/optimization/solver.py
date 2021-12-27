@@ -1,10 +1,11 @@
 import time
+
 import numpy as np
 
 from pylops.utils.backend import get_array_module
 
 
-def cg(Op, y, x0, niter=10, damp=0., tol=1e-4, show=False, callback=None):
+def cg(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
     r"""Conjugate gradient
 
     Solve a square system of equations given an operator ``Op`` and
@@ -49,14 +50,14 @@ def cg(Op, y, x0, niter=10, damp=0., tol=1e-4, show=False, callback=None):
 
     if show:
         tstart = time.time()
-        print('CG\n'
-              '-----------------------------------------------------------\n'
-              'The Operator Op has %d rows and %d cols\n'
-              'tol = %10e\tniter = %d' % (Op.shape[0],
-                                          Op.shape[1],
-                                          tol, niter))
-        print('-----------------------------------------------------------')
-        head1 = '    Itn           x[0]              r2norm'
+        print(
+            "CG\n"
+            "-----------------------------------------------------------\n"
+            "The Operator Op has %d rows and %d cols\n"
+            "tol = %10e\tniter = %d" % (Op.shape[0], Op.shape[1], tol, niter)
+        )
+        print("-----------------------------------------------------------")
+        head1 = "    Itn           x[0]              r2norm"
         print(head1)
 
     if x0 is None:
@@ -91,22 +92,25 @@ def cg(Op, y, x0, niter=10, damp=0., tol=1e-4, show=False, callback=None):
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
                 if not np.iscomplex(x[0]):
-                    msg = '%6g        %11.4e        %11.4e' % \
-                          (iiter, x[0], cost[iiter])
+                    msg = "%6g        %11.4e        %11.4e" % (iiter, x[0], cost[iiter])
                 else:
-                    msg = '%6g     %4.1e+%4.1ej     %11.4e' % \
-                          (iiter, np.real(x[0]), np.imag(x[0]), cost[iiter])
+                    msg = "%6g     %4.1e+%4.1ej     %11.4e" % (
+                        iiter,
+                        np.real(x[0]),
+                        np.imag(x[0]),
+                        cost[iiter],
+                    )
                 print(msg)
     if show:
-        print('\nIterations = %d        Total time (s) = %.2f'
-              % (iiter, time.time() - tstart))
         print(
-            '-----------------------------------------------------------------\n')
+            "\nIterations = %d        Total time (s) = %.2f"
+            % (iiter, time.time() - tstart)
+        )
+        print("-----------------------------------------------------------------\n")
     return x, iiter, cost[:iiter]
 
 
-def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
-         show=False, callback=None):
+def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
     r"""Conjugate gradient least squares
 
     Solve an overdetermined system of equations given an operator ``Op`` and
@@ -171,14 +175,15 @@ def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
 
     if show:
         tstart = time.time()
-        print('CGLS\n'
-              '-----------------------------------------------------------\n'
-              'The Operator Op has %d rows and %d cols\n'
-              'damp = %10e\ttol = %10e\tniter = %d' % (Op.shape[0],
-                                                       Op.shape[1],
-                                                       damp, tol, niter))
-        print('-----------------------------------------------------------')
-        head1 = '    Itn           x[0]              r1norm          r2norm'
+        print(
+            "CGLS\n"
+            "-----------------------------------------------------------\n"
+            "The Operator Op has %d rows and %d cols\n"
+            "damp = %10e\ttol = %10e\tniter = %d"
+            % (Op.shape[0], Op.shape[1], damp, tol, niter)
+        )
+        print("-----------------------------------------------------------")
+        head1 = "    Itn           x[0]              r1norm          r2norm"
         print(head1)
 
     damp = damp ** 2
@@ -221,17 +226,27 @@ def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
                 if not np.iscomplex(x[0]):
-                    msg = '%6g        %11.4e        %11.4e     %11.4e' % \
-                          (iiter, x[0], cost[iiter], cost1[iiter])
+                    msg = "%6g        %11.4e        %11.4e     %11.4e" % (
+                        iiter,
+                        x[0],
+                        cost[iiter],
+                        cost1[iiter],
+                    )
                 else:
-                    msg = '%6g     %4.1e+%4.1ej     %11.4e     %11.4e' % \
-                          (iiter, np.real(x[0]), np.imag(x[0]), cost[iiter], cost1[iiter])
+                    msg = "%6g     %4.1e+%4.1ej     %11.4e     %11.4e" % (
+                        iiter,
+                        np.real(x[0]),
+                        np.imag(x[0]),
+                        cost[iiter],
+                        cost1[iiter],
+                    )
                 print(msg)
     if show:
-        print('\nIterations = %d        Total time (s) = %.2f'
-              % (iiter, time.time() - tstart))
         print(
-            '-----------------------------------------------------------------\n')
+            "\nIterations = %d        Total time (s) = %.2f"
+            % (iiter, time.time() - tstart)
+        )
+        print("-----------------------------------------------------------------\n")
 
     # reason for termination
     istop = 1 if kold < tol else 2
@@ -240,8 +255,19 @@ def cgls(Op, y, x0, niter=10, damp=0., tol=1e-4,
     return x, istop, iiter, r1norm, r2norm, cost[:iiter]
 
 
-def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
-         niter=10, calc_var=True, show=False, callback=None):
+def lsqr(
+    Op,
+    y,
+    x0,
+    damp=0.0,
+    atol=1e-08,
+    btol=1e-08,
+    conlim=100000000.0,
+    niter=10,
+    calc_var=True,
+    show=False,
+    callback=None,
+):
     r"""LSQR
 
     Solve an overdetermined system of equations given an operator ``Op`` and
@@ -345,14 +371,16 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
 
     """
     # Return messages.
-    msg = ('The exact solution is x = 0                               ',
-           'Opx - b is small enough, given atol, btol                  ',
-           'The least-squares solution is good enough, given atol     ',
-           'The estimate of cond(Opbar) has exceeded conlim            ',
-           'Opx - b is small enough for this machine                   ',
-           'The least-squares solution is good enough for this machine',
-           'Cond(Opbar) seems to be too large for this machine         ',
-           'The iteration limit has been reached                      ')
+    msg = (
+        "The exact solution is x = 0                               ",
+        "Opx - b is small enough, given atol, btol                  ",
+        "The least-squares solution is good enough, given atol     ",
+        "The estimate of cond(Opbar) has exceeded conlim            ",
+        "Opx - b is small enough for this machine                   ",
+        "The least-squares solution is good enough for this machine",
+        "Cond(Opbar) seems to be too large for this machine         ",
+        "The iteration limit has been reached                      ",
+    )
 
     ncp = get_array_module(y)
     m, n = Op.shape
@@ -363,23 +391,23 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
 
     if show:
         tstart = time.time()
-        print('LSQR')
-        print('-------------------------------------------------')
-        str1 = 'The Operator Op has %d rows and %d cols' % (m, n)
-        str2 = 'damp = %20.14e     calc_var = %6g' %(damp, calc_var)
-        str3 = 'atol = %8.2e                 conlim = %8.2e' %(atol, conlim)
-        str4 = 'btol = %8.2e                 niter = %8g' %(btol, niter)
+        print("LSQR")
+        print("-------------------------------------------------")
+        str1 = "The Operator Op has %d rows and %d cols" % (m, n)
+        str2 = "damp = %20.14e     calc_var = %6g" % (damp, calc_var)
+        str3 = "atol = %8.2e                 conlim = %8.2e" % (atol, conlim)
+        str4 = "btol = %8.2e                 niter = %8g" % (btol, niter)
         print(str1)
         print(str2)
         print(str3)
         print(str4)
-        print('-------------------------------------------------')
+        print("-------------------------------------------------")
 
     itn = 0
     istop = 0
     ctol = 0
     if conlim > 0:
-        ctol = 1. / conlim
+        ctol = 1.0 / conlim
     anorm = 0
     acond = 0
     dampsq = damp ** 2
@@ -399,9 +427,9 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
     else:
         x = x0.copy()
         u = y - Op.matvec(x0)
-    alfa = 0.
+    alfa = 0.0
     beta = ncp.linalg.norm(u)
-    if beta > 0.:
+    if beta > 0.0:
         u = u / beta
         v = Op.rmatvec(u)
         alfa = ncp.linalg.norm(v)
@@ -411,8 +439,8 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
 
     arnorm = alfa * beta
     if arnorm == 0:
-        print(' ')
-        print('LSQR finished')
+        print(" ")
+        print("LSQR finished")
         print(msg[istop])
         return x, istop, itn, 0, 0, anorm, acond, arnorm, xnorm, var
     arnorm0 = arnorm
@@ -425,17 +453,17 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
     r2norm = rnorm
     cost = np.zeros(niter + 1)
     cost[0] = rnorm
-    head1 = '   Itn      x[0]       r1norm     r2norm '
-    head2 = ' Compatible   LS      Norm A   Cond A'
+    head1 = "   Itn      x[0]       r1norm     r2norm "
+    head2 = " Compatible   LS      Norm A   Cond A"
 
     if show:
-        print(' ')
+        print(" ")
         print(head1 + head2)
         test1 = 1
         test2 = alfa / beta
-        str1 = '%6g %12.5e' %(itn,   x[0])
-        str2 = ' %10.3e %10.3e' %(r1norm, r2norm)
-        str3 = '  %8.1e %8.1e' %(test1,  test2)
+        str1 = "%6g %12.5e" % (itn, x[0])
+        str2 = " %10.3e %10.3e" % (r1norm, r2norm)
+        str3 = "  %8.1e %8.1e" % (test1, test2)
         print(str1 + str2 + str3)
 
     # main iteration loop
@@ -488,15 +516,15 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
         # super-diagonal element (theta) of the upper-bidiagonal matrix.
         # Then use the result to estimate norm(x).
         delta = sn2 * rho
-        gambar = - cs2 * rho
+        gambar = -cs2 * rho
         rhs = phi - delta * z
         zbar = rhs / gambar
-        xnorm = ncp.sqrt(xxnorm + zbar**2)
+        xnorm = ncp.sqrt(xxnorm + zbar ** 2)
         gamma = np.linalg.norm([gambar, theta])
         cs2 = gambar / gamma
         sn2 = theta / gamma
         z = rhs / gamma
-        xxnorm = xxnorm + z ** 2.
+        xxnorm = xxnorm + z ** 2.0
 
         # test for convergence. First, estimate the condition of the matrix
         # Opbar, and the norms of rbar and Opbar'rbar
@@ -514,15 +542,15 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
         r1norm = ncp.sqrt(ncp.abs(r1sq))
         cost[itn] = r1norm
         if r1sq < 0:
-            r1norm = - r1norm
+            r1norm = -r1norm
         r2norm = rnorm.copy()
 
         # use these norms to estimate certain other quantities,
         # some of which will be small near a solution.
         test1 = rnorm / bnorm
         test2 = arnorm / arnorm0
-        test3 = 1. / acond
-        t1 = test1 / (1. + anorm * xnorm / bnorm)
+        test3 = 1.0 / acond
+        t1 = test1 / (1.0 + anorm * xnorm / bnorm)
         rtol = btol + atol * anorm * xnorm / bnorm
 
         # set reason for termination.
@@ -552,31 +580,39 @@ def lsqr(Op, y, x0, damp=0., atol=1e-08, btol=1e-08, conlim=100000000.0,
 
         # print status
         if show:
-            if n <= 40 or itn <= 10 or itn >= niter-10 or itn % 10 == 0 or \
-                    test3 <= 2*ctol or test2 <= 10*atol or \
-                    test1 <= 10*rtol or istop != 0:
-                str1 = '%6g %12.5e' %(itn, x[0])
-                str2 = ' %10.3e %10.3e' %(r1norm, r2norm)
-                str3 = '  %8.1e %8.1e' %(test1, test2)
-                str4 = ' %8.1e %8.1e' %(anorm, acond)
+            if (
+                n <= 40
+                or itn <= 10
+                or itn >= niter - 10
+                or itn % 10 == 0
+                or test3 <= 2 * ctol
+                or test2 <= 10 * atol
+                or test1 <= 10 * rtol
+                or istop != 0
+            ):
+                str1 = "%6g %12.5e" % (itn, x[0])
+                str2 = " %10.3e %10.3e" % (r1norm, r2norm)
+                str3 = "  %8.1e %8.1e" % (test1, test2)
+                str4 = " %8.1e %8.1e" % (anorm, acond)
                 print(str1 + str2 + str3 + str4)
         if istop > 0:
             break
 
     # Print the stopping condition.
     if show:
-        print(' ')
-        print('LSQR finished, %s' % msg[istop])
-        print(' ')
-        str1 = 'istop =%8g   r1norm =%8.1e' %(istop, r1norm)
-        str2 = 'anorm =%8.1e   arnorm =%8.1e' %(anorm, arnorm)
-        str3 = 'itn   =%8g   r2norm =%8.1e' %(itn, r2norm)
-        str4 = 'acond =%8.1e   xnorm  =%8.1e' %( acond, xnorm)
-        str5 = 'Total time (s) = %.2f' % (time.time() - tstart)
-        print(str1 +'   '+ str2)
-        print(str3 +'   '+ str4)
+        print(" ")
+        print("LSQR finished, %s" % msg[istop])
+        print(" ")
+        str1 = "istop =%8g   r1norm =%8.1e" % (istop, r1norm)
+        str2 = "anorm =%8.1e   arnorm =%8.1e" % (anorm, arnorm)
+        str3 = "itn   =%8g   r2norm =%8.1e" % (itn, r2norm)
+        str4 = "acond =%8.1e   xnorm  =%8.1e" % (acond, xnorm)
+        str5 = "Total time (s) = %.2f" % (time.time() - tstart)
+        print(str1 + "   " + str2)
+        print(str3 + "   " + str4)
         print(str5)
-        print('-----------------------------------------------------------------------\n')
+        print(
+            "-----------------------------------------------------------------------\n"
+        )
 
-    return x, istop, itn, r1norm, r2norm, anorm, acond, \
-           arnorm, xnorm, var, cost[:itn]
+    return x, istop, itn, r1norm, r2norm, anorm, acond, arnorm, xnorm, var, cost[:itn]

@@ -1,8 +1,9 @@
 import numpy as np
+
 from pylops.signalprocessing import Convolve1D
 
 
-def Smoothing1D(nsmooth, dims, dir=0, dtype='float64'):
+def Smoothing1D(nsmooth, dims, dir=0, dtype="float64"):
     r"""1D Smoothing.
 
     Apply smoothing to model (and data) along a specific direction of a
@@ -64,6 +65,11 @@ def Smoothing1D(nsmooth, dims, dir=0, dtype='float64'):
     if nsmooth % 2 == 0:
         nsmooth += 1
 
-    return Convolve1D(n, np.ones(nsmooth)/float(nsmooth),
-                      dims=dims, dir=dir, offset=(nsmooth-1)/2,
-                      dtype=dtype)
+    return Convolve1D(
+        n,
+        np.ones(nsmooth) / float(nsmooth),
+        dims=dims,
+        dir=dir,
+        offset=(nsmooth - 1) / 2,
+        dtype=dtype,
+    )
