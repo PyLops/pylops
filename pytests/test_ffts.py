@@ -172,6 +172,7 @@ def test_FFT_1dsignal(par):
         assert_array_almost_equal(x, xadj, decimal=decimal)
         assert_array_almost_equal(x, xinv, decimal=decimal)
 
+
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par5), (par1w), (par2w), (par3w), (par4w)]
 )
@@ -299,6 +300,7 @@ def test_FFT_2dsignal(par):
 
         assert_array_almost_equal(d, dadj, decimal=decimal)
         assert_array_almost_equal(d, dinv, decimal=decimal)
+
 
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par5), (par1w), (par2w), (par3w), (par4w)]

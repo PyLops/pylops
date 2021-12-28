@@ -1,5 +1,6 @@
 import logging
 import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -67,7 +68,7 @@ class _FFT_numpy(LinearOperator):
         self.f = (
             np.fft.rfftfreq(self.nfft, d=sampling)
             if real
-                 else np.fft.fftfreq(self.nfft, d=sampling)
+            else np.fft.fftfreq(self.nfft, d=sampling)
         )
         self.fftshift_after = fftshift_after
         if self.fftshift_after:
@@ -111,7 +112,7 @@ class _FFT_numpy(LinearOperator):
                 # Apply scaling to obtain a correct adjoint for this operator
                 y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             else:
-                y = np.fft.fft(x, n=self.nfft, axis=-1, norm='ortho')
+                y = np.fft.fft(x, n=self.nfft, axis=-1, norm="ortho")
             if self.fftshift_after:
                 y = np.fft.fftshift(y)
         else:
@@ -125,8 +126,7 @@ class _FFT_numpy(LinearOperator):
                 y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
                 y = np.swapaxes(y, self.dir, -1)
             else:
-                y = np.fft.fft(x, n=self.nfft,
-                               axis=self.dir, norm='ortho')
+                y = np.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
             if self.fftshift_after:
                 y = np.fft.fftshift(y, axes=self.dir)
             y = y.flatten()
@@ -146,7 +146,7 @@ class _FFT_numpy(LinearOperator):
             else:
                 y = np.fft.ifft(x, n=self.nfft, axis=-1, norm="ortho")
             if self.nfft != self.dims[self.dir]:
-                y = y[:self.dims[self.dir]]
+                y = y[: self.dims[self.dir]]
             if self.ifftshift_before:
                 y = np.fft.fftshift(y)
         else:
@@ -163,8 +163,7 @@ class _FFT_numpy(LinearOperator):
             else:
                 y = np.fft.ifft(x, n=self.nfft, axis=self.dir, norm="ortho")
             if self.nfft != self.dims[self.dir]:
-                y = np.take(y, np.arange(0, self.dims[self.dir]),
-                            axis=self.dir)
+                y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
             if self.ifftshift_before:
                 y = np.fft.fftshift(y, axes=self.dir)
             y = y.flatten()
@@ -230,7 +229,7 @@ class _FFT_fftw(LinearOperator):
         self.f = (
             np.fft.rfftfreq(self.nfft, d=sampling)
             if real
-                 else np.fft.fftfreq(self.nfft, d=sampling)
+            else np.fft.fftfreq(self.nfft, d=sampling)
         )
         self.fftshift_after = fftshift_after
         if self.fftshift_after:
@@ -304,7 +303,7 @@ class _FFT_fftw(LinearOperator):
                 x = np.pad(x, self.pad, "constant", constant_values=0)
             y = np.sqrt(1.0 / self.nfft) * self.fftplan(x)
             if self.real:
-                y[..., 1:1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+                y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             if self.fftshift_after:
                 y = np.fft.fftshift(y)
         else:
@@ -334,7 +333,7 @@ class _FFT_fftw(LinearOperator):
                 x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             y = np.sqrt(self.nfft) * self.ifftplan(x)
             if self.nfft != self.dims[self.dir]:
-                y = y[:self.dims[self.dir]]
+                y = y[: self.dims[self.dir]]
             if self.ifftshift_before:
                 y = np.fft.fftshift(y)
         else:
@@ -349,8 +348,7 @@ class _FFT_fftw(LinearOperator):
                 x = np.swapaxes(x, self.dir, -1)
             y = np.sqrt(self.nfft) * self.ifftplan(x)
             if self.nfft != self.dims[self.dir]:
-                y = np.take(y, np.arange(0, self.dims[self.dir]),
-                            axis=self.dir)
+                y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
             if self.ifftshift_before:
                 y = np.fft.fftshift(y, axes=self.dir)
         if self.real:
@@ -458,7 +456,7 @@ def FFT(
     Hermitian.
 
     """
-    if engine == 'fftw' and pyfftw is not None:
+    if engine == "fftw" and pyfftw is not None:
         f = _FFT_fftw(
             dims,
             dir=dir,
@@ -471,8 +469,8 @@ def FFT(
             dtype=dtype,
             **kwargs_fftw
         )
-    elif engine == 'numpy' or (engine == 'fftw' and pyfftw is None):
-        if engine == 'fftw' and pyfftw is None:
+    elif engine == "numpy" or (engine == "fftw" and pyfftw is None):
+        if engine == "fftw" and pyfftw is None:
             logging.warning(pyfftw_message)
         f = _FFT_numpy(
             dims,
