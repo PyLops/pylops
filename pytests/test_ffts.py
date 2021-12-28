@@ -13,7 +13,7 @@ par1 = {
     "nfft": None,
     "real": False,
     "engine": "numpy",
-    "ffthshift": False,
+    "ifftshift_before": False,
     "dtype": np.complex128,
 }  # nfft=nt, complex input, numpy engine
 par2 = {
@@ -23,7 +23,7 @@ par2 = {
     "nfft": 64,
     "real": False,
     "engine": "numpy",
-    "ffthshift": False,
+    "ifftshift_before": False,
     "dtype": np.complex64,
 }  # nfft>nt, complex input, numpy engine
 par3 = {
@@ -33,7 +33,7 @@ par3 = {
     "nfft": None,
     "real": True,
     "engine": "numpy",
-    "ffthshift": False,
+    "ifftshift_before": False,
     "dtype": np.float64,
 }  # nfft=nt, real input, numpy engine
 par4 = {
@@ -43,7 +43,7 @@ par4 = {
     "nfft": 64,
     "real": True,
     "engine": "numpy",
-    "ffthshift": False,
+    "ifftshift_before": False,
     "dtype": np.float64,
 }  # nfft>nt, real input, numpy engine
 par5 = {
@@ -53,9 +53,9 @@ par5 = {
     "nfft": 64,
     "real": True,
     "engine": "numpy",
-    "ffthshift": True,
+    "ifftshift_before": True,
     "dtype": np.float32,
-}  # nfft>nt, real input and fftshift, numpy engine
+}  # nfft>nt, real input and ifftshift_before, numpy engine
 par1w = {
     "nt": 41,
     "nx": 31,
@@ -63,7 +63,7 @@ par1w = {
     "nfft": None,
     "real": False,
     "engine": "fftw",
-    "ffthshift": False,
+    "ifftshift_before": False,
     "dtype": np.complex128,
 }  # nfft=nt, complex input, fftw engine
 par2w = {
@@ -73,7 +73,7 @@ par2w = {
     "nfft": 64,
     "real": False,
     "engine": "fftw",
-    "ffthshift": False,
+    "ifftshift_before": False,
     "dtype": np.complex128,
 }  # nfft>nt, complex input, fftw engine
 par3w = {
@@ -83,7 +83,7 @@ par3w = {
     "nfft": None,
     "real": True,
     "engine": "fftw",
-    "ffthshift": False,
+    "ifftshift_before": False,
     "dtype": np.float64,
 }  # nfft=nt, real input, fftw engine
 par4w = {
@@ -93,7 +93,7 @@ par4w = {
     "nfft": 64,
     "real": True,
     "engine": "fftw",
-    "ffthshift": False,
+    "ifftshift_before": False,
     "dtype": np.float32,
 }  # nfft>nt, real input, fftw engine
 
@@ -151,6 +151,27 @@ def test_FFT_1dsignal(par):
     assert_array_almost_equal(x, xadj, decimal=decimal)
     assert_array_almost_equal(x, xinv, decimal=decimal)
 
+    if not par["real"]:
+        FFTop_fftshift = FFT(
+            dims=[par["nt"]],
+            nfft=nfft,
+            sampling=dt,
+            real=par["real"],
+            ifftshift_before=par["ifftshift_before"],
+            fftshift_after=True,
+            engine=par["engine"],
+            dtype=par["dtype"],
+        )
+        assert_array_almost_equal(FFTop_fftshift.f, np.fft.fftshift(FFTop.f))
+
+        y_fftshift = FFTop_fftshift * x
+        assert_array_almost_equal(y_fftshift, np.fft.fftshift(y))
+
+        xadj = FFTop_fftshift.H * y_fftshift  # adjoint is same as inverse for fft
+        xinv = lsqr(FFTop_fftshift, y_fftshift, damp=1e-10, iter_lim=10, show=0)[0]
+        assert_array_almost_equal(x, xadj, decimal=decimal)
+        assert_array_almost_equal(x, xinv, decimal=decimal)
+
 
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par5), (par1w), (par2w), (par3w), (par4w)]
@@ -198,6 +219,32 @@ def test_FFT_2dsignal(par):
     assert_array_almost_equal(d, dadj, decimal=decimal)
     assert_array_almost_equal(d, dinv, decimal=decimal)
 
+    if not par["real"]:
+        FFTop_fftshift = FFT(
+            dims=(nt, nx),
+            dir=0,
+            nfft=nfft,
+            sampling=dt,
+            real=par["real"],
+            fftshift_after=True,
+            engine=par["engine"],
+            dtype=par["dtype"],
+        )
+        assert_array_almost_equal(FFTop_fftshift.f, np.fft.fftshift(FFTop.f))
+
+        D_fftshift = FFTop_fftshift * d.flatten()
+        D2 = np.fft.fftshift(D.reshape(nfft, nx), axes=0).flatten()
+        assert_array_almost_equal(D_fftshift, D2)
+
+        dadj = FFTop_fftshift.H * D_fftshift  # adjoint is same as inverse for fft
+        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, show=0)[0]
+
+        dadj = np.real(dadj.reshape(nt, nx))
+        dinv = np.real(dinv.reshape(nt, nx))
+
+        assert_array_almost_equal(d, dadj, decimal=decimal)
+        assert_array_almost_equal(d, dinv, decimal=decimal)
+
     # 2nd dimension
     nfft = par["nx"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
@@ -227,6 +274,32 @@ def test_FFT_2dsignal(par):
 
     assert_array_almost_equal(d, dadj, decimal=decimal)
     assert_array_almost_equal(d, dinv, decimal=decimal)
+
+    if not par["real"]:
+        FFTop_fftshift = FFT(
+            dims=(nt, nx),
+            dir=1,
+            nfft=nfft,
+            sampling=dt,
+            real=par["real"],
+            fftshift_after=True,
+            engine=par["engine"],
+            dtype=par["dtype"],
+        )
+        assert_array_almost_equal(FFTop_fftshift.f, np.fft.fftshift(FFTop.f))
+
+        D_fftshift = FFTop_fftshift * d.flatten()
+        D2 = np.fft.fftshift(D.reshape(nt, nfft), axes=1).flatten()
+        assert_array_almost_equal(D_fftshift, D2)
+
+        dadj = FFTop_fftshift.H * D_fftshift  # adjoint is same as inverse for fft
+        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, show=0)[0]
+
+        dadj = np.real(dadj.reshape(nt, nx))
+        dinv = np.real(dinv.reshape(nt, nx))
+
+        assert_array_almost_equal(d, dadj, decimal=decimal)
+        assert_array_almost_equal(d, dinv, decimal=decimal)
 
 
 @pytest.mark.parametrize(
@@ -359,6 +432,32 @@ def test_FFT_3dsignal(par):
 
     assert_array_almost_equal(d, dadj, decimal=decimal)
     assert_array_almost_equal(d, dinv, decimal=decimal)
+
+    if not par["real"]:
+        FFTop_fftshift = FFT(
+            dims=(nt, nx, ny),
+            dir=2,
+            nfft=nfft,
+            sampling=dt,
+            real=par["real"],
+            fftshift_after=True,
+            engine=par["engine"],
+            dtype=par["dtype"],
+        )
+        assert_array_almost_equal(FFTop_fftshift.f, np.fft.fftshift(FFTop.f))
+
+        D_fftshift = FFTop_fftshift * d.flatten()
+        D2 = np.fft.fftshift(D.reshape(nt, nx, nfft), axes=2).flatten()
+        assert_array_almost_equal(D_fftshift, D2)
+
+        dadj = FFTop_fftshift.H * D_fftshift  # adjoint is same as inverse for fft
+        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, show=0)[0]
+
+        dadj = np.real(dadj.reshape(nt, nx, ny))
+        dinv = np.real(dinv.reshape(nt, nx, ny))
+
+        assert_array_almost_equal(d, dadj, decimal=decimal)
+        assert_array_almost_equal(d, dinv, decimal=decimal)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
