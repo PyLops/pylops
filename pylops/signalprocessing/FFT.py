@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils.backend import get_complex_dtype, get_real_dtype
 
 try:
     import pyfftw
@@ -21,8 +22,8 @@ except Exception as e:
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class _FFT_numpy(LinearOperator):
-    """One dimensional Fast-Fourier Transform using numpy"""
+class _BaseFFT(LinearOperator):
+    """Base class for one dimensional Fast-Fourier Transform"""
 
     def __init__(
         self,
@@ -89,18 +90,55 @@ class _FFT_numpy(LinearOperator):
             self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
             self.reshape = True
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
+
         # Find types to enforce to forward and adjoint outputs. This is
         # required as np.fft.fft always returns complex128 even if input is
         # float32 or less. Moreover, when choosing real=True, the type of the
         # adjoint output is forced to be real even if the provided dtype
         # is complex.
-        self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
-        self.cdtype = (
-            np.ones(1, dtype=self.rdtype) + 1j * np.ones(1, dtype=self.rdtype)
-        ).dtype
+        self.rdtype = get_real_dtype(dtype) if real else np.dtype(dtype)
+        self.cdtype = get_complex_dtype(dtype)
         self.dtype = self.cdtype
         self.clinear = False if real else True
         self.explicit = False
+
+    def _matvec(self, x):
+        raise NotImplementedError(
+            "_BaseFFT does not provide _matvec. It must be implemented separately."
+        )
+
+    def _rmatvec(self, x):
+        raise NotImplementedError(
+            "_BaseFFT does not provide _rmatvec. It must be implemented separately."
+        )
+
+
+class _FFT_numpy(_BaseFFT):
+    """One dimensional Fast-Fourier Transform using numpy"""
+
+    def __init__(
+        self,
+        dims,
+        dir=0,
+        nfft=None,
+        sampling=1.0,
+        real=False,
+        fftshift=None,
+        ifftshift_before=None,
+        fftshift_after=False,
+        dtype="complex128",
+    ):
+        super().__init__(
+            dims,
+            dir,
+            nfft,
+            sampling,
+            real,
+            fftshift,
+            ifftshift_before,
+            fftshift_after,
+            dtype,
+        )
 
     def _matvec(self, x):
         if not self.reshape:
@@ -171,7 +209,7 @@ class _FFT_numpy(LinearOperator):
         return y
 
 
-class _FFT_fftw(LinearOperator):
+class _FFT_fftw(_BaseFFT):
     """One dimensional Fast-Fourier Transform using pyffw"""
 
     def __init__(
@@ -187,83 +225,26 @@ class _FFT_fftw(LinearOperator):
         dtype="complex128",
         **kwargs_fftw
     ):
-        if isinstance(dims, int):
-            dims = (dims,)
-        if dir > len(dims) - 1:
-            raise ValueError(
-                "dir=%d must be smaller than " "number of dims=%d..." % (dir, len(dims))
-            )
-        self.dir = dir
-        if nfft is None:
-            nfft = dims[self.dir]
-        elif nfft < dims[self.dir]:
-            logging.warning(
-                "nfft should be bigger or equal then "
-                " dims[self.dir] for engine=fftw, set to "
-                "dims[self.dir]"
-            )
-            nfft = dims[self.dir]
-        self.nfft = nfft
-
-        self.real = real
-
-        # Use fftshift if supplied, otherwise use ifftshift_before
-        # If neither are supplied, set to False
-        if fftshift is not None:
-            warnings.warn(
-                "fftshift is deprecated. Please use ifftshift_before.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            if ifftshift_before is not None:
-                warnings.warn(
-                    "Passed fftshift and ifftshift_before, ignoring ifftshift_before. ",
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
-            ifftshift_before = fftshift
-        if fftshift is None and ifftshift_before is None:
-            ifftshift_before = False
-        self.ifftshift_before = ifftshift_before
-
-        self.f = (
-            np.fft.rfftfreq(self.nfft, d=sampling)
-            if real
-            else np.fft.fftfreq(self.nfft, d=sampling)
+        super().__init__(
+            dims,
+            dir,
+            nfft,
+            sampling,
+            real,
+            fftshift,
+            ifftshift_before,
+            fftshift_after,
+            dtype,
         )
-        self.fftshift_after = fftshift_after
-        if self.fftshift_after:
-            if self.real:
-                warnings.warn(
-                    "Using fftshift_after with real=True. fftshift should only be applied after a complex FFT. This is rarely intended behavior but if it is, ignore this message."
-                )
-            self.f = np.fft.fftshift(self.f)
         if len(dims) == 1:
-            self.dims = np.array(
-                [
-                    dims[0],
-                ]
-            )
+            self.dims = np.array((dims[0],))
             self.dims_t = self.dims.copy()
             self.dims_t[self.dir] = self.nfft
             self.dims_fft = self.dims.copy()
             self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
-            self.reshape = False
         else:
-            self.dims = np.array(dims)
             self.dims_t = self.dims.copy()
             self.dims_t[self.dir] = self.nfft
-            self.dims_fft = self.dims.copy()
-            self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
-            self.reshape = True
-        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
-        self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
-        self.cdtype = (
-            np.ones(1, dtype=self.rdtype) + 1j * np.ones(1, dtype=self.rdtype)
-        ).dtype
-        self.dtype = self.cdtype
-        self.clinear = False if real else True
-        self.explicit = False
 
         # define padding(fftw requires the user to provide padded input signal)
         self.pad = [[0, 0] for _ in range(len(self.dims))]
