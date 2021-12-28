@@ -116,26 +116,26 @@ Cop = pylops.CausalIntegration(
     nt * nx, dims=(nt, nx), sampling=dt, dir=0, halfcurrent=True
 )
 
-y = Cop * x.flatten()
+y = Cop * x.ravel()
 y = y.reshape(nt, nx)
 yn = y + np.random.normal(0, 4e-1, y.shape)
 
 # Numerical derivative
 Dop = pylops.FirstDerivative(nt * nx, dims=(nt, nx), dir=0, sampling=dt)
-xder = Dop * yn.flatten()
+xder = Dop * yn.ravel()
 xder = xder.reshape(nt, nx)
 
 # Regularized derivative
 Rop = pylops.Laplacian(dims=(nt, nx))
 xreg = pylops.RegularizedInversion(
-    Cop, [Rop], yn.flatten(), epsRs=[1e0], **dict(iter_lim=100, atol=1e-5)
+    Cop, [Rop], yn.ravel(), epsRs=[1e0], **dict(iter_lim=100, atol=1e-5)
 )
 xreg = xreg.reshape(nt, nx)
 
 # Preconditioned derivative
 Sop = pylops.Smoothing2D((11, 21), dims=(nt, nx))
 xp = pylops.PreconditionedInversion(
-    Cop, Sop, yn.flatten(), **dict(iter_lim=10, atol=1e-2)
+    Cop, Sop, yn.ravel(), **dict(iter_lim=10, atol=1e-2)
 )
 xp = xp.reshape(nt, nx)
 

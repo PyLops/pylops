@@ -167,7 +167,7 @@ class _FFT_numpy(_BaseFFT):
                 y = np.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
             if self.fftshift_after:
                 y = np.fft.fftshift(y, axes=self.dir)
-            y = y.flatten()
+            y = y.ravel()
         y = y.astype(self.cdtype)
         return y
 
@@ -204,7 +204,7 @@ class _FFT_numpy(_BaseFFT):
                 y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
             if self.ifftshift_before:
                 y = np.fft.fftshift(y, axes=self.dir)
-            y = y.flatten()
+            y = y.ravel()
         y = y.astype(self.rdtype)
         return y
 

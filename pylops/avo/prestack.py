@@ -316,7 +316,7 @@ def PrestackWaveletModelling(
     D = get_block_diag(theta)(*([D] * nG))
 
     # Create infinite-reflectivity data
-    M = ncp.dot(G, ncp.dot(D, m.T.flatten())).reshape(ntheta, nt0)
+    M = ncp.dot(G, ncp.dot(D, m.T.ravel())).reshape(ntheta, nt0)
     Mconv = VStack(
         [
             MatrixMult(convmtx(M[itheta], nwav)[wavc : -nwav + wavc + 1], dtype=dtype)
@@ -523,7 +523,7 @@ def PrestackInversion(
     # invert model
     if epsR is None:
         # create and remove background data from original data
-        datar = data.flatten() if m0 is None else data.flatten() - PPop * m0.flatten()
+        datar = data.ravel() if m0 is None else data.ravel() - PPop * m0.ravel()
         # inversion without spatial regularization
         if explicit:
             if epsI is None and not simultaneous:
@@ -570,7 +570,7 @@ def PrestackInversion(
             #    PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0*nm)
             #    datarn = PPop.A.T * datar.reshape(nt0*ntheta, nspatprod)
             #    PPop_reg = MatrixMult(PP, dims=ntheta*nspatprod)
-            #    minv = lstsq(PPop_reg, datarn.flatten(), **kwargs_solver)[0]
+            #    minv = lstsq(PPop_reg, datarn.ravel(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
             if ncp == np:
@@ -610,7 +610,7 @@ def PrestackInversion(
                 PPop,
                 Regop,
                 data.ravel(),
-                x0=m0.flatten() if m0 is not None else None,
+                x0=m0.ravel() if m0 is not None else None,
                 epsRs=epsR,
                 returninfo=False,
                 **kwargs_solver
@@ -669,7 +669,7 @@ def PrestackInversion(
                 mu=mu,
                 niter_outer=niter_outer,
                 niter_inner=niter_inner,
-                x0=None if m0 is None else m0.flatten(),
+                x0=None if m0 is None else m0.ravel(),
                 **kwargs_solver
             )[0]
 

@@ -401,14 +401,14 @@ def SeismicInterpolation(
 
     # inversion
     if kind == "spatial":
-        recdata = RegularizedInversion(SIop, [Regop], data.flatten(), **kwargs_solver)
+        recdata = RegularizedInversion(SIop, [Regop], data.ravel(), **kwargs_solver)
         if isinstance(recdata, tuple):
             recdata = recdata[0]
         recdata = recdata.reshape(dims)
         recprec = None
         cost = None
     else:
-        recprec = FISTA(SIop, data.flatten(), **kwargs_solver)
+        recprec = FISTA(SIop, data.ravel(), **kwargs_solver)
         if len(recprec) == 3:
             cost = recprec[2]
         else:

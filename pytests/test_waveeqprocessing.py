@@ -119,7 +119,7 @@ def test_MDC_1virtualsource(par):
     )
     dottest(MDCop, par["nt2"] * par["ny"], par["nt2"] * par["nx"])
     # Create data
-    d = MDCop * mwav.flatten()
+    d = MDCop * mwav.ravel()
     d = d.reshape(par["ny"], par["nt2"])
 
     # Check that events are at correct time and correct amplitude
@@ -154,7 +154,7 @@ def test_MDC_1virtualsource(par):
         dtype="float32",
     )
     dottest(MDCpreop, par["nt2"] * par["ny"], par["nt2"] * par["nx"])
-    dpre = MDCpreop * mwav.flatten()
+    dpre = MDCpreop * mwav.ravel()
     dpre = dpre.reshape(par["ny"], par["nt2"])
     assert_array_equal(d, dpre)
 
@@ -187,7 +187,7 @@ def test_MDC_1virtualsource(par):
     )
     dottest(MDCop, par["nt2"] * par["ny"], par["nt2"] * par["nx"])
     mwav = mwav.T
-    d = MDCop * mwav.flatten()
+    d = MDCop * mwav.ravel()
     d = d.reshape(par["nt2"], par["ny"])
 
     for it, amp in zip(it0_G, amp_G):
@@ -286,7 +286,7 @@ def test_MDC_Nvirtualsources(par):
     )
 
     # Create data
-    d = MDCop * mwav.flatten()
+    d = MDCop * mwav.ravel()
     d = d.reshape(par["ny"], par["nx"], par["nt2"])
 
     # Check that events are at correct time
@@ -335,7 +335,7 @@ def test_MDC_Nvirtualsources(par):
     )
 
     mwav = mwav.transpose(2, 0, 1)
-    d = MDCop * mwav.flatten()
+    d = MDCop * mwav.ravel()
     d = d.reshape(par["nt2"], par["ny"], par["nx"])
 
     for it, amp in zip(it0_G, amp_G):

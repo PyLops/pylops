@@ -51,7 +51,7 @@ _, x3d = linear3d(xaxis, yaxis, taxis, v, t0, theta, phi, amp, wav)
 Rop2d = Restriction(
     par["ny"] * par["nt"], iava, dims=(par["ny"], par["nt"]), dir=0, dtype="float64"
 )
-y2d = Rop2d * x2d.flatten()
+y2d = Rop2d * x2d.ravel()
 y2d = y2d.reshape(nysub, par["nt"])
 Rop3d = Restriction(
     par["ny"] * par["nx"] * par["nt"],
@@ -60,7 +60,7 @@ Rop3d = Restriction(
     dir=0,
     dtype="float64",
 )
-y3d = Rop3d * x3d.flatten()
+y3d = Rop3d * x3d.ravel()
 y3d = y3d.reshape(nysub, par["nx"], par["nt"])
 
 

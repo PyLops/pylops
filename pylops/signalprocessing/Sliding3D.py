@@ -126,9 +126,7 @@ def Sliding3D(
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)], nproc=nproc)
     else:
-        OOp = BlockDiag(
-            [Diagonal(tap.flatten()) * Op for _ in range(nwins)], nproc=nproc
-        )
+        OOp = BlockDiag([Diagonal(tap.ravel()) * Op for _ in range(nwins)], nproc=nproc)
 
     hstack = HStack(
         [

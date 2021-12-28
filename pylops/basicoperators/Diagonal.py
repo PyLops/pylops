@@ -57,7 +57,7 @@ class Diagonal(LinearOperator):
 
     def __init__(self, diag, dims=None, dir=0, dtype="float64"):
         ncp = get_array_module(diag)
-        self.diag = diag.flatten()
+        self.diag = diag.ravel()
         self.complex = True if ncp.iscomplexobj(self.diag) else False
         if dims is None:
             self.shape = (len(self.diag), len(self.diag))

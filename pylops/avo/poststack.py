@@ -327,7 +327,7 @@ def PoststackInversion(
         )
 
     # create and remove background data from original data
-    datar = data.flatten() if m0 is None else data.flatten() - PPop * m0.flatten()
+    datar = data.ravel() if m0 is None else data.ravel() - PPop * m0.ravel()
     # invert model
     if epsR is None:
         # inversion without spatial regularization
@@ -372,7 +372,7 @@ def PoststackInversion(
                 PP = ncp.dot(PPop.A.T, PPop.A) + epsI * ncp.eye(nt0, dtype=PPop.A.dtype)
                 datarn = PPop.A.T * datar.reshape(nt0, nspatprod)
                 PPop_reg = MatrixMult(PP, dims=nspatprod)
-                minv = get_lstsq(data)(PPop_reg.A, datarn.flatten(), **kwargs_solver)[0]
+                minv = get_lstsq(data)(PPop_reg.A, datarn.ravel(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
             if ncp == np:
@@ -397,8 +397,8 @@ def PoststackInversion(
             minv = RegularizedInversion(
                 PPop,
                 [Regop],
-                data.flatten(),
-                x0=None if m0 is None else m0.flatten(),
+                data.ravel(),
+                x0=None if m0 is None else m0.ravel(),
                 epsRs=[epsR],
                 returninfo=False,
                 **kwargs_solver
@@ -454,7 +454,7 @@ def PoststackInversion(
                 mu=mu,
                 niter_outer=niter_outer,
                 niter_inner=niter_inner,
-                x0=None if m0 is None else m0.flatten(),
+                x0=None if m0 is None else m0.ravel(),
                 **kwargs_solver
             )[0]
 
