@@ -404,9 +404,22 @@ def FFT(
         (``False``). Used to enforce that the output of adjoint of a real
         model is real.
     fftshift : :obj:`bool`, optional
-        Apply ifftshift/fftshift (``True``) or not (``False``) to model vector.
-        This is required when the model is arranged over a symmetric time axis
-        such that it is first rearranged before applying the Fourier Transform.
+        Note: `fftshift` is deprecated, use `ifftshift_before`.
+    ifftshift_before : :obj:`bool`, optional
+        Apply ifftshift (``True``) or not (``False``) to model vector (before FFT).
+        Consider using this option when the model vector's respective axis is symmetric
+        with respect to the zero value sample. This will shift the zero value sample to
+        coincide with the zero index sample. With such an arrangement, FFT will not
+        introduce a sample-dependent phase-shift when compared to the continuous Fourier
+        Transform.
+        Defaults to not applying ifftshift.
+    fftshift_after : :obj:`bool`, optional
+        Apply fftshift (``True``) or not (``False``) to data vector (after FFT).
+        Consider using this option when you require frequencies to be arranged
+        naturally, from negative to positive. When not applying fftshift after FFT,
+        frequencies are arranged from zero to largest positive, and then from negative
+        Nyquist to the frequency bin before zero.
+        Defaults to not applying fftshift.
     engine : :obj:`str`, optional
         Engine used for fft computation (``numpy`` or ``fftw``). Choose
         ``numpy`` when working with cupy arrays.
