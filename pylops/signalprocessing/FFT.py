@@ -75,7 +75,9 @@ class _BaseFFT(LinearOperator):
         if self.fftshift_after:
             if self.real:
                 warnings.warn(
-                    "Using fftshift_after with real=True. fftshift should only be applied after a complex FFT. This is rarely intended behavior but if it is, ignore this message."
+                    "Using fftshift_after with real=True. fftshift should only be "
+                    "applied after a complex FFT. This is rarely intended behavior "
+                    "but if it is, ignore this message."
                 )
             self.f = np.fft.fftshift(self.f)
 
@@ -236,8 +238,10 @@ class _FFT_fftw(_BaseFFT):
             fftshift_after,
             dtype,
         )
-        if len(dims) == 1:
-            self.dims = np.array((dims[0],))
+        if isinstance(dims, int) or len(dims) == 1:
+            self.dims = (
+                np.array((dims,)) if isinstance(dims, int) else np.array((dims[0],))
+            )
             self.dims_t = self.dims.copy()
             self.dims_t[self.dir] = self.nfft
             self.dims_fft = self.dims.copy()
