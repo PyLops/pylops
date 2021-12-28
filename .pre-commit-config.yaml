@@ -7,20 +7,15 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
 
-  - repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: v1.5 # Use the sha / tag you want to point at
-    hooks:
-      - id: autopep8
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.10.1
-    hooks:
-      - id: isort
-        name: isort (python)
-
   - repo: https://github.com/psf/black
     rev: 21.12b0
     hooks:
       - id: black
         args: # arguments to configure black
           - --line-length=88
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        name: isort (python)
