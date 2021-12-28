@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
@@ -38,9 +39,9 @@ class Conj(LinearOperator):
         x_{i} = \Re\{y_{i}\} - i\Im\{y_{i}\} \quad \forall i=0,...,N
 
     """
-    def __init__(self, dims, dtype='complex128'):
-        self.shape = (np.prod(np.array(dims)),
-                      np.prod(np.array(dims)))
+
+    def __init__(self, dims, dtype="complex128"):
+        self.shape = (np.prod(np.array(dims)), np.prod(np.array(dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
         self.clinear = False

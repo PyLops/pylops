@@ -1,10 +1,12 @@
 import numpy as np
-from pylops.LinearOperator import aslinearoperator
+
 from pylops.basicoperators import SecondDerivative
+from pylops.LinearOperator import aslinearoperator
 
 
-def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1),
-              edge=False, dtype='float64'):
+def Laplacian(
+    dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1), edge=False, dtype="float64"
+):
     r"""Laplacian.
 
     Apply second-order centered Laplacian operator to a multi-dimensional
@@ -44,10 +46,20 @@ def Laplacian(dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1),
                   / (dx*dy)
 
     """
-    l2op = weights[0]*SecondDerivative(np.prod(dims), dims=dims, dir=dirs[0],
-                                       sampling=sampling[0],
-                                       edge=edge, dtype=dtype)
-    l2op += weights[1]*SecondDerivative(np.prod(dims), dims=dims, dir=dirs[1],
-                                        sampling=sampling[1],
-                                        edge=edge, dtype=dtype)
+    l2op = weights[0] * SecondDerivative(
+        np.prod(dims),
+        dims=dims,
+        dir=dirs[0],
+        sampling=sampling[0],
+        edge=edge,
+        dtype=dtype,
+    )
+    l2op += weights[1] * SecondDerivative(
+        np.prod(dims),
+        dims=dims,
+        dir=dirs[1],
+        sampling=sampling[1],
+        edge=edge,
+        dtype=dtype,
+    )
     return aslinearoperator(l2op)

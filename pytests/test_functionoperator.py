@@ -6,59 +6,66 @@ by wrapping a matrix multiplication as a FunctionOperator.
 Also provides a good starting point for new tests.
 """
 import itertools
-import pytest
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+import pytest
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 from scipy.sparse.linalg import lsqr
 
-from pylops.utils import dottest
 from pylops.basicoperators import FunctionOperator
+from pylops.utils import dottest
 
 PARS_LISTS = [
-        [11, 21],  # nr
-        [11, 21],  # nc
-        ['float32', 'float64', 'complex64', 'complex128'],  # dtypes
-        ]
+    [11, 21],  # nr
+    [11, 21],  # nc
+    ["float32", "float64", "complex64", "complex128"],  # dtypes
+]
 PARS = []
 for nr, nc, dtype in itertools.product(*PARS_LISTS):
-    PARS += [{'nr': nr,
-              'nc': nc,
-              'imag': 0 if dtype.startswith('float') else 1j,
-              'dtype': dtype,
-              'tol':1e-3 if dtype in ['float32', 'complex64'] else 1e-6}]
+    PARS += [
+        {
+            "nr": nr,
+            "nc": nc,
+            "imag": 0 if dtype.startswith("float") else 1j,
+            "dtype": dtype,
+            "tol": 1e-3 if dtype in ["float32", "complex64"] else 1e-6,
+        }
+    ]
 
 
 @pytest.mark.parametrize("par", PARS)
 def test_FunctionOperator(par):
-    """Dot-test and inversion for FunctionOperator operator.
-    """
+    """Dot-test and inversion for FunctionOperator operator."""
     print(par)
     np.random.seed(10)
-    G = (np.random.normal(0, 1, (par['nr'], par['nc'])) +
-         np.random.normal(0, 1, (par['nr'], par['nc'])) *
-         par['imag']).astype(par['dtype'])
+    G = (
+        np.random.normal(0, 1, (par["nr"], par["nc"]))
+        + np.random.normal(0, 1, (par["nr"], par["nc"])) * par["imag"]
+    ).astype(par["dtype"])
 
     def forward_f(x):
         return G @ x
+
     def adjoint_f(y):
         return np.conj(G.T) @ y
 
-    if par['nr'] == par['nc']:
-        Fop = FunctionOperator(forward_f, adjoint_f, par['nr'],
-                               dtype=par['dtype'])
+    if par["nr"] == par["nc"]:
+        Fop = FunctionOperator(forward_f, adjoint_f, par["nr"], dtype=par["dtype"])
     else:
-        Fop = FunctionOperator(forward_f, adjoint_f, par['nr'], par['nc'],
-                               dtype=par['dtype'])
+        Fop = FunctionOperator(
+            forward_f, adjoint_f, par["nr"], par["nc"], dtype=par["dtype"]
+        )
 
-    assert dottest(Fop, par['nr'], par['nc'],
-                   complexflag=0 if par['imag'] == 0 else 3,
-                   tol=par['tol'])
+    assert dottest(
+        Fop,
+        par["nr"],
+        par["nc"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        tol=par["tol"],
+    )
 
-    x = (np.ones(par['nc']) +
-         np.ones(par['nc'])*par['imag']).astype(par['dtype'])
-    y = (np.ones(par['nr']) +
-         np.ones(par['nr'])*par['imag']).astype(par['dtype'])
+    x = (np.ones(par["nc"]) + np.ones(par["nc"]) * par["imag"]).astype(par["dtype"])
+    y = (np.ones(par["nr"]) + np.ones(par["nr"]) * par["imag"]).astype(par["dtype"])
 
     F_x = Fop @ x
     FH_y = Fop.H @ y
@@ -70,7 +77,7 @@ def test_FunctionOperator(par):
     assert_array_equal(FH_y, GH_y)
 
     # Only test inversion for square or overdetermined systems
-    if par['nc'] <= par['nr']:
+    if par["nc"] <= par["nr"]:
         xlsqr = lsqr(Fop, F_x, damp=0, iter_lim=100, show=0)[0]
         assert_array_almost_equal(x, xlsqr, decimal=4)
 
@@ -81,23 +88,21 @@ def test_FunctionOperator_NoAdjoint(par):
     is not implemented.
     """
     np.random.seed(10)
-    G = (np.random.normal(0, 1, (par['nr'], par['nc'])) +
-         np.random.normal(0, 1, (par['nr'], par['nc'])) *
-         par['imag']).astype(par['dtype'])
+    G = (
+        np.random.normal(0, 1, (par["nr"], par["nc"]))
+        + np.random.normal(0, 1, (par["nr"], par["nc"])) * par["imag"]
+    ).astype(par["dtype"])
 
     def forward_f(x):
         return G @ x
 
-    if par['nr'] == par['nc']:
-        Fop = FunctionOperator(forward_f, par['nr'], dtype=par['dtype'])
+    if par["nr"] == par["nc"]:
+        Fop = FunctionOperator(forward_f, par["nr"], dtype=par["dtype"])
     else:
-        Fop = FunctionOperator(forward_f, par['nr'], par['nc'],
-                               dtype=par['dtype'])
+        Fop = FunctionOperator(forward_f, par["nr"], par["nc"], dtype=par["dtype"])
 
-    x = (np.ones(par['nc']) +
-         np.ones(par['nc'])*par['imag']).astype(par['dtype'])
-    y = (np.ones(par['nr']) +
-         np.ones(par['nr'])*par['imag']).astype(par['dtype'])
+    x = (np.ones(par["nc"]) + np.ones(par["nc"]) * par["imag"]).astype(par["dtype"])
+    y = (np.ones(par["nr"]) + np.ones(par["nr"]) * par["imag"]).astype(par["dtype"])
 
     F_x = Fop @ x
     G_x = np.asarray(G @ x)

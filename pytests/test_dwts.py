@@ -1,38 +1,35 @@
-import pytest
-
 import numpy as np
+import pytest
 from numpy.testing import assert_array_almost_equal
 from scipy.sparse.linalg import lsqr
 
-from pylops.utils import dottest
 from pylops.signalprocessing import DWT, DWT2D
+from pylops.utils import dottest
 
-par1 = {'ny': 7, 'nx': 9, 'nt': 10, 'imag': 0,
-        'dtype': 'float32'}  # real
-par2 = {'ny': 7, 'nx': 9, 'nt': 10, 'imag': 1j,
-        'dtype': 'complex64'}  # complex
+par1 = {"ny": 7, "nx": 9, "nt": 10, "imag": 0, "dtype": "float32"}  # real
+par2 = {"ny": 7, "nx": 9, "nt": 10, "imag": 1j, "dtype": "complex64"}  # complex
 
 np.random.seed(10)
 
 
 @pytest.mark.parametrize("par", [(par1)])
 def test_unknown_wavelet(par):
-    """Check error is raised if unknown wavelet is chosen is passed
-    """
+    """Check error is raised if unknown wavelet is chosen is passed"""
     with pytest.raises(ValueError):
-        _ = DWT(dims=par['nt'], wavelet='foo')
+        _ = DWT(dims=par["nt"], wavelet="foo")
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT_1dsignal(par):
-    """Dot-test and inversion for DWT operator for 1d signal
-    """
-    DWTop = DWT(dims=[par['nt']], dir=0, wavelet='haar', level=3)
-    x = np.random.normal(0., 1., par['nt']) + \
-        par['imag'] * np.random.normal(0., 1., par['nt'])
+    """Dot-test and inversion for DWT operator for 1d signal"""
+    DWTop = DWT(dims=[par["nt"]], dir=0, wavelet="haar", level=3)
+    x = np.random.normal(0.0, 1.0, par["nt"]) + par["imag"] * np.random.normal(
+        0.0, 1.0, par["nt"]
+    )
 
-    assert dottest(DWTop, DWTop.shape[0], DWTop.shape[1],
-                   complexflag=0 if par['imag'] == 0 else 3)
+    assert dottest(
+        DWTop, DWTop.shape[0], DWTop.shape[1], complexflag=0 if par["imag"] == 0 else 3
+    )
 
     y = DWTop * x
     xadj = DWTop.H * y  # adjoint is same as inverse for dwt
@@ -44,16 +41,19 @@ def test_DWT_1dsignal(par):
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT_2dsignal(par):
-    """Dot-test and inversion for DWT operator for 2d signal
-    """
+    """Dot-test and inversion for DWT operator for 2d signal"""
     for dir in [0, 1]:
-        DWTop = DWT(dims=(par['nt'], par['nx']),
-                    dir=dir, wavelet='haar', level=3)
-        x = np.random.normal(0., 1., (par['nt'], par['nx'])) + \
-            par['imag'] * np.random.normal(0., 1., (par['nt'], par['nx']))
+        DWTop = DWT(dims=(par["nt"], par["nx"]), dir=dir, wavelet="haar", level=3)
+        x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"])) + par[
+            "imag"
+        ] * np.random.normal(0.0, 1.0, (par["nt"], par["nx"]))
 
-        assert dottest(DWTop, DWTop.shape[0], DWTop.shape[1],
-                       complexflag=0 if par['imag'] == 0 else 3)
+        assert dottest(
+            DWTop,
+            DWTop.shape[0],
+            DWTop.shape[1],
+            complexflag=0 if par["imag"] == 0 else 3,
+        )
 
         y = DWTop * x.ravel()
         xadj = DWTop.H * y  # adjoint is same as inverse for dwt
@@ -65,16 +65,21 @@ def test_DWT_2dsignal(par):
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT_3dsignal(par):
-    """Dot-test and inversion for DWT operator for 3d signal
-    """
+    """Dot-test and inversion for DWT operator for 3d signal"""
     for dir in [0, 1, 2]:
-        DWTop = DWT(dims=(par['nt'], par['nx'], par['ny']),
-                    dir=dir, wavelet='haar', level=3)
-        x = np.random.normal(0., 1., (par['nt'], par['nx'], par['ny'])) + \
-            par['imag'] * np.random.normal(0., 1., (par['nt'], par['nx'], par['ny']))
+        DWTop = DWT(
+            dims=(par["nt"], par["nx"], par["ny"]), dir=dir, wavelet="haar", level=3
+        )
+        x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"])) + par[
+            "imag"
+        ] * np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"]))
 
-        assert dottest(DWTop, DWTop.shape[0], DWTop.shape[1],
-                       complexflag=0 if par['imag'] == 0 else 3)
+        assert dottest(
+            DWTop,
+            DWTop.shape[0],
+            DWTop.shape[1],
+            complexflag=0 if par["imag"] == 0 else 3,
+        )
 
         y = DWTop * x.ravel()
         xadj = DWTop.H * y  # adjoint is same as inverse for dwt
@@ -86,15 +91,15 @@ def test_DWT_3dsignal(par):
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT2D_2dsignal(par):
-    """Dot-test and inversion for DWT2D operator for 2d signal
-    """
-    DWTop = DWT2D(dims=(par['nt'], par['nx']),
-                dirs=(0, 1), wavelet='haar', level=3)
-    x = np.random.normal(0., 1., (par['nt'], par['nx'])) + \
-        par['imag'] * np.random.normal(0., 1., (par['nt'], par['nx']))
+    """Dot-test and inversion for DWT2D operator for 2d signal"""
+    DWTop = DWT2D(dims=(par["nt"], par["nx"]), dirs=(0, 1), wavelet="haar", level=3)
+    x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"])) + par[
+        "imag"
+    ] * np.random.normal(0.0, 1.0, (par["nt"], par["nx"]))
 
-    assert dottest(DWTop, DWTop.shape[0], DWTop.shape[1],
-                   complexflag=0 if par['imag'] == 0 else 3)
+    assert dottest(
+        DWTop, DWTop.shape[0], DWTop.shape[1], complexflag=0 if par["imag"] == 0 else 3
+    )
 
     y = DWTop * x.ravel()
     xadj = DWTop.H * y  # adjoint is same as inverse for dwt
@@ -106,16 +111,21 @@ def test_DWT2D_2dsignal(par):
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT2D_3dsignal(par):
-    """Dot-test and inversion for DWT operator for 3d signal
-    """
+    """Dot-test and inversion for DWT operator for 3d signal"""
     for dirs in [(0, 1), (0, 2), (1, 2)]:
-        DWTop = DWT2D(dims=(par['nt'], par['nx'], par['ny']),
-                      dirs=dirs, wavelet='haar', level=3)
-        x = np.random.normal(0., 1., (par['nt'], par['nx'], par['ny'])) + \
-            par['imag'] * np.random.normal(0., 1., (par['nt'], par['nx'], par['ny']))
+        DWTop = DWT2D(
+            dims=(par["nt"], par["nx"], par["ny"]), dirs=dirs, wavelet="haar", level=3
+        )
+        x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"])) + par[
+            "imag"
+        ] * np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"]))
 
-        assert dottest(DWTop, DWTop.shape[0], DWTop.shape[1],
-                       complexflag=0 if par['imag'] == 0 else 3)
+        assert dottest(
+            DWTop,
+            DWTop.shape[0],
+            DWTop.shape[1],
+            complexflag=0 if par["imag"] == 0 else 3,
+        )
 
         y = DWTop * x.ravel()
         xadj = DWTop.H * y  # adjoint is same as inverse for dwt

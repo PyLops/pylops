@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
@@ -45,17 +46,17 @@ class SecondDerivative(LinearOperator):
         y[i] = (x[i+1] - 2x[i] + x[i-1]) / dx^2
 
     """
-    def __init__(self, N, dims=None, dir=0, sampling=1,
-                 edge=False, dtype='float64'):
+
+    def __init__(self, N, dims=None, dir=0, sampling=1, edge=False, dtype="float64"):
         self.N = N
         self.sampling = sampling
         self.edge = edge
         if dims is None:
-            self.dims = (self.N, )
+            self.dims = (self.N,)
             self.reshape = False
         else:
             if np.prod(dims) != self.N:
-                raise ValueError('product of dims must equal N!')
+                raise ValueError("product of dims must equal N!")
             else:
                 self.dims = dims
                 self.reshape = True
@@ -69,19 +70,19 @@ class SecondDerivative(LinearOperator):
         if not self.reshape:
             x = x.squeeze()
             y = ncp.zeros(self.N, self.dtype)
-            y[1:-1] = (x[2:] - 2*x[1:-1] + x[0:-2]) / self.sampling**2
+            y[1:-1] = (x[2:] - 2 * x[1:-1] + x[0:-2]) / self.sampling ** 2
             if self.edge:
-                y[0] = (x[0] - 2*x[1] + x[2]) / self.sampling**2
-                y[-1] = (x[-3] - 2*x[-2] + x[-1]) / self.sampling**2
+                y[0] = (x[0] - 2 * x[1] + x[2]) / self.sampling ** 2
+                y[-1] = (x[-3] - 2 * x[-2] + x[-1]) / self.sampling ** 2
         else:
             x = ncp.reshape(x, self.dims)
             if self.dir > 0:  # need to bring the dim. to derive to first dim.
                 x = ncp.swapaxes(x, self.dir, 0)
             y = ncp.zeros(x.shape, self.dtype)
-            y[1:-1] = (x[2:] - 2*x[1:-1] + x[0:-2])/self.sampling**2
+            y[1:-1] = (x[2:] - 2 * x[1:-1] + x[0:-2]) / self.sampling ** 2
             if self.edge:
-                y[0] = (x[0] - 2*x[1] + x[2]) / self.sampling ** 2
-                y[-1] = (x[-3] - 2*x[-2] + x[-1]) / self.sampling ** 2
+                y[0] = (x[0] - 2 * x[1] + x[2]) / self.sampling ** 2
+                y[-1] = (x[-3] - 2 * x[-2] + x[-1]) / self.sampling ** 2
             if self.dir > 0:
                 y = ncp.swapaxes(y, 0, self.dir)
             y = y.ravel()
@@ -92,24 +93,24 @@ class SecondDerivative(LinearOperator):
         if not self.reshape:
             x = x.squeeze()
             y = ncp.zeros(self.N, self.dtype)
-            y[0:-2] += (x[1:-1]) / self.sampling**2
-            y[1:-1] -= (2*x[1:-1]) / self.sampling**2
-            y[2:] += (x[1:-1]) / self.sampling**2
+            y[0:-2] += (x[1:-1]) / self.sampling ** 2
+            y[1:-1] -= (2 * x[1:-1]) / self.sampling ** 2
+            y[2:] += (x[1:-1]) / self.sampling ** 2
             if self.edge:
-                y[0] += x[0] / self.sampling**2
-                y[1] -= 2 * x[0] / self.sampling**2
+                y[0] += x[0] / self.sampling ** 2
+                y[1] -= 2 * x[0] / self.sampling ** 2
                 y[2] += x[0] / self.sampling ** 2
-                y[-3] += x[-1] / self.sampling**2
-                y[-2] -= 2 * x[-1] / self.sampling**2
-                y[-1] += x[-1] / self.sampling**2
+                y[-3] += x[-1] / self.sampling ** 2
+                y[-2] -= 2 * x[-1] / self.sampling ** 2
+                y[-1] += x[-1] / self.sampling ** 2
         else:
             x = ncp.reshape(x, self.dims)
             if self.dir > 0:  # need to bring the dim. to derive to first dim.
                 x = ncp.swapaxes(x, self.dir, 0)
             y = ncp.zeros(x.shape, self.dtype)
-            y[0:-2] += (x[1:-1]) / self.sampling**2
-            y[1:-1] -= (2*x[1:-1]) / self.sampling**2
-            y[2:] += (x[1:-1]) / self.sampling**2
+            y[0:-2] += (x[1:-1]) / self.sampling ** 2
+            y[1:-1] -= (2 * x[1:-1]) / self.sampling ** 2
+            y[2:] += (x[1:-1]) / self.sampling ** 2
             if self.edge:
                 y[0] += x[0] / self.sampling ** 2
                 y[1] -= 2 * x[0] / self.sampling ** 2

@@ -1,3 +1,4 @@
+# isort: skip_file
 from .FunctionOperator import FunctionOperator
 from .MemoizeOperator import MemoizeOperator
 from .Regression import Regression

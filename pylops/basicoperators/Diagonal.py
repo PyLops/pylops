@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 
@@ -53,7 +54,8 @@ class Diagonal(LinearOperator):
     multiplication with the complex conjugate elements of ``diag``.
 
     """
-    def __init__(self, diag, dims=None, dir=0, dtype='float64'):
+
+    def __init__(self, diag, dims=None, dir=0, dtype="float64"):
         ncp = get_array_module(diag)
         self.diag = diag.ravel()
         self.complex = True if ncp.iscomplexobj(self.diag) else False

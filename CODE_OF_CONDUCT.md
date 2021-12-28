@@ -111,7 +111,7 @@ Take care of each other. Alert PyLops if you notice a dangerous situation, someo
 
 **If you feel your safety is in jeopardy or the situation is an emergency, we urge you to contact local law enforcement before making a report to PyLops.** (In the U.S., dial 911.)
 
-PyLops is committed to promptly addressing any reported issues. If you have experienced or witnessed behavior that violates the PyLops Code of Conduct, please report it by sending an email to 
+PyLops is committed to promptly addressing any reported issues. If you have experienced or witnessed behavior that violates the PyLops Code of Conduct, please report it by sending an email to
 one of the members of the PyLops CoC Enforcement Team.
 
 #### Person(s) Responsible for Resolving Complaints
@@ -123,11 +123,11 @@ The current PyLops Code of Conduct Enforcement Team consists of:
 -   Matteo Ravasi
 
     -   [*matteoravasi@gmail.com*](mailto:matteoravasi@gmail.com)
-  
+
 -   Carlos Alberto da Costa Filho
 
     -   [*c.dacostaf@gmail.com*](mailto:c.dacostaf@gmail.com)
-  
+
 #### Conflicts of Interest
 
 In the event of any conflict of interest, the team member will immediately notify the PyLops Code of Conduct Enforcement Team and recuse themselves if necessary.
@@ -155,7 +155,7 @@ What happens after a report is filed?
 
 #### Acknowledgment and Responding to Immediate Needs
 
-PyLops and/or our event staff will attempt to ensure your safety and help with any immediate needs, particularly at an in-person event.  PyLops will make every effort to **acknowledge receipt within 24 hours** (and we'll aim for much more quickly than that).  
+PyLops and/or our event staff will attempt to ensure your safety and help with any immediate needs, particularly at an in-person event.  PyLops will make every effort to **acknowledge receipt within 24 hours** (and we'll aim for much more quickly than that).
 
 <!-- PROJECT SHOULD REVIEW THE RESPONSE SCHEDULE LISTED ABOVE AND BELOW, AND DETERMINE WHETHER IT IS REALISTIC FOR THE PROJECT. -->
 
@@ -236,7 +236,7 @@ We aim to respond **within one week** to the original reporter with either a res
 
 ## License
 
-This code of conduct has been adapted from [*NUMFOCUS code of conduct*](https://github.com/numfocus/numfocus/blob/master/manual/numfocus-coc.md#the-short-version), 
+This code of conduct has been adapted from [*NUMFOCUS code of conduct*](https://github.com/numfocus/numfocus/blob/master/manual/numfocus-coc.md#the-short-version),
 which is adapted from numerous sources, including the [*Geek Feminism wiki, created by the Ada Initiative and other volunteers, which is under a Creative Commons Zero license*](http://geekfeminism.wikia.com/wiki/Conference_anti-harassment/Policy), the [*Contributor Covenant version 1.2.0*](http://contributor-covenant.org/version/1/2/0/), the [*Bokeh Code of Conduct*](https://github.com/bokeh/bokeh/blob/master/CODE_OF_CONDUCT.md), the [*SciPy Code of Conduct*](https://github.com/jupyter/governance/blob/master/conduct/enforcement.md), the [*Carpentries Code of Conduct*](https://docs.carpentries.org/topic_folders/policies/code-of-conduct.html#enforcement-manual), and the [*NeurIPS Code of Conduct*](https://neurips.cc/public/CodeOfConduct).
 
 **PyLops Code of Conduct is licensed under the [Creative Commons Attribution 3.0 Unported License](https://creativecommons.org/licenses/by/3.0/).**

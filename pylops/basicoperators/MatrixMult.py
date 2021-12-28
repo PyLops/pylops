@@ -1,11 +1,13 @@
 import logging
+
 import numpy as np
 import scipy as sp
 from scipy.sparse.linalg import inv
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class MatrixMult(LinearOperator):
@@ -36,7 +38,8 @@ class MatrixMult(LinearOperator):
         Matrix has complex numbers (``True``) or not (``False``)
 
     """
-    def __init__(self, A, dims=None, dtype='float64'):
+
+    def __init__(self, A, dims=None, dtype="float64"):
         ncp = get_array_module(A)
         self.A = A
         if isinstance(A, ncp.ndarray):
@@ -49,21 +52,25 @@ class MatrixMult(LinearOperator):
             self.explicit = True
         else:
             if isinstance(dims, int):
-                dims = (dims, )
+                dims = (dims,)
             self.reshape = True
             self.dims = np.array(dims, dtype=np.int)
-            self.reshapedims = \
-                [np.insert([np.prod(self.dims)], 0, self.A.shape[1]),
-                 np.insert([np.prod(self.dims)], 0, self.A.shape[0])]
-            self.shape = (A.shape[0]*np.prod(self.dims),
-                          A.shape[1]*np.prod(self.dims))
+            self.reshapedims = [
+                np.insert([np.prod(self.dims)], 0, self.A.shape[1]),
+                np.insert([np.prod(self.dims)], 0, self.A.shape[0]),
+            ]
+            self.shape = (
+                A.shape[0] * np.prod(self.dims),
+                A.shape[1] * np.prod(self.dims),
+            )
             self.explicit = False
         self.dtype = np.dtype(dtype)
         # Check dtype for correctness (upcast to complex when A is complex)
         if np.iscomplexobj(A) and not np.iscomplexobj(np.ones(1, dtype=self.dtype)):
             self.dtype = A.dtype
-            logging.warning('Matrix A is a complex object, dtype '
-                            'casted to %s' % self.dtype)
+            logging.warning(
+                "Matrix A is a complex object, dtype " "casted to %s" % self.dtype
+            )
 
     def _matvec(self, x):
         ncp = get_array_module(x)

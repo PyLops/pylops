@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
+
 from pylops.utils.backend import get_array_module, get_toeplitz
 
 
@@ -30,8 +31,8 @@ def convmtx(h, n):
     """
     ncp = get_array_module(h)
     if len(h) < n:
-        col_1 = ncp.r_[h[0], ncp.zeros(n-1, dtype=h.dtype)]
-        row_1 = ncp.r_[h, ncp.zeros(n-1, dtype=h.dtype)]
+        col_1 = ncp.r_[h[0], ncp.zeros(n - 1, dtype=h.dtype)]
+        row_1 = ncp.r_[h, ncp.zeros(n - 1, dtype=h.dtype)]
     else:
         row_1 = ncp.r_[h[0], ncp.zeros(n - 1, dtype=h.dtype)]
         col_1 = ncp.r_[h, ncp.zeros(n - 1, dtype=h.dtype)]
@@ -69,9 +70,9 @@ def nonstationary_convmtx(H, n, hc=0, pad=(0, 0)):
     """
     ncp = get_array_module(H)
 
-    H = ncp.pad(H, ((0, 0), pad), mode='constant')
+    H = ncp.pad(H, ((0, 0), pad), mode="constant")
     C = ncp.array([ncp.roll(h, ih) for ih, h in enumerate(H)])
-    C = C[:, pad[0] + hc:pad[0] + hc + n].T  # take away edges
+    C = C[:, pad[0] + hc : pad[0] + hc + n].T  # take away edges
     return C
 
 
@@ -142,12 +143,13 @@ def slope_estimate(d, dz, dx, smooth=20):
     linearity = np.zeros((nz, nx))
     for iz in range(nz):
         for ix in range(nx):
-            lcommon1 = 0.5 * (gzz[iz, ix] + gxx[iz, ix]),
-            lcommon2 = 0.5 * np.sqrt((gzz[iz, ix] - gxx[iz, ix]) ** 2 +
-                                     4 * gzx[iz, ix] ** 2)
+            lcommon1 = (0.5 * (gzz[iz, ix] + gxx[iz, ix]),)
+            lcommon2 = 0.5 * np.sqrt(
+                (gzz[iz, ix] - gxx[iz, ix]) ** 2 + 4 * gzx[iz, ix] ** 2
+            )
             l1 = lcommon1 + lcommon2
             l2 = lcommon1 - lcommon2
             slopes[iz, ix] = np.arctan((l1 - gzz[iz, ix]) / gzx[iz, ix])
-            linearity[iz, ix] = 1 - l2/l1
-    slopes[np.isnan(slopes)] = 0.
+            linearity[iz, ix] = 1 - l2 / l1
+    slopes[np.isnan(slopes)] = 0.0
     return slopes, linearity

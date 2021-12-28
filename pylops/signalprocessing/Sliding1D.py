@@ -1,15 +1,15 @@
 import logging
+
 import numpy as np
 
-from pylops.basicoperators import Diagonal, BlockDiag, Restriction, HStack
-from pylops.utils.tapers import taper
+from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.Sliding2D import _slidingsteps
+from pylops.utils.tapers import taper
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def Sliding1D(Op, dim, dimd, nwin, nover,
-              tapertype='hanning', design=False):
+def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False):
     r"""1D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to slices of the model
@@ -83,19 +83,18 @@ def Sliding1D(Op, dim, dimd, nwin, nover,
 
     # check that identified number of windows agrees with mode size
     if design:
-        logging.warning('%d windows required...', nwins)
-        logging.warning('model wins - start:%s, end:%s',
-                        str(mwin_ins), str(mwin_ends))
-        logging.warning('data wins - start:%s, end:%s',
-                        str(dwin_ins), str(dwin_ends))
+        logging.warning("%d windows required...", nwins)
+        logging.warning("model wins - start:%s, end:%s", str(mwin_ins), str(mwin_ends))
+        logging.warning("data wins - start:%s, end:%s", str(dwin_ins), str(dwin_ends))
     if nwins * Op.shape[1] != dim:
-        raise ValueError('Model shape (dim=%d) is not consistent with chosen '
-                         'number of windows. Choose dim=%d for the '
-                         'operator to work with estimated number of windows, '
-                         'or create the operator with design=True to find '
-                         'out the optimal number of windows for the current '
-                         'model size...'
-                         % (dim, nwins*Op.shape[1]))
+        raise ValueError(
+            "Model shape (dim=%d) is not consistent with chosen "
+            "number of windows. Choose dim=%d for the "
+            "operator to work with estimated number of windows, "
+            "or create the operator with design=True to find "
+            "out the optimal number of windows for the current "
+            "model size..." % (dim, nwins * Op.shape[1])
+        )
     # transform to apply
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)])
@@ -103,7 +102,11 @@ def Sliding1D(Op, dim, dimd, nwin, nover,
         OOp = BlockDiag([Diagonal(taps[itap].ravel()) * Op
                          for itap in range(nwins)])
 
-    combining = HStack([Restriction(dimd, np.arange(win_in, win_end)).H
-                        for win_in, win_end in zip(dwin_ins, dwin_ends)])
+    combining = HStack(
+        [
+            Restriction(dimd, np.arange(win_in, win_end)).H
+            for win_in, win_end in zip(dwin_ins, dwin_ends)
+        ]
+    )
     Sop = combining * OOp
     return Sop

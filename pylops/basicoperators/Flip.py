@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 
 
@@ -41,7 +42,8 @@ class Flip(LinearOperator):
     swapped in adjoint mode.
 
     """
-    def __init__(self, N, dims=None, dir=0, dtype='float64'):
+
+    def __init__(self, N, dims=None, dir=0, dtype="float64"):
         self.N = N
         self.dir = dir
         if dims is None:
@@ -49,7 +51,7 @@ class Flip(LinearOperator):
             self.reshape = False
         else:
             if np.prod(dims) != self.N:
-                raise ValueError('product of dims must equal N')
+                raise ValueError("product of dims must equal N")
             else:
                 self.dims = dims
                 self.reshape = True

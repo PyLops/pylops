@@ -16,14 +16,14 @@ to operate on cupy arrays and perform computations on a GPU.
 """
 
 import warnings
-import numpy as np
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 import pylops
 
-plt.close('all')
-warnings.filterwarnings('ignore')
+plt.close("all")
+warnings.filterwarnings("ignore")
 
 ###############################################################################
 # Let's define a matrix :math:`\mathbf{A}` or size (``N`` and ``M``) and
@@ -31,7 +31,7 @@ warnings.filterwarnings('ignore')
 
 N, M = 20, 10
 A = np.random.normal(0, 1, (N, M))
-Aop = pylops.MatrixMult(A, dtype='float64')
+Aop = pylops.MatrixMult(A, dtype="float64")
 
 x = np.ones(M)
 
@@ -39,23 +39,33 @@ x = np.ones(M)
 # We can now use the cgls solver to invert this matrix
 
 y = Aop * x
-xest, istop, nit, r1norm, r2norm, cost_cgls = \
-    pylops.optimization.solver.cgls(Aop, y, x0=np.zeros_like(x),
-                                    niter=10, tol=1e-10, show=True)
+xest, istop, nit, r1norm, r2norm, cost_cgls = pylops.optimization.solver.cgls(
+    Aop, y, x0=np.zeros_like(x), niter=10, tol=1e-10, show=True
+)
 
-print('x= %s' % x)
-print('cgls solution xest= %s' % xest)
+print("x= %s" % x)
+print("cgls solution xest= %s" % xest)
 
 ###############################################################################
 # And the lsqr solver to invert this matrix
 
 y = Aop * x
-xest, istop, itn, r1norm, r2norm, anorm, acond, arnorm, xnorm, var, cost_lsqr = \
-    pylops.optimization.solver.lsqr(Aop, y, x0=np.zeros_like(x),
-                                    niter=10, show=True)
+(
+    xest,
+    istop,
+    itn,
+    r1norm,
+    r2norm,
+    anorm,
+    acond,
+    arnorm,
+    xnorm,
+    var,
+    cost_lsqr,
+) = pylops.optimization.solver.lsqr(Aop, y, x0=np.zeros_like(x), niter=10, show=True)
 
-print('x= %s' % x)
-print('lsqr solution xest= %s' % xest)
+print("x= %s" % x)
+print("lsqr solution xest= %s" % xest)
 
 ###############################################################################
 # Finally we show that the L2 norm of the residual of the two solvers decays
@@ -63,9 +73,9 @@ print('lsqr solution xest= %s' % xest)
 # equations and CGLS
 
 plt.figure(figsize=(12, 3))
-plt.plot(cost_cgls, 'k', lw=2, label='CGLS')
-plt.plot(cost_lsqr, '--r', lw=2, label='LSQR')
-plt.title('Cost functions')
+plt.plot(cost_cgls, "k", lw=2, label="CGLS")
+plt.plot(cost_lsqr, "--r", lw=2, label="LSQR")
+plt.title("Cost functions")
 plt.legend()
 plt.tight_layout()
 

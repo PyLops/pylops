@@ -1,26 +1,48 @@
 import logging
 import warnings
-import numpy as np
 
-from scipy.sparse.linalg import lsqr
+import numpy as np
 from scipy.signal import filtfilt
+from scipy.sparse.linalg import lsqr
 
 from pylops import Diagonal, Identity, Transpose
+from pylops.optimization.leastsquares import PreconditionedInversion
+from pylops.optimization.solver import cgls
 from pylops.signalprocessing import FFT, Fredholm1
 from pylops.utils import dottest as Dottest
-from pylops.optimization.solver import cgls
-from pylops.optimization.leastsquares import PreconditionedInversion
+from pylops.utils.backend import (
+    get_array_module,
+    get_fftconvolve,
+    get_module_name,
+    to_cupy_conditional,
+)
 
-from pylops.utils.backend import get_array_module, get_module_name, \
-    get_fftconvolve, to_cupy_conditional
 
-
-def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
-         transpose=True, saveGt=True, conj=False, prescaled=False,
-         _Identity=Identity, _Transpose=Transpose, _FFT=FFT,
-         _Fredholm1=Fredholm1, args_Identity={}, args_Transpose={},
-         args_FFT={}, args_Identity1={}, args_Transpose1={},
-         args_FFT1={}, args_Fredholm1={}):
+def _MDC(
+    G,
+    nt,
+    nv,
+    dt=1.0,
+    dr=1.0,
+    twosided=True,
+    fast=None,
+    dtype=None,
+    transpose=True,
+    saveGt=True,
+    conj=False,
+    prescaled=False,
+    _Identity=Identity,
+    _Transpose=Transpose,
+    _FFT=FFT,
+    _Fredholm1=Fredholm1,
+    args_Identity={},
+    args_Transpose={},
+    args_FFT={},
+    args_Identity1={},
+    args_Transpose1={},
+    args_FFT1={},
+    args_Fredholm1={},
+):
     r"""Multi-dimensional convolution.
 
     Used to be able to provide operators from different libraries to
@@ -30,16 +52,19 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
     operator.
 
     """
-    warnings.warn('A new implementation of MDC is provided in v1.5.0. This '
-                  'currently affects only the inner working of the operator, '
-                  'end-users can continue using the operator in the same way. '
-                  'Nevertheless, it is now recommended to start using the '
-                  'operator with transpose=True, as this behaviour will '
-                  'become default in version v2.0.0 and the behaviour with '
-                  'transpose=False will be deprecated.', FutureWarning)
+    warnings.warn(
+        "A new implementation of MDC is provided in v1.5.0. This "
+        "currently affects only the inner working of the operator, "
+        "end-users can continue using the operator in the same way. "
+        "Nevertheless, it is now recommended to start using the "
+        "operator with transpose=True, as this behaviour will "
+        "become default in version v2.0.0 and the behaviour with "
+        "transpose=False will be deprecated.",
+        FutureWarning,
+    )
 
     if twosided and nt % 2 == 0:
-        raise ValueError('nt must be odd number')
+        raise ValueError("nt must be odd number")
 
     # transpose G
     if transpose:
@@ -51,11 +76,11 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
 
     # create Fredholm operator
     if prescaled:
-        Frop = _Fredholm1(G, nv, saveGt=saveGt,
-                          dtype=dtype, **args_Fredholm1)
+        Frop = _Fredholm1(G, nv, saveGt=saveGt, dtype=dtype, **args_Fredholm1)
     else:
-        Frop = _Fredholm1(dr * dt * np.sqrt(nt) * G, nv, saveGt=saveGt,
-                          dtype=dtype, **args_Fredholm1)
+        Frop = _Fredholm1(
+            dr * dt * np.sqrt(nt) * G, nv, saveGt=saveGt, dtype=dtype, **args_Fredholm1
+        )
     if conj:
         Frop = Frop.conj()
 
@@ -65,18 +90,22 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
     nfft = int(np.ceil((nt + 1) / 2))
     if nfmax > nfft:
         nfmax = nfft
-        logging.warning('nfmax set equal to ceil[(nt+1)/2=%d]' % nfmax)
+        logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]" % nfmax)
 
-    Fop = _FFT(dims=(nt, nr, nv), dir=0, real=True,
-               fftshift=twosided, dtype=rdtype, **args_FFT)
-    F1op = _FFT(dims=(nt, ns, nv), dir=0, real=True,
-                fftshift=False, dtype=rdtype, **args_FFT1)
+    Fop = _FFT(
+        dims=(nt, nr, nv), dir=0, real=True, fftshift=twosided, dtype=rdtype, **args_FFT
+    )
+    F1op = _FFT(
+        dims=(nt, ns, nv), dir=0, real=True, fftshift=False, dtype=rdtype, **args_FFT1
+    )
 
     # create Identity operator to extract only relevant frequencies
-    Iop = _Identity(N=nfmax * nr * nv, M=nfft * nr * nv,
-                    inplace=True, dtype=dtype, **args_Identity)
-    I1op = _Identity(N=nfmax * ns * nv, M=nfft * ns * nv,
-                     inplace=True, dtype=dtype, **args_Identity1)
+    Iop = _Identity(
+        N=nfmax * nr * nv, M=nfft * nr * nv, inplace=True, dtype=dtype, **args_Identity
+    )
+    I1op = _Identity(
+        N=nfmax * ns * nv, M=nfft * ns * nv, inplace=True, dtype=dtype, **args_Identity1
+    )
     F1opH = F1op.H
     I1opH = I1op.H
 
@@ -101,9 +130,22 @@ def _MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None, dtype=None,
     return MDCop
 
 
-def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
-        dtype=None, fftengine='numpy', transpose=True,
-        saveGt=True, conj=False, usematmul=False, prescaled=False):
+def MDC(
+    G,
+    nt,
+    nv,
+    dt=1.0,
+    dr=1.0,
+    twosided=True,
+    fast=None,
+    dtype=None,
+    fftengine="numpy",
+    transpose=True,
+    saveGt=True,
+    conj=False,
+    usematmul=False,
+    prescaled=False,
+):
     r"""Multi-dimensional convolution.
 
     Apply multi-dimensional convolution between two datasets. If
@@ -213,17 +255,42 @@ def MDC(G, nt, nv, dt=1., dr=1., twosided=True, fast=None,
        pp. 1335-1364. 2011.
 
     """
-    return _MDC(G, nt, nv, dt=dt, dr=dr, twosided=twosided, fast=fast,
-                dtype=dtype, transpose=transpose, saveGt=saveGt,
-                conj=conj, prescaled=prescaled,
-                args_FFT={'engine': fftengine},
-                args_Fredholm1={'usematmul': usematmul})
+    return _MDC(
+        G,
+        nt,
+        nv,
+        dt=dt,
+        dr=dr,
+        twosided=twosided,
+        fast=fast,
+        dtype=dtype,
+        transpose=transpose,
+        saveGt=saveGt,
+        conj=conj,
+        prescaled=prescaled,
+        args_FFT={"engine": fftengine},
+        args_Fredholm1={"usematmul": usematmul},
+    )
 
 
-def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
-        twosided=True, causality_precond=False, adjoint=False,
-        psf=False, dtype='float64', dottest=False,
-        saveGt=True, add_negative=True, smooth_precond=0, **kwargs_solver):
+def MDD(
+    G,
+    d,
+    dt=0.004,
+    dr=1.0,
+    nfmax=None,
+    wav=None,
+    twosided=True,
+    causality_precond=False,
+    adjoint=False,
+    psf=False,
+    dtype="float64",
+    dottest=False,
+    saveGt=True,
+    add_negative=True,
+    smooth_precond=0,
+    **kwargs_solver
+):
     r"""Multi-dimensional deconvolution.
 
     Solve multi-dimensional deconvolution problem using
@@ -346,7 +413,7 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         else:
             nt2 = nt
             nt = (nt2 + 1) // 2
-        nfmax_allowed = int(np.ceil((nt2+1)/2))
+        nfmax_allowed = int(np.ceil((nt2 + 1) / 2))
     else:
         nt2 = nt
         nfmax_allowed = nt
@@ -354,13 +421,12 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
     # Fix nfmax to be at maximum equal to half of the size of fft samples
     if nfmax is None or nfmax > nfmax_allowed:
         nfmax = nfmax_allowed
-        logging.warning('nfmax set equal to ceil[(nt+1)/2=%d]' % nfmax)
+        logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]" % nfmax)
 
     # Add negative part to data and model
     if twosided and add_negative:
         G = np.concatenate((ncp.zeros((ns, nr, nt - 1)), G), axis=-1)
-        d = np.concatenate((np.squeeze(np.zeros((ns, nv, nt - 1))), d),
-                           axis=-1)
+        d = np.concatenate((np.squeeze(np.zeros((ns, nv, nt - 1))), d), axis=-1)
     # Bring kernel to frequency domain
     Gfft = np.fft.rfft(G, nt2, axis=-1)
     Gfft = Gfft[..., :nfmax]
@@ -372,17 +438,39 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         G = np.moveaxis(G, -1, 0)
 
     # Define MDC linear operator
-    MDCop = MDC(Gfft, nt2, nv=nv, dt=dt, dr=dr, twosided=twosided,
-                transpose=False, saveGt=saveGt)
+    MDCop = MDC(
+        Gfft,
+        nt2,
+        nv=nv,
+        dt=dt,
+        dr=dr,
+        twosided=twosided,
+        transpose=False,
+        saveGt=saveGt,
+    )
     if psf:
-        PSFop = MDC(Gfft, nt2, nv=nr, dt=dt, dr=dr, twosided=twosided,
-                    transpose=False, saveGt=saveGt)
+        PSFop = MDC(
+            Gfft,
+            nt2,
+            nv=nr,
+            dt=dt,
+            dr=dr,
+            twosided=twosided,
+            transpose=False,
+            saveGt=saveGt,
+        )
     if dottest:
-        Dottest(MDCop, nt2*ns*nv, nt2*nr*nv, verb=True,
-                backend=get_module_name(ncp))
+        Dottest(
+            MDCop, nt2 * ns * nv, nt2 * nr * nv, verb=True, backend=get_module_name(ncp)
+        )
         if psf:
-            Dottest(PSFop, nt2 * ns * nr, nt2 * nr * nr, verb=True,
-                    backend=get_module_name(ncp))
+            Dottest(
+                PSFop,
+                nt2 * ns * nr,
+                nt2 * nr * nr,
+                verb=True,
+                backend=get_module_name(ncp),
+            )
 
     # Adjoint
     if adjoint:
@@ -397,9 +485,9 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
     # Inverse
     if twosided and causality_precond:
         P = np.ones((nt2, nr, nv))
-        P[:nt - 1] = 0
+        P[: nt - 1] = 0
         if smooth_precond > 0:
-            P = filtfilt(np.ones(smooth_precond)/smooth_precond, 1, P, axis=0)
+            P = filtfilt(np.ones(smooth_precond) / smooth_precond, 1, P, axis=0)
         P = to_cupy_conditional(d, P)
         Pop = Diagonal(P)
         minv = PreconditionedInversion(MDCop, Pop, d.ravel(),
@@ -416,9 +504,9 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
 
     if wav is not None:
         wav1 = wav.copy()
-        for _ in range(minv.ndim-1):
+        for _ in range(minv.ndim - 1):
             wav1 = wav1[ncp.newaxis]
-        minv = get_fftconvolve(d)(minv, wav1, mode='same')
+        minv = get_fftconvolve(d)(minv, wav1, mode="same")
 
     if psf:
         if ncp == np:
@@ -431,9 +519,9 @@ def MDD(G, d, dt=0.004, dr=1., nfmax=None, wav=None,
         psfinv = np.moveaxis(psfinv, 0, -1)
         if wav is not None:
             wav1 = wav.copy()
-            for _ in range(psfinv.ndim-1):
+            for _ in range(psfinv.ndim - 1):
                 wav1 = wav1[np.newaxis]
-            psfinv = get_fftconvolve(d)(psfinv, wav1, mode='same')
+            psfinv = get_fftconvolve(d)(psfinv, wav1, mode="same")
     if adjoint and psf:
         return minv, madj, psfinv, psfadj
     elif adjoint:

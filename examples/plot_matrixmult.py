@@ -19,17 +19,17 @@ not exist and a least-square solution is computed instead.
 """
 
 import warnings
+
+import matplotlib.gridspec as pltgs
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.sparse import rand
 from scipy.sparse.linalg import lsqr
 
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as pltgs
-
 import pylops
 
-plt.close('all')
-warnings.filterwarnings('ignore')
+plt.close("all")
+warnings.filterwarnings("ignore")
 # sphinx_gallery_thumbnail_number = 2
 
 ###############################################################################
@@ -38,7 +38,7 @@ warnings.filterwarnings('ignore')
 
 N, M = 20, 20
 A = np.random.normal(0, 1, (N, M))
-Aop = pylops.MatrixMult(A, dtype='float64')
+Aop = pylops.MatrixMult(A, dtype="float64")
 
 x = np.ones(M)
 
@@ -46,70 +46,84 @@ x = np.ones(M)
 # We can now apply the forward operator to create the data vector :math:`\mathbf{y}`
 # and use ``/`` to solve the system by means of an explicit solver.
 
-y = Aop*x
-xest = Aop/y
+y = Aop * x
+xest = Aop / y
 
 ###############################################################################
 # Let's visually plot the system of equations we just solved.
 gs = pltgs.GridSpec(1, 6)
 fig = plt.figure(figsize=(7, 3))
 ax = plt.subplot(gs[0, 0])
-ax.imshow(y[:, np.newaxis], cmap='rainbow')
-ax.set_title('y', size=20, fontweight='bold')
+ax.imshow(y[:, np.newaxis], cmap="rainbow")
+ax.set_title("y", size=20, fontweight="bold")
 ax.set_xticks([])
-ax.set_yticks(np.arange(N-1)+0.5)
-ax.grid(linewidth=3, color='white')
+ax.set_yticks(np.arange(N - 1) + 0.5)
+ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 ax = plt.subplot(gs[0, 1])
-ax.text(0.35, 0.5, '=', horizontalalignment='center',
-        verticalalignment='center', size=40, fontweight='bold')
-ax.axis('off')
+ax.text(
+    0.35,
+    0.5,
+    "=",
+    horizontalalignment="center",
+    verticalalignment="center",
+    size=40,
+    fontweight="bold",
+)
+ax.axis("off")
 ax = plt.subplot(gs[0, 2:5])
-ax.imshow(Aop.A, cmap='rainbow')
-ax.set_title('A', size=20, fontweight='bold')
-ax.set_xticks(np.arange(N-1)+0.5)
-ax.set_yticks(np.arange(M-1)+0.5)
-ax.grid(linewidth=3, color='white')
+ax.imshow(Aop.A, cmap="rainbow")
+ax.set_title("A", size=20, fontweight="bold")
+ax.set_xticks(np.arange(N - 1) + 0.5)
+ax.set_yticks(np.arange(M - 1) + 0.5)
+ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 ax = plt.subplot(gs[0, 5])
-ax.imshow(x[:, np.newaxis], cmap='rainbow')
-ax.set_title('x', size=20, fontweight='bold')
+ax.imshow(x[:, np.newaxis], cmap="rainbow")
+ax.set_title("x", size=20, fontweight="bold")
 ax.set_xticks([])
-ax.set_yticks(np.arange(M-1)+0.5)
-ax.grid(linewidth=3, color='white')
+ax.set_yticks(np.arange(M - 1) + 0.5)
+ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 
 gs = pltgs.GridSpec(1, 6)
 fig = plt.figure(figsize=(7, 3))
 ax = plt.subplot(gs[0, 0])
-ax.imshow(x[:, np.newaxis], cmap='rainbow')
-ax.set_title('xest', size=20, fontweight='bold')
+ax.imshow(x[:, np.newaxis], cmap="rainbow")
+ax.set_title("xest", size=20, fontweight="bold")
 ax.set_xticks([])
-ax.set_yticks(np.arange(M-1)+0.5)
-ax.grid(linewidth=3, color='white')
+ax.set_yticks(np.arange(M - 1) + 0.5)
+ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 ax = plt.subplot(gs[0, 1])
-ax.text(0.35, 0.5, '=', horizontalalignment='center',
-        verticalalignment='center', size=40, fontweight='bold')
-ax.axis('off')
+ax.text(
+    0.35,
+    0.5,
+    "=",
+    horizontalalignment="center",
+    verticalalignment="center",
+    size=40,
+    fontweight="bold",
+)
+ax.axis("off")
 ax = plt.subplot(gs[0, 2:5])
-ax.imshow(Aop.inv(), cmap='rainbow')
-ax.set_title(r'A$^{-1}$', size=20, fontweight='bold')
-ax.set_xticks(np.arange(N-1)+0.5)
-ax.set_yticks(np.arange(M-1)+0.5)
-ax.grid(linewidth=3, color='white')
+ax.imshow(Aop.inv(), cmap="rainbow")
+ax.set_title(r"A$^{-1}$", size=20, fontweight="bold")
+ax.set_xticks(np.arange(N - 1) + 0.5)
+ax.set_yticks(np.arange(M - 1) + 0.5)
+ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 ax = plt.subplot(gs[0, 5])
-ax.imshow(y[:, np.newaxis], cmap='rainbow')
-ax.set_title('y', size=20, fontweight='bold')
+ax.imshow(y[:, np.newaxis], cmap="rainbow")
+ax.set_title("y", size=20, fontweight="bold")
 ax.set_xticks([])
-ax.set_yticks(np.arange(N-1)+0.5)
-ax.grid(linewidth=3, color='white')
+ax.set_yticks(np.arange(N - 1) + 0.5)
+ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 
@@ -117,10 +131,10 @@ ax.yaxis.set_ticklabels([])
 # Let's also plot the matrix eigenvalues
 
 plt.figure(figsize=(8, 3))
-plt.plot(Aop.eigs(), 'k', lw=2)
-plt.title('Eigenvalues', size=16, fontweight='bold')
-plt.xlabel('#eigenvalue')
-plt.xlabel('intensity')
+plt.plot(Aop.eigs(), "k", lw=2)
+plt.title("Eigenvalues", size=16, fontweight="bold")
+plt.xlabel("#eigenvalue")
+plt.xlabel("intensity")
 plt.tight_layout()
 
 ###############################################################################
@@ -129,37 +143,37 @@ N, M = 200, 50
 A = np.random.normal(0, 1, (N, M))
 x = np.ones(M)
 
-Aop = pylops.MatrixMult(A, dtype='float64')
-y = Aop*x
+Aop = pylops.MatrixMult(A, dtype="float64")
+y = Aop * x
 yn = y + np.random.normal(0, 0.3, N)
 
-xest = Aop/y
-xnest = Aop/yn
+xest = Aop / y
+xnest = Aop / yn
 
 plt.figure(figsize=(8, 3))
-plt.plot(x, 'k', lw=2, label='True')
-plt.plot(xest, '--r', lw=2, label='Noise-free')
-plt.plot(xnest, '--g', lw=2, label='Noisy')
-plt.title('Matrix inversion', size=16, fontweight='bold')
+plt.plot(x, "k", lw=2, label="True")
+plt.plot(xest, "--r", lw=2, label="Noise-free")
+plt.plot(xnest, "--g", lw=2, label="Noisy")
+plt.title("Matrix inversion", size=16, fontweight="bold")
 plt.legend()
 
 ###############################################################################
 # And we can also use a sparse matrix from the :obj:`scipy.sparse`
 # family of sparse matrices.
 N, M = 5, 5
-A = rand(N, M , density=0.75)
+A = rand(N, M, density=0.75)
 x = np.ones(M)
 
-Aop = pylops.MatrixMult(A, dtype='float64')
-y = Aop*x
-xest = Aop/y
+Aop = pylops.MatrixMult(A, dtype="float64")
+y = Aop * x
+xest = Aop / y
 
-print('A= %s' % Aop.A.todense())
-print('A^-1=', Aop.inv().todense())
-print('eigs=', Aop.eigs())
-print('x= %s' % x)
-print('y= %s' % y)
-print('lsqr solution xest= %s' % xest)
+print("A= %s" % Aop.A.todense())
+print("A^-1=", Aop.inv().todense())
+print("eigs=", Aop.eigs())
+print("x= %s" % x)
+print("y= %s" % y)
+print("lsqr solution xest= %s" % xest)
 
 ###############################################################################
 # Finally, in several circumstances the input model :math:`\mathbf{x}` may
@@ -183,19 +197,16 @@ print('lsqr solution xest= %s' % xest)
 # and apply it using the same implementation of the
 # :py:class:`pylops.MatrixMult` operator by simply telling the operator how we
 # want the model to be organized through the ``dims`` input parameter.
-A = np.array([[1., 2.], [4., 5.]])
-x = np.array([[1., 1.],
-              [2., 2.],
-              [3., 3.]])
+A = np.array([[1.0, 2.0], [4.0, 5.0]])
+x = np.array([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
 
 Aop = pylops.MatrixMult(A, dims=(3,), dtype='float64')
 y = Aop*x.ravel()
 
-xest, istop, itn, r1norm, r2norm = \
-        lsqr(Aop, y, damp=1e-10, iter_lim=10, show=0)[0:5]
+xest, istop, itn, r1norm, r2norm = lsqr(Aop, y, damp=1e-10, iter_lim=10, show=0)[0:5]
 xest = xest.reshape(3, 2)
 
-print('A= %s' % A)
-print('x= %s' % x)
-print('y= %s' % y)
-print('lsqr solution xest= %s' % xest)
+print("A= %s" % A)
+print("x= %s" % x)
+print("y= %s" % y)
+print("lsqr solution xest= %s" % xest)

@@ -1,6 +1,7 @@
-from math import log, ceil
+from math import ceil, log
 
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.basicoperators import Pad
 
@@ -37,8 +38,7 @@ def _predict_trace(trace, t, dt, dx, slope, adj=False):
 
     """
     newt = t - dx * slope
-    sinc = np.tile(newt, (len(newt), 1)) - \
-           np.tile(t[:, np.newaxis], (1, len(newt)))
+    sinc = np.tile(newt, (len(newt), 1)) - np.tile(t[:, np.newaxis], (1, len(newt)))
     if adj:
         tracenew = np.dot(trace, np.sinc(sinc / dt).T)
     else:
@@ -97,17 +97,25 @@ def _predict_haar(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
         pred_tmp = traces[ix]
         if adj:
             for irepeat in range(repeat - 1, -1, -1):
-                #print('Slope at', ix * slopejump + iback * repeat + idir * irepeat)
-                pred_tmp = \
-                    _predict_trace(pred_tmp, t, dt, idir * dx,
-                                   slopes[ix * slopejump + iback * repeat + idir * irepeat],
-                                   adj=True)
+                # print('Slope at', ix * slopejump + iback * repeat + idir * irepeat)
+                pred_tmp = _predict_trace(
+                    pred_tmp,
+                    t,
+                    dt,
+                    idir * dx,
+                    slopes[ix * slopejump + iback * repeat + idir * irepeat],
+                    adj=True,
+                )
         else:
             for irepeat in range(repeat):
-                #print('Slope at', ix * slopejump + iback * repeat + idir * irepeat)
-                pred_tmp = \
-                    _predict_trace(pred_tmp, t, dt, idir * dx,
-                                   slopes[ix * slopejump + iback * repeat + idir * irepeat])
+                # print('Slope at', ix * slopejump + iback * repeat + idir * irepeat)
+                pred_tmp = _predict_trace(
+                    pred_tmp,
+                    t,
+                    dt,
+                    idir * dx,
+                    slopes[ix * slopejump + iback * repeat + idir * irepeat],
+                )
         pred[ix] = pred_tmp
     return pred
 
@@ -131,59 +139,85 @@ def _predict_lin(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
     pred = np.zeros_like(traces)
     for ix in range(nx):
         pred_tmp = traces[ix]
-        #print('Data+ at', ix * slopejump)
+        # print('Data+ at', ix * slopejump)
         if adj:
             if not ((ix == 0 and not backward) or (ix == nx - 1 and backward)):
                 pred_tmp1 = traces[ix - idir]
-            #if ix > 0: print('Data- at', (ix - idir) * slopejump)
+            # if ix > 0: print('Data- at', (ix - idir) * slopejump)
             for irepeat in range(repeat - 1, -1, -1):
                 if (ix == 0 and not backward) or (ix == nx - 1 and backward):
-                    #print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
-                    pred_tmp = \
-                        _predict_trace(pred_tmp, t, dt, idir * dx,
-                                       slopes[ix * slopejump + iback * repeat + idir * irepeat],
-                                       adj=True)
+                    # print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
+                    pred_tmp = _predict_trace(
+                        pred_tmp,
+                        t,
+                        dt,
+                        idir * dx,
+                        slopes[ix * slopejump + iback * repeat + idir * irepeat],
+                        adj=True,
+                    )
                     pred_tmp1 = 0
                 else:
-                    #print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
-                    #print('Slope- at', ix * slopejump + iback * repeat - idir * irepeat)
-                    pred_tmp = \
-                        _predict_trace(pred_tmp, t, dt, idir * dx,
-                                       slopes[ix * slopejump + iback * repeat + idir * irepeat],
-                                       adj=True)
-                    pred_tmp1 = \
-                        _predict_trace(pred_tmp1, t, dt, (-idir) * dx,
-                                       slopes[ix * slopejump + iback * repeat - idir * irepeat],
-                                       adj=True)
+                    # print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
+                    # print('Slope- at', ix * slopejump + iback * repeat - idir * irepeat)
+                    pred_tmp = _predict_trace(
+                        pred_tmp,
+                        t,
+                        dt,
+                        idir * dx,
+                        slopes[ix * slopejump + iback * repeat + idir * irepeat],
+                        adj=True,
+                    )
+                    pred_tmp1 = _predict_trace(
+                        pred_tmp1,
+                        t,
+                        dt,
+                        (-idir) * dx,
+                        slopes[ix * slopejump + iback * repeat - idir * irepeat],
+                        adj=True,
+                    )
         else:
             if not ((ix == nx - 1 and not backward) or (ix == 0 and backward)):
                 pred_tmp1 = traces[ix + idir]
-            #if ix < nx - 1: print('Data- at', (ix + idir) * slopejump)
+            # if ix < nx - 1: print('Data- at', (ix + idir) * slopejump)
             for irepeat in range(repeat):
                 if (ix == nx - 1 and not backward) or (ix == 0 and backward):
-                    #print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
-                    pred_tmp = \
-                        _predict_trace(pred_tmp, t, dt, idir * dx,
-                                       slopes[ix * slopejump + iback * repeat + idir * irepeat])
+                    # print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
+                    pred_tmp = _predict_trace(
+                        pred_tmp,
+                        t,
+                        dt,
+                        idir * dx,
+                        slopes[ix * slopejump + iback * repeat + idir * irepeat],
+                    )
                     pred_tmp1 = 0
                 else:
-                    #print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
-                    #print('Slope- at', (ix + idir) * slopejump + iback * repeat - idir * irepeat)
-                    pred_tmp = \
-                        _predict_trace(pred_tmp, t, dt, idir * dx,
-                                       slopes[ix * slopejump + iback * repeat + idir * irepeat])
-                    pred_tmp1 = \
-                        _predict_trace(pred_tmp1, t, dt, (-idir) * dx,
-                                       slopes[(ix + idir) * slopejump + iback * repeat - idir * irepeat])
+                    # print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
+                    # print('Slope- at', (ix + idir) * slopejump + iback * repeat - idir * irepeat)
+                    pred_tmp = _predict_trace(
+                        pred_tmp,
+                        t,
+                        dt,
+                        idir * dx,
+                        slopes[ix * slopejump + iback * repeat + idir * irepeat],
+                    )
+                    pred_tmp1 = _predict_trace(
+                        pred_tmp1,
+                        t,
+                        dt,
+                        (-idir) * dx,
+                        slopes[
+                            (ix + idir) * slopejump + iback * repeat - idir * irepeat
+                        ],
+                    )
 
-        #if (adj and ((ix == 0 and not backward) or (ix == nx - 1 and backward))) or
+        # if (adj and ((ix == 0 and not backward) or (ix == nx - 1 and backward))) or
         #    (ix == nx - 1 and not backward) or (ix == 0 and backward):
         #    pred[ix] = pred_tmp
-        #else:
+        # else:
         if ix == nx - 1:
-            pred[ix] = pred_tmp + pred_tmp1 / 2.
+            pred[ix] = pred_tmp + pred_tmp1 / 2.0
         else:
-            pred[ix] = (pred_tmp + pred_tmp1) / 2.
+            pred[ix] = (pred_tmp + pred_tmp1) / 2.0
     return pred
 
 
@@ -341,18 +375,26 @@ class Seislet(LinearOperator):
        Geophysics, 75, no. 3, V25-V38. 2010.
 
     """
-    def __init__(self, slopes, sampling=(1., 1.), level=None, kind='haar',
-                 inv=False, dtype='float64'):
+
+    def __init__(
+        self,
+        slopes,
+        sampling=(1.0, 1.0),
+        level=None,
+        kind="haar",
+        inv=False,
+        dtype="float64",
+    ):
         if len(sampling) != 2:
-            raise ValueError('provide two sampling steps')
+            raise ValueError("provide two sampling steps")
 
         # define predict and update steps
-        if kind == 'haar':
+        if kind == "haar":
             self.predict = _predict_haar
-        elif kind == 'linear':
+        elif kind == "linear":
             self.predict = _predict_lin
         else:
-            raise NotImplementedError('kind should be haar or linear')
+            raise NotImplementedError("kind should be haar or linear")
 
         # define padding for length to be power of 2
         dims = slopes.shape
@@ -379,8 +421,7 @@ class Seislet(LinearOperator):
         self.dx, self.dt = sampling
         self.slopes = (self.pad * slopes.ravel()).reshape(self.dims)
         self.inv = inv
-        self.shape = (int(np.prod(self.slopes.size)),
-                      int(np.prod(slopes.size)))
+        self.shape = (int(np.prod(self.slopes.size)), int(np.prod(slopes.size)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
@@ -391,27 +432,48 @@ class Seislet(LinearOperator):
         for ilevel in range(self.level):
             odd = x[1::2]
             even = x[::2]
-            res = odd - self.predict(even, self.dt, self.dx, self.slopes,
-                                     repeat=ilevel, backward=False)
-            x = even + self.predict(res, self.dt, self.dx,
-                                    self.slopes, repeat=ilevel,
-                                    backward=True) / 2.
-            y[self.levels_cum[ilevel]:self.levels_cum[ilevel + 1]] = res
-        y[self.levels_cum[-1]:] = x
+            res = odd - self.predict(
+                even, self.dt, self.dx, self.slopes, repeat=ilevel, backward=False
+            )
+            x = (
+                even
+                + self.predict(
+                    res, self.dt, self.dx, self.slopes, repeat=ilevel, backward=True
+                )
+                / 2.0
+            )
+            y[self.levels_cum[ilevel] : self.levels_cum[ilevel + 1]] = res
+        y[self.levels_cum[-1] :] = x
         return y.ravel()
 
     def _rmatvec(self, x):
         if not self.inv:
             x = np.reshape(x, self.dims)
-            y = x[self.levels_cum[-1]:]
+            y = x[self.levels_cum[-1] :]
             for ilevel in range(self.level, 0, -1):
-                res = x[self.levels_cum[ilevel - 1]:self.levels_cum[ilevel]]
-                odd = res + self.predict(y, self.dt, self.dx, self.slopes,
-                                         repeat=ilevel - 1, backward=True,
-                                         adj=True) / 2.
-                even = y - self.predict(odd, self.dt, self.dx, self.slopes,
-                                        repeat=ilevel - 1, backward=False,
-                                        adj=True)
+                res = x[self.levels_cum[ilevel - 1] : self.levels_cum[ilevel]]
+                odd = (
+                    res
+                    + self.predict(
+                        y,
+                        self.dt,
+                        self.dx,
+                        self.slopes,
+                        repeat=ilevel - 1,
+                        backward=True,
+                        adj=True,
+                    )
+                    / 2.0
+                )
+                even = y - self.predict(
+                    odd,
+                    self.dt,
+                    self.dx,
+                    self.slopes,
+                    repeat=ilevel - 1,
+                    backward=False,
+                    adj=True,
+                )
                 y = np.zeros((2 * even.shape[0], self.nt))
                 y[1::2] = odd
                 y[::2] = even
@@ -422,13 +484,19 @@ class Seislet(LinearOperator):
 
     def inverse(self, x):
         x = np.reshape(x, self.dims)
-        y = x[self.levels_cum[-1]:]
+        y = x[self.levels_cum[-1] :]
         for ilevel in range(self.level, 0, -1):
-            res = x[self.levels_cum[ilevel - 1]:self.levels_cum[ilevel]]
-            even = y - self.predict(res, self.dt, self.dx, self.slopes,
-                                    repeat=ilevel - 1, backward=True) / 2.
-            odd = res + self.predict(even, self.dt, self.dx, self.slopes,
-                                     repeat=ilevel - 1, backward=False)
+            res = x[self.levels_cum[ilevel - 1] : self.levels_cum[ilevel]]
+            even = (
+                y
+                - self.predict(
+                    res, self.dt, self.dx, self.slopes, repeat=ilevel - 1, backward=True
+                )
+                / 2.0
+            )
+            odd = res + self.predict(
+                even, self.dt, self.dx, self.slopes, repeat=ilevel - 1, backward=False
+            )
             y = np.zeros((2 * even.shape[0], self.nt))
             y[1::2] = odd
             y[::2] = even

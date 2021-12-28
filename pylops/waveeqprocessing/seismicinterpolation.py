@@ -1,24 +1,49 @@
 import logging
+
 import numpy as np
 
-from pylops.utils.dottest import dottest as Dottest
-from pylops import Restriction, SecondDerivative, Laplacian
-from pylops.signalprocessing import Interp, FFT2D, FFTND, \
-    Sliding2D, Sliding3D, Radon2D, Radon3D, ChirpRadon2D, ChirpRadon3D
+from pylops import Laplacian, Restriction, SecondDerivative
 from pylops.optimization.leastsquares import RegularizedInversion
 from pylops.optimization.sparsity import FISTA
+from pylops.signalprocessing import (
+    FFT2D,
+    FFTND,
+    ChirpRadon2D,
+    ChirpRadon3D,
+    Interp,
+    Radon2D,
+    Radon3D,
+    Sliding2D,
+    Sliding3D,
+)
 from pylops.utils.backend import get_array_module
+from pylops.utils.dottest import dottest as Dottest
+
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
-
-
-def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
-                         nffts=None, sampling=None,
-                         spataxis=None, spat1axis=None, taxis=None,
-                         paxis=None, p1axis=None, centeredh=True,
-                         nwins=None, nwin=None, nover=None, design=False,
-                         engine='numba', dottest=False, **kwargs_solver):
+def SeismicInterpolation(
+    data,
+    nrec,
+    iava,
+    iava1=None,
+    kind="fk",
+    nffts=None,
+    sampling=None,
+    spataxis=None,
+    spat1axis=None,
+    taxis=None,
+    paxis=None,
+    p1axis=None,
+    centeredh=True,
+    nwins=None,
+    nwin=None,
+    nover=None,
+    design=False,
+    engine="numba",
+    dottest=False,
+    **kwargs_solver
+):
     r"""Seismic interpolation (or regularization).
 
     Interpolate seismic data from irregular to regular spatial grid.
@@ -179,7 +204,7 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
     dtype = data.dtype
     ndims = data.ndim
     if ndims == 1 or ndims > 3:
-        raise ValueError('data must have 2 or 3 dimensions')
+        raise ValueError("data must have 2 or 3 dimensions")
     if ndims == 2:
         dimsd = data.shape
         dims = (nrec, dimsd[1])
@@ -197,142 +222,182 @@ def SeismicInterpolation(data, nrec, iava, iava1=None, kind='fk',
 
     # create restriction/interpolation operator
     if iava.dtype == float:
-        Rop = Interp(np.prod(dims), iava, dims=dims,
-                     dir=0, kind='linear', dtype=dtype)
+        Rop = Interp(np.prod(dims), iava, dims=dims, dir=0, kind="linear", dtype=dtype)
         if ndims == 3 and iava1 is not None:
             dims1 = (len(iava), nrec[1], dimsd[2])
-            Rop1 = Interp(np.prod(dims1), iava1, dims=dims1,
-                          dir=1, kind='linear', dtype=dtype)
+            Rop1 = Interp(
+                np.prod(dims1), iava1, dims=dims1, dir=1, kind="linear", dtype=dtype
+            )
             Rop = Rop1 * Rop
     else:
-        Rop = Restriction(np.prod(dims), iava, dims=dims,
-                          dir=0, dtype=dtype)
+        Rop = Restriction(np.prod(dims), iava, dims=dims, dir=0, dtype=dtype)
         if ndims == 3 and iava1 is not None:
             dims1 = (len(iava), nrec[1], dimsd[2])
-            Rop1 = Restriction(np.prod(dims1), iava1, dims=dims1,
-                               dir=1, dtype=dtype)
+            Rop1 = Restriction(np.prod(dims1), iava1, dims=dims1, dir=1, dtype=dtype)
             Rop = Rop1 * Rop
 
     # create other operators for inversion
-    if kind == 'spatial':
+    if kind == "spatial":
         prec = False
         dotcflag = 0
         if ndims == 3 and iava1 is not None:
             Regop = Laplacian(dims=dims, dirs=(0, 1), dtype=dtype)
         else:
-            Regop = SecondDerivative(np.prod(dims),
-                                     dims=(dims), dir=0,
-                                     dtype=dtype)
+            Regop = SecondDerivative(np.prod(dims), dims=(dims), dir=0, dtype=dtype)
         SIop = Rop
-    elif kind == 'fk':
+    elif kind == "fk":
         prec = True
         dimsp = nffts
         dotcflag = 1
         if ndims == 3:
             if sampling is None:
                 if spataxis is None or spat1axis is None or taxis is None:
-                    raise ValueError('Provide either sampling or spataxis, '
-                                     'spat1axis and taxis for kind=%s' % kind)
+                    raise ValueError(
+                        "Provide either sampling or spataxis, "
+                        "spat1axis and taxis for kind=%s" % kind
+                    )
                 else:
-                    sampling = (np.abs(spataxis[1] - spataxis[1]),
-                                np.abs(spat1axis[1] - spat1axis[1]),
-                                np.abs(taxis[1] - taxis[1]))
-            Pop = FFTND(dims=dims, nffts=nffts,
-                        sampling=sampling)
+                    sampling = (
+                        np.abs(spataxis[1] - spataxis[1]),
+                        np.abs(spat1axis[1] - spat1axis[1]),
+                        np.abs(taxis[1] - taxis[1]),
+                    )
+            Pop = FFTND(dims=dims, nffts=nffts, sampling=sampling)
             Pop = Pop.H
         else:
             if sampling is None:
                 if spataxis is None or taxis is None:
-                    raise ValueError('Provide either sampling or spataxis, '
-                                     'and taxis for kind=%s' % kind)
+                    raise ValueError(
+                        "Provide either sampling or spataxis, "
+                        "and taxis for kind=%s" % kind
+                    )
                 else:
-                    sampling = (np.abs(spataxis[1] - spataxis[1]),
-                                np.abs(taxis[1] - taxis[1]))
-            Pop = FFT2D(dims=dims, nffts=nffts,
-                        sampling=sampling)
+                    sampling = (
+                        np.abs(spataxis[1] - spataxis[1]),
+                        np.abs(taxis[1] - taxis[1]),
+                    )
+            Pop = FFT2D(dims=dims, nffts=nffts, sampling=sampling)
             Pop = Pop.H
         SIop = Rop * Pop
-    elif 'chirpradon' in kind:
+    elif "chirpradon" in kind:
         prec = True
         dotcflag = 0
         if ndims == 3:
-            Pop = ChirpRadon3D(taxis, spataxis, spat1axis,
-                               (np.max(paxis) * dspat / dt,
-                                np.max(p1axis) * dspat1 / dt)).H
+            Pop = ChirpRadon3D(
+                taxis,
+                spataxis,
+                spat1axis,
+                (np.max(paxis) * dspat / dt, np.max(p1axis) * dspat1 / dt),
+            ).H
             dimsp = (spataxis.size, spat1axis.size, taxis.size)
         else:
             Pop = ChirpRadon2D(taxis, spataxis, np.max(paxis) * dspat / dt).H
             dimsp = (spataxis.size, taxis.size)
         SIop = Rop * Pop
-    elif 'radon' in kind:
+    elif "radon" in kind:
         prec = True
         dotcflag = 0
-        kindradon = kind.split('-')[-1]
+        kindradon = kind.split("-")[-1]
         if ndims == 3:
-            Pop = Radon3D(taxis, spataxis, spat1axis, paxis, p1axis,
-                          centeredh=centeredh, kind=kindradon, engine=engine)
+            Pop = Radon3D(
+                taxis,
+                spataxis,
+                spat1axis,
+                paxis,
+                p1axis,
+                centeredh=centeredh,
+                kind=kindradon,
+                engine=engine,
+            )
             dimsp = (paxis.size, p1axis.size, taxis.size)
 
         else:
-            Pop = Radon2D(taxis, spataxis, paxis,
-                          centeredh=centeredh, kind=kindradon, engine=engine)
+            Pop = Radon2D(
+                taxis,
+                spataxis,
+                paxis,
+                centeredh=centeredh,
+                kind=kindradon,
+                engine=engine,
+            )
             dimsp = (paxis.size, taxis.size)
         SIop = Rop * Pop
-    elif kind == 'sliding':
+    elif kind == "sliding":
         prec = True
         dotcflag = 0
         if ndims == 3:
             nspat, nspat1 = spataxis.size, spat1axis.size
-            spataxis_local = np.linspace(-dspat * nwin[0] // 2,
-                                         dspat * nwin[0] // 2,
-                                         nwin[0])
-            spat1axis_local = np.linspace(-dspat1 * nwin[1] // 2,
-                                          dspat1 * nwin[1] // 2,
-                                          nwin[1])
+            spataxis_local = np.linspace(
+                -dspat * nwin[0] // 2, dspat * nwin[0] // 2, nwin[0]
+            )
+            spat1axis_local = np.linspace(
+                -dspat1 * nwin[1] // 2, dspat1 * nwin[1] // 2, nwin[1]
+            )
             dimsslid = (nspat, nspat1, taxis.size)
             if ncp == np:
                 npaxis, np1axis = paxis.size, p1axis.size
-                Op = Radon3D(taxis, spataxis_local, spat1axis_local,
-                             paxis, p1axis, centeredh=True,
-                             kind='linear', engine=engine)
+                Op = Radon3D(
+                    taxis,
+                    spataxis_local,
+                    spat1axis_local,
+                    paxis,
+                    p1axis,
+                    centeredh=True,
+                    kind="linear",
+                    engine=engine,
+                )
             else:
                 npaxis, np1axis = nwin[0], nwin[1]
-                Op = ChirpRadon3D(taxis, spataxis_local, spat1axis_local,
-                                  (np.max(paxis) * dspat / dt,
-                                   np.max(p1axis) * dspat1 / dt)).H
+                Op = ChirpRadon3D(
+                    taxis,
+                    spataxis_local,
+                    spat1axis_local,
+                    (np.max(paxis) * dspat / dt, np.max(p1axis) * dspat1 / dt),
+                ).H
             dimsp = (nwins[0] * npaxis, nwins[1] * np1axis, dimsslid[2])
-            Pop = Sliding3D(Op, dimsp, dimsslid, nwin, nover,
-                            (npaxis, np1axis), tapertype='cosine')
+            Pop = Sliding3D(
+                Op, dimsp, dimsslid, nwin, nover, (npaxis, np1axis), tapertype="cosine"
+            )
             # to be able to reshape correctly the preconditioned model
             dimsp = (nwins[0], nwins[1], npaxis, np1axis, dimsslid[2])
         else:
             nspat = spataxis.size
-            spataxis_local = np.linspace(-dspat * nwin // 2,
-                                         dspat * nwin // 2,
-                                         nwin)
+            spataxis_local = np.linspace(-dspat * nwin // 2, dspat * nwin // 2, nwin)
             dimsslid = (nspat, taxis.size)
             if ncp == np:
                 npaxis = paxis.size
-                Op = Radon2D(taxis, spataxis_local, paxis, centeredh=True,
-                             kind='linear', engine=engine)
+                Op = Radon2D(
+                    taxis,
+                    spataxis_local,
+                    paxis,
+                    centeredh=True,
+                    kind="linear",
+                    engine=engine,
+                )
             else:
                 npaxis = nwin
-                Op = ChirpRadon2D(taxis, spataxis_local,
-                                  np.max(paxis) * dspat / dt).H
+                Op = ChirpRadon2D(taxis, spataxis_local, np.max(paxis) * dspat / dt).H
             dimsp = (nwins * npaxis, dimsslid[1])
-            Pop = Sliding2D(Op, dimsp, dimsslid, nwin, nover,
-                            tapertype='cosine', design=design)
+            Pop = Sliding2D(
+                Op, dimsp, dimsslid, nwin, nover, tapertype="cosine", design=design
+            )
         SIop = Rop * Pop
     else:
-        raise KeyError('kind must be spatial, fk, radon-linear, '
-                       'radon-parabolic, radon-hyperbolic or sliding')
+        raise KeyError(
+            "kind must be spatial, fk, radon-linear, "
+            "radon-parabolic, radon-hyperbolic or sliding"
+        )
 
     # dot-test
     if dottest:
-        Dottest(SIop, np.prod(dimsd),
-                np.prod(dimsp) if prec else np.prod(dims),
-                complexflag=dotcflag,
-                raiseerror=True, verb=True)
+        Dottest(
+            SIop,
+            np.prod(dimsd),
+            np.prod(dimsp) if prec else np.prod(dims),
+            complexflag=dotcflag,
+            raiseerror=True,
+            verb=True,
+        )
 
     # inversion
     if kind == 'spatial':

@@ -1,13 +1,14 @@
 import numpy as np
 import scipy.signal as filt
 
+
 def _filterdata(d, nt, wav, wcenter):
-    r"""Apply filtering to data with wavelet wav
-    """
+    r"""Apply filtering to data with wavelet wav"""
     dwav = filt.lfilter(wav, 1, d, axis=-1)
     dwav = dwav[..., wcenter:]
-    d = d[..., :(nt - wcenter)]
+    d = d[..., : (nt - wcenter)]
     return d, dwav
+
 
 def makeaxis(par):
     r"""Create axes t, x, and y axes
@@ -40,12 +41,12 @@ def makeaxis(par):
     >>> # Create axis
     >>> t, t2, x, y = makeaxis(par)
     """
-    x = par['ox'] + np.arange(par['nx']) * par['dx']
-    t = par['ot'] + np.arange(par['nt']) * par['dt']
-    t2 = np.arange(-par['nt'] + 1, par['nt']) * par['dt']
+    x = par["ox"] + np.arange(par["nx"]) * par["dx"]
+    t = par["ot"] + np.arange(par["nt"]) * par["dt"]
+    t2 = np.arange(-par["nt"] + 1, par["nt"]) * par["dt"]
 
-    if 'oy' in par.keys():
-        y = par['oy'] + np.arange(par['ny']) * par['dy']
+    if "oy" in par.keys():
+        y = par["oy"] + np.arange(par["ny"]) * par["dy"]
     else:
         y = None
     return t, t2, x, y
@@ -102,7 +103,7 @@ def linear2d(x, t, v, t0, theta, amp, wav):
 
     # identify dimensions
     dt = t[1] - t[0]
-    wcenter = int(len(wav)/2)
+    wcenter = int(len(wav) / 2)
     nx = np.size(x)
     nt = np.size(t) + wcenter
     nevents = np.size(t0)
@@ -120,7 +121,7 @@ def linear2d(x, t, v, t0, theta, amp, wav):
                 d[ix, itevent[ix]] += amp[ievent] * (1 - dtevent[ix])
                 d[ix, itevent[ix] + 1] += amp[ievent] * dtevent[ix]
 
-    #filter events with certain wavelet
+    # filter events with certain wavelet
     d, dwav = _filterdata(d, nt, wav, wcenter)
     return d, dwav
 
@@ -175,8 +176,8 @@ def parabolic2d(x, t, t0, px, pxx, amp, wav):
         amp = (amp,)
 
     # identify dimensions
-    dt = t[1]-t[0]
-    wcenter = int(len(wav)/2)
+    dt = t[1] - t[0]
+    wcenter = int(len(wav) / 2)
     nx = np.size(x)
     nt = np.size(t) + wcenter
     nevents = np.size(t0)
@@ -193,7 +194,7 @@ def parabolic2d(x, t, t0, px, pxx, amp, wav):
                 d[ix, itevent[ix]] += amp[ievent] * (1 - dtevent[ix])
                 d[ix, itevent[ix] + 1] += amp[ievent] * dtevent[ix]
 
-    #filter events with certain wavelet
+    # filter events with certain wavelet
     d, dwav = _filterdata(d, nt, wav, wcenter)
     return d, dwav
 
@@ -242,13 +243,13 @@ def hyperbolic2d(x, t, t0, vrms, amp, wav):
         amp = (amp,)
 
     # identify dimensions
-    dt = t[1]-t[0]
-    wcenter = int(len(wav)/2)
+    dt = t[1] - t[0]
+    wcenter = int(len(wav) / 2)
     nx = np.size(x)
-    nt = np.size(t)+ wcenter
+    nt = np.size(t) + wcenter
     nevents = np.size(t0)
 
-    #create events
+    # create events
     d = np.zeros((nx, nt))
     for ievent in range(nevents):
         tevent = np.sqrt(t0[ievent] ** 2 + x ** 2 / vrms[ievent] ** 2)
@@ -260,7 +261,7 @@ def hyperbolic2d(x, t, t0, vrms, amp, wav):
                 d[ix, itevent[ix]] += amp[ievent] * (1 - dtevent[ix])
                 d[ix, itevent[ix] + 1] += amp[ievent] * dtevent[ix]
 
-    #filter events with certain wavelet
+    # filter events with certain wavelet
     d, dwav = _filterdata(d, nt, wav, wcenter)
     return d, dwav
 
@@ -323,17 +324,17 @@ def linear3d(x, y, t, v, t0, theta, phi, amp, wav):
 
     # identify dimensions
     dt = t[1] - t[0]
-    wcenter = int(len(wav)/2)
+    wcenter = int(len(wav) / 2)
     nx = np.size(x)
     ny = np.size(y)
     nt = np.size(t) + wcenter
     nevents = np.size(t0)
 
-    #create events
+    # create events
     d = np.zeros((ny, nx, nt))
     for ievent in range(nevents):
-        px = np.sin(np.deg2rad(theta[ievent]))*np.cos(np.deg2rad(phi[ievent]))/v
-        py = np.sin(np.deg2rad(theta[ievent]))*np.sin(np.deg2rad(phi[ievent]))/v
+        px = np.sin(np.deg2rad(theta[ievent])) * np.cos(np.deg2rad(phi[ievent])) / v
+        py = np.sin(np.deg2rad(theta[ievent])) * np.sin(np.deg2rad(phi[ievent])) / v
         for iy in range(ny):
             tevent = t0[ievent] + px * x + py * y[iy]
             tevent = (tevent - t[0]) / dt
@@ -344,7 +345,7 @@ def linear3d(x, y, t, v, t0, theta, phi, amp, wav):
                     d[iy, ix, itevent[ix]] += amp[ievent] * (1 - dtevent[ix])
                     d[iy, ix, itevent[ix] + 1] += amp[ievent] * dtevent[ix]
 
-    #filter events with certain wavelet
+    # filter events with certain wavelet
     d, dwav = _filterdata(d, nt, wav, wcenter)
     return d, dwav
 
@@ -404,20 +405,22 @@ def hyperbolic3d(x, y, t, t0, vrms_x, vrms_y, amp, wav):
         amp = (amp,)
 
     # identify dimensions
-    dt = t[1]-t[0]
-    wcenter = int(len(wav)/2)
+    dt = t[1] - t[0]
+    wcenter = int(len(wav) / 2)
     nx = np.size(x)
     ny = np.size(y)
     nt = np.size(t) + wcenter
     nevents = np.size(t0)
 
-    #create events
+    # create events
     d = np.zeros((ny, nx, nt))
     for ievent in range(nevents):
         for iy in range(ny):
-            tevent = np.sqrt(t0[ievent] ** 2 +
-                             x ** 2 / vrms_x[ievent] ** 2 +
-                             y[iy] ** 2 / vrms_y[ievent] ** 2)
+            tevent = np.sqrt(
+                t0[ievent] ** 2
+                + x ** 2 / vrms_x[ievent] ** 2
+                + y[iy] ** 2 / vrms_y[ievent] ** 2
+            )
             tevent = (tevent - t[0]) / dt
             itevent = tevent.astype(int)
             dtevent = tevent - itevent
@@ -426,6 +429,6 @@ def hyperbolic3d(x, y, t, t0, vrms_x, vrms_y, amp, wav):
                     d[iy, ix, itevent[ix]] += amp[ievent] * (1 - dtevent[ix])
                     d[iy, ix, itevent[ix] + 1] += amp[ievent] * dtevent[ix]
 
-    #filter events with certain wavelet
+    # filter events with certain wavelet
     d, dwav = _filterdata(d, nt, wav, wcenter)
     return d, dwav

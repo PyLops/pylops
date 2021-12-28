@@ -1,7 +1,8 @@
 import logging
-import numpy as np
 
+import numpy as np
 from scipy.sparse.linalg import lsqr
+
 from pylops import Spread
 from pylops.signalprocessing import Convolve1D
 from pylops.utils import dottest as Dottest
@@ -10,20 +11,21 @@ try:
     import skfmm
 except ModuleNotFoundError:
     skfmm = None
-    skfmm_message = 'Skfmm package not installed. Choose method=analytical ' \
-                    'if using constant velocity or run ' \
-                    '"pip install scikit-fmm" or ' \
-                    '"conda install -c conda-forge scikit-fmm".'
+    skfmm_message = (
+        "Skfmm package not installed. Choose method=analytical "
+        "if using constant velocity or run "
+        '"pip install scikit-fmm" or '
+        '"conda install -c conda-forge scikit-fmm".'
+    )
 except Exception as e:
     skfmm = None
-    skfmm_message = 'Failed to import skfmm (error:%s).' % e
+    skfmm_message = "Failed to import skfmm (error:%s)." % e
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _identify_geometry(z, x, srcs, recs, y=None):
-    """Identify geometry and acquisition size and sampling
-    """
+    """Identify geometry and acquisition size and sampling"""
     ns, nr = srcs.shape[1], recs.shape[1]
     nz, nx = len(z), len(x)
     dz = np.abs(z[1] - z[0])
@@ -44,11 +46,10 @@ def _identify_geometry(z, x, srcs, recs, y=None):
         dims = np.array([ny, nx, nz])
         dsamp = np.array([dy, dx, dz])
         origin = np.array([y[0], x[0], z[0]])
-    return ndims, shiftdim, dims, ny, nx, nz, ns, nr, dy, dx, dz, \
-           dsamp, origin
+    return ndims, shiftdim, dims, ny, nx, nz, ns, nr, dy, dx, dz, dsamp, origin
 
 
-def _traveltime_table(z, x, srcs, recs, vel, y=None, mode='eikonal'):
+def _traveltime_table(z, x, srcs, recs, vel, y=None, mode="eikonal"):
     r"""Traveltime table
 
     Compute traveltimes along the source-subsurface-receivers triplet
@@ -86,11 +87,12 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode='eikonal'):
         :math:`\lbrack (n_y*) n_x*n_z \times n_r \rbrack`
 
     """
-    ndims, shiftdim, _, ny, nx, nz, ns, nr, _, _, _, dsamp, origin = \
-        _identify_geometry(z, x, srcs, recs, y=y)
-    if mode == 'analytic':
+    ndims, shiftdim, _, ny, nx, nz, ns, nr, _, _, _, dsamp, origin = _identify_geometry(
+        z, x, srcs, recs, y=y
+    )
+    if mode == "analytic":
         if not isinstance(vel, (float, int)):
-            raise ValueError('vel must be scalar for mode=analytical')
+            raise ValueError("vel must be scalar for mode=analytical")
 
         # compute grid
         if ndims == 2:
@@ -103,59 +105,64 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode='eikonal'):
         dist_srcs2 = np.zeros((ny * nx * nz, ns))
         dist_recs2 = np.zeros((ny * nx * nz, nr))
         for isrc, src in enumerate(srcs.T):
-            dist_srcs2[:, isrc] = (X - src[0+ shiftdim]) ** 2 + \
-                                  (Z - src[1+ shiftdim]) ** 2
+            dist_srcs2[:, isrc] = (X - src[0 + shiftdim]) ** 2 + (
+                Z - src[1 + shiftdim]
+            ) ** 2
             if ndims == 3:
                 dist_srcs2[:, isrc] += (Y - src[0]) ** 2
         for irec, rec in enumerate(recs.T):
-            dist_recs2[:, irec] = (X - rec[0 + shiftdim]) ** 2 + \
-                                  (Z - rec[1 + shiftdim]) ** 2
+            dist_recs2[:, irec] = (X - rec[0 + shiftdim]) ** 2 + (
+                Z - rec[1 + shiftdim]
+            ) ** 2
             if ndims == 3:
                 dist_recs2[:, irec] += (Y - rec[0]) ** 2
         trav_srcs = np.sqrt(dist_srcs2) / vel
         trav_recs = np.sqrt(dist_recs2) / vel
 
-        trav = trav_srcs.reshape(ny * nx * nz, ns, 1) + \
-               trav_recs.reshape(ny * nx * nz, 1, nr)
+        trav = trav_srcs.reshape(ny * nx * nz, ns, 1) + trav_recs.reshape(
+            ny * nx * nz, 1, nr
+        )
         trav = trav.reshape(ny * nx * nz, ns * nr)
 
-    elif mode == 'eikonal':
+    elif mode == "eikonal":
         if skfmm is not None:
             trav_srcs = np.zeros((ny * nx * nz, ns))
             trav_recs = np.zeros((ny * nx * nz, nr))
             for isrc, src in enumerate(srcs.T):
-                src = np.round((src-origin)/dsamp).astype(np.int32)
+                src = np.round((src - origin) / dsamp).astype(np.int32)
                 phi = np.ones_like(vel)
                 if ndims == 2:
                     phi[src[0], src[1]] = -1
                 else:
                     phi[src[0], src[1], src[2]] = -1
-                trav_srcs[:, isrc] = (skfmm.travel_time(phi=phi,
-                                                        speed=vel,
-                                                        dx=dsamp)).ravel()
+                trav_srcs[:, isrc] = (
+                    skfmm.travel_time(phi=phi, speed=vel, dx=dsamp)
+                ).ravel()
             for irec, rec in enumerate(recs.T):
-                rec = np.round((rec-origin)/dsamp).astype(np.int32)
+                rec = np.round((rec - origin) / dsamp).astype(np.int32)
                 phi = np.ones_like(vel)
                 if ndims == 2:
                     phi[rec[0], rec[1]] = -1
                 else:
                     phi[rec[0], rec[1], rec[2]] = -1
-                trav_recs[:, irec] = (skfmm.travel_time(phi=phi,
-                                                        speed=vel,
-                                                        dx=dsamp)).ravel()
-            trav = trav_srcs.reshape(ny * nx * nz, ns, 1) + \
-                   trav_recs.reshape(ny * nx * nz, 1, nr)
+                trav_recs[:, irec] = (
+                    skfmm.travel_time(phi=phi, speed=vel, dx=dsamp)
+                ).ravel()
+            trav = trav_srcs.reshape(ny * nx * nz, ns, 1) + trav_recs.reshape(
+                ny * nx * nz, 1, nr
+            )
             trav = trav.reshape(ny * nx * nz, ns * nr)
         else:
             raise NotImplementedError(skfmm_message)
     else:
-        raise NotImplementedError('method must be analytic or eikonal')
+        raise NotImplementedError("method must be analytic or eikonal")
 
     return trav, trav_srcs, trav_recs
 
 
-def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
-                y=None, trav=None, mode='eikonal'):
+def Demigration(
+    z, x, t, srcs, recs, vel, wav, wavcenter, y=None, trav=None, mode="eikonal"
+):
     r"""Kirchoff Demigration operator.
 
     Traveltime based seismic demigration/migration operator.
@@ -233,40 +240,42 @@ def Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
     reflectivity.
 
     """
-    ndim, _, dims, ny, nx, nz, ns, nr, _, _, _, _, _ = \
-        _identify_geometry(z, x, srcs, recs, y=y)
+    ndim, _, dims, ny, nx, nz, ns, nr, _, _, _, _, _ = _identify_geometry(
+        z, x, srcs, recs, y=y
+    )
     dt = t[1] - t[0]
     nt = len(t)
-    if mode in ['analytic', 'eikonal', 'byot']:
-        if mode in ['analytic', 'eikonal']:
+    if mode in ["analytic", "eikonal", "byot"]:
+        if mode in ["analytic", "eikonal"]:
             # compute traveltime table
             trav = _traveltime_table(z, x, srcs, recs, vel, y=y, mode=mode)[0]
 
-        itrav = (trav / dt).astype('int32')
-        travd = (trav / dt - itrav)
+        itrav = (trav / dt).astype("int32")
+        travd = trav / dt - itrav
         if ndim == 2:
             itrav = itrav.reshape(nx, nz, ns * nr)
             travd = travd.reshape(nx, nz, ns * nr)
             dims = tuple(dims)
         else:
-            itrav = itrav.reshape(ny*nx, nz, ns * nr)
-            travd = travd.reshape(ny*nx, nz, ns * nr)
-            dims = (dims[0]*dims[1], dims[2])
+            itrav = itrav.reshape(ny * nx, nz, ns * nr)
+            travd = travd.reshape(ny * nx, nz, ns * nr)
+            dims = (dims[0] * dims[1], dims[2])
 
         # create operator
-        sop = Spread(dims=dims, dimsd=(ns * nr, nt),
-                     table=itrav, dtable=travd, engine='numba')
+        sop = Spread(
+            dims=dims, dimsd=(ns * nr, nt), table=itrav, dtable=travd, engine="numba"
+        )
 
-        cop = Convolve1D(ns * nr * nt, h=wav, offset=wavcenter,
-                         dims=(ns * nr, nt),
-                         dir=1)
+        cop = Convolve1D(
+            ns * nr * nt, h=wav, offset=wavcenter, dims=(ns * nr, nt), dir=1
+        )
         demop = cop * sop
     else:
-        raise NotImplementedError('method must be analytic or eikonal')
+        raise NotImplementedError("method must be analytic or eikonal")
     return demop
 
 
-class LSM():
+class LSM:
     r"""Least-squares Migration (LSM).
 
     Solve seismic migration as inverse problem given smooth velocity model
@@ -325,14 +334,33 @@ class LSM():
     referred to in the literature as *migration*.
 
     """
-    def __init__(self, z, x, t, srcs, recs, vel, wav, wavcenter, y=None,
-                 mode='eikonal', dottest=False):
+
+    def __init__(
+        self,
+        z,
+        x,
+        t,
+        srcs,
+        recs,
+        vel,
+        wav,
+        wavcenter,
+        y=None,
+        mode="eikonal",
+        dottest=False,
+    ):
         self.y, self.x, self.z = y, x, z
-        self.Demop = Demigration(z, x, t, srcs, recs, vel, wav, wavcenter,
-                                 y=y, mode=mode)
+        self.Demop = Demigration(
+            z, x, t, srcs, recs, vel, wav, wavcenter, y=y, mode=mode
+        )
         if dottest:
-            Dottest(self.Demop, self.Demop.shape[0], self.Demop.shape[1],
-                    raiseerror=True, verb=True)
+            Dottest(
+                self.Demop,
+                self.Demop.shape[0],
+                self.Demop.shape[1],
+                raiseerror=True,
+                verb=True,
+            )
 
     def solve(self, d, solver=lsqr, **kwargs_solver):
         r"""Solve least-squares migration equations with chosen ``solver``

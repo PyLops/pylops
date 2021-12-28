@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
@@ -58,8 +59,17 @@ class FirstDerivative(LinearOperator):
         y[i] = (x[i] - x[i-1]) / dx
 
     """
-    def __init__(self, N, dims=None, dir=0, sampling=1.,
-                 edge=False, dtype='float64', kind='centered'):
+
+    def __init__(
+        self,
+        N,
+        dims=None,
+        dir=0,
+        sampling=1.0,
+        edge=False,
+        dtype="float64",
+        kind="centered",
+    ):
         self.N = N
         self.sampling = sampling
         self.edge = edge
@@ -68,7 +78,7 @@ class FirstDerivative(LinearOperator):
             self.reshape = False
         else:
             if np.prod(dims) != self.N:
-                raise ValueError('product of dims must equal N')
+                raise ValueError("product of dims must equal N")
             else:
                 self.dims = dims
                 self.reshape = True
@@ -79,18 +89,17 @@ class FirstDerivative(LinearOperator):
         self.explicit = False
 
         # choose _matvec and _rmatvec kind
-        if self.kind == 'forward':
+        if self.kind == "forward":
             self._matvec = self._matvec_forward
             self._rmatvec = self._rmatvec_forward
-        elif self.kind == 'centered':
+        elif self.kind == "centered":
             self._matvec = self._matvec_centered
             self._rmatvec = self._rmatvec_centered
-        elif self.kind == 'backward':
+        elif self.kind == "backward":
             self._matvec = self._matvec_backward
             self._rmatvec = self._rmatvec_backward
         else:
-            raise NotImplementedError('kind must be forward, centered, '
-                                      'or backward')
+            raise NotImplementedError("kind must be forward, centered, " "or backward")
 
     def _matvec_forward(self, x):
         ncp = get_array_module(x)

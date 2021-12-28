@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 
 
@@ -82,15 +83,24 @@ class CausalIntegration(LinearOperator):
     no matter the choice of :math:`c`.
 
     """
-    def __init__(self, N, dims=None, dir=-1, sampling=1,
-                 halfcurrent=True, dtype='float64',
-                 kind='full', removefirst=False):
+
+    def __init__(
+        self,
+        N,
+        dims=None,
+        dir=-1,
+        sampling=1,
+        halfcurrent=True,
+        dtype="float64",
+        kind="full",
+        removefirst=False,
+    ):
         self.N = N
         self.dir = dir
         self.sampling = sampling
         self.kind = kind
-        if kind == 'full' and halfcurrent: # ensure backcompatibility
-            self.kind = 'half'
+        if kind == "full" and halfcurrent:  # ensure backcompatibility
+            self.kind = "half"
         self.removefirst = removefirst
         # define samples to remove from output
         rf = 0
@@ -102,14 +112,14 @@ class CausalIntegration(LinearOperator):
             self.reshape = False
         else:
             if np.prod(dims) != self.N:
-                raise ValueError('product of dims must equal N!')
+                raise ValueError("product of dims must equal N!")
             else:
                 self.dims = dims
                 self.dimsd = list(dims)
                 if self.removefirst:
                     self.dimsd[self.dir] -= 1
                 self.reshape = True
-        self.shape = (self.N-rf, self.N)
+        self.shape = (self.N - rf, self.N)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
@@ -119,10 +129,10 @@ class CausalIntegration(LinearOperator):
         if self.dir != -1:
             x = np.swapaxes(x, self.dir, -1)
         y = self.sampling * np.cumsum(x, axis=-1)
-        if self.kind in ('half', 'trapezoidal'):
-            y -= self.sampling * x / 2.
-        if self.kind == 'trapezoidal':
-            y[..., 1:] -= self.sampling * x[..., 0:1] / 2.
+        if self.kind in ("half", "trapezoidal"):
+            y -= self.sampling * x / 2.0
+        if self.kind == "trapezoidal":
+            y[..., 1:] -= self.sampling * x[..., 0:1] / 2.0
         if self.removefirst:
             y = y[..., 1:]
         if self.dir != -1:
@@ -137,11 +147,11 @@ class CausalIntegration(LinearOperator):
         if self.dir != -1:
             x = np.swapaxes(x, self.dir, -1)
         xflip = np.flip(x, axis=-1)
-        if self.kind == 'half':
-            y = self.sampling * (np.cumsum(xflip, axis=-1) - xflip / 2.)
-        elif self.kind == 'trapezoidal':
-            y = self.sampling * (np.cumsum(xflip, axis=-1) - xflip / 2.)
-            y[..., -1] = self.sampling * np.sum(xflip, axis=-1) / 2.
+        if self.kind == "half":
+            y = self.sampling * (np.cumsum(xflip, axis=-1) - xflip / 2.0)
+        elif self.kind == "trapezoidal":
+            y = self.sampling * (np.cumsum(xflip, axis=-1) - xflip / 2.0)
+            y[..., -1] = self.sampling * np.sum(xflip, axis=-1) / 2.0
         else:
             y = self.sampling * np.cumsum(xflip, axis=-1)
         y = np.flip(y, axis=-1)

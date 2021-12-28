@@ -1,22 +1,21 @@
 import logging
 import warnings
-import numpy as np
 
+import numpy as np
 from scipy.signal import filtfilt
 from scipy.sparse.linalg import lsqr
 from scipy.special import hankel2
-from pylops.utils import dottest as Dottest
-from pylops import Diagonal, Identity, Block, BlockDiag, Roll
-from pylops.waveeqprocessing.mdd import MDC
+
+from pylops import Block, BlockDiag, Diagonal, Identity, Roll
 from pylops.optimization.solver import cgls
-from pylops.utils.backend import get_array_module, get_module_name, \
-    to_cupy_conditional
+from pylops.utils import dottest as Dottest
+from pylops.utils.backend import get_array_module, get_module_name, to_cupy_conditional
+from pylops.waveeqprocessing.mdd import MDC
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d',
-               derivative=True):
+def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=True):
     r"""Analytical direct wave in acoustic media
 
     Compute the analytical acoustic 2d or 3d Green's function in frequency
@@ -82,11 +81,11 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d',
     f = 2 * np.pi * ncp.arange(nfft) / (dt * nfft)
     direct = ncp.zeros((nfft // 2 + 1, nr), dtype=np.complex128)
     for it in range(len(W)):
-        if kind == '2d':
-            #direct[it] = W[it] * np.exp(-1j * ((f[it] * trav) \
+        if kind == "2d":
+            # direct[it] = W[it] * np.exp(-1j * ((f[it] * trav) \
             #             + np.sign(f[it]) * np.pi / 4)) / \
             #             np.sqrt(8 * np.pi * np.abs(f[it]) * trav + 1e-10)
-            direct[it] = - W[it] * 1j * hankel2(0, f[it] * trav + 1e-10) / 4.
+            direct[it] = -W[it] * 1j * hankel2(0, f[it] * trav + 1e-10) / 4.0
         else:
             direct[it] = W[it] * np.exp(-1j * f[it] * trav) / (4 * np.pi * dist)
         if derivative:
@@ -96,7 +95,7 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind='2d',
     return direct
 
 
-class Marchenko():
+class Marchenko:
     r"""Marchenko redatuming
 
     Solve multi-dimensional Marchenko redatuming problem using
@@ -217,18 +216,33 @@ class Marchenko():
        pp. 792-813. 2015.
 
     """
-    def __init__(self, R, R1=None, dt=0.004, nt=None, dr=1.,
-                 nfmax=None, wav=None, toff=0.0, nsmooth=10,
-                 dtype='float64', saveRt=True, prescaled=False):
-        warnings.warn('A new implementation of Marchenko is provided in v1.5.0. '
-                      'This currently affects only the inner working of the '
-                      'operator, end-users can continue using the operator in '
-                      'the same way. Nevertheless, R1 is not required anymore'
-                      'even when R is provided in frequency domain. It is '
-                      'recommended to start using the operator without the R1 '
-                      'input as this behaviour will become default in '
-                      'version v2.0.0 and R1 will be removed from the inputs.',
-                      FutureWarning)
+
+    def __init__(
+        self,
+        R,
+        R1=None,
+        dt=0.004,
+        nt=None,
+        dr=1.0,
+        nfmax=None,
+        wav=None,
+        toff=0.0,
+        nsmooth=10,
+        dtype="float64",
+        saveRt=True,
+        prescaled=False,
+    ):
+        warnings.warn(
+            "A new implementation of Marchenko is provided in v1.5.0. "
+            "This currently affects only the inner working of the "
+            "operator, end-users can continue using the operator in "
+            "the same way. Nevertheless, R1 is not required anymore"
+            "even when R is provided in frequency domain. It is "
+            "recommended to start using the operator without the R1 "
+            "input as this behaviour will become default in "
+            "version v2.0.0 and R1 will be removed from the inputs.",
+            FutureWarning,
+        )
         # Save inputs into class
         self.dt = dt
         self.dr = dr
@@ -249,32 +263,42 @@ class Marchenko():
             self.ns, self.nr, self.nfmax = R.shape
             self.nt = nt
             if nt is None:
-                logging.error('nt must be provided as R is in frequency')
-        self.nt2 = int(2*self.nt-1)
-        self.t = np.arange(self.nt)*self.dt
+                logging.error("nt must be provided as R is in frequency")
+        self.nt2 = int(2 * self.nt - 1)
+        self.t = np.arange(self.nt) * self.dt
 
         # Fix nfmax to be at maximum equal to half of the size of fft samples
         if self.nfmax is None or self.nfmax > np.ceil((self.nt2 + 1) / 2):
-            self.nfmax = int(np.ceil((self.nt2+1)/2))
-            logging.warning('nfmax set equal to (nt+1)/2=%d', self.nfmax)
+            self.nfmax = int(np.ceil((self.nt2 + 1) / 2))
+            logging.warning("nfmax set equal to (nt+1)/2=%d", self.nfmax)
 
         # Add negative time to reflection data and convert to frequency
         if not np.iscomplexobj(R):
-            Rtwosided = np.concatenate((self.ncp.zeros((self.ns, self.nr,
-                                                        self.nt - 1),
-                                                       dtype=R.dtype),
-                                        R), axis=-1)
-            Rtwosided_fft = np.fft.rfft(Rtwosided, self.nt2,
-                                        axis=-1) / np.sqrt(self.nt2)
+            Rtwosided = np.concatenate(
+                (self.ncp.zeros((self.ns, self.nr, self.nt - 1), dtype=R.dtype), R),
+                axis=-1,
+            )
+            Rtwosided_fft = np.fft.rfft(Rtwosided, self.nt2, axis=-1) / np.sqrt(
+                self.nt2
+            )
             self.Rtwosided_fft = Rtwosided_fft[..., :nfmax]
         else:
             self.Rtwosided_fft = R
         # bring frequency to first dimension
         self.Rtwosided_fft = self.Rtwosided_fft.transpose(2, 0, 1)
 
-    def apply_onepoint(self, trav, G0=None, nfft=None, rtm=False, greens=False,
-                       dottest=False, fast=None, usematmul=False,
-                       **kwargs_solver):
+    def apply_onepoint(
+        self,
+        trav,
+        G0=None,
+        nfft=None,
+        rtm=False,
+        greens=False,
+        dottest=False,
+        fast=None,
+        usematmul=False,
+        **kwargs_solver
+    ):
         r"""Marchenko redatuming for one point
 
         Solve the Marchenko redatuming inverse problem for a single point
@@ -332,7 +356,7 @@ class Marchenko():
 
         w = np.zeros((self.nr, self.nt), dtype=self.dtype)
         for ir in range(self.nr):
-            w[ir, :trav_off[ir]] = 1
+            w[ir, : trav_off[ir]] = 1
         w = np.hstack((np.fliplr(w), w[:, 1:]))
         if self.nsmooth > 0:
             smooth = np.ones(self.nsmooth, dtype=self.dtype) / self.nsmooth
@@ -353,36 +377,51 @@ class Marchenko():
                       dir=0, shift=-1, dtype=self.dtype)
         Wop = Diagonal(w.T.ravel())
         Iop = Identity(self.nr * self.nt2)
-        Mop = Block([[Iop, -1 * Wop * Rop],
-                     [-1 * Wop * Rollop * R1op, Iop]]) * BlockDiag([Wop, Wop])
-        Gop = Block([[Iop, -1 * Rop],
-                     [-1 * Rollop * R1op, Iop]])
+        Mop = Block(
+            [[Iop, -1 * Wop * Rop], [-1 * Wop * Rollop * R1op, Iop]]
+        ) * BlockDiag([Wop, Wop])
+        Gop = Block([[Iop, -1 * Rop], [-1 * Rollop * R1op, Iop]])
 
         if dottest:
-            Dottest(Gop, 2 * self.ns * self.nt2,
-                    2 * self.nr * self.nt2,
-                    raiseerror=True, verb=True,
-                    backend=get_module_name(self.ncp))
+            Dottest(
+                Gop,
+                2 * self.ns * self.nt2,
+                2 * self.nr * self.nt2,
+                raiseerror=True,
+                verb=True,
+                backend=get_module_name(self.ncp),
+            )
         if dottest:
-            Dottest(Mop, 2 * self.ns * self.nt2,
-                    2 * self.nr * self.nt2,
-                    raiseerror=True, verb=True,
-                    backend=get_module_name(self.ncp))
+            Dottest(
+                Mop,
+                2 * self.ns * self.nt2,
+                2 * self.nr * self.nt2,
+                raiseerror=True,
+                verb=True,
+                backend=get_module_name(self.ncp),
+            )
 
         # Create input focusing function
         if G0 is None:
             if self.wav is not None and nfft is not None:
-                G0 = (directwave(self.wav, trav, self.nt,
-                                 self.dt, nfft=nfft, derivative=True)).T
+                G0 = (
+                    directwave(
+                        self.wav, trav, self.nt, self.dt, nfft=nfft, derivative=True
+                    )
+                ).T
                 G0 = to_cupy_conditional(self.Rtwosided_fft, G0)
             else:
-                logging.error('wav and/or nfft are not provided. '
-                              'Provide either G0 or wav and nfft...')
-                raise ValueError('wav and/or nfft are not provided. '
-                                 'Provide either G0 or wav and nfft...')
-        fd_plus = np.concatenate((np.fliplr(G0).T,
-                                  self.ncp.zeros((self.nt - 1, self.nr),
-                                                 dtype=self.dtype)))
+                logging.error(
+                    "wav and/or nfft are not provided. "
+                    "Provide either G0 or wav and nfft..."
+                )
+                raise ValueError(
+                    "wav and/or nfft are not provided. "
+                    "Provide either G0 or wav and nfft..."
+                )
+        fd_plus = np.concatenate(
+            (np.fliplr(G0).T, self.ncp.zeros((self.nt - 1, self.nr), dtype=self.dtype))
+        )
 
         # Run standard redatuming as benchmark
         if rtm:
@@ -403,18 +442,18 @@ class Marchenko():
                           **kwargs_solver)[0]
 
         f1_inv = f1_inv.reshape(2 * self.nt2, self.nr)
-        f1_inv_tot = f1_inv + np.concatenate((self.ncp.zeros((self.nt2,
-                                                              self.nr),
-                                                             dtype=self.dtype),
-                                              fd_plus))
-        f1_inv_minus = f1_inv_tot[:self.nt2].T
-        f1_inv_plus = f1_inv_tot[self.nt2:].T
+        f1_inv_tot = f1_inv + np.concatenate(
+            (self.ncp.zeros((self.nt2, self.nr), dtype=self.dtype), fd_plus)
+        )
+        f1_inv_minus = f1_inv_tot[: self.nt2].T
+        f1_inv_plus = f1_inv_tot[self.nt2 :].T
         if greens:
             # Create Green's functions
             g_inv = Gop * f1_inv_tot.ravel()
             g_inv = g_inv.reshape(2 * self.nt2, self.ns)
-            g_inv_minus, g_inv_plus = -g_inv[:self.nt2].T, \
-                                      np.fliplr(g_inv[self.nt2:].T)
+            g_inv_minus, g_inv_plus = -g_inv[: self.nt2].T, np.fliplr(
+                g_inv[self.nt2 :].T
+            )
         if rtm and greens:
             return f1_inv_minus, f1_inv_plus, p0_minus, g_inv_minus, g_inv_plus
         elif rtm:
@@ -424,9 +463,17 @@ class Marchenko():
         else:
             return f1_inv_minus, f1_inv_plus
 
-    def apply_multiplepoints(self, trav, G0=None, nfft=None,
-                             rtm=False, greens=False,
-                             dottest=False, usematmul=False, **kwargs_solver):
+    def apply_multiplepoints(
+        self,
+        trav,
+        G0=None,
+        nfft=None,
+        rtm=False,
+        greens=False,
+        dottest=False,
+        usematmul=False,
+        **kwargs_solver
+    ):
         r"""Marchenko redatuming for multiple points
 
         Solve the Marchenko redatuming inverse problem for multiple
@@ -488,7 +535,7 @@ class Marchenko():
         w = np.zeros((self.nr, nvs, self.nt), dtype=self.dtype)
         for ir in range(self.nr):
             for ivs in range(nvs):
-                w[ir, ivs, :trav_off[ir, ivs]] = 1
+                w[ir, ivs, : trav_off[ir, ivs]] = 1
         w = np.concatenate((np.flip(w, axis=-1), w[:, :, 1:]), axis=-1)
         if self.nsmooth > 0:
             smooth = np.ones(self.nsmooth, dtype=self.dtype) / self.nsmooth
@@ -509,39 +556,61 @@ class Marchenko():
                       dir=0, shift=-1, dtype=self.dtype)
         Wop = Diagonal(w.transpose(2, 0, 1).ravel())
         Iop = Identity(self.nr * nvs * self.nt2)
-        Mop = Block([[Iop, -1 * Wop * Rop],
-                     [-1 * Wop * Rollop * R1op, Iop]]) * BlockDiag([Wop, Wop])
-        Gop = Block([[Iop, -1 * Rop],
-                     [-1 * Rollop * R1op, Iop]])
+        Mop = Block(
+            [[Iop, -1 * Wop * Rop], [-1 * Wop * Rollop * R1op, Iop]]
+        ) * BlockDiag([Wop, Wop])
+        Gop = Block([[Iop, -1 * Rop], [-1 * Rollop * R1op, Iop]])
 
         if dottest:
-            Dottest(Gop, 2 * self.nr * nvs * self.nt2,
-                    2 * self.nr * nvs * self.nt2,
-                    raiseerror=True, verb=True,
-                    backend=get_module_name(self.ncp))
+            Dottest(
+                Gop,
+                2 * self.nr * nvs * self.nt2,
+                2 * self.nr * nvs * self.nt2,
+                raiseerror=True,
+                verb=True,
+                backend=get_module_name(self.ncp),
+            )
         if dottest:
-            Dottest(Mop, 2 * self.ns * nvs * self.nt2,
-                    2 * self.nr * nvs * self.nt2,
-                    raiseerror=True, verb=True,
-                    backend=get_module_name(self.ncp))
+            Dottest(
+                Mop,
+                2 * self.ns * nvs * self.nt2,
+                2 * self.nr * nvs * self.nt2,
+                raiseerror=True,
+                verb=True,
+                backend=get_module_name(self.ncp),
+            )
 
         # Create input focusing function
         if G0 is None:
             if self.wav is not None and nfft is not None:
                 G0 = np.zeros((self.nr, nvs, self.nt), dtype=self.dtype)
                 for ivs in range(nvs):
-                    G0[:, ivs] = (directwave(self.wav, trav[:, ivs],
-                                             self.nt, self.dt,
-                                             nfft=nfft, derivative=True)).T
+                    G0[:, ivs] = (
+                        directwave(
+                            self.wav,
+                            trav[:, ivs],
+                            self.nt,
+                            self.dt,
+                            nfft=nfft,
+                            derivative=True,
+                        )
+                    ).T
                 G0 = to_cupy_conditional(self.Rtwosided_fft, G0)
             else:
-                logging.error('wav and/or nfft are not provided. '
-                              'Provide either G0 or wav and nfft...')
-                raise ValueError('wav and/or nfft are not provided. '
-                                 'Provide either G0 or wav and nfft...')
-        fd_plus = np.concatenate((np.flip(G0, axis=-1).transpose(2, 0, 1),
-                                  self.ncp.zeros((self.nt - 1, self.nr, nvs),
-                                                 dtype = self.dtype)))
+                logging.error(
+                    "wav and/or nfft are not provided. "
+                    "Provide either G0 or wav and nfft..."
+                )
+                raise ValueError(
+                    "wav and/or nfft are not provided. "
+                    "Provide either G0 or wav and nfft..."
+                )
+        fd_plus = np.concatenate(
+            (
+                np.flip(G0, axis=-1).transpose(2, 0, 1),
+                self.ncp.zeros((self.nt - 1, self.nr, nvs), dtype=self.dtype),
+            )
+        )
 
         # Run standard redatuming as benchmark
         if rtm:
@@ -566,18 +635,18 @@ class Marchenko():
                           **kwargs_solver)[0]
 
         f1_inv = f1_inv.reshape(2 * self.nt2, self.nr, nvs)
-        f1_inv_tot = \
-            f1_inv + np.concatenate((self.ncp.zeros((self.nt2, self.nr, nvs),
-                                                    dtype=self.dtype), fd_plus))
-        f1_inv_minus = f1_inv_tot[:self.nt2].transpose(1, 2, 0)
-        f1_inv_plus = f1_inv_tot[self.nt2:].transpose(1, 2, 0)
+        f1_inv_tot = f1_inv + np.concatenate(
+            (self.ncp.zeros((self.nt2, self.nr, nvs), dtype=self.dtype), fd_plus)
+        )
+        f1_inv_minus = f1_inv_tot[: self.nt2].transpose(1, 2, 0)
+        f1_inv_plus = f1_inv_tot[self.nt2 :].transpose(1, 2, 0)
 
         if greens:
             # Create Green's functions
             g_inv = Gop * f1_inv_tot.ravel()
             g_inv = g_inv.reshape(2 * self.nt2, self.ns, nvs)
-            g_inv_minus = -g_inv[:self.nt2].transpose(1, 2, 0)
-            g_inv_plus = np.flip(g_inv[self.nt2:], axis=0).transpose(1, 2, 0)
+            g_inv_minus = -g_inv[: self.nt2].transpose(1, 2, 0)
+            g_inv_plus = np.flip(g_inv[self.nt2 :], axis=0).transpose(1, 2, 0)
 
         if rtm and greens:
             return f1_inv_minus, f1_inv_plus, p0_minus, g_inv_minus, g_inv_plus

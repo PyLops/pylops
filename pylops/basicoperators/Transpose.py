@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 
 
@@ -43,14 +44,15 @@ class Transpose(LinearOperator):
     The array is then rearragned into the original model dimensions ``dims``.
 
     """
-    def __init__(self, dims, axes, dtype='float64'):
+
+    def __init__(self, dims, axes, dtype="float64"):
         self.dims = list(dims)
         self.axes = list(axes)
 
         # find out if all axes are present only once in axes
         ndims = len(self.dims)
         if len(np.unique(self.axes)) != ndims:
-            raise ValueError('axes must contain each direction once')
+            raise ValueError("axes must contain each direction once")
 
         # find out how axes should be transposed in adjoint mode
         self.axesd = np.zeros(ndims, dtype=np.int)

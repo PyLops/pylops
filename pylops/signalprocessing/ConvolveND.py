@@ -1,7 +1,12 @@
 import numpy as np
+
 from pylops import LinearOperator
-from pylops.utils.backend import get_array_module, get_convolve, \
-    get_correlate, to_cupy_conditional
+from pylops.utils.backend import (
+    get_array_module,
+    get_convolve,
+    get_correlate,
+    to_cupy_conditional,
+)
 
 
 class ConvolveND(LinearOperator):
@@ -46,8 +51,10 @@ class ConvolveND(LinearOperator):
     :obj:`pylops.signalprocessing.Convolve2D` operator.
 
     """
-    def __init__(self, N, h, dims, offset=None, dirs=None,
-                 method='fft', dtype='float64'):
+
+    def __init__(
+        self, N, h, dims, offset=None, dirs=None, method="fft", dtype="float64"
+    ):
         ncp = get_array_module(h)
         self.h = h
         self.nh = np.array(self.h.shape)
@@ -65,11 +72,13 @@ class ConvolveND(LinearOperator):
             if nh % 2 == 0:
                 self.offset[inh] -= 1
             if self.offset[inh] != 0:
-                pad[inh] = [self.offset[inh] if self.offset[inh] > 0 else 0,
-                            -self.offset[inh] if self.offset[inh] < 0 else 0]
+                pad[inh] = [
+                    self.offset[inh] if self.offset[inh] > 0 else 0,
+                    -self.offset[inh] if self.offset[inh] < 0 else 0,
+                ]
                 dopad = True
         if dopad:
-            self.h = ncp.pad(self.h, pad, mode='constant')
+            self.h = ncp.pad(self.h, pad, mode="constant")
         self.nh = self.h.shape
 
         # find out which directions are used for convolution and define offsets
@@ -80,7 +89,7 @@ class ConvolveND(LinearOperator):
             self.h = self.h.reshape(dimsh)
 
         if np.prod(dims) != N:
-            raise ValueError('product of dims must equal N!')
+            raise ValueError("product of dims must equal N!")
         else:
             self.dims = np.array(dims)
             self.reshape = True
@@ -101,7 +110,7 @@ class ConvolveND(LinearOperator):
             self.convolve = get_convolve(self.h)
             self.correlate = get_correlate(self.h)
         x = np.reshape(x, self.dims)
-        y = self.convolve(x, self.h, mode='same', method=self.method)
+        y = self.convolve(x, self.h, mode="same", method=self.method)
         y = y.ravel()
         return y
 
@@ -112,6 +121,6 @@ class ConvolveND(LinearOperator):
             self.convolve = get_convolve(self.h)
             self.correlate = get_correlate(self.h)
         x = np.reshape(x, self.dims)
-        y = self.correlate(x, self.h, mode='same', method=self.method)
+        y = self.correlate(x, self.h, mode="same", method=self.method)
         y = y.ravel()
         return y

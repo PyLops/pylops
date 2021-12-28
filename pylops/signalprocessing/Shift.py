@@ -1,10 +1,20 @@
 import numpy as np
+
 from pylops.basicoperators import Diagonal
 from pylops.signalprocessing import FFT
 
 
-def Shift(dims, shift, dir=0, nfft=None, sampling=1., real=False,
-          engine='numpy', dtype='complex128', **kwargs_fftw):
+def Shift(
+    dims,
+    shift,
+    dir=0,
+    nfft=None,
+    sampling=1.0,
+    real=False,
+    engine="numpy",
+    dtype="complex128",
+    **kwargs_fftw
+):
     r"""Shift operator
 
     Apply fractional shift in the frequency domain along a specific direction ]
@@ -63,8 +73,9 @@ def Shift(dims, shift, dir=0, nfft=None, sampling=1., real=False,
     chosen ``shift``.
 
     """
-    Fop = FFT(dims, dir, nfft, sampling, real=real,
-              engine=engine, dtype=dtype, **kwargs_fftw)
+    Fop = FFT(
+        dims, dir, nfft, sampling, real=real, engine=engine, dtype=dtype, **kwargs_fftw
+    )
     if isinstance(dims, int):
         dimsdiag = None
     else:
@@ -76,6 +87,3 @@ def Shift(dims, shift, dir=0, nfft=None, sampling=1., real=False,
     # force dtype to that of input (FFT always upcasts it to complex)
     Op.dtype = dtype
     return Op
-
-
-

@@ -1,16 +1,17 @@
 import logging
+
 import numpy as np
 
-from pylops.basicoperators import Diagonal, BlockDiag, Restriction, \
-    HStack
-from pylops.utils.tapers import taper3d
+from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.Sliding2D import _slidingsteps
+from pylops.utils.tapers import taper3d
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def Sliding3D(Op, dims, dimsd, nwin, nover, nop,
-              tapertype='hanning', design=False, nproc=1):
+def Sliding3D(
+    Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False, nproc=1
+):
     """3D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to patches of the model
@@ -74,17 +75,15 @@ def Sliding3D(Op, dims, dimsd, nwin, nover, nop,
 
     """
     # model windows
-    mwin0_ins, mwin0_ends = _slidingsteps(dims[0],
-                                          Op.shape[1]//(nop[1]*dims[2]), 0)
-    mwin1_ins, mwin1_ends = _slidingsteps(dims[1],
-                                          Op.shape[1]//(nop[0]*dims[2]), 0)
+    mwin0_ins, mwin0_ends = _slidingsteps(dims[0], Op.shape[1] // (nop[1] * dims[2]), 0)
+    mwin1_ins, mwin1_ends = _slidingsteps(dims[1], Op.shape[1] // (nop[0] * dims[2]), 0)
 
     # data windows
     dwin0_ins, dwin0_ends = _slidingsteps(dimsd[0], nwin[0], nover[0])
     dwin1_ins, dwin1_ends = _slidingsteps(dimsd[1], nwin[1], nover[1])
     nwins0 = len(dwin0_ins)
     nwins1 = len(dwin1_ins)
-    nwins = nwins0*nwins1
+    nwins = nwins0 * nwins1
 
     # create tapers
     if tapertype is not None:
@@ -92,24 +91,37 @@ def Sliding3D(Op, dims, dimsd, nwin, nover, nop,
 
     # check that identified number of windows agrees with mode size
     if design:
-        logging.warning('(%d,%d) windows required...', nwins0, nwins1)
-        logging.warning('model wins - start0:%s, end0:%s, start1:%s, end1:%s',
-                        str(mwin0_ins), str(mwin0_ends),
-                        str(mwin1_ins), str(mwin1_ends))
-        logging.warning('data wins - start0:%s, end0:%s, start1:%s, end1:%s',
-                        str(dwin0_ins), str(dwin0_ends),
-                        str(dwin1_ins), str(dwin1_ends))
+        logging.warning("(%d,%d) windows required...", nwins0, nwins1)
+        logging.warning(
+            "model wins - start0:%s, end0:%s, start1:%s, end1:%s",
+            str(mwin0_ins),
+            str(mwin0_ends),
+            str(mwin1_ins),
+            str(mwin1_ends),
+        )
+        logging.warning(
+            "data wins - start0:%s, end0:%s, start1:%s, end1:%s",
+            str(dwin0_ins),
+            str(dwin0_ends),
+            str(dwin1_ins),
+            str(dwin1_ends),
+        )
 
-    if nwins*Op.shape[1]//dims[2] != dims[0]*dims[1]:
-        raise ValueError('Model shape (dims=%s) is not consistent with chosen '
-                         'number of windows. Choose dims[0]=%d and '
-                         'dims[1]=%d for the operator to work with '
-                         'estimated number of windows, or create '
-                         'the operator with design=True to find out the'
-                         'optimal number of windows for the current '
-                         'model size...'
-                         % (str(dims), nwins0*Op.shape[1]//(nop[1]*dims[2]),
-                            nwins1 * Op.shape[1]//(nop[0]*dims[2])))
+    if nwins * Op.shape[1] // dims[2] != dims[0] * dims[1]:
+        raise ValueError(
+            "Model shape (dims=%s) is not consistent with chosen "
+            "number of windows. Choose dims[0]=%d and "
+            "dims[1]=%d for the operator to work with "
+            "estimated number of windows, or create "
+            "the operator with design=True to find out the"
+            "optimal number of windows for the current "
+            "model size..."
+            % (
+                str(dims),
+                nwins0 * Op.shape[1] // (nop[1] * dims[2]),
+                nwins1 * Op.shape[1] // (nop[0] * dims[2]),
+            )
+        )
     # transform to apply
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)], nproc=nproc)

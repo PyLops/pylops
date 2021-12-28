@@ -1,11 +1,12 @@
 import logging
-import numpy as np
 
-from numpy import tan, sin, cos
+import numpy as np
+from numpy import cos, sin, tan
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
@@ -47,7 +48,11 @@ def zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
 
     # Create theta1 array of angles in radiants
     if isinstance(theta1, (int, float)):
-        theta1 = ncp.array([float(theta1), ])
+        theta1 = ncp.array(
+            [
+                float(theta1),
+            ]
+        )
     elif isinstance(theta1, (list, tuple)):
         theta1 = ncp.array(theta1)
     theta1 = ncp.radians(theta1)
@@ -56,32 +61,50 @@ def zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     p = sin(theta1) / vp1
 
     # Calculate reflection & transmission angles for Zoeppritz
-    theta2 = ncp.arcsin(p * vp0) # Trans. angle of P-wave
-    phi1 = ncp.arcsin(p * vs1)   # Refl. angle of converted S-wave
-    phi2 = ncp.arcsin(p * vs0)   # Trans. angle of converted S-wave
+    theta2 = ncp.arcsin(p * vp0)  # Trans. angle of P-wave
+    phi1 = ncp.arcsin(p * vs1)  # Refl. angle of converted S-wave
+    phi2 = ncp.arcsin(p * vs0)  # Trans. angle of converted S-wave
 
     # Matrix form of Zoeppritz equation
-    M = ncp.array([[-sin(theta1), -cos(phi1), sin(theta2), cos(phi2)],
-                   [cos(theta1), -sin(phi1), cos(theta2), -sin(phi2)],
-                   [2 * rho1 * vs1 * sin(phi1) * cos(theta1),
-                    rho1 * vs1 * (1 - 2 * sin(phi1) ** 2),
-                    2 * rho0 * vs0 * sin(phi2) * cos(theta2),
-                    rho0 * vs0 * (1 - 2 * sin(phi2) ** 2)],
-                   [-rho1 * vp1 * (1 - 2 * sin(phi1) ** 2),
-                    rho1 * vs1 * sin(2 * phi1),
-                    rho0 * vp0 * (1 - 2 * sin(phi2) ** 2),
-                    -rho0 * vs0 * sin(2 * phi2)]], dtype='float')
+    M = ncp.array(
+        [
+            [-sin(theta1), -cos(phi1), sin(theta2), cos(phi2)],
+            [cos(theta1), -sin(phi1), cos(theta2), -sin(phi2)],
+            [
+                2 * rho1 * vs1 * sin(phi1) * cos(theta1),
+                rho1 * vs1 * (1 - 2 * sin(phi1) ** 2),
+                2 * rho0 * vs0 * sin(phi2) * cos(theta2),
+                rho0 * vs0 * (1 - 2 * sin(phi2) ** 2),
+            ],
+            [
+                -rho1 * vp1 * (1 - 2 * sin(phi1) ** 2),
+                rho1 * vs1 * sin(2 * phi1),
+                rho0 * vp0 * (1 - 2 * sin(phi2) ** 2),
+                -rho0 * vs0 * sin(2 * phi2),
+            ],
+        ],
+        dtype="float",
+    )
 
-    N = ncp.array([[sin(theta1), cos(phi1), -sin(theta2), -cos(phi2)],
-                   [cos(theta1), -sin(phi1), cos(theta2), -sin(phi2)],
-                   [2 * rho1 * vs1 * sin(phi1) * cos(theta1),
-                    rho1 * vs1 * (1 - 2 * sin(phi1) ** 2),
-                    2 * rho0 * vs0 * sin(phi2) * cos(theta2),
-                    rho0 * vs0 * (1 - 2 * sin(phi2) ** 2)],
-                   [rho1 * vp1 * (1 - 2 * sin(phi1) ** 2),
-                    -rho1 * vs1 * sin(2 * phi1),
-                    -rho0 * vp0 * (1 - 2 * sin(phi2) ** 2),
-                    rho0 * vs0 * sin(2 * phi2)]], dtype='float')
+    N = ncp.array(
+        [
+            [sin(theta1), cos(phi1), -sin(theta2), -cos(phi2)],
+            [cos(theta1), -sin(phi1), cos(theta2), -sin(phi2)],
+            [
+                2 * rho1 * vs1 * sin(phi1) * cos(theta1),
+                rho1 * vs1 * (1 - 2 * sin(phi1) ** 2),
+                2 * rho0 * vs0 * sin(phi2) * cos(theta2),
+                rho0 * vs0 * (1 - 2 * sin(phi2) ** 2),
+            ],
+            [
+                rho1 * vp1 * (1 - 2 * sin(phi1) ** 2),
+                -rho1 * vs1 * sin(2 * phi1),
+                -rho0 * vp0 * (1 - 2 * sin(phi2) ** 2),
+                rho0 * vs0 * sin(2 * phi2),
+            ],
+        ],
+        dtype="float",
+    )
 
     # Create Zoeppritz coefficient for all angles
     zoep = ncp.zeros((4, 4, M.shape[-1]))
@@ -94,7 +117,7 @@ def zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     return zoep
 
 
-def zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta1, element='PdPu'):
+def zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta1, element="PdPu"):
     """Single element of Zoeppritz solution.
 
     Simple wrapper to :py:class:`pylops.avo.avo.scattering_matrix`,
@@ -136,10 +159,14 @@ def zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta1, element='PdPu'):
     zoeppritz_pp : PP reflectivity element of Zoeppritz solution
 
     """
-    elements = np.array([['PdPu', 'SdPu', 'PuPu', 'SuPu'],
-                         ['PdSu', 'SdSu', 'PuSu', 'SuSu'],
-                         ['PdPd', 'SdPd', 'PuPd', 'SuPd'],
-                         ['PdSd', 'SdSd', 'PuSd', 'SuSd']])
+    elements = np.array(
+        [
+            ["PdPu", "SdPu", "PuPu", "SuPu"],
+            ["PdSu", "SdSu", "PuSu", "SuSu"],
+            ["PdPd", "SdPd", "PuPd", "SuPd"],
+            ["PdSd", "SdSd", "PuSd", "SuSd"],
+        ]
+    )
     refl = zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1)
     element = np.where(elements == element)
     return np.squeeze(refl[element])
@@ -180,7 +207,7 @@ def zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     zoeppritz_element : Single reflectivity element of Zoeppritz solution
 
     """
-    PPrefl = zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta1, 'PdPu')
+    PPrefl = zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta1, "PdPu")
     return PPrefl
 
 
@@ -241,22 +268,22 @@ def approx_zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     phi0 = ncp.arcsin(p * vs0)
 
     # Coefficients
-    a = rho0 * (1 - 2 * np.sin(phi0)**2.) - rho1 * (1 - 2 * np.sin(phi1)**2.)
-    b = rho0 * (1 - 2 * np.sin(phi0)**2.) + 2 * rho1 * np.sin(phi1)**2.
-    c = rho1 * (1 - 2 * np.sin(phi1)**2.) + 2 * rho0 * np.sin(phi0)**2.
-    d = 2 * (rho0 * vs0**2 - rho1 * vs1**2)
+    a = rho0 * (1 - 2 * np.sin(phi0) ** 2.0) - rho1 * (1 - 2 * np.sin(phi1) ** 2.0)
+    b = rho0 * (1 - 2 * np.sin(phi0) ** 2.0) + 2 * rho1 * np.sin(phi1) ** 2.0
+    c = rho1 * (1 - 2 * np.sin(phi1) ** 2.0) + 2 * rho0 * np.sin(phi0) ** 2.0
+    d = 2 * (rho0 * vs0 ** 2 - rho1 * vs1 ** 2)
 
     E = (b * np.cos(theta1) / vp1) + (c * np.cos(theta0) / vp0)
     F = (b * np.cos(phi1) / vs1) + (c * np.cos(phi0) / vs0)
-    G = a - d * np.cos(theta1)/vp1 * np.cos(phi0)/vs0
-    H = a - d * np.cos(theta0)/vp0 * np.cos(phi1)/vs1
+    G = a - d * np.cos(theta1) / vp1 * np.cos(phi0) / vs0
+    H = a - d * np.cos(theta0) / vp0 * np.cos(phi1) / vs1
 
-    D = E*F + G*H*p**2
+    D = E * F + G * H * p ** 2
 
-    rpp = (1 / D) * (F * (b * (ncp.cos(theta1) / vp1) - c *
-                          (ncp.cos(theta0) / vp0)) -
-                     H * p ** 2 * (a + d * (ncp.cos(theta1) / vp1) *
-                                   (ncp.cos(phi0) / vs0)))
+    rpp = (1 / D) * (
+        F * (b * (ncp.cos(theta1) / vp1) - c * (ncp.cos(theta0) / vp0))
+        - H * p ** 2 * (a + d * (ncp.cos(theta1) / vp1) * (ncp.cos(phi0) / vs0))
+    )
 
     return rpp
 
@@ -312,14 +339,14 @@ def akirichards(theta, vsvp, n=1):
     ncp = get_array_module(theta)
 
     theta = ncp.deg2rad(theta)
-    vsvp = vsvp*ncp.ones(n) if not isinstance(vsvp, ncp.ndarray) else vsvp
+    vsvp = vsvp * ncp.ones(n) if not isinstance(vsvp, ncp.ndarray) else vsvp
 
     theta = theta[:, np.newaxis] if vsvp.size > 1 else theta
     vsvp = vsvp[:, np.newaxis].T if vsvp.size > 1 else vsvp
 
-    G1 = 1. / (2. * cos(theta) ** 2) + 0 * vsvp
-    G2 = -4. * vsvp ** 2 * np.sin(theta) ** 2
-    G3 = 0.5 - 2. * vsvp ** 2 * sin(theta) ** 2
+    G1 = 1.0 / (2.0 * cos(theta) ** 2) + 0 * vsvp
+    G2 = -4.0 * vsvp ** 2 * np.sin(theta) ** 2
+    G3 = 0.5 - 2.0 * vsvp ** 2 * sin(theta) ** 2
 
     return G1, G2, G3
 
@@ -375,13 +402,13 @@ def fatti(theta, vsvp, n=1):
     ncp = get_array_module(theta)
 
     theta = ncp.deg2rad(theta)
-    vsvp = vsvp*ncp.ones(n) if not isinstance(vsvp, ncp.ndarray) else vsvp
+    vsvp = vsvp * ncp.ones(n) if not isinstance(vsvp, ncp.ndarray) else vsvp
 
     theta = theta[:, np.newaxis] if vsvp.size > 1 else theta
     vsvp = vsvp[:, np.newaxis].T if vsvp.size > 1 else vsvp
 
     G1 = 0.5 * (1 + np.tan(theta) ** 2) + 0 * vsvp
-    G2 = -4 * vsvp ** 2 * np.sin(theta)** 2
+    G2 = -4 * vsvp ** 2 * np.sin(theta) ** 2
     G3 = 0.5 * (4 * vsvp ** 2 * np.sin(theta) ** 2 - tan(theta) ** 2)
 
     return G1, G2, G3
@@ -444,13 +471,19 @@ def ps(theta, vsvp, n=1):
     vsvp = vsvp[:, np.newaxis].T if vsvp.size > 1 else vsvp
 
     phi = np.arcsin(vsvp * np.sin(theta))
-    #G1 = 0.0 * np.sin(theta) + 0 * vsvp
-    #G2 = (np.tan(phi) / vsvp) * (4 * np.sin(phi) ** 2 - 4 * vsvp * np.cos(theta) * np.cos(phi)) + 0 * vsvp
-    #G3 = -((np.tan(phi)) / (2 * vsvp)) * (1 + 2 * np.sin(phi) - 2 * vsvp * np.cos(theta) * np.cos(phi)) + 0 * vsvp
+    # G1 = 0.0 * np.sin(theta) + 0 * vsvp
+    # G2 = (np.tan(phi) / vsvp) * (4 * np.sin(phi) ** 2 - 4 * vsvp * np.cos(theta) * np.cos(phi)) + 0 * vsvp
+    # G3 = -((np.tan(phi)) / (2 * vsvp)) * (1 + 2 * np.sin(phi) - 2 * vsvp * np.cos(theta) * np.cos(phi)) + 0 * vsvp
 
     G1 = 0.0 * np.sin(theta) + 0 * vsvp
-    G2 = (np.tan(phi) / 2) * (4 * (vsvp * np.sin(phi)) ** 2 - 4 * vsvp * np.cos(theta) * np.cos(phi)) + 0 * vsvp
-    G3 = -(np.tan(phi) / 2) * (1 - 2 * (vsvp * np.sin(phi)) ** 2 + 2 * vsvp * np.cos(theta) * np.cos(phi)) + 0 * vsvp
+    G2 = (np.tan(phi) / 2) * (
+        4 * (vsvp * np.sin(phi)) ** 2 - 4 * vsvp * np.cos(theta) * np.cos(phi)
+    ) + 0 * vsvp
+    G3 = (
+        -(np.tan(phi) / 2)
+        * (1 - 2 * (vsvp * np.sin(phi)) ** 2 + 2 * vsvp * np.cos(theta) * np.cos(phi))
+        + 0 * vsvp
+    )
 
     return G1, G2, G3
 
@@ -507,8 +540,16 @@ class AVOLinearModelling(LinearOperator):
     :math:`x` and :math:`y`.
 
     """
-    def __init__(self, theta, vsvp=0.5, nt0=1, spatdims=None,
-                 linearization='akirich', dtype='float64'):
+
+    def __init__(
+        self,
+        theta,
+        vsvp=0.5,
+        nt0=1,
+        spatdims=None,
+        linearization="akirich",
+        dtype="float64",
+    ):
         self.ncp = get_array_module(theta)
 
         self.nt0 = nt0 if not isinstance(vsvp, self.ncp.ndarray) else len(vsvp)
@@ -517,30 +558,31 @@ class AVOLinearModelling(LinearOperator):
             self.spatdims = ()
             nspatdims = 1
         else:
-            self.spatdims = spatdims if isinstance(spatdims, tuple) \
-                else (spatdims,)
+            self.spatdims = spatdims if isinstance(spatdims, tuple) else (spatdims,)
             nspatdims = np.prod(spatdims)
 
         # Compute AVO coefficients
-        if linearization == 'akirich':
+        if linearization == "akirich":
             Gs = akirichards(theta, vsvp, n=self.nt0)
-        elif linearization == 'fatti':
+        elif linearization == "fatti":
             Gs = fatti(theta, vsvp, n=self.nt0)
-        elif linearization == 'ps':
+        elif linearization == "ps":
             Gs = ps(theta, vsvp, n=self.nt0)
         else:
-            logging.error('%s not an available '
-                          'linearization...', linearization)
-            raise NotImplementedError('%s not an available linearization...'
-                                      % linearization)
+            logging.error("%s not an available " "linearization...", linearization)
+            raise NotImplementedError(
+                "%s not an available linearization..." % linearization
+            )
 
         self.G = self.ncp.concatenate([gs.T[:, self.ncp.newaxis] for gs in Gs], axis=1)
         # add dimensions to G to account for horizonal axes
         for _ in range(len(self.spatdims)):
             self.G = self.G[..., np.newaxis]
         self.npars = len(Gs)
-        self.shape = (self.nt0*self.ntheta*nspatdims,
-                      self.nt0*self.npars*nspatdims)
+        self.shape = (
+            self.nt0 * self.ntheta * nspatdims,
+            self.nt0 * self.npars * nspatdims,
+        )
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
@@ -548,7 +590,13 @@ class AVOLinearModelling(LinearOperator):
         if self.spatdims is None:
             x = x.reshape(self.nt0, self.npars)
         else:
-            x = x.reshape((self.nt0, self.npars,) + self.spatdims)
+            x = x.reshape(
+                (
+                    self.nt0,
+                    self.npars,
+                )
+                + self.spatdims
+            )
         y = self.ncp.sum(self.G * x[:, :, self.ncp.newaxis], axis=1)
         return y
 
@@ -556,6 +604,12 @@ class AVOLinearModelling(LinearOperator):
         if self.spatdims is None:
             x = x.reshape(self.nt0, self.ntheta)
         else:
-            x = x.reshape((self.nt0, self.ntheta,) + self.spatdims)
+            x = x.reshape(
+                (
+                    self.nt0,
+                    self.ntheta,
+                )
+                + self.spatdims
+            )
         y = self.ncp.sum(self.G * x[:, self.ncp.newaxis], axis=2)
         return y
