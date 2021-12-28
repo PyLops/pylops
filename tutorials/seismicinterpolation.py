@@ -125,11 +125,11 @@ xsmooth, _, _ = pylops.waveeqprocessing.SeismicInterpolation(
 )
 
 # sparse inversion with FFT2
-nfft = 2**8
-FFTop = pylops.signalprocessing.FFT2D(dims=[par['nx'], par['nt']],
-                                      nffts=[nfft, nfft],
-                                      sampling=[par['dx'], par['dt']])
-X = FFTop*x.ravel()
+nfft = 2 ** 8
+FFTop = pylops.signalprocessing.FFT2D(
+    dims=[par["nx"], par["nt"]], nffts=[nfft, nfft], sampling=[par["dx"], par["dt"]]
+)
+X = FFTop * x.ravel()
 X = np.reshape(X, (nfft, nfft))
 
 xl1, Xl1, cost = pylops.waveeqprocessing.SeismicInterpolation(
@@ -221,11 +221,11 @@ Radop = pylops.signalprocessing.Radon2D(taxis, xaxis, px, engine="numba")
 RRop = Rop * Radop
 
 # adjoint
-Xadj_fromx = Radop.H*x.ravel()
-Xadj_fromx = Xadj_fromx.reshape(npx, par['nt'])
+Xadj_fromx = Radop.H * x.ravel()
+Xadj_fromx = Xadj_fromx.reshape(npx, par["nt"])
 
-Xadj = RRop.H*y.ravel()
-Xadj = Xadj.reshape(npx, par['nt'])
+Xadj = RRop.H * y.ravel()
+Xadj = Xadj.reshape(npx, par["nt"])
 
 # L1 inverse
 xl1, Xl1, cost = pylops.waveeqprocessing.SeismicInterpolation(
@@ -322,8 +322,8 @@ Rop = pylops.Restriction(
     par["nx"] * par["nt"], iava, dims=(par["nx"], par["nt"]), dir=0, dtype="float64"
 )
 
-y = Rop*x.ravel()
-xadj = Rop.H*y.ravel()
+y = Rop * x.ravel()
+xadj = Rop.H * y.ravel()
 
 y = y.reshape(Nsub, par["nt"])
 xadj = xadj.reshape(par["nx"], par["nt"])
@@ -357,11 +357,11 @@ Slidop = pylops.signalprocessing.Sliding2D(
 # adjoint
 RSop = Rop * Slidop
 
-Xadj_fromx = Slidop.H*x.ravel()
-Xadj_fromx = Xadj_fromx.reshape(npx*nwins, par['nt'])
+Xadj_fromx = Slidop.H * x.ravel()
+Xadj_fromx = Xadj_fromx.reshape(npx * nwins, par["nt"])
 
-Xadj = RSop.H*y.ravel()
-Xadj = Xadj.reshape(npx*nwins, par['nt'])
+Xadj = RSop.H * y.ravel()
+Xadj = Xadj.reshape(npx * nwins, par["nt"])
 
 # inverse
 xl1, Xl1, _ = pylops.waveeqprocessing.SeismicInterpolation(

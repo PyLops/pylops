@@ -184,25 +184,47 @@ def test_Radon3D(par):
     ):  # avoid timeout in travis for numba
 
         dt, dhy, dhx = 0.005, 1, 1
-        t = np.arange(par['nt']) * dt
-        hy = np.arange(par['nhy']) * dhy
-        hx = np.arange(par['nhx']) * dhx
-        py = np.linspace(0, par['pymax'], par['npy'])
-        px = np.linspace(0, par['pxmax'], par['npx'])
-        x = np.zeros((par['npy'], par['npx'], par['nt']))
-        x[3, 2, par['nt']//2] = 1
+        t = np.arange(par["nt"]) * dt
+        hy = np.arange(par["nhy"]) * dhy
+        hx = np.arange(par["nhx"]) * dhx
+        py = np.linspace(0, par["pymax"], par["npy"])
+        px = np.linspace(0, par["pxmax"], par["npx"])
+        x = np.zeros((par["npy"], par["npx"], par["nt"]))
+        x[3, 2, par["nt"] // 2] = 1
 
-        Rop = Radon3D(t, hy, hx, py, px, centeredh=par['centeredh'],
-                      interp=par['interp'], kind=par['kind'],
-                      onthefly=False, engine=par['engine'],
-                      dtype='float64')
-        R1op = Radon3D(t, hy, hx, py, px, centeredh=par['centeredh'],
-                       interp=par['interp'], kind=par['kind'],
-                       onthefly=True, engine=par['engine'],
-                       dtype='float64')
+        Rop = Radon3D(
+            t,
+            hy,
+            hx,
+            py,
+            px,
+            centeredh=par["centeredh"],
+            interp=par["interp"],
+            kind=par["kind"],
+            onthefly=False,
+            engine=par["engine"],
+            dtype="float64",
+        )
+        R1op = Radon3D(
+            t,
+            hy,
+            hx,
+            py,
+            px,
+            centeredh=par["centeredh"],
+            interp=par["interp"],
+            kind=par["kind"],
+            onthefly=True,
+            engine=par["engine"],
+            dtype="float64",
+        )
 
-        assert dottest(Rop, par['nhy']*par['nhx']*par['nt'],
-                       par['npy']*par['npx']*par['nt'], tol=1e-3)
+        assert dottest(
+            Rop,
+            par["nhy"] * par["nhx"] * par["nt"],
+            par["npy"] * par["npx"] * par["nt"],
+            tol=1e-3,
+        )
         y = Rop * x.ravel()
         y1 = R1op * x.ravel()
         assert_array_almost_equal(y, y1, decimal=4)

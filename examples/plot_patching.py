@@ -53,10 +53,10 @@ dims = (nwins[0] * nop[0], nwins[1] * nop[1])
 
 
 # Sliding window transform without taper
-Op = \
-    pylops.signalprocessing.FFT2D(nwin, nffts=nop)
-Slid = pylops.signalprocessing.Patch2D(Op.H, dims, dimsd, nwin, nover, nop,
-                                       tapertype=None, design=False)
+Op = pylops.signalprocessing.FFT2D(nwin, nffts=nop)
+Slid = pylops.signalprocessing.Patch2D(
+    Op.H, dims, dimsd, nwin, nover, nop, tapertype=None, design=False
+)
 fftdata = Slid.H * data.ravel()
 
 ###############################################################################

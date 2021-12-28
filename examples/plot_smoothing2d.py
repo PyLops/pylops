@@ -23,13 +23,13 @@ nsmooth1, nsmooth2 = 5, 3
 A = np.zeros((N, M))
 A[5, 10] = 1
 
-Sop = pylops.Smoothing2D(nsmooth=[nsmooth1, nsmooth2], dims=[N, M], dtype='float64')
-B = Sop*A.ravel()
+Sop = pylops.Smoothing2D(nsmooth=[nsmooth1, nsmooth2], dims=[N, M], dtype="float64")
+B = Sop * A.ravel()
 B = np.reshape(B, (N, M))
 
 ###############################################################################
 # After applying smoothing, we will also try to invert it.
-Aest = Sop/B.ravel()
+Aest = Sop / B.ravel()
 Aest = np.reshape(Aest, (N, M))
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 3))

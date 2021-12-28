@@ -69,20 +69,33 @@ imdeblurfista = pylops.optimization.sparsity.FISTA(
 )[0]
 imdeblurfista = Wop.H * imdeblurfista
 
-imdeblurtv = \
-    pylops.optimization.sparsity.SplitBregman(Cop, Dop, imblur.ravel(),
-                                              niter_outer=10, niter_inner=5,
-                                              mu=1.5, epsRL1s=[2e0, 2e0],
-                                              tol=1e-4, tau=1., show=False,
-                                              ** dict(iter_lim=5, damp=1e-4))[0]
+imdeblurtv = pylops.optimization.sparsity.SplitBregman(
+    Cop,
+    Dop,
+    imblur.ravel(),
+    niter_outer=10,
+    niter_inner=5,
+    mu=1.5,
+    epsRL1s=[2e0, 2e0],
+    tol=1e-4,
+    tau=1.0,
+    show=False,
+    **dict(iter_lim=5, damp=1e-4)
+)[0]
 
-imdeblurtv1 = \
-    pylops.optimization.sparsity.SplitBregman(Cop, DWop,
-                                              imblur.ravel(),
-                                              niter_outer=10, niter_inner=5,
-                                              mu=1.5, epsRL1s=[1e0, 1e0, 1e0],
-                                              tol=1e-4, tau=1., show=False,
-                                              ** dict(iter_lim=5, damp=1e-4))[0]
+imdeblurtv1 = pylops.optimization.sparsity.SplitBregman(
+    Cop,
+    DWop,
+    imblur.ravel(),
+    niter_outer=10,
+    niter_inner=5,
+    mu=1.5,
+    epsRL1s=[1e0, 1e0, 1e0],
+    tol=1e-4,
+    tau=1.0,
+    show=False,
+    **dict(iter_lim=5, damp=1e-4)
+)[0]
 
 # Reshape images
 imblur = imblur.reshape((Nz, Nx))

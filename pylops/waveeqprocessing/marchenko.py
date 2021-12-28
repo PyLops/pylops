@@ -364,17 +364,41 @@ class Marchenko:
         w = to_cupy_conditional(self.Rtwosided_fft, w)
 
         # Create operators
-        Rop = MDC(self.Rtwosided_fft, self.nt2, nv=1, dt=self.dt, dr=self.dr,
-                  twosided=True, conj=False, transpose=False,
-                  saveGt=self.saveRt, prescaled=self.prescaled,
-                  usematmul=usematmul, dtype=self.dtype)
-        R1op = MDC(self.Rtwosided_fft, self.nt2, nv=1, dt=self.dt, dr=self.dr,
-                   twosided=True, conj=True, transpose=False,
-                   saveGt=self.saveRt, prescaled=self.prescaled,
-                   usematmul=usematmul, dtype=self.dtype)
-        Rollop = Roll(self.nt2 * self.ns,
-                      dims=(self.nt2, self.ns),
-                      dir=0, shift=-1, dtype=self.dtype)
+        Rop = MDC(
+            self.Rtwosided_fft,
+            self.nt2,
+            nv=1,
+            dt=self.dt,
+            dr=self.dr,
+            twosided=True,
+            conj=False,
+            transpose=False,
+            saveGt=self.saveRt,
+            prescaled=self.prescaled,
+            usematmul=usematmul,
+            dtype=self.dtype,
+        )
+        R1op = MDC(
+            self.Rtwosided_fft,
+            self.nt2,
+            nv=1,
+            dt=self.dt,
+            dr=self.dr,
+            twosided=True,
+            conj=True,
+            transpose=False,
+            saveGt=self.saveRt,
+            prescaled=self.prescaled,
+            usematmul=usematmul,
+            dtype=self.dtype,
+        )
+        Rollop = Roll(
+            self.nt2 * self.ns,
+            dims=(self.nt2, self.ns),
+            dir=0,
+            shift=-1,
+            dtype=self.dtype,
+        )
         Wop = Diagonal(w.T.ravel())
         Iop = Identity(self.nr * self.nt2)
         Mop = Block(
@@ -430,16 +454,23 @@ class Marchenko:
 
         # Create data and inverse focusing functions
         d = Wop * Rop * fd_plus.ravel()
-        d = np.concatenate((d.reshape(self.nt2, self.ns),
-                            self.ncp.zeros((self.nt2, self.ns), self.dtype)))
+        d = np.concatenate(
+            (
+                d.reshape(self.nt2, self.ns),
+                self.ncp.zeros((self.nt2, self.ns), self.dtype),
+            )
+        )
 
         # Invert for focusing functions
         if self.ncp == np:
             f1_inv = lsqr(Mop, d.ravel(), **kwargs_solver)[0]
         else:
-            f1_inv = cgls(Mop, d.ravel(),
-                          x0=self.ncp.zeros(2*(2*self.nt-1)*self.nr, dtype=self.dtype),
-                          **kwargs_solver)[0]
+            f1_inv = cgls(
+                Mop,
+                d.ravel(),
+                x0=self.ncp.zeros(2 * (2 * self.nt - 1) * self.nr, dtype=self.dtype),
+                **kwargs_solver
+            )[0]
 
         f1_inv = f1_inv.reshape(2 * self.nt2, self.nr)
         f1_inv_tot = f1_inv + np.concatenate(
@@ -543,17 +574,39 @@ class Marchenko:
         w = to_cupy_conditional(self.Rtwosided_fft, w)
 
         # Create operators
-        Rop = MDC(self.Rtwosided_fft, self.nt2, nv=nvs,
-                  dt=self.dt, dr=self.dr, twosided=True,
-                  conj=False, transpose=False, prescaled=self.prescaled,
-                  usematmul=usematmul, dtype=self.dtype)
-        R1op = MDC(self.Rtwosided_fft, self.nt2, nv=nvs,
-                   dt=self.dt, dr=self.dr, twosided=True,
-                   conj=True, transpose=False, prescaled=self.prescaled,
-                   usematmul=usematmul, dtype=self.dtype)
-        Rollop = Roll(self.ns * nvs * self.nt2,
-                      dims=(self.nt2, self.ns, nvs),
-                      dir=0, shift=-1, dtype=self.dtype)
+        Rop = MDC(
+            self.Rtwosided_fft,
+            self.nt2,
+            nv=nvs,
+            dt=self.dt,
+            dr=self.dr,
+            twosided=True,
+            conj=False,
+            transpose=False,
+            prescaled=self.prescaled,
+            usematmul=usematmul,
+            dtype=self.dtype,
+        )
+        R1op = MDC(
+            self.Rtwosided_fft,
+            self.nt2,
+            nv=nvs,
+            dt=self.dt,
+            dr=self.dr,
+            twosided=True,
+            conj=True,
+            transpose=False,
+            prescaled=self.prescaled,
+            usematmul=usematmul,
+            dtype=self.dtype,
+        )
+        Rollop = Roll(
+            self.ns * nvs * self.nt2,
+            dims=(self.nt2, self.ns, nvs),
+            dir=0,
+            shift=-1,
+            dtype=self.dtype,
+        )
         Wop = Diagonal(w.transpose(2, 0, 1).ravel())
         Iop = Identity(self.nr * nvs * self.nt2)
         Mop = Block(
@@ -615,24 +668,29 @@ class Marchenko:
         # Run standard redatuming as benchmark
         if rtm:
             p0_minus = Rop * fd_plus.ravel()
-            p0_minus = p0_minus.reshape(self.nt2, self.ns,
-                                        nvs).transpose(1, 2, 0)
+            p0_minus = p0_minus.reshape(self.nt2, self.ns, nvs).transpose(1, 2, 0)
 
         # Create data and inverse focusing functions
         d = Wop * Rop * fd_plus.ravel()
-        d = np.concatenate((d.reshape(self.nt2, self.ns, nvs),
-                            self.ncp.zeros((self.nt2, self.ns, nvs),
-                                           dtype=self.dtype)))
+        d = np.concatenate(
+            (
+                d.reshape(self.nt2, self.ns, nvs),
+                self.ncp.zeros((self.nt2, self.ns, nvs), dtype=self.dtype),
+            )
+        )
 
         # Invert for focusing functions
         if self.ncp == np:
             f1_inv = lsqr(Mop, d.ravel(), **kwargs_solver)[0]
         else:
-            f1_inv = cgls(Mop, d.ravel(),
-                          x0=self.ncp.zeros(2 * (2 * self.nt - 1) *
-                                            self.nr * nvs,
-                                            dtype=self.dtype),
-                          **kwargs_solver)[0]
+            f1_inv = cgls(
+                Mop,
+                d.ravel(),
+                x0=self.ncp.zeros(
+                    2 * (2 * self.nt - 1) * self.nr * nvs, dtype=self.dtype
+                ),
+                **kwargs_solver
+            )[0]
 
         f1_inv = f1_inv.reshape(2 * self.nt2, self.nr, nvs)
         f1_inv_tot = f1_inv + np.concatenate(

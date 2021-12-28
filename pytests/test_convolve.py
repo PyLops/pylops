@@ -137,31 +137,45 @@ def test_Convolve1D(par):
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 1D on 2D
-    if par['dir'] < 2:
-        Cop = Convolve1D(par['ny'] * par['nx'], h=h1, offset=par['offset'],
-                        dims=(par['ny'], par['nx']), dir=par['dir'],
-                        dtype='float64')
-        assert dottest(Cop, par['ny'] * par['nx'], par['ny'] * par['nx'])
+    if par["dir"] < 2:
+        Cop = Convolve1D(
+            par["ny"] * par["nx"],
+            h=h1,
+            offset=par["offset"],
+            dims=(par["ny"], par["nx"]),
+            dir=par["dir"],
+            dtype="float64",
+        )
+        assert dottest(Cop, par["ny"] * par["nx"], par["ny"] * par["nx"])
 
-        x = np.zeros((par['ny'], par['nx']))
-        x[int(par['ny']/2-3):int(par['ny']/2+3),
-          int(par['nx']/2-3):int(par['nx']/2+3)] = 1.
+        x = np.zeros((par["ny"], par["nx"]))
+        x[
+            int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
+            int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
+        ] = 1.0
         x = x.ravel()
         xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, show=0)[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 1D on 3D
-    Cop = Convolve1D(par['nz'] * par['ny'] * par['nx'], h=h1,
-                     offset=par['offset'],
-                     dims=(par['nz'], par['ny'], par['nx']), dir=par['dir'],
-                     dtype='float64')
-    assert dottest(Cop, par['nz'] * par['ny'] * par['nx'],
-                   par['nz'] * par['ny'] * par['nx'])
+    Cop = Convolve1D(
+        par["nz"] * par["ny"] * par["nx"],
+        h=h1,
+        offset=par["offset"],
+        dims=(par["nz"], par["ny"], par["nx"]),
+        dir=par["dir"],
+        dtype="float64",
+    )
+    assert dottest(
+        Cop, par["nz"] * par["ny"] * par["nx"], par["nz"] * par["ny"] * par["nx"]
+    )
 
-    x = np.zeros((par['nz'], par['ny'], par['nx']))
-    x[int(par['nz'] / 2 - 3):int(par['nz'] / 2 + 3),
-      int(par['ny'] / 2 - 3):int(par['ny'] / 2 + 3),
-      int(par['nx'] / 2 - 3):int(par['nx'] / 2 + 3)] = 1.
+    x = np.zeros((par["nz"], par["ny"], par["nx"]))
+    x[
+        int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
+        int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
+        int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
+    ] = 1.0
     x = x.ravel()
     xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
@@ -173,30 +187,44 @@ def test_Convolve1D(par):
 def test_Convolve2D(par):
     """Dot-test and inversion for Convolve2D operator"""
     # 2D on 2D
-    if par['dir'] == 2:
-        Cop = Convolve2D(par['ny'] * par['nx'], h=h2, offset=par['offset'],
-                         dims=(par['ny'], par['nx']), dtype='float64')
-        assert dottest(Cop, par['ny'] * par['nx'], par['ny'] * par['nx'])
+    if par["dir"] == 2:
+        Cop = Convolve2D(
+            par["ny"] * par["nx"],
+            h=h2,
+            offset=par["offset"],
+            dims=(par["ny"], par["nx"]),
+            dtype="float64",
+        )
+        assert dottest(Cop, par["ny"] * par["nx"], par["ny"] * par["nx"])
 
-        x = np.zeros((par['ny'], par['nx']))
-        x[int(par['ny'] / 2 - 3):int(par['ny'] / 2 + 3),
-          int(par['nx'] / 2 - 3):int(par['nx'] / 2 + 3)] = 1.
+        x = np.zeros((par["ny"], par["nx"]))
+        x[
+            int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
+            int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
+        ] = 1.0
         x = x.ravel()
         xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, show=0)[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 2D on 3D
-    Cop = Convolve2D(par['nz'] * par['ny'] * par['nx'], h=h2,
-                     offset=par['offset'],
-                     dims=[par['nz'], par['ny'], par['nx']],
-                     nodir=par['dir'], dtype='float64')
-    assert dottest(Cop, par['nz'] * par['ny'] * par['nx'],
-                   par['nz'] * par['ny'] * par['nx'])
+    Cop = Convolve2D(
+        par["nz"] * par["ny"] * par["nx"],
+        h=h2,
+        offset=par["offset"],
+        dims=[par["nz"], par["ny"], par["nx"]],
+        nodir=par["dir"],
+        dtype="float64",
+    )
+    assert dottest(
+        Cop, par["nz"] * par["ny"] * par["nx"], par["nz"] * par["ny"] * par["nx"]
+    )
 
-    x = np.zeros((par['nz'], par['ny'], par['nx']))
-    x[int(par['nz'] / 2 - 3):int(par['nz'] / 2 + 3),
-      int(par['ny'] / 2 - 3):int(par['ny'] / 2 + 3),
-      int(par['nx'] / 2 - 3):int(par['nx'] / 2 + 3)] = 1.
+    x = np.zeros((par["nz"], par["ny"], par["nx"]))
+    x[
+        int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
+        int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
+        int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
+    ] = 1.0
     x = x.ravel()
     xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, show=0)[0]
     # due to ringing in solution we cannot use assert_array_almost_equal
@@ -207,17 +235,23 @@ def test_Convolve2D(par):
 def test_Convolve3D(par):
     """Dot-test and inversion for ConvolveND operator"""
     # 3D on 3D
-    Cop = ConvolveND(par['nz'] * par['ny'] * par['nx'], h=h3,
-                     offset=par['offset'],
-                     dims=[par['nz'], par['ny'], par['nx']],
-                     dtype='float64')
-    assert dottest(Cop, par['nz'] * par['ny'] * par['nx'],
-                   par['nz'] * par['ny'] * par['nx'])
+    Cop = ConvolveND(
+        par["nz"] * par["ny"] * par["nx"],
+        h=h3,
+        offset=par["offset"],
+        dims=[par["nz"], par["ny"], par["nx"]],
+        dtype="float64",
+    )
+    assert dottest(
+        Cop, par["nz"] * par["ny"] * par["nx"], par["nz"] * par["ny"] * par["nx"]
+    )
 
-    x = np.zeros((par['nz'], par['ny'], par['nx']))
-    x[int(par['nz'] / 2 - 3):int(par['nz'] / 2 + 3),
-    int(par['ny'] / 2 - 3):int(par['ny'] / 2 + 3),
-    int(par['nx'] / 2 - 3):int(par['nx'] / 2 + 3)] = 1.
+    x = np.zeros((par["nz"], par["ny"], par["nx"]))
+    x[
+        int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
+        int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
+        int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
+    ] = 1.0
     x = x.ravel()
     y = Cop * x
     xlsqr = lsqr(Cop, y, damp=1e-20, iter_lim=400, show=0)[0]

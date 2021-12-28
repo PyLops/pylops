@@ -76,7 +76,7 @@ class Pad(LinearOperator):
             y = x.reshape(self.dims)
             y = np.pad(y, self.pad, mode="constant")
         else:
-            y = np.pad(x, self.pad, mode='constant')
+            y = np.pad(x, self.pad, mode="constant")
         return y.ravel()
 
     def _rmatvec(self, x):
@@ -85,5 +85,5 @@ class Pad(LinearOperator):
             for ax, pad in enumerate(self.pad):
                 y = np.take(y, np.arange(pad[0], pad[0] + self.dims[ax]), axis=ax)
         else:
-            y = x[self.pad[0]:self.pad[0]+self.dims]
+            y = x[self.pad[0] : self.pad[0] + self.dims]
         return y.ravel()

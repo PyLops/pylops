@@ -70,16 +70,19 @@ def test_Patch2D(par):
     """Dot-test and inverse for Patch2D operator"""
     Op = MatrixMult(np.ones((par["nwiny"] * par["nwint"], par["ny"] * par["nt"])))
 
-    Pop = Patch2D(Op,
-                  dims=(par['ny'] * par['winsy'], par['nt'] * par['winst']),
-                  dimsd=(par['npy'], par['npt']),
-                  nwin=(par['nwiny'], par['nwint']),
-                  nover=(par['novery'], par['novert']),
-                  nop=(par['ny'], par['nt']),
-                  tapertype=par['tapertype'])
-    assert dottest(Pop, par['npy'] * par['nt'],
-                   par['ny'] * par['nt'] * par['winsy'] * par['winst'])
-    x = np.ones((par['ny'] * par['winsy'], par['nt'] * par['winst']))
+    Pop = Patch2D(
+        Op,
+        dims=(par["ny"] * par["winsy"], par["nt"] * par["winst"]),
+        dimsd=(par["npy"], par["npt"]),
+        nwin=(par["nwiny"], par["nwint"]),
+        nover=(par["novery"], par["novert"]),
+        nop=(par["ny"], par["nt"]),
+        tapertype=par["tapertype"],
+    )
+    assert dottest(
+        Pop, par["npy"] * par["nt"], par["ny"] * par["nt"] * par["winsy"] * par["winst"]
+    )
+    x = np.ones((par["ny"] * par["winsy"], par["nt"] * par["winst"]))
     y = Pop * x.ravel()
 
     xinv = LinearOperator(Pop) / y

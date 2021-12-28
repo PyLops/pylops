@@ -70,13 +70,16 @@ def test_Sliding1D(par):
     """Dot-test and inverse for Sliding1D operator"""
     Op = MatrixMult(np.ones((par["nwiny"], par["ny"])))
 
-    Slid = Sliding1D(Op, dim=par['ny']*par['winsy'],
-                     dimd=par['npy'],
-                     nwin=par['nwiny'], nover=par['novery'],
-                     tapertype=par['tapertype'])
-    assert dottest(Slid, par['npy'],
-                   par['ny']*par['winsy'])
-    x = np.ones(par['ny']*par['winsy'])
+    Slid = Sliding1D(
+        Op,
+        dim=par["ny"] * par["winsy"],
+        dimd=par["npy"],
+        nwin=par["nwiny"],
+        nover=par["novery"],
+        tapertype=par["tapertype"],
+    )
+    assert dottest(Slid, par["npy"], par["ny"] * par["winsy"])
+    x = np.ones(par["ny"] * par["winsy"])
     y = Slid * x.ravel()
 
     xinv = LinearOperator(Slid) / y
@@ -88,13 +91,16 @@ def test_Sliding2D(par):
     """Dot-test and inverse for Sliding2D operator"""
     Op = MatrixMult(np.ones((par["nwiny"] * par["nt"], par["ny"] * par["nt"])))
 
-    Slid = Sliding2D(Op, dims=(par['ny']*par['winsy'], par['nt']),
-                     dimsd=(par['npy'], par['nt']),
-                     nwin=par['nwiny'], nover=par['novery'],
-                     tapertype=par['tapertype'])
-    assert dottest(Slid, par['npy']*par['nt'],
-                   par['ny']*par['nt']*par['winsy'])
-    x = np.ones((par['ny']*par['winsy'], par['nt']))
+    Slid = Sliding2D(
+        Op,
+        dims=(par["ny"] * par["winsy"], par["nt"]),
+        dimsd=(par["npy"], par["nt"]),
+        nwin=par["nwiny"],
+        nover=par["novery"],
+        tapertype=par["tapertype"],
+    )
+    assert dottest(Slid, par["npy"] * par["nt"], par["ny"] * par["nt"] * par["winsy"])
+    x = np.ones((par["ny"] * par["winsy"], par["nt"]))
     y = Slid * x.ravel()
 
     xinv = LinearOperator(Slid) / y
@@ -110,17 +116,21 @@ def test_Sliding3D(par):
         )
     )
 
-    Slid = Sliding3D(Op,
-                     dims=(par['ny']*par['winsy'],
-                           par['nx']*par['winsx'], par['nt']),
-                     dimsd=(par['npy'], par['npx'], par['nt']),
-                     nwin=(par['nwiny'], par['nwinx']),
-                     nover=(par['novery'], par['noverx']),
-                     nop=(par['ny'], par['nx']),
-                     tapertype=par['tapertype'])
-    assert dottest(Slid, par['npy']*par['npx']*par['nt'],
-                   par['ny']*par['nx']*par['nt']*par['winsy']*par['winsx'])
-    x = np.ones((par['ny']*par['nx']*par['winsy']*par['winsx'], par['nt']))
+    Slid = Sliding3D(
+        Op,
+        dims=(par["ny"] * par["winsy"], par["nx"] * par["winsx"], par["nt"]),
+        dimsd=(par["npy"], par["npx"], par["nt"]),
+        nwin=(par["nwiny"], par["nwinx"]),
+        nover=(par["novery"], par["noverx"]),
+        nop=(par["ny"], par["nx"]),
+        tapertype=par["tapertype"],
+    )
+    assert dottest(
+        Slid,
+        par["npy"] * par["npx"] * par["nt"],
+        par["ny"] * par["nx"] * par["nt"] * par["winsy"] * par["winsx"],
+    )
+    x = np.ones((par["ny"] * par["nx"] * par["winsy"] * par["winsx"], par["nt"]))
     y = Slid * x.ravel()
 
     xinv = LinearOperator(Slid) / y

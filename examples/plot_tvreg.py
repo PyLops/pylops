@@ -115,12 +115,12 @@ iava = np.sort(np.random.permutation(np.arange(ny * nx))[:nxsub])
 Rop = pylops.Restriction(ny * nx, iava, dtype=np.complex)
 Fop = pylops.signalprocessing.FFT2D(dims=(ny, nx))
 
-n = np.random.normal(0, 0., (ny, nx))
-y = Rop*Fop*(x.ravel() + n.ravel())
-yfft = Fop*(x.ravel() + n.ravel())
+n = np.random.normal(0, 0.0, (ny, nx))
+y = Rop * Fop * (x.ravel() + n.ravel())
+yfft = Fop * (x.ravel() + n.ravel())
 yfft = np.fft.fftshift(yfft.reshape(ny, nx))
 
-ymask = Rop.mask(Fop*(x.ravel()) + n.ravel())
+ymask = Rop.mask(Fop * (x.ravel()) + n.ravel())
 ymask = ymask.reshape(ny, nx)
 ymask.data[:] = np.fft.fftshift(ymask.data)
 ymask.mask[:] = np.fft.fftshift(ymask.mask)
@@ -161,12 +161,19 @@ lamda = [0.1, 0.1]
 niter = 20
 niterinner = 10
 
-xinv, niter = \
-    pylops.optimization.sparsity.SplitBregman(Rop * Fop, Dop, y.ravel(),
-                                              niter, niterinner,
-                                              mu=mu, epsRL1s=lamda,
-                                              tol=1e-4, tau=1., show=False,
-                                              **dict(iter_lim=5, damp=1e-4))
+xinv, niter = pylops.optimization.sparsity.SplitBregman(
+    Rop * Fop,
+    Dop,
+    y.ravel(),
+    niter,
+    niterinner,
+    mu=mu,
+    epsRL1s=lamda,
+    tol=1e-4,
+    tau=1.0,
+    show=False,
+    **dict(iter_lim=5, damp=1e-4)
+)
 xinv = np.real(xinv.reshape(ny, nx))
 
 fig, axs = plt.subplots(1, 2, figsize=(9, 5))

@@ -122,16 +122,16 @@ def test_MatrixMult_repeated(par):
     along another dimension
     """
     np.random.seed(10)
-    G = np.random.normal(0, 10, (par['ny'], par['nx'])).astype('float32') + \
-        par['imag'] * np.random.normal(0, 10, (par['ny'],
-                                               par['nx'])).astype('float32')
-    Gop = MatrixMult(G, dims=5, dtype=par['dtype'])
-    assert dottest(Gop, par['ny']*5, par['nx']*5,
-                   complexflag=0 if par['imag'] == 1 else 3)
+    G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32") + par[
+        "imag"
+    ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32")
+    Gop = MatrixMult(G, dims=5, dtype=par["dtype"])
+    assert dottest(
+        Gop, par["ny"] * 5, par["nx"] * 5, complexflag=0 if par["imag"] == 1 else 3
+    )
 
-    x = (np.ones((par['nx'], 5)) +
-         par['imag'] * np.ones((par['nx'], 5))).ravel()
-    xlsqr = lsqr(Gop, Gop*x, damp=1e-20, iter_lim=300, show=0)[0]
+    x = (np.ones((par["nx"], 5)) + par["imag"] * np.ones((par["nx"], 5))).ravel()
+    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
@@ -229,7 +229,7 @@ def test_Flip2D(par):
 
         y = Fop * x[str(dir)].ravel()
         xadj = Fop.H * y.ravel()
-        xadj = xadj.reshape(par['ny'], par['nx'])
+        xadj = xadj.reshape(par["ny"], par["nx"])
         assert_array_equal(x[str(dir)], xadj)
 
 
@@ -280,7 +280,7 @@ def test_Flip3D(par):
 
         y = Fop * x[str(dir)].ravel()
         xadj = Fop.H * y.ravel()
-        xadj = xadj.reshape(par['ny'], par['nx'], par['nx'])
+        xadj = xadj.reshape(par["ny"], par["nx"], par["nx"])
         assert_array_equal(x[str(dir)], xadj)
 
 
@@ -311,11 +311,14 @@ def test_Symmetrize2D(par):
     ] * np.outer(np.ones(par["ny"]), np.arange(par["nx"]))
 
     for dir in [0, 1]:
-        Sop = Symmetrize(par['ny']*par['nx'],
-                         dims=(par['ny'], par['nx']),
-                         dir=dir, dtype=par['dtype'])
+        Sop = Symmetrize(
+            par["ny"] * par["nx"],
+            dims=(par["ny"], par["nx"]),
+            dir=dir,
+            dtype=par["dtype"],
+        )
         y = Sop * x[str(dir)].ravel()
-        assert dottest(Sop, y.size, par['ny']*par['nx'])
+        assert dottest(Sop, y.size, par["ny"] * par["nx"])
 
         xinv = Sop / y
         assert_array_almost_equal(x[str(dir)].ravel(), xinv, decimal=3)
@@ -356,11 +359,14 @@ def test_Symmetrize3D(par):
     )
 
     for dir in [0, 1, 2]:
-        Sop = Symmetrize(par['ny']*par['nx']*par['nx'],
-                         dims=(par['ny'], par['nx'], par['nx']),
-                         dir=dir, dtype=par['dtype'])
+        Sop = Symmetrize(
+            par["ny"] * par["nx"] * par["nx"],
+            dims=(par["ny"], par["nx"], par["nx"]),
+            dir=dir,
+            dtype=par["dtype"],
+        )
         y = Sop * x[str(dir)].ravel()
-        assert dottest(Sop, y.size, par['ny']*par['nx']*par['nx'])
+        assert dottest(Sop, y.size, par["ny"] * par["nx"] * par["nx"])
 
         xinv = Sop / y
         assert_array_almost_equal(x[str(dir)].ravel(), xinv, decimal=3)
@@ -393,11 +399,15 @@ def test_Roll2D(par):
     ] * np.outer(np.ones(par["ny"]), np.arange(par["nx"]))
 
     for dir in [0, 1]:
-        Rop = Roll(par['ny'] * par['nx'],
-                   dims=(par['ny'], par['nx']),
-                   dir=dir, shift=-2, dtype=par['dtype'])
+        Rop = Roll(
+            par["ny"] * par["nx"],
+            dims=(par["ny"], par["nx"]),
+            dir=dir,
+            shift=-2,
+            dtype=par["dtype"],
+        )
         y = Rop * x[str(dir)].ravel()
-        assert dottest(Rop, par['ny'] * par['nx'], par['ny'] * par['nx'])
+        assert dottest(Rop, par["ny"] * par["nx"], par["ny"] * par["nx"])
 
         xadj = Rop.H * y
         assert_array_almost_equal(x[str(dir)].ravel(), xadj, decimal=3)
@@ -438,12 +448,17 @@ def test_Roll3D(par):
     )
 
     for dir in [0, 1, 2]:
-        Rop = Roll(par['ny'] * par['nx'] * par['nx'],
-                   dims=(par['ny'], par['nx'], par['nx']),
-                   dir=dir, shift=3, dtype=par['dtype'])
+        Rop = Roll(
+            par["ny"] * par["nx"] * par["nx"],
+            dims=(par["ny"], par["nx"], par["nx"]),
+            dir=dir,
+            shift=3,
+            dtype=par["dtype"],
+        )
         y = Rop * x[str(dir)].ravel()
-        assert dottest(Rop, par['ny'] * par['nx'] * par['nx'],
-                       par['ny'] * par['nx'] * par['nx'])
+        assert dottest(
+            Rop, par["ny"] * par["nx"] * par["nx"], par["ny"] * par["nx"] * par["nx"]
+        )
 
         xinv = Rop.H * y
         assert_array_almost_equal(x[str(dir)].ravel(), xinv, decimal=3)

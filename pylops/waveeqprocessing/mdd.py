@@ -490,15 +490,19 @@ def MDD(
             P = filtfilt(np.ones(smooth_precond) / smooth_precond, 1, P, axis=0)
         P = to_cupy_conditional(d, P)
         Pop = Diagonal(P)
-        minv = PreconditionedInversion(MDCop, Pop, d.ravel(),
-                                       returninfo=False, **kwargs_solver)
+        minv = PreconditionedInversion(
+            MDCop, Pop, d.ravel(), returninfo=False, **kwargs_solver
+        )
     else:
-        if ncp == np and 'callback' not in kwargs_solver:
+        if ncp == np and "callback" not in kwargs_solver:
             minv = lsqr(MDCop, d.ravel(), **kwargs_solver)[0]
         else:
-            minv = cgls(MDCop, d.ravel(), ncp.zeros(int(MDCop.shape[1]),
-                                                      dtype=MDCop.dtype),
-                        **kwargs_solver)[0]
+            minv = cgls(
+                MDCop,
+                d.ravel(),
+                ncp.zeros(int(MDCop.shape[1]), dtype=MDCop.dtype),
+                **kwargs_solver
+            )[0]
     minv = np.squeeze(minv.reshape(nt2, nr, nv))
     minv = np.moveaxis(minv, 0, -1)
 
@@ -512,9 +516,12 @@ def MDD(
         if ncp == np:
             psfinv = lsqr(PSFop, G.ravel(), **kwargs_solver)[0]
         else:
-            psfinv = cgls(PSFop, G.ravel(), ncp.zeros(int(PSFop.shape[1]),
-                                                        dtype=PSFop.dtype),
-                          **kwargs_solver)[0]
+            psfinv = cgls(
+                PSFop,
+                G.ravel(),
+                ncp.zeros(int(PSFop.shape[1]), dtype=PSFop.dtype),
+                **kwargs_solver
+            )[0]
         psfinv = np.squeeze(psfinv.reshape(nt2, nr, nr))
         psfinv = np.moveaxis(psfinv, 0, -1)
         if wav is not None:

@@ -81,8 +81,8 @@ print("x =\n%s" % x)
 d = np.arange(nx * ny).reshape(nx, ny)
 Dop = pylops.Diagonal(d)
 
-y = Dop*x.ravel()
-y1 = Dop.H*x.ravel()
+y = Dop * x.ravel()
+y1 = Dop.H * x.ravel()
 
 print("y = D*x =\n%s" % y.reshape(nx, ny))
 print("xadj = D'*x =\n%s " % y1.reshape(nx, ny))
@@ -97,8 +97,8 @@ print("x =\n%s" % x)
 d = np.arange(nx)
 Dop = pylops.Diagonal(d, dims=(nx, ny), dir=0)
 
-y = Dop*x.ravel()
-y1 = Dop.H*x.ravel()
+y = Dop * x.ravel()
+y1 = Dop.H * x.ravel()
 
 print("1st dim: y = D*x =\n%s" % y.reshape(nx, ny))
 print("1st dim: xadj = D'*x =\n%s " % y1.reshape(nx, ny))
@@ -107,8 +107,8 @@ print("1st dim: xadj = D'*x =\n%s " % y1.reshape(nx, ny))
 d = np.arange(ny)
 Dop = pylops.Diagonal(d, dims=(nx, ny), dir=1)
 
-y = Dop*x.ravel()
-y1 = Dop.H*x.ravel()
+y = Dop * x.ravel()
+y1 = Dop.H * x.ravel()
 
 print("2nd dim: y = D*x =\n%s" % y.reshape(nx, ny))
 print("2nd dim: xadj = D'*x =\n%s " % y1.reshape(nx, ny))

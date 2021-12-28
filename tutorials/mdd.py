@@ -81,8 +81,8 @@ MDCop = pylops.waveeqprocessing.MDC(
 )
 
 # Create data
-d = MDCop*m.ravel()
-d = d.reshape(par['ny'], 2*par['nt']-1)
+d = MDCop * m.ravel()
+d = d.reshape(par["ny"], 2 * par["nt"] - 1)
 
 ###############################################################################
 # Let's display what we have so far: operator, input model, and data

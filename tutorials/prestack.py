@@ -356,7 +356,7 @@ PPop = pylops.avo.prestack.PrestackLinearModelling(
 )
 
 # data
-dPP = PPop_dense*m.swapaxes(0, 1).ravel()
+dPP = PPop_dense * m.swapaxes(0, 1).ravel()
 dPP = dPP.reshape(ntheta, nz, nx).swapaxes(0, 1)
 dPPn = dPP + np.random.normal(0, 5e-2, dPP.shape)
 

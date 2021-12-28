@@ -49,9 +49,9 @@ plt.legend()
 nt, nx = 10, 6
 x = np.outer(np.arange(nt), np.ones(nx))
 
-Sop = pylops.Symmetrize(nt*nx, dims=(nt, nx), dir=0)
-y = Sop*x.ravel()
-xadj = Sop.H*y.ravel()
+Sop = pylops.Symmetrize(nt * nx, dims=(nt, nx), dir=0)
+y = Sop * x.ravel()
+xadj = Sop.H * y.ravel()
 xinv = Sop / y
 y = y.reshape(2 * nt - 1, nx)
 xadj = xadj.reshape(nt, nx)
@@ -77,8 +77,8 @@ plt.subplots_adjust(top=0.8)
 x = np.outer(np.ones(nt), np.arange(nx))
 Sop = pylops.Symmetrize(nt * nx, dims=(nt, nx), dir=1)
 
-y = Sop*x.ravel()
-xadj = Sop.H*y.ravel()
+y = Sop * x.ravel()
+xadj = Sop.H * y.ravel()
 xinv = Sop / y
 y = y.reshape(nt, 2 * nx - 1)
 xadj = xadj.reshape(nt, nx)

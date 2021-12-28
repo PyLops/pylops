@@ -125,11 +125,20 @@ wavn_est = Wavesop / dn.T.ravel()
 D2op = pylops.SecondDerivative(ntwav, dtype="float64")
 
 # Invert for wavelet
-wavn_reg_est, istop, itn, r1norm, r2norm = \
-    pylops.optimization.leastsquares.RegularizedInversion(Wavesop, [D2op], dn.T.ravel(),
-                                                          epsRs=[np.sqrt(0.1)], returninfo=True,
-                                                          **dict(damp=np.sqrt(1e-4),
-                                                                 iter_lim=200, show=0))
+(
+    wavn_reg_est,
+    istop,
+    itn,
+    r1norm,
+    r2norm,
+) = pylops.optimization.leastsquares.RegularizedInversion(
+    Wavesop,
+    [D2op],
+    dn.T.ravel(),
+    epsRs=[np.sqrt(0.1)],
+    returninfo=True,
+    **dict(damp=np.sqrt(1e-4), iter_lim=200, show=0)
+)
 
 ###############################################################################
 # As expected, the regularization helps to retrieve a smooth wavelet
@@ -166,21 +175,21 @@ Sop = pylops.Symmetrize((ntwav + 1) // 2)
 Smop = pylops.Smoothing1D(5, dims=((ntwav + 1) // 2,), dtype="float64")
 
 # Invert for wavelet
-wavn_prec_est = \
-    pylops.optimization.leastsquares.PreconditionedInversion(Wavesop, Sop,
-                                                             dn.T.ravel(),
-                                                             returninfo=False,
-                                                             **dict(damp=np.sqrt(1e-4),
-                                                                    iter_lim=200,
-                                                                    show=0))
+wavn_prec_est = pylops.optimization.leastsquares.PreconditionedInversion(
+    Wavesop,
+    Sop,
+    dn.T.ravel(),
+    returninfo=False,
+    **dict(damp=np.sqrt(1e-4), iter_lim=200, show=0)
+)
 
-wavn_smooth_est = \
-    pylops.optimization.leastsquares.PreconditionedInversion(Wavesop, Sop*Smop,
-                                                             dn.T.ravel(),
-                                                             returninfo=False,
-                                                             **dict(damp=np.sqrt(1e-4),
-                                                                    iter_lim=200,
-                                                                    show=0))
+wavn_smooth_est = pylops.optimization.leastsquares.PreconditionedInversion(
+    Wavesop,
+    Sop * Smop,
+    dn.T.ravel(),
+    returninfo=False,
+    **dict(damp=np.sqrt(1e-4), iter_lim=200, show=0)
+)
 
 fig, ax = plt.subplots(1, 1, sharex=True, figsize=(8, 3))
 ax.plot(wav, "k", lw=6, label="True")

@@ -317,8 +317,12 @@ def PrestackWaveletModelling(
 
     # Create infinite-reflectivity data
     M = ncp.dot(G, ncp.dot(D, m.T.ravel())).reshape(ntheta, nt0)
-    Mconv = VStack([MatrixMult(convmtx(M[itheta], nwav)[wavc:-nwav+wavc+1],
-                               dtype=dtype) for itheta in range(ntheta)])
+    Mconv = VStack(
+        [
+            MatrixMult(convmtx(M[itheta], nwav)[wavc : -nwav + wavc + 1], dtype=dtype)
+            for itheta in range(ntheta)
+        ]
+    )
     return Mconv
 
 
@@ -519,8 +523,7 @@ def PrestackInversion(
     # invert model
     if epsR is None:
         # create and remove background data from original data
-        datar = data.ravel() if m0 is None else \
-            data.ravel() - PPop * m0.ravel()
+        datar = data.ravel() if m0 is None else data.ravel() - PPop * m0.ravel()
         # inversion without spatial regularization
         if explicit:
             if epsI is None and not simultaneous:
@@ -603,11 +606,15 @@ def PrestackInversion(
             else:
                 Regop = (Regop, RegI)
                 epsR = (epsR, 1)
-            minv = \
-                RegularizedInversion(PPop, Regop, data.ravel(),
-                                     x0=m0.ravel() if m0 is not None
-                                     else None, epsRs=epsR,
-                                     returninfo=False, **kwargs_solver)
+            minv = RegularizedInversion(
+                PPop,
+                Regop,
+                data.ravel(),
+                x0=m0.ravel() if m0 is not None else None,
+                epsRs=epsR,
+                returninfo=False,
+                **kwargs_solver
+            )
         else:
             # Blockiness-promoting inversion with spatial regularization
             if dims == 1:
@@ -652,13 +659,19 @@ def PrestackInversion(
                 kwargs_solver.pop("niter_inner")
             else:
                 niter_inner = 5
-            minv = SplitBregman(PPop, (RegL1op, ), data.ravel(),
-                                RegsL2=RegL2op, epsRL1s=epsRL1,
-                                epsRL2s=epsR, mu=mu,
-                                niter_outer=niter_outer,
-                                niter_inner=niter_inner,
-                                x0=None if m0 is None else m0.ravel(),
-                                **kwargs_solver)[0]
+            minv = SplitBregman(
+                PPop,
+                (RegL1op,),
+                data.ravel(),
+                RegsL2=RegL2op,
+                epsRL1s=epsRL1,
+                epsRL2s=epsR,
+                mu=mu,
+                niter_outer=niter_outer,
+                niter_inner=niter_inner,
+                x0=None if m0 is None else m0.ravel(),
+                **kwargs_solver
+            )[0]
 
     # compute residual
     if returnres:

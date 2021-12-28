@@ -91,10 +91,14 @@ x[int(nt / 2), int(nx / 2)] = 1
 nh = [11, 5]
 h = np.ones((nh[0], nh[1]))
 
-Cop = pylops.signalprocessing.Convolve2D(nt * nx, h=h,
-                                         offset=(int(nh[0])/2, int(nh[1])/2),
-                                         dims=(nt, nx), dtype='float32')
-y = Cop*x.ravel()
+Cop = pylops.signalprocessing.Convolve2D(
+    nt * nx,
+    h=h,
+    offset=(int(nh[0]) / 2, int(nh[1]) / 2),
+    dims=(nt, nx),
+    dtype="float32",
+)
+y = Cop * x.ravel()
 xinv = Cop / y
 
 y = y.reshape(nt, nx)
@@ -139,10 +143,10 @@ x[ny // 3, nx // 2, nz // 4] = 1
 h = np.ones((3, 5, 3))
 offset = [1, 2, 1]
 
-Cop = pylops.signalprocessing.ConvolveND(nx*ny*nz, h=h, offset=offset,
-                                         dims=[ny, nx, nz], dirs=[0, 1, 2],
-                                         dtype='float32')
-y = Cop*x.ravel()
+Cop = pylops.signalprocessing.ConvolveND(
+    nx * ny * nz, h=h, offset=offset, dims=[ny, nx, nz], dirs=[0, 1, 2], dtype="float32"
+)
+y = Cop * x.ravel()
 xinv = lsqr(Cop, y, damp=0, iter_lim=300, show=0)[0]
 
 y = y.reshape(ny, nx, nz)

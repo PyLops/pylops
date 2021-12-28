@@ -327,8 +327,7 @@ def PoststackInversion(
         )
 
     # create and remove background data from original data
-    datar = data.ravel() if m0 is None else \
-        data.ravel() - PPop * m0.ravel()
+    datar = data.ravel() if m0 is None else data.ravel() - PPop * m0.ravel()
     # invert model
     if epsR is None:
         # inversion without spatial regularization
@@ -373,9 +372,7 @@ def PoststackInversion(
                 PP = ncp.dot(PPop.A.T, PPop.A) + epsI * ncp.eye(nt0, dtype=PPop.A.dtype)
                 datarn = PPop.A.T * datar.reshape(nt0, nspatprod)
                 PPop_reg = MatrixMult(PP, dims=nspatprod)
-                minv = \
-                    get_lstsq(data)(PPop_reg.A, datarn.ravel(),
-                                    **kwargs_solver)[0]
+                minv = get_lstsq(data)(PPop_reg.A, datarn.ravel(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
             if ncp == np:
@@ -397,10 +394,15 @@ def PoststackInversion(
             else:
                 Regop = Laplacian((nt0, nx, ny), dirs=(1, 2), dtype=PPop.dtype)
 
-            minv = RegularizedInversion(PPop, [Regop], data.ravel(),
-                                        x0=None if m0 is None else m0.ravel(),
-                                        epsRs=[epsR], returninfo=False,
-                                        **kwargs_solver)
+            minv = RegularizedInversion(
+                PPop,
+                [Regop],
+                data.ravel(),
+                x0=None if m0 is None else m0.ravel(),
+                epsRs=[epsR],
+                returninfo=False,
+                **kwargs_solver
+            )
         else:
             # Blockiness-promoting inversion with spatial regularization
             if dims == 1:
@@ -442,13 +444,19 @@ def PoststackInversion(
                 epsRL1 = list([epsRL1])
             if not isinstance(epsR, (list, tuple)):
                 epsR = list([epsR])
-            minv = SplitBregman(PPop, [RegL1op], data.ravel(),
-                                RegsL2=[RegL2op], epsRL1s=epsRL1,
-                                epsRL2s=epsR, mu=mu,
-                                niter_outer=niter_outer,
-                                niter_inner=niter_inner,
-                                x0=None if m0 is None else m0.ravel(),
-                                **kwargs_solver)[0]
+            minv = SplitBregman(
+                PPop,
+                [RegL1op],
+                data.ravel(),
+                RegsL2=[RegL2op],
+                epsRL1s=epsRL1,
+                epsRL2s=epsR,
+                mu=mu,
+                niter_outer=niter_outer,
+                niter_inner=niter_inner,
+                x0=None if m0 is None else m0.ravel(),
+                **kwargs_solver
+            )[0]
 
     # compute residual
     if epsR is None:

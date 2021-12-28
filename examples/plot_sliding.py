@@ -132,8 +132,7 @@ reconstructed_data = reconstructed_data.reshape(dimsd)
 # This is because we have not inverted our operator but simply applied
 # the adjoint to estimate the representation of the input data in the Radon
 # domain. We can do better if we use the inverse instead.
-radoninv = pylops.LinearOperator(Slid, explicit=False).div(data.ravel(),
-                                                           niter=10)
+radoninv = pylops.LinearOperator(Slid, explicit=False).div(data.ravel(), niter=10)
 reconstructed_datainv = Slid * radoninv.ravel()
 
 radoninv = radoninv.reshape(dims)
@@ -268,7 +267,7 @@ Slid = pylops.signalprocessing.Sliding3D(
 )
 
 radon = Slid.H * data.ravel()
-radon = radon.reshape(nwins[0], nwins[1], npx, npx, par['nt'])
+radon = radon.reshape(nwins[0], nwins[1], npx, npx, par["nt"])
 
 Slid = pylops.signalprocessing.Sliding3D(
     Op, dims, dimsd, winsize, overlap, (npx, npx), tapertype="cosine", design=False
@@ -277,8 +276,7 @@ Slid = pylops.signalprocessing.Sliding3D(
 reconstructed_data = Slid * radon.ravel()
 reconstructed_data = reconstructed_data.reshape(dimsd)
 
-radoninv = pylops.LinearOperator(Slid, explicit=False).div(data.ravel(),
-                                                           niter=10)
+radoninv = pylops.LinearOperator(Slid, explicit=False).div(data.ravel(), niter=10)
 reconstructed_datainv = Slid * radoninv.ravel()
 
 radoninv = radoninv.reshape(nwins[0], nwins[1], npx, npx, par["nt"])

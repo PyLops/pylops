@@ -126,20 +126,26 @@ def Sliding3D(
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)], nproc=nproc)
     else:
-        OOp = BlockDiag([Diagonal(tap.ravel()) * Op
-                         for _ in range(nwins)], nproc=nproc)
+        OOp = BlockDiag([Diagonal(tap.ravel()) * Op for _ in range(nwins)], nproc=nproc)
 
-    hstack = HStack([Restriction(dimsd[1] * dimsd[2] * nwin[0],
-                                 range(win_in, win_end),
-                                 dims=(nwin[0], dimsd[1], dimsd[2]),
-                                 dir=1).H
-                     for win_in, win_end in zip(dwin1_ins,
-                                                dwin1_ends)])
+    hstack = HStack(
+        [
+            Restriction(
+                dimsd[1] * dimsd[2] * nwin[0],
+                range(win_in, win_end),
+                dims=(nwin[0], dimsd[1], dimsd[2]),
+                dir=1,
+            ).H
+            for win_in, win_end in zip(dwin1_ins, dwin1_ends)
+        ]
+    )
 
-    combining1 = BlockDiag([hstack]*nwins0)
-    combining0 = HStack([Restriction(np.prod(dimsd),
-                                     range(win_in, win_end),
-                                     dims=dimsd, dir=0).H
-                         for win_in, win_end in zip(dwin0_ins, dwin0_ends)])
+    combining1 = BlockDiag([hstack] * nwins0)
+    combining0 = HStack(
+        [
+            Restriction(np.prod(dimsd), range(win_in, win_end), dims=dimsd, dir=0).H
+            for win_in, win_end in zip(dwin0_ins, dwin0_ends)
+        ]
+    )
     Sop = combining0 * combining1 * OOp
     return Sop

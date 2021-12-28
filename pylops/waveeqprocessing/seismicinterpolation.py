@@ -400,10 +400,8 @@ def SeismicInterpolation(
         )
 
     # inversion
-    if kind == 'spatial':
-        recdata = \
-            RegularizedInversion(SIop, [Regop], data.ravel(),
-                                 **kwargs_solver)
+    if kind == "spatial":
+        recdata = RegularizedInversion(SIop, [Regop], data.ravel(), **kwargs_solver)
         if isinstance(recdata, tuple):
             recdata = recdata[0]
         recdata = recdata.reshape(dims)

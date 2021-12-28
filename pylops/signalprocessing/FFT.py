@@ -94,8 +94,7 @@ class _FFT_numpy(LinearOperator):
                 y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
                 y = np.swapaxes(y, self.dir, -1)
             else:
-                y = np.fft.fft(x, n=self.nfft,
-                               axis=self.dir, norm='ortho')
+                y = np.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
             y = y.ravel()
         y = y.astype(self.cdtype)
         return y

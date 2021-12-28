@@ -53,19 +53,22 @@ def create_data2D():
     _, p2d_minus = hyperbolic2d(x, t, t0_minus, vrms, amp, wav)
     _, p2d_plus = hyperbolic2d(x, t, t0_plus, vrms, amp, wav)
 
-    UPop = \
-        UpDownComposition2D(PAR['nt'], PAR['nx'],
-                            PAR['dt'], PAR['dx'],
-                            rho_sep, vel_sep,
-                            nffts=(nfftk, nfftf),
-                            critical=critical * 100.,
-                            ntaper=ntaper,
-                            dtype='complex128')
+    UPop = UpDownComposition2D(
+        PAR["nt"],
+        PAR["nx"],
+        PAR["dt"],
+        PAR["dx"],
+        rho_sep,
+        vel_sep,
+        nffts=(nfftk, nfftf),
+        critical=critical * 100.0,
+        ntaper=ntaper,
+        dtype="complex128",
+    )
 
-    d2d = UPop * np.concatenate((p2d_plus.ravel(),
-                                 p2d_minus.ravel())).ravel()
-    d2d = np.real(d2d.reshape(2 * PAR['nx'], PAR['nt']))
-    p2d, vz2d = d2d[:PAR['nx']], d2d[PAR['nx']:]
+    d2d = UPop * np.concatenate((p2d_plus.ravel(), p2d_minus.ravel())).ravel()
+    d2d = np.real(d2d.reshape(2 * PAR["nx"], PAR["nt"]))
+    p2d, vz2d = d2d[: PAR["nx"]], d2d[PAR["nx"] :]
     return p2d, vz2d, p2d_minus, p2d_plus
 
 
@@ -80,19 +83,22 @@ def create_data3D():
     _, p3d_minus = hyperbolic3d(x, y, t, t0_minus, vrms, vrms, amp, wav)
     _, p3d_plus = hyperbolic3d(x, y, t, t0_plus, vrms, vrms, amp, wav)
 
-    UPop = \
-        UpDownComposition3D(PAR['nt'], (PAR['ny'], PAR['nx']),
-                            PAR['dt'], (PAR['dy'], PAR['dx']),
-                            rho_sep, vel_sep,
-                            nffts=(nfftk, nfftk, nfftf),
-                            critical=critical * 100.,
-                            ntaper=ntaper,
-                            dtype='complex128')
+    UPop = UpDownComposition3D(
+        PAR["nt"],
+        (PAR["ny"], PAR["nx"]),
+        PAR["dt"],
+        (PAR["dy"], PAR["dx"]),
+        rho_sep,
+        vel_sep,
+        nffts=(nfftk, nfftk, nfftf),
+        critical=critical * 100.0,
+        ntaper=ntaper,
+        dtype="complex128",
+    )
 
-    d3d = UPop * np.concatenate((p3d_plus.ravel(),
-                                 p3d_minus.ravel())).ravel()
-    d3d = np.real(d3d.reshape(2 * PAR['ny'], PAR['nx'], PAR['nt']))
-    p3d, vz3d = d3d[:PAR['ny']], d3d[PAR['ny']:]
+    d3d = UPop * np.concatenate((p3d_plus.ravel(), p3d_minus.ravel())).ravel()
+    d3d = np.real(d3d.reshape(2 * PAR["ny"], PAR["nx"], PAR["nt"]))
+    p3d, vz3d = d3d[: PAR["ny"]], d3d[PAR["ny"] :]
     return p3d, vz3d, p3d_minus, p3d_plus
 
 

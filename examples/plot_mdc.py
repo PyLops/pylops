@@ -88,12 +88,12 @@ MDCop = pylops.waveeqprocessing.MDC(
 )
 
 # Create data
-d = MDCop*m.ravel()
-d = d.reshape(2*par['nt']-1, par['ny'])
+d = MDCop * m.ravel()
+d = d.reshape(2 * par["nt"] - 1, par["ny"])
 
 # Apply adjoint operator to data
-madj = MDCop.H*d.ravel()
-madj = madj.reshape(2*par['nt']-1, par['nx'])
+madj = MDCop.H * d.ravel()
+madj = madj.reshape(2 * par["nt"] - 1, par["nx"])
 
 ###############################################################################
 # Finally let's display the operator, input model, data and adjoint model

@@ -48,32 +48,59 @@ _, x2d = linear2d(yaxis, taxis, v, t0, theta, amp, wav)
 _, x3d = linear3d(xaxis, yaxis, taxis, v, t0, theta, phi, amp, wav)
 
 # Create restriction operator
-Rop2d = Restriction(par['ny'] * par['nt'], iava,
-                    dims=(par['ny'], par['nt']),
-                    dir=0, dtype='float64')
-y2d = Rop2d*x2d.ravel()
-y2d = y2d.reshape(nysub, par['nt'])
-Rop3d = Restriction(par['ny'] * par['nx'] * par['nt'], iava,
-                    dims=(par['ny'], par['nx'], par['nt']),
-                    dir=0, dtype='float64')
-y3d = Rop3d*x3d.ravel()
-y3d = y3d.reshape(nysub, par['nx'], par['nt'])
+Rop2d = Restriction(
+    par["ny"] * par["nt"], iava, dims=(par["ny"], par["nt"]), dir=0, dtype="float64"
+)
+y2d = Rop2d * x2d.ravel()
+y2d = y2d.reshape(nysub, par["nt"])
+Rop3d = Restriction(
+    par["ny"] * par["nx"] * par["nt"],
+    iava,
+    dims=(par["ny"], par["nx"], par["nt"]),
+    dir=0,
+    dtype="float64",
+)
+y3d = Rop3d * x3d.ravel()
+y3d = y3d.reshape(nysub, par["nx"], par["nt"])
 
 
-par1_2d = {'kind': 'spatial',
-           'kwargs': dict(epsRs=[np.sqrt(0.1)], damp=np.sqrt(1e-4),
-                          iter_lim=20, show=0)}
-par2_2d = {'kind': 'fk',
-           'kwargs': dict(nffts=(2**9, 2**9),
-                          sampling=(par['dy'], par['dt']),
-                          niter=20, eps=1e-2, eigsiter=4)}
-par3_2d = {'kind': 'radon-linear',
-           'kwargs': dict(paxis=np.linspace(-1e-3, 1e-3, 50),
-                          centeredh=True, niter=20, eps=1e-1, eigsiter=4)}
-par4_2d = {'kind': 'sliding',
-           'kwargs': dict(paxis=np.linspace(-1e-3, 1e-3, 50),
-                          nwin=12, nwins=3, nover=3, design=False,
-                          niter=20, eps=1e-1, eigsiter=4)}
+par1_2d = {
+    "kind": "spatial",
+    "kwargs": dict(epsRs=[np.sqrt(0.1)], damp=np.sqrt(1e-4), iter_lim=20, show=0),
+}
+par2_2d = {
+    "kind": "fk",
+    "kwargs": dict(
+        nffts=(2 ** 9, 2 ** 9),
+        sampling=(par["dy"], par["dt"]),
+        niter=20,
+        eps=1e-2,
+        eigsiter=4,
+    ),
+}
+par3_2d = {
+    "kind": "radon-linear",
+    "kwargs": dict(
+        paxis=np.linspace(-1e-3, 1e-3, 50),
+        centeredh=True,
+        niter=20,
+        eps=1e-1,
+        eigsiter=4,
+    ),
+}
+par4_2d = {
+    "kind": "sliding",
+    "kwargs": dict(
+        paxis=np.linspace(-1e-3, 1e-3, 50),
+        nwin=12,
+        nwins=3,
+        nover=3,
+        design=False,
+        niter=20,
+        eps=1e-1,
+        eigsiter=4,
+    ),
+}
 par1_2d.update(par)
 par2_2d.update(par)
 par3_2d.update(par)

@@ -131,11 +131,13 @@ def Sliding2D(Op, dims, dimsd, nwin, nover, tapertype="hanning", design=False):
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)])
     else:
-        OOp = BlockDiag([Diagonal(taps[itap].ravel()) * Op
-                         for itap in range(nwins)])
+        OOp = BlockDiag([Diagonal(taps[itap].ravel()) * Op for itap in range(nwins)])
 
-    combining = HStack([Restriction(np.prod(dimsd), range(win_in, win_end),
-                                    dims=dimsd).H
-                        for win_in, win_end in zip(dwin_ins, dwin_ends)])
+    combining = HStack(
+        [
+            Restriction(np.prod(dimsd), range(win_in, win_end), dims=dimsd).H
+            for win_in, win_end in zip(dwin_ins, dwin_ends)
+        ]
+    )
     Sop = combining * OOp
     return Sop

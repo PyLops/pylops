@@ -92,16 +92,16 @@ UPop = pylops.waveeqprocessing.UpDownComposition2D(
 
 # wavefield modelling
 d = UPop * np.concatenate((p_plus.ravel(), p_minus.ravel())).ravel()
-d = np.real(d.reshape(2*par['nx'], par['nt']))
-p, vz = d[:par['nx']], d[par['nx']:]
+d = np.real(d.reshape(2 * par["nx"], par["nt"]))
+p, vz = d[: par["nx"]], d[par["nx"] :]
 
 # obliquity scaled vz
 VZ = FFTop * vz.ravel()
 VZ = VZ.reshape(nfft, nfft)
 
 VZ_obl = OBL * VZ
-vz_obl = FFTop.H*VZ_obl.ravel()
-vz_obl = np.real(vz_obl.reshape(par['nx'], par['nt']))
+vz_obl = FFTop.H * VZ_obl.ravel()
+vz_obl = np.real(vz_obl.reshape(par["nx"], par["nt"]))
 
 fig, axs = plt.subplots(1, 4, figsize=(10, 5))
 axs[0].imshow(

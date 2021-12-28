@@ -83,12 +83,19 @@ def test_Fredholm1(par):
         (par["nsl"], par["ny"], par["nz"])
     )
 
-    Fop = Fredholm1(F, nz=par['nz'], saveGt=par['saveGt'],
-                    usematmul=par['usematmul'], dtype=par['dtype'])
-    assert dottest(Fop, par['nsl']*par['nx']*par['nz'],
-                   par['nsl']*par['ny']*par['nz'],
-                   complexflag=0 if par['imag'] == 0 else 3)
-    xlsqr = lsqr(Fop, Fop * x.ravel(), damp=1e-20,
-                 iter_lim=30, show=0)[0]
-    xlsqr = xlsqr.reshape(par['nsl'], par['ny'], par['nz'])
+    Fop = Fredholm1(
+        F,
+        nz=par["nz"],
+        saveGt=par["saveGt"],
+        usematmul=par["usematmul"],
+        dtype=par["dtype"],
+    )
+    assert dottest(
+        Fop,
+        par["nsl"] * par["nx"] * par["nz"],
+        par["nsl"] * par["ny"] * par["nz"],
+        complexflag=0 if par["imag"] == 0 else 3,
+    )
+    xlsqr = lsqr(Fop, Fop * x.ravel(), damp=1e-20, iter_lim=30, show=0)[0]
+    xlsqr = xlsqr.reshape(par["nsl"], par["ny"], par["nz"])
     assert_array_almost_equal(x, xlsqr, decimal=3)

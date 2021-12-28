@@ -69,8 +69,8 @@ PPop_dense = pylops.avo.poststack.PoststackLinearModelling(
 PPop = pylops.avo.poststack.PoststackLinearModelling(wav / 2, nt0=nt0)
 
 # data
-d_dense = PPop_dense*m.ravel()
-d = PPop*m
+d_dense = PPop_dense * m.ravel()
+d = PPop * m
 
 # add noise
 dn_dense = d_dense + np.random.normal(0, 2e-2, d_dense.shape)
