@@ -1,6 +1,7 @@
+from itertools import chain
+
 import numpy
 
-from itertools import chain
 from pylops.utils.backend import get_module
 
 

@@ -1,8 +1,9 @@
 import numpy as np
+
 from pylops.basicoperators import FirstDerivative, VStack
 
 
-def Gradient(dims, sampling=1, edge=False, dtype='float64', kind='centered'):
+def Gradient(dims, sampling=1, edge=False, dtype="float64", kind="centered"):
     r"""Gradient.
 
     Apply gradient operator to a multi-dimensional
@@ -59,8 +60,18 @@ def Gradient(dims, sampling=1, edge=False, dtype='float64', kind='centered'):
     if isinstance(sampling, (int, float)):
         sampling = [sampling] * ndims
 
-    gop = VStack([FirstDerivative(np.prod(dims), dims=dims, dir=idir,
-                                  sampling=sampling[idir],
-                                  edge=edge, kind=kind, dtype=dtype)
-                  for idir in range(ndims)])
+    gop = VStack(
+        [
+            FirstDerivative(
+                np.prod(dims),
+                dims=dims,
+                dir=idir,
+                sampling=sampling[idir],
+                edge=edge,
+                kind=kind,
+                dtype=dtype,
+            )
+            for idir in range(ndims)
+        ]
+    )
     return gop

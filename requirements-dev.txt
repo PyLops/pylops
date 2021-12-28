@@ -17,3 +17,7 @@ sphinx-gallery
 numpydoc
 nbsphinx
 image
+pre-commit
+autopep8
+isort
+black

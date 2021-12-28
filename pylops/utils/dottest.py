@@ -1,9 +1,18 @@
 import numpy as np
+
 from pylops.utils.backend import get_module, to_numpy
 
 
-def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb=False,
-            backend='numpy'):
+def dottest(
+    Op,
+    nr=None,
+    nc=None,
+    tol=1e-6,
+    complexflag=0,
+    raiseerror=True,
+    verb=False,
+    backend="numpy",
+):
     r"""Dot test.
 
     Generate random vectors :math:`\mathbf{u}` and :math:`\mathbf{v}`
@@ -58,7 +67,7 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
     if nc is None:
         nc = Op.shape[1]
 
-    assert (nr, nc) == Op.shape, 'Provided nr and nc do not match operator shape'
+    assert (nr, nc) == Op.shape, "Provided nr and nc do not match operator shape"
 
     # make u and v vectors
     if complexflag != 0:
@@ -67,21 +76,23 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
     if complexflag in (0, 2):
         u = ncp.random.randn(nc).astype(Op.dtype)
     else:
-        u = ncp.random.randn(nc).astype(rdtype) + \
-            1j * ncp.random.randn( nc).astype(rdtype)
+        u = ncp.random.randn(nc).astype(rdtype) + 1j * ncp.random.randn(nc).astype(
+            rdtype
+        )
 
     if complexflag in (0, 1):
         v = ncp.random.randn(nr).astype(Op.dtype)
     else:
-        v = ncp.random.randn(nr).astype(rdtype) + \
-            1j * ncp.random.randn(nr).astype(rdtype)
+        v = ncp.random.randn(nr).astype(rdtype) + 1j * ncp.random.randn(nr).astype(
+            rdtype
+        )
 
-    y = Op.matvec(u)   # Op * u
+    y = Op.matvec(u)  # Op * u
     x = Op.rmatvec(v)  # Op'* v
 
-    if getattr(Op, 'clinear', True):
-        yy = ncp.vdot(y, v) # (Op  * u)' * v
-        xx = ncp.vdot(u, x) # u' * (Op' * v)
+    if getattr(Op, "clinear", True):
+        yy = ncp.vdot(y, v)  # (Op  * u)' * v
+        xx = ncp.vdot(u, x)  # u' * (Op' * v)
     else:
         # Op is only R-linear, so treat complex numbers as elements of R^2
         yy = ncp.dot(y.real, v.real) + ncp.dot(y.imag, v.imag)
@@ -95,33 +106,47 @@ def dottest(Op, nr=None, nc=None, tol=1e-6, complexflag=0, raiseerror=True, verb
     # evaluate if dot test is passed
     if complexflag == 0:
         if np.abs((yy - xx) / ((yy + xx + 1e-15) / 2)) < tol:
-            if verb: print('Dot test passed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
-                           % (yy, xx))
+            if verb:
+                print("Dot test passed, v^T(Opu)=%f - u^T(Op^Tv)=%f" % (yy, xx))
             return True
         else:
             if raiseerror:
-                raise ValueError('Dot test failed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
-                                 % (yy, xx))
-            if verb: print('Dot test failed, v^T(Opu)=%f - u^T(Op^Tv)=%f'
-                           % (yy, xx))
+                raise ValueError(
+                    "Dot test failed, v^T(Opu)=%f - u^T(Op^Tv)=%f" % (yy, xx)
+                )
+            if verb:
+                print("Dot test failed, v^T(Opu)=%f - u^T(Op^Tv)=%f" % (yy, xx))
             return False
     else:
         # Check both real and imag parts
-        checkreal = np.abs((np.real(yy) - np.real(xx)) /
-                           ((np.real(yy) + np.real(xx)+1e-15) / 2)) < tol
-        checkimag = np.abs((np.imag(yy) - np.imag(xx)) /
-                           ((np.imag(yy) + np.imag(xx)+1e-15) / 2)) < tol
+        checkreal = (
+            np.abs(
+                (np.real(yy) - np.real(xx)) / ((np.real(yy) + np.real(xx) + 1e-15) / 2)
+            )
+            < tol
+        )
+        checkimag = (
+            np.abs(
+                (np.imag(yy) - np.imag(xx)) / ((np.imag(yy) + np.imag(xx) + 1e-15) / 2)
+            )
+            < tol
+        )
         if checkreal and checkimag:
             if verb:
-                print('Dot test passed, v^T(Opu)=%f%+fi - u^T(Op^Tv)=%f%+fi'
-                      % (yy.real, yy.imag, xx.real, xx.imag))
+                print(
+                    "Dot test passed, v^T(Opu)=%f%+fi - u^T(Op^Tv)=%f%+fi"
+                    % (yy.real, yy.imag, xx.real, xx.imag)
+                )
             return True
         else:
             if raiseerror:
-                raise ValueError('Dot test failed, v^H(Opu)=%f%+fi '
-                                 '- u^H(Op^Hv)=%f%+fi'
-                                 % (yy.real, yy.imag, xx.real, xx.imag))
+                raise ValueError(
+                    "Dot test failed, v^H(Opu)=%f%+fi "
+                    "- u^H(Op^Hv)=%f%+fi" % (yy.real, yy.imag, xx.real, xx.imag)
+                )
             if verb:
-                print('Dot test failed, v^H(Opu)=%f%+fi - u^H(Op^Hv)=%f%+fi'
-                      % (yy.real, yy.imag, xx.real, xx.imag))
+                print(
+                    "Dot test failed, v^H(Opu)=%f%+fi - u^H(Op^Hv)=%f%+fi"
+                    % (yy.real, yy.imag, xx.real, xx.imag)
+                )
             return False

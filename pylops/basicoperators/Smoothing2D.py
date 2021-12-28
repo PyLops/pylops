@@ -1,8 +1,9 @@
 import numpy as np
+
 from pylops.signalprocessing import Convolve2D
 
 
-def Smoothing2D(nsmooth, dims, nodir=None, dtype='float64'):
+def Smoothing2D(nsmooth, dims, nodir=None, dtype="float64"):
     r"""2D Smoothing.
 
     Apply smoothing to model (and data) along two directions of a
@@ -56,7 +57,12 @@ def Smoothing2D(nsmooth, dims, nodir=None, dtype='float64'):
     if nsmooth[1] % 2 == 0:
         nsmooth[1] += 1
 
-    h = np.ones((nsmooth[0], nsmooth[1]))/float(nsmooth[0]*nsmooth[1])
-    return Convolve2D(np.prod(np.array(dims)), h=h,
-                      offset=[(nsmooth[0]-1)/2, (nsmooth[1]-1)/2],
-                      dims=dims, nodir=nodir, dtype=dtype)
+    h = np.ones((nsmooth[0], nsmooth[1])) / float(nsmooth[0] * nsmooth[1])
+    return Convolve2D(
+        np.prod(np.array(dims)),
+        h=h,
+        offset=[(nsmooth[0] - 1) / 2, (nsmooth[1] - 1) / 2],
+        dims=dims,
+        nodir=nodir,
+        dtype=dtype,
+    )

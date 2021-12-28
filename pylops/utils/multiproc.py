@@ -30,7 +30,7 @@ def scalability_test(Op, x, workers=[1, 2, 4], forward=True):
     compute_times = []
     speedup = []
     for nworkers in workers:
-        print('Working with %d workers...' % nworkers)
+        print("Working with %d workers..." % nworkers)
         # update number of workers in operator
         Op.nproc = nworkers
         # run forward/adjoint computation
@@ -41,6 +41,6 @@ def scalability_test(Op, x, workers=[1, 2, 4], forward=True):
             _ = Op.rmatvec(x)
         elapsedtime = time.time() - starttime
         compute_times.append(elapsedtime)
-        speedup.append(compute_times[0]/elapsedtime)
+        speedup.append(compute_times[0] / elapsedtime)
     Op.pool.close()
     return compute_times, speedup

@@ -1,6 +1,6 @@
 import warnings
-import numpy as np
 
+import numpy as np
 from scipy.signal.windows import gaussian as spgauss
 
 
@@ -26,11 +26,11 @@ def ricker(t, f0=10):
         Index of center of wavelet
 
     """
-    if len(t)%2 == 0:
+    if len(t) % 2 == 0:
         t = t[:-1]
-        warnings.warn('one sample removed from time axis...')
+        warnings.warn("one sample removed from time axis...")
 
-    w = (1 - 2 * (np.pi * f0 * t) ** 2) * np.exp(-(np.pi * f0 * t) ** 2)
+    w = (1 - 2 * (np.pi * f0 * t) ** 2) * np.exp(-((np.pi * f0 * t) ** 2))
 
     w = np.concatenate((np.flipud(w[1:]), w), axis=0)
     t = np.concatenate((np.flipud(-t[1:]), t), axis=0)
@@ -63,11 +63,11 @@ def gaussian(t, std=1):
         Index of center of wavelet
 
     """
-    if len(t)%2 == 0:
+    if len(t) % 2 == 0:
         t = t[:-1]
-        warnings.warn('one sample removed from time axis...')
+        warnings.warn("one sample removed from time axis...")
 
-    w = spgauss(len(t)*2-1, std=std)
+    w = spgauss(len(t) * 2 - 1, std=std)
     t = np.concatenate((np.flipud(-t[1:]), t), axis=0)
     wcenter = np.argmax(np.abs(w))
 

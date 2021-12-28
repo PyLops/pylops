@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 
 
@@ -55,9 +56,10 @@ class Pad(LinearOperator):
         x_{i} = y_{pad_{in}+i}  \quad \forall i=0, N-1
 
     """
-    def __init__(self, dims, pad, dtype='float64'):
+
+    def __init__(self, dims, pad, dtype="float64"):
         if np.any(np.array(pad) < 0):
-            raise ValueError('Padding must be positive or zero')
+            raise ValueError("Padding must be positive or zero")
         self.dims = dims
         self.pad = pad
         self.reshape = False if isinstance(self.dims, int) else True
@@ -65,25 +67,23 @@ class Pad(LinearOperator):
             self.dimsd = [dim + p[0] + p[1] for dim, p in zip(dims, pad)]
         else:
             self.dimsd = dims + pad[0] + pad[1]
-        self.shape = (np.prod(np.array(self.dimsd)),
-                      np.prod(np.array(self.dims)))
+        self.shape = (np.prod(np.array(self.dimsd)), np.prod(np.array(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         if self.reshape:
             y = x.reshape(self.dims)
-            y = np.pad(y, self.pad, mode='constant')
+            y = np.pad(y, self.pad, mode="constant")
         else:
-            y = np.pad(x, self.pad, mode='constant')
+            y = np.pad(x, self.pad, mode="constant")
         return y.flatten()
 
     def _rmatvec(self, x):
         if self.reshape:
             y = x.reshape(self.dimsd)
             for ax, pad in enumerate(self.pad):
-                y = np.take(y, np.arange(pad[0], pad[0] + self.dims[ax]),
-                            axis=ax)
+                y = np.take(y, np.arange(pad[0], pad[0] + self.dims[ax]), axis=ax)
         else:
-            y = x[self.pad[0]:self.pad[0]+self.dims]
+            y = x[self.pad[0] : self.pad[0] + self.dims]
         return y.flatten()

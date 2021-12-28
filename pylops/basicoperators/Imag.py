@@ -1,4 +1,5 @@
 import numpy as np
+
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 
@@ -40,9 +41,9 @@ class Imag(LinearOperator):
         x_{i} = 0 + i\Re\{y_{i}\} \quad \forall i=0,...,N
 
     """
-    def __init__(self, dims, dtype='complex128'):
-        self.shape = (np.prod(np.array(dims)),
-                      np.prod(np.array(dims)))
+
+    def __init__(self, dims, dtype="complex128"):
+        self.shape = (np.prod(np.array(dims)), np.prod(np.array(dims)))
         self.dtype = np.dtype(dtype)
         self.rdtype = np.real(np.ones(1, self.dtype)).dtype
         self.explicit = False
@@ -54,4 +55,4 @@ class Imag(LinearOperator):
 
     def _rmatvec(self, x):
         ncp = get_array_module(x)
-        return (0 + 1j*ncp.real(x)).astype(self.dtype)
+        return (0 + 1j * ncp.real(x)).astype(self.dtype)

@@ -14,8 +14,10 @@ def test_report(capsys):
     # We just ensure the shown packages do not change (core and optional).
     if scooby:
         out1 = utils.Report()
-        out2 = scooby.Report(core=['numpy', 'scipy', 'pylops'],
-                             optional=['IPython', 'matplotlib', 'numba'])
+        out2 = scooby.Report(
+            core=["numpy", "scipy", "pylops"],
+            optional=["IPython", "matplotlib", "numba"],
+        )
 
         # Ensure they're the same; exclude time to avoid errors.
         assert out1.__repr__()[115:] == out2.__repr__()[115:]
@@ -23,4 +25,4 @@ def test_report(capsys):
     else:  # soft dependency
         _ = utils.Report()
         out, _ = capsys.readouterr()  # Empty capsys
-        assert 'NOTE: `pylops.Report` requires `scooby`. Install it via' in out
+        assert "NOTE: `pylops.Report` requires `scooby`. Install it via" in out

@@ -1,20 +1,23 @@
 import logging
 import warnings
 import numpy as np
+
 from pylops import LinearOperator
 
 try:
     import pyfftw
 except ModuleNotFoundError:
     pyfftw = None
-    pyfftw_message = 'Pyfftw not installed, use numpy or run ' \
-                     '"pip install pyFFTW" or ' \
-                     '"conda install -c conda-forge pyfftw".'
+    pyfftw_message = (
+        "Pyfftw not installed, use numpy or run "
+        '"pip install pyFFTW" or '
+        '"conda install -c conda-forge pyfftw".'
+    )
 except Exception as e:
     pyfftw = None
-    pyfftw_message = 'Failed to import pyfftw (error:%s), use numpy.' % e
+    pyfftw_message = "Failed to import pyfftw (error:%s), use numpy." % e
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class _FFT_numpy(LinearOperator):
@@ -34,9 +37,10 @@ class _FFT_numpy(LinearOperator):
     ):
         if isinstance(dims, int):
             dims = (dims,)
-        if dir > len(dims)-1:
-            raise ValueError('dir=%d must be smaller than '
-                             'number of dims=%d...' % (dir, len(dims)))
+        if dir > len(dims) - 1:
+            raise ValueError(
+                "dir=%d must be smaller than " "number of dims=%d..." % (dir, len(dims))
+            )
         self.dir = dir
         self.nfft = nfft if nfft is not None else dims[self.dir]
         self.real = real
@@ -76,14 +80,12 @@ class _FFT_numpy(LinearOperator):
         if len(dims) == 1:
             self.dims = np.array([dims[0], 1])
             self.dims_fft = self.dims.copy()
-            self.dims_fft[self.dir] = self.nfft // 2 + 1 if \
-                self.real else self.nfft
+            self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
             self.reshape = False
         else:
             self.dims = np.array(dims)
             self.dims_fft = self.dims.copy()
-            self.dims_fft[self.dir] = self.nfft // 2 + 1 if \
-                self.real else self.nfft
+            self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
             self.reshape = True
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         # Find types to enforce to forward and adjoint outputs. This is
@@ -92,8 +94,9 @@ class _FFT_numpy(LinearOperator):
         # adjoint output is forced to be real even if the provided dtype
         # is complex.
         self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
-        self.cdtype = (np.ones(1, dtype=self.rdtype) +
-                       1j * np.ones(1, dtype=self.rdtype)).dtype
+        self.cdtype = (
+            np.ones(1, dtype=self.rdtype) + 1j * np.ones(1, dtype=self.rdtype)
+        ).dtype
         self.dtype = self.cdtype
         self.clinear = False if real else True
         self.explicit = False
@@ -104,9 +107,9 @@ class _FFT_numpy(LinearOperator):
             if self.ifftshift_before:
                 x = np.fft.ifftshift(x)
             if self.real:
-                y = np.fft.rfft(np.real(x), n=self.nfft, axis=-1, norm='ortho')
+                y = np.fft.rfft(np.real(x), n=self.nfft, axis=-1, norm="ortho")
                 # Apply scaling to obtain a correct adjoint for this operator
-                y[..., 1:1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+                y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             else:
                 y = np.fft.fft(x, n=self.nfft, axis=-1, norm='ortho')
             if self.fftshift_after:
@@ -116,11 +119,10 @@ class _FFT_numpy(LinearOperator):
             if self.ifftshift_before:
                 x = np.fft.ifftshift(x, axes=self.dir)
             if self.real:
-                y = np.fft.rfft(np.real(x), n=self.nfft,
-                                axis=self.dir, norm='ortho')
+                y = np.fft.rfft(np.real(x), n=self.nfft, axis=self.dir, norm="ortho")
                 # Apply scaling to obtain a correct adjoint for this operator
                 y = np.swapaxes(y, -1, self.dir)
-                y[..., 1:1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+                y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
                 y = np.swapaxes(y, self.dir, -1)
             else:
                 y = np.fft.fft(x, n=self.nfft,
@@ -139,10 +141,10 @@ class _FFT_numpy(LinearOperator):
             if self.real:
                 # Apply scaling to obtain a correct adjoint for this operator
                 x = x.copy()
-                x[..., 1:1 + (self.nfft - 1) // 2] /= np.sqrt(2)
-                y = np.fft.irfft(x, n=self.nfft, axis=-1, norm='ortho')
+                x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+                y = np.fft.irfft(x, n=self.nfft, axis=-1, norm="ortho")
             else:
-                y = np.fft.ifft(x, n=self.nfft, axis=-1, norm='ortho')
+                y = np.fft.ifft(x, n=self.nfft, axis=-1, norm="ortho")
             if self.nfft != self.dims[self.dir]:
                 y = y[:self.dims[self.dir]]
             if self.ifftshift_before:
@@ -155,11 +157,11 @@ class _FFT_numpy(LinearOperator):
                 # Apply scaling to obtain a correct adjoint for this operator
                 x = x.copy()
                 x = np.swapaxes(x, -1, self.dir)
-                x[..., 1:1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+                x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
                 x = np.swapaxes(x, self.dir, -1)
-                y = np.fft.irfft(x, n=self.nfft, axis=self.dir, norm='ortho')
+                y = np.fft.irfft(x, n=self.nfft, axis=self.dir, norm="ortho")
             else:
-                y = np.fft.ifft(x, n=self.nfft, axis=self.dir, norm='ortho')
+                y = np.fft.ifft(x, n=self.nfft, axis=self.dir, norm="ortho")
             if self.nfft != self.dims[self.dir]:
                 y = np.take(y, np.arange(0, self.dims[self.dir]),
                             axis=self.dir)
@@ -188,16 +190,19 @@ class _FFT_fftw(LinearOperator):
     ):
         if isinstance(dims, int):
             dims = (dims,)
-        if dir > len(dims)-1:
-            raise ValueError('dir=%d must be smaller than '
-                             'number of dims=%d...' % (dir, len(dims)))
+        if dir > len(dims) - 1:
+            raise ValueError(
+                "dir=%d must be smaller than " "number of dims=%d..." % (dir, len(dims))
+            )
         self.dir = dir
         if nfft is None:
             nfft = dims[self.dir]
         elif nfft < dims[self.dir]:
-            logging.warning('nfft should be bigger or equal then '
-                            ' dims[self.dir] for engine=fftw, set to '
-                            'dims[self.dir]')
+            logging.warning(
+                "nfft should be bigger or equal then "
+                " dims[self.dir] for engine=fftw, set to "
+                "dims[self.dir]"
+            )
             nfft = dims[self.dir]
         self.nfft = nfft
 
@@ -235,25 +240,28 @@ class _FFT_fftw(LinearOperator):
                 )
             self.f = np.fft.fftshift(self.f)
         if len(dims) == 1:
-            self.dims = np.array([dims[0], ])
+            self.dims = np.array(
+                [
+                    dims[0],
+                ]
+            )
             self.dims_t = self.dims.copy()
             self.dims_t[self.dir] = self.nfft
             self.dims_fft = self.dims.copy()
-            self.dims_fft[self.dir] = self.nfft // 2 + 1 if \
-                self.real else self.nfft
+            self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
             self.reshape = False
         else:
             self.dims = np.array(dims)
             self.dims_t = self.dims.copy()
             self.dims_t[self.dir] = self.nfft
             self.dims_fft = self.dims.copy()
-            self.dims_fft[self.dir] = self.nfft//2 + 1 if \
-                self.real else self.nfft
+            self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
             self.reshape = True
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
-        self.cdtype = (np.ones(1, dtype=self.rdtype) +
-                       1j * np.ones(1, dtype=self.rdtype)).dtype
+        self.cdtype = (
+            np.ones(1, dtype=self.rdtype) + 1j * np.ones(1, dtype=self.rdtype)
+        ).dtype
         self.dtype = self.cdtype
         self.clinear = False if real else True
         self.explicit = False
@@ -262,25 +270,28 @@ class _FFT_fftw(LinearOperator):
         self.pad = [[0, 0] for _ in range(len(self.dims))]
         if self.real:
             if self.nfft % 2:
-                self.pad[self.dir][1] = 2*(self.dims_fft[self.dir]-1) + 1 - \
-                                        self.dims[self.dir]
+                self.pad[self.dir][1] = (
+                    2 * (self.dims_fft[self.dir] - 1) + 1 - self.dims[self.dir]
+                )
             else:
-                self.pad[self.dir][1] = 2*(self.dims_fft[self.dir]-1) - \
-                                        self.dims[self.dir]
+                self.pad[self.dir][1] = (
+                    2 * (self.dims_fft[self.dir] - 1) - self.dims[self.dir]
+                )
         else:
-            self.pad[self.dir][1] = self.dims_fft[self.dir] - \
-                                      self.dims[self.dir]
+            self.pad[self.dir][1] = self.dims_fft[self.dir] - self.dims[self.dir]
         self.dopad = True if np.sum(np.array(self.pad)) > 0 else False
 
         # create empty arrays and plans for fft/ifft
-        self.x = pyfftw.empty_aligned(self.dims_t,
-                                      dtype=self.rdtype if real else self.cdtype)
-        self.y = pyfftw.empty_aligned(self.dims_fft,
-                                      dtype=self.cdtype)
-        self.fftplan = pyfftw.FFTW(self.x, self.y, axes=(self.dir,),
-                                   direction='FFTW_FORWARD', **kwargs_fftw)
-        self.ifftplan = pyfftw.FFTW(self.y, self.x, axes=(self.dir,),
-                                    direction='FFTW_BACKWARD', **kwargs_fftw)
+        self.x = pyfftw.empty_aligned(
+            self.dims_t, dtype=self.rdtype if real else self.cdtype
+        )
+        self.y = pyfftw.empty_aligned(self.dims_fft, dtype=self.cdtype)
+        self.fftplan = pyfftw.FFTW(
+            self.x, self.y, axes=(self.dir,), direction="FFTW_FORWARD", **kwargs_fftw
+        )
+        self.ifftplan = pyfftw.FFTW(
+            self.y, self.x, axes=(self.dir,), direction="FFTW_BACKWARD", **kwargs_fftw
+        )
 
     def _matvec(self, x):
         if self.real:
@@ -290,8 +301,8 @@ class _FFT_fftw(LinearOperator):
             if self.ifftshift_before:
                 x = np.fft.ifftshift(x)
             if self.dopad:
-                x = np.pad(x, self.pad, 'constant', constant_values=0)
-            y = np.sqrt(1. / self.nfft) * self.fftplan(x)
+                x = np.pad(x, self.pad, "constant", constant_values=0)
+            y = np.sqrt(1.0 / self.nfft) * self.fftplan(x)
             if self.real:
                 y[..., 1:1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             if self.fftshift_after:
@@ -301,12 +312,12 @@ class _FFT_fftw(LinearOperator):
             if self.ifftshift_before:
                 x = np.fft.ifftshift(x, axes=self.dir)
             if self.dopad:
-                x = np.pad(x, self.pad, 'constant', constant_values=0)
-            y = np.sqrt(1. / self.nfft) * self.fftplan(x)
+                x = np.pad(x, self.pad, "constant", constant_values=0)
+            y = np.sqrt(1.0 / self.nfft) * self.fftplan(x)
             if self.real:
                 # Apply scaling to obtain a correct adjoint for this operator
                 y = np.swapaxes(y, -1, self.dir)
-                y[..., 1:1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+                y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
                 y = np.swapaxes(y, self.dir, -1)
             if self.fftshift_after:
                 y = np.fft.fftshift(y, axes=self.dir)
@@ -320,7 +331,7 @@ class _FFT_fftw(LinearOperator):
             if self.real:
                 # Apply scaling to obtain a correct adjoint for this operator
                 x = x.copy()
-                x[..., 1:1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+                x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             y = np.sqrt(self.nfft) * self.ifftplan(x)
             if self.nfft != self.dims[self.dir]:
                 y = y[:self.dims[self.dir]]
@@ -334,7 +345,7 @@ class _FFT_fftw(LinearOperator):
                 # Apply scaling to obtain a correct adjoint for this operator
                 x = x.copy()
                 x = np.swapaxes(x, -1, self.dir)
-                x[..., 1:1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+                x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
                 x = np.swapaxes(x, self.dir, -1)
             y = np.sqrt(self.nfft) * self.ifftplan(x)
             if self.nfft != self.dims[self.dir]:
@@ -475,5 +486,5 @@ def FFT(
             dtype=dtype,
         )
     else:
-        raise NotImplementedError('engine must be numpy or fftw')
+        raise NotImplementedError("engine must be numpy or fftw")
     return f

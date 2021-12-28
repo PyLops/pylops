@@ -1,3 +1,4 @@
+# isort: skip_file
 from .LinearOperator import LinearOperator
 from .basicoperators import Regression
 from .basicoperators import LinearRegression
@@ -63,4 +64,5 @@ except ImportError:
     # warning here, but this case *should* be rare. pylops should be installed
     # properly!
     from datetime import datetime
-    __version__ = 'unknown-'+datetime.today().strftime('%Y%m%d')
+
+    __version__ = "unknown-" + datetime.today().strftime("%Y%m%d")

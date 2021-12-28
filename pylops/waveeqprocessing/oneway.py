@@ -1,16 +1,15 @@
 import logging
+
 import numpy as np
-
 from scipy.sparse.linalg import lsqr
-from pylops import LinearOperator
-from pylops.utils.tapers import taper2d, taper3d
-from pylops.utils import dottest as Dottest
-from pylops import Diagonal, Identity, Pad
+
+from pylops import Diagonal, Identity, LinearOperator, Pad
 from pylops.signalprocessing import FFT
+from pylops.utils import dottest as Dottest
 from pylops.utils.backend import to_cupy_conditional
+from pylops.utils.tapers import taper2d, taper3d
 
-
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.WARNING)
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _phase_shift(phiin, freq, kx, vel, dz, ky=0, adj=False):
@@ -42,7 +41,7 @@ def _phase_shift(phiin, freq, kx, vel, dz, ky=0, adj=False):
 
     """
     # vertical slowness
-    kz = ((freq / vel) ** 2 - kx ** 2 - ky ** 2)
+    kz = (freq / vel) ** 2 - kx ** 2 - ky ** 2
     kz = np.sqrt(kz.astype(phiin.dtype))
     # ensure evanescent region is complex positive
     kz = np.real(kz) - 1j * np.sign(dz) * np.abs(np.imag(kz))
@@ -62,18 +61,18 @@ class _PhaseShift(LinearOperator):
     input parameters.
 
     """
-    def __init__(self, vel, dz, freq, kx, ky=None, dtype='complex64'):
+
+    def __init__(self, vel, dz, freq, kx, ky=None, dtype="complex64"):
         self.vel = vel
         self.dz = dz
         # define frequency and horizontal wavenumber axes
         if ky is None:
             ky = 0
-            [freq, kx] = np.meshgrid(freq, kx, indexing='ij')
+            [freq, kx] = np.meshgrid(freq, kx, indexing="ij")
         else:
-            [freq, kx, ky] = \
-                np.meshgrid(freq, kx, ky, indexing='ij')
+            [freq, kx, ky] = np.meshgrid(freq, kx, ky, indexing="ij")
         # define vertical wavenumber axis
-        kz = ((freq / vel) ** 2 - kx ** 2 - ky ** 2)
+        kz = (freq / vel) ** 2 - kx ** 2 - ky ** 2
         kz = np.sqrt(kz.astype(dtype))
         # ensure evanescent region is complex positive
         kz = np.real(kz) - 1j * np.sign(dz) * np.abs(np.imag(kz))
@@ -98,7 +97,7 @@ class _PhaseShift(LinearOperator):
         return y.ravel()
 
 
-def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype='float64'):
+def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64"):
     r"""Phase shift operator
 
     Apply positive (forward) phase shift with constant velocity in
@@ -167,11 +166,11 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype='float64'):
         dims = (nt, kx.size, ky.size)
         dimsfft = (freq.size, kx.size, ky.size)
     Fop = FFT(dims, dir=0, nfft=nt, real=True, dtype=dtype)
-    Kxop = FFT(dimsfft, dir=1, nfft=kx.size, real=False,
-               fftshift=True, dtype=dtypefft)
+    Kxop = FFT(dimsfft, dir=1, nfft=kx.size, real=False, fftshift=True, dtype=dtypefft)
     if ky is not None:
-        Kyop = FFT(dimsfft, dir=2, nfft=ky.size, real=False,
-                   fftshift=True, dtype=dtypefft)
+        Kyop = FFT(
+            dimsfft, dir=2, nfft=ky.size, real=False, fftshift=True, dtype=dtypefft
+        )
     Pop = _PhaseShift(vel, dz, freq, kx, ky, dtypefft)
     if ky is None:
         Pop = Fop.H * Kxop * Pop * Kxop.H * Fop
@@ -184,10 +183,25 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype='float64'):
     return LinearOperator(Pop)
 
 
-def Deghosting(p, nt, nr, dt, dr, vel, zrec, pd=None, win=None,
-               npad=(11, 11), ntaper=(11, 11),
-               restriction=None, sptransf=None, solver=lsqr,
-               dottest=False, dtype='complex128', **kwargs_solver):
+def Deghosting(
+    p,
+    nt,
+    nr,
+    dt,
+    dr,
+    vel,
+    zrec,
+    pd=None,
+    win=None,
+    npad=(11, 11),
+    ntaper=(11, 11),
+    restriction=None,
+    sptransf=None,
+    solver=lsqr,
+    dottest=False,
+    dtype="complex128",
+    **kwargs_solver
+):
     r"""Wavefield deghosting.
 
     Apply seismic wavefield decomposition from single-component (pressure)
@@ -300,11 +314,15 @@ def Deghosting(p, nt, nr, dt, dr, vel, zrec, pd=None, win=None,
         taper = taper3d(nt, nr, ntaper).transpose(2, 0, 1)
         Padop = Pad(dims, ((0, 0), (npad[0], npad[0]), (npad[1], npad[1])))
 
-    Pop = - Padop.H * PhaseShift(vel, zprop, nt, freq, kx, ky) * \
-          Padop * Diagonal(taper.ravel(), dtype=dtype)
+    Pop = (
+        -Padop.H
+        * PhaseShift(vel, zprop, nt, freq, kx, ky)
+        * Padop
+        * Diagonal(taper.ravel(), dtype=dtype)
+    )
 
     # Decomposition operator
-    Dupop = (Identity(nt * nrs, dtype=p.dtype) + Pop)
+    Dupop = Identity(nt * nrs, dtype=p.dtype) + Pop
     if dottest:
         Dottest(Dupop, nt * nrs, nt * nrs, verb=True)
 
@@ -329,7 +347,7 @@ def Deghosting(p, nt, nr, dt, dr, vel, zrec, pd=None, win=None,
 
     # Apply sparse transform
     if sptransf is not None:
-        p = Dupop_norestr * pup # reconstruct p at finely sampled spatial axes
+        p = Dupop_norestr * pup  # reconstruct p at finely sampled spatial axes
         pup = sptransf * pup
         p = np.real(p).reshape(dims)
 
