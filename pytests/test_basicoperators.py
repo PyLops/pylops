@@ -130,7 +130,7 @@ def test_MatrixMult_repeated(par):
         Gop, par["ny"] * 5, par["nx"] * 5, complexflag=0 if par["imag"] == 1 else 3
     )
 
-    x = (np.ones((par["nx"], 5)) + par["imag"] * np.ones((par["nx"], 5))).flatten()
+    x = (np.ones((par["nx"], 5)) + par["imag"] * np.ones((par["nx"], 5))).ravel()
     xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
@@ -227,8 +227,8 @@ def test_Flip2D(par):
         )
         assert dottest(Fop, par["ny"] * par["nx"], par["ny"] * par["nx"])
 
-        y = Fop * x[str(dir)].flatten()
-        xadj = Fop.H * y.flatten()
+        y = Fop * x[str(dir)].ravel()
+        xadj = Fop.H * y.ravel()
         xadj = xadj.reshape(par["ny"], par["nx"])
         assert_array_equal(x[str(dir)], xadj)
 
@@ -278,8 +278,8 @@ def test_Flip3D(par):
             Fop, par["ny"] * par["nx"] * par["nx"], par["ny"] * par["nx"] * par["nx"]
         )
 
-        y = Fop * x[str(dir)].flatten()
-        xadj = Fop.H * y.flatten()
+        y = Fop * x[str(dir)].ravel()
+        xadj = Fop.H * y.ravel()
         xadj = xadj.reshape(par["ny"], par["nx"], par["nx"])
         assert_array_equal(x[str(dir)], xadj)
 
@@ -317,7 +317,7 @@ def test_Symmetrize2D(par):
             dir=dir,
             dtype=par["dtype"],
         )
-        y = Sop * x[str(dir)].flatten()
+        y = Sop * x[str(dir)].ravel()
         assert dottest(Sop, y.size, par["ny"] * par["nx"])
 
         xinv = Sop / y
@@ -365,7 +365,7 @@ def test_Symmetrize3D(par):
             dir=dir,
             dtype=par["dtype"],
         )
-        y = Sop * x[str(dir)].flatten()
+        y = Sop * x[str(dir)].ravel()
         assert dottest(Sop, y.size, par["ny"] * par["nx"] * par["nx"])
 
         xinv = Sop / y
@@ -406,7 +406,7 @@ def test_Roll2D(par):
             shift=-2,
             dtype=par["dtype"],
         )
-        y = Rop * x[str(dir)].flatten()
+        y = Rop * x[str(dir)].ravel()
         assert dottest(Rop, par["ny"] * par["nx"], par["ny"] * par["nx"])
 
         xadj = Rop.H * y
@@ -455,7 +455,7 @@ def test_Roll3D(par):
             shift=3,
             dtype=par["dtype"],
         )
-        y = Rop * x[str(dir)].flatten()
+        y = Rop * x[str(dir)].ravel()
         assert dottest(
             Rop, par["ny"] * par["nx"] * par["nx"], par["ny"] * par["nx"] * par["nx"]
         )

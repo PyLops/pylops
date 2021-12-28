@@ -97,10 +97,10 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode="eikonal"):
         # compute grid
         if ndims == 2:
             X, Z = np.meshgrid(x, z, indexing="ij")
-            X, Z = X.flatten(), Z.flatten()
+            X, Z = X.ravel(), Z.ravel()
         else:
             Y, X, Z = np.meshgrid(y, x, z, indexing="ij")
-            Y, X, Z = Y.flatten(), X.flatten(), Z.flatten()
+            Y, X, Z = Y.ravel(), X.ravel(), Z.ravel()
 
         dist_srcs2 = np.zeros((ny * nx * nz, ns))
         dist_recs2 = np.zeros((ny * nx * nz, nr))

@@ -53,7 +53,7 @@ of the matrix we want to multiply to the model and data.
 .. code-block:: python
 
     def __init__(self, d, dtype=None):
-        self.d = d.flatten()
+        self.d = d.ravel()
         self.shape = (len(self.d), len(self.d))
         self.dtype = np.dtype(dtype)
         self.explicit = False

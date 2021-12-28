@@ -102,7 +102,7 @@ D2op = pylops.Laplacian(dims=(nx, ny), edge=True, dtype=np.float)
 
 # L2
 xinv_sm = pylops.optimization.leastsquares.RegularizedInversion(
-    RLop.H, [D2op], y.T.flatten(), epsRs=[1e1], **dict(iter_lim=20)
+    RLop.H, [D2op], y.T.ravel(), epsRs=[1e1], **dict(iter_lim=20)
 )
 xinv_sm = np.real(xinv_sm.reshape(nx, ny)).T
 
@@ -115,7 +115,7 @@ niterinner = 4
 xinv, niter = pylops.optimization.sparsity.SplitBregman(
     RLop.H,
     Dop,
-    y.T.flatten(),
+    y.T.ravel(),
     niter,
     niterinner,
     mu=mu,

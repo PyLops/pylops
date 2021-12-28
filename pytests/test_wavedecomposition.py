@@ -66,7 +66,7 @@ def create_data2D():
         dtype="complex128",
     )
 
-    d2d = UPop * np.concatenate((p2d_plus.flatten(), p2d_minus.flatten())).flatten()
+    d2d = UPop * np.concatenate((p2d_plus.ravel(), p2d_minus.ravel())).ravel()
     d2d = np.real(d2d.reshape(2 * PAR["nx"], PAR["nt"]))
     p2d, vz2d = d2d[: PAR["nx"]], d2d[PAR["nx"] :]
     return p2d, vz2d, p2d_minus, p2d_plus
@@ -96,7 +96,7 @@ def create_data3D():
         dtype="complex128",
     )
 
-    d3d = UPop * np.concatenate((p3d_plus.flatten(), p3d_minus.flatten())).flatten()
+    d3d = UPop * np.concatenate((p3d_plus.ravel(), p3d_minus.ravel())).ravel()
     d3d = np.real(d3d.reshape(2 * PAR["ny"], PAR["nx"], PAR["nt"]))
     p3d, vz3d = d3d[: PAR["ny"]], d3d[PAR["ny"] :]
     return p3d, vz3d, p3d_minus, p3d_plus

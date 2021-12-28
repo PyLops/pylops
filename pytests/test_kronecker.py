@@ -58,6 +58,6 @@ def test_Kroneker_Derivative(par):
     )
     x[par["ny"] // 2, par["nx"] // 2] = 1
 
-    y = D2op * x.flatten()
-    yk = Kop * x.flatten()
+    y = D2op * x.ravel()
+    yk = Kop * x.ravel()
     assert_array_equal(y, yk)

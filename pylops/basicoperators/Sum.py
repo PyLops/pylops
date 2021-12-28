@@ -65,11 +65,11 @@ class Sum(LinearOperator):
         ncp = get_array_module(x)
         y = x.reshape(self.dims)
         y = ncp.sum(y, axis=self.dir)
-        return y.flatten()
+        return y.ravel()
 
     def _rmatvec(self, x):
         ncp = get_array_module(x)
         y = x.reshape(self.dims_d)
         y = ncp.expand_dims(y, self.dir)
         y = ncp.tile(y, self.tile)
-        return y.flatten()
+        return y.ravel()

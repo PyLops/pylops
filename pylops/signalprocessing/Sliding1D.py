@@ -99,7 +99,7 @@ def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False):
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)])
     else:
-        OOp = BlockDiag([Diagonal(taps[itap].flatten()) * Op for itap in range(nwins)])
+        OOp = BlockDiag([Diagonal(taps[itap].ravel()) * Op for itap in range(nwins)])
 
     combining = HStack(
         [

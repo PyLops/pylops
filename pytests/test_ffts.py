@@ -188,7 +188,7 @@ def test_FFT_2dsignal(par):
         assert dottest(FFTop, nfft * nx, nt * nx, complexflag=2, tol=10 ** (-decimal))
         assert dottest(FFTop, nfft * nx, nt * nx, complexflag=3, tol=10 ** (-decimal))
 
-    D = FFTop * d.flatten()
+    D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is same as inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
 
@@ -218,7 +218,7 @@ def test_FFT_2dsignal(par):
         assert dottest(FFTop, nt * nfft, nt * nx, complexflag=2, tol=10 ** (-decimal))
         assert dottest(FFTop, nt * nfft, nt * nx, complexflag=3, tol=10 ** (-decimal))
 
-    D = FFTop * d.flatten()
+    D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
 
@@ -274,7 +274,7 @@ def test_FFT_3dsignal(par):
             FFTop, nfft * nx * ny, nt * nx * ny, complexflag=3, tol=10 ** (-decimal)
         )
 
-    D = FFTop * d.flatten()
+    D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is same as inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
 
@@ -312,7 +312,7 @@ def test_FFT_3dsignal(par):
             FFTop, nt * nfft * ny, nt * nx * ny, complexflag=3, tol=10 ** (-decimal)
         )
 
-    D = FFTop * d.flatten()
+    D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
 
@@ -350,7 +350,7 @@ def test_FFT_3dsignal(par):
             FFTop, nt * nx * nfft, nt * nx * ny, complexflag=3, tol=10 ** (-decimal)
         )
 
-    D = FFTop * d.flatten()
+    D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
 
@@ -407,7 +407,7 @@ def test_FFT2D(par):
             tol=10 ** (-decimal),
         )
 
-    D = FFTop * d.flatten()
+    D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
 
@@ -450,7 +450,7 @@ def test_FFT2D(par):
             tol=10 ** (-decimal),
         )
 
-    D = FFTop * d.flatten()
+    D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
 
@@ -509,7 +509,7 @@ def test_FFT3D(par):
             tol=10 ** (-decimal),
         )
 
-    D = FFTop * d.flatten()
+    D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
 
@@ -552,7 +552,7 @@ def test_FFT3D(par):
             tol=10 ** (-decimal),
         )
 
-    D = FFTop * d.flatten()
+    D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
 
@@ -595,7 +595,7 @@ def test_FFT3D(par):
             tol=10 ** (-decimal),
         )
 
-    D = FFTop * d.flatten()
+    D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
     dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
 

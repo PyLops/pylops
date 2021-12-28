@@ -49,7 +49,7 @@ Cop = pylops.signalprocessing.Convolve2D(
 # regularization, the deblurred image will show some ringing due to the
 # instabilities of the inverse process. Using a L1 solver with a DWT
 # preconditioner or TV regularization allows to recover sharper contrasts.
-imblur = Cop * im.flatten()
+imblur = Cop * im.ravel()
 
 imdeblur = pylops.optimization.leastsquares.NormalEquationsInversion(
     Cop, None, imblur, maxiter=50
@@ -72,7 +72,7 @@ imdeblurfista = Wop.H * imdeblurfista
 imdeblurtv = pylops.optimization.sparsity.SplitBregman(
     Cop,
     Dop,
-    imblur.flatten(),
+    imblur.ravel(),
     niter_outer=10,
     niter_inner=5,
     mu=1.5,
@@ -86,7 +86,7 @@ imdeblurtv = pylops.optimization.sparsity.SplitBregman(
 imdeblurtv1 = pylops.optimization.sparsity.SplitBregman(
     Cop,
     DWop,
-    imblur.flatten(),
+    imblur.ravel(),
     niter_outer=10,
     niter_inner=5,
     mu=1.5,

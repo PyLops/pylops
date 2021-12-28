@@ -474,11 +474,11 @@ def MDD(
 
     # Adjoint
     if adjoint:
-        madj = MDCop.H * d.flatten()
+        madj = MDCop.H * d.ravel()
         madj = np.squeeze(madj.reshape(nt2, nr, nv))
         madj = np.moveaxis(madj, 0, -1)
         if psf:
-            psfadj = PSFop.H * G.flatten()
+            psfadj = PSFop.H * G.ravel()
             psfadj = np.squeeze(psfadj.reshape(nt2, nr, nr))
             psfadj = np.moveaxis(psfadj, 0, -1)
 
@@ -491,15 +491,15 @@ def MDD(
         P = to_cupy_conditional(d, P)
         Pop = Diagonal(P)
         minv = PreconditionedInversion(
-            MDCop, Pop, d.flatten(), returninfo=False, **kwargs_solver
+            MDCop, Pop, d.ravel(), returninfo=False, **kwargs_solver
         )
     else:
         if ncp == np and "callback" not in kwargs_solver:
-            minv = lsqr(MDCop, d.flatten(), **kwargs_solver)[0]
+            minv = lsqr(MDCop, d.ravel(), **kwargs_solver)[0]
         else:
             minv = cgls(
                 MDCop,
-                d.flatten(),
+                d.ravel(),
                 ncp.zeros(int(MDCop.shape[1]), dtype=MDCop.dtype),
                 **kwargs_solver
             )[0]
@@ -514,11 +514,11 @@ def MDD(
 
     if psf:
         if ncp == np:
-            psfinv = lsqr(PSFop, G.flatten(), **kwargs_solver)[0]
+            psfinv = lsqr(PSFop, G.ravel(), **kwargs_solver)[0]
         else:
             psfinv = cgls(
                 PSFop,
-                G.flatten(),
+                G.ravel(),
                 ncp.zeros(int(PSFop.shape[1]), dtype=PSFop.dtype),
                 **kwargs_solver
             )[0]

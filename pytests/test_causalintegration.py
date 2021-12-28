@@ -107,7 +107,7 @@ def test_CausalIntegration1d(par):
             Dop = FirstDerivative(
                 par["nt"] - rf1, sampling=par["dt"], dtype=par["dtype"]
             )
-            xder = Dop * y.flatten()
+            xder = Dop * y.ravel()
 
             # derivative by inversion
             xinv = Cop / y
@@ -151,7 +151,7 @@ def test_CausalIntegration2d(par):
         # cases where a zero c is required
         if kind != "full" and not rf:
             # numerical integration
-            y = Cop * x.flatten()
+            y = Cop * x.ravel()
             y = y.reshape(par["nt"], par["nx"])
 
             # analytical integration
@@ -173,11 +173,11 @@ def test_CausalIntegration2d(par):
                 sampling=dt,
                 dtype=par["dtype"],
             )
-            xder = Dop * y.flatten()
+            xder = Dop * y.ravel()
             xder = xder.reshape(par["nt"], par["nx"])
 
             # derivative by inversion
-            xinv = Cop / y.flatten()
+            xinv = Cop / y.ravel()
             xinv = xinv.reshape(par["nt"], par["nx"])
 
             assert_array_almost_equal(x[:-1], xder[:-1], decimal=2)

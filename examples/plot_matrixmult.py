@@ -201,7 +201,7 @@ A = np.array([[1.0, 2.0], [4.0, 5.0]])
 x = np.array([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
 
 Aop = pylops.MatrixMult(A, dims=(3,), dtype="float64")
-y = Aop * x.flatten()
+y = Aop * x.ravel()
 
 xest, istop, itn, r1norm, r2norm = lsqr(Aop, y, damp=1e-10, iter_lim=10, show=0)[0:5]
 xest = xest.reshape(3, 2)

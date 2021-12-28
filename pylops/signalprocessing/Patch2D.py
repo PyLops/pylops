@@ -161,10 +161,7 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
         OOp = BlockDiag([Op for _ in range(nwins)])
     else:
         OOp = BlockDiag(
-            [
-                Diagonal(taps[itap].flatten(), dtype=Op.dtype) * Op
-                for itap in range(nwins)
-            ]
+            [Diagonal(taps[itap].ravel(), dtype=Op.dtype) * Op for itap in range(nwins)]
         )
 
     hstack = HStack(

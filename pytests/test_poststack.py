@@ -103,8 +103,8 @@ def test_PoststackLinearModelling1d(par):
     assert dottest(PPop, nt0, nt0, tol=1e-4)
 
     # Compare data
-    d = PPop * m.flatten()
-    d_dense = PPop_dense * m.T.flatten()
+    d = PPop * m.ravel()
+    d_dense = PPop_dense * m.T.ravel()
     assert_array_almost_equal(d, d_dense, decimal=4)
 
     # Inversion
@@ -140,8 +140,8 @@ def test_PoststackLinearModelling1d_nonstationary(par):
     assert dottest(PPop, nt0, nt0, tol=1e-4)
 
     # Compare data
-    d = PPop * m.flatten()
-    d_dense = PPop_dense * m.T.flatten()
+    d = PPop * m.ravel()
+    d_dense = PPop_dense * m.T.ravel()
     assert_array_almost_equal(d, d_dense, decimal=4)
 
     # Inversion
@@ -178,8 +178,8 @@ def test_PoststackLinearModelling2d(par):
     assert dottest(PPop, nz * nx, nz * nx, tol=1e-4)
 
     # Compare data
-    d = (PPop * m2d.flatten()).reshape(nz, nx)
-    d_dense = (PPop_dense * m2d.flatten()).reshape(nz, nx)
+    d = (PPop * m2d.ravel()).reshape(nz, nx)
+    d_dense = (PPop_dense * m2d.ravel()).reshape(nz, nx)
     assert_array_almost_equal(d, d_dense, decimal=4)
 
     # Inversion

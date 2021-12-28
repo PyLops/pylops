@@ -96,6 +96,6 @@ def test_Fredholm1(par):
         par["nsl"] * par["ny"] * par["nz"],
         complexflag=0 if par["imag"] == 0 else 3,
     )
-    xlsqr = lsqr(Fop, Fop * x.flatten(), damp=1e-20, iter_lim=30, show=0)[0]
+    xlsqr = lsqr(Fop, Fop * x.ravel(), damp=1e-20, iter_lim=30, show=0)[0]
     xlsqr = xlsqr.reshape(par["nsl"], par["ny"], par["nz"])
     assert_array_almost_equal(x, xlsqr, decimal=3)
