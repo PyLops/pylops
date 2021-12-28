@@ -1,5 +1,4 @@
 import numpy as np
-import numpy.typing as npt
 from scipy.linalg import block_diag, lstsq, toeplitz
 from scipy.signal import convolve, correlate, fftconvolve, oaconvolve
 from scipy.sparse import csc_matrix, eye
@@ -335,33 +334,33 @@ def get_lstsq(x):
         return cp.linalg.lstsq
 
 
-def get_complex_dtype(dtype: npt.DTypeLike) -> npt.DTypeLike:
+def get_complex_dtype(dtype):
     """Returns a complex type in the precision of the input type.
 
     Parameters
     ----------
-    dtype : :obj:`npt.DTypeLike`
+    dtype : :obj:`numpy.dtype`
         Input dtype.
 
     Returns
     -------
-    npt.DTypeLike
+    complex_dtype : :obj:`numpy.dtype`
         Complex output type.
     """
     return (np.ones(1, dtype=dtype) + 1j * np.ones(1, dtype=dtype)).dtype
 
 
-def get_real_dtype(dtype: npt.DTypeLike) -> npt.DTypeLike:
+def get_real_dtype(dtype):
     """Returns a real type in the precision of the input type.
 
     Parameters
     ----------
-    dtype : :obj:`npt.DTypeLike`
+    dtype : :obj:`numpy.dtype`
         Input dtype.
 
     Returns
     -------
-    npt.DTypeLike
+    real_dtype : :obj:`numpy.dtype`
         Real output type.
     """
     return np.real(np.ones(1, dtype)).dtype
