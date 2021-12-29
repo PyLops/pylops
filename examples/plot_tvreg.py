@@ -112,7 +112,7 @@ ny, nx = x.shape
 perc_subsampling = 0.6
 nxsub = int(np.round(ny * nx * perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(ny * nx))[:nxsub])
-Rop = pylops.Restriction(ny * nx, iava, dtype=np.complex)
+Rop = pylops.Restriction(ny * nx, iava, dtype=np.complex128)
 Fop = pylops.signalprocessing.FFT2D(dims=(ny, nx))
 
 n = np.random.normal(0, 0.0, (ny, nx))
@@ -148,10 +148,10 @@ axs[2].axis("tight")
 
 Dop = [
     pylops.FirstDerivative(
-        ny * nx, dims=(ny, nx), dir=0, edge=False, kind="backward", dtype=np.complex
+        ny * nx, dims=(ny, nx), dir=0, edge=False, kind="backward", dtype=np.complex128
     ),
     pylops.FirstDerivative(
-        ny * nx, dims=(ny, nx), dir=1, edge=False, kind="backward", dtype=np.complex
+        ny * nx, dims=(ny, nx), dir=1, edge=False, kind="backward", dtype=np.complex128
     ),
 ]
 

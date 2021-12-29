@@ -89,7 +89,7 @@ class HStack(LinearOperator):
 
     def __init__(self, ops, nproc=1, dtype=None):
         self.ops = ops
-        mops = np.zeros(len(ops), dtype=np.int)
+        mops = np.zeros(len(ops), dtype=int)
         for iop, oper in enumerate(ops):
             if not isinstance(oper, (LinearOperator, spLinearOperator)):
                 self.ops[iop] = MatrixMult(oper, dtype=oper.dtype)

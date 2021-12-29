@@ -54,7 +54,7 @@ class MatrixMult(LinearOperator):
             if isinstance(dims, int):
                 dims = (dims,)
             self.reshape = True
-            self.dims = np.array(dims, dtype=np.int)
+            self.dims = np.array(dims, dtype=int)
             self.reshapedims = [
                 np.insert([np.prod(self.dims)], 0, self.A.shape[1]),
                 np.insert([np.prod(self.dims)], 0, self.A.shape[0]),

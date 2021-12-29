@@ -62,9 +62,9 @@ class ConvolveND(LinearOperator):
 
         # padding
         if offset is None:
-            offset = np.zeros(self.h.ndim, dtype=np.int)
+            offset = np.zeros(self.h.ndim, dtype=int)
         else:
-            offset = np.array(offset, dtype=np.int)
+            offset = np.array(offset, dtype=int)
         self.offset = 2 * (self.nh // 2 - offset)
         pad = [(0, 0) for _ in range(self.h.ndim)]
         dopad = False
@@ -83,7 +83,7 @@ class ConvolveND(LinearOperator):
 
         # find out which directions are used for convolution and define offsets
         if len(dims) != len(self.nh):
-            dimsh = np.ones(len(dims), dtype=np.int)
+            dimsh = np.ones(len(dims), dtype=int)
             for idir, dir in enumerate(self.dirs):
                 dimsh[dir] = self.nh[idir]
             self.h = self.h.reshape(dimsh)

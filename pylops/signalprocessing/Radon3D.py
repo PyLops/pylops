@@ -71,7 +71,7 @@ def _indices_3d(f, y, x, py, px, t, nt, interp=True):
         sscan = (tdecscan >= 0) & (tdecscan < nt)
     else:
         sscan = (tdecscan >= 0) & (tdecscan < nt - 1)
-    tscan = tdecscan[sscan].astype(np.int)
+    tscan = tdecscan[sscan].astype(int)
     if interp:
         dtscan = tdecscan[sscan] - tscan
     else:

@@ -52,7 +52,7 @@ x = np.arange(n) + 1.0
 Ar = np.random.normal(0, 1, (n, n))
 Ai = np.random.normal(0, 1, (n, n))
 A = Ar + 1j * Ai
-Aop = pylops.MatrixMult(A, dtype=np.complex)
+Aop = pylops.MatrixMult(A, dtype=np.complex128)
 y = Aop @ x
 
 ###############################################################################

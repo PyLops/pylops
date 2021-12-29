@@ -93,10 +93,20 @@ def _MDC(
         logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]" % nfmax)
 
     Fop = _FFT(
-        dims=(nt, nr, nv), dir=0, real=True, fftshift=twosided, dtype=rdtype, **args_FFT
+        dims=(nt, nr, nv),
+        dir=0,
+        real=True,
+        ifftshift_before=twosided,
+        dtype=rdtype,
+        **args_FFT
     )
     F1op = _FFT(
-        dims=(nt, ns, nv), dir=0, real=True, fftshift=False, dtype=rdtype, **args_FFT1
+        dims=(nt, ns, nv),
+        dir=0,
+        real=True,
+        ifftshift_before=False,
+        dtype=rdtype,
+        **args_FFT1
     )
 
     # create Identity operator to extract only relevant frequencies

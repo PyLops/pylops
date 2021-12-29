@@ -79,7 +79,7 @@ direct = np.sqrt(np.sum((s[:, np.newaxis] - r) ** 2, axis=0)) / vel_sep
 off = 0.035
 direct_off = direct + off
 win = np.zeros((nt, nr))
-iwin = np.round(direct_off / dt).astype(np.int)
+iwin = np.round(direct_off / dt).astype(int)
 for i in range(nr):
     win[iwin[i] :, i] = 1
 

@@ -126,7 +126,7 @@ def test_eigs(par):
 def test_conj(par):
     """Complex conjugation operator"""
     M = 1j * np.ones((par["ny"], par["nx"]))
-    Op = MatrixMult(M, dtype=np.complex)
+    Op = MatrixMult(M, dtype=np.complex128)
     Opconj = Op.conj()
 
     x = np.arange(par["nx"]) + par["imag"] * np.arange(par["nx"])
@@ -170,7 +170,7 @@ def test_realimag(par):
     M = np.random.normal(0, 1, (par["ny"], par["nx"])) + 1j * np.random.normal(
         0, 1, (par["ny"], par["nx"])
     )
-    Op = MatrixMult(M, dtype=np.complex)
+    Op = MatrixMult(M, dtype=np.complex128)
 
     Opr = Op.toreal()
     Opi = Op.toimag()

@@ -9,7 +9,7 @@ def _compute_iavamask(dims, dir, iava, ncp):
     """Compute restriction mask when using cupy arrays"""
     otherdims = np.array(dims)
     otherdims = np.delete(otherdims, dir)
-    iavamask = ncp.zeros(dims[dir], dtype=np.int)
+    iavamask = ncp.zeros(dims[dir], dtype=int)
     iavamask[iava] = 1
     iavamask = ncp.moveaxis(
         ncp.broadcast_to(iavamask, list(otherdims) + [dims[dir]]), -1, dir

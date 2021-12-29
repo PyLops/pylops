@@ -211,11 +211,11 @@ plt.subplots_adjust(top=0.8)
 # derivatives
 nx, nz = 60, 40
 
-horlayers = np.cumsum(np.random.uniform(2, 10, 20).astype(np.int))
+horlayers = np.cumsum(np.random.uniform(2, 10, 20).astype(int))
 horlayers = horlayers[horlayers < nz // 2]
 nhorlayers = len(horlayers)
 
-vertlayers = np.cumsum(np.random.uniform(2, 20, 10).astype(np.int))
+vertlayers = np.cumsum(np.random.uniform(2, 20, 10).astype(int))
 vertlayers = vertlayers[vertlayers < nx]
 nvertlayers = len(vertlayers)
 

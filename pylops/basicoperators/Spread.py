@@ -186,7 +186,7 @@ class Spread(LinearOperator):
                         indices = self.fh(ix0, it)
                 mask = np.argwhere(~np.isnan(indices))
                 if mask.size > 0:
-                    indices = (indices[mask]).astype(np.int)
+                    indices = (indices[mask]).astype(int)
                     if not self.interp:
                         y[mask, indices] += x[ix0, it]
                     else:
@@ -210,7 +210,7 @@ class Spread(LinearOperator):
                         indices = self.fh(ix0, it)
                 mask = np.argwhere(~np.isnan(indices))
                 if mask.size > 0:
-                    indices = (indices[mask]).astype(np.int)
+                    indices = (indices[mask]).astype(int)
                     if not self.interp:
                         y[ix0, it] = np.sum(x[mask, indices])
                     else:
