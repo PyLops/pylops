@@ -13,13 +13,10 @@ repos:
       - id: black
         args: # arguments to configure black
           - --line-length=88
-# -   repo: https://github.com/asottile/seed-isort-config
-#     rev: v2.2.0
-#     hooks:
-#     -   id: seed-isort-config
 
-#   - repo: https://github.com/pycqa/isort
-#     rev: 5.10.1
-#     hooks:
-#       - id: isort
-#         name: isort (python)
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        name: isort (python)
+        args: ["--profile", "black", "--filter-files", "--line-length=88"]
