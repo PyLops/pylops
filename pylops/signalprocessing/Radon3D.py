@@ -7,14 +7,9 @@ from pylops.basicoperators import Spread
 try:
     from numba import jit
 
-    from ._Radon3D_numba import (
-        _create_table_numba,
-        _hyperbolic_numba,
-        _indices_3d_numba,
-        _indices_3d_onthefly_numba,
-        _linear_numba,
-        _parabolic_numba,
-    )
+    from ._Radon3D_numba import (_create_table_numba, _hyperbolic_numba,
+                                 _indices_3d_numba, _indices_3d_onthefly_numba,
+                                 _linear_numba, _parabolic_numba)
 except ModuleNotFoundError:
     jit = None
 
@@ -236,13 +231,14 @@ def Radon3D(
     dt = np.abs(taxis[1] - taxis[0])
     dpy = dhy / dt
     pyaxis = pyaxis * dpy
-    hyaxisunitless = hyaxis // dhy
     dpx = dhx / dt
     pxaxis = pxaxis * dpx
-    hxaxisunitless = hxaxis // dhx
-    if centeredh:
-        hyaxisunitless -= nhy // 2
-        hxaxisunitless -= nhx // 2
+    if not centeredh:
+        hyaxisunitless = hyaxis // dhy
+        hxaxisunitless = hxaxis // dhx
+    else:
+        hyaxisunitless = np.arange(nhy) - nhy // 2
+        hxaxisunitless = np.arange(nhx) - nhx // 2
 
     # create grid for py and px axis
     hyaxisunitless, hxaxisunitless = np.meshgrid(
