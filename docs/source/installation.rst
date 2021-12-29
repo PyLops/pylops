@@ -139,6 +139,19 @@ To ensure that everything has been setup correctly, run tests:
 
 Make sure no tests fail, this guarantees that the installation has been successfull.
 
+Finally, to ensure consistency in the coding style of our developers we rely on
+`pre-commit <https://pre-commit.com>`_ to perform a series of checks when you are
+ready to commit and push some changes. This is accomplished by means of git hooks
+that have been configured in the ``.pre-commit-config.yaml`` file.
+
+In order to setup such hooks in your local repository, run:
+
+.. code-block:: bash
+
+    >> pre-commit install
+
+Later on, ``pre-commit`` will automatically run for you and propose additional stylistic changes to your commits.
+
 If using Conda environment, always remember to activate the conda environment every time you open
 a new *bash* shell by typing:
 
