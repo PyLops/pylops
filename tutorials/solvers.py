@@ -62,10 +62,10 @@ X[ifreqs] = amps
 x = FFTop.H * X
 
 fig, axs = plt.subplots(2, 1, figsize=(12, 8))
-axs[0].plot(f, np.abs(X), "k", LineWidth=2)
+axs[0].plot(f, np.abs(X), "k", lw=2)
 axs[0].set_xlim(0, 30)
 axs[0].set_title("Data(frequency domain)")
-axs[1].plot(t, x, "k", LineWidth=2)
+axs[1].plot(t, x, "k", lw=2)
 axs[1].set_title("Data(time domain)")
 axs[1].axis("tight")
 
