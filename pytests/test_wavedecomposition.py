@@ -20,7 +20,7 @@ PAR = {
     "ny": 11,
     "ot": 0,
     "dt": 0.004,
-    "nt": 50,
+    "nt": 30,
     "f0": 40,
 }
 
@@ -32,10 +32,10 @@ par2["kind"] = "inverse"
 # separation params
 vel_sep = 1000.0  # velocity at separation level
 rho_sep = 1000.0  # density at separation level
-critical = 0.9
-ntaper = 41
-nfftf = 2 ** 8
-nfftk = 2 ** 7
+critical = 0.99
+ntaper = 5
+nfftf = 2 ** 6
+nfftk = 2 ** 6
 
 # axes and wavelet
 t, t2, x, y = makeaxis(PAR)
