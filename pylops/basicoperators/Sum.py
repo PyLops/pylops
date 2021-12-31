@@ -55,7 +55,7 @@ class Sum(LinearOperator):
         self.dims_d = list(dims).copy()
         self.dims_d.pop(dir)
         # array of ones with dims of model in dir for np.tile in adjoint mode
-        self.tile = np.ones(len(dims), dtype=np.int)
+        self.tile = np.ones(len(dims), dtype=int)
         self.tile[dir] = self.dims[dir]
         self.dtype = np.dtype(dtype)
         self.shape = (np.prod(self.dims_d), np.prod(dims))

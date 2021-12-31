@@ -17,7 +17,7 @@ def _checkunique(iava):
 
 def _nearestinterp(M, iava, dims=None, dir=0, dtype="float64"):
     """Nearest neighbour interpolation."""
-    iava = np.round(iava).astype(np.int)
+    iava = np.round(iava).astype(int)
     _checkunique(iava)
     return Restriction(M, iava, dims=dims, dir=dir, dtype=dtype), iava
 
@@ -27,7 +27,7 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype="float64"):
     ncp = get_array_module(iava)
 
     if np.issubdtype(iava.dtype, np.integer):
-        iava = iava.astype(np.float)
+        iava = iava.astype(np.float64)
     if dims is None:
         lastsample = M
         dimsd = None
@@ -49,7 +49,7 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype="float64"):
     _checkunique(iava)
 
     # find indices and weights
-    iva_l = ncp.floor(iava).astype(np.int)
+    iva_l = ncp.floor(iava).astype(int)
     iva_r = iva_l + 1
     weights = iava - iva_l
 
@@ -84,7 +84,7 @@ def _sincinterp(M, iava, dims=None, dir=0, dtype="float64"):
 
     # create Transpose operator that brings dir to first dimension
     if dir > 0:
-        axes = np.arange(len(dims), dtype=np.int)
+        axes = np.arange(len(dims), dtype=int)
         axes = np.roll(axes, -dir)
         dimsd = list(dims)
         dimsd[dir] = len(iava)

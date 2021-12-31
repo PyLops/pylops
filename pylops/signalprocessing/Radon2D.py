@@ -62,7 +62,7 @@ def _indices_2d(f, x, px, t, nt, interp=True):
         xscan = (tdecscan >= 0) & (tdecscan < nt)
     else:
         xscan = (tdecscan >= 0) & (tdecscan < nt - 1)
-    tscan = tdecscan[xscan].astype(np.int)
+    tscan = tdecscan[xscan].astype(int)
     if interp:
         dtscan = tdecscan[xscan] - tscan
     else:

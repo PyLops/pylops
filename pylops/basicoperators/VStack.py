@@ -89,7 +89,7 @@ class VStack(LinearOperator):
 
     def __init__(self, ops, nproc=1, dtype=None):
         self.ops = ops
-        nops = np.zeros(len(self.ops), dtype=np.int)
+        nops = np.zeros(len(self.ops), dtype=int)
         for iop, oper in enumerate(ops):
             if not isinstance(oper, (LinearOperator, spLinearOperator)):
                 self.ops[iop] = MatrixMult(oper, dtype=oper.dtype)

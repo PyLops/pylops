@@ -352,7 +352,7 @@ class Marchenko:
         """
         # Create window
         trav_off = trav - self.toff
-        trav_off = np.round(trav_off / self.dt).astype(np.int)
+        trav_off = np.round(trav_off / self.dt).astype(int)
 
         w = np.zeros((self.nr, self.nt), dtype=self.dtype)
         for ir in range(self.nr):
@@ -561,7 +561,7 @@ class Marchenko:
 
         # Create window
         trav_off = trav - self.toff
-        trav_off = np.round(trav_off / self.dt).astype(np.int)
+        trav_off = np.round(trav_off / self.dt).astype(int)
 
         w = np.zeros((self.nr, nvs, self.nt), dtype=self.dtype)
         for ir in range(self.nr):

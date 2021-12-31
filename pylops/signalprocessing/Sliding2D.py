@@ -32,7 +32,7 @@ def _slidingsteps(ntr, nwin, nover):
     if nwin > ntr:
         raise ValueError("nwin=%d is bigger than ntr=%d..." % (nwin, ntr))
     step = nwin - nover
-    starts = np.arange(0, ntr - nwin + 1, step, dtype=np.int)
+    starts = np.arange(0, ntr - nwin + 1, step, dtype=int)
     ends = starts + nwin
     return starts, ends
 

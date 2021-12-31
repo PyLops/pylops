@@ -88,10 +88,10 @@ class Bilinear(LinearOperator):
         self.dimsd = [len(iava[1])] + list(dims[2:])
 
         # find indices and weights
-        self.iava_t = ncp.floor(iava[0]).astype(np.int)
+        self.iava_t = ncp.floor(iava[0]).astype(int)
         self.iava_b = self.iava_t + 1
         self.weights_tb = iava[0] - self.iava_t
-        self.iava_l = ncp.floor(iava[1]).astype(np.int)
+        self.iava_l = ncp.floor(iava[1]).astype(int)
         self.iava_r = self.iava_l + 1
         self.weights_lr = iava[1] - self.iava_l
 
@@ -123,14 +123,20 @@ class Bilinear(LinearOperator):
         y = ncp.zeros(self.dims, dtype=self.dtype)
         ncp_add_at(
             y,
-            [self.iava_t, self.iava_l],
+            tuple([self.iava_t, self.iava_l]),
             x * (1 - self.weights_tb) * (1 - self.weights_lr),
         )
         ncp_add_at(
-            y, [self.iava_t, self.iava_r], x * (1 - self.weights_tb) * self.weights_lr
+            y,
+            tuple([self.iava_t, self.iava_r]),
+            x * (1 - self.weights_tb) * self.weights_lr,
         )
         ncp_add_at(
-            y, [self.iava_b, self.iava_l], x * self.weights_tb * (1 - self.weights_lr)
+            y,
+            tuple([self.iava_b, self.iava_l]),
+            x * self.weights_tb * (1 - self.weights_lr),
         )
-        ncp_add_at(y, [self.iava_b, self.iava_r], x * self.weights_tb * self.weights_lr)
+        ncp_add_at(
+            y, tuple([self.iava_b, self.iava_r]), x * self.weights_tb * self.weights_lr
+        )
         return y.ravel()

@@ -66,7 +66,7 @@ FFTop = pylops.signalprocessing.FFT2D(
 # obliquity factor
 [Kx, F] = np.meshgrid(FFTop.f1, FFTop.f2, indexing="ij")
 k = F / vel_sep
-Kz = np.sqrt((k ** 2 - Kx ** 2).astype(np.complex))
+Kz = np.sqrt((k ** 2 - Kx ** 2).astype(np.complex128))
 Kz[np.isnan(Kz)] = 0
 OBL = rho_sep * (np.abs(F) / Kz)
 OBL[Kz == 0] = 0

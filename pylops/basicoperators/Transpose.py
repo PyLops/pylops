@@ -55,9 +55,9 @@ class Transpose(LinearOperator):
             raise ValueError("axes must contain each direction once")
 
         # find out how axes should be transposed in adjoint mode
-        self.axesd = np.zeros(ndims, dtype=np.int)
-        self.dimsd = np.zeros(ndims, dtype=np.int)
-        self.axesd[self.axes] = np.arange(ndims, dtype=np.int)
+        self.axesd = np.zeros(ndims, dtype=int)
+        self.dimsd = np.zeros(ndims, dtype=int)
+        self.axesd[self.axes] = np.arange(ndims, dtype=int)
         self.dimsd[self.axesd] = self.dims
         self.axesd = list(self.axesd)
 
