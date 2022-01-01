@@ -198,9 +198,9 @@ def test_FFT_small_real(par):
 
 par_lists_fft_random_real = dict(
     shape=[
-        np.random.randint(1, 100, size=(1,)),
-        np.random.randint(1, 100, size=(2,)),
-        np.random.randint(1, 100, size=(3,)),
+        np.random.randint(1, 50, size=(1,)),
+        np.random.randint(1, 50, size=(2,)),
+        np.random.randint(1, 50, size=(3,)),
     ],
     dtype_precision=[
         (np.float16, 1),
@@ -297,9 +297,9 @@ def test_FFT_small_complex(par):
 
 par_lists_fft_random_cpx = dict(
     shape=[
-        np.random.randint(1, 100, size=(1,)),
-        np.random.randint(1, 100, size=(2,)),
-        np.random.randint(1, 100, size=(3,)),
+        np.random.randint(1, 50, size=(1,)),
+        np.random.randint(1, 50, size=(2,)),
+        np.random.randint(1, 50, size=(3,)),
     ],
     dtype_precision=[
         (np.float16, 1),
@@ -355,6 +355,277 @@ def test_FFT_random_complex(par):
         phase_correction = np.exp(2 * np.pi * 1j * FFTop.f * x0)
         y_true *= phase_correction
         y_true = np.swapaxes(y_true, -1, axis)
+    y_true = y_true.ravel()
+
+    # Compute FFT with FFTop and compare with y_true
+    x = x.ravel()
+    y = FFTop * x
+    assert_array_almost_equal(y, y_true, decimal=decimal)
+
+    # Ensure inverse and adjoint recover x
+    xadj = FFTop.H * y  # adjoint is same as inverse for fft
+    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, show=0)[0]
+    assert_array_almost_equal(x, xadj, decimal=decimal)
+    assert_array_almost_equal(x, xinv, decimal=decimal)
+
+    # Dot tests
+    nr, nc = FFTop.shape
+    assert dottest(FFTop, nr, nc, complexflag=0, tol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=2, tol=10 ** (-decimal))
+    if np.issubdtype(dtype, np.complexfloating):
+        assert dottest(FFTop, nr, nc, complexflag=1, tol=10 ** (-decimal))
+        assert dottest(FFTop, nr, nc, complexflag=3, tol=10 ** (-decimal))
+
+
+par_lists_fft2d_random_real = dict(
+    shape=[
+        np.random.randint(1, 5, size=(2,)),
+        np.random.randint(1, 5, size=(3,)),
+        np.random.randint(1, 5, size=(4,)),
+    ],
+    dtype_precision=[
+        (np.float16, 1),
+        (np.float32, 5),
+        (np.float64, 13),
+        (np.float128, 13),
+    ],
+    ifftshift_before=[False, True],
+)
+pars_fft2d_random_real = [
+    dict(zip(par_lists_fft2d_random_real.keys(), value))
+    for value in itertools.product(*par_lists_fft2d_random_real.values())
+]
+
+
+@pytest.mark.parametrize("par", pars_fft2d_random_real)
+def test_FFT2D_random_real(par):
+    shape = par["shape"]
+    dtype, decimal = par["dtype_precision"]
+    ifftshift_before = par["ifftshift_before"]
+
+    x = np.random.randn(*shape).astype(dtype)
+
+    # Select an axis to apply FFT on. It can be any integer
+    # in [0,..., ndim-1] but also in [-ndim, ..., -1]
+    # However, dimensions cannot be repeated
+    axes = _choose_random_axes(x.ndim, n_choices=2)
+
+    FFTop = FFT2D(
+        dims=x.shape,
+        dirs=axes,
+        ifftshift_before=ifftshift_before,
+        real=True,
+        dtype=dtype,
+    )
+    x = x.ravel()
+    y = FFTop * x
+
+    # Ensure inverse and adjoint recover x
+    xadj = FFTop.H * y  # adjoint is same as inverse for fft
+    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, show=0)[0]
+    assert_array_almost_equal(x, xadj, decimal=decimal)
+    assert_array_almost_equal(x, xinv, decimal=decimal)
+
+    # Dot tests
+    nr, nc = FFTop.shape
+    assert dottest(FFTop, nr, nc, complexflag=0, tol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=2, tol=10 ** (-decimal))
+
+
+par_lists_fft2d_random_cpx = dict(
+    shape=[
+        np.random.randint(1, 5, size=(2,)),
+        np.random.randint(1, 5, size=(3,)),
+        np.random.randint(1, 5, size=(5,)),
+    ],
+    dtype_precision=[
+        (np.float16, 1),
+        (np.float32, 4),
+        (np.float64, 11),
+        (np.float128, 11),
+        (np.complex64, 3),
+        (np.complex128, 11),
+        (np.complex256, 11),
+    ],
+    ifftshift_before=itertools.product([False, True], [False, True]),
+    fftshift_after=itertools.product([False, True], [False, True]),
+)
+# Generate all combinations of the above parameters
+pars_fft2d_random_cpx = [
+    dict(zip(par_lists_fft2d_random_cpx.keys(), value))
+    for value in itertools.product(*par_lists_fft2d_random_cpx.values())
+]
+
+
+@pytest.mark.parametrize("par", pars_fft2d_random_cpx)
+def test_FFT2D_random_complex(par):
+    shape = par["shape"]
+    dtype, decimal = par["dtype_precision"]
+    ifftshift_before = par["ifftshift_before"]
+    fftshift_after = par["fftshift_after"]
+
+    x = np.random.randn(*shape).astype(dtype)
+    if np.issubdtype(dtype, np.complexfloating):
+        x += 1j * np.random.randn(*shape).astype(dtype)
+
+    # Select an axis to apply FFT on. It can be any integer
+    # in [0,..., ndim-1] but also in [-ndim, ..., -1]
+    # However, dimensions cannot be repeated
+    axes = _choose_random_axes(x.ndim, n_choices=2)
+
+    FFTop = FFT2D(
+        dims=x.shape,
+        dirs=axes,
+        ifftshift_before=ifftshift_before,
+        fftshift_after=fftshift_after,
+        dtype=dtype,
+    )
+
+    # Compute FFT of x independently
+    x_ishift = x.copy()
+    for axis, ishift in zip(axes, ifftshift_before):
+        if ishift:
+            x_ishift = np.fft.ifftshift(x_ishift, axes=axis)
+    y_true = np.fft.fft2(x_ishift, axes=axes, norm="ortho")
+    for axis, fshift in zip(axes, fftshift_after):
+        if fshift:
+            y_true = np.fft.fftshift(y_true, axes=axis)
+    y_true = y_true.ravel()
+
+    # Compute FFT with FFTop and compare with y_true
+    x = x.ravel()
+    y = FFTop * x
+    assert_array_almost_equal(y, y_true, decimal=decimal)
+
+    # Ensure inverse and adjoint recover x
+    xadj = FFTop.H * y  # adjoint is same as inverse for fft
+    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, show=0)[0]
+    assert_array_almost_equal(x, xadj, decimal=decimal)
+    assert_array_almost_equal(x, xinv, decimal=decimal)
+
+    # Dot tests
+    nr, nc = FFTop.shape
+    assert dottest(FFTop, nr, nc, complexflag=0, tol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=2, tol=10 ** (-decimal))
+    if np.issubdtype(dtype, np.complexfloating):
+        assert dottest(FFTop, nr, nc, complexflag=1, tol=10 ** (-decimal))
+        assert dottest(FFTop, nr, nc, complexflag=3, tol=10 ** (-decimal))
+
+
+par_lists_fftnd_random_real = dict(
+    shape=[
+        np.random.randint(1, 5, size=(3,)),
+        np.random.randint(1, 5, size=(4,)),
+    ],
+    dtype_precision=[
+        (np.float16, 1),
+        (np.float32, 5),
+        (np.float64, 13),
+        (np.float128, 13),
+    ],
+)
+pars_fftnd_random_real = [
+    dict(zip(par_lists_fftnd_random_real.keys(), value))
+    for value in itertools.product(*par_lists_fftnd_random_real.values())
+]
+
+
+@pytest.mark.parametrize("par", pars_fftnd_random_real)
+def test_FFTND_random_real(par):
+    shape = par["shape"]
+    dtype, decimal = par["dtype_precision"]
+
+    x = np.random.randn(*shape).astype(dtype)
+
+    # Select an axis to apply FFT on. It can be any integer
+    # in [0,..., ndim-1] but also in [-ndim, ..., -1]
+    # However, dimensions cannot be repeated
+    n_choices = np.random.randint(3, x.ndim + 1)
+    axes = _choose_random_axes(x.ndim, n_choices=n_choices)
+
+    # Trying out all posibilities is very cumbersome, let's select some shifts randomly
+    ifftshift_before = np.random.choice([False, True], size=n_choices)
+
+    FFTop = FFTND(
+        dims=x.shape,
+        dirs=axes,
+        ifftshift_before=ifftshift_before,
+        real=True,
+        dtype=dtype,
+    )
+    x = x.ravel()
+    y = FFTop * x
+
+    # Ensure inverse and adjoint recover x
+    xadj = FFTop.H * y  # adjoint is same as inverse for fft
+    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, show=0)[0]
+    assert_array_almost_equal(x, xadj, decimal=decimal)
+    assert_array_almost_equal(x, xinv, decimal=decimal)
+
+    # Dot tests
+    nr, nc = FFTop.shape
+    assert dottest(FFTop, nr, nc, complexflag=0, tol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=2, tol=10 ** (-decimal))
+
+
+par_lists_fftnd_random_cpx = dict(
+    shape=[
+        np.random.randint(1, 5, size=(3,)),
+        np.random.randint(1, 5, size=(5,)),
+    ],
+    dtype_precision=[
+        (np.float16, 1),
+        (np.float32, 4),
+        (np.float64, 11),
+        (np.float128, 11),
+        (np.complex64, 3),
+        (np.complex128, 11),
+        (np.complex256, 11),
+    ],
+)
+# Generate all combinations of the above parameters
+pars_fftnd_random_cpx = [
+    dict(zip(par_lists_fftnd_random_cpx.keys(), value))
+    for value in itertools.product(*par_lists_fftnd_random_cpx.values())
+]
+
+
+@pytest.mark.parametrize("par", pars_fftnd_random_cpx)
+def test_FFTND_random_complex(par):
+    shape = par["shape"]
+    dtype, decimal = par["dtype_precision"]
+
+    x = np.random.randn(*shape).astype(dtype)
+    if np.issubdtype(dtype, np.complexfloating):
+        x += 1j * np.random.randn(*shape).astype(dtype)
+
+    # Select an axis to apply FFT on. It can be any integer
+    # in [0,..., ndim-1] but also in [-ndim, ..., -1]
+    # However, dimensions cannot be repeated
+    n_choices = np.random.randint(3, x.ndim + 1)
+    axes = _choose_random_axes(x.ndim, n_choices=n_choices)
+
+    # Trying out all posibilities is very cumbersome, let's select some shifts randomly
+    ifftshift_before = np.random.choice([False, True], size=n_choices)
+    fftshift_after = np.random.choice([True, False], size=n_choices)
+
+    FFTop = FFTND(
+        dims=x.shape,
+        dirs=axes,
+        ifftshift_before=ifftshift_before,
+        fftshift_after=fftshift_after,
+        dtype=dtype,
+    )
+
+    # Compute FFT of x independently
+    x_ishift = x.copy()
+    for axis, ishift in zip(axes, ifftshift_before):
+        if ishift:
+            x_ishift = np.fft.ifftshift(x_ishift, axes=axis)
+    y_true = np.fft.fft2(x_ishift, axes=axes, norm="ortho")
+    for axis, fshift in zip(axes, fftshift_after):
+        if fshift:
+            y_true = np.fft.fftshift(y_true, axes=axis)
     y_true = y_true.ravel()
 
     # Compute FFT with FFTop and compare with y_true
