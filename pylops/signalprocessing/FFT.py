@@ -45,6 +45,10 @@ class _FFT_numpy(_BaseFFT):
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
+        if self.cdtype != np.complex128:
+            warnings.warn(
+                f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
+            )
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
@@ -115,6 +119,11 @@ class _FFT_fftw(_BaseFFT):
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
+        if self.cdtype != np.complex128:
+            warnings.warn(
+                f"fftw backend returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
+            )
+
         self.dims_t = self.dims.copy()
         self.dims_t[self.dir] = self.nfft
 

@@ -1,6 +1,11 @@
+import logging
+import warnings
+
 import numpy as np
 
 from pylops.signalprocessing._BaseFFTs import _BaseFFTND
+
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class FFT2D(_BaseFFTND):
@@ -113,6 +118,10 @@ class FFT2D(_BaseFFTND):
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
+        if self.cdtype != np.complex128:
+            warnings.warn(
+                f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
+            )
 
         # checks
         if self.ndim < 2:
