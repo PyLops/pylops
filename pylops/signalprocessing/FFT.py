@@ -2,6 +2,7 @@ import logging
 import warnings
 
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_complex_dtype, get_real_dtype
@@ -22,6 +23,53 @@ except Exception as e:
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
+def _value_or_list_like_to_array(value_or_list_like, repeat=1):
+    """Convert an object which is either single value or a list-like to an array.
+    Parameters
+    ----------
+    value_or_list_like
+        Single value or list-like.
+    repeat : `obj`:`int`
+        Size of resulting array if value is passed. If list is passed, it is ignored.
+    Returns
+    -------
+    out : `obj`:`numpy.array`
+        When the input is a single value, returned an array with `repeat` samples
+        containing that value. When the input is a list-like object, converts it to an
+        array.
+    """
+    try:
+        len(value_or_list_like)
+        out = np.array(value_or_list_like)
+    except TypeError:
+        out = np.array([value_or_list_like] * repeat)
+    return out
+
+
+def _raise_on_wrong_dtype(arr, dtype, name):
+    """Raises an error if dtype of `arr` is not a subdtype of `dtype`.
+    Parameters
+    ----------
+    arr : `obj`:`numpy.array`
+        Array whose type will be checked
+    dtype : `obj`:`numpy.dtype`
+        Type which must be a supertype of `arr.dtype`.
+    name : `obj`:`str`
+        Name of parameter to issue error.
+    Raises
+    ------
+    TypeError
+        When `arr.dtype` is not a subdtype of `dtype`.
+    """
+    if not np.issubdtype(arr.dtype, dtype):
+        raise TypeError(
+            (
+                f"Wrong input type for `{name}`. "
+                f'Must be "{dtype}", but received to "{arr.dtype}".'
+            )
+        )
+
+
 class _BaseFFT(LinearOperator):
     """Base class for one dimensional Fast-Fourier Transform"""
 
@@ -32,38 +80,29 @@ class _BaseFFT(LinearOperator):
         nfft=None,
         sampling=1.0,
         real=False,
-        fftshift=None,
-        ifftshift_before=None,
+        ifftshift_before=False,
         fftshift_after=False,
         dtype="complex128",
     ):
-        if isinstance(dims, int):
-            dims = (dims,)
-        if dir > len(dims) - 1:
-            raise ValueError(
-                "dir=%d must be smaller than " "number of dims=%d..." % (dir, len(dims))
-            )
-        self.dir = dir
-        self.nfft = nfft if nfft is not None else dims[self.dir]
+        self.dims = _value_or_list_like_to_array(dims)
+        _raise_on_wrong_dtype(self.dims, np.integer, "dims")
+
+        self.ndim = len(self.dims)
+
+        dirs = _value_or_list_like_to_array(dir)
+        _raise_on_wrong_dtype(dirs, np.integer, "dirs")
+        self.dir = normalize_axis_index(dirs[0], self.ndim)
+
+        if nfft is None:
+            nfft = self.dims[self.dir]
+        else:
+            nffts = _value_or_list_like_to_array(nfft)
+            _raise_on_wrong_dtype(nffts, np.integer, "nfft")
+            nfft = nffts[0]
+        self.nfft = nfft
+
         self.real = real
 
-        # Use fftshift if supplied, otherwise use ifftshift_before
-        # If neither are supplied, set to False
-        if fftshift is not None:
-            warnings.warn(
-                "fftshift is deprecated. Please use ifftshift_before.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            if ifftshift_before is not None:
-                warnings.warn(
-                    "Passed fftshift and ifftshift_before, ignoring ifftshift_before. ",
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
-            ifftshift_before = fftshift
-        if fftshift is None and ifftshift_before is None:
-            ifftshift_before = False
         self.ifftshift_before = ifftshift_before
 
         self.f = (
@@ -75,22 +114,12 @@ class _BaseFFT(LinearOperator):
         if self.fftshift_after:
             if self.real:
                 warnings.warn(
-                    "Using fftshift_after with real=True. fftshift should only be "
-                    "applied after a complex FFT. This is rarely intended behavior "
-                    "but if it is, ignore this message."
+                    "Using fftshift_after with real=True. fftshift should only be applied after a complex FFT. This is rarely intended behavior but if it is, ignore this message."
                 )
             self.f = np.fft.fftshift(self.f)
 
-        if len(dims) == 1:
-            self.dims = np.array([dims[0], 1])
-            self.dims_fft = self.dims.copy()
-            self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
-            self.reshape = False
-        else:
-            self.dims = np.array(dims)
-            self.dims_fft = self.dims.copy()
-            self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
-            self.reshape = True
+        self.dims_fft = self.dims.copy()
+        self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
 
         # Find types to enforce to forward and adjoint outputs. This is
@@ -98,10 +127,10 @@ class _BaseFFT(LinearOperator):
         # float32 or less. Moreover, when choosing real=True, the type of the
         # adjoint output is forced to be real even if the provided dtype
         # is complex.
-        self.rdtype = get_real_dtype(dtype) if real else np.dtype(dtype)
+        self.rdtype = get_real_dtype(dtype) if self.real else np.dtype(dtype)
         self.cdtype = get_complex_dtype(dtype)
         self.dtype = self.cdtype
-        self.clinear = False if real else True
+        self.clinear = False if self.real or np.issubdtype(dtype, np.floating) else True
         self.explicit = False
 
     def _matvec(self, x):
@@ -125,88 +154,61 @@ class _FFT_numpy(_BaseFFT):
         nfft=None,
         sampling=1.0,
         real=False,
-        fftshift=None,
-        ifftshift_before=None,
+        ifftshift_before=False,
         fftshift_after=False,
         dtype="complex128",
     ):
         super().__init__(
-            dims,
-            dir,
-            nfft,
-            sampling,
-            real,
-            fftshift,
-            ifftshift_before,
-            fftshift_after,
-            dtype,
+            dims=dims,
+            dir=dir,
+            nfft=nfft,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
         )
 
     def _matvec(self, x):
-        if not self.reshape:
-            x = x.ravel()
-            if self.ifftshift_before:
-                x = np.fft.ifftshift(x)
-            if self.real:
-                y = np.fft.rfft(np.real(x), n=self.nfft, axis=-1, norm="ortho")
-                # Apply scaling to obtain a correct adjoint for this operator
-                y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
-            else:
-                y = np.fft.fft(x, n=self.nfft, axis=-1, norm="ortho")
-            if self.fftshift_after:
-                y = np.fft.fftshift(y)
+        x = np.reshape(x, self.dims)
+        if self.ifftshift_before:
+            x = np.fft.ifftshift(x, axes=self.dir)
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = np.fft.rfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.dir)
+            y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.dir, -1)
         else:
-            x = np.reshape(x, self.dims)
-            if self.ifftshift_before:
-                x = np.fft.ifftshift(x, axes=self.dir)
-            if self.real:
-                y = np.fft.rfft(np.real(x), n=self.nfft, axis=self.dir, norm="ortho")
-                # Apply scaling to obtain a correct adjoint for this operator
-                y = np.swapaxes(y, -1, self.dir)
-                y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
-                y = np.swapaxes(y, self.dir, -1)
-            else:
-                y = np.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
-            if self.fftshift_after:
-                y = np.fft.fftshift(y, axes=self.dir)
-            y = y.ravel()
+            y = np.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
+        if self.fftshift_after:
+            y = np.fft.fftshift(y, axes=self.dir)
+        y = y.ravel()
         y = y.astype(self.cdtype)
         return y
 
     def _rmatvec(self, x):
-        if not self.reshape:
-            x = x.ravel()
-            if self.fftshift_after:
-                x = np.fft.ifftshift(x)
-            if self.real:
-                # Apply scaling to obtain a correct adjoint for this operator
-                x = x.copy()
-                x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
-                y = np.fft.irfft(x, n=self.nfft, axis=-1, norm="ortho")
-            else:
-                y = np.fft.ifft(x, n=self.nfft, axis=-1, norm="ortho")
-            if self.nfft != self.dims[self.dir]:
-                y = y[: self.dims[self.dir]]
-            if self.ifftshift_before:
-                y = np.fft.fftshift(y)
+        x = np.reshape(x, self.dims_fft)
+        if self.fftshift_after:
+            x = np.fft.ifftshift(x, axes=self.dir)
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.dir)
+            x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.dir, -1)
+            y = np.fft.irfft(x, n=self.nfft, axis=self.dir, norm="ortho")
         else:
-            x = np.reshape(x, self.dims_fft)
-            if self.fftshift_after:
-                x = np.fft.ifftshift(x, axes=self.dir)
-            if self.real:
-                # Apply scaling to obtain a correct adjoint for this operator
-                x = x.copy()
-                x = np.swapaxes(x, -1, self.dir)
-                x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
-                x = np.swapaxes(x, self.dir, -1)
-                y = np.fft.irfft(x, n=self.nfft, axis=self.dir, norm="ortho")
-            else:
-                y = np.fft.ifft(x, n=self.nfft, axis=self.dir, norm="ortho")
-            if self.nfft != self.dims[self.dir]:
-                y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
-            if self.ifftshift_before:
-                y = np.fft.fftshift(y, axes=self.dir)
-            y = y.ravel()
+            y = np.fft.ifft(x, n=self.nfft, axis=self.dir, norm="ortho")
+        if self.nfft != self.dims[self.dir]:
+            y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
+        if not self.clinear:
+            y = np.real(y)
+        if self.ifftshift_before:
+            y = np.fft.fftshift(y, axes=self.dir)
+        y = y.ravel()
         y = y.astype(self.rdtype)
         return y
 
@@ -221,49 +223,38 @@ class _FFT_fftw(_BaseFFT):
         nfft=None,
         sampling=1.0,
         real=False,
-        fftshift=None,
         ifftshift_before=None,
         fftshift_after=False,
         dtype="complex128",
-        **kwargs_fftw
+        **kwargs_fftw,
     ):
         super().__init__(
-            dims,
-            dir,
-            nfft,
-            sampling,
-            real,
-            fftshift,
-            ifftshift_before,
-            fftshift_after,
-            dtype,
+            dims=dims,
+            dir=dir,
+            nfft=nfft,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
         )
-        if isinstance(dims, int) or len(dims) == 1:
-            self.dims = (
-                np.array((dims,)) if isinstance(dims, int) else np.array((dims[0],))
-            )
-            self.dims_t = self.dims.copy()
-            self.dims_t[self.dir] = self.nfft
-            self.dims_fft = self.dims.copy()
-            self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
-        else:
-            self.dims_t = self.dims.copy()
-            self.dims_t[self.dir] = self.nfft
+        self.dims_t = self.dims.copy()
+        self.dims_t[self.dir] = self.nfft
 
         # define padding(fftw requires the user to provide padded input signal)
-        self.pad = [[0, 0] for _ in range(len(self.dims))]
+        self.pad = np.zeros((self.ndim, 2), dtype=int)
         if self.real:
             if self.nfft % 2:
-                self.pad[self.dir][1] = (
+                self.pad[self.dir, 1] = (
                     2 * (self.dims_fft[self.dir] - 1) + 1 - self.dims[self.dir]
                 )
             else:
-                self.pad[self.dir][1] = (
+                self.pad[self.dir, 1] = (
                     2 * (self.dims_fft[self.dir] - 1) - self.dims[self.dir]
                 )
         else:
-            self.pad[self.dir][1] = self.dims_fft[self.dir] - self.dims[self.dir]
-        self.dopad = True if np.sum(np.array(self.pad)) > 0 else False
+            self.pad[self.dir, 1] = self.dims_fft[self.dir] - self.dims[self.dir]
+        self.dopad = True if np.sum(self.pad) > 0 else False
 
         # create empty arrays and plans for fft/ifft
         self.x = pyfftw.empty_aligned(
@@ -280,63 +271,39 @@ class _FFT_fftw(_BaseFFT):
     def _matvec(self, x):
         if self.real:
             x = np.real(x)
-        if not self.reshape:
-            x = x.ravel()
-            if self.ifftshift_before:
-                x = np.fft.ifftshift(x)
-            if self.dopad:
-                x = np.pad(x, self.pad, "constant", constant_values=0)
-            y = np.sqrt(1.0 / self.nfft) * self.fftplan(x)
-            if self.real:
-                y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
-            if self.fftshift_after:
-                y = np.fft.fftshift(y)
-        else:
-            x = np.reshape(x, self.dims)
-            if self.ifftshift_before:
-                x = np.fft.ifftshift(x, axes=self.dir)
-            if self.dopad:
-                x = np.pad(x, self.pad, "constant", constant_values=0)
-            y = np.sqrt(1.0 / self.nfft) * self.fftplan(x)
-            if self.real:
-                # Apply scaling to obtain a correct adjoint for this operator
-                y = np.swapaxes(y, -1, self.dir)
-                y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
-                y = np.swapaxes(y, self.dir, -1)
-            if self.fftshift_after:
-                y = np.fft.fftshift(y, axes=self.dir)
+        x = np.reshape(x, self.dims)
+        if self.ifftshift_before:
+            x = np.fft.ifftshift(x, axes=self.dir)
+        if not self.clinear:
+            x = np.real(x)
+        if self.dopad:
+            x = np.pad(x, self.pad, "constant", constant_values=0)
+        y = np.sqrt(1.0 / self.nfft) * self.fftplan(x)
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.dir)
+            y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.dir, -1)
+        if self.fftshift_after:
+            y = np.fft.fftshift(y, axes=self.dir)
         return y.ravel()
 
     def _rmatvec(self, x):
-        if not self.reshape:
-            x = x.ravel()
-            if self.fftshift_after:
-                x = np.fft.ifftshift(x)
-            if self.real:
-                # Apply scaling to obtain a correct adjoint for this operator
-                x = x.copy()
-                x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
-            y = np.sqrt(self.nfft) * self.ifftplan(x)
-            if self.nfft != self.dims[self.dir]:
-                y = y[: self.dims[self.dir]]
-            if self.ifftshift_before:
-                y = np.fft.fftshift(y)
-        else:
-            x = np.reshape(x, self.dims_fft)
-            if self.fftshift_after:
-                x = np.fft.ifftshift(x, axes=self.dir)
-            if self.real:
-                # Apply scaling to obtain a correct adjoint for this operator
-                x = x.copy()
-                x = np.swapaxes(x, -1, self.dir)
-                x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
-                x = np.swapaxes(x, self.dir, -1)
-            y = np.sqrt(self.nfft) * self.ifftplan(x)
-            if self.nfft != self.dims[self.dir]:
-                y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
-            if self.ifftshift_before:
-                y = np.fft.fftshift(y, axes=self.dir)
+        x = np.reshape(x, self.dims_fft)
+        if self.fftshift_after:
+            x = np.fft.ifftshift(x, axes=self.dir)
         if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.dir)
+            x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.dir, -1)
+        y = np.sqrt(self.nfft) * self.ifftplan(x)
+        if self.nfft != self.dims[self.dir]:
+            y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
+        if self.ifftshift_before:
+            y = np.fft.fftshift(y, axes=self.dir)
+        if not self.clinear:
             y = np.real(y)
         return y.ravel()
 
@@ -352,20 +319,17 @@ def FFT(
     fftshift_after=False,
     engine="numpy",
     dtype="complex128",
-    **kwargs_fftw
+    **kwargs_fftw,
 ):
     r"""One dimensional Fast-Fourier Transform.
-
     Apply Fast-Fourier Transform (FFT) along a specific direction ``dir`` of a
     multi-dimensional array of size ``dim``.
-
     Note that the FFT operator is an overload to either the numpy
     :py:func:`numpy.fft.fft` (or :py:func:`numpy.fft.rfft` for real models) in
     forward mode and to the numpy :py:func:`numpy.fft.ifft` (or
     :py:func:`numpy.fft.irfft` for real models) in adjoint mode, or their cupy
     equivalents. Alternatively, the :py:class:`pyfftw.FFTW` class is used
     when ``engine='fftw'`` is chosen.
-
     In both cases, scaling is properly taken into account to guarantee
     that the operator is passing the dot-test. If a user is interested to use
     the unscaled forward FFT, it must pre-multiply the operator by an
@@ -373,7 +337,6 @@ def FFT(
     input signal, it is advised to use the flag `real=True` as it stores
     the values of the Fourier transform at positive frequencies only as
     values at negative frequencies are simply their complex conjugates.
-
     Parameters
     ----------
     dims : :obj:`tuple`
@@ -416,44 +379,57 @@ def FFT(
     **kwargs_fftw
             Arbitrary keyword arguments
             for :py:class:`pyfftw.FTTW`
-
     Attributes
     ----------
     shape : :obj:`tuple`
         Operator shape
+    clinear : :obj:`bool`
+        Operator is complex-linear. Is false when either real=True or when
+        dtype is not a complex type.
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (True) or not (False)
-
     Raises
     ------
     ValueError
         If ``dims`` is provided and ``dir`` is bigger than ``len(dims)``
     NotImplementedError
         If ``engine`` is neither ``numpy`` nor ``fftw``
-
     Notes
     -----
     The FFT operator applies the forward Fourier transform to a signal
     :math:`d(t)` in forward mode:
-
     .. math::
         D(f) = \mathscr{F} (d) = \frac{1}{\sqrt{N_F}} \int d(t) e^{-j2\pi ft} dt
-
     Similarly, the inverse Fourier transform is applied to the Fourier spectrum
     :math:`D(f)` in adjoint mode:
-
     .. math::
         d(t) = \mathscr{F}^{-1} (D) = \sqrt{N_F} \int D(f) e^{j2\pi ft} df
-
     where :math:`N_F` is the number of samples in the Fourier domain `nfft`.
     Both operators are effectively discretized and solved by a fast iterative
     algorithm known as Fast Fourier Transform. Note that the FFT operator is a
     special operator in that the adjoint is also the inverse of the forward mode.
     Moreover, in case of real signal in time domain, the Fourier transform in
     Hermitian.
-
     """
+    # Use fftshift if supplied, otherwise use ifftshift_before
+    # If neither are supplied, set to False
+    if fftshift is not None:
+        warnings.warn(
+            "fftshift is deprecated. Please use ifftshift_before.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        if ifftshift_before is not None:
+            warnings.warn(
+                "Passed fftshift and ifftshift_before, ignoring ifftshift_before. ",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+        ifftshift_before = fftshift
+    if fftshift is None and ifftshift_before is None:
+        ifftshift_before = False
+
     if engine == "fftw" and pyfftw is not None:
         f = _FFT_fftw(
             dims,
@@ -461,11 +437,10 @@ def FFT(
             nfft=nfft,
             sampling=sampling,
             real=real,
-            fftshift=fftshift,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
-            **kwargs_fftw
+            **kwargs_fftw,
         )
     elif engine == "numpy" or (engine == "fftw" and pyfftw is None):
         if engine == "fftw" and pyfftw is None:
@@ -476,7 +451,6 @@ def FFT(
             nfft=nfft,
             sampling=sampling,
             real=real,
-            fftshift=fftshift,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
