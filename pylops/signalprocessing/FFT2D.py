@@ -5,13 +5,16 @@ from pylops.signalprocessing._BaseFFTs import _BaseFFTND
 
 class FFT2D(_BaseFFTND):
     r"""Two dimensional Fast-Fourier Transform.
+
     Apply two dimensional Fast-Fourier Transform (FFT) to any pair of axes of a
     multi-dimensional array depending on the choice of ``dirs``.
+
     Note that the FFT2D operator is a simple overload to the numpy
     :py:func:`numpy.fft.fft2` in forward mode and to the numpy
     :py:func:`numpy.fft.ifft2` in adjoint mode (or their cupy equivalents),
     however scaling is taken into account differently to guarantee that the
     operator is passing the dot-test.
+
     Parameters
     ----------
     dims : :obj:`tuple`
@@ -50,6 +53,7 @@ class FFT2D(_BaseFFTND):
         is the corresponding complex type even when a real type is provided.
         Nevertheless, the provided dtype will be enforced on the vector
         returned by the `rmatvec` method.
+
     Attributes
     ----------
     shape : :obj:`tuple`
@@ -60,25 +64,32 @@ class FFT2D(_BaseFFTND):
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (True) or not (False)
+
     Raises
     ------
     ValueError
         If ``dims`` has less than two elements, and if ``dirs``, ``nffts``,
         or ``sampling`` has more or less than two elements.
+
     Notes
     -----
     The FFT2D operator applies the two-dimensional forward Fourier transform
     to a signal :math:`d(y,x)` in forward mode:
+
     .. math::
         D(k_y, k_x) = \mathscr{F} (d) = \int \int d(y,x) e^{-j2\pi k_yy}
         e^{-j2\pi k_xx} dy dx
+
     Similarly, the  two-dimensional inverse Fourier transform is applied to
     the Fourier spectrum :math:`D(k_y, k_x)` in adjoint mode:
+
     .. math::
         d(y,x) = \mathscr{F}^{-1} (D) = \int \int D(k_y, k_x) e^{j2\pi k_yy}
         e^{j2\pi k_xx} dk_y  dk_x
+
     Both operators are effectively discretized and solved by a fast iterative
     algorithm known as Fast Fourier Transform.
+
     """
 
     def __init__(

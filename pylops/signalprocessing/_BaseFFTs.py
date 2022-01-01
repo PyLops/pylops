@@ -12,18 +12,21 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 def _value_or_list_like_to_array(value_or_list_like, repeat=1):
     """Convert an object which is either single value or a list-like to an array.
+
     Parameters
     ----------
     value_or_list_like
         Single value or list-like.
     repeat : `obj`:`int`
         Size of resulting array if value is passed. If list is passed, it is ignored.
+
     Returns
     -------
     out : `obj`:`numpy.array`
         When the input is a single value, returned an array with `repeat` samples
         containing that value. When the input is a list-like object, converts it to an
         array.
+
     """
     try:
         len(value_or_list_like)
@@ -35,6 +38,7 @@ def _value_or_list_like_to_array(value_or_list_like, repeat=1):
 
 def _raise_on_wrong_dtype(arr, dtype, name):
     """Raises an error if dtype of `arr` is not a subdtype of `dtype`.
+
     Parameters
     ----------
     arr : `obj`:`numpy.array`
@@ -43,10 +47,12 @@ def _raise_on_wrong_dtype(arr, dtype, name):
         Type which must be a supertype of `arr.dtype`.
     name : `obj`:`str`
         Name of parameter to issue error.
+
     Raises
     ------
     TypeError
         When `arr.dtype` is not a subdtype of `dtype`.
+
     """
     if not np.issubdtype(arr.dtype, dtype):
         raise TypeError(

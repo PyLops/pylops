@@ -5,13 +5,16 @@ from pylops.signalprocessing._BaseFFTs import _BaseFFTND
 
 class FFTND(_BaseFFTND):
     r"""N-dimensional Fast-Fourier Transform.
+
     Apply n-dimensional Fast-Fourier Transform (FFT) to any n axes
     of a multi-dimensional array depending on the choice of ``dirs``.
+
     Note that the FFTND operator is a simple overload to the numpy
     :py:func:`numpy.fft.fftn` in forward mode and to the numpy
     :py:func:`numpy.fft.ifftn` in adjoint mode, however scaling is taken
     into account differently to guarantee that the operator is passing the
     dot-test.
+
     Parameters
     ----------
     dims : :obj:`tuple`
@@ -49,6 +52,7 @@ class FFTND(_BaseFFTND):
         is the corresponding complex type even when a real type is provided.
         Nevertheless, the provided dtype will be enforced on the vector
         returned by the `rmatvec` method.
+
     Attributes
     ----------
     shape : :obj:`tuple`
@@ -59,28 +63,35 @@ class FFTND(_BaseFFTND):
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (True) or not (False)
+
     Raises
     ------
     ValueError
         If ``dims``, ``dirs``, ``nffts``, or ``sampling`` have less than \
         three elements and if the dimension of ``dirs``, ``nffts``, and
         ``sampling`` is not the same
+
     Notes
     -----
     The FFTND operator applies the n-dimensional forward Fourier transform
     to a multi-dimensional array. Without loss of generality we consider here
     a three-dimensional signal :math:`d(z, y, x)`.
     The FFTND in forward mode is:
+
     .. math::
         D(k_z, k_y, k_x) = \mathscr{F} (d) = \int \int d(z,y,x) e^{-j2\pi k_zz}
         e^{-j2\pi k_yy} e^{-j2\pi k_xx} dz dy dx
+
     Similarly, the  three-dimensional inverse Fourier transform is applied to
     the Fourier spectrum :math:`D(k_z, k_y, k_x)` in adjoint mode:
+
     .. math::
         d(z, y, x) = \mathscr{F}^{-1} (D) = \int \int D(k_z, k_y, k_x)
         e^{j2\pi k_zz} e^{j2\pi k_yy} e^{j2\pi k_xx} dk_z dk_y  dk_x
+
     Both operators are effectively discretized and solved by a fast iterative
     algorithm known as Fast Fourier Transform.
+
     """
 
     def __init__(

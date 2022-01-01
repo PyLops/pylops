@@ -199,14 +199,17 @@ def FFT(
     **kwargs_fftw,
 ):
     r"""One dimensional Fast-Fourier Transform.
+
     Apply Fast-Fourier Transform (FFT) along a specific direction ``dir`` of a
     multi-dimensional array of size ``dim``.
+
     Note that the FFT operator is an overload to either the numpy
     :py:func:`numpy.fft.fft` (or :py:func:`numpy.fft.rfft` for real models) in
     forward mode and to the numpy :py:func:`numpy.fft.ifft` (or
     :py:func:`numpy.fft.irfft` for real models) in adjoint mode, or their cupy
     equivalents. Alternatively, the :py:class:`pyfftw.FFTW` class is used
     when ``engine='fftw'`` is chosen.
+
     In both cases, scaling is properly taken into account to guarantee
     that the operator is passing the dot-test. If a user is interested to use
     the unscaled forward FFT, it must pre-multiply the operator by an
@@ -214,6 +217,7 @@ def FFT(
     input signal, it is advised to use the flag `real=True` as it stores
     the values of the Fourier transform at positive frequencies only as
     values at negative frequencies are simply their complex conjugates.
+
     Parameters
     ----------
     dims : :obj:`tuple`
@@ -256,6 +260,7 @@ def FFT(
     **kwargs_fftw
             Arbitrary keyword arguments
             for :py:class:`pyfftw.FTTW`
+
     Attributes
     ----------
     shape : :obj:`tuple`
@@ -266,28 +271,35 @@ def FFT(
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (True) or not (False)
+
     Raises
     ------
     ValueError
         If ``dims`` is provided and ``dir`` is bigger than ``len(dims)``
     NotImplementedError
         If ``engine`` is neither ``numpy`` nor ``fftw``
+
     Notes
     -----
     The FFT operator applies the forward Fourier transform to a signal
     :math:`d(t)` in forward mode:
+
     .. math::
         D(f) = \mathscr{F} (d) = \frac{1}{\sqrt{N_F}} \int d(t) e^{-j2\pi ft} dt
+
     Similarly, the inverse Fourier transform is applied to the Fourier spectrum
     :math:`D(f)` in adjoint mode:
+
     .. math::
         d(t) = \mathscr{F}^{-1} (D) = \sqrt{N_F} \int D(f) e^{j2\pi ft} df
+
     where :math:`N_F` is the number of samples in the Fourier domain `nfft`.
     Both operators are effectively discretized and solved by a fast iterative
     algorithm known as Fast Fourier Transform. Note that the FFT operator is a
     special operator in that the adjoint is also the inverse of the forward mode.
     Moreover, in case of real signal in time domain, the Fourier transform in
     Hermitian.
+
     """
     # Use fftshift if supplied, otherwise use ifftshift_before
     # If neither are supplied, set to False
