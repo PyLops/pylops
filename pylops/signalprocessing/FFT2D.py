@@ -1,6 +1,6 @@
 import numpy as np
 
-from pylops.signalprocessing.FFTND import _BaseFFTND
+from pylops.signalprocessing._BaseFFTs import _BaseFFTND
 
 
 class FFT2D(_BaseFFTND):
