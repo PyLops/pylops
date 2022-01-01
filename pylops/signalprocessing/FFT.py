@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 
-from ._BaseFFTs import _BaseFFT
+from pylops.signalprocessing._BaseFFTs import _BaseFFT
 
 try:
     import pyfftw
