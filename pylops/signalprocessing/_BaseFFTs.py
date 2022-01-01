@@ -77,7 +77,7 @@ class _BaseFFT(LinearOperator):
         self.ndim = len(self.dims)
 
         dirs = _value_or_list_like_to_array(dir)
-        _raise_on_wrong_dtype(dirs, np.integer, "dirs")
+        _raise_on_wrong_dtype(dirs, np.integer, "dir")
         self.dir = normalize_axis_index(dirs[0], self.ndim)
 
         if nfft is None:
