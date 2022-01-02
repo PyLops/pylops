@@ -26,46 +26,56 @@ class FFT2D(_BaseFFTND):
         Number of samples for each dimension
     dirs : :obj:`tuple`, optional
         Pair of directions along which FFT2D is applied
-    nffts : :obj:`tuple`, optional
-        Number of samples in Fourier Transform for each direction (same as
-        input if ``nffts=(None, None)``). Note that the order must agree with
-        ``dirs``.
-    sampling : :obj:`tuple`, optional
-        Sampling steps ``dy`` and ``dx``
+    nffts : :obj:`tuple` or :obj:`int`, optional
+        Number of samples in Fourier Transform for each direction. In case only one
+        dimension needs to be specified, use ``None`` for the other dimension in the
+        tuple. The direction with None will use ``dims[dir]`` as ``nfft``. When supplying a
+        tuple, the order must agree with that of ``dirs``. When a single value is
+        passed, it will be used for both directions. As such the default is
+        equivalent to ``nffts=(None, None)``.
+    sampling : :obj:`tuple` or :obj:`float`, optional
+        Sampling steps for each direction. When supplied a single value, it is used
+        for both directions. Unlike ``nffts``, ``None``s will not be converted to the
+        default value.
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
         model is real. Note that the real FFT is applied only to the first
         dimension to which the FFT2D operator is applied (last element of
-        `dirs`)
-    ifftshift_before : :obj:`bool`, optional
+        ``dirs``)
+    ifftshift_before : :obj:`tuple` or :obj:`bool`, optional
         Apply ifftshift (``True``) or not (``False``) to model vector (before FFT).
         Consider using this option when the model vector's respective axis is symmetric
         with respect to the zero value sample. This will shift the zero value sample to
         coincide with the zero index sample. With such an arrangement, FFT will not
         introduce a sample-dependent phase-shift when compared to the continuous Fourier
         Transform.
-        Defaults to not applying ifftshift.
-    fftshift_after : :obj:`bool`, optional
+        When passing a single value, the shift will the same for every direction. Pass
+        a tuple to specify which dimensions are shifted.
+    fftshift_after : :obj:`tuple` or :obj:`bool`, optional
         Apply fftshift (``True``) or not (``False``) to data vector (after FFT).
         Consider using this option when you require frequencies to be arranged
         naturally, from negative to positive. When not applying fftshift after FFT,
         frequencies are arranged from zero to largest positive, and then from negative
         Nyquist to the frequency bin before zero.
-        Defaults to not applying fftshift.
+        When passing a single value, the shift will the same for every direction. Pass
+        a tuple to specify which dimensions are shifted.
     dtype : :obj:`str`, optional
-        Type of elements in input array. Note that the `dtype` of the operator
+        Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.
-        Nevertheless, the provided dtype will be enforced on the vector
-        returned by the `rmatvec` method.
+        In addition, note that the NumPy backend used in ``FFT2D`` does not support
+        returning ``dtype``s different than ``complex128``. As such, arrays will
+        be force-casted to types corresponding to the supplied ``dtype``.
+        Note that when a real ``dtype`` is supplied, a real result will be
+        enforced on the result of the ``rmatvec`` and the input of the ``matvec``.
 
     Attributes
     ----------
     shape : :obj:`tuple`
         Operator shape
     clinear : :obj:`bool`
-        Operator is complex-linear. Is false when either real=True or when
-        dtype is not a complex type.
+        Operator is complex-linear. Is false when either ``real=True`` or when
+        ``dtype`` is not a complex type.
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (True) or not (False)
@@ -73,8 +83,10 @@ class FFT2D(_BaseFFTND):
     Raises
     ------
     ValueError
-        If ``dims`` has less than two elements, and if ``dirs``, ``nffts``,
-        or ``sampling`` has more or less than two elements.
+        If ``dims`` has less than two elements.
+        If ``dirs`` does not have exactly two elements.
+        If ``nffts`` or ``sampling`` are not either a single value or a tuple with
+        two elements.
 
     Notes
     -----

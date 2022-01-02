@@ -242,7 +242,7 @@ def FFT(
         (``False``). Used to enforce that the output of adjoint of a real
         model is real.
     fftshift : :obj:`bool`, optional
-        Note: `fftshift` is deprecated, use `ifftshift_before`.
+        Note: ``fftshift`` is deprecated, use ``ifftshift_before``.
     ifftshift_before : :obj:`bool`, optional
         Apply ifftshift (``True``) or not (``False``) to model vector (before FFT).
         Consider using this option when the model vector's respective axis is symmetric
@@ -257,15 +257,17 @@ def FFT(
         naturally, from negative to positive. When not applying fftshift after FFT,
         frequencies are arranged from zero to largest positive, and then from negative
         Nyquist to the frequency bin before zero.
-        Defaults to not applying fftshift.
     engine : :obj:`str`, optional
         Engine used for fft computation (``numpy`` or ``fftw``). Choose
         ``numpy`` when working with cupy arrays.
     dtype : :obj:`str`, optional
-        Type of elements in input array. Note that the `dtype` of the operator
+        Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.
-        Nevertheless, the provided dtype will be enforced on the vector
-        returned by the `rmatvec` method.
+        In addition, note that neither the NumPy nor the FFTW backends supports
+        returning ``dtype``s different than ``complex128``. As such, when using either
+        backend, arrays will be force-casted to types corresponding to the supplied ``dtype``.
+        Under both backends, when a real ``dtype`` is supplied, a real result will be
+        enforced on the result of the ``rmatvec`` and the input of the ``matvec``.
     **kwargs_fftw
             Arbitrary keyword arguments
             for :py:class:`pyfftw.FTTW`
@@ -275,8 +277,8 @@ def FFT(
     shape : :obj:`tuple`
         Operator shape
     clinear : :obj:`bool`
-        Operator is complex-linear. Is false when either real=True or when
-        dtype is not a complex type.
+        Operator is complex-linear. Is false when either ``real=True`` or when
+        ``dtype`` is not a complex type.
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (True) or not (False)
