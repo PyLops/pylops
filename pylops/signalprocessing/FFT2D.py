@@ -1,13 +1,19 @@
+import logging
+import warnings
+
 import numpy as np
 
-from pylops import LinearOperator
+from pylops.signalprocessing._BaseFFTs import _BaseFFTND
+
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class FFT2D(LinearOperator):
+class FFT2D(_BaseFFTND):
     r"""Two dimensional Fast-Fourier Transform.
 
     Apply two dimensional Fast-Fourier Transform (FFT) to any pair of axes of a
     multi-dimensional array depending on the choice of ``dirs``.
+
     Note that the FFT2D operator is a simple overload to the numpy
     :py:func:`numpy.fft.fft2` in forward mode and to the numpy
     :py:func:`numpy.fft.ifft2` in adjoint mode (or their cupy equivalents),
@@ -20,28 +26,56 @@ class FFT2D(LinearOperator):
         Number of samples for each dimension
     dirs : :obj:`tuple`, optional
         Pair of directions along which FFT2D is applied
-    nffts : :obj:`tuple`, optional
-        Number of samples in Fourier Transform for each direction (same as
-        input if ``nffts=(None, None)``). Note that the order must agree with
-        ``dirs``.
-    sampling : :obj:`tuple`, optional
-        Sampling steps ``dy`` and ``dx``
+    nffts : :obj:`tuple` or :obj:`int`, optional
+        Number of samples in Fourier Transform for each direction. In case only one
+        dimension needs to be specified, use ``None`` for the other dimension in the
+        tuple. The direction with None will use ``dims[dir]`` as ``nfft``. When supplying a
+        tuple, the order must agree with that of ``dirs``. When a single value is
+        passed, it will be used for both directions. As such the default is
+        equivalent to ``nffts=(None, None)``.
+    sampling : :obj:`tuple` or :obj:`float`, optional
+        Sampling steps for each direction. When supplied a single value, it is used
+        for both directions. Unlike ``nffts``, ``None``s will not be converted to the
+        default value.
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
         model is real. Note that the real FFT is applied only to the first
         dimension to which the FFT2D operator is applied (last element of
-        `dirs`)
+        ``dirs``)
+    ifftshift_before : :obj:`tuple` or :obj:`bool`, optional
+        Apply ifftshift (``True``) or not (``False``) to model vector (before FFT).
+        Consider using this option when the model vector's respective axis is symmetric
+        with respect to the zero value sample. This will shift the zero value sample to
+        coincide with the zero index sample. With such an arrangement, FFT will not
+        introduce a sample-dependent phase-shift when compared to the continuous Fourier
+        Transform.
+        When passing a single value, the shift will the same for every direction. Pass
+        a tuple to specify which dimensions are shifted.
+    fftshift_after : :obj:`tuple` or :obj:`bool`, optional
+        Apply fftshift (``True``) or not (``False``) to data vector (after FFT).
+        Consider using this option when you require frequencies to be arranged
+        naturally, from negative to positive. When not applying fftshift after FFT,
+        frequencies are arranged from zero to largest positive, and then from negative
+        Nyquist to the frequency bin before zero.
+        When passing a single value, the shift will the same for every direction. Pass
+        a tuple to specify which dimensions are shifted.
     dtype : :obj:`str`, optional
-        Type of elements in input array. Note that the `dtype` of the operator
+        Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.
-        Nevertheless, the provided dtype will be enforced on the vector
-        returned by the `rmatvec` method.
+        In addition, note that the NumPy backend used in ``FFT2D`` does not support
+        returning ``dtype``s different than ``complex128``. As such, arrays will
+        be force-casted to types corresponding to the supplied ``dtype``.
+        Note that when a real ``dtype`` is supplied, a real result will be
+        enforced on the result of the ``rmatvec`` and the input of the ``matvec``.
 
     Attributes
     ----------
     shape : :obj:`tuple`
         Operator shape
+    clinear : :obj:`bool`
+        Operator is complex-linear. Is false when either ``real=True`` or when
+        ``dtype`` is not a complex type.
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (True) or not (False)
@@ -49,8 +83,10 @@ class FFT2D(LinearOperator):
     Raises
     ------
     ValueError
-        If ``dims`` has less than two elements, and if ``dirs``, ``nffts``,
-        or ``sampling`` has more or less than two elements.
+        If ``dims`` has less than two elements.
+        If ``dirs`` does not have exactly two elements.
+        If ``nffts`` or ``sampling`` are not either a single value or a tuple with
+        two elements.
 
     Notes
     -----
@@ -77,50 +113,43 @@ class FFT2D(LinearOperator):
         self,
         dims,
         dirs=(0, 1),
-        nffts=(None, None),
-        sampling=(1.0, 1.0),
-        dtype="complex128",
+        nffts=None,
+        sampling=1.0,
         real=False,
+        ifftshift_before=False,
+        fftshift_after=False,
+        dtype="complex128",
     ):
+        super().__init__(
+            dims=dims,
+            dirs=dirs,
+            nffts=nffts,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+        if self.cdtype != np.complex128:
+            warnings.warn(
+                f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
+            )
+
         # checks
-        if len(dims) < 2:
-            raise ValueError("provide at least two dimensions")
-        if len(dirs) != 2:
-            raise ValueError("provide at two directions along which fft is applied")
-        if len(nffts) != 2:
-            raise ValueError("provide at two nfft dimensions")
-        if len(sampling) != 2:
-            raise ValueError("provide two sampling steps")
+        if self.ndim < 2:
+            raise ValueError("FFT2D requires at least two input dimensions")
+        if self.ndirs != 2:
+            raise ValueError("FFT2D must be applied along exactly two dimensions")
 
-        self.dirs = dirs
-        self.nffts = tuple(
-            [
-                int(nffts[0]) if nffts[0] is not None else dims[self.dirs[0]],
-                int(nffts[1]) if nffts[1] is not None else dims[self.dirs[1]],
-            ]
-        )
-        self.f1 = np.fft.fftfreq(self.nffts[0], d=sampling[0])
-        self.f2 = np.fft.fftfreq(self.nffts[1], d=sampling[1])
-        self.real = real
-
-        self.dims = np.array(dims)
-        self.dims_fft = self.dims.copy()
-        self.dims_fft[self.dirs[0]] = self.nffts[0]
-        self.dims_fft[self.dirs[1]] = (
-            self.nffts[1] // 2 + 1 if self.real else self.nffts[1]
-        )
-
-        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
-        self.rdtype = np.real(np.ones(1, dtype)).dtype if real else np.dtype(dtype)
-        self.cdtype = (
-            np.ones(1, dtype=self.rdtype) + 1j * np.ones(1, dtype=self.rdtype)
-        ).dtype
-        self.dtype = self.cdtype
-        self.clinear = False if real else True
-        self.explicit = False
+        self.f1, self.f2 = self.fs
+        del self.fs
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
+        if self.ifftshift_before.any():
+            x = np.fft.ifftshift(x, axes=self.dirs[self.ifftshift_before])
+        if not self.clinear:
+            x = np.real(x)
         if self.real:
             y = np.fft.rfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
             # Apply scaling to obtain a correct adjoint for this operator
@@ -130,10 +159,14 @@ class FFT2D(LinearOperator):
         else:
             y = np.fft.fft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
         y = y.astype(self.cdtype)
+        if self.fftshift_after.any():
+            y = np.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
         return y.ravel()
 
     def _rmatvec(self, x):
         x = np.reshape(x, self.dims_fft)
+        if self.fftshift_after.any():
+            x = np.fft.ifftshift(x, axes=self.dirs[self.fftshift_after])
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
@@ -145,5 +178,9 @@ class FFT2D(LinearOperator):
             y = np.fft.ifft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
         y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
         y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
+        if not self.clinear:
+            y = np.real(y)
         y = y.astype(self.rdtype)
+        if self.ifftshift_before.any():
+            y = np.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
         return y.ravel()
