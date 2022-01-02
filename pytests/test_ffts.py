@@ -145,7 +145,7 @@ par_lists_fft_small_real = dict(
         (np.float128, 13),
     ],
     ifftshift_before=[False, True],
-    engine=["numpy", "fftw"],
+    engine=["numpy", "fftw", "scipy"],
 )
 # Generate all combinations of the above parameters
 pars_fft_small_real = [
@@ -209,7 +209,7 @@ par_lists_fft_random_real = dict(
         (np.float128, 11),
     ],
     ifftshift_before=[False, True],
-    engine=["numpy", "fftw"],
+    engine=["numpy", "fftw", "scipy"],
 )
 pars_fft_random_real = [
     dict(zip(par_lists_fft_random_real.keys(), value))
@@ -255,7 +255,7 @@ par_lists_fft_small_cpx = dict(
     dtype_precision=[(np.complex64, 5), (np.complex128, 13), (np.complex256, 13)],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
-    engine=["numpy", "fftw"],
+    engine=["numpy", "fftw", "scipy"],
 )
 pars_fft_small_cpx = [
     dict(zip(par_lists_fft_small_cpx.keys(), value))
@@ -303,7 +303,7 @@ par_lists_fft_random_cpx = dict(
     ],
     dtype_precision=[
         (np.float16, 1),
-        (np.float32, 4),
+        (np.float32, 3),
         (np.float64, 11),
         (np.float128, 11),
         (np.complex64, 3),
@@ -312,7 +312,7 @@ par_lists_fft_random_cpx = dict(
     ],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
-    engine=["numpy", "fftw"],
+    engine=["numpy", "fftw", "scipy"],
 )
 pars_fft_random_cpx = [
     dict(zip(par_lists_fft_random_cpx.keys(), value))

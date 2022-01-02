@@ -2,6 +2,7 @@ import logging
 import warnings
 
 import numpy as np
+import scipy.fft
 
 from pylops.signalprocessing._BaseFFTs import _BaseFFT
 
@@ -89,6 +90,79 @@ class _FFT_numpy(_BaseFFT):
             y = np.real(y)
         if self.ifftshift_before:
             y = np.fft.fftshift(y, axes=self.dir)
+        y = y.ravel()
+        y = y.astype(self.rdtype)
+        return y
+
+
+class _FFT_scipy(_BaseFFT):
+    """One dimensional Fast-Fourier Transform using numpy"""
+
+    def __init__(
+        self,
+        dims,
+        dir=0,
+        nfft=None,
+        sampling=1.0,
+        real=False,
+        ifftshift_before=False,
+        fftshift_after=False,
+        dtype="complex128",
+    ):
+        super().__init__(
+            dims=dims,
+            dir=dir,
+            nfft=nfft,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+        if self.cdtype != np.complex128:
+            warnings.warn(
+                f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
+            )
+
+    def _matvec(self, x):
+        x = np.reshape(x, self.dims)
+        if self.ifftshift_before:
+            x = scipy.fft.ifftshift(x, axes=self.dir)
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = scipy.fft.rfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.dir)
+            y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.dir, -1)
+        else:
+            y = scipy.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
+        if self.fftshift_after:
+            y = scipy.fft.fftshift(y, axes=self.dir)
+        y = y.ravel()
+        y = y.astype(self.cdtype)
+        return y
+
+    def _rmatvec(self, x):
+        x = np.reshape(x, self.dims_fft)
+        if self.fftshift_after:
+            x = scipy.fft.ifftshift(x, axes=self.dir)
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.dir)
+            x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.dir, -1)
+            y = scipy.fft.irfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+        else:
+            y = scipy.fft.ifft(x, n=self.nfft, axis=self.dir, norm="ortho")
+        if self.nfft != self.dims[self.dir]:
+            y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
+        if not self.clinear:
+            y = np.real(y)
+        if self.ifftshift_before:
+            y = scipy.fft.fftshift(y, axes=self.dir)
         y = y.ravel()
         y = y.astype(self.rdtype)
         return y
@@ -259,7 +333,7 @@ def FFT(
         Nyquist to the frequency bin before zero.
         Defaults to not applying fftshift.
     engine : :obj:`str`, optional
-        Engine used for fft computation (``numpy`` or ``fftw``). Choose
+        Engine used for fft computation (``numpy``, ``fftw``, or ``scipy``). Choose
         ``numpy`` when working with cupy arrays.
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the `dtype` of the operator
@@ -344,6 +418,17 @@ def FFT(
         if engine == "fftw" and pyfftw is None:
             logging.warning(pyfftw_message)
         f = _FFT_numpy(
+            dims,
+            dir=dir,
+            nfft=nfft,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+    elif engine == "scipy":
+        f = _FFT_scipy(
             dims,
             dir=dir,
             nfft=nfft,
