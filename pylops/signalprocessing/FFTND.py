@@ -161,11 +161,26 @@ def FFTND(
     Apply n-dimensional Fast-Fourier Transform (FFT) to any n axes
     of a multi-dimensional array depending on the choice of ``dirs``.
 
-    Note that the FFTND operator is a simple overload to the numpy
-    :py:func:`numpy.fft.fftn` in forward mode and to the numpy
-    :py:func:`numpy.fft.ifftn` in adjoint mode, however scaling is taken
-    into account differently to guarantee that the operator is passing the
-    dot-test.
+    Using the default NumPy engine, the FFT operator is an overload to either the NumPy
+    :py:func:`numpy.fft.fftn` (or :py:func:`numpy.fft.rfftn` for real models) in
+    forward mode, and to :py:func:`numpy.fft.ifftn` (or :py:func:`numpy.fft.irfftn`
+    for real models) in adjoint mode, or their CuPy equivalents.
+    Alternatively, when the SciPy engine is chosen, the overloads are of
+    :py:func:`scipy.fft.fftn` (or :py:func:`scipy.fft.rfftn` for real models) in
+    forward mode, and to :py:func:`scipy.fft.ifftn` (or :py:func:`scipy.fft.irfftn`
+    for real models) in adjoint mode.
+
+    In all cases, the "ortho" scaling (see :py:func:`numpy.fft.fftn`) is used to
+    to guarantee that the operator passes the dot-test. When using `real=True`, the
+    result of the forward is also multiplied by sqrt(2) for all frequency bins
+    except zero and Nyquist along the last direction of ``dirs``, and the input of
+    the adjoint is divided by sqrt(2) for the same frequencies.
+    If a user is interested in using the unscaled forward FFT, they must pre-multiply
+    the operator by an appropriate correction factor.
+
+    For a real valued input signal, it is advised to use the flag ``real=True``
+    as it stores the values of the Fourier transform of the last direction at positive
+    frequencies only as values at negative frequencies are simply their complex conjugates.
 
     Parameters
     ----------
@@ -221,6 +236,18 @@ def FFTND(
 
     Attributes
     ----------
+    dims_fft : :obj:`tuple`
+        Shape of the array after the forward, but before linearization. E.g.
+        ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
+    fs : :obj:`tuple`
+        Each element of the tuple corresponds to the Discrete Fourier Transform
+        sample frequencies along the respective direction given by ``dirs``.
+    real : :obj:`bool`
+        When True, uses ``rfftn``/``irfftn``
+    rdtype : :obj:`bool`
+        Expected input type to the forward
+    cdtype : :obj:`bool`
+        Output type of the forward. Complex equivalent to ``rdtype``.
     shape : :obj:`tuple`
         Operator shape
     clinear : :obj:`bool`

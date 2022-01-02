@@ -280,19 +280,27 @@ def FFT(
     Apply Fast-Fourier Transform (FFT) along a specific direction ``dir`` of a
     multi-dimensional array of size ``dim``.
 
-    Note that the FFT operator is an overload to either the numpy
+    Using the default NumPy engine, the FFT operator is an overload to either the NumPy
     :py:func:`numpy.fft.fft` (or :py:func:`numpy.fft.rfft` for real models) in
-    forward mode and to the numpy :py:func:`numpy.fft.ifft` (or
-    :py:func:`numpy.fft.irfft` for real models) in adjoint mode, or their cupy
-    equivalents. Alternatively, the :py:class:`pyfftw.FFTW` class is used
-    when ``engine='fftw'`` is chosen.
+    forward mode, and to :py:func:`numpy.fft.ifft` (or :py:func:`numpy.fft.irfft`
+    for real models) in adjoint mode, or their CuPy equivalents.
+    When ``engine='fftw'`` is chosen, the :py:class:`pyfftw.FFTW` class is used
+    instead.
+    Alternatively, when the SciPy engine is chosen, the overloads are of
+    :py:func:`scipy.fft.fft` (or :py:func:`scipy.fft.rfft` for real models) in
+    forward mode, and to :py:func:`scipy.fft.ifft` (or :py:func:`scipy.fft.irfft`
+    for real models) in adjoint mode.
 
-    In both cases, scaling is properly taken into account to guarantee
-    that the operator is passing the dot-test. If a user is interested to use
-    the unscaled forward FFT, it must pre-multiply the operator by an
-    appropriate correction factor. Moreover, for a real valued
-    input signal, it is advised to use the flag `real=True` as it stores
-    the values of the Fourier transform at positive frequencies only as
+    In all cases, the "ortho" scaling (see :py:func:`numpy.fft.fft`) is used to
+    to guarantee that the operator passes the dot-test. When using `real=True`, the
+    result of the forward is also multiplied by sqrt(2) for all frequency bins
+    except zero and Nyquist, and the input of the adjoint is divided by
+    sqrt(2) for the same frequencies.
+    If a user is interested in using the unscaled forward FFT, they must pre-multiply
+    the operator by an appropriate correction factor.
+
+    For a real valued input signal, it is advised to use the flag `real=True`
+    as it stores the values of the Fourier transform at positive frequencies only as
     values at negative frequencies are simply their complex conjugates.
 
     Parameters
@@ -343,6 +351,17 @@ def FFT(
 
     Attributes
     ----------
+    dims_fft : :obj:`tuple`
+        Shape of the array after the forward, but before linearization. E.g.
+        ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
+    f : :obj:`numpy.ndarray`
+        Discrete Fourier Transform sample frequencies
+    real : :obj:`bool`
+        When True, uses ``rfft``/``irfft``
+    rdtype : :obj:`bool`
+        Expected input type to the forward
+    cdtype : :obj:`bool`
+        Output type of the forward. Complex equivalent to ``rdtype``.
     shape : :obj:`tuple`
         Operator shape
     clinear : :obj:`bool`
