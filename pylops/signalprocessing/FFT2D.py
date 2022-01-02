@@ -2,13 +2,178 @@ import logging
 import warnings
 
 import numpy as np
+import scipy.fft
 
 from pylops.signalprocessing._BaseFFTs import _BaseFFTND
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class FFT2D(_BaseFFTND):
+class _FFT2D_numpy(_BaseFFTND):
+    """Two dimensional Fast-Fourier Transform using numpy"""
+
+    def __init__(
+        self,
+        dims,
+        dirs=(0, 1),
+        nffts=None,
+        sampling=1.0,
+        real=False,
+        ifftshift_before=False,
+        fftshift_after=False,
+        dtype="complex128",
+    ):
+        super().__init__(
+            dims=dims,
+            dirs=dirs,
+            nffts=nffts,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+        if self.cdtype != np.complex128:
+            warnings.warn(
+                f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
+            )
+
+        # checks
+        if self.ndim < 2:
+            raise ValueError("FFT2D requires at least two input dimensions")
+        if self.ndirs != 2:
+            raise ValueError("FFT2D must be applied along exactly two dimensions")
+
+        self.f1, self.f2 = self.fs
+        del self.fs
+
+    def _matvec(self, x):
+        x = np.reshape(x, self.dims)
+        if self.ifftshift_before.any():
+            x = np.fft.ifftshift(x, axes=self.dirs[self.ifftshift_before])
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = np.fft.rfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+            # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.dirs[-1])
+            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.dirs[-1], -1)
+        else:
+            y = np.fft.fft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        y = y.astype(self.cdtype)
+        if self.fftshift_after.any():
+            y = np.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
+        return y.ravel()
+
+    def _rmatvec(self, x):
+        x = np.reshape(x, self.dims_fft)
+        if self.fftshift_after.any():
+            x = np.fft.ifftshift(x, axes=self.dirs[self.fftshift_after])
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.dirs[-1])
+            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.dirs[-1], -1)
+            y = np.fft.irfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        else:
+            y = np.fft.ifft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
+        y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
+        if not self.clinear:
+            y = np.real(y)
+        y = y.astype(self.rdtype)
+        if self.ifftshift_before.any():
+            y = np.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
+        return y.ravel()
+
+
+class _FFT2D_scipy(_BaseFFTND):
+    """Two dimensional Fast-Fourier Transform using scipy"""
+
+    def __init__(
+        self,
+        dims,
+        dirs=(0, 1),
+        nffts=None,
+        sampling=1.0,
+        real=False,
+        ifftshift_before=False,
+        fftshift_after=False,
+        dtype="complex128",
+    ):
+        super().__init__(
+            dims=dims,
+            dirs=dirs,
+            nffts=nffts,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+
+        # checks
+        if self.ndim < 2:
+            raise ValueError("FFT2D requires at least two input dimensions")
+        if self.ndirs != 2:
+            raise ValueError("FFT2D must be applied along exactly two dimensions")
+
+        self.f1, self.f2 = self.fs
+        del self.fs
+
+    def _matvec(self, x):
+        x = np.reshape(x, self.dims)
+        if self.ifftshift_before.any():
+            x = scipy.fft.ifftshift(x, axes=self.dirs[self.ifftshift_before])
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = scipy.fft.rfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+            # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.dirs[-1])
+            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.dirs[-1], -1)
+        else:
+            y = scipy.fft.fft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        if self.fftshift_after.any():
+            y = scipy.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
+        return y.ravel()
+
+    def _rmatvec(self, x):
+        x = np.reshape(x, self.dims_fft)
+        if self.fftshift_after.any():
+            x = scipy.fft.ifftshift(x, axes=self.dirs[self.fftshift_after])
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.dirs[-1])
+            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.dirs[-1], -1)
+            y = scipy.fft.irfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        else:
+            y = scipy.fft.ifft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
+        y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
+        if not self.clinear:
+            y = np.real(y)
+        if self.ifftshift_before.any():
+            y = scipy.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
+        return y.ravel()
+
+
+def FFT2D(
+    dims,
+    dirs=(0, 1),
+    nffts=None,
+    sampling=1.0,
+    real=False,
+    ifftshift_before=False,
+    fftshift_after=False,
+    dtype="complex128",
+    engine="numpy",
+):
     r"""Two dimensional Fast-Fourier Transform.
 
     Apply two dimensional Fast-Fourier Transform (FFT) to any pair of axes of a
@@ -96,19 +261,8 @@ class FFT2D(_BaseFFTND):
     algorithm known as Fast Fourier Transform.
 
     """
-
-    def __init__(
-        self,
-        dims,
-        dirs=(0, 1),
-        nffts=None,
-        sampling=1.0,
-        real=False,
-        ifftshift_before=False,
-        fftshift_after=False,
-        dtype="complex128",
-    ):
-        super().__init__(
+    if engine == "numpy":
+        f = _FFT2D_numpy(
             dims=dims,
             dirs=dirs,
             nffts=nffts,
@@ -118,57 +272,17 @@ class FFT2D(_BaseFFTND):
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
-        if self.cdtype != np.complex128:
-            warnings.warn(
-                f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
-            )
-
-        # checks
-        if self.ndim < 2:
-            raise ValueError("FFT2D requires at least two input dimensions")
-        if self.ndirs != 2:
-            raise ValueError("FFT2D must be applied along exactly two dimensions")
-
-        self.f1, self.f2 = self.fs
-        del self.fs
-
-    def _matvec(self, x):
-        x = np.reshape(x, self.dims)
-        if self.ifftshift_before.any():
-            x = np.fft.ifftshift(x, axes=self.dirs[self.ifftshift_before])
-        if not self.clinear:
-            x = np.real(x)
-        if self.real:
-            y = np.fft.rfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
-            # Apply scaling to obtain a correct adjoint for this operator
-            y = np.swapaxes(y, -1, self.dirs[-1])
-            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
-            y = np.swapaxes(y, self.dirs[-1], -1)
-        else:
-            y = np.fft.fft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
-        y = y.astype(self.cdtype)
-        if self.fftshift_after.any():
-            y = np.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
-        return y.ravel()
-
-    def _rmatvec(self, x):
-        x = np.reshape(x, self.dims_fft)
-        if self.fftshift_after.any():
-            x = np.fft.ifftshift(x, axes=self.dirs[self.fftshift_after])
-        if self.real:
-            # Apply scaling to obtain a correct adjoint for this operator
-            x = x.copy()
-            x = np.swapaxes(x, -1, self.dirs[-1])
-            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
-            x = np.swapaxes(x, self.dirs[-1], -1)
-            y = np.fft.irfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
-        else:
-            y = np.fft.ifft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
-        y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
-        y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
-        if not self.clinear:
-            y = np.real(y)
-        y = y.astype(self.rdtype)
-        if self.ifftshift_before.any():
-            y = np.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
-        return y.ravel()
+    elif engine == "scipy":
+        f = _FFT2D_scipy(
+            dims=dims,
+            dirs=dirs,
+            nffts=nffts,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+    else:
+        raise NotImplementedError("engine must be numpy or scipy")
+    return f

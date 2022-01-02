@@ -2,13 +2,160 @@ import logging
 import warnings
 
 import numpy as np
+import scipy.fft
 
 from pylops.signalprocessing._BaseFFTs import _BaseFFTND
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class FFTND(_BaseFFTND):
+class _FFTND_numpy(_BaseFFTND):
+    """N-dimensional Fast-Fourier Transform using numpy"""
+
+    def __init__(
+        self,
+        dims,
+        dirs=(0, 1, 2),
+        nffts=None,
+        sampling=1.0,
+        real=False,
+        ifftshift_before=False,
+        fftshift_after=False,
+        dtype="complex128",
+    ):
+        super().__init__(
+            dims=dims,
+            dirs=dirs,
+            nffts=nffts,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+        if self.cdtype != np.complex128:
+            warnings.warn(
+                f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
+            )
+
+    def _matvec(self, x):
+        x = np.reshape(x, self.dims)
+        if self.ifftshift_before.any():
+            x = np.fft.ifftshift(x, axes=self.dirs[self.ifftshift_before])
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = np.fft.rfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+            # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.dirs[-1])
+            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.dirs[-1], -1)
+        else:
+            y = np.fft.fftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        y = y.astype(self.cdtype)
+        if self.fftshift_after.any():
+            y = np.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
+        return y.ravel()
+
+    def _rmatvec(self, x):
+        x = np.reshape(x, self.dims_fft)
+        if self.fftshift_after.any():
+            x = np.fft.ifftshift(x, axes=self.dirs[self.fftshift_after])
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.dirs[-1])
+            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.dirs[-1], -1)
+            y = np.fft.irfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        else:
+            y = np.fft.ifftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        for direction in self.dirs:
+            y = np.take(y, range(self.dims[direction]), axis=direction)
+        if not self.clinear:
+            y = np.real(y)
+        y = y.astype(self.rdtype)
+        if self.ifftshift_before.any():
+            y = np.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
+        return y.ravel()
+
+
+class _FFTND_scipy(_BaseFFTND):
+    """N-dimensional Fast-Fourier Transform using scipy"""
+
+    def __init__(
+        self,
+        dims,
+        dirs=(0, 1, 2),
+        nffts=None,
+        sampling=1.0,
+        real=False,
+        ifftshift_before=False,
+        fftshift_after=False,
+        dtype="complex128",
+    ):
+        super().__init__(
+            dims=dims,
+            dirs=dirs,
+            nffts=nffts,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+
+    def _matvec(self, x):
+        x = np.reshape(x, self.dims)
+        if self.ifftshift_before.any():
+            x = scipy.fft.ifftshift(x, axes=self.dirs[self.ifftshift_before])
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = scipy.fft.rfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+            # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.dirs[-1])
+            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.dirs[-1], -1)
+        else:
+            y = scipy.fft.fftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        if self.fftshift_after.any():
+            y = scipy.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
+        return y.ravel()
+
+    def _rmatvec(self, x):
+        x = np.reshape(x, self.dims_fft)
+        if self.fftshift_after.any():
+            x = scipy.fft.ifftshift(x, axes=self.dirs[self.fftshift_after])
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.dirs[-1])
+            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.dirs[-1], -1)
+            y = scipy.fft.irfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        else:
+            y = scipy.fft.ifftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        for direction in self.dirs:
+            y = np.take(y, range(self.dims[direction]), axis=direction)
+        if not self.clinear:
+            y = np.real(y)
+        if self.ifftshift_before.any():
+            y = scipy.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
+        return y.ravel()
+
+
+def FFTND(
+    dims,
+    dirs=(0, 1, 2),
+    nffts=None,
+    sampling=1.0,
+    real=False,
+    ifftshift_before=False,
+    fftshift_after=False,
+    dtype="complex128",
+    engine="scipy",
+):
     r"""N-dimensional Fast-Fourier Transform.
 
     Apply n-dimensional Fast-Fourier Transform (FFT) to any n axes
@@ -99,18 +246,8 @@ class FFTND(_BaseFFTND):
 
     """
 
-    def __init__(
-        self,
-        dims,
-        dirs=(0, 1, 2),
-        nffts=None,
-        sampling=1.0,
-        real=False,
-        ifftshift_before=False,
-        fftshift_after=False,
-        dtype="complex128",
-    ):
-        super().__init__(
+    if engine == "numpy":
+        f = _FFTND_numpy(
             dims=dims,
             dirs=dirs,
             nffts=nffts,
@@ -120,48 +257,17 @@ class FFTND(_BaseFFTND):
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
-        if self.cdtype != np.complex128:
-            warnings.warn(
-                f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
-            )
-
-    def _matvec(self, x):
-        x = np.reshape(x, self.dims)
-        if self.ifftshift_before.any():
-            x = np.fft.ifftshift(x, axes=self.dirs[self.ifftshift_before])
-        if not self.clinear:
-            x = np.real(x)
-        if self.real:
-            y = np.fft.rfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
-            # Apply scaling to obtain a correct adjoint for this operator
-            y = np.swapaxes(y, -1, self.dirs[-1])
-            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
-            y = np.swapaxes(y, self.dirs[-1], -1)
-        else:
-            y = np.fft.fftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
-        y = y.astype(self.cdtype)
-        if self.fftshift_after.any():
-            y = np.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
-        return y.ravel()
-
-    def _rmatvec(self, x):
-        x = np.reshape(x, self.dims_fft)
-        if self.fftshift_after.any():
-            x = np.fft.ifftshift(x, axes=self.dirs[self.fftshift_after])
-        if self.real:
-            # Apply scaling to obtain a correct adjoint for this operator
-            x = x.copy()
-            x = np.swapaxes(x, -1, self.dirs[-1])
-            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
-            x = np.swapaxes(x, self.dirs[-1], -1)
-            y = np.fft.irfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
-        else:
-            y = np.fft.ifftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
-        for direction in self.dirs:
-            y = np.take(y, range(self.dims[direction]), axis=direction)
-        if not self.clinear:
-            y = np.real(y)
-        y = y.astype(self.rdtype)
-        if self.ifftshift_before.any():
-            y = np.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
-        return y.ravel()
+    elif engine == "scipy":
+        f = _FFTND_scipy(
+            dims=dims,
+            dirs=dirs,
+            nffts=nffts,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+    else:
+        raise NotImplementedError("engine must be numpy or scipy")
+    return f

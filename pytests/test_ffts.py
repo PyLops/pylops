@@ -198,9 +198,9 @@ def test_FFT_small_real(par):
 
 par_lists_fft_random_real = dict(
     shape=[
-        np.random.randint(1, 50, size=(1,)),
-        np.random.randint(1, 50, size=(2,)),
-        np.random.randint(1, 50, size=(3,)),
+        np.random.randint(1, 20, size=(1,)),
+        np.random.randint(1, 20, size=(2,)),
+        np.random.randint(1, 20, size=(3,)),
     ],
     dtype_precision=[
         (np.float16, 1),
@@ -297,9 +297,9 @@ def test_FFT_small_complex(par):
 
 par_lists_fft_random_cpx = dict(
     shape=[
-        np.random.randint(1, 50, size=(1,)),
-        np.random.randint(1, 50, size=(2,)),
-        np.random.randint(1, 50, size=(3,)),
+        np.random.randint(1, 20, size=(1,)),
+        np.random.randint(1, 20, size=(2,)),
+        np.random.randint(1, 20, size=(3,)),
     ],
     dtype_precision=[
         (np.float16, 1),
@@ -385,11 +385,12 @@ par_lists_fft2d_random_real = dict(
     ],
     dtype_precision=[
         (np.float16, 1),
-        (np.float32, 5),
-        (np.float64, 13),
-        (np.float128, 13),
+        (np.float32, 3),
+        (np.float64, 11),
+        (np.float128, 11),
     ],
     ifftshift_before=[False, True],
+    engine=["numpy", "scipy"],
 )
 pars_fft2d_random_real = [
     dict(zip(par_lists_fft2d_random_real.keys(), value))
@@ -402,6 +403,7 @@ def test_FFT2D_random_real(par):
     shape = par["shape"]
     dtype, decimal = par["dtype_precision"]
     ifftshift_before = par["ifftshift_before"]
+    engine = par["engine"]
 
     x = np.random.randn(*shape).astype(dtype)
 
@@ -416,6 +418,7 @@ def test_FFT2D_random_real(par):
         ifftshift_before=ifftshift_before,
         real=True,
         dtype=dtype,
+        engine=engine,
     )
     x = x.ravel()
     y = FFTop * x
@@ -440,7 +443,7 @@ par_lists_fft2d_random_cpx = dict(
     ],
     dtype_precision=[
         (np.float16, 1),
-        (np.float32, 4),
+        (np.float32, 3),
         (np.float64, 11),
         (np.float128, 11),
         (np.complex64, 3),
@@ -449,6 +452,7 @@ par_lists_fft2d_random_cpx = dict(
     ],
     ifftshift_before=itertools.product([False, True], [False, True]),
     fftshift_after=itertools.product([False, True], [False, True]),
+    engine=["numpy", "scipy"],
 )
 # Generate all combinations of the above parameters
 pars_fft2d_random_cpx = [
@@ -463,6 +467,7 @@ def test_FFT2D_random_complex(par):
     dtype, decimal = par["dtype_precision"]
     ifftshift_before = par["ifftshift_before"]
     fftshift_after = par["fftshift_after"]
+    engine = par["engine"]
 
     x = np.random.randn(*shape).astype(dtype)
     if np.issubdtype(dtype, np.complexfloating):
@@ -479,6 +484,7 @@ def test_FFT2D_random_complex(par):
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
         dtype=dtype,
+        engine=engine,
     )
 
     # Compute FFT of x independently
@@ -519,10 +525,11 @@ par_lists_fftnd_random_real = dict(
     ],
     dtype_precision=[
         (np.float16, 1),
-        (np.float32, 5),
-        (np.float64, 13),
-        (np.float128, 13),
+        (np.float32, 3),
+        (np.float64, 11),
+        (np.float128, 11),
     ],
+    engine=["numpy", "scipy"],
 )
 pars_fftnd_random_real = [
     dict(zip(par_lists_fftnd_random_real.keys(), value))
@@ -534,6 +541,7 @@ pars_fftnd_random_real = [
 def test_FFTND_random_real(par):
     shape = par["shape"]
     dtype, decimal = par["dtype_precision"]
+    engine = par["engine"]
 
     x = np.random.randn(*shape).astype(dtype)
 
@@ -552,6 +560,7 @@ def test_FFTND_random_real(par):
         ifftshift_before=ifftshift_before,
         real=True,
         dtype=dtype,
+        engine=engine,
     )
     x = x.ravel()
     y = FFTop * x
@@ -575,13 +584,14 @@ par_lists_fftnd_random_cpx = dict(
     ],
     dtype_precision=[
         (np.float16, 1),
-        (np.float32, 4),
+        (np.float32, 3),
         (np.float64, 11),
         (np.float128, 11),
         (np.complex64, 3),
         (np.complex128, 11),
         (np.complex256, 11),
     ],
+    engine=["numpy", "scipy"],
 )
 # Generate all combinations of the above parameters
 pars_fftnd_random_cpx = [
@@ -594,6 +604,7 @@ pars_fftnd_random_cpx = [
 def test_FFTND_random_complex(par):
     shape = par["shape"]
     dtype, decimal = par["dtype_precision"]
+    engine = par["engine"]
 
     x = np.random.randn(*shape).astype(dtype)
     if np.issubdtype(dtype, np.complexfloating):
@@ -615,6 +626,7 @@ def test_FFTND_random_complex(par):
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
         dtype=dtype,
+        engine=engine,
     )
 
     # Compute FFT of x independently
