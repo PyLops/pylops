@@ -144,6 +144,7 @@ par_lists_fft_small_real = dict(
         (np.float64, 13),
         (np.float128, 13),
     ],
+    norm=["ortho", "backward", "forward"],
     ifftshift_before=[False, True],
     engine=["numpy", "fftw", "scipy"],
 )
@@ -157,6 +158,7 @@ pars_fft_small_real = [
 @pytest.mark.parametrize("par", pars_fft_small_real)
 def test_FFT_small_real(par):
     dtype, decimal = par["dtype_precision"]
+    norm = par["norm"]
     ifftshift_before = par["ifftshift_before"]
     engine = par["engine"]
 
@@ -169,16 +171,21 @@ def test_FFT_small_real(par):
     FFTop = FFT(
         dims=x.shape,
         dir=0,
+        norm=norm,
+        real=True,
         ifftshift_before=ifftshift_before,
         dtype=dtype,
-        real=True,
         engine=engine,
     )
     y = FFTop * x.ravel()
 
-    # y_true = np.array([1, 2 + 1j, -1], dtype=cdtype)  # norm="backward"/default
-    # y_true = np.array([0.25, 0.5 + 0.25j, 0.25], dtype=cdtype)  # norm="forward"
-    y_true = np.array([0.5, 1 + 0.5j, -0.5], dtype=FFTop.cdtype)  # norm="ortho"
+    if norm == "ortho":
+        y_true = np.array([0.5, 1 + 0.5j, -0.5], dtype=FFTop.cdtype)
+    elif norm == "backward":
+        y_true = np.array([1, 2 + 1j, -1], dtype=FFTop.cdtype)
+    elif norm == "forward":
+        y_true = np.array([0.25, 0.5 + 0.25j, -0.25], dtype=FFTop.cdtype)
+
     y_true[1:-1] *= np.sqrt(2)  # Zero and Nyquist
     if ifftshift_before:
         # `ifftshift_before`` is useful when the time-axis is centered around zero as
@@ -253,6 +260,7 @@ def test_FFT_random_real(par):
 
 par_lists_fft_small_cpx = dict(
     dtype_precision=[(np.complex64, 5), (np.complex128, 13), (np.complex256, 13)],
+    norm=["ortho", "backward", "forward"],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
     engine=["numpy", "fftw", "scipy"],
@@ -266,6 +274,7 @@ pars_fft_small_cpx = [
 @pytest.mark.parametrize("par", pars_fft_small_cpx)
 def test_FFT_small_complex(par):
     dtype, decimal = par["dtype_precision"]
+    norm = par["norm"]
     ifftshift_before = par["ifftshift_before"]
     fftshift_after = par["fftshift_after"]
 
@@ -274,15 +283,20 @@ def test_FFT_small_complex(par):
     FFTop = FFT(
         dims=x.shape,
         dir=0,
+        norm=norm,
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
         dtype=dtype,
     )
 
     # Compute FFT of x independently
-    # y_true = np.array([2, -2 - 2j, -2j, 4 + 4j], dtype=dtype)  # norm="backward"/default
-    # y_true = np.array([0.5, -0.5 - 0.5j, -0.5j, 1 + 1j], dtype=dtype)  # norm="forward"
-    y_true = np.array([1, -1 - 1j, -1j, 2 + 2j], dtype=dtype)  # norm="ortho"
+    if norm == "ortho":
+        y_true = np.array([1, -1 - 1j, -1j, 2 + 2j], dtype=FFTop.cdtype)
+    elif norm == "backward":
+        y_true = np.array([2, -2 - 2j, -2j, 4 + 4j], dtype=FFTop.cdtype)
+    elif norm == "forward":
+        y_true = np.array([0.5, -0.5 - 0.5j, -0.5j, 1 + 1j], dtype=FFTop.cdtype)
+
     if fftshift_after:
         y_true = np.fft.fftshift(y_true)
     if ifftshift_before:

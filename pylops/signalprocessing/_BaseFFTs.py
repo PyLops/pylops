@@ -72,6 +72,7 @@ class _BaseFFT(LinearOperator):
         dir=0,
         nfft=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=False,
         fftshift_after=False,
@@ -94,8 +95,8 @@ class _BaseFFT(LinearOperator):
             nfft = nffts[0]
         self.nfft = nfft
 
+        self.norm = norm
         self.real = real
-
         self.ifftshift_before = ifftshift_before
 
         self.f = (
