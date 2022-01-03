@@ -2,6 +2,7 @@ import logging
 import warnings
 
 import numpy as np
+import scipy.fft
 
 from pylops.signalprocessing._BaseFFTs import _BaseFFT
 
@@ -91,6 +92,73 @@ class _FFT_numpy(_BaseFFT):
             y = np.fft.fftshift(y, axes=self.dir)
         y = y.ravel()
         y = y.astype(self.rdtype)
+        return y
+
+
+class _FFT_scipy(_BaseFFT):
+    """One dimensional Fast-Fourier Transform using numpy"""
+
+    def __init__(
+        self,
+        dims,
+        dir=0,
+        nfft=None,
+        sampling=1.0,
+        real=False,
+        ifftshift_before=False,
+        fftshift_after=False,
+        dtype="complex128",
+    ):
+        super().__init__(
+            dims=dims,
+            dir=dir,
+            nfft=nfft,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+
+    def _matvec(self, x):
+        x = np.reshape(x, self.dims)
+        if self.ifftshift_before:
+            x = scipy.fft.ifftshift(x, axes=self.dir)
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = scipy.fft.rfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.dir)
+            y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.dir, -1)
+        else:
+            y = scipy.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
+        if self.fftshift_after:
+            y = scipy.fft.fftshift(y, axes=self.dir)
+        y = y.ravel()
+        return y
+
+    def _rmatvec(self, x):
+        x = np.reshape(x, self.dims_fft)
+        if self.fftshift_after:
+            x = scipy.fft.ifftshift(x, axes=self.dir)
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.dir)
+            x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.dir, -1)
+            y = scipy.fft.irfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+        else:
+            y = scipy.fft.ifft(x, n=self.nfft, axis=self.dir, norm="ortho")
+        if self.nfft != self.dims[self.dir]:
+            y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
+        if not self.clinear:
+            y = np.real(y)
+        if self.ifftshift_before:
+            y = scipy.fft.fftshift(y, axes=self.dir)
+        y = y.ravel()
         return y
 
 
@@ -212,19 +280,27 @@ def FFT(
     Apply Fast-Fourier Transform (FFT) along a specific direction ``dir`` of a
     multi-dimensional array of size ``dim``.
 
-    Note that the FFT operator is an overload to either the numpy
+    Using the default NumPy engine, the FFT operator is an overload to either the NumPy
     :py:func:`numpy.fft.fft` (or :py:func:`numpy.fft.rfft` for real models) in
-    forward mode and to the numpy :py:func:`numpy.fft.ifft` (or
-    :py:func:`numpy.fft.irfft` for real models) in adjoint mode, or their cupy
-    equivalents. Alternatively, the :py:class:`pyfftw.FFTW` class is used
-    when ``engine='fftw'`` is chosen.
+    forward mode, and to :py:func:`numpy.fft.ifft` (or :py:func:`numpy.fft.irfft`
+    for real models) in adjoint mode, or their CuPy equivalents.
+    When ``engine='fftw'`` is chosen, the :py:class:`pyfftw.FFTW` class is used
+    instead.
+    Alternatively, when the SciPy engine is chosen, the overloads are of
+    :py:func:`scipy.fft.fft` (or :py:func:`scipy.fft.rfft` for real models) in
+    forward mode, and to :py:func:`scipy.fft.ifft` (or :py:func:`scipy.fft.irfft`
+    for real models) in adjoint mode.
 
-    In both cases, scaling is properly taken into account to guarantee
-    that the operator is passing the dot-test. If a user is interested to use
-    the unscaled forward FFT, it must pre-multiply the operator by an
-    appropriate correction factor. Moreover, for a real valued
-    input signal, it is advised to use the flag `real=True` as it stores
-    the values of the Fourier transform at positive frequencies only as
+    In all cases, the "ortho" scaling (see :py:func:`numpy.fft.fft`) is used to
+    to guarantee that the operator passes the dot-test. When using `real=True`, the
+    result of the forward is also multiplied by sqrt(2) for all frequency bins
+    except zero and Nyquist, and the input of the adjoint is divided by
+    sqrt(2) for the same frequencies.
+    If a user is interested in using the unscaled forward FFT, they must pre-multiply
+    the operator by an appropriate correction factor.
+
+    For a real valued input signal, it is advised to use the flag `real=True`
+    as it stores the values of the Fourier transform at positive frequencies only as
     values at negative frequencies are simply their complex conjugates.
 
     Parameters
@@ -258,7 +334,7 @@ def FFT(
         frequencies are arranged from zero to largest positive, and then from negative
         Nyquist to the frequency bin before zero.
     engine : :obj:`str`, optional
-        Engine used for fft computation (``numpy`` or ``fftw``). Choose
+        Engine used for fft computation (``numpy``, ``fftw``, or ``scipy``). Choose
         ``numpy`` when working with cupy arrays.
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
@@ -266,7 +342,8 @@ def FFT(
         In addition, note that neither the NumPy nor the FFTW backends supports
         returning ``dtype``s different than ``complex128``. As such, when using either
         backend, arrays will be force-casted to types corresponding to the supplied ``dtype``.
-        Under both backends, when a real ``dtype`` is supplied, a real result will be
+        The SciPy backend supports all precisions natively.
+        Under all backends, when a real ``dtype`` is supplied, a real result will be
         enforced on the result of the ``rmatvec`` and the input of the ``matvec``.
     **kwargs_fftw
             Arbitrary keyword arguments
@@ -274,6 +351,17 @@ def FFT(
 
     Attributes
     ----------
+    dims_fft : :obj:`tuple`
+        Shape of the array after the forward, but before linearization. E.g.
+        ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
+    f : :obj:`numpy.ndarray`
+        Discrete Fourier Transform sample frequencies
+    real : :obj:`bool`
+        When True, uses ``rfft``/``irfft``
+    rdtype : :obj:`bool`
+        Expected input type to the forward
+    cdtype : :obj:`bool`
+        Output type of the forward. Complex equivalent to ``rdtype``.
     shape : :obj:`tuple`
         Operator shape
     clinear : :obj:`bool`
@@ -288,7 +376,7 @@ def FFT(
     ValueError
         If ``dims`` is provided and ``dir`` is bigger than ``len(dims)``
     NotImplementedError
-        If ``engine`` is neither ``numpy`` nor ``fftw``
+        If ``engine`` is neither ``numpy``, ``fftw``, nor ``scipy``.
 
     Notes
     -----
@@ -355,6 +443,17 @@ def FFT(
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
+    elif engine == "scipy":
+        f = _FFT_scipy(
+            dims,
+            dir=dir,
+            nfft=nfft,
+            sampling=sampling,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
     else:
-        raise NotImplementedError("engine must be numpy or fftw")
+        raise NotImplementedError("engine must be numpy, fftw or scipy")
     return f
