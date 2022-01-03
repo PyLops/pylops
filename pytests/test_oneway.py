@@ -23,7 +23,7 @@ parmod = {
 }
 
 par1 = {"ny": 8, "nx": 10, "nt": 20, "dtype": "float32"}  # even
-par2 = {"ny": 9, "nx": 11, "nt": 21, "dtype": "complex64"}  # odd
+par2 = {"ny": 9, "nx": 11, "nt": 21, "dtype": "float32"}  # odd
 
 # deghosting params
 vel_sep = 1000.0  # velocity at separation level
