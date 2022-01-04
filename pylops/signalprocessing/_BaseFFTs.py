@@ -147,6 +147,7 @@ class _BaseFFTND(LinearOperator):
         dirs=None,
         nffts=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=False,
         fftshift_after=False,
@@ -206,6 +207,7 @@ class _BaseFFTND(LinearOperator):
                     "respectively."
                 )
             )
+        self.norm = norm
         self.real = real
 
         fs = [

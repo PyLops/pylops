@@ -18,6 +18,7 @@ class _FFT2D_numpy(_BaseFFTND):
         dirs=(0, 1),
         nffts=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=False,
         fftshift_after=False,
@@ -28,6 +29,7 @@ class _FFT2D_numpy(_BaseFFTND):
             dirs=dirs,
             nffts=nffts,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
@@ -47,6 +49,13 @@ class _FFT2D_numpy(_BaseFFTND):
         self.f1, self.f2 = self.fs
         del self.fs
 
+        # FFTs are called with "ortho" for backwards compatibility
+        # The factors below are conversions factors ortho->norm
+        if self.norm == "backward":
+            self._scale = np.sqrt(np.prod(self.nffts))
+        elif self.norm == "forward":
+            self._scale = np.sqrt(1.0 / np.prod(self.nffts))
+
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.ifftshift_before.any():
@@ -61,6 +70,8 @@ class _FFT2D_numpy(_BaseFFTND):
             y = np.swapaxes(y, self.dirs[-1], -1)
         else:
             y = np.fft.fft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        if self.norm != "ortho":
+            y *= self._scale
         y = y.astype(self.cdtype)
         if self.fftshift_after.any():
             y = np.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
@@ -79,6 +90,8 @@ class _FFT2D_numpy(_BaseFFTND):
             y = np.fft.irfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
         else:
             y = np.fft.ifft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        if self.norm != "ortho":
+            y *= self._scale
         y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
         y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
         if not self.clinear:
@@ -98,6 +111,7 @@ class _FFT2D_scipy(_BaseFFTND):
         dirs=(0, 1),
         nffts=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=False,
         fftshift_after=False,
@@ -108,6 +122,7 @@ class _FFT2D_scipy(_BaseFFTND):
             dirs=dirs,
             nffts=nffts,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
@@ -123,6 +138,13 @@ class _FFT2D_scipy(_BaseFFTND):
         self.f1, self.f2 = self.fs
         del self.fs
 
+        # FFTs are called with "ortho" for backwards compatibility
+        # The factors below are conversions factors ortho->norm
+        if self.norm == "backward":
+            self._scale = np.sqrt(np.prod(self.nffts))
+        elif self.norm == "forward":
+            self._scale = np.sqrt(1.0 / np.prod(self.nffts))
+
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.ifftshift_before.any():
@@ -137,6 +159,8 @@ class _FFT2D_scipy(_BaseFFTND):
             y = np.swapaxes(y, self.dirs[-1], -1)
         else:
             y = scipy.fft.fft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        if self.norm != "ortho":
+            y *= self._scale
         if self.fftshift_after.any():
             y = scipy.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
         return y.ravel()
@@ -154,6 +178,8 @@ class _FFT2D_scipy(_BaseFFTND):
             y = scipy.fft.irfft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
         else:
             y = scipy.fft.ifft2(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        if self.norm != "ortho":
+            y *= self._scale
         y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
         y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
         if not self.clinear:
@@ -168,6 +194,7 @@ def FFT2D(
     dirs=(0, 1),
     nffts=None,
     sampling=1.0,
+    norm="ortho",
     real=False,
     ifftshift_before=False,
     fftshift_after=False,
@@ -188,13 +215,9 @@ def FFT2D(
     forward mode, and to :py:func:`scipy.fft.ifft2` (or :py:func:`scipy.fft.irfft2`
     for real models) in adjoint mode.
 
-    In all cases, the "ortho" scaling (see :py:func:`numpy.fft.fft2`) is used to
-    to guarantee that the operator passes the dot-test. When using `real=True`, the
-    result of the forward is also multiplied by sqrt(2) for all frequency bins
-    except zero and Nyquist along the second direction of ``dirs``, and the input of
-    the adjoint is divided by sqrt(2) for the same frequencies.
-    If a user is interested in using the unscaled forward FFT, they must pre-multiply
-    the operator by an appropriate correction factor.
+    When using `real=True`, the result of the forward is also multiplied by sqrt(2)
+    for all frequency bins except zero and Nyquist, and the input of the adjoint is
+    divided by sqrt(2) for the same frequencies.
 
     For a real valued input signal, it is advised to use the flag ``real=True``
     as it stores the values of the Fourier transform of the last direction at positive
@@ -210,14 +233,24 @@ def FFT2D(
     nffts : :obj:`tuple` or :obj:`int`, optional
         Number of samples in Fourier Transform for each direction. In case only one
         dimension needs to be specified, use ``None`` for the other dimension in the
-        tuple. The direction with None will use ``dims[dir]`` as ``nfft``. When supplying a
-        tuple, the order must agree with that of ``dirs``. When a single value is
-        passed, it will be used for both directions. As such the default is
+        tuple. The direction with None will use ``dims[dir]`` as ``nfft``. When
+        supplying a tuple, the order must agree with that of ``dirs``. When a single
+        value is passed, it will be used for both directions. As such the default is
         equivalent to ``nffts=(None, None)``.
     sampling : :obj:`tuple` or :obj:`float`, optional
         Sampling steps for each direction. When supplied a single value, it is used
         for both directions. Unlike ``nffts``, ``None``s will not be converted to the
         default value.
+    norm : `{"ortho", "backward", "forward"}`, optional
+        Normalization mode (see :py:func:`numpy.fft.fft2`). Note that for "backward"
+        and "forward", the scaling placed on the forward is the same as that placed
+        on the adjoint, so as to respect adjoitness. This is different from standard
+        NumPy/SciPy behavior which scales ``fft2`` and ``ifft2`` differently when using
+        the same ``norm``. As a result, a forward and adjoint pass with the "backward"
+        norm will introduce a factor of :math:`nfft_1 \cdot nfft_2`; a forward and
+        adjoint pass with "forward" will introduce a factor of
+        :math:`(nfft_1 \cdot nfft_2)^{-1}`. Only "ortho" will recover the original
+        signal.
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
@@ -313,6 +346,7 @@ def FFT2D(
             dirs=dirs,
             nffts=nffts,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
@@ -324,6 +358,7 @@ def FFT2D(
             dirs=dirs,
             nffts=nffts,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,

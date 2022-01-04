@@ -18,6 +18,7 @@ class _FFTND_numpy(_BaseFFTND):
         dirs=(0, 1, 2),
         nffts=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=False,
         fftshift_after=False,
@@ -28,6 +29,7 @@ class _FFTND_numpy(_BaseFFTND):
             dirs=dirs,
             nffts=nffts,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
@@ -37,6 +39,13 @@ class _FFTND_numpy(_BaseFFTND):
             warnings.warn(
                 f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
             )
+
+        # FFTs are called with "ortho" for backwards compatibility
+        # The factors below are conversions factors ortho->norm
+        if self.norm == "backward":
+            self._scale = np.sqrt(np.prod(self.nffts))
+        elif self.norm == "forward":
+            self._scale = np.sqrt(1.0 / np.prod(self.nffts))
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
@@ -52,6 +61,8 @@ class _FFTND_numpy(_BaseFFTND):
             y = np.swapaxes(y, self.dirs[-1], -1)
         else:
             y = np.fft.fftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        if self.norm != "ortho":
+            y *= self._scale
         y = y.astype(self.cdtype)
         if self.fftshift_after.any():
             y = np.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
@@ -70,6 +81,8 @@ class _FFTND_numpy(_BaseFFTND):
             y = np.fft.irfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
         else:
             y = np.fft.ifftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        if self.norm != "ortho":
+            y *= self._scale
         for direction in self.dirs:
             y = np.take(y, range(self.dims[direction]), axis=direction)
         if not self.clinear:
@@ -89,6 +102,7 @@ class _FFTND_scipy(_BaseFFTND):
         dirs=(0, 1, 2),
         nffts=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=False,
         fftshift_after=False,
@@ -99,11 +113,19 @@ class _FFTND_scipy(_BaseFFTND):
             dirs=dirs,
             nffts=nffts,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
+
+        # FFTs are called with "ortho" for backwards compatibility
+        # The factors below are conversions factors ortho->norm
+        if self.norm == "backward":
+            self._scale = np.sqrt(np.prod(self.nffts))
+        elif self.norm == "forward":
+            self._scale = np.sqrt(1.0 / np.prod(self.nffts))
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
@@ -119,6 +141,8 @@ class _FFTND_scipy(_BaseFFTND):
             y = np.swapaxes(y, self.dirs[-1], -1)
         else:
             y = scipy.fft.fftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        if self.norm != "ortho":
+            y *= self._scale
         if self.fftshift_after.any():
             y = scipy.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
         return y.ravel()
@@ -136,6 +160,8 @@ class _FFTND_scipy(_BaseFFTND):
             y = scipy.fft.irfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
         else:
             y = scipy.fft.ifftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+        if self.norm != "ortho":
+            y *= self._scale
         for direction in self.dirs:
             y = np.take(y, range(self.dims[direction]), axis=direction)
         if not self.clinear:
@@ -150,6 +176,7 @@ def FFTND(
     dirs=(0, 1, 2),
     nffts=None,
     sampling=1.0,
+    norm="ortho",
     real=False,
     ifftshift_before=False,
     fftshift_after=False,
@@ -191,14 +218,23 @@ def FFTND(
     nffts : :obj:`tuple` or :obj:`int`, optional
         Number of samples in Fourier Transform for each direction. In case only one
         dimension needs to be specified, use ``None`` for the other dimension in the
-        tuple. The direction with None will use ``dims[dir]`` as ``nfft``. When supplying a
-        tuple, the order must agree with that of ``dirs``. When a single value is
-        passed, it will be used for both directions. As such the default is
+        tuple. The direction with None will use ``dims[dir]`` as ``nfft``. When
+        supplying a tuple, the order must agree with that of ``dirs``. When a single
+        value is passed, it will be used for both directions. As such the default is
         equivalent to ``nffts=(None,..., None)``.
     sampling : :obj:`tuple` or :obj:`float`, optional
         Sampling steps for each direction. When supplied a single value, it is used
         for all directions. Unlike ``nffts``, ``None``s will not be converted to the
         default value.
+    norm : `{"ortho", "backward", "forward"}`, optional
+        Normalization mode (see :py:func:`numpy.fft.fftn`). Note that for "backward"
+        and "forward", the scaling placed on the forward is the same as that placed
+        on the adjoint, so as to respect adjoitness. This is different from standard
+        NumPy/SciPy behavior which scales ``fftn`` and ``ifftn`` differently when using
+        the same ``norm``. As a result, a forward and adjoint pass with the "backward"
+        norm will introduce a factor of :math:`\Pi_{i \in dirs} nfft_i`; a forward and
+        adjoint pass with "forward" will introduce a factor of
+        :math:`(\Pi_{i \in dirs} nfft_i)^{-1}`. Only "ortho" will recover the original signal.
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
@@ -294,6 +330,7 @@ def FFTND(
             dirs=dirs,
             nffts=nffts,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
@@ -305,6 +342,7 @@ def FFTND(
             dirs=dirs,
             nffts=nffts,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,

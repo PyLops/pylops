@@ -674,6 +674,103 @@ def test_FFTND_random_complex(par):
         assert dottest(FFTop, nr, nc, complexflag=3, tol=10 ** (-decimal))
 
 
+par_lists_fft2dnd_small_cpx = dict(
+    dtype_precision=[(np.complex64, 5), (np.complex128, 11), (np.complex256, 11)],
+    norm=["ortho", "backward", "forward"],
+    engine=["numpy", "scipy"],
+)
+pars_fft2dnd_small_cpx = [
+    dict(zip(par_lists_fft2dnd_small_cpx.keys(), value))
+    for value in itertools.product(*par_lists_fft2dnd_small_cpx.values())
+]
+
+
+@pytest.mark.parametrize("par", pars_fft2dnd_small_cpx)
+def test_FFT2D_small_complex(par):
+    dtype, decimal = par["dtype_precision"]
+    norm = par["norm"]
+
+    x = np.array(
+        [
+            [1, 2 - 1j, -1j, -1 + 2j],
+            [2 - 1j, -1j, -1 - 2j, 1],
+            [-1j, -1 - 2j, 1, 2 - 1j],
+            [-1 - 2j, 1, 2 - 1j, -1j],
+        ]
+    )
+
+    FFTop = FFT2D(
+        dims=x.shape,
+        dirs=(0, 1),
+        norm=norm,
+        dtype=dtype,
+    )
+
+    # Compute FFT of x independently
+    y_true = np.array(
+        [
+            [8 - 12j, -4, -4j, 4],
+            [4j, 4 - 8j, -4j, 4],
+            [4j, -4, 4j, 4],
+            [4j, -4, -4j, 4 + 16j],
+        ],
+        dtype=FFTop.cdtype,
+    )  # Backward
+    if norm == "ortho":
+        y_true /= 4
+    elif norm == "forward":
+        y_true /= 16
+
+    # Compute FFT with FFTop and compare with y_true
+    y = FFTop * x.ravel()
+    y = y.reshape(FFTop.dims_fft)
+    assert_array_almost_equal(y, y_true, decimal=decimal)
+    assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
+
+
+@pytest.mark.parametrize("par", pars_fft2dnd_small_cpx)
+def test_FFTND_small_complex(par):
+    dtype, decimal = par["dtype_precision"]
+    norm = par["norm"]
+
+    x = np.array(
+        [
+            [1, 2 - 1j, -1j, -1 + 2j],
+            [2 - 1j, -1j, -1 - 2j, 1],
+            [-1j, -1 - 2j, 1, 2 - 1j],
+            [-1 - 2j, 1, 2 - 1j, -1j],
+        ]
+    )
+
+    FFTop = FFTND(
+        dims=x.shape,
+        dirs=(0, 1),
+        norm=norm,
+        dtype=dtype,
+    )
+
+    # Compute FFT of x independently
+    y_true = np.array(
+        [
+            [8 - 12j, -4, -4j, 4],
+            [4j, 4 - 8j, -4j, 4],
+            [4j, -4, 4j, 4],
+            [4j, -4, -4j, 4 + 16j],
+        ],
+        dtype=FFTop.cdtype,
+    )  # Backward
+    if norm == "ortho":
+        y_true /= 4
+    elif norm == "forward":
+        y_true /= 16
+
+    # Compute FFT with FFTop and compare with y_true
+    y = FFTop * x.ravel()
+    y = y.reshape(FFTop.dims_fft)
+    assert_array_almost_equal(y, y_true, decimal=decimal)
+    assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
+
+
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par5), (par1w), (par2w), (par3w), (par4w)]
 )
