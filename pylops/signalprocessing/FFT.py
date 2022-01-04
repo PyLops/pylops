@@ -352,7 +352,10 @@ def FFT(
         and "forward", the scaling placed on the forward is the same as that placed
         on the adjoint, so as to respect adjoitness. This is different from standard
         NumPy/SciPy behavior which scales ``fft`` and ``ifft`` differently when using
-        the same ``norm``.
+        the same ``norm``. As a result, a forward and adjoint pass with the "backward"
+        norm will introduce a factor of :math:`nfft`; a forward and adjoint pass with
+        "forward" will introduce a factor of :math:`nfft^{-1}`. Only "ortho" will
+        recover the original signal.
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
