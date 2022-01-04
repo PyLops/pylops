@@ -72,11 +72,13 @@ Rtwosided_fft = Rtwosided_fft[..., :nfmax]
 R1twosided_fft = np.fft.rfft(R1twosided, 2 * nt - 1, axis=-1) / np.sqrt(2 * nt - 1)
 R1twosided_fft = R1twosided_fft[..., :nfmax]
 
-par1 = {"niter": 10, "prescaled": False}
-par2 = {"niter": 10, "prescaled": True}
+par1 = {"niter": 10, "prescaled": False, "fftengine": "numpy"}
+par2 = {"niter": 10, "prescaled": True, "fftengine": "numpy"}
+par3 = {"niter": 10, "prescaled": False, "fftengine": "scipy"}
+par4 = {"niter": 10, "prescaled": False, "fftengine": "fftw"}
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_Marchenko_freq(par):
     """Solve marchenko equations using input Rs in frequency domain"""
     if par["prescaled"]:
@@ -96,6 +98,7 @@ def test_Marchenko_freq(par):
         toff=toff,
         nsmooth=nsmooth,
         prescaled=par["prescaled"],
+        fftengine=par["fftengine"],
     )
 
     _, _, _, g_inv_minus, g_inv_plus = MarchenkoWM.apply_onepoint(

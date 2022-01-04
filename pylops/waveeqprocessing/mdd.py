@@ -198,7 +198,7 @@ def MDC(
     dtype : :obj:`str`, optional
         *Deprecated*, will be removed in v2.0.0
     fftengine : :obj:`str`, optional
-        Engine used for fft computation (``numpy`` or ``fftw``)
+        Engine used for fft computation (``numpy``, ``scipy`` or ``fftw``)
     transpose : :obj:`bool`, optional
         Transpose ``G`` and inputs such that time/frequency is placed in first
         dimension. This allows back-compatibility with v1.4.0 and older but
@@ -299,6 +299,7 @@ def MDD(
     saveGt=True,
     add_negative=True,
     smooth_precond=0,
+    fftengine="numpy",
     **kwargs_solver
 ):
     r"""Multi-dimensional deconvolution.
@@ -355,6 +356,8 @@ def MDD(
         :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
         ``G^H`` on-the-fly (``False``) Note that ``saveGt=True`` will be
         faster but double the amount of required memory
+    fftengine : :obj:`str`, optional
+        Engine used for fft computation (``numpy``, ``scipy`` or ``fftw``)
     **kwargs_solver
         Arbitrary keyword arguments for chosen solver
         (:py:func:`scipy.sparse.linalg.cg` and
@@ -457,6 +460,7 @@ def MDD(
         twosided=twosided,
         transpose=False,
         saveGt=saveGt,
+        fftengine=fftengine,
     )
     if psf:
         PSFop = MDC(
@@ -468,6 +472,7 @@ def MDD(
             twosided=twosided,
             transpose=False,
             saveGt=saveGt,
+            fftengine=fftengine,
         )
     if dottest:
         Dottest(

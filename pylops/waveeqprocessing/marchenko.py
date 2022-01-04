@@ -138,6 +138,8 @@ class Marchenko:
         :class:`pylops.waveeqprocessing.MDC` operator. In case
         ``prescaled=True``, the ``R`` is assumed to have been pre-scaled by
         the user.
+    fftengine : :obj:`str`, optional
+        Engine used for fft computation (``numpy``, ``scipy`` or ``fftw``)
 
     Attributes
     ----------
@@ -231,6 +233,7 @@ class Marchenko:
         dtype="float64",
         saveRt=True,
         prescaled=False,
+        fftengine="numpy",
     ):
         warnings.warn(
             "A new implementation of Marchenko is provided in v1.5.0. "
@@ -251,6 +254,7 @@ class Marchenko:
         self.nsmooth = nsmooth
         self.saveRt = saveRt
         self.prescaled = prescaled
+        self.fftengine = fftengine
         self.dtype = dtype
         self.explicit = False
         self.ncp = get_array_module(R)
@@ -372,6 +376,7 @@ class Marchenko:
             dr=self.dr,
             twosided=True,
             conj=False,
+            fftengine=self.fftengine,
             transpose=False,
             saveGt=self.saveRt,
             prescaled=self.prescaled,
@@ -386,6 +391,7 @@ class Marchenko:
             dr=self.dr,
             twosided=True,
             conj=True,
+            fftengine=self.fftengine,
             transpose=False,
             saveGt=self.saveRt,
             prescaled=self.prescaled,
@@ -582,6 +588,7 @@ class Marchenko:
             dr=self.dr,
             twosided=True,
             conj=False,
+            fftengine=self.fftengine,
             transpose=False,
             prescaled=self.prescaled,
             usematmul=usematmul,
@@ -595,6 +602,7 @@ class Marchenko:
             dr=self.dr,
             twosided=True,
             conj=True,
+            fftengine=self.fftengine,
             transpose=False,
             prescaled=self.prescaled,
             usematmul=usematmul,
