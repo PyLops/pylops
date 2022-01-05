@@ -223,8 +223,6 @@ class _FFT_fftw(_BaseFFT):
         )
 
     def _matvec(self, x):
-        if self.real:
-            x = np.real(x)
         x = np.reshape(x, self.dims)
         if self.ifftshift_before:
             x = np.fft.ifftshift(x, axes=self.dir)
