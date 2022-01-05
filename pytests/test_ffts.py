@@ -160,10 +160,6 @@ def test_FFT_small_real(par):
     ifftshift_before = par["ifftshift_before"]
     engine = par["engine"]
 
-    if engine == "fftw" and dtype == np.float16:
-        # fftw does not support float16 for real
-        return
-
     x = np.array([1, 0, -1, 1], dtype=dtype)
 
     FFTop = FFT(

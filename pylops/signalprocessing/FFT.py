@@ -177,6 +177,11 @@ class _FFT_fftw(_BaseFFT):
         dtype="complex128",
         **kwargs_fftw,
     ):
+        if np.dtype(dtype) == np.float16:
+            warnings.warn(
+                "fftw backend is unavailable with float16 dtype. Will use float32."
+            )
+            dtype = np.float32
         super().__init__(
             dims=dims,
             dir=dir,
