@@ -191,9 +191,14 @@ def test_FFT_small_real(par):
         # https://www.iap.uni-jena.de/iapmedia/de/Lecture/Computational+Photonics/CoPho19_supp_FFT_primer.pdf
         x0 = -np.ceil(len(x) / 2)
         y_true *= np.exp(2 * np.pi * 1j * FFTop.f * x0)
+
     assert_array_almost_equal(y, y_true, decimal=decimal)
     assert dottest(FFTop, len(y), len(x), complexflag=0, tol=10 ** (-decimal))
     assert dottest(FFTop, len(y), len(x), complexflag=2, tol=10 ** (-decimal))
+
+    x_inv = FFTop / y
+    x_inv = x_inv.reshape(x.shape)
+    assert_array_almost_equal(x_inv, x, decimal=decimal)
 
 
 par_lists_fft_random_real = dict(
@@ -293,6 +298,10 @@ def test_FFT_small_complex(par):
     y = FFTop * x.ravel()
     assert_array_almost_equal(y, y_true, decimal=decimal)
     assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
+
+    x_inv = FFTop / y
+    x_inv = x_inv.reshape(x.shape)
+    assert_array_almost_equal(x_inv, x, decimal=decimal)
 
 
 par_lists_fft_random_cpx = dict(

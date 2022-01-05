@@ -232,7 +232,13 @@ class _FFT_fftw(_BaseFFT):
             x = np.real(x)
         if self.dopad:
             x = np.pad(x, self.pad, "constant", constant_values=0)
-        y = np.sqrt(1.0 / self.nfft) * self.fftplan(x)
+
+        # self.fftplan() always uses byte-alligned self.x as input array and
+        # returns self.y as output array. As such, self.y must be copied so as
+        # not to be overwritten on a subsequent call to _matvec.
+        np.copyto(self.x, x)
+        y = np.sqrt(1.0 / self.nfft) * self.fftplan().copy()
+
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.dir)
@@ -246,13 +252,23 @@ class _FFT_fftw(_BaseFFT):
         x = np.reshape(x, self.dims_fft)
         if self.fftshift_after:
             x = np.fft.ifftshift(x, axes=self.dir)
+
+        # self.ifftplan() always uses byte-alligned self.y as input array.
+        # We copy here so we don't need to copy again in the case of `real=True`,
+        # which only performs operations that preserve byte-allignment.
+        np.copyto(self.y, x)
+        x = self.y  # Update reference only
+
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
-            x = x.copy()
             x = np.swapaxes(x, -1, self.dir)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.dir, -1)
-        y = np.sqrt(self.nfft) * self.ifftplan(x)
+
+        # self.ifftplan() always returns self.x, which must be copied so as not
+        # to be overwritten on a subsequent call to _rmatvec.
+        y = np.sqrt(self.nfft) * self.ifftplan().copy()
+
         if self.nfft != self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
         if self.ifftshift_before:
