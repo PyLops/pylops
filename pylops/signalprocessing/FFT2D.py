@@ -49,6 +49,10 @@ class _FFT2D_numpy(_BaseFFTND):
         self.f1, self.f2 = self.fs
         del self.fs
 
+        if self.norm not in ["ortho", "backward", "forward"]:
+            raise ValueError(
+                f"'{self.norm}' is not one of 'ortho', 'backward' or 'forward'"
+            )
         # FFTs are called with "ortho" for backwards compatibility
         # The factors below are conversions factors ortho->norm
         if self.norm == "backward":
@@ -138,6 +142,10 @@ class _FFT2D_scipy(_BaseFFTND):
         self.f1, self.f2 = self.fs
         del self.fs
 
+        if self.norm not in ["ortho", "backward", "forward"]:
+            raise ValueError(
+                f"'{self.norm}' is not one of 'ortho', 'backward' or 'forward'"
+            )
         # FFTs are called with "ortho" for backwards compatibility
         # The factors below are conversions factors ortho->norm
         if self.norm == "backward":

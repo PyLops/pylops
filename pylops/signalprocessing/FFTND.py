@@ -40,6 +40,10 @@ class _FFTND_numpy(_BaseFFTND):
                 f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
             )
 
+        if self.norm not in ["ortho", "backward", "forward"]:
+            raise ValueError(
+                f"'{self.norm}' is not one of 'ortho', 'backward' or 'forward'"
+            )
         # FFTs are called with "ortho" for backwards compatibility
         # The factors below are conversions factors ortho->norm
         if self.norm == "backward":
@@ -120,6 +124,10 @@ class _FFTND_scipy(_BaseFFTND):
             dtype=dtype,
         )
 
+        if self.norm not in ["ortho", "backward", "forward"]:
+            raise ValueError(
+                f"'{self.norm}' is not one of 'ortho', 'backward' or 'forward'"
+            )
         # FFTs are called with "ortho" for backwards compatibility
         # The factors below are conversions factors ortho->norm
         if self.norm == "backward":
