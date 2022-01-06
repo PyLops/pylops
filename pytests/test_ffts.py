@@ -732,6 +732,10 @@ def test_FFT2D_small_complex(par):
     assert_array_almost_equal(y, y_true, decimal=decimal)
     assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
 
+    x_inv = FFTop / y.ravel()
+    x_inv = x_inv.reshape(x.shape)
+    assert_array_almost_equal(x_inv, x, decimal=decimal)
+
 
 @pytest.mark.parametrize("par", pars_fft2dnd_small_cpx)
 def test_FFTND_small_complex(par):
@@ -774,6 +778,10 @@ def test_FFTND_small_complex(par):
     y = y.reshape(FFTop.dims_fft)
     assert_array_almost_equal(y, y_true, decimal=decimal)
     assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
+
+    x_inv = FFTop / y.ravel()
+    x_inv = x_inv.reshape(x.shape)
+    assert_array_almost_equal(x_inv, x, decimal=decimal)
 
 
 @pytest.mark.parametrize(

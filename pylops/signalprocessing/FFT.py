@@ -110,6 +110,11 @@ class _FFT_numpy(_BaseFFT):
         y = y.astype(self.rdtype)
         return y
 
+    def __truediv__(self, y):
+        if self.norm != "ortho":
+            return self._rmatvec(y) / self._scale / self._scale
+        return self._rmatvec(y)
+
 
 class _FFT_scipy(_BaseFFT):
     """One dimensional Fast-Fourier Transform using numpy"""
@@ -192,6 +197,11 @@ class _FFT_scipy(_BaseFFT):
             y = scipy.fft.fftshift(y, axes=self.dir)
         y = y.ravel()
         return y
+
+    def __truediv__(self, y):
+        if self.norm != "ortho":
+            return self._rmatvec(y) / self._scale / self._scale
+        return self._rmatvec(y)
 
 
 class _FFT_fftw(_BaseFFT):
@@ -339,6 +349,11 @@ class _FFT_fftw(_BaseFFT):
         if not self.clinear:
             y = np.real(y)
         return y.ravel()
+
+    def __truediv__(self, y):
+        if self.norm == "ortho":
+            return self._rmatvec(y)
+        return self._rmatvec(y) / self._scale
 
 
 def FFT(

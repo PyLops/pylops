@@ -96,6 +96,11 @@ class _FFTND_numpy(_BaseFFTND):
             y = np.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
         return y.ravel()
 
+    def __truediv__(self, y):
+        if self.norm != "ortho":
+            return self._rmatvec(y) / self._scale / self._scale
+        return self._rmatvec(y)
+
 
 class _FFTND_scipy(_BaseFFTND):
     """N-dimensional Fast-Fourier Transform using scipy"""
@@ -177,6 +182,11 @@ class _FFTND_scipy(_BaseFFTND):
         if self.ifftshift_before.any():
             y = scipy.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
         return y.ravel()
+
+    def __truediv__(self, y):
+        if self.norm != "ortho":
+            return self._rmatvec(y) / self._scale / self._scale
+        return self._rmatvec(y)
 
 
 def FFTND(
