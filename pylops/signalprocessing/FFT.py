@@ -246,23 +246,36 @@ class _FFT_fftw(_BaseFFT):
             self.dims_t, dtype=self.rdtype if real else self.cdtype
         )
         self.y = pyfftw.empty_aligned(self.dims_fft, dtype=self.cdtype)
+
+        if "ortho" in kwargs_fftw:
+            warnings.warn(
+                f"FFTW option 'ortho' will be overwritten by norm={self.norm}"
+            )
+        if "normalise_idft" in kwargs_fftw:
+            warnings.warn(
+                f"FFTW option 'normalise_idft' will be overwritten by norm={self.norm}"
+            )
+        if self.norm == "ortho":
+            kwargs_fftw["ortho"] = True
+            kwargs_fftw["normalise_idft"] = False
+        elif self.norm == "backward":
+            self._scale = self.nfft
+            kwargs_fftw["ortho"] = False
+            kwargs_fftw["normalise_idft"] = False
+        elif self.norm == "forward":
+            self._scale = 1.0 / self.nfft
+            kwargs_fftw["ortho"] = False
+            kwargs_fftw["normalise_idft"] = True
+        else:
+            raise ValueError(
+                f"'{self.norm}' is not one of 'ortho', 'backward' or 'forward'"
+            )
         self.fftplan = pyfftw.FFTW(
             self.x, self.y, axes=(self.dir,), direction="FFTW_FORWARD", **kwargs_fftw
         )
         self.ifftplan = pyfftw.FFTW(
             self.y, self.x, axes=(self.dir,), direction="FFTW_BACKWARD", **kwargs_fftw
         )
-        # FFTW FFTs are called with "forward" by default
-        # The factors below are conversions factors forward->norm
-        if self.norm == "ortho":
-            self._scalefwd = np.sqrt(1.0 / self.nfft)
-            self._scaleadj = np.sqrt(self.nfft)
-        elif self.norm == "backward":
-            self._scalefwd = 1
-            self._scaleadj = self.nfft
-        elif self.norm == "forward":
-            self._scalefwd = 1.0 / self.nfft
-            self._scaleadj = 1
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
@@ -277,7 +290,9 @@ class _FFT_fftw(_BaseFFT):
         # returns self.y as output array. As such, self.y must be copied so as
         # not to be overwritten on a subsequent call to _matvec.
         np.copyto(self.x, x)
-        y = self._scalefwd * self.fftplan().copy()
+        y = self.fftplan().copy()
+        if self.norm == "forward":
+            y *= self._scale
 
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
@@ -307,7 +322,7 @@ class _FFT_fftw(_BaseFFT):
 
         # self.ifftplan() always returns self.x, which must be copied so as not
         # to be overwritten on a subsequent call to _rmatvec.
-        y = self._scaleadj * self.ifftplan().copy()
+        y = self.ifftplan().copy()
 
         if self.nfft != self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
