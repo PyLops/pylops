@@ -273,21 +273,21 @@ class _FFT_fftw(_BaseFFT):
             warnings.warn(
                 f"FFTW option 'ortho' will be overwritten by norm={self.norm}"
             )
+            del kwargs_fftw["ortho"]
         if "normalise_idft" in kwargs_fftw:
             warnings.warn(
                 f"FFTW option 'normalise_idft' will be overwritten by norm={self.norm}"
             )
+            del kwargs_fftw["normalise_idft"]
+        # Use FFTW without norm-related keywords above. In this case, FFTW standard
+        # behavior is to scale with 1/N on the inverse transform. The _scale below
+        # converts the default bevavior to that of ``norm``.
         if self.norm == "ortho":
-            kwargs_fftw["ortho"] = True
-            kwargs_fftw["normalise_idft"] = False
+            self._scale = np.sqrt(1.0 / self.nfft)
         elif self.norm == "backward":
             self._scale = self.nfft
-            kwargs_fftw["ortho"] = False
-            kwargs_fftw["normalise_idft"] = False
         elif self.norm == "forward":
             self._scale = 1.0 / self.nfft
-            kwargs_fftw["ortho"] = False
-            kwargs_fftw["normalise_idft"] = True
         else:
             raise ValueError(
                 f"'{self.norm}' is not one of 'ortho', 'backward' or 'forward'"
@@ -313,7 +313,7 @@ class _FFT_fftw(_BaseFFT):
         # not to be overwritten on a subsequent call to _matvec.
         np.copyto(self.x, x)
         y = self.fftplan().copy()
-        if self.norm == "forward":
+        if self.norm != "backward":
             y *= self._scale
 
         if self.real:
@@ -345,6 +345,10 @@ class _FFT_fftw(_BaseFFT):
         # self.ifftplan() always returns self.x, which must be copied so as not
         # to be overwritten on a subsequent call to _rmatvec.
         y = self.ifftplan().copy()
+        if self.norm == "ortho":
+            y /= self._scale
+        elif self.norm == "backward":
+            y *= self._scale
 
         if self.nfft != self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
