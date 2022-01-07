@@ -40,16 +40,17 @@ class _FFTND_numpy(_BaseFFTND):
                 f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
             )
 
-        if self.norm not in ["ortho", "backward", "forward"]:
+        self._norm_kwargs = {"norm": None}  # backward
+        if self.norm == "ortho":
+            self._norm_kwargs["norm"] = "ortho"
+        elif self.norm == "backward":
+            self._scale = np.prod(self.nffts)
+        elif self.norm == "forward":
+            self._scale = 1.0 / np.prod(self.nffts)
+        else:
             raise ValueError(
                 f"'{self.norm}' is not one of 'ortho', 'backward' or 'forward'"
             )
-        # FFTs are called with "ortho" for backwards compatibility
-        # The factors below are conversions factors ortho->norm
-        if self.norm == "backward":
-            self._scale = np.sqrt(np.prod(self.nffts))
-        elif self.norm == "forward":
-            self._scale = np.sqrt(1.0 / np.prod(self.nffts))
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
@@ -58,14 +59,14 @@ class _FFTND_numpy(_BaseFFTND):
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = np.fft.rfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+            y = np.fft.rfftn(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.dirs[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.dirs[-1], -1)
         else:
-            y = np.fft.fftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
-        if self.norm != "ortho":
+            y = np.fft.fftn(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+        if self.norm == "forward":
             y *= self._scale
         y = y.astype(self.cdtype)
         if self.fftshift_after.any():
@@ -82,10 +83,10 @@ class _FFTND_numpy(_BaseFFTND):
             x = np.swapaxes(x, -1, self.dirs[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.dirs[-1], -1)
-            y = np.fft.irfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+            y = np.fft.irfftn(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
         else:
-            y = np.fft.ifftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
-        if self.norm != "ortho":
+            y = np.fft.ifftn(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+        if self.norm == "backward":
             y *= self._scale
         for direction in self.dirs:
             y = np.take(y, range(self.dims[direction]), axis=direction)
@@ -98,7 +99,7 @@ class _FFTND_numpy(_BaseFFTND):
 
     def __truediv__(self, y):
         if self.norm != "ortho":
-            return self._rmatvec(y) / self._scale / self._scale
+            return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
 
 
@@ -129,16 +130,17 @@ class _FFTND_scipy(_BaseFFTND):
             dtype=dtype,
         )
 
-        if self.norm not in ["ortho", "backward", "forward"]:
+        self._norm_kwargs = {"norm": None}  # backward
+        if self.norm == "ortho":
+            self._norm_kwargs["norm"] = "ortho"
+        elif self.norm == "backward":
+            self._scale = np.prod(self.nffts)
+        elif self.norm == "forward":
+            self._scale = 1.0 / np.prod(self.nffts)
+        else:
             raise ValueError(
                 f"'{self.norm}' is not one of 'ortho', 'backward' or 'forward'"
             )
-        # FFTs are called with "ortho" for backwards compatibility
-        # The factors below are conversions factors ortho->norm
-        if self.norm == "backward":
-            self._scale = np.sqrt(np.prod(self.nffts))
-        elif self.norm == "forward":
-            self._scale = np.sqrt(1.0 / np.prod(self.nffts))
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
@@ -147,14 +149,14 @@ class _FFTND_scipy(_BaseFFTND):
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = scipy.fft.rfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+            y = scipy.fft.rfftn(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.dirs[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.dirs[-1], -1)
         else:
-            y = scipy.fft.fftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
-        if self.norm != "ortho":
+            y = scipy.fft.fftn(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+        if self.norm == "forward":
             y *= self._scale
         if self.fftshift_after.any():
             y = scipy.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
@@ -170,10 +172,10 @@ class _FFTND_scipy(_BaseFFTND):
             x = np.swapaxes(x, -1, self.dirs[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.dirs[-1], -1)
-            y = scipy.fft.irfftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
+            y = scipy.fft.irfftn(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
         else:
-            y = scipy.fft.ifftn(x, s=self.nffts, axes=self.dirs, norm="ortho")
-        if self.norm != "ortho":
+            y = scipy.fft.ifftn(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+        if self.norm == "backward":
             y *= self._scale
         for direction in self.dirs:
             y = np.take(y, range(self.dims[direction]), axis=direction)
@@ -185,7 +187,7 @@ class _FFTND_scipy(_BaseFFTND):
 
     def __truediv__(self, y):
         if self.norm != "ortho":
-            return self._rmatvec(y) / self._scale / self._scale
+            return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
 
 

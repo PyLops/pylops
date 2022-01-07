@@ -52,16 +52,18 @@ class _FFT_numpy(_BaseFFT):
             warnings.warn(
                 f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
             )
-        if self.norm not in ["ortho", "backward", "forward"]:
+
+        self._norm_kwargs = {"norm": None}  # backward
+        if self.norm == "ortho":
+            self._norm_kwargs["norm"] = "ortho"
+        elif self.norm == "backward":
+            self._scale = self.nfft
+        elif self.norm == "forward":
+            self._scale = 1.0 / self.nfft
+        else:
             raise ValueError(
                 f"'{self.norm}' is not one of 'ortho', 'backward' or 'forward'"
             )
-        # FFTs are called with "ortho" for backwards compatibility
-        # The factors below are conversions factors ortho->norm
-        if self.norm == "backward":
-            self._scale = np.sqrt(self.nfft)
-        elif self.norm == "forward":
-            self._scale = np.sqrt(1.0 / self.nfft)
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
@@ -70,14 +72,14 @@ class _FFT_numpy(_BaseFFT):
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = np.fft.rfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = np.fft.rfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.dir)
             y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.dir, -1)
         else:
-            y = np.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
-        if self.norm != "ortho":
+            y = np.fft.fft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+        if self.norm == "forward":
             y *= self._scale
         if self.fftshift_after:
             y = np.fft.fftshift(y, axes=self.dir)
@@ -95,10 +97,10 @@ class _FFT_numpy(_BaseFFT):
             x = np.swapaxes(x, -1, self.dir)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.dir, -1)
-            y = np.fft.irfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = np.fft.irfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
         else:
-            y = np.fft.ifft(x, n=self.nfft, axis=self.dir, norm="ortho")
-        if self.norm != "ortho":
+            y = np.fft.ifft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+        if self.norm == "backward":
             y *= self._scale
         if self.nfft != self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
@@ -112,7 +114,7 @@ class _FFT_numpy(_BaseFFT):
 
     def __truediv__(self, y):
         if self.norm != "ortho":
-            return self._rmatvec(y) / self._scale / self._scale
+            return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
 
 
@@ -142,16 +144,18 @@ class _FFT_scipy(_BaseFFT):
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
-        if self.norm not in ["ortho", "backward", "forward"]:
+
+        self._norm_kwargs = {"norm": None}  # backward
+        if self.norm == "ortho":
+            self._norm_kwargs["norm"] = "ortho"
+        elif self.norm == "backward":
+            self._scale = self.nfft
+        elif self.norm == "forward":
+            self._scale = 1.0 / self.nfft
+        else:
             raise ValueError(
                 f"'{self.norm}' is not one of 'ortho', 'backward' or 'forward'"
             )
-        # FFTs are called with "ortho" for backwards compatibility
-        # The factors below are conversions factors ortho->norm
-        if self.norm == "backward":
-            self._scale = np.sqrt(self.nfft)
-        elif self.norm == "forward":
-            self._scale = np.sqrt(1.0 / self.nfft)
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
@@ -160,14 +164,14 @@ class _FFT_scipy(_BaseFFT):
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = scipy.fft.rfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = scipy.fft.rfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.dir)
             y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.dir, -1)
         else:
-            y = scipy.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
-        if self.norm != "ortho":
+            y = scipy.fft.fft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+        if self.norm == "forward":
             y *= self._scale
         if self.fftshift_after:
             y = scipy.fft.fftshift(y, axes=self.dir)
@@ -184,10 +188,10 @@ class _FFT_scipy(_BaseFFT):
             x = np.swapaxes(x, -1, self.dir)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.dir, -1)
-            y = scipy.fft.irfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = scipy.fft.irfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
         else:
-            y = scipy.fft.ifft(x, n=self.nfft, axis=self.dir, norm="ortho")
-        if self.norm != "ortho":
+            y = scipy.fft.ifft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+        if self.norm == "backward":
             y *= self._scale
         if self.nfft != self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
@@ -200,7 +204,7 @@ class _FFT_scipy(_BaseFFT):
 
     def __truediv__(self, y):
         if self.norm != "ortho":
-            return self._rmatvec(y) / self._scale / self._scale
+            return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
 
 
