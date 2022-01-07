@@ -140,9 +140,9 @@ def test_unknown_engine(par):
 par_lists_fft_small_real = dict(
     dtype_precision=[
         (np.float16, 1),
-        (np.float32, 5),
-        (np.float64, 13),
-        (np.float128, 13),
+        (np.float32, 4),
+        (np.float64, 11),
+        (np.float128, 11),
     ],
     norm=["ortho", "backward", "forward"],
     ifftshift_before=[False, True],
@@ -260,7 +260,7 @@ def test_FFT_random_real(par):
 
 
 par_lists_fft_small_cpx = dict(
-    dtype_precision=[(np.complex64, 5), (np.complex128, 13), (np.complex256, 13)],
+    dtype_precision=[(np.complex64, 4), (np.complex128, 11), (np.complex256, 11)],
     norm=["ortho", "backward", "forward"],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
