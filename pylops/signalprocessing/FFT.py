@@ -390,9 +390,9 @@ def FFT(
     forward mode, and to :py:func:`scipy.fft.ifft` (or :py:func:`scipy.fft.irfft`
     for real models) in adjoint mode.
 
-    When using `real=True`, the result of the forward is also multiplied by sqrt(2)
-    for all frequency bins except zero and Nyquist, and the input of the adjoint is
-    divided by sqrt(2) for the same frequencies.
+    When using `real=True`, the result of the forward is also multiplied by
+    :math:`\sqrt{2}` for all frequency bins except zero and Nyquist, and the input of
+    the adjoint is multiplied by :math:`1 / \sqrt{2}` for the same frequencies.
 
     For a real valued input signal, it is advised to use the flag `real=True`
     as it stores the values of the Fourier transform at positive frequencies only as
@@ -409,14 +409,17 @@ def FFT(
     sampling : :obj:`float`, optional
         Sampling step ``dt``.
     norm : `{"ortho", "backward", "forward"}`, optional
-        Normalization mode (see :py:func:`numpy.fft.fft`). Note that for "backward"
-        and "forward", the scaling placed on the forward is the same as that placed
-        on the adjoint, so as to respect adjoitness. This is different from standard
-        NumPy/SciPy behavior which scales ``fft`` and ``ifft`` differently when using
-        the same ``norm``. As a result, a forward and adjoint pass with the "backward"
-        norm will introduce a factor of :math:`nfft`; a forward and adjoint pass with
-        "forward" will introduce a factor of :math:`nfft^{-1}`. Only "ortho" will
-        recover the original signal.
+        * "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
+        where :math:`N_F` is the number of samples in the Fourier domain given by ``nfft``.
+        * "backward": Does not scale the forward or the adjoint FFT transforms. Note
+        that the adjoint behaviour of this option differs from :py:func:`ifft`
+        implementations in NumPy and SciPy.
+        * "forward": Scales both the forward and adjoint FFT transforms by
+        :math:`1/N_F`. Note the forward behaviour of this option differs from
+        :py:func:`fft` implementations in NumPy and SciPy.
+        Also note that for "forward" and "backward", the operator is not unitary,
+        that is, the adjoint is not the inverse. To invert the operator, simply use
+        `Op \ y`.
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
@@ -484,7 +487,8 @@ def FFT(
 
     Notes
     -----
-    The FFT operator applies the forward Fourier transform to a signal
+    The FFT operator (using `norm="ortho"`) applies the forward Fourier transform to
+    a signal
     :math:`d(t)` in forward mode:
 
     .. math::
@@ -496,12 +500,13 @@ def FFT(
     .. math::
         d(t) = \mathscr{F}^{-1} (D) = \sqrt{N_F} \int D(f) e^{j2\pi ft} df
 
-    where :math:`N_F` is the number of samples in the Fourier domain `nfft`.
+    where :math:`N_F` is the number of samples in the Fourier domain ``nfft``.
     Both operators are effectively discretized and solved by a fast iterative
-    algorithm known as Fast Fourier Transform. Note that the FFT operator is a
-    special operator in that the adjoint is also the inverse of the forward mode.
-    Moreover, in case of real signal in time domain, the Fourier transform in
-    Hermitian.
+    algorithm known as Fast Fourier Transform. Note that the FFT operator
+    (using `norm="ortho"`) is a special operator in that the adjoint is also
+    the inverse of the forward mode. For other norms, this does not hold (see ``norm``
+    help). However, for any norm, the Fourier transform is Hermitian for real input
+    signals.
 
     """
     # Use fftshift if supplied, otherwise use ifftshift_before

@@ -205,7 +205,7 @@ def FFTND(
 ):
     r"""N-dimensional Fast-Fourier Transform.
 
-    Apply n-dimensional Fast-Fourier Transform (FFT) to any n axes
+    Apply N-dimensional Fast-Fourier Transform (FFT) to any n axes
     of a multi-dimensional array depending on the choice of ``dirs``.
 
     Using the default NumPy engine, the FFT operator is an overload to either the NumPy
@@ -217,13 +217,10 @@ def FFTND(
     forward mode, and to :py:func:`scipy.fft.ifftn` (or :py:func:`scipy.fft.irfftn`
     for real models) in adjoint mode.
 
-    In all cases, the "ortho" scaling (see :py:func:`numpy.fft.fftn`) is used to
-    to guarantee that the operator passes the dot-test. When using `real=True`, the
-    result of the forward is also multiplied by sqrt(2) for all frequency bins
-    except zero and Nyquist along the last direction of ``dirs``, and the input of
-    the adjoint is divided by sqrt(2) for the same frequencies.
-    If a user is interested in using the unscaled forward FFT, they must pre-multiply
-    the operator by an appropriate correction factor.
+    When using `real=True`, the result of the forward is also multiplied by
+    :math:`\sqrt{2}` for all frequency bins except zero and Nyquist along the last
+    direction of ``dirs``, and the input of the adjoint is multiplied by
+    :math:`1 / \sqrt{2}` for the same frequencies.
 
     For a real valued input signal, it is advised to use the flag ``real=True``
     as it stores the values of the Fourier transform of the last direction at positive
@@ -247,14 +244,18 @@ def FFTND(
         for all directions. Unlike ``nffts``, ``None``s will not be converted to the
         default value.
     norm : `{"ortho", "backward", "forward"}`, optional
-        Normalization mode (see :py:func:`numpy.fft.fftn`). Note that for "backward"
-        and "forward", the scaling placed on the forward is the same as that placed
-        on the adjoint, so as to respect adjoitness. This is different from standard
-        NumPy/SciPy behavior which scales ``fftn`` and ``ifftn`` differently when using
-        the same ``norm``. As a result, a forward and adjoint pass with the "backward"
-        norm will introduce a factor of :math:`\Pi_{i \in dirs} nfft_i`; a forward and
-        adjoint pass with "forward" will introduce a factor of
-        :math:`(\Pi_{i \in dirs} nfft_i)^{-1}`. Only "ortho" will recover the original signal.
+        * "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
+        where :math:`N_F` is the number of samples in the Fourier domain given by
+        product of all elements of ``nffts``.
+        * "backward": Does not scale the forward or the adjoint FFT transforms. Note
+        that the adjoint behaviour of this option differs from :py:func:`ifftn`
+        implementations in NumPy and SciPy.
+        * "forward": Scales both the forward and adjoint FFT transforms by
+        :math:`1/N_F`. Note the forward behaviour of this option differs from
+        :py:func:`fftn` implementations in NumPy and SciPy.
+        Also note that for "forward" and "backward", the operator is not unitary,
+        that is, the adjoint is not the inverse. To invert the operator, simply use
+        `Op \ y`.
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
@@ -323,24 +324,34 @@ def FFTND(
 
     Notes
     -----
-    The FFTND operator applies the n-dimensional forward Fourier transform
-    to a multi-dimensional array. Without loss of generality we consider here
-    a three-dimensional signal :math:`d(z, y, x)`.
+    The FFTND operator applies the N-dimensional forward Fourier transform
+    to a multi-dimensional array. Considering an N-dimensional signal
+    :math:`d(x_1, \ldots, x_N)`.
     The FFTND in forward mode is:
 
     .. math::
-        D(k_z, k_y, k_x) = \mathscr{F} (d) = \int \int d(z,y,x) e^{-j2\pi k_zz}
-        e^{-j2\pi k_yy} e^{-j2\pi k_xx} dz dy dx
+        D(k_1, \ldots, k_N) = \mathscr{F} (d) = \frac{1}{\sqrt{N_F}} \int \int
+        d(x_1, \ldots, x_N)
+        e^{-j2\pi k_1 x_1} \cdots
+        e^{-j 2 \pi k_N x_N}  dx_1 \cdots dx_N
 
     Similarly, the  three-dimensional inverse Fourier transform is applied to
     the Fourier spectrum :math:`D(k_z, k_y, k_x)` in adjoint mode:
 
     .. math::
-        d(z, y, x) = \mathscr{F}^{-1} (D) = \int \int D(k_z, k_y, k_x)
-        e^{j2\pi k_zz} e^{j2\pi k_yy} e^{j2\pi k_xx} dk_z dk_y  dk_x
+        d(x_1, \ldots, x_N) = \mathscr{F}^{-1} (D) = \sqrt{N_F}  \int \int
+        D(k_1, \ldots, k_N)
+        e^{-j2\pi k_1 x_1} \cdots
+        e^{-j 2 \pi k_N x_N} dk_1 \cdots  dk_N
 
+    where :math:`N_F` is the number of samples in the Fourier domain given by the
+    product of the element of ``nffts``.
     Both operators are effectively discretized and solved by a fast iterative
-    algorithm known as Fast Fourier Transform.
+    algorithm known as Fast Fourier Transform. Note that the FFTND operator
+    (using `norm="ortho"`) is a special operator in that the adjoint is also
+    the inverse of the forward mode. For other norms, this does not hold (see ``norm``
+    help). However, for any norm, the N-dimensional Fourier transform is Hermitian
+    for real input signals.
 
     """
 
