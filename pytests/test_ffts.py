@@ -140,9 +140,9 @@ def test_unknown_engine(par):
 par_lists_fft_small_real = dict(
     dtype_precision=[
         (np.float16, 1),
-        (np.float32, 5),
-        (np.float64, 13),
-        (np.float128, 13),
+        (np.float32, 4),
+        (np.float64, 11),
+        (np.float128, 11),
     ],
     ifftshift_before=[False, True],
     engine=["numpy", "fftw", "scipy"],
@@ -159,10 +159,6 @@ def test_FFT_small_real(par):
     dtype, decimal = par["dtype_precision"]
     ifftshift_before = par["ifftshift_before"]
     engine = par["engine"]
-
-    if engine == "fftw" and dtype == np.float16:
-        # fftw does not support float16 for real
-        return
 
     x = np.array([1, 0, -1, 1], dtype=dtype)
 
@@ -191,9 +187,14 @@ def test_FFT_small_real(par):
         # https://www.iap.uni-jena.de/iapmedia/de/Lecture/Computational+Photonics/CoPho19_supp_FFT_primer.pdf
         x0 = -np.ceil(len(x) / 2)
         y_true *= np.exp(2 * np.pi * 1j * FFTop.f * x0)
+
     assert_array_almost_equal(y, y_true, decimal=decimal)
     assert dottest(FFTop, len(y), len(x), complexflag=0, tol=10 ** (-decimal))
     assert dottest(FFTop, len(y), len(x), complexflag=2, tol=10 ** (-decimal))
+
+    x_inv = FFTop / y
+    x_inv = x_inv.reshape(x.shape)
+    assert_array_almost_equal(x_inv, x, decimal=decimal)
 
 
 par_lists_fft_random_real = dict(
@@ -252,7 +253,7 @@ def test_FFT_random_real(par):
 
 
 par_lists_fft_small_cpx = dict(
-    dtype_precision=[(np.complex64, 5), (np.complex128, 13), (np.complex256, 13)],
+    dtype_precision=[(np.complex64, 4), (np.complex128, 11), (np.complex256, 11)],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
     engine=["numpy", "fftw", "scipy"],
@@ -293,6 +294,10 @@ def test_FFT_small_complex(par):
     y = FFTop * x.ravel()
     assert_array_almost_equal(y, y_true, decimal=decimal)
     assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
+
+    x_inv = FFTop / y
+    x_inv = x_inv.reshape(x.shape)
+    assert_array_almost_equal(x_inv, x, decimal=decimal)
 
 
 par_lists_fft_random_cpx = dict(
