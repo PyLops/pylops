@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import scipy.fft
 
-from pylops.signalprocessing._BaseFFTs import _BaseFFT
+from pylops.signalprocessing._BaseFFTs import _BaseFFT, _FFTNorms
 
 try:
     import pyfftw
@@ -23,7 +23,7 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class _FFT_numpy(_BaseFFT):
-    """One dimensional Fast-Fourier Transform using numpy"""
+    """One dimensional Fast-Fourier Transform using NumPy"""
 
     def __init__(
         self,
@@ -31,6 +31,7 @@ class _FFT_numpy(_BaseFFT):
         dir=0,
         nfft=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=False,
         fftshift_after=False,
@@ -41,6 +42,7 @@ class _FFT_numpy(_BaseFFT):
             dir=dir,
             nfft=nfft,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
@@ -51,6 +53,14 @@ class _FFT_numpy(_BaseFFT):
                 f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
             )
 
+        self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
+        if self.norm is _FFTNorms.ORTHO:
+            self._norm_kwargs["norm"] = "ortho"
+        elif self.norm is _FFTNorms.NONE:
+            self._scale = self.nfft
+        elif self.norm is _FFTNorms.ONE_OVER_N:
+            self._scale = 1.0 / self.nfft
+
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.ifftshift_before:
@@ -58,13 +68,15 @@ class _FFT_numpy(_BaseFFT):
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = np.fft.rfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = np.fft.rfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.dir)
             y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.dir, -1)
         else:
-            y = np.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = np.fft.fft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+        if self.norm is _FFTNorms.ONE_OVER_N:
+            y *= self._scale
         if self.fftshift_after:
             y = np.fft.fftshift(y, axes=self.dir)
         y = y.ravel()
@@ -81,9 +93,11 @@ class _FFT_numpy(_BaseFFT):
             x = np.swapaxes(x, -1, self.dir)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.dir, -1)
-            y = np.fft.irfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = np.fft.irfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
         else:
-            y = np.fft.ifft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = np.fft.ifft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+        if self.norm is _FFTNorms.NONE:
+            y *= self._scale
         if self.nfft != self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
         if not self.clinear:
@@ -94,9 +108,14 @@ class _FFT_numpy(_BaseFFT):
         y = y.astype(self.rdtype)
         return y
 
+    def __truediv__(self, y):
+        if self.norm is not _FFTNorms.ORTHO:
+            return self._rmatvec(y) / self._scale
+        return self._rmatvec(y)
+
 
 class _FFT_scipy(_BaseFFT):
-    """One dimensional Fast-Fourier Transform using numpy"""
+    """One dimensional Fast-Fourier Transform using SciPy"""
 
     def __init__(
         self,
@@ -104,6 +123,7 @@ class _FFT_scipy(_BaseFFT):
         dir=0,
         nfft=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=False,
         fftshift_after=False,
@@ -114,11 +134,20 @@ class _FFT_scipy(_BaseFFT):
             dir=dir,
             nfft=nfft,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
+
+        self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
+        if self.norm is _FFTNorms.ORTHO:
+            self._norm_kwargs["norm"] = "ortho"
+        elif self.norm is _FFTNorms.NONE:
+            self._scale = self.nfft
+        elif self.norm is _FFTNorms.ONE_OVER_N:
+            self._scale = 1.0 / self.nfft
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
@@ -127,13 +156,15 @@ class _FFT_scipy(_BaseFFT):
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = scipy.fft.rfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = scipy.fft.rfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.dir)
             y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.dir, -1)
         else:
-            y = scipy.fft.fft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = scipy.fft.fft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+        if self.norm is _FFTNorms.ONE_OVER_N:
+            y *= self._scale
         if self.fftshift_after:
             y = scipy.fft.fftshift(y, axes=self.dir)
         y = y.ravel()
@@ -149,9 +180,11 @@ class _FFT_scipy(_BaseFFT):
             x = np.swapaxes(x, -1, self.dir)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.dir, -1)
-            y = scipy.fft.irfft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = scipy.fft.irfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
         else:
-            y = scipy.fft.ifft(x, n=self.nfft, axis=self.dir, norm="ortho")
+            y = scipy.fft.ifft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+        if self.norm is _FFTNorms.NONE:
+            y *= self._scale
         if self.nfft != self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
         if not self.clinear:
@@ -161,9 +194,14 @@ class _FFT_scipy(_BaseFFT):
         y = y.ravel()
         return y
 
+    def __truediv__(self, y):
+        if self.norm is not _FFTNorms.ORTHO:
+            return self._rmatvec(y) / self._scale
+        return self._rmatvec(y)
+
 
 class _FFT_fftw(_BaseFFT):
-    """One dimensional Fast-Fourier Transform using pyffw"""
+    """One dimensional Fast-Fourier Transform using pyFFTW"""
 
     def __init__(
         self,
@@ -171,6 +209,7 @@ class _FFT_fftw(_BaseFFT):
         dir=0,
         nfft=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=None,
         fftshift_after=False,
@@ -182,11 +221,22 @@ class _FFT_fftw(_BaseFFT):
                 "fftw backend is unavailable with float16 dtype. Will use float32."
             )
             dtype = np.float32
+
+        for badop in ["ortho", "normalise_idft"]:
+            if badop in kwargs_fftw:
+                if badop == "ortho" and norm == "ortho":
+                    continue
+                warnings.warn(
+                    f"FFTW option '{badop}' will be overwritten by norm={norm}"
+                )
+                del kwargs_fftw[badop]
+
         super().__init__(
             dims=dims,
             dir=dir,
             nfft=nfft,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
@@ -220,6 +270,19 @@ class _FFT_fftw(_BaseFFT):
             self.dims_t, dtype=self.rdtype if real else self.cdtype
         )
         self.y = pyfftw.empty_aligned(self.dims_fft, dtype=self.cdtype)
+
+        # Use FFTW without norm-related keywords above. In this case, FFTW standard
+        # behavior is to scale with 1/N on the inverse transform. The _scale below
+        # converts the default bevavior to that of ``norm``. Keywords ``ortho`` and
+        # ``normalise_idft`` do not seem to be available over all versions of pyFFTW
+        # so best to avoid them.
+        if self.norm is _FFTNorms.ORTHO:
+            self._scale = np.sqrt(1.0 / self.nfft)
+        elif self.norm is _FFTNorms.NONE:
+            self._scale = self.nfft
+        elif self.norm is _FFTNorms.ONE_OVER_N:
+            self._scale = 1.0 / self.nfft
+
         self.fftplan = pyfftw.FFTW(
             self.x, self.y, axes=(self.dir,), direction="FFTW_FORWARD", **kwargs_fftw
         )
@@ -240,7 +303,9 @@ class _FFT_fftw(_BaseFFT):
         # returns self.y as output array. As such, self.y must be copied so as
         # not to be overwritten on a subsequent call to _matvec.
         np.copyto(self.x, x)
-        y = np.sqrt(1.0 / self.nfft) * self.fftplan().copy()
+        y = self.fftplan().copy()
+        if self.norm is not _FFTNorms.NONE:
+            y *= self._scale
 
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
@@ -270,7 +335,11 @@ class _FFT_fftw(_BaseFFT):
 
         # self.ifftplan() always returns self.x, which must be copied so as not
         # to be overwritten on a subsequent call to _rmatvec.
-        y = np.sqrt(self.nfft) * self.ifftplan().copy()
+        y = self.ifftplan().copy()
+        if self.norm is _FFTNorms.ORTHO:
+            y /= self._scale
+        elif self.norm is _FFTNorms.NONE:
+            y *= self._scale
 
         if self.nfft != self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
@@ -280,12 +349,18 @@ class _FFT_fftw(_BaseFFT):
             y = np.real(y)
         return y.ravel()
 
+    def __truediv__(self, y):
+        if self.norm is _FFTNorms.ORTHO:
+            return self._rmatvec(y)
+        return self._rmatvec(y) / self._scale
+
 
 def FFT(
     dims,
     dir=0,
     nfft=None,
     sampling=1.0,
+    norm="ortho",
     real=False,
     fftshift=None,
     ifftshift_before=None,
@@ -310,13 +385,9 @@ def FFT(
     forward mode, and to :py:func:`scipy.fft.ifft` (or :py:func:`scipy.fft.irfft`
     for real models) in adjoint mode.
 
-    In all cases, the "ortho" scaling (see :py:func:`numpy.fft.fft`) is used to
-    to guarantee that the operator passes the dot-test. When using `real=True`, the
-    result of the forward is also multiplied by sqrt(2) for all frequency bins
-    except zero and Nyquist, and the input of the adjoint is divided by
-    sqrt(2) for the same frequencies.
-    If a user is interested in using the unscaled forward FFT, they must pre-multiply
-    the operator by an appropriate correction factor.
+    When using `real=True`, the result of the forward is also multiplied by
+    :math:`\sqrt{2}` for all frequency bins except zero and Nyquist, and the input of
+    the adjoint is multiplied by :math:`1 / \sqrt{2}` for the same frequencies.
 
     For a real valued input signal, it is advised to use the flag `real=True`
     as it stores the values of the Fourier transform at positive frequencies only as
@@ -332,6 +403,14 @@ def FFT(
         Number of samples in Fourier Transform (same as input if ``nfft=None``)
     sampling : :obj:`float`, optional
         Sampling step ``dt``.
+    norm : `{"ortho", "none", "1/n"}`, optional
+        * "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
+        where :math:`N_F` is the number of samples in the Fourier domain given by ``nfft``.
+        * "none": Does not scale the forward or the adjoint FFT transforms.
+        * "1/n": Scales both the forward and adjoint FFT transforms by
+        :math:`1/N_F`.
+        Note that for "none" and "1/n", the operator is not unitary, that is,
+        the adjoint is not the inverse. To invert the operator, simply use `Op \ y`.
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
@@ -394,12 +473,14 @@ def FFT(
     ------
     ValueError
         If ``dims`` is provided and ``dir`` is bigger than ``len(dims)``
+        If ``norm`` is not one of "ortho", "none", or "1/n".
     NotImplementedError
         If ``engine`` is neither ``numpy``, ``fftw``, nor ``scipy``.
 
     Notes
     -----
-    The FFT operator applies the forward Fourier transform to a signal
+    The FFT operator (using `norm="ortho"`) applies the forward Fourier transform to
+    a signal
     :math:`d(t)` in forward mode:
 
     .. math::
@@ -409,14 +490,15 @@ def FFT(
     :math:`D(f)` in adjoint mode:
 
     .. math::
-        d(t) = \mathscr{F}^{-1} (D) = \sqrt{N_F} \int D(f) e^{j2\pi ft} df
+        d(t) = \mathscr{F}^{-1} (D) = \frac{1}{\sqrt{N_F}} \int D(f) e^{j2\pi ft} df
 
-    where :math:`N_F` is the number of samples in the Fourier domain `nfft`.
+    where :math:`N_F` is the number of samples in the Fourier domain ``nfft``.
     Both operators are effectively discretized and solved by a fast iterative
-    algorithm known as Fast Fourier Transform. Note that the FFT operator is a
-    special operator in that the adjoint is also the inverse of the forward mode.
-    Moreover, in case of real signal in time domain, the Fourier transform in
-    Hermitian.
+    algorithm known as Fast Fourier Transform. Note that the FFT operator
+    (using `norm="ortho"`) is a special operator in that the adjoint is also
+    the inverse of the forward mode. For other norms, this does not hold (see ``norm``
+    help). However, for any norm, the Fourier transform is Hermitian for real input
+    signals.
 
     """
     # Use fftshift if supplied, otherwise use ifftshift_before
@@ -443,6 +525,7 @@ def FFT(
             dir=dir,
             nfft=nfft,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
@@ -457,6 +540,7 @@ def FFT(
             dir=dir,
             nfft=nfft,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
@@ -468,6 +552,7 @@ def FFT(
             dir=dir,
             nfft=nfft,
             sampling=sampling,
+            norm=norm,
             real=real,
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,

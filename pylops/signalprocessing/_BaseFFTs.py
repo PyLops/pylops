@@ -1,5 +1,6 @@
 import logging
 import warnings
+from enum import Enum, auto
 
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
@@ -8,6 +9,12 @@ from pylops import LinearOperator
 from pylops.utils.backend import get_complex_dtype, get_real_dtype
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+
+
+class _FFTNorms(Enum):
+    ORTHO = auto()
+    NONE = auto()
+    ONE_OVER_N = auto()
 
 
 def _value_or_list_like_to_array(value_or_list_like, repeat=1):
@@ -72,6 +79,7 @@ class _BaseFFT(LinearOperator):
         dir=0,
         nfft=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=False,
         fftshift_after=False,
@@ -94,8 +102,24 @@ class _BaseFFT(LinearOperator):
             nfft = nffts[0]
         self.nfft = nfft
 
-        self.real = real
+        if norm == "ortho":
+            self.norm = _FFTNorms.ORTHO
+        elif norm == "none":
+            self.norm = _FFTNorms.NONE
+        elif norm.lower() == "1/n":
+            self.norm = _FFTNorms.ONE_OVER_N
+        elif norm == "backward":
+            raise ValueError(
+                'To use no scaling on the forward transform, use "none". Note that in this case, the adjoint transform will *not* have a 1/n scaling.'
+            )
+        elif norm == "forward":
+            raise ValueError(
+                'To use 1/n scaling on the forward transform, use "1/n". Note that in this case, the adjoint transform will *also* have a 1/n scaling.'
+            )
+        else:
+            raise ValueError(f"'{norm}' is not one of 'ortho', 'none' or '1/n'")
 
+        self.real = real
         self.ifftshift_before = ifftshift_before
 
         self.f = (
@@ -146,6 +170,7 @@ class _BaseFFTND(LinearOperator):
         dirs=None,
         nffts=None,
         sampling=1.0,
+        norm="ortho",
         real=False,
         ifftshift_before=False,
         fftshift_after=False,
@@ -205,6 +230,24 @@ class _BaseFFTND(LinearOperator):
                     "respectively."
                 )
             )
+
+        if norm == "ortho":
+            self.norm = _FFTNorms.ORTHO
+        elif norm == "none":
+            self.norm = _FFTNorms.NONE
+        elif norm.lower() == "1/n":
+            self.norm = _FFTNorms.ONE_OVER_N
+        elif norm == "backward":
+            raise ValueError(
+                'To use no scaling on the forward transform, use "none". Note that in this case, the adjoint transform will *not* have a 1/n scaling.'
+            )
+        elif norm == "forward":
+            raise ValueError(
+                'To use 1/n scaling on the forward transform, use "1/n". Note that in this case, the adjoint transform will *also* have a 1/n scaling.'
+            )
+        else:
+            raise ValueError(f"'{norm}' is not one of 'ortho', 'none' or '1/n'")
+
         self.real = real
 
         fs = [

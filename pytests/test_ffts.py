@@ -144,6 +144,7 @@ par_lists_fft_small_real = dict(
         (np.float64, 11),
         (np.float128, 11),
     ],
+    norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
     engine=["numpy", "fftw", "scipy"],
 )
@@ -157,6 +158,7 @@ pars_fft_small_real = [
 @pytest.mark.parametrize("par", pars_fft_small_real)
 def test_FFT_small_real(par):
     dtype, decimal = par["dtype_precision"]
+    norm = par["norm"]
     ifftshift_before = par["ifftshift_before"]
     engine = par["engine"]
 
@@ -165,16 +167,21 @@ def test_FFT_small_real(par):
     FFTop = FFT(
         dims=x.shape,
         dir=0,
+        norm=norm,
+        real=True,
         ifftshift_before=ifftshift_before,
         dtype=dtype,
-        real=True,
         engine=engine,
     )
     y = FFTop * x.ravel()
 
-    # y_true = np.array([1, 2 + 1j, -1], dtype=cdtype)  # norm="backward"/default
-    # y_true = np.array([0.25, 0.5 + 0.25j, 0.25], dtype=cdtype)  # norm="forward"
-    y_true = np.array([0.5, 1 + 0.5j, -0.5], dtype=FFTop.cdtype)  # norm="ortho"
+    if norm == "ortho":
+        y_true = np.array([0.5, 1 + 0.5j, -0.5], dtype=FFTop.cdtype)
+    elif norm == "none":
+        y_true = np.array([1, 2 + 1j, -1], dtype=FFTop.cdtype)
+    elif norm == "1/n":
+        y_true = np.array([0.25, 0.5 + 0.25j, -0.25], dtype=FFTop.cdtype)
+
     y_true[1:-1] *= np.sqrt(2)  # Zero and Nyquist
     if ifftshift_before:
         # `ifftshift_before`` is useful when the time-axis is centered around zero as
@@ -254,6 +261,7 @@ def test_FFT_random_real(par):
 
 par_lists_fft_small_cpx = dict(
     dtype_precision=[(np.complex64, 4), (np.complex128, 11), (np.complex256, 11)],
+    norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
     engine=["numpy", "fftw", "scipy"],
@@ -267,6 +275,7 @@ pars_fft_small_cpx = [
 @pytest.mark.parametrize("par", pars_fft_small_cpx)
 def test_FFT_small_complex(par):
     dtype, decimal = par["dtype_precision"]
+    norm = par["norm"]
     ifftshift_before = par["ifftshift_before"]
     fftshift_after = par["fftshift_after"]
 
@@ -275,15 +284,20 @@ def test_FFT_small_complex(par):
     FFTop = FFT(
         dims=x.shape,
         dir=0,
+        norm=norm,
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
         dtype=dtype,
     )
 
     # Compute FFT of x independently
-    # y_true = np.array([2, -2 - 2j, -2j, 4 + 4j], dtype=dtype)  # norm="backward"/default
-    # y_true = np.array([0.5, -0.5 - 0.5j, -0.5j, 1 + 1j], dtype=dtype)  # norm="forward"
-    y_true = np.array([1, -1 - 1j, -1j, 2 + 2j], dtype=dtype)  # norm="ortho"
+    if norm == "ortho":
+        y_true = np.array([1, -1 - 1j, -1j, 2 + 2j], dtype=FFTop.cdtype)
+    elif norm == "none":
+        y_true = np.array([2, -2 - 2j, -2j, 4 + 4j], dtype=FFTop.cdtype)
+    elif norm == "1/n":
+        y_true = np.array([0.5, -0.5 - 0.5j, -0.5j, 1 + 1j], dtype=FFTop.cdtype)
+
     if fftshift_after:
         y_true = np.fft.fftshift(y_true)
     if ifftshift_before:
@@ -663,6 +677,111 @@ def test_FFTND_random_complex(par):
     if np.issubdtype(dtype, np.complexfloating):
         assert dottest(FFTop, nr, nc, complexflag=1, tol=10 ** (-decimal))
         assert dottest(FFTop, nr, nc, complexflag=3, tol=10 ** (-decimal))
+
+
+par_lists_fft2dnd_small_cpx = dict(
+    dtype_precision=[(np.complex64, 5), (np.complex128, 11), (np.complex256, 11)],
+    norm=["ortho", "none", "1/n"],
+    engine=["numpy", "scipy"],
+)
+pars_fft2dnd_small_cpx = [
+    dict(zip(par_lists_fft2dnd_small_cpx.keys(), value))
+    for value in itertools.product(*par_lists_fft2dnd_small_cpx.values())
+]
+
+
+@pytest.mark.parametrize("par", pars_fft2dnd_small_cpx)
+def test_FFT2D_small_complex(par):
+    dtype, decimal = par["dtype_precision"]
+    norm = par["norm"]
+
+    x = np.array(
+        [
+            [1, 2 - 1j, -1j, -1 + 2j],
+            [2 - 1j, -1j, -1 - 2j, 1],
+            [-1j, -1 - 2j, 1, 2 - 1j],
+            [-1 - 2j, 1, 2 - 1j, -1j],
+        ]
+    )
+
+    FFTop = FFT2D(
+        dims=x.shape,
+        dirs=(0, 1),
+        norm=norm,
+        dtype=dtype,
+    )
+
+    # Compute FFT of x independently
+    y_true = np.array(
+        [
+            [8 - 12j, -4, -4j, 4],
+            [4j, 4 - 8j, -4j, 4],
+            [4j, -4, 4j, 4],
+            [4j, -4, -4j, 4 + 16j],
+        ],
+        dtype=FFTop.cdtype,
+    )  # Backward
+    if norm == "ortho":
+        y_true /= 4
+    elif norm == "1/n":
+        y_true /= 16
+
+    # Compute FFT with FFTop and compare with y_true
+    y = FFTop * x.ravel()
+    y = y.reshape(FFTop.dims_fft)
+    assert_array_almost_equal(y, y_true, decimal=decimal)
+    assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
+
+    x_inv = FFTop / y.ravel()
+    x_inv = x_inv.reshape(x.shape)
+    assert_array_almost_equal(x_inv, x, decimal=decimal)
+
+
+@pytest.mark.parametrize("par", pars_fft2dnd_small_cpx)
+def test_FFTND_small_complex(par):
+    dtype, decimal = par["dtype_precision"]
+    norm = par["norm"]
+
+    x = np.array(
+        [
+            [1, 2 - 1j, -1j, -1 + 2j],
+            [2 - 1j, -1j, -1 - 2j, 1],
+            [-1j, -1 - 2j, 1, 2 - 1j],
+            [-1 - 2j, 1, 2 - 1j, -1j],
+        ]
+    )
+
+    FFTop = FFTND(
+        dims=x.shape,
+        dirs=(0, 1),
+        norm=norm,
+        dtype=dtype,
+    )
+
+    # Compute FFT of x independently
+    y_true = np.array(
+        [
+            [8 - 12j, -4, -4j, 4],
+            [4j, 4 - 8j, -4j, 4],
+            [4j, -4, 4j, 4],
+            [4j, -4, -4j, 4 + 16j],
+        ],
+        dtype=FFTop.cdtype,
+    )  # Backward
+    if norm == "ortho":
+        y_true /= 4
+    elif norm == "1/n":
+        y_true /= 16
+
+    # Compute FFT with FFTop and compare with y_true
+    y = FFTop * x.ravel()
+    y = y.reshape(FFTop.dims_fft)
+    assert_array_almost_equal(y, y_true, decimal=decimal)
+    assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
+
+    x_inv = FFTop / y.ravel()
+    x_inv = x_inv.reshape(x.shape)
+    assert_array_almost_equal(x_inv, x, decimal=decimal)
 
 
 @pytest.mark.parametrize(
