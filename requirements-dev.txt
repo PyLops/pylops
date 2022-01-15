@@ -5,6 +5,7 @@ pyfftw
 PyWavelets
 spgl1
 scikit-fmm
+sympy
 matplotlib
 ipython
 pytest
