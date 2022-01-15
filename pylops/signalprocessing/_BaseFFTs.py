@@ -1,8 +1,8 @@
 import logging
 import warnings
+from enum import Enum, auto
 
 import numpy as np
-from enum import Enum, auto
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
@@ -106,8 +106,16 @@ class _BaseFFT(LinearOperator):
             self.norm = _FFTNorms.ORTHO
         elif norm == "none":
             self.norm = _FFTNorms.NONE
-        elif norm == "1/n":
+        elif norm.lower() == "1/n":
             self.norm = _FFTNorms.ONE_OVER_N
+        elif norm == "backward":
+            raise ValueError(
+                'To use no scaling on the forward transform, use "none". Note that in this case, the adjoint transform will *not* have a 1/n scaling.'
+            )
+        elif norm == "forward":
+            raise ValueError(
+                'To use 1/n scaling on the forward transform, use "1/n". Note that in this case, the adjoint transform will *also* have a 1/n scaling.'
+            )
         else:
             raise ValueError(f"'{norm}' is not one of 'ortho', 'none' or '1/n'")
 
@@ -227,8 +235,16 @@ class _BaseFFTND(LinearOperator):
             self.norm = _FFTNorms.ORTHO
         elif norm == "none":
             self.norm = _FFTNorms.NONE
-        elif norm == "1/n":
+        elif norm.lower() == "1/n":
             self.norm = _FFTNorms.ONE_OVER_N
+        elif norm == "backward":
+            raise ValueError(
+                'To use no scaling on the forward transform, use "none". Note that in this case, the adjoint transform will *not* have a 1/n scaling.'
+            )
+        elif norm == "forward":
+            raise ValueError(
+                'To use 1/n scaling on the forward transform, use "1/n". Note that in this case, the adjoint transform will *also* have a 1/n scaling.'
+            )
         else:
             raise ValueError(f"'{norm}' is not one of 'ortho', 'none' or '1/n'")
 
