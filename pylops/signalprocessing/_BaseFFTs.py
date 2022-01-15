@@ -2,12 +2,19 @@ import logging
 import warnings
 
 import numpy as np
+from enum import Enum, auto
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_complex_dtype, get_real_dtype
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+
+
+class _FFTNorms(Enum):
+    ORTHO = auto()
+    NONE = auto()
+    ONE_OVER_N = auto()
 
 
 def _value_or_list_like_to_array(value_or_list_like, repeat=1):
@@ -95,7 +102,15 @@ class _BaseFFT(LinearOperator):
             nfft = nffts[0]
         self.nfft = nfft
 
-        self.norm = norm
+        if norm == "ortho":
+            self.norm = _FFTNorms.ORTHO
+        elif norm == "none":
+            self.norm = _FFTNorms.NONE
+        elif norm == "1/n":
+            self.norm = _FFTNorms.ONE_OVER_N
+        else:
+            raise ValueError(f"'{norm}' is not one of 'ortho', 'none' or '1/n'")
+
         self.real = real
         self.ifftshift_before = ifftshift_before
 
@@ -207,7 +222,16 @@ class _BaseFFTND(LinearOperator):
                     "respectively."
                 )
             )
-        self.norm = norm
+
+        if norm == "ortho":
+            self.norm = _FFTNorms.ORTHO
+        elif norm == "none":
+            self.norm = _FFTNorms.NONE
+        elif norm == "1/n":
+            self.norm = _FFTNorms.ONE_OVER_N
+        else:
+            raise ValueError(f"'{norm}' is not one of 'ortho', 'none' or '1/n'")
+
         self.real = real
 
         fs = [

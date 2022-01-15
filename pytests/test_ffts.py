@@ -144,7 +144,7 @@ par_lists_fft_small_real = dict(
         (np.float64, 11),
         (np.float128, 11),
     ],
-    norm=["ortho", "backward", "forward"],
+    norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
     engine=["numpy", "fftw", "scipy"],
 )
@@ -177,9 +177,9 @@ def test_FFT_small_real(par):
 
     if norm == "ortho":
         y_true = np.array([0.5, 1 + 0.5j, -0.5], dtype=FFTop.cdtype)
-    elif norm == "backward":
+    elif norm == "none":
         y_true = np.array([1, 2 + 1j, -1], dtype=FFTop.cdtype)
-    elif norm == "forward":
+    elif norm == "1/n":
         y_true = np.array([0.25, 0.5 + 0.25j, -0.25], dtype=FFTop.cdtype)
 
     y_true[1:-1] *= np.sqrt(2)  # Zero and Nyquist
@@ -261,7 +261,7 @@ def test_FFT_random_real(par):
 
 par_lists_fft_small_cpx = dict(
     dtype_precision=[(np.complex64, 4), (np.complex128, 11), (np.complex256, 11)],
-    norm=["ortho", "backward", "forward"],
+    norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
     engine=["numpy", "fftw", "scipy"],
@@ -293,9 +293,9 @@ def test_FFT_small_complex(par):
     # Compute FFT of x independently
     if norm == "ortho":
         y_true = np.array([1, -1 - 1j, -1j, 2 + 2j], dtype=FFTop.cdtype)
-    elif norm == "backward":
+    elif norm == "none":
         y_true = np.array([2, -2 - 2j, -2j, 4 + 4j], dtype=FFTop.cdtype)
-    elif norm == "forward":
+    elif norm == "1/n":
         y_true = np.array([0.5, -0.5 - 0.5j, -0.5j, 1 + 1j], dtype=FFTop.cdtype)
 
     if fftshift_after:
@@ -681,7 +681,7 @@ def test_FFTND_random_complex(par):
 
 par_lists_fft2dnd_small_cpx = dict(
     dtype_precision=[(np.complex64, 5), (np.complex128, 11), (np.complex256, 11)],
-    norm=["ortho", "backward", "forward"],
+    norm=["ortho", "none", "1/n"],
     engine=["numpy", "scipy"],
 )
 pars_fft2dnd_small_cpx = [
@@ -723,7 +723,7 @@ def test_FFT2D_small_complex(par):
     )  # Backward
     if norm == "ortho":
         y_true /= 4
-    elif norm == "forward":
+    elif norm == "1/n":
         y_true /= 16
 
     # Compute FFT with FFTop and compare with y_true
@@ -770,7 +770,7 @@ def test_FFTND_small_complex(par):
     )  # Backward
     if norm == "ortho":
         y_true /= 4
-    elif norm == "forward":
+    elif norm == "1/n":
         y_true /= 16
 
     # Compute FFT with FFTop and compare with y_true
