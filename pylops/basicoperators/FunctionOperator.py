@@ -6,23 +6,23 @@ from pylops import LinearOperator
 class FunctionOperator(LinearOperator):
     r"""Function Operator.
 
-    Simple wrapper to functions for forward `f` and adjoint `fc`
+    Simple wrapper to functions for forward `f` and adjoint `f_c`
     multiplication.
 
-    Functions :math:`f` and :math:`fc` are such that
-    :math:`f:\mathbb{F}^m \to \mathbb{F}^n` and
-    :math:`fc:\mathbb{F}^n \to \mathbb{F}^m` where :math:`\mathbb{F}` is
-    the appropriate underlying type (e.g., :math:`\mathbb{R}` for real or
-    :math:`\mathbb{C}` for complex)
+    Functions :math:`f` and :math:`f_c` are such that
+    :math:`f:\mathbb{F}^m \to \mathbb{F}_c^n` and
+    :math:`f_c:\mathbb{F}_c^n \to \mathbb{F}^m` where :math:`\mathbb{F}` and
+    :math:`\mathbb{F}_c` are the underlying fields (e.g., :math:`\mathbb{R}` for
+    real or :math:`\mathbb{C}` for complex)
 
     FunctionOperator can be called in the following ways:
     ``FunctionOperator(f, n)``, ``FunctionOperator(f, n, m)``,
     ``FunctionOperator(f, fc, n)``, and ``FunctionOperator(f, fc, n, m)``.
 
     The first two methods can only be used for forward modelling and
-    will return `NotImplementedError` if the adjoint is called.
+    will return ``NotImplementedError`` if the adjoint is called.
     The first and third method assume the matrix (or matrices) to be square.
-    All methods can be called with the `dtype` keyword argument.
+    All methods can be called with the ``dtype`` keyword argument.
 
     Parameters
     ----------

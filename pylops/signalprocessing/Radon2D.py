@@ -116,7 +116,7 @@ def Radon2D(
     r"""Two dimensional Radon transform.
 
     Apply two dimensional Radon forward (and adjoint) transform to a
-    2-dimensional array of size :math:`[n_{px} \times n_t]`
+    2-dimensional array of size :math:`[n_{p_x} \times n_t]`
     (and :math:`[n_x \times n_t]`).
 
     In forward mode this entails to spreading the model vector
@@ -135,7 +135,7 @@ def Radon2D(
     kind : :obj:`str`, optional
         Curve to be used for stacking/spreading (``linear``, ``parabolic``,
         and ``hyperbolic`` are currently supported) or a function that takes
-        (x, t0, px) as input and returns t as output
+        :math:`(x, t_0, p_x)` as input and returns :math:`t` as output
     centeredh : :obj:`bool`, optional
         Assume centered spatial axis (``True``) or not (``False``). If ``True``
         the original ``haxis`` is ignored and a new axis is created.
@@ -176,11 +176,11 @@ def Radon2D(
     size :math:`[n_x \times n_t]` in adjoint mode:
 
     .. math::
-        m(p_x, t_0) = \int{d(x, t = f(p_x, x, t))} dx
+        m(p_x, t_0) = \int{d(x, t = f(p_x, x, t))} \,\mathrm{d}x
 
-    where :math:`f(p_x, x, t) = t_0 + p_x * x` where
-    :math:`p_x = sin(\theta)/v` in linear mode,
-    :math:`f(p_x, x, t) = t_0 + p_x * x^2` in parabolic mode, and
+    where :math:`f(p_x, x, t) = t_0 + p_x x` where
+    :math:`p_x = \sin(\theta)/v` in linear mode,
+    :math:`f(p_x, x, t) = t_0 + p_x x^2` in parabolic mode, and
     :math:`f(p_x, x, t) = \sqrt{t_0^2 + x^2 / p_x^2}` in hyperbolic mode. Note
     that internally the :math:`p_x` axis will be normalized by the ratio of the
     spatial and time axes and used alongside unitless axes. Whilst this makes

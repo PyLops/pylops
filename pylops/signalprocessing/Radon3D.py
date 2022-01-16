@@ -122,7 +122,7 @@ def Radon3D(
     r"""Three dimensional Radon transform.
 
     Apply three dimensional Radon forward (and adjoint) transform to a
-    3-dimensional array of size :math:`[n_{py} \times n_{px} \times n_t]`
+    3-dimensional array of size :math:`[n_{p_y} \times n_{p_x} \times n_t]`
     (and :math:`[n_y \times n_x \times n_t]`).
 
     In forward mode this entails to spreading the model vector
@@ -185,10 +185,10 @@ def Radon3D(
     size :math:`[n_y \times n_x \times n_t]` in adjoint mode:
 
     .. math::
-        m(p_y, p_x, t_0) = \int{d(y, x, t = f(p_y, p_x, y, x, t))} dx dy
+        m(p_y, p_x, t_0) = \int{d(y, x, t = f(p_y, p_x, y, x, t))} \,\mathrm{d}x \,\mathrm{d}y
 
-    where :math:`f(p_y, p_x, y, x, t) = t_0 + p_y * y + p_x * x` in linear
-    mode, :math:`f(p_y, p_x, y, x, t) = t_0 + p_y * y^2 + p_x * x^2` in
+    where :math:`f(p_y, p_x, y, x, t) = t_0 + p_y y + p_x x` in linear
+    mode, :math:`f(p_y, p_x, y, x, t) = t_0 + p_y y^2 + p_x x^2` in
     parabolic mode, and
     :math:`f(p_y, p_x, y, x, t) = \sqrt{t_0^2 + y^2 / p_y^2 + x^2 / p_x^2}`
     in hyperbolic mode. Note that internally the :math:`p_x` and :math:`p_y`

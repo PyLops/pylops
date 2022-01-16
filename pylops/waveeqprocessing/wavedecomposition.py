@@ -227,7 +227,7 @@ def PressureToVelocity(
     Apply conversion from pressure to vertical velocity seismic wavefield
     (or vertical velocity to pressure). The input model and data required by
     the operator should be created by flattening the a wavefield of size
-    :math:`(\lbrack n_{r_y}) \times n_{r_x} \times n_t \rbrack`.
+    :math:`(\lbrack n_{r_y} \times n_{r_x} \times n_t \rbrack`.
 
     Parameters
     ----------
@@ -240,15 +240,15 @@ def PressureToVelocity(
     dr : :obj:`float` or :obj:`tuple`
         Sampling(s) along the receiver array
     rho : :obj:`float`
-        Density along the receiver array (must be constant)
+        Density :math:`\rho` along the receiver array (must be constant)
     vel : :obj:`float`
-        Velocity along the receiver array (must be constant)
+        Velocity :math:`c` along the receiver array (must be constant)
     nffts : :obj:`tuple`, optional
         Number of samples along the wavenumber and frequency axes
     critical : :obj:`float`, optional
         Percentage of angles to retain in obliquity factor. For example, if
         ``critical=100`` only angles below the critical angle
-        :math:`\sqrt{k_y^2 + k_x^2} < \frac{\omega}{vel}` will be retained
+        :math:`\sqrt{k_y^2 + k_x^2} < \frac{\omega}{c}` will be retained
     ntaper : :obj:`float`, optional
         Number of samples of taper applied to obliquity factor around critical
         angle
@@ -275,26 +275,26 @@ def PressureToVelocity(
 
     Notes
     -----
-    A pressure wavefield (:math:`p(x, t)`) can be converted into an equivalent
-    vertical particle velocity wavefield (:math:`v_z(x, t)`) by applying
+    A pressure wavefield :math:`p(x, t)` can be converted into an equivalent
+    vertical particle velocity wavefield :math:`v_z(x, t)` by applying
     the following frequency-wavenumber dependant scaling [1]_:
 
     .. math::
-        v_z(k_x, \omega) = \frac{k_z}{\omega \rho} p(k_x, \omega)
+        \hat{v}_z(k_x, \omega) = \frac{k_z}{\omega \rho} \hat{p}(k_x, \omega)
 
     where the vertical wavenumber :math:`k_z` is defined as
-    :math:`k_z=\sqrt{\omega^2/c^2 - k_x^2}`.
+    :math:`k_z=\sqrt{\frac{\omega^2}{c^2} - k_x^2}`.
 
     Similarly a vertical particle velocity can be converted into an equivalent
     pressure wavefield by applying the following frequency-wavenumber
     dependant scaling [1]_:
 
     .. math::
-        p(k_x, \omega) = \frac{\omega \rho}{k_z} v_z(k_x, \omega)
+        \hat{p}(k_x, \omega) = \frac{\omega \rho}{k_z} \hat{v}_z(k_x, \omega)
 
     For 3-dimensional applications the only difference is represented
     by the vertical wavenumber :math:`k_z`, which is defined as
-    :math:`k_z=\sqrt{\omega^2/c^2 - k_x^2 - k_y^2}`.
+    :math:`k_z=\sqrt{\frac{\omega^2}{c^2} - k_x^2 - k_y^2}`.
 
     In both cases, this operator is implemented as a concatanation of
     a 2 or 3-dimensional forward FFT (:class:`pylops.signalprocessing.FFT2` or
@@ -377,15 +377,15 @@ def UpDownComposition2D(
     dr : :obj:`float`
         Sampling along the receiver array
     rho : :obj:`float`
-        Density along the receiver array (must be constant)
+        Density :math:`\rho` along the receiver array (must be constant)
     vel : :obj:`float`
-        Velocity along the receiver array (must be constant)
+        Velocity :math:`c` along the receiver array (must be constant)
     nffts : :obj:`tuple`, optional
         Number of samples along the wavenumber and frequency axes
     critical : :obj:`float`, optional
         Percentage of angles to retain in obliquity factor. For example, if
         ``critical=100`` only angles below the critical angle
-        :math:`|k_x| < \frac{f(k_x)}{vel}` will be retained
+        :math:`|k_x| < \frac{f(k_x)}{c}` will be retained
         will be retained
     ntaper : :obj:`float`, optional
         Number of samples of taper applied to obliquity factor around critical
@@ -410,7 +410,7 @@ def UpDownComposition2D(
 
     Notes
     -----
-    Multi-component seismic data (:math:`p(x, t)` and :math:`v_z(x, t)`) can be
+    Multi-component seismic data :math:`p(x, t)` and :math:`v_z(x, t)` can be
     synthesized in the frequency-wavenumber domain
     as the superposition of the up- and downgoing constituents of
     the pressure wavefield (:math:`p^-(x, t)` and :math:`p^+(x, t)`)
@@ -418,20 +418,20 @@ def UpDownComposition2D(
 
     .. math::
         \begin{bmatrix}
-            \mathbf{p}(k_x, \omega)  \\
-            \mathbf{v_z}(k_x, \omega)
-        \end{bmatrix} =
+            \hat{p}  \\
+            \hat{v_z}
+        \end{bmatrix}(k_x, \omega) =
         \begin{bmatrix}
             1  & 1 \\
             \frac{k_z}{\omega \rho}  & - \frac{k_z}{\omega \rho}  \\
         \end{bmatrix}
         \begin{bmatrix}
-            \mathbf{p^+}(k_x, \omega)  \\
-            \mathbf{p^-}(k_x, \omega)
-        \end{bmatrix}
+            \hat{p^+}  \\
+            \hat{p^-}
+        \end{bmatrix}(k_x, \omega)
 
     where the vertical wavenumber :math:`k_z` is defined as
-    :math:`k_z=\sqrt{\omega^2/c^2 - k_x^2}`.
+    :math:`k_z=\sqrt{\frac{\omega^2}{c^2} - k_x^2}`.
 
     We can write the entire composition process in a compact
     matrix-vector notation as follows:
@@ -439,11 +439,11 @@ def UpDownComposition2D(
     .. math::
         \begin{bmatrix}
             \mathbf{p}  \\
-            s*\mathbf{v_z}
+            s\mathbf{v_z}
         \end{bmatrix} =
         \begin{bmatrix}
             \mathbf{F} & 0 \\
-            0 & s*\mathbf{F}
+            0 & s\mathbf{F}
         \end{bmatrix} \begin{bmatrix}
             \mathbf{I} & \mathbf{I} \\
             \mathbf{W}^+ & \mathbf{W}^-
@@ -543,16 +543,16 @@ def UpDownComposition3D(
     dr : :obj:`tuple`
         Samplings along the receiver array
     rho : :obj:`float`
-        Density along the receiver array (must be constant)
+        Density :math:`\rho` along the receiver array (must be constant)
     vel : :obj:`float`
-        Velocity along the receiver array (must be constant)
+        Velocity :math:`c` along the receiver array (must be constant)
     nffts : :obj:`tuple`, optional
         Number of samples along the wavenumbers and frequency axes (for the
         wavenumbers axes the same order as ``nr`` and ``dr`` must be followed)
     critical : :obj:`float`, optional
         Percentage of angles to retain in obliquity factor. For example, if
         ``critical=100`` only angles below the critical angle
-        :math:`\sqrt{k_y^2 + k_x^2} < \frac{\omega}{vel}` will be retained
+        :math:`\sqrt{k_y^2 + k_x^2} < \frac{\omega}{c}` will be retained
     ntaper : :obj:`float`, optional
         Number of samples of taper applied to obliquity factor around critical
         angle
@@ -576,14 +576,14 @@ def UpDownComposition3D(
 
     Notes
     -----
-    Multi-component seismic data (:math:`p(y, x, t)` and :math:`v_z(y, x, t)`)
+    Multi-component seismic data :math:`p(y, x, t)` and :math:`v_z(y, x, t)`
     can be synthesized in the frequency-wavenumber domain
     as the superposition of the up- and downgoing constituents of
     the pressure wavefield (:math:`p^-(y, x, t)` and :math:`p^+(y, x, t)`)
     as described :class:`pylops.waveeqprocessing.UpDownComposition2D`.
 
     Here the vertical wavenumber :math:`k_z` is defined as
-    :math:`k_z=\sqrt{\omega^2/c^2 - k_y^2 - k_x^2}`.
+    :math:`k_z=\sqrt{\frac{\omega^2}{c^2} - k_y^2 - k_x^2}`.
 
     """
     nffts = (
@@ -655,12 +655,12 @@ def WavefieldDecomposition(
     Parameters
     ----------
     p : :obj:`np.ndarray`
-        Pressure data of size :math:`\lbrack n_{r_x} (\times n_{r_y})
-        \times n_t \rbrack` (or :math:`\lbrack n_{r_{x,sub}}
-        (\times n_{r_{y,sub}}) \times n_t \rbrack`
+        Pressure data of size :math:`\lbrack n_{r_x} \,(\times n_{r_y})
+        \times n_t \rbrack` (or :math:`\lbrack n_{r_{x,\text{sub}}}
+        \,(\times n_{r_{y,\text{sub}}}) \times n_t \rbrack`
         in case a ``restriction`` operator is provided. Note that
-        :math:`n_{r_{x,sub}}` (and :math:`n_{r_{y,sub}}`)
-        must agree with the size of the output of this operator)
+        :math:`n_{r_{x,\text{sub}}}` (and :math:`n_{r_{y,\text{sub}}}`)
+        must agree with the size of the output of this operator.)
     vz : :obj:`np.ndarray`
         Vertical particle velocity data of same size as pressure data
     nt : :obj:`int`
@@ -672,14 +672,14 @@ def WavefieldDecomposition(
     dr : :obj:`float` or :obj:`tuple`
         Sampling along the receiver array (or axes)
     rho : :obj:`float`
-        Density along the receiver array (must be constant)
+        Density :math:`\rho` along the receiver array (must be constant)
     vel : :obj:`float`
-        Velocity along the receiver array (must be constant)
+        Velocity :math:`c` along the receiver array (must be constant)
     nffts : :obj:`tuple`, optional
         Number of samples along the wavenumber and frequency axes
     critical : :obj:`float`, optional
         Percentage of angles to retain in obliquity factor. For example, if
-        ``critical=100`` only angles below the critical angle :math:`\frac{f(k_x)}{v}`
+        ``critical=100`` only angles below the critical angle :math:`\frac{f(k_x)}{c}`
         will be retained
     ntaper : :obj:`float`, optional
         Number of samples of taper applied to obliquity factor around critical
@@ -717,24 +717,24 @@ def WavefieldDecomposition(
 
     Notes
     -----
-    Up- and down-going components of seismic data (:math:`p^-(x, t)`
-    and :math:`p^+(x, t)`) can be estimated from multi-component data
-    (:math:`p(x, t)` and :math:`v_z(x, t)`) by computing the following
+    Up- and down-going components of seismic data :math:`p^-(x, t)`
+    and :math:`p^+(x, t)` can be estimated from multi-component data
+    :math:`p(x, t)` and :math:`v_z(x, t)` by computing the following
     expression [1]_:
 
     .. math::
         \begin{bmatrix}
-            \mathbf{p^+}(k_x, \omega)  \\
-            \mathbf{p^-}(k_x, \omega)
-        \end{bmatrix} = \frac{1}{2}
+            \hat{p}^+  \\
+            \hat{p}^-
+        \end{bmatrix}(k_x, \omega) = \frac{1}{2}
         \begin{bmatrix}
             1  & \frac{\omega \rho}{k_z} \\
             1  & - \frac{\omega \rho}{k_z}  \\
         \end{bmatrix}
         \begin{bmatrix}
-            \mathbf{p}(k_x, \omega)  \\
-            \mathbf{v_z}(k_x, \omega)
-        \end{bmatrix}
+            \hat{p}  \\
+            \hat{v}_z
+        \end{bmatrix}(k_x, \omega)
 
     if ``kind='analytical'`` or alternatively by solving the equation in
     :func:`ptcpy.waveeqprocessing.UpDownComposition2D` as an inverse problem,
@@ -747,11 +747,11 @@ def WavefieldDecomposition(
     .. math::
         \begin{bmatrix}
             \mathbf{p}  \\
-            s*\mathbf{v_z}
+            s\mathbf{v_z}
         \end{bmatrix} =
         \begin{bmatrix}
             \mathbf{R}\mathbf{F} & 0 \\
-            0 & s*\mathbf{R}\mathbf{F}
+            0 & s\mathbf{R}\mathbf{F}
         \end{bmatrix} \mathbf{W} \begin{bmatrix}
             \mathbf{F}^H \mathbf{S} & 0 \\
             0 & \mathbf{F}^H \mathbf{S}

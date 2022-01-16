@@ -19,12 +19,12 @@ class Fredholm1(LinearOperator):
     ----------
     G : :obj:`numpy.ndarray`
         Multi-dimensional convolution kernel of size
-        :math:`[n_{slice} \times n_x \times n_y]`
+        :math:`[n_{\text{slice}} \times n_x \times n_y]`
     nz : :obj:`numpy.ndarray`, optional
         Additional dimension of model
     saveGt : :obj:`bool`, optional
-        Save ``G`` and ``G^H`` to speed up the computation of adjoint
-        (``True``) or create ``G^H`` on-the-fly (``False``)
+        Save ``G`` and ``G.H`` to speed up the computation of adjoint
+        (``True``) or create ``G.H`` on-the-fly (``False``)
         Note that ``saveGt=True`` will double the amount of required memory
     usematmul : :obj:`bool`, optional
         Use :func:`numpy.matmul` (``True``) or for-loop with :func:`numpy.dot`
@@ -50,31 +50,31 @@ class Fredholm1(LinearOperator):
 
     .. math::
 
-        d(sl, x, z) = \int{G(sl, x, y) m(sl, y, z) dy}
-        \quad \forall sl=1,n_{slice}
+        d(k, x, z) = \int{G(k, x, y) m(k, y, z) \,\mathrm{d}y}
+        \quad \forall k=1,\ldots,n_{slice}
 
     on the other hand its adjoin is expressed as
 
     .. math::
 
-        m(sl, y, z) = \int{G^*(sl, y, x) d(sl, x, z) dx}
-        \quad \forall sl=1,n_{slice}
+        m(k, y, z) = \int{G^*(k, y, x) d(k, x, z) \,\mathrm{d}x}
+        \quad \forall k=1,\ldots,n_{\text{slice}}
 
     In discrete form, this operator can be seen as a block-diagonal
     matrix multiplication:
 
     .. math::
         \begin{bmatrix}
-            \mathbf{G}_{sl1}  & \mathbf{0}       &  ... & \mathbf{0} \\
-            \mathbf{0}        & \mathbf{G}_{sl2} &  ... & \mathbf{0} \\
-            ...               & ...              &  ... & ...        \\
-            \mathbf{0}        & \mathbf{0}       &  ... & \mathbf{G}_{slN}
+            \mathbf{G}_{k=1}  & \mathbf{0}       &  \ldots & \mathbf{0} \\
+            \mathbf{0}        & \mathbf{G}_{k=2} &  \ldots & \mathbf{0} \\
+            \vdots            & \vdots           &  \ddots & \vdots        \\
+            \mathbf{0}        & \mathbf{0}       &  \ldots & \mathbf{G}_{k=N}
         \end{bmatrix}
         \begin{bmatrix}
-            \mathbf{m}_{sl1}  \\
-            \mathbf{m}_{sl2}  \\
-            ...     \\
-            \mathbf{m}_{slN}
+            \mathbf{m}_{k=1}  \\
+            \mathbf{m}_{k=2}  \\
+            \vdots            \\
+            \mathbf{m}_{k=N}
         \end{bmatrix}
 
     """

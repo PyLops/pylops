@@ -20,7 +20,7 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype="float64", method="f
         Indeces of the center of the compact filter
     nodir : :obj:`int`, optional
         Direction along which convolution is NOT applied
-        (set to None for 2d arrays)
+        (set to ``None`` for 2d arrays)
     dtype : :obj:`str`, optional
         Type of elements in input array.
     method : :obj:`str`, optional
@@ -38,13 +38,13 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype="float64", method="f
     :math:`h(t,x)` in forward model:
 
     .. math::
-        y(t,x) = \int_{-\inf}^{\inf}\int_{-\inf}^{\inf}
-        h(t-\tau,x-\chi) d(\tau,\chi) d\tau d\chi
+        y(t,x) = \iint\limits_{-\infty}^{\infty}
+        h(t-\tau,x-\chi) d(\tau,\chi) \,\mathrm{d}\tau \,\mathrm{d}\chi
 
     This operation can be discretized as follows
 
     .. math::
-        y[i,n] = \sum_{j=-\inf}^{\inf} \sum_{m=-\inf}^{\inf} h[i-j,n-m] d[j,m]
+        y[i,n] = \sum_{j=-\infty}^{\infty} \sum_{m=-\infty}^{\infty} h[i-j,n-m] d[j,m]
 
 
     as well as performed in the frequency domain.
@@ -62,8 +62,8 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype="float64", method="f
     In time domain:
 
     .. math::
-        y(t,x) = \int_{-\inf}^{\inf}\int_{-\inf}^{\inf}
-        h(t+\tau,x+\chi) d(\tau,\chi) d\tau d\chi
+        y(t,x) = \iint\limits_{-\infty}^{\infty}
+        h(t+\tau,x+\chi) d(\tau,\chi) \,\mathrm{d}\tau \,\mathrm{d}\chi
 
     or in frequency domain:
 

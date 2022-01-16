@@ -27,7 +27,7 @@ class Spread(LinearOperator):
     r"""Spread operator.
 
     Spread values from the input model vector arranged as a 2-dimensional
-    array of size :math:`[n_{x0} \times n_{t0}]` into the data vector of size
+    array of size :math:`[n_{x_0} \times n_{t_0}]` into the data vector of size
     :math:`[n_x \times n_t]`. Spreading is performed along parametric curves
     provided as look-up table of pre-computed indices (``table``)
     or computed on-the-fly using a function handle (``fh``).
@@ -39,23 +39,23 @@ class Spread(LinearOperator):
     ----------
     dims : :obj:`tuple`
         Dimensions of model vector (vector will be reshaped internally into
-        a two-dimensional array of size :math:`[n_{x0} \times n_{t0}]`,
+        a two-dimensional array of size :math:`[n_{x_0} \times n_{t_0}]`,
         where the first dimension is the spreading/stacking direction)
     dimsd : :obj:`tuple`
         Dimensions of model vector (vector will be reshaped internal into
         a two-dimensional array of size :math:`[n_x \times n_t]`)
     table : :obj:`np.ndarray`, optional
         Look-up table of indeces of size
-        :math:`[n_{x0} \times n_{t0} \times n_x]` (if ``None`` use function
+        :math:`[n_{x_0} \times n_{t_0} \times n_x]` (if ``None`` use function
         handle ``fh``)
     dtable : :obj:`np.ndarray`, optional
         Look-up table of decimals remainders for linear interpolation of size
-        :math:`[n_{x0} \times n_{t0} \times n_x]` (if ``None`` use function
+        :math:`[n_{x_0} \times n_{t_0} \times n_x]` (if ``None`` use function
         handle ``fh``)
     fh : :obj:`np.ndarray`, optional
         Function handle that returns an index (and a fractional value in case
         of ``interp=True``) to be used for spreading/stacking given indices
-        in :math:`x0` and :math:`t` axes (if ``None`` use look-up table
+        in :math:`x_0` and :math:`t` axes (if ``None`` use look-up table
         ``table``)
     interp : :obj:`bool`, optional
         Apply linear interpolation (``True``) or nearest interpolation
@@ -84,7 +84,7 @@ class Spread(LinearOperator):
         If both ``table`` and ``fh`` are not provided
     ValueError
         If ``table`` has shape different from
-        :math:`[n_{x0} \times n_t0 \times n_x]`
+        :math:`[n_{x_0} \times n_{t_0} \times n_x]`
 
     Notes
     -----
@@ -93,16 +93,16 @@ class Spread(LinearOperator):
     :math:`[n_x \times n_t]`:
 
     .. math::
-        m(x0, t_0) \rightarrow d(x, t=f(x0, x, t_0))
+        m(x_0, t_0) \rightarrow d(x, t=f(x_0, x, t_0))
 
-    where :math:`f(x0, x, t)` is a mapping function that returns a value t
-    given values :math:`x0`, :math:`x`, and  :math:`t_0`.
+    where :math:`f(x_0, x, t)` is a mapping function that returns a value t
+    given values :math:`x_0`, :math:`x`, and  :math:`t_0`.
 
     In adjoint mode, the model is reconstructed by means of the following
     stacking operation:
 
     .. math::
-        m(x0, t_0) = \int{d(x, t=f(x0, x, t_0))} dx
+        m(x_0, t_0) = \int{d(x, t=f(x_0, x, t_0))} \,\mathrm{d}x
 
     Note that ``table`` (or ``fh``)  must return integer numbers
     representing indices in the axis :math:`t`. However it also possible to

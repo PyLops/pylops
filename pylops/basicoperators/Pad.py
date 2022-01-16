@@ -38,22 +38,22 @@ class Pad(LinearOperator):
     Notes
     -----
     Given an array of size :math:`N`, the *Pad* operator simply adds
-    :math:`pad_{in}` at the start and :math:`pad_{end}` at the end in forward mode:
+    :math:`\text{pad}_\text{in}` at the start and :math:`\text{pad}_\text{end}` at the end in forward mode:
 
     .. math::
 
-        y_{i} = x_{i-pad_{in}}  \quad \forall
-        i=pad_{in},pad_{in}+1,...,pad_{in}+N-1
+        y_{i} = x_{i-\text{pad}_\text{in}}  \quad \forall
+        i=\text{pad}_\text{in},\ldots,\text{pad}_\text{in}+N-1
 
     and :math:`y_i = 0 \quad \forall
-    i=0,...,pad_{in}-1, pad_{in}+N-1,...,N+pad_{in}+pad_{end}`
+    i=0,\ldots,\text{pad}_\text{in}-1, \text{pad}_\text{in}+N-1,\ldots,N+\text{pad}_\text{in}+\text{pad}_\text{end}`
 
-    In adjoint mode, values from :math:`pad_{in}` to :math:`N-pad_{end}` are
+    In adjoint mode, values from :math:`\text{pad}_\text{in}` to :math:`N-\text{pad}_\text{end}` are
     extracted from the data:
 
     .. math::
 
-        x_{i} = y_{pad_{in}+i}  \quad \forall i=0, N-1
+        x_{i} = y_{\text{pad}_\text{in}+i}  \quad \forall i=0, N-1
 
     """
 

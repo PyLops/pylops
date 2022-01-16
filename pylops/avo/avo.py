@@ -299,39 +299,44 @@ def akirichards(theta, vsvp, n=1):
     theta : :obj:`np.ndarray`
         Incident angles in degrees
     vsvp : :obj:`np.ndarray` or :obj:`float`
-        VS/VP ratio
+        :math:`V_S/V_P` ratio
     n : :obj:`int`, optional
-        number of samples (if ``vsvp`` is a scalare)
+        number of samples (if ``vsvp`` is a scalar)
 
     Returns
     -------
     G1 : :obj:`np.ndarray`
         first coefficient of three terms Aki-Richards approximation
-        :math:`[n_{theta}  \times  n_{vsvp}]`
+        :math:`[n_\theta  \times  n_\text{vsvp}]`
     G2 : :obj:`np.ndarray`
         second coefficient of three terms Aki-Richards approximation
-        :math:`[n_{theta}  \times  n_{vsvp}]`
+        :math:`[n_\theta  \times  n_\text{vsvp}]`
     G3 : :obj:`np.ndarray`
         third coefficient of three terms Aki-Richards approximation
-        :math:`[n_{theta}  \times  n_{vsvp}]`
+        :math:`[n_\theta  \times  n_\text{vsvp}]`
 
     Notes
     -----
     The three terms Aki-Richards approximation [1]_ is used to compute the
     reflection coefficient as linear combination of contrasts in
-    :math:`V_P`, :math:`V_S`, and :math:`\rho`. More specifically:
+    :math:`V_P`, :math:`V_S`, and :math:`\rho.` More specifically:
 
     .. math::
-        R(\theta) = G_1(\theta) \frac{\Delta V_P}{\bar{V_P}} + G_2(\theta)
-        \frac{\Delta V_S}{\bar{V_S}} + G_3(\theta)
-        \frac{\Delta \rho}{\bar{\rho}}
+        R(\theta) = G_1(\theta) \frac{\Delta V_P}{\overline{V}_P} + G_2(\theta)
+        \frac{\Delta V_S}{\overline{V}_S} + G_3(\theta)
+        \frac{\Delta \rho}{\overline{\rho}}
 
-    where :math:`G_1(\theta) = \frac{1}{2 cos^2 \theta}`,
-    :math:`G_2(\theta) = -4 (V_S/V_P)^2 sin^2 \theta`,
-    :math:`G_3(\theta) = 0.5 - 2 (V_S/V_P)^2 sin^2 \theta`,
-    :math:`\frac{\Delta V_P}{\bar{V_P}} = 2 \frac{V_{P,2}-V_{P,1}}{V_{P,2}+V_{P,1}}`,
-    :math:`\frac{\Delta V_S}{\bar{V_S}} = 2 \frac{V_{S,2}-V_{S,1}}{V_{S,2}+V_{S,1}}`, and
-    :math:`\frac{\Delta \rho}{\bar{\rho}} = 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}`.
+    where
+
+    .. math::
+        \begin{align}
+        G_1(\theta) &= \frac{1}{2 \cos^2 \theta},\\
+        G_2(\theta) &= -4 (V_S/V_P)^2 \sin^2 \theta,\\
+         G_3(\theta) &= 0.5 - 2 (V_S/V_P)^2 \sin^2 \theta,\\
+         \frac{\Delta V_P}{\overline{V}_P} &= 2 \frac{V_{P,2}-V_{P,1}}{V_{P,2}+V_{P,1}},\\
+         \frac{\Delta V_S}{\overline{V}_S} &= 2 \frac{V_{S,2}-V_{S,1}}{V_{S,2}+V_{S,1}}, \\
+         \frac{\Delta \rho}{\overline{\rho}} &= 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}.
+        \end{align}
 
     .. [1] https://wiki.seg.org/wiki/AVO_equations
 
@@ -362,7 +367,7 @@ def fatti(theta, vsvp, n=1):
     theta : :obj:`np.ndarray`
         Incident angles in degrees
     vsvp : :obj:`np.ndarray` or :obj:`float`
-        VS/VP ratio
+        :math:`V_S/V_P` ratio
     n : :obj:`int`, optional
         number of samples (if ``vsvp`` is a scalar)
 
@@ -370,31 +375,36 @@ def fatti(theta, vsvp, n=1):
     -------
     G1 : :obj:`np.ndarray`
         first coefficient of three terms Smith-Gidlow approximation
-        :math:`[n_{theta}  \times  n_{vsvp}]`
+        :math:`[n_{\theta}  \times  n_\text{vsvp}]`
     G2 : :obj:`np.ndarray`
         second coefficient of three terms Smith-Gidlow approximation
-        :math:`[n_{theta}  \times  n_{vsvp}]`
+        :math:`[n_{\theta}  \times  n_\text{vsvp}]`
     G3 : :obj:`np.ndarray`
         third coefficient of three terms Smith-Gidlow approximation
-        :math:`[n_{theta}  \times  n_{vsvp}]`
+        :math:`[n_{\theta}  \times  n_\text{vsvp}]`
 
     Notes
     -----
     The three terms Fatti approximation [1]_ is used to compute the reflection
-    coefficient as linear combination of contrasts in :math:`AI`,
-    :math:`SI`, and :math:`\rho`. More specifically:
+    coefficient as linear combination of contrasts in :math:`\text{AI},`
+    :math:`SI`, and :math:`\rho.` More specifically:
 
     .. math::
-        R(\theta) = G_1(\theta) \frac{\Delta AI}{\bar{AI}} + G_2(\theta)
-        \frac{\Delta SI}{\bar{SI}} +
-        G_3(\theta) \frac{\Delta \rho}{\bar{\rho}}
+        R(\theta) = G_1(\theta) \frac{\Delta \text{AI}}{\bar{\text{AI}}} + G_2(\theta)
+        \frac{\Delta \text{SI}}{\overline{\text{SI}}} +
+        G_3(\theta) \frac{\Delta \rho}{\overline{\rho}}
 
-    where :math:`G_1(\theta) = 0.5 (1 + tan^2 \theta)`,
-    :math:`G_2(\theta) = -4 (V_S/V_P)^2 sin^2 \theta`,
-    :math:`G_3(\theta) = 0.5 (4 (V_S/V_P)^2 sin^2 \theta - tan^2 \theta)`,
-    :math:`\frac{\Delta AI}{\bar{AI}} = 2 \frac{AI_2-AI_1}{AI_2+AI_1}`.
-    :math:`\frac{\Delta SI}{\bar{SI}} = 2 \frac{SI_2-SI_1}{SI_2+SI_1}`.
-    :math:`\frac{\Delta \rho}{\bar{\rho}} = 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}`.
+    where
+
+    .. math::
+        \begin{align}
+        G_1(\theta) &= 0.5 (1 + \tan^2 \theta),\\
+        G_2(\theta) &= -4 (V_S/V_P)^2 \sin^2 \theta,\\
+        G_3(\theta) &= 0.5 \left(4 (V_S/V_P)^2 \sin^2 \theta - \tan^2 \theta\right),\\
+        \frac{\Delta \text{AI}}{\overline{\text{AI}}} &= 2 \frac{\text{AI}_2-\text{AI}_1}{\text{AI}_2+\text{AI}_1},\\
+        \frac{\Delta \text{SI}}{\overline{\text{SI}}} &= 2 \frac{\text{SI}_2-\text{SI}_1}{\text{SI}_2+\text{SI}_1},\\
+        \frac{\Delta \rho}{\overline{\rho}} &= 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}.
+        \end{align}
 
     .. [1] https://www.subsurfwiki.org/wiki/Fatti_equation
 
@@ -425,38 +435,44 @@ def ps(theta, vsvp, n=1):
     theta : :obj:`np.ndarray`
         Incident angles in degrees
     vsvp : :obj:`np.ndarray` or :obj:`float`
-        VS/VP ratio
+        :math:`V_S/V_P` ratio
     n : :obj:`int`, optional
         number of samples (if ``vsvp`` is a scalar)
 
     Returns
     -------
     G1 : :obj:`np.ndarray`
-        first coefficient for VP :math:`[n_{theta}  \times  n_{vsvp}]`
+        first coefficient for VP :math:`[n_{\theta}  \times  n_\text{vsvp}]`
     G2 : :obj:`np.ndarray`
-        second coefficient for VS :math:`[n_{theta}  \times  n_{vsvp}]`
+        second coefficient for VS :math:`[n_{\theta}  \times  n_\text{vsvp}]`
     G3 : :obj:`np.ndarray`
-        third coefficient for density :math:`[n_{theta}  \times  n_{vsvp}]`
+        third coefficient for density :math:`[n_{\theta}  \times  n_\text{vsvp}]`
 
     Notes
     -----
     The approximation in [1]_ is used to compute the PS
     reflection coefficient as linear combination of contrasts in
-    :math:`V_P`, :math:`V_S`, and :math:`\rho`. More specifically:
+    :math:`V_P`, :math:`V_S`, and :math:`\rho.` More specifically:
 
     .. math::
         R(\theta) = G_2(\theta) \frac{\Delta V_S}{\bar{V_S}} + G_3(\theta)
-        \frac{\Delta \rho}{\bar{\rho}}
+        \frac{\Delta \rho}{\overline{\rho}}
 
-    where :math:`G_2(\theta) = tan \theta / 2 [4 (V_S/V_P)^2 sin^2 \theta -
-    4(V_S/V_P) cos \theta cos \phi]`,
-    :math:`G_3(\theta) = -tan \theta / 2 [1 - 2 (V_S/V_P)^2 sin^2 \theta +
-    2(V_S/V_P) cos \theta cos \phi]`,
-    :math:`\frac{\Delta V_S}{\bar{V_S}} = 2 \frac{V_{S,2}-V_{S,1}}{V_{S,2}+V_{S,1}}`, and
-    :math:`\frac{\Delta \rho}{\bar{\rho}} = 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}`.
+    where
+
+    .. math::
+        \begin{align}
+        G_2(\theta) &= \tan \frac{\theta}{2} \left\{4 (V_S/V_P)^2 \sin^2 \theta
+            - 4(V_S/V_P) \cos \theta \cos \phi \right\},\\
+        G_3(\theta) &= -\tan \frac{\theta}{2} \left\{1 - 2 (V_S/V_P)^2 \sin^2 \theta +
+        2(V_S/V_P) \cos \theta \cos \phi\right\},\\
+        \frac{\Delta V_S}{\overline{V_S}} &= 2 \frac{V_{S,2}-V_{S,1}}{V_{S,2}+V_{S,1}},\\
+        \frac{\Delta \rho}{\overline{\rho}} &= 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}.
+        \end{align}
+
     Note that :math:`\theta` is the P-incidence angle whilst :math:`\phi` is
     the S-reflected angle which is computed using Snell's law and the average
-    :math:`VS/VP` ratio.
+    :math:`V_S/V_P` ratio.
 
     .. [1] Xu, Y., and Bancroft, J.C., "Joint AVO analysis of PP and PS
         seismic data", CREWES Report, vol. 9. 1997.
@@ -499,7 +515,7 @@ class AVOLinearModelling(LinearOperator):
     theta : :obj:`np.ndarray`
         Incident angles in degrees
     vsvp : :obj:`np.ndarray` or :obj:`float`
-        VS/VP ratio
+        :math:`V_S/V_P` ratio
     nt0 : :obj:`int`, optional
         number of samples (if ``vsvp`` is a scalar)
     spatdims : :obj:`int` or :obj:`tuple`, optional
@@ -528,14 +544,14 @@ class AVOLinearModelling(LinearOperator):
     -----
     The AVO linearized operator performs a linear combination of three
     (or two) elastic parameters arranged in input vector :math:`\mathbf{m}`
-    of size :math:`n_{t0} \times N` to create the so-called seismic
+    of size :math:`n_{t_0} \times N` to create the so-called seismic
     reflectivity:
 
     .. math::
         r(t, \theta, x, y) = \sum_{i=1}^N G_i(t, \theta) m_i(t, x, y) \qquad
-        \forall \quad t, \theta
+        \forall \,t,\theta
 
-    where :math:`N=2/3`. Note that the reflectivity can be in 1d, 2d or 3d
+    where :math:`N=2,\, 3`. Note that the reflectivity can be in 1d, 2d or 3d
     and ``spatdims`` contains the dimensions of the spatial axis (or axes)
     :math:`x` and :math:`y`.
 

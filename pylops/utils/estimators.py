@@ -44,16 +44,16 @@ def trace_hutchinson(
         Vectorize computations by sampling sketching matrices instead of
         vectors. Set this value to as high as permitted by memory, but there is
         no guarantee of speedup. Coerced to never exceed ``neval``. When using
-        **unitvector** as sampler, is coerced to not exceed `shape[1]`.
+        "unitvector" as sampler, is coerced to not exceed ``shape[1]``.
         Defaults to 100 or ``neval``.
     sampler : :obj:`str`, optional
         Sample sketching matrices from the following distributions:
 
-            - **gaussian**: Mean zero, unit variance Gaussian.
-            - **rayleigh**: Sample from mean zero, unit variance Gaussian and
+            - "gaussian": Mean zero, unit variance Gaussian.
+            - "rayleigh": Sample from mean zero, unit variance Gaussian and
               normalize the columns.
-            - **rademacher**: Random sign.
-            - **unitvector**: Samples from the unit vectors :math:`\mathrm{e}_i`
+            - "rademacher": Random sign.
+            - "unitvector": Samples from the unit vectors :math:`\mathrm{e}_i`
               without replacement.
 
     backend : :obj:`str`, optional
@@ -88,7 +88,7 @@ def trace_hutchinson(
     Prefer the Rademacher sampler if the goal is to minimize variance, but the
     Gaussian for a better probability of approximating the correct value. Use
     the Unit Vector approach if you are sampling a large number of ``neval``
-    (compared to `shape[1]`), especially if the operator is highly-structured.
+    (compared to ``shape[1]``), especially if the operator is highly-structured.
 
     .. [1] Hutchinson, M. F. (1990). *A stochastic estimator of the trace of
            the influence matrix for laplacian smoothing splines*.
@@ -151,10 +151,10 @@ def trace_hutchpp(Op, neval=None, sampler="rademacher", backend="numpy"):
     sampler : :obj:`str`, optional
         Sample sketching matrices from the following distributions:
 
-            - **gaussian**: Mean zero, unit variance Gaussian.
-            - **rayleigh**: Sample from mean zero, unit variance Gaussian and
+            - "gaussian": Mean zero, unit variance Gaussian.
+            - "rayleigh": Sample from mean zero, unit variance Gaussian and
               normalize the columns.
-            - **rademacher**: Random sign.
+            - "rademacher": Random sign.
 
     backend : :obj:`str`, optional
         Backend used to densify matrix (``numpy`` or ``cupy``). Note that
@@ -185,7 +185,7 @@ def trace_hutchpp(Op, neval=None, sampler="rademacher", backend="numpy"):
            from sub-Gaussian distributions.
         2. Compute reduced QR decomposition of :math:`\mathbf{Op}\,\mathbf{S}`,
            retaining only :math:`\mathbf{Q}`.
-        3. Return :math:`\operatorname{tr}(\mathbf{Q}^T\,\mathbf{Op}\,\mathbf{Q}) + \frac{1}{\lfloor k/3\rfloor}\operatorname{tr}(\mathbf{G}^T(\mathbf{I} - \mathbf{Q}\mathbf{Q}^T)\,\mathbf{Op}\,(\mathbf{I} - \mathbf{Q}\mathbf{Q}^T)\mathbf{G})`
+        3. Return :math:`\operatorname{tr}(\mathbf{Q}^T\,\mathbf{Op}\,\mathbf{Q}) + \frac{1}{\lfloor k/3\rfloor}\operatorname{tr}\left(\mathbf{G}^T(\mathbf{I} - \mathbf{Q}\mathbf{Q}^T)\,\mathbf{Op}\,(\mathbf{I} - \mathbf{Q}\mathbf{Q}^T)\mathbf{G}\right)`
 
     Use the Rademacher sampler unless you know what you are doing.
 
@@ -244,10 +244,10 @@ def trace_nahutchpp(
     sampler : :obj:`str`, optional
         Sample sketching matrices from the following distributions:
 
-            - **gaussian**: Mean zero, unit variance Gaussian.
-            - **rayleigh**: Sample from mean zero, unit variance Gaussian and
+            - "gaussian": Mean zero, unit variance Gaussian.
+            - "rayleigh": Sample from mean zero, unit variance Gaussian and
               normalize the columns.
-            - **rademacher**: Random sign.
+            - "rademacher": Random sign.
 
     c1 : :obj:`float`, optional
         Fraction of ``neval`` for sketching matrix :math:`\mathbf{S}`.

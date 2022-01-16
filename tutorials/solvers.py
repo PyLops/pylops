@@ -25,8 +25,8 @@ elements from :math:`\mathbf{x}` at random locations is implemented using
 :py:class:`pylops.Restriction`, and
 
 .. math::
-    \mathbf{y}= [y_1, y_2,...,y_N]^T, \qquad
-    \mathbf{x}= [x_1, x_2,...,x_M]^T, \qquad
+    \mathbf{y}= [y_1, y_2,\ldots,y_N]^T, \qquad
+    \mathbf{x}= [x_1, x_2,\ldots,x_M]^T, \qquad
 
 with :math:`M>>N`.
 

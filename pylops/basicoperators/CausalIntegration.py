@@ -46,41 +46,42 @@ class CausalIntegration(LinearOperator):
     For simplicity, given a one dimensional array, the causal integration is:
 
     .. math::
-        y(t) = \int x(t) dt
+        y(t) = \int\limits_{-\infty}^t x(\tau) \,\mathrm{d}\tau
 
     which can be discretised as :
 
     .. math::
-        y[i] = \sum_{j=0}^i x[j] dt
+        y[i] = \sum_{j=0}^i x[j] \,\Delta t
 
     or
 
     .. math::
-        y[i] = (\sum_{j=0}^{i-1} x[j] + 0.5x[i]) dt
+        y[i] = \left(\sum_{j=0}^{i-1} x[j] + 0.5x[i]\right) \,\Delta t
 
     or
 
     .. math::
-        y[i] = (\sum_{j=1}^{i-1} x[j] + 0.5x[0] + 0.5x[i]) dt
+        y[i] = \left(\sum_{j=1}^{i-1} x[j] + 0.5x[0] + 0.5x[i]\right) \,\Delta t
 
-    where :math:`dt` is the ``sampling`` interval. In our implementation, the
+    where :math:`\Delta t` is the ``sampling`` interval, and assuming the signal is zero
+    before sample :math:`j=0`. In our implementation, the
     choice to add :math:`x[i]` or :math:`0.5x[i]` is made by selecting ``kind=full``
     or ``kind=half``, respectively. The choice to add :math:`0.5x[i]` and
     :math:`0.5x[0]` instead of made by selecting the ``kind=trapezoidal``.
 
-    Note that the integral of a signal has no unique solution, as any constant
-    :math:`c` can be added to :math:`y`, for example if :math:`x(t)=t^2` the
-    resulting integration is:
+    Note that the causal integral of a signal will depend, up to a constant,
+    on causal start of the signal. For example if :math:`x(\tau) = t^2` the
+    resulting indefinite integration is:
 
     .. math::
-        y(t) = \int t^2 dt = \frac{t^3}{3} + c
+        y(t) = \int \tau^2 \,\mathrm{d}\tau = \frac{t^3}{3} + C
 
-    If we apply a first derivative to :math:`y` we in fact obtain:
+    However, if we apply a first derivative to :math:`y` always obtain:
 
     .. math::
-        x(t) = \frac{dy}{dt} = t^2
+        x(t) = \frac{\mathrm{d}y}{\mathrm{d}t} = t^2
 
-    no matter the choice of :math:`c`.
+    no matter the choice of :math:`C`.
 
     """
 

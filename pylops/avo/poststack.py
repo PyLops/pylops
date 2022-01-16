@@ -128,7 +128,7 @@ def PoststackLinearModelling(
 
     Create operator to be applied to an elastic parameter trace (or stack of
     traces) for generation of band-limited seismic post-stack data. The input
-    model and data have shape :math:`[n_{t0} (\times n_x \times n_y)]`.
+    model and data have shape :math:`[n_{t_0} \,(\times n_x \times n_y)]`.
 
     Parameters
     ----------
@@ -137,7 +137,7 @@ def PoststackLinearModelling(
         and centered to zero). If 1d, assume stationary wavelet for the entire
         time axis. If 2d, use as non-stationary wavelet (user must provide
         one wavelet per time sample in an array of size
-        :math:`[n_{t0} \times n_{wav}]` where :math:`n_{wav}` is the length
+        :math:`[n_{t_0} \times n_\text{wav}]` where :math:`n_\text{wav}` is the length
         of each wavelet). Note that the ``dtype`` of this variable will define
         that of the operator
     nt0 : :obj:`int`
@@ -171,7 +171,7 @@ def PoststackLinearModelling(
     forward model:
 
     .. math::
-        d(t, \theta=0) =  w(t) * \frac{dln(m(t))}{dt}
+        d(t, \theta=0) =  w(t) * \frac{\mathrm{d}\ln m(t)}{\mathrm{d}t}
 
     where :math:`m(t)` is the elastic parameter profile and
     :math:`w(t)` is the time domain seismic wavelet. In compact form:
@@ -183,7 +183,7 @@ def PoststackLinearModelling(
     modelling operator can be used to create zero-offset data:
 
     .. math::
-        d(t, \theta=0) = \frac{1}{2} w(t) * \frac{dln(m(t))}{dt}
+        d(t, \theta=0) = \frac{1}{2} w(t) * \frac{\mathrm{d}\ln m(t)}{\mathrm{d}t}
 
     where the scaling factor :math:`\frac{1}{2}` can be easily included in
     the wavelet.
@@ -218,14 +218,14 @@ def PoststackInversion(
     ----------
     data : :obj:`np.ndarray`
         Band-limited seismic post-stack data of size
-        :math:`[n_{t0} (\times n_x \times n_y)]`
+        :math:`[n_{t_0}\,(\times n_x \times n_y)]`
     wav : :obj:`np.ndarray`
         Wavelet in time domain (must have odd number of elements
         and centered to zero). If 1d, assume stationary wavelet for the entire
-        time axis. If 2d of size :math:`[n_{t0} \times n_h]` use as
+        time axis. If 2d of size :math:`[n_{t_0} \times n_h]` use as
         non-stationary wavelet
     m0 : :obj:`np.ndarray`, optional
-        Background model of size :math:`[n_{t0} (\times n_x \times n_y)]`
+        Background model of size :math:`[n_{t_0}\,(\times n_x \times n_y)]`
     explicit : :obj:`bool`, optional
         Create a chained linear operator (``False``, preferred for large data)
         or a ``MatrixMult`` linear operator with dense matrix
@@ -252,10 +252,10 @@ def PoststackInversion(
     Returns
     -------
     minv : :obj:`np.ndarray`
-        Inverted model of size :math:`[n_{t0} (\times n_x \times n_y)]`
+        Inverted model of size :math:`[n_{t_0}\,(\times n_x \times n_y)]`
     datar : :obj:`np.ndarray`
         Residual data (i.e., data - background data) of
-        size :math:`[n_{t0} (\times n_x \times n_y)]`
+        size :math:`[n_{t_0}\,(\times n_x \times n_y)]`
 
     Notes
     -----
@@ -269,7 +269,7 @@ def PoststackInversion(
       if ``simultaneous=True``)
     * ``explicit=True`` with ``epsI`` and ``epsR=None``: the regularized
       normal equations :math:`\mathbf{W}^T\mathbf{d} = (\mathbf{W}^T
-      \mathbf{W} + \epsilon_I^2 \mathbf{I}) \mathbf{AI}` are instead fed
+      \mathbf{W} + \epsilon_\mathbf{I}^2 \mathbf{I}) \mathbf{AI}` are instead fed
       into the :py:func:`scipy.linalg.lstsq` solver if ``simultaneous=False``
       (or the iterative solver :py:func:`scipy.sparse.linalg.lsqr`
       if ``simultaneous=True``)

@@ -51,16 +51,16 @@ class HStack(LinearOperator):
 
     .. math::
         \begin{bmatrix}
-            \mathbf{L}_{1} & \mathbf{L}_{2} & ... & \mathbf{L}_{N}
+            \mathbf{L}_{1} & \mathbf{L}_{2} & \ldots & \mathbf{L}_{N}
         \end{bmatrix}
         \begin{bmatrix}
             \mathbf{x}_{1}  \\
             \mathbf{x}_{2}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{x}_{N}
         \end{bmatrix} =
         \mathbf{L}_{1} \mathbf{x}_1 + \mathbf{L}_{2} \mathbf{x}_2 +
-        ... + \mathbf{L}_{N} \mathbf{x}_N
+        \ldots + \mathbf{L}_{N} \mathbf{x}_N
 
     while its application in adjoint mode leads to
 
@@ -68,20 +68,20 @@ class HStack(LinearOperator):
         \begin{bmatrix}
             \mathbf{L}_{1}^H  \\
             \mathbf{L}_{2}^H  \\
-            ...     \\
+            \vdots     \\
             \mathbf{L}_{N}^H
         \end{bmatrix}
         \mathbf{y} =
         \begin{bmatrix}
             \mathbf{L}_{1}^H \mathbf{y}  \\
             \mathbf{L}_{2}^H \mathbf{y}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{L}_{N}^H \mathbf{y}
         \end{bmatrix} =
         \begin{bmatrix}
             \mathbf{x}_{1}  \\
             \mathbf{x}_{2}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{x}_{N}
         \end{bmatrix}
 

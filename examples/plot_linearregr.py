@@ -10,7 +10,7 @@ coefficients, namely intercept :math:`\mathbf{x_0}` and gradient
 :math:`\mathbf{x_1}`, for this equation:
 
     .. math::
-        y_i = x_0 + x_1 t_i   \qquad \forall i=1,2,...,N
+        y_i = x_0 + x_1 t_i   \qquad \forall i=1,2,\ldots,N
 
 As we can express this problem in a matrix form:
 

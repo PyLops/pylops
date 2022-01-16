@@ -32,13 +32,13 @@ class Imag(LinearOperator):
 
     .. math::
 
-        y_{i} = \Imag\{x_{i}\} \quad \forall i=0,...,N
+        y_{i} = \Im\{x_{i}\} \quad \forall i=0,\ldots,N-1
 
     In adjoint mode:
 
     .. math::
 
-        x_{i} = 0 + i\Re\{y_{i}\} \quad \forall i=0,...,N
+        x_{i} = 0 + i\Re\{y_{i}\} \quad \forall i=0,\ldots,N-1
 
     """
 

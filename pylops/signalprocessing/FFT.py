@@ -385,11 +385,11 @@ def FFT(
     forward mode, and to :py:func:`scipy.fft.ifft` (or :py:func:`scipy.fft.irfft`
     for real models) in adjoint mode.
 
-    When using `real=True`, the result of the forward is also multiplied by
+    When using ``real=True``, the result of the forward is also multiplied by
     :math:`\sqrt{2}` for all frequency bins except zero and Nyquist, and the input of
     the adjoint is multiplied by :math:`1 / \sqrt{2}` for the same frequencies.
 
-    For a real valued input signal, it is advised to use the flag `real=True`
+    For a real valued input signal, it is advised to use the flag ``real=True``
     as it stores the values of the Fourier transform at positive frequencies only as
     values at negative frequencies are simply their complex conjugates.
 
@@ -404,13 +404,16 @@ def FFT(
     sampling : :obj:`float`, optional
         Sampling step ``dt``.
     norm : `{"ortho", "none", "1/n"}`, optional
-        * "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
-        where :math:`N_F` is the number of samples in the Fourier domain given by ``nfft``.
-        * "none": Does not scale the forward or the adjoint FFT transforms.
-        * "1/n": Scales both the forward and adjoint FFT transforms by
-        :math:`1/N_F`.
-        Note that for "none" and "1/n", the operator is not unitary, that is,
-        the adjoint is not the inverse. To invert the operator, simply use `Op \ y`.
+        - "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
+          where :math:`N_F` is the number of samples in the Fourier domain given by ``nfft``.
+
+        - "none": Does not scale the forward or the adjoint FFT transforms.
+
+        - "1/n": Scales both the forward and adjoint FFT transforms by
+          :math:`1/N_F`.
+
+        .. note:: For "none" and "1/n", the operator is not unitary, that is, the
+          adjoint is not the inverse. To invert the operator, simply use ``Op \ y``.
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
@@ -438,7 +441,7 @@ def FFT(
         Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.
         In addition, note that neither the NumPy nor the FFTW backends supports
-        returning ``dtype``s different than ``complex128``. As such, when using either
+        returning ``dtype`` different than ``complex128``. As such, when using either
         backend, arrays will be force-casted to types corresponding to the supplied ``dtype``.
         The SciPy backend supports all precisions natively.
         Under all backends, when a real ``dtype`` is supplied, a real result will be
@@ -450,12 +453,13 @@ def FFT(
     Attributes
     ----------
     dims_fft : :obj:`tuple`
-        Shape of the array after the forward, but before linearization. E.g.
-        ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
+        Shape of the array after the forward, but before linearization.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
     f : :obj:`numpy.ndarray`
         Discrete Fourier Transform sample frequencies
     real : :obj:`bool`
-        When True, uses ``rfft``/``irfft``
+        When ``True``, uses ``rfft``/``irfft``
     rdtype : :obj:`bool`
         Expected input type to the forward
     cdtype : :obj:`bool`
@@ -467,35 +471,41 @@ def FFT(
         ``dtype`` is not a complex type.
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
-        (True) or not (False)
+        (``True``) or not (``False``)
 
     Raises
     ------
     ValueError
-        If ``dims`` is provided and ``dir`` is bigger than ``len(dims)``
-        If ``norm`` is not one of "ortho", "none", or "1/n".
+        - If ``dims`` is provided and ``dir`` is bigger than ``len(dims)``.
+        - If ``norm`` is not one of "ortho", "none", or "1/n".
     NotImplementedError
         If ``engine`` is neither ``numpy``, ``fftw``, nor ``scipy``.
 
+    See Also
+    --------
+    FFT2D: Two-dimensional FFT
+    FFTND: N-dimensional FFT
+
+
     Notes
     -----
-    The FFT operator (using `norm="ortho"`) applies the forward Fourier transform to
+    The FFT operator (using ``norm="ortho"``) applies the forward Fourier transform to
     a signal
     :math:`d(t)` in forward mode:
 
     .. math::
-        D(f) = \mathscr{F} (d) = \frac{1}{\sqrt{N_F}} \int d(t) e^{-j2\pi ft} dt
+        D(f) = \mathscr{F} (d) = \frac{1}{\sqrt{N_F}} \int\limits_{-\infty}^\infty d(t) e^{-j2\pi ft} \,\mathrm{d}t
 
     Similarly, the inverse Fourier transform is applied to the Fourier spectrum
     :math:`D(f)` in adjoint mode:
 
     .. math::
-        d(t) = \mathscr{F}^{-1} (D) = \frac{1}{\sqrt{N_F}} \int D(f) e^{j2\pi ft} df
+        d(t) = \mathscr{F}^{-1} (D) = \frac{1}{\sqrt{N_F}} \int\limits_{-\infty}^\infty D(f) e^{j2\pi ft} \,\mathrm{d}f
 
     where :math:`N_F` is the number of samples in the Fourier domain ``nfft``.
     Both operators are effectively discretized and solved by a fast iterative
     algorithm known as Fast Fourier Transform. Note that the FFT operator
-    (using `norm="ortho"`) is a special operator in that the adjoint is also
+    (using ``norm="ortho"``) is a special operator in that the adjoint is also
     the inverse of the forward mode. For other norms, this does not hold (see ``norm``
     help). However, for any norm, the Fourier transform is Hermitian for real input
     signals.

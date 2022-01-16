@@ -63,11 +63,11 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode="eikonal"):
     x : :obj:`numpy.ndarray`
         Spatial axis
     srcs : :obj:`numpy.ndarray`
-        Sources in array of size :math:`\lbrack 2/3 \times n_s \rbrack`
+        Sources in array of size :math:`\lbrack 2 (3) \times n_s \rbrack`
     recs : :obj:`numpy.ndarray`
-        Receivers in array of size :math:`\lbrack 2/3 \times n_r \rbrack`
+        Receivers in array of size :math:`\lbrack 2 (3) \times n_r \rbrack`
     vel : :obj:`numpy.ndarray` or :obj:`float`
-        Velocity model of size :math:`\lbrack (n_y \times) n_x
+        Velocity model of size :math:`\lbrack (n_y \times)\, n_x
         \times n_z \rbrack` (or constant)
     y : :obj:`numpy.ndarray`
         Additional spatial axis (for 3-dimensional problems)
@@ -77,14 +77,14 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode="eikonal"):
     Returns
     -------
     trav : :obj:`numpy.ndarray`
-        Total traveltime table of size :math:`\lbrack (n_y*) n_x*n_z
-        \times n_s*n_r \rbrack`
+        Total traveltime table of size :math:`\lbrack (n_y) n_x n_z
+        \times n_s n_r \rbrack`
     trav_srcs : :obj:`numpy.ndarray`
         Source-to-subsurface traveltime table of size
-        :math:`\lbrack (n_y*) n_x*n_z \times n_s \rbrack` (or constant)
+        :math:`\lbrack (n_y*) n_x n_z \times n_s \rbrack` (or constant)
     trav_recs : :obj:`numpy.ndarray`
         Receiver-to-subsurface traveltime table of size
-        :math:`\lbrack (n_y*) n_x*n_z \times n_r \rbrack`
+        :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack`
 
     """
     ndims, shiftdim, _, ny, nx, nz, ns, nr, _, _, _, dsamp, origin = _identify_geometry(
@@ -176,13 +176,13 @@ def Demigration(
     t : :obj:`numpy.ndarray`
         Time axis for data
     srcs : :obj:`numpy.ndarray`
-        Sources in array of size :math:`\lbrack 2/3 \times n_s \rbrack`
+        Sources in array of size :math:`\lbrack 2 (3) \times n_s \rbrack`
         The first axis should be ordered as (``y``,) ``x``, ``z``.
     recs : :obj:`numpy.ndarray`
-        Receivers in array of size :math:`\lbrack 2/3 \times n_r \rbrack`
+        Receivers in array of size :math:`\lbrack 2 (3) \times n_r \rbrack`
         The first axis should be ordered as (``y``,) ``x``, ``z``.
     vel : :obj:`numpy.ndarray` or :obj:`float`
-        Velocity model of size :math:`\lbrack (n_y \times) n_x
+        Velocity model of size :math:`\lbrack (n_y\,\times)\; n_x
         \times n_z \rbrack` (or constant)
     wav : :obj:`numpy.ndarray`
         Wavelet
@@ -195,7 +195,7 @@ def Demigration(
         more details)
     trav : :obj:`numpy.ndarray`, optional
         Traveltime table of size
-        :math:`\lbrack (n_y*) n_x*n_z \times n_r \rbrack` (to be provided if
+        :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack` (to be provided if
         ``mode='byot'``)
 
     Returns
@@ -216,8 +216,8 @@ def Demigration(
 
     .. math::
         d(\mathbf{x_r}, \mathbf{x_s}, t) =
-        w(t) * \int_V G(\mathbf{x}, \mathbf{x_s}, t)
-        G(\mathbf{x_r}, \mathbf{x}, t) m(\mathbf{x}) d\mathbf{x}
+        w(t) * \int_V G(\mathbf{x_r}, \mathbf{x}, t)
+        m(\mathbf{x}) G(\mathbf{x}, \mathbf{x_s}, t)\,\mathrm{d}\mathbf{x}
 
     where :math:`m(\mathbf{x})` is the model and it represents the reflectivity
     at every location in the subsurface, :math:`G(\mathbf{x}, \mathbf{x_s}, t)`
@@ -291,11 +291,11 @@ class LSM:
     t : :obj:`numpy.ndarray`
         Time axis for data
     srcs : :obj:`numpy.ndarray`
-        Sources in array of size :math:`\lbrack 2/3 \times n_s \rbrack`
+        Sources in array of size :math:`\lbrack 2(3) \times n_s \rbrack`
     recs : :obj:`numpy.ndarray`
-        Receivers in array of size :math:`\lbrack 2/3 \times n_r \rbrack`
+        Receivers in array of size :math:`\lbrack 2(3) \times n_r \rbrack`
     vel : :obj:`numpy.ndarray` or :obj:`float`
-        Velocity model of size :math:`\lbrack (n_y \times) n_x
+        Velocity model of size :math:`\lbrack (n_y \times)\, n_x
         \times n_z \rbrack` (or constant)
     wav : :obj:`numpy.ndarray`
         Wavelet

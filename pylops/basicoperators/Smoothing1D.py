@@ -32,27 +32,27 @@ def Smoothing1D(nsmooth, dims, dir=0, dtype="float64"):
     -----
     The Smoothing1D operator is a special type of convolutional operator that
     convolves the input model (or data) with a constant filter of size
-    :math:`n_{smooth}`:
+    :math:`n_\text{smooth}`:
 
     .. math::
-        \mathbf{f} = [ 1/n_{smooth}, 1/n_{smooth}, ..., 1/n_{smooth} ]
+        \mathbf{f} = [ 1/n_\text{smooth}, 1/n_\text{smooth}, ..., 1/n_\text{smooth} ]
 
     When applied to the first direction:
 
     .. math::
-        y[i,j,k] = 1/n_{smooth} \sum_{l=-(n_{smooth}-1)/2}^{(n_{smooth}-1)/2}
+        y[i,j,k] = 1/n_\text{smooth} \sum_{l=-(n_\text{smooth}-1)/2}^{(n_\text{smooth}-1)/2}
         x[l,j,k]
 
     Similarly when applied to the second direction:
 
     .. math::
-        y[i,j,k] = 1/n_{smooth} \sum_{l=-(n_{smooth}-1)/2}^{(n_{smooth}-1)/2}
+        y[i,j,k] = 1/n_\text{smooth} \sum_{l=-(n_\text{smooth}-1)/2}^{(n_\text{smooth}-1)/2}
         x[i,l,k]
 
     and the third direction:
 
     .. math::
-        y[i,j,k] = 1/n_{smooth} \sum_{l=-(n_{smooth}-1)/2}^{(n_{smooth}-1)/2}
+        y[i,j,k] = 1/n_\text{smooth} \sum_{l=-(n_\text{smooth}-1)/2}^{(n_\text{smooth}-1)/2}
         x[i,j,l]
 
     Note that since the filter is symmetrical, the *Smoothing1D* operator is

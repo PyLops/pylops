@@ -121,7 +121,7 @@ def taper(nmask, ntap, tapertype):
 def taper2d(nt, nmask, ntap, tapertype="hanning"):
     r"""2D taper
 
-    Create 2d mask of size :math:`[n_{mask} \times n_t]`
+    Create 2d mask of size :math:`[n_\text{mask} \times n_t]`
     with tapering of size ``ntap`` along the first (and possibly
     second) dimensions
 
@@ -141,7 +141,7 @@ def taper2d(nt, nmask, ntap, tapertype="hanning"):
     -------
     taper : :obj:`numpy.ndarray`
         2d mask with tapering along first dimension
-        of size :math:`[n_{mask} \times n_t]`
+        of size :math:`[n_\text{mask} \times n_t]`
 
     """
     # create 1d window along first dimension
@@ -167,7 +167,7 @@ def taper2d(nt, nmask, ntap, tapertype="hanning"):
 def taper3d(nt, nmask, ntap, tapertype="hanning"):
     r"""3D taper
 
-    Create 2d mask of size :math:`[n_{mask}[0] \times n_{mask}[1] \times n_t]`
+    Create 2d mask of size :math:`[n_\text{mask}[0] \times n_\text{mask}[1] \times n_t]`
     with tapering of size ``ntap`` along the first and second dimension
 
     Parameters
@@ -186,7 +186,7 @@ def taper3d(nt, nmask, ntap, tapertype="hanning"):
     -------
     taper : :obj:`numpy.ndarray`
         2d mask with tapering along first dimension
-        of size :math:`[n_{mask,0} \times n_{mask,1} \times n_t]`
+        of size :math:`[n_\text{mask,0} \times n_\text{mask,1} \times n_t]`
 
     """
     nmasky, nmaskx = nmask[0], nmask[1]

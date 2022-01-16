@@ -30,16 +30,16 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=Tr
         wavelet with same amplitude spectrum as provided by ``wav``
     trav : :obj:`numpy.ndarray`
         Traveltime of first arrival from subsurface point to
-        surface receivers of size :math:`\lbrack nr \times 1 \rbrack`
+        surface receivers of size :math:`\lbrack n_r \times 1 \rbrack`
     nt : :obj:`float`, optional
         Number of samples in time
     dt : :obj:`float`, optional
         Sampling in time
     nfft : :obj:`int`, optional
-        Number of samples in fft time (if ``None``, :math:`nfft=nt`)
+        Number of samples in fft time (if ``None``, ``nfft=nt``)
     dist: :obj:`numpy.ndarray`
         Distance between subsurface point to
-        surface receivers of size :math:`\lbrack nr \times 1 \rbrack`
+        surface receivers of size :math:`\lbrack n_r \times 1 \rbrack`
     kind : :obj:`str`, optional
         2-dimensional (``2d``) or 3-dimensional (``3d``)
     derivative : :obj:`bool`, optional
@@ -49,7 +49,7 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=Tr
     -------
     direct : :obj:`numpy.ndarray`
         Direct arrival in time domain of size
-        :math:`\lbrack nt \times nr \rbrack`
+        :math:`\lbrack n_t \times n_r \rbrack`
 
     Notes
     -----
@@ -67,10 +67,10 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=Tr
     a point source of volume injection. In case the response to a point source
     of volume injection rate is desired, a :math:`j\omega` scaling (which is
     equivalent to applying a first derivative in time domain) must be applied.
-    Here this is accomplished by setting ``derivative==True``.
+    Here this is accomplished by setting ``derivative=True``.
 
     .. [1] Snieder, R. "A Guided Tour of Mathematical Methods for the
-    Physical Sciences", Cambridge University Press, pp. 302, 2004.
+       Physical Sciences", Cambridge University Press, pp. 302, 2004.
 
     """
     ncp = get_array_module(wav)
@@ -105,8 +105,8 @@ class Marchenko:
     ----------
     R : :obj:`numpy.ndarray`
         Multi-dimensional reflection response in time or frequency
-        domain of size :math:`[n_s \times n_r \times n_t/n_{fmax}]`. If
-        provided in time, `R` should not be of complex type. Note that the
+        domain of size :math:`[n_s \times n_r \times n_t (n_{f_\text{max}}}]`. If
+        provided in time, ``R`` should not be of complex type. Note that the
         reflection response should have already been multiplied by 2.
     R1 : :obj:`bool`, optional
         *Deprecated*, will be removed in v2.0.0. Simply kept for
@@ -128,9 +128,9 @@ class Marchenko:
     dtype : :obj:`bool`, optional
         Type of elements in input array.
     saveRt : :obj:`bool`, optional
-        Save ``R`` and ``R^H`` to speed up the computation of adjoint of
+        Save ``R`` and ``R.H`` to speed up the computation of adjoint of
         :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
-        ``R^H`` on-the-fly (``False``) Note that ``saveRt=True`` will be
+        ``R.H`` on-the-fly (``False``) Note that ``saveRt=True`` will be
         faster but double the amount of required memory
     prescaled : :obj:`bool`, optional
         Apply scaling to ``R`` (``False``) or not (``False``)
@@ -151,7 +151,7 @@ class Marchenko:
         Operator shape
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
-        (True) or not (False)
+        (``True``) or not (``False``)
 
     Raises
     ------

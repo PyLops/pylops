@@ -81,12 +81,12 @@ class Convolve1D(LinearOperator):
     :math:`x(t)` and a compact filter kernel :math:`h(t)` in forward model:
 
     .. math::
-        y(t) = \int_{-\inf}^{\inf} h(t-\tau) x(\tau) d\tau
+        y(t) = \int\limits_{-\infty}^{\infty} h(t-\tau) x(\tau) \,\mathrm{d}\tau
 
     This operation can be discretized as follows
 
     .. math::
-        y[n] = \sum_{m=-\inf}^{\inf} h[n-m] x[m]
+        y[n] = \sum_{m=-\infty}^{\infty} h[n-m] x[m]
 
     as well as performed in the frequency domain.
 
@@ -106,7 +106,7 @@ class Convolve1D(LinearOperator):
     In time domain:
 
     .. math::
-        x(t) = \int_{-\inf}^{\inf} h(t+\tau) x(\tau) d\tau
+        x(t) = \int\limits_{-\infty}^{\infty} h(t+\tau) x(\tau) \,\mathrm{d}\tau
 
     or in frequency domain:
 

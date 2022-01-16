@@ -7,7 +7,8 @@ from pylops.utils.backend import get_array_module
 class FirstDerivative(LinearOperator):
     r"""First derivative.
 
-    Apply first derivative.
+    Apply a first derivative using a three-point stencil finite-difference
+    approximation.
 
     Parameters
     ----------
@@ -19,7 +20,7 @@ class FirstDerivative(LinearOperator):
     dir : :obj:`int`, optional
         Direction along which the derivative is applied.
     sampling : :obj:`float`, optional
-        Sampling step ``dx``.
+        Sampling step :math:`\Delta x`.
     edge : :obj:`bool`, optional
         Use reduced order derivative at edges (``True``) or
         ignore them (``False``)
@@ -46,17 +47,17 @@ class FirstDerivative(LinearOperator):
     first derivative is:
 
     .. math::
-        y[i] = (0.5x[i+1] - 0.5x[i-1]) / dx
+        y[i] = (0.5x[i+1] - 0.5x[i-1]) / \Delta x
 
     while the first-order forward stencil is:
 
     .. math::
-        y[i] = (x[i+1] - x[i]) / dx
+        y[i] = (x[i+1] - x[i]) / \Delta x
 
     and the first-order backward stencil is:
 
     .. math::
-        y[i] = (x[i] - x[i-1]) / dx
+        y[i] = (x[i] - x[i-1]) / \Delta x
 
     """
 

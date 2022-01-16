@@ -6,8 +6,10 @@ from pylops.basicoperators import FirstDerivative, VStack
 def Gradient(dims, sampling=1, edge=False, dtype="float64", kind="centered"):
     r"""Gradient.
 
-    Apply gradient operator to a multi-dimensional
-    array (at least 2 dimensions are required).
+    Apply gradient operator to a multi-dimensional array.
+
+    .. note:: At least 2 dimensions are required, use
+      :py:func:`pylops.FirstDerivative` for 1d arrays.
 
     Parameters
     ----------

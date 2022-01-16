@@ -45,11 +45,11 @@ class ChirpRadon3D(LinearOperator):
     hyaxis : :obj:`np.ndarray`
         Slow spatial axis
     pmax : :obj:`np.ndarray`
-        Two element array :math:`(p_{y,max}, p_{x,max})` of :math:`\tan`
+        Two element array :math:`(p_{y,\text{max}}, p_{x,\text{max}})` of :math:`\tan`
         of maximum stacking angles in :math:`y` and :math:`x` directions
-        :math:`(\tan(\alpha_{y,max}), \tan(\alpha_{x,max}))`. If one operates
+        :math:`(\tan(\alpha_{y,\text{max}}), \tan(\alpha_{x,\text{max}}))`. If one operates
         in terms of minimum velocity :math:`c_0`, then
-        :math:`p_{y.max}=c_0dy/dt` and :math:`p_{x,max}=c_0dx/dt`
+        :math:`p_{y,\text{max}}=c_0\,\mathrm{d}y/\mathrm{d}t` and :math:`p_{x,\text{max}}=c_0\,\mathrm{d}x/\mathrm{d}t`
     engine : :obj:`str`, optional
         Engine used for fft computation (``numpy`` or ``fftw``)
     dtype : :obj:`str`, optional

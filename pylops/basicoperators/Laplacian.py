@@ -9,8 +9,10 @@ def Laplacian(
 ):
     r"""Laplacian.
 
-    Apply second-order centered Laplacian operator to a multi-dimensional
-    array (at least 2 dimensions are required)
+    Apply second-order centered Laplacian operator to a multi-dimensional array.
+
+    .. note:: At least 2 dimensions are required, use
+      :py:func:`pylops.SecondDerivative` for 1d arrays.
 
     Parameters
     ----------
@@ -43,7 +45,7 @@ def Laplacian(
 
     .. math::
         y[i, j] = (x[i+1, j] + x[i-1, j] + x[i, j-1] +x[i, j+1] - 4x[i, j])
-                  / (dx*dy)
+                  / (\Delta x \Delta y)
 
     """
     l2op = weights[0] * SecondDerivative(

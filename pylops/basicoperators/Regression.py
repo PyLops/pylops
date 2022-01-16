@@ -12,7 +12,7 @@ class Regression(LinearOperator):
     r"""Polynomial regression.
 
     Creates an operator that applies polynomial regression to a set of points.
-    Values along the t-axis must be provided while initializing the operator.
+    Values along the :math:`t`-axis must be provided while initializing the operator.
     The coefficients of the polynomial regression form the model vector to
     be provided in forward mode, while the values of the regression
     curve shall be provided in adjoint mode.
@@ -20,7 +20,7 @@ class Regression(LinearOperator):
     Parameters
     ----------
     taxis : :obj:`numpy.ndarray`
-        Elements along the t-axis.
+        Elements along the :math:`t`-axis.
     order : :obj:`int`
         Order of the regressed polynomial.
     dtype : :obj:`str`, optional
@@ -37,7 +37,7 @@ class Regression(LinearOperator):
     Raises
     ------
     TypeError
-        If ``t`` is not :obj:`numpy.ndarray`.
+        If ``taxis`` is not :obj:`numpy.ndarray`.
 
     See Also
     --------
@@ -48,7 +48,7 @@ class Regression(LinearOperator):
     The Regression operator solves the following problem:
 
     .. math::
-        y_i = \sum_{n=0}^{order} x_n t_i^n  \qquad \forall i=1,2,...,N
+        y_i = \sum_{n=0}^\text{order} x_n t_i^n  \qquad \forall i=1,2,\ldots,N
 
     where :math:`N` represents the order of the chosen polynomial. We can
     express this problem in a matrix form
@@ -59,18 +59,18 @@ class Regression(LinearOperator):
     where
 
     .. math::
-        \mathbf{y}= [y_1, y_2,...,y_N]^T,
-        \qquad \mathbf{x}= [x_0, x_1,...,x_{order}]^T
+        \mathbf{y}= [y_1, y_2,\ldots,y_N]^T,
+        \qquad \mathbf{x}= [x_0, x_1,\ldots,x_\text{order}]^T
 
     and
 
     .. math::
         \mathbf{A}
         = \begin{bmatrix}
-            1  & t_{1} & t_{1}^2 & .. & t_{1}^{order}  \\
-            1  & t_{2} & t_{2}^2 & .. & t_{1}^{order}  \\
-            .. & ..    & ..      & .. & ..             \\
-            1  & t_{N} & t_{N}^2 & .. & t_{N}^{order}  \\
+            1      & t_{1}  & t_{1}^2 & \ldots & t_{1}^\text{order}  \\
+            1      & t_{2}  & t_{2}^2 & \ldots & t_{1}^\text{order}  \\
+            \vdots & \vdots & \vdots  & \ddots & \vdots             \\
+            1      & t_{N}  & t_{N}^2 & \ldots & t_{N}^\text{order}
         \end{bmatrix}
 
     """

@@ -10,11 +10,11 @@ operator which is applied along the spatial direction(s).
 .. math::
     \mathbf{y} = \mathbf{R} \mathbf{x}
 
-Here :math:`\mathbf{y} = [\mathbf{y}_{R1}^T, \mathbf{y}_{R2}^T,...,
+Here :math:`\mathbf{y} = [\mathbf{y}_{R1}^T, \mathbf{y}_{R2}^T,\ldots,
 \mathbf{y}_{RN^T}]^T` where each vector :math:`\mathbf{y}_{Ri}`
 contains all time samples recorded in the seismic data at the specific
 receiver :math:`R_i`. Similarly, :math:`\mathbf{x} = [\mathbf{x}_{r1}^T,
-\mathbf{x}_{r2}^T,..., \mathbf{x}_{rM}^T]`, contains all traces at the
+\mathbf{x}_{r2}^T,\ldots, \mathbf{x}_{rM}^T]`, contains all traces at the
 regularly and finely sampled receiver locations :math:`r_i`.
 
 By inverting such an equation we can create a regularized data with

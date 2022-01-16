@@ -43,7 +43,7 @@ class Diagonal(LinearOperator):
 
     .. math::
 
-        y_i = d_i x_i  \quad \forall i=1,2,...,N
+        y_i = d_i x_i  \quad \forall i=1,2,\ldots,N
 
     This is equivalent to a matrix-vector multiplication with a matrix
     containing the vector :math:`\mathbf{d}` along its main diagonal.

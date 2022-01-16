@@ -257,7 +257,7 @@ class Seislet(LinearOperator):
         Operator shape
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
-        (True) or not (False)
+        (``True``) or not (``False``)
 
     Raises
     ------
@@ -318,44 +318,44 @@ class Seislet(LinearOperator):
 
     .. math::
         \begin{bmatrix}
-           \mathbf{r}_1  \\ \mathbf{r}_2  \\ ... \\ \mathbf{r}_N \\
-           \mathbf{c}_1  \\ \mathbf{c}_2  \\ ... \\ \mathbf{c}_N
+           \mathbf{r}_1  \\ \mathbf{r}_2  \\ \vdots \\ \mathbf{r}_N \\
+           \mathbf{c}_1  \\ \mathbf{c}_2  \\ \vdots \\ \mathbf{c}_N
         \end{bmatrix} =
         \begin{bmatrix}
-           \mathbf{I} & \mathbf{0} & ... & \mathbf{0} & -\mathbf{P} & \mathbf{0}  & ... & \mathbf{0}  \\
-           \mathbf{0} & \mathbf{I} & ... & \mathbf{0} & \mathbf{0}  & -\mathbf{P} & ... & \mathbf{0}  \\
-           ...        & ...        & ... & ...        & ...         & ...         & ... & ...         \\
-           \mathbf{0} & \mathbf{0} & ... & \mathbf{I} & \mathbf{0}  & \mathbf{0}  & ... & -\mathbf{P} \\
-           \mathbf{U} & \mathbf{0} & ... & \mathbf{0} & \mathbf{I}-\mathbf{UP} & \mathbf{0}  & ... & \mathbf{0}  \\
-           \mathbf{0} & \mathbf{U} & ... & \mathbf{0} & \mathbf{0}  & \mathbf{I}-\mathbf{UP} & ... & \mathbf{0}  \\
-           ...        & ...        & ... & ...        & ...         & ...         & ... & ...         \\
-           \mathbf{0} & \mathbf{0} & ... & \mathbf{U} & \mathbf{0}  & \mathbf{0}  & ... & \mathbf{I}-\mathbf{UP} \\
+           \mathbf{I} & \mathbf{0} & \ldots & \mathbf{0} & -\mathbf{P} & \mathbf{0}  & \ldots & \mathbf{0}  \\
+           \mathbf{0} & \mathbf{I} & \ldots & \mathbf{0} & \mathbf{0}  & -\mathbf{P} & \ldots & \mathbf{0}  \\
+           \vdots     & \vdots     & \ddots & \vdots     & \vdots      & \vdots      & \ddots & \vdots      \\
+           \mathbf{0} & \mathbf{0} & \ldots & \mathbf{I} & \mathbf{0}  & \mathbf{0}  & \ldots & -\mathbf{P} \\
+           \mathbf{U} & \mathbf{0} & \ldots & \mathbf{0} & \mathbf{I}-\mathbf{UP} & \mathbf{0}  & \ldots & \mathbf{0} \\
+           \mathbf{0} & \mathbf{U} & \ldots & \mathbf{0} & \mathbf{0}  & \mathbf{I}-\mathbf{UP} & \ldots & \mathbf{0} \\
+           \vdots     & \vdots     & \ddots & \vdots     & \vdots      & \vdots      & \ddots   & \vdots    \\
+           \mathbf{0} & \mathbf{0} & \ldots & \mathbf{U} & \mathbf{0}  & \mathbf{0}  & \ldots & \mathbf{I}-\mathbf{UP}
         \end{bmatrix}
         \begin{bmatrix}
-           \mathbf{o}_1  \\ \mathbf{o}_2  \\ ... \\ \mathbf{o}_N \\
-           \mathbf{e}_1  \\ \mathbf{e}_2  \\ ... \\ \mathbf{e}_N \\
+           \mathbf{o}_1  \\ \mathbf{o}_2  \\ \vdots \\ \mathbf{o}_N \\
+           \mathbf{e}_1  \\ \mathbf{e}_2  \\ \vdots \\ \mathbf{e}_N
         \end{bmatrix}
 
     Transposing the operator leads to:
 
     .. math::
         \begin{bmatrix}
-           \mathbf{o}_1  \\ \mathbf{o}_2  \\ ... \\ \mathbf{o}_N \\
-           \mathbf{e}_1  \\ \mathbf{e}_2  \\ ... \\ \mathbf{e}_N \\
+           \mathbf{o}_1  \\ \mathbf{o}_2  \\ \vdots \\ \mathbf{o}_N \\
+           \mathbf{e}_1  \\ \mathbf{e}_2  \\ \vdots \\ \mathbf{e}_N
         \end{bmatrix} =
         \begin{bmatrix}
-           \mathbf{I} & \mathbf{0} & ... & \mathbf{0} & -\mathbf{U^T} & \mathbf{0}  & ... & \mathbf{0}  \\
-           \mathbf{0} & \mathbf{I} & ... & \mathbf{0} & \mathbf{0} & -\mathbf{U^T} & ... & \mathbf{0}  \\
-           ...        & ...        & ... & ...        & ...        & ...        & ... & ...         \\
-           \mathbf{0} & \mathbf{0} & ... & \mathbf{I} & \mathbf{0} & \mathbf{0} & ... & -\mathbf{U^T} \\
-           \mathbf{P^T} & \mathbf{0} & ... & \mathbf{0} & \mathbf{I}-\mathbf{P^TU^T} & \mathbf{0} & ... & \mathbf{0}  \\
-           \mathbf{0} & \mathbf{P^T} & ... & \mathbf{0} & \mathbf{0} & \mathbf{I}-\mathbf{P^TU^T} & ... & \mathbf{0}  \\
-           ...        & ...        & ... & ...          & ...        & ...        & ... & ...         \\
-           \mathbf{0} & \mathbf{0} & ... & \mathbf{P^T} & \mathbf{0} & \mathbf{0} & ... & \mathbf{I}-\mathbf{P^TU^T} \\
+           \mathbf{I} & \mathbf{0} & \ldots & \mathbf{0} & -\mathbf{U^T} & \mathbf{0}    & \ldots & \mathbf{0}  \\
+           \mathbf{0} & \mathbf{I} & \ldots & \mathbf{0} & \mathbf{0}    & -\mathbf{U^T} & \ldots & \mathbf{0}  \\
+           \vdots     & \vdots     & \ddots & \vdots     & \vdots        & \vdots        & \ddots & \vdots      \\
+           \mathbf{0} & \mathbf{0} & \ldots & \mathbf{I} & \mathbf{0} & \mathbf{0} & \ldots & -\mathbf{U^T} \\
+           \mathbf{P^T} & \mathbf{0} & \ldots & \mathbf{0} & \mathbf{I}-\mathbf{P^T U^T} & \mathbf{0} & \ldots & \mathbf{0}  \\
+           \mathbf{0} & \mathbf{P^T} & \ldots & \mathbf{0} & \mathbf{0} & \mathbf{I}-\mathbf{P^T U^T} & \ldots & \mathbf{0}  \\
+           \vdots & \vdots & \ddots & \vdots & \vdots & \vdots & \ddots & \vdots \\
+           \mathbf{0} & \mathbf{0} & \ldots & \mathbf{P^T} & \mathbf{0} & \mathbf{0} & \ldots & \mathbf{I}-\mathbf{P^T U^T}
         \end{bmatrix}
         \begin{bmatrix}
-           \mathbf{r}_1  \\ \mathbf{r}_2  \\ ... \\ \mathbf{r}_N \\
-           \mathbf{c}_1  \\ \mathbf{c}_2  \\ ... \\ \mathbf{c}_N
+           \mathbf{r}_1  \\ \mathbf{r}_2  \\ \vdots \\ \mathbf{r}_N \\
+           \mathbf{c}_1  \\ \mathbf{c}_2  \\ \vdots \\ \mathbf{c}_N
         \end{bmatrix}
 
     which can be written more easily in the following two steps:

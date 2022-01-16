@@ -46,11 +46,11 @@ def PrestackLinearModelling(
     Create operator to be applied to elastic property profiles
     for generation of band-limited seismic angle gathers from a
     linearized version of the Zoeppritz equation. The input model must
-    be arranged in a vector of size :math:`n_m \times n_{t0} (\times n_x \times n_y)`
-    for ``explicit=True`` and :math:`n_{t0} \times n_m  (\times n_x \times n_y)`
+    be arranged in a vector of size :math:`n_m \times n_{t_0}\,(\times n_x \times n_y)`
+    for ``explicit=True`` and :math:`n_{t_0} \times n_m \,(\times n_x \times n_y)`
     for ``explicit=False``. Similarly the output data is arranged in a
-    vector of size :math:`n_{theta} \times n_{t0}  (\times n_x \times n_y)`
-    for ``explicit=True`` and :math:`n_{t0} \times n_{theta} (\times n_x \times n_y)`
+    vector of size :math:`n_{\theta} \times n_{t_0} \,(\times n_x \times n_y)`
+    for ``explicit=True`` and :math:`n_{t_0} \times n_{\theta} \,(\times n_x \times n_y)`
     for ``explicit=False``.
 
     Parameters
@@ -63,16 +63,18 @@ def PrestackLinearModelling(
         Incident angles in degrees. Must have same ``dtype`` of ``wav`` (or
         it will be automatically casted to it)
     vsvp : :obj:`float` or :obj:`np.ndarray`
-        VS/VP ratio (constant or time/depth variant)
+        :math:`V_S/V_P` ratio (constant or time/depth variant)
     nt0 : :obj:`int`, optional
         number of samples (if ``vsvp`` is a scalar)
     spatdims : :obj:`int` or :obj:`tuple`, optional
         Number of samples along spatial axis (or axes)
         (``None`` if only one dimension is available)
     linearization : :obj:`str` or :obj:`func`, optional
-        choice of linearization, ``akirich``: Aki-Richards, ``fatti``: Fatti,
-        ``ps``: PS or any function on the form of
-        ``pylops.avo.avo.akirichards``
+        * "akirich": Aki-Richards
+
+        * "fatti": Fatti
+
+        * "PS": PS, or any function on the form of ``pylops.avo.avo.akirichards``
     explicit : :obj:`bool`, optional
         Create a chained linear operator (``False``, preferred for large data)
         or a ``MatrixMult`` linear operator with dense matrix
@@ -223,8 +225,8 @@ def PrestackWaveletModelling(
     Parameters
     ----------
     m : :obj:`np.ndarray`
-        elastic parameter profles of size :math:`[n_{t0} \times N]`
-        where :math:`N=3/2`. Note that the ``dtype`` of this
+        elastic parameter profles of size :math:`[n_{t_0} \times N]`
+        where :math:`N=3,\,2`. Note that the ``dtype`` of this
         variable will define that of the operator
     theta : :obj:`int`
         Incident angles in degrees. Must have same ``dtype`` of ``m`` (or
@@ -234,11 +236,13 @@ def PrestackWaveletModelling(
     wavc : :obj:`int`, optional
         Index of the center of the wavelet
     vsvp : :obj:`np.ndarray` or :obj:`float`, optional
-        VS/VP ratio
+        :math:`V_S/V_P` ratio
     linearization : :obj:`str`, optional
-        choice of linearization, ``akirich``: Aki-Richards,
-        ``fatti``: Fatti, ``ps``: PS, or any function on the form of
-        ``pylops.avo.avo.akirichards``
+        * "akirich": Aki-Richards
+
+        * "fatti": Fatti
+
+        * "PS": PS, or any function on the form of ``pylops.avo.avo.akirichards``
 
     Returns
     -------
@@ -256,7 +260,7 @@ def PrestackWaveletModelling(
     of constructing seismic reflectivities using three (or two)
     profiles of elastic parameters in time (or depth)
     domain arranged in an input vector :math:`\mathbf{m}`
-    of size :math:`nt0 \times N`:
+    of size :math:`n_{t_0} \times N`:
 
     .. math::
         d(t, \theta) =  \sum_{i=1}^N G_i(t, \theta) m_i(t) * w(t)
@@ -355,19 +359,21 @@ def PrestackInversion(
     ----------
     data : :obj:`np.ndarray`
         Band-limited seismic post-stack data of size
-        :math:`[(n_{lins} \times) n_{t0} \times n_{\theta} (\times n_x \times n_y)]`
+        :math:`[(n_\text{lins} \times) \, n_{t_0} \times n_{\theta} \, (\times n_x \times n_y)]`
     theta : :obj:`np.ndarray`
         Incident angles in degrees
     wav : :obj:`np.ndarray`
         Wavelet in time domain (must had odd number of elements
         and centered to zero)
     m0 : :obj:`np.ndarray`, optional
-        Background model of size :math:`[n_{t0} \times n_{m}
-        (\times n_x \times n_y)]`
+        Background model of size :math:`[n_{t_0} \times n_{m}
+        \,(\times n_x \times n_y)]`
     linearization : :obj:`str` or :obj:`list`, optional
-        choice of linearization, ``akirich``: Aki-Richards, ``fatti``: Fatti
-        ``PS``: PS or a combination of them (required only when ``m0``
-        is ``None``).
+        * "akirich": Aki-Richards
+
+        * "fatti": Fatti
+
+        * "PS": PS or a combination of them (required only when ``m0`` is ``None``).
     explicit : :obj:`bool`, optional
         Create a chained linear operator (``False``, preferred for large data)
         or a ``MatrixMult`` linear operator with dense matrix
@@ -392,7 +398,7 @@ def PrestackInversion(
     kind : :obj:`str`, optional
         Derivative kind (``forward`` or ``centered``).
     vsvp : :obj:`float` or :obj:`np.ndarray`
-        VS/VP ratio (constant or time/depth variant)
+        :math:`V_S/V_P` ratio (constant or time/depth variant)
     **kwargs_solver
         Arbitrary keyword arguments for :py:func:`scipy.linalg.lstsq`
         solver (if ``explicit=True`` and  ``epsR=None``)
@@ -402,11 +408,11 @@ def PrestackInversion(
     Returns
     -------
     minv : :obj:`np.ndarray`
-        Inverted model of size :math:`[n_{t0} \times n_{m}
-        (\times n_x \times n_y)]`
+        Inverted model of size :math:`[n_{t_0} \times n_{m}
+        \,(\times n_x \times n_y)]`
     datar : :obj:`np.ndarray`
         Residual data (i.e., data - background data) of
-        size :math:`[n_{t0} \times n_{\theta} (\times n_x \times n_y)]`
+        size :math:`[n_{t_0} \times n_{\theta} \,(\times n_x \times n_y)]`
 
     Notes
     -----

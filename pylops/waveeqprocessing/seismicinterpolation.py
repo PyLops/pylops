@@ -55,7 +55,7 @@ def SeismicInterpolation(
     ----------
     data : :obj:`np.ndarray`
         Irregularly sampled seismic data of size
-        :math:`[n_{r_y} (\times n_{r_x} \times n_t)]`
+        :math:`[n_{r_y} \,(\times n_{r_x} \times n_t)]`
     nrec : :obj:`int` or :obj:`tuple`
         Number of elements in the regularly sampled (reconstructed) spatial
         array, :math:`n_{R_y}` for 2-dimensional data and
@@ -134,7 +134,7 @@ def SeismicInterpolation(
     Returns
     -------
     recdata : :obj:`np.ndarray`
-        Reconstructed data of size :math:`[n_{R_y} (\times n_{R_x} \times n_t)]`
+        Reconstructed data of size :math:`[n_{R_y}\,(\times n_{R_x} \times n_t)]`
     recprec : :obj:`np.ndarray`
         Reconstructed data in the sparse or preconditioned domain in case of
         ``kind='fk'``, ``kind='radon-linear'``, ``kind='radon-parabolic'``,
@@ -157,11 +157,11 @@ def SeismicInterpolation(
         \mathbf{y} = \mathbf{R} \mathbf{x}
 
     where a restriction or interpolation operator is applied along the spatial
-    direction(s). Here :math:`\mathbf{y} = [\mathbf{y}_{R1}^T, \mathbf{y}_{R2}^T,...,
+    direction(s). Here :math:`\mathbf{y} = [\mathbf{y}_{R1}^T, \mathbf{y}_{R2}^T,\ldots,
     \mathbf{y}_{RN^T}]^T` where each vector :math:`\mathbf{y}_{Ri}`
     contains all time samples recorded in the seismic data at the specific
     receiver :math:`R_i`. Similarly, :math:`\mathbf{x} = [\mathbf{x}_{r1}^T,
-    \mathbf{x}_{r2}^T,..., \mathbf{x}_{rM}^T]`, contains all traces at the
+    \mathbf{x}_{r2}^T,\ldots, \mathbf{x}_{rM}^T]`, contains all traces at the
     regularly and finely sampled receiver locations :math:`r_i`.
 
     Several alternative approaches can be taken to solve such a problem. They

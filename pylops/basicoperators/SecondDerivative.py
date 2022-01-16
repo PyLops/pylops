@@ -7,7 +7,8 @@ from pylops.utils.backend import get_array_module
 class SecondDerivative(LinearOperator):
     r"""Second derivative.
 
-    Apply second-order second derivative.
+    Apply a second derivative using a three-point stencil finite-difference
+    approximation.
 
     Parameters
     ----------
@@ -19,7 +20,7 @@ class SecondDerivative(LinearOperator):
     dir : :obj:`int`, optional
         Direction along which the derivative is applied.
     sampling : :obj:`float`, optional
-        Sampling step ``dx``.
+        Sampling step :math:`\Delta x`.
     edge : :obj:`bool`, optional
         Use reduced order derivative at edges (``True``) or
         ignore them (``False``)
@@ -43,7 +44,7 @@ class SecondDerivative(LinearOperator):
     first derivative is:
 
     .. math::
-        y[i] = (x[i+1] - 2x[i] + x[i-1]) / dx^2
+        y[i] = (x[i+1] - 2x[i] + x[i-1]) / \Delta x^2
 
     """
 

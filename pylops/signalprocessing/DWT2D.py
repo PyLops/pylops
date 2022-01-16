@@ -47,7 +47,7 @@ class DWT2D(LinearOperator):
         Operator shape
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
-        (True) or not (False)
+        (``True``) or not (``False``)
 
     Raises
     ------
