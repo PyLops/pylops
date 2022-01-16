@@ -7,11 +7,8 @@ Alongside with its *Linear Operators* and *Solvers*, PyLops contains also a numb
 performing universal tasks that are used by several operators or simply within one or more :ref:`tutorials` for
 the preparation of input data and subsequent visualization of results.
 
-Shared
-------
-
 Dot-test
-~~~~~~~~
+------
 
 .. currentmodule:: pylops.utils
 
@@ -21,7 +18,7 @@ Dot-test
     dottest
 
 Estimators
-~~~~~~~~
+------
 
 .. currentmodule:: pylops.utils
 
@@ -33,7 +30,7 @@ Estimators
     trace_nahutchpp
 
 Scalability test
-~~~~~~~~~~~~~~~~
+------
 
 .. currentmodule:: pylops.utils
 
@@ -42,11 +39,8 @@ Scalability test
 
     scalability_test
 
-Others
-------
-
 Synthetics
-~~~~~~~~~~
+------
 
 .. currentmodule:: pylops.utils
 
@@ -70,7 +64,7 @@ Synthetics
 
 
 Signal-processing
-~~~~~~~~~~~~~~~~~
+------
 
 .. currentmodule:: pylops.utils
 
@@ -83,7 +77,7 @@ Signal-processing
 
 
 Tapers
-~~~~~~
+------
 
 .. currentmodule:: pylops.utils
 
@@ -95,7 +89,7 @@ Tapers
 
 
 Wavelets
-~~~~~~~~
+------
 
 .. currentmodule:: pylops.utils
 
@@ -106,8 +100,8 @@ Wavelets
     wavelets.gaussian
 
 
-Geophysicical Reservoir characterization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Geophysical Reservoir characterization
+------
 
 .. currentmodule:: pylops.avo
 
