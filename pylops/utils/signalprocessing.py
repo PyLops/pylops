@@ -129,7 +129,6 @@ def slope_estimate(d, dz, dx, smooth=20):
         anisotropy in digitized images", Journal ASCI Imaging Workshop. 1995.
 
     """
-    nz, nx = d.shape
     gz, gx = np.gradient(d, dz, dx)
     gzz, gzx, gxx = gz * gz, gz * gx, gx * gx
 
