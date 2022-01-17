@@ -223,6 +223,19 @@ If interested to use ``pywt``, you can manually install it:
 
 or pip equivalent.
 
+sympy
+~~~~~
+This library is used to implement the ``describe`` method, which transforms
+PyLops operators into their mathematical expression.
+
+If interested to use ``sympy``, you can manually install it:
+
+.. code-block:: bash
+
+   >> conda install sympy
+
+or pip equivalent.
+
 
 .. note:: If you are a developer, all the above optional dependencies can also
    be installed automatically by cloning the repository and installing
