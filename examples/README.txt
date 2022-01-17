@@ -1,6 +1,6 @@
 .. _general_examples:
 
-PyLops gallery
---------------
+Gallery
+-------
 
-Below is a gallery of examples
+Below is a gallery of examples which use PyLops operators and utilities.
