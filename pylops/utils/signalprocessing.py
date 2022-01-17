@@ -139,17 +139,11 @@ def slope_estimate(d, dz, dx, smooth=20):
         gzx = gaussian_filter(gzx, sigma=smooth)
         gxx = gaussian_filter(gxx, sigma=smooth)
 
-    slopes = np.zeros((nz, nx))
-    linearity = np.zeros((nz, nx))
-    for iz in range(nz):
-        for ix in range(nx):
-            lcommon1 = (0.5 * (gzz[iz, ix] + gxx[iz, ix]),)
-            lcommon2 = 0.5 * np.sqrt(
-                (gzz[iz, ix] - gxx[iz, ix]) ** 2 + 4 * gzx[iz, ix] ** 2
-            )
-            l1 = lcommon1 + lcommon2
-            l2 = lcommon1 - lcommon2
-            slopes[iz, ix] = np.arctan((l1 - gzz[iz, ix]) / gzx[iz, ix])
-            linearity[iz, ix] = 1 - l2 / l1
+    lcommon1 = 0.5 * (gzz + gxx)
+    lcommon2 = 0.5 * np.sqrt((gzz - gxx) ** 2 + 4 * gzx ** 2)
+    l1 = lcommon1 + lcommon2
+    l2 = lcommon1 - lcommon2
+    slopes = np.arctan((l1 - gzz) / gzx)
     slopes[np.isnan(slopes)] = 0.0
+    linearity = 1 - l2 / l1
     return slopes, linearity
