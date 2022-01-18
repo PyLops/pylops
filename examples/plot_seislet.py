@@ -14,6 +14,7 @@ recordings.
 """
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import pylops
@@ -31,27 +32,40 @@ inputfile = "../testdata/sigmoid.npz"
 d = np.load(inputfile)
 d = d["sigmoid"]
 nx, nt = d.shape
-dx, dt = 8, 0.004
+dx, dt = 0.008, 0.004
 x, t = np.arange(nx) * dx, np.arange(nt) * dt
 
 # slope estimation
-slope = -pylops.utils.signalprocessing.slope_estimate(d.T, dt, dx, smooth=6)[0]
+slope, _ = pylops.utils.signalprocessing.slope_estimate(d.T, dt, dx, smooth=2.5)
+slope *= -1  # t-axis points down
+# clip slopes above 80°
+pmax = np.arctan(80 * np.pi / 180)
+slope[slope > pmax] = pmax
+slope[slope < -pmax] = -pmax
 
+############################################
 clip = 0.5 * np.max(np.abs(d))
-clip_s = np.max(np.abs(slope))
-opts = dict(aspect="auto", extent=(x[0], x[-1], t[-1], t[0]))
+clip_s = min(pmax, np.max(np.abs(slope)))
+opts = dict(aspect=2, extent=(x[0], x[-1], t[-1], t[0]))
 
-fig, axs = plt.subplots(1, 2, figsize=(10, 4), sharey=True, sharex=True)
+fig, axs = plt.subplots(1, 2, figsize=(14, 7), sharey=True, sharex=True)
 axs[0].imshow(d.T, cmap="gray", vmin=-clip, vmax=clip, **opts)
-axs[0].set(xlabel="Position [m]", ylabel="Time [s]", title="Data")
-axs[0].axis("tight")
-im = axs[1].imshow(slope, cmap="jet", vmin=-clip_s, vmax=clip_s, **opts)
-axs[1].set(xlabel="Position [m]", title="Slopes")
-axs[1].axis("tight")
-cax = make_axes_locatable(axs[1]).append_axes("right", size="5%", pad=0.1)
-cb = fig.colorbar(im, cax=cax, orientation="vertical")
-cb.set_label("[m/s]")
+axs[0].set(xlabel="Position [km]", ylabel="Time [s]", title="Data")
+
+im = axs[1].imshow(slope, cmap="RdBu_r", vmin=-clip_s, vmax=clip_s, **opts)
+axs[1].set(xlabel="Position [km]", title="Slopes")
 fig.tight_layout()
+
+pos = axs[1].get_position()
+cbpos = [
+    pos.x0 + 0.1 * pos.width,
+    pos.y0 + 0.9 * pos.height,
+    0.8 * pos.width,
+    0.05 * pos.height,
+]
+cax = fig.add_axes(cbpos)
+cb = fig.colorbar(im, cax=cax, orientation="horizontal")
+cb.set_label("[s/km]")
 
 ############################################
 # Next the Seislet transform is computed.
@@ -64,41 +78,44 @@ nlevels_max = int(np.log2(nx))
 levels_size = np.flip(np.array([2 ** i for i in range(nlevels_max)]))
 levels_cum = np.cumsum(levels_size)
 
-plt.figure(figsize=(14, 5))
-plt.imshow(
-    seis.T, cmap="gray", vmin=-clip, vmax=clip, extent=(1, seis.shape[0], t[-1], t[0])
+############################################
+fig, ax = plt.subplots(figsize=(14, 6))
+im = ax.imshow(
+    seis.T,
+    cmap="gray",
+    vmin=-clip,
+    vmax=clip,
+    aspect="auto",
+    interpolation="none",
+    extent=(1, seis.shape[0], t[-1], t[0]),
 )
+ax.xaxis.set_major_locator(MaxNLocator(nbins=20, integer=True))
 for level in levels_cum:
-    plt.axvline(level + 0.5, color="w")
-plt.xlabel("Scale")
-plt.ylabel("Time [s]")
-plt.title("Seislet transform")
-plt.colorbar()
-plt.axis("tight")
-plt.tight_layout()
+    ax.axvline(level + 0.5, color="w")
+ax.set(xlabel="Scale", ylabel="Time [s]", title="Seislet transform")
+cax = make_axes_locatable(ax).append_axes("right", size="2%", pad=0.1)
+cb = fig.colorbar(im, cax=cax, orientation="vertical")
+cb.formatter.set_powerlimits((0, 0))
+fig.tight_layout()
 
 ############################################
 # We may also stretch the finer scales to be the width of the image
 fig, axs = plt.subplots(2, nlevels_max // 2, figsize=(14, 7), sharex=True, sharey=True)
-axs[0, 0].imshow(
-    seis[: levels_cum[0], :].T, cmap="gray", interpolation="nearest", **opts
-)
-axs[0, 0].set(ylabel="Time [s]", title="Scale 1")
-for i, ax in enumerate(axs.ravel()[1:-1]):
-    ax.imshow(
-        seis[levels_cum[i] : levels_cum[i + 1], :].T,
-        cmap="gray",
-        interpolation="nearest",
-        **opts,
-    )
-    ax.set(title=f"Scale {i+2}")
-    if i + 2 > nlevels_max // 2:
-        ax.set(xlabel="Position [m]")
-axs[1, 0].set(ylabel="Time [s]")
+for i, ax in enumerate(axs.ravel()[:-1]):
+    curdata = seis[levels_cum[i] : levels_cum[i + 1], :].T
+    vmax = np.max(np.abs(curdata))
+    ax.imshow(curdata, vmin=-vmax, vmax=vmax, cmap="gray", interpolation="none", **opts)
+    ax.set(title=f"Scale {i+1}")
+    if i + 1 > nlevels_max // 2:
+        ax.set(xlabel="Position [km]")
+curdata = seis[levels_cum[-1] :, :].T
+vmax = np.max(np.abs(curdata))
 axs[-1, -1].imshow(
-    seis[levels_cum[-1] :, :].T, cmap="gray", interpolation="nearest", **opts
+    curdata, vmin=-vmax, vmax=vmax, cmap="gray", interpolation="none", **opts
 )
-axs[-1, -1].set(xlabel="Position [m]", title=f"Scale {nlevels_max}")
+axs[0, 0].set(ylabel="Time [s]")
+axs[1, 0].set(ylabel="Time [s]")
+axs[-1, -1].set(xlabel="Position [km]", title=f"Scale {nlevels_max}")
 fig.tight_layout()
 
 ############################################
@@ -109,41 +126,44 @@ Wop = pylops.signalprocessing.Seislet(np.zeros_like(slope.T), sampling=(dx, dt))
 dwt = Wop * d.ravel()
 dwt = dwt.reshape(nx, nt)
 
-plt.figure(figsize=(14, 5))
-plt.imshow(
-    dwt.T, cmap="gray", vmin=-clip, vmax=clip, extent=(1, dwt.shape[0], t[-1], t[0])
+############################################
+fig, ax = plt.subplots(figsize=(14, 6))
+im = ax.imshow(
+    dwt.T,
+    cmap="gray",
+    vmin=-clip,
+    vmax=clip,
+    aspect="auto",
+    interpolation="none",
+    extent=(1, dwt.shape[0], t[-1], t[0]),
 )
+ax.xaxis.set_major_locator(MaxNLocator(nbins=20, integer=True))
 for level in levels_cum:
-    plt.axvline(level + 0.5, color="w")
-plt.xlabel("Scale")
-plt.ylabel("Time [s]")
-plt.title("Wavelet transform")
-plt.colorbar()
-plt.axis("tight")
-plt.tight_layout()
+    ax.axvline(level + 0.5, color="w")
+ax.set(xlabel="Scale", ylabel="Time [s]", title="Wavelet transform")
+cax = make_axes_locatable(ax).append_axes("right", size="2%", pad=0.1)
+cb = fig.colorbar(im, cax=cax, orientation="vertical")
+cb.formatter.set_powerlimits((0, 0))
+fig.tight_layout()
 
 ############################################
 # Again, we may decompress the finer scales
 fig, axs = plt.subplots(2, nlevels_max // 2, figsize=(14, 7), sharex=True, sharey=True)
-axs[0, 0].imshow(
-    dwt[: levels_cum[0], :].T, cmap="gray", interpolation="nearest", **opts
-)
-axs[0, 0].set(ylabel="Time [s]", title="Scale 1")
-for i, ax in enumerate(axs.ravel()[1:-1]):
-    ax.imshow(
-        dwt[levels_cum[i] : levels_cum[i + 1], :].T,
-        cmap="gray",
-        interpolation="nearest",
-        **opts,
-    )
-    ax.set(title=f"Scale {i+2}")
-    if i + 2 > nlevels_max // 2:
-        ax.set(xlabel="Position [m]")
-axs[1, 0].set(ylabel="Time [s]")
+for i, ax in enumerate(axs.ravel()[:-1]):
+    curdata = dwt[levels_cum[i] : levels_cum[i + 1], :].T
+    vmax = np.max(np.abs(curdata))
+    ax.imshow(curdata, vmin=-vmax, vmax=vmax, cmap="gray", interpolation="none", **opts)
+    ax.set(title=f"Scale {i+1}")
+    if i + 1 > nlevels_max // 2:
+        ax.set(xlabel="Position [km]")
+curdata = dwt[levels_cum[-1] :, :].T
+vmax = np.max(np.abs(curdata))
 axs[-1, -1].imshow(
-    dwt[levels_cum[-1] :, :].T, cmap="gray", interpolation="nearest", **opts
+    curdata, vmin=-vmax, vmax=vmax, cmap="gray", interpolation="none", **opts
 )
-axs[-1, -1].set(xlabel="Position [m]", title=f"Scale {nlevels_max}")
+axs[0, 0].set(ylabel="Time [s]")
+axs[1, 0].set(ylabel="Time [s]")
+axs[-1, -1].set(xlabel="Position [km]", title=f"Scale {nlevels_max}")
 fig.tight_layout()
 
 ############################################
@@ -158,6 +178,7 @@ dwt_strong_idx = np.argsort(-np.abs(dwt.ravel()))
 seis_strong = np.abs(seis.ravel())[seis_strong_idx]
 dwt_strong = np.abs(dwt.ravel())[dwt_strong_idx]
 
+############################################
 fig, ax = plt.subplots()
 ax.plot(range(1, len(seis_strong) + 1), seis_strong / seis_strong[0], label="Seislet")
 ax.plot(
@@ -168,7 +189,7 @@ ax.axvline(np.rint(len(seis_strong) * perc), color="k", label=f"{100*perc:.0f}%"
 ax.legend()
 fig.tight_layout()
 
-
+############################################
 seis1 = np.zeros_like(seis.ravel())
 seis_strong_idx = seis_strong_idx[: int(np.rint(len(seis_strong) * perc))]
 seis1[seis_strong_idx] = seis.ravel()[seis_strong_idx]
@@ -181,6 +202,7 @@ dwt1[dwt_strong_idx] = dwt.ravel()[dwt_strong_idx]
 d_dwt = Wop.inverse(dwt1)
 d_dwt = d_dwt.reshape(nx, nt)
 
+############################################
 opts.update(dict(cmap="gray", vmin=-clip, vmax=clip))
 fig, axs = plt.subplots(2, 3, figsize=(14, 7), sharex=True, sharey=True)
 axs[0, 0].imshow(d.T, **opts)
@@ -196,7 +218,7 @@ axs[1, 1].set(title=f"Rec. from Wavelet ({100*perc:.0f}% of coeffs.)")
 axs[1, 2].imshow((d - d_dwt).T, **opts)
 axs[1, 2].set(title="Error from Wavelet Rec.")
 for i in range(3):
-    axs[1, i].set(xlabel="Position [m]")
+    axs[1, i].set(xlabel="Position [km]")
 plt.tight_layout()
 
 ############################################
