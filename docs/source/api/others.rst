@@ -17,6 +17,16 @@ Dot-test
 
     dottest
 
+Describe
+~~~~~~~~
+
+.. currentmodule:: pylops.utils.describe
+
+.. autosummary::
+   :toctree: generated/
+
+    describe
+
 Estimators
 ------
 
