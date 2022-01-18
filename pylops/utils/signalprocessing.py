@@ -76,7 +76,7 @@ def nonstationary_convmtx(H, n, hc=0, pad=(0, 0)):
     return C
 
 
-def slope_estimate(d, dz, dx, smooth=5, eps=0):
+def slope_estimate(d, dz=1.0, dx=1.0, smooth=5, eps=0):
     r"""Local slope estimation
 
     Local slopes are estimated using the *Structure Tensor* algorithm [1]_.
