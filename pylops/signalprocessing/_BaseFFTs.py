@@ -102,7 +102,7 @@ class _BaseFFT(LinearOperator):
             nfft = nffts[0]
         self.nfft = nfft
 
-        # Check if the user provided nnft smaller than n (size of signal in
+        # Check if the user provided nfft smaller than n (size of signal in
         # original domain). If so, raise a warning as this is unlikely a
         # wanted behavoir (since FFT routines cut some of the input signal
         # before applying fft, which is lost forever) and set a flag such that
@@ -247,7 +247,7 @@ class _BaseFFTND(LinearOperator):
                 )
             )
 
-        # Check if the user provided nnft smaller than n. See _BaseFFT for
+        # Check if the user provided nfft smaller than n. See _BaseFFT for
         # details
         nfftshort = [
             nfft < self.dims[direction]
