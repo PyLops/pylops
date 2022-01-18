@@ -93,8 +93,14 @@ class _FFT2D_numpy(_BaseFFTND):
             y = np.fft.ifft2(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
-        y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
-        y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
+        if self.nffts[0] > self.dims[self.dirs[0]]:
+            y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
+        if self.nffts[1] > self.dims[self.dirs[1]]:
+            y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
+        if (self.nffts[0] < self.dims[self.dirs[0]]) or (
+            self.nffts[1] < self.dims[self.dirs[1]]
+        ):
+            y = np.pad(y, self.ifftpad)
         if not self.clinear:
             y = np.real(y)
         y = y.astype(self.rdtype)

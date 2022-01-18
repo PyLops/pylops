@@ -84,8 +84,16 @@ class _FFTND_numpy(_BaseFFTND):
             y = np.fft.ifftn(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
-        for direction in self.dirs:
-            y = np.take(y, range(self.dims[direction]), axis=direction)
+        for direction, nfft in zip(self.dirs, self.nffts):
+            if nfft > self.dims[direction]:
+                y = np.take(y, range(self.dims[direction]), axis=direction)
+        if any(
+            [
+                nfft < self.dims[direction]
+                for direction, nfft in zip(self.dirs, self.nffts)
+            ]
+        ):
+            y = np.pad(y, self.ifftpad)
         if not self.clinear:
             y = np.real(y)
         y = y.astype(self.rdtype)
@@ -169,8 +177,16 @@ class _FFTND_scipy(_BaseFFTND):
             y = scipy.fft.ifftn(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
-        for direction in self.dirs:
-            y = np.take(y, range(self.dims[direction]), axis=direction)
+        for direction, nfft in zip(self.dirs, self.nffts):
+            if nfft > self.dims[direction]:
+                y = np.take(y, range(self.dims[direction]), axis=direction)
+        if any(
+            [
+                nfft < self.dims[direction]
+                for direction, nfft in zip(self.dirs, self.nffts)
+            ]
+        ):
+            y = np.pad(y, self.ifftpad)
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before.any():

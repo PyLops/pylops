@@ -98,8 +98,12 @@ class _FFT_numpy(_BaseFFT):
             y = np.fft.ifft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
-        if self.nfft != self.dims[self.dir]:
+
+        if self.nfft > self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
+        elif self.nfft < self.dims[self.dir]:
+            y = np.pad(y, self.ifftpad)
+
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before:
@@ -185,8 +189,12 @@ class _FFT_scipy(_BaseFFT):
             y = scipy.fft.ifft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
-        if self.nfft != self.dims[self.dir]:
+
+        if self.nfft > self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
+        elif self.nfft < self.dims[self.dir]:
+            y = np.pad(y, self.ifftpad)
+
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before:
@@ -298,9 +306,11 @@ class _FFT_fftw(_BaseFFT):
             x = np.real(x)
         if self.dopad:
             x = np.pad(x, self.pad, "constant", constant_values=0)
+        elif self.doifftpad:
+            x = np.take(x, np.arange(0, self.nfft), axis=self.dir)
 
         # self.fftplan() always uses byte-alligned self.x as input array and
-        # returns self.y as output array. As such, self.y must be copied so as
+        # returns self.y as output array. As such, self.x must be copied so as
         # not to be overwritten on a subsequent call to _matvec.
         np.copyto(self.x, x)
         y = self.fftplan().copy()
@@ -341,8 +351,11 @@ class _FFT_fftw(_BaseFFT):
         elif self.norm is _FFTNorms.NONE:
             y *= self._scale
 
-        if self.nfft != self.dims[self.dir]:
+        if self.nfft > self.dims[self.dir]:
             y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
+        elif self.nfft < self.dims[self.dir]:
+            y = np.pad(y, self.ifftpad)
+
         if self.ifftshift_before:
             y = np.fft.fftshift(y, axes=self.dir)
         if not self.clinear:

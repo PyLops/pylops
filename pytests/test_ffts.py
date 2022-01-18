@@ -80,6 +80,16 @@ par5 = {
     "ifftshift_before": True,
     "dtype": np.float32,
 }  # nfft>nt, real input and ifftshift_before, numpy engine
+par6 = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 16,
+    "real": False,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+}  # nfft<nt, complex input, numpy engine
 par1w = {
     "nt": 41,
     "nx": 31,
@@ -120,6 +130,16 @@ par4w = {
     "ifftshift_before": False,
     "dtype": np.float32,
 }  # nfft>nt, real input, fftw engine
+par5w = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 16,
+    "real": False,
+    "engine": "fftw",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+}  # nfft<nt, complex input, fftw engine
 
 np.random.seed(5)
 
@@ -785,7 +805,20 @@ def test_FFTND_small_complex(par):
 
 
 @pytest.mark.parametrize(
-    "par", [(par1), (par2), (par3), (par4), (par5), (par1w), (par2w), (par3w), (par4w)]
+    "par",
+    [
+        (par1),
+        (par2),
+        (par3),
+        (par4),
+        (par5),
+        (par6),
+        (par1w),
+        (par2w),
+        (par3w),
+        (par4w),
+        (par5w),
+    ],
 )
 def test_FFT_1dsignal(par):
     """Dot-test and inversion for FFT operator for 1d signal"""
@@ -819,8 +852,10 @@ def test_FFT_1dsignal(par):
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
     xinv = lsqr(FFTop, y, damp=1e-10, iter_lim=10, show=0)[0]
 
-    assert_array_almost_equal(x, xadj, decimal=decimal)
-    assert_array_almost_equal(x, xinv, decimal=decimal)
+    # check all signal if nt>nfft and only up to nfft if nfft<nt
+    imax = par["nt"] if par["nfft"] is None else min([par["nt"], par["nfft"]])
+    assert_array_almost_equal(x[:imax], xadj[:imax], decimal=decimal)
+    assert_array_almost_equal(x[:imax], xinv[:imax], decimal=decimal)
 
     if not par["real"]:
         FFTop_fftshift = FFT(
@@ -840,12 +875,25 @@ def test_FFT_1dsignal(par):
 
         xadj = FFTop_fftshift.H * y_fftshift  # adjoint is same as inverse for fft
         xinv = lsqr(FFTop_fftshift, y_fftshift, damp=1e-10, iter_lim=10, show=0)[0]
-        assert_array_almost_equal(x, xadj, decimal=decimal)
-        assert_array_almost_equal(x, xinv, decimal=decimal)
+        assert_array_almost_equal(x[:imax], xadj[:imax], decimal=decimal)
+        assert_array_almost_equal(x[:imax], xinv[:imax], decimal=decimal)
 
 
 @pytest.mark.parametrize(
-    "par", [(par1), (par2), (par3), (par4), (par5), (par1w), (par2w), (par3w), (par4w)]
+    "par",
+    [
+        (par1),
+        (par2),
+        (par3),
+        (par4),
+        (par5),
+        (par6),
+        (par1w),
+        (par2w),
+        (par3w),
+        (par4w),
+        (par5w),
+    ],
 )
 def test_FFT_2dsignal(par):
     """Dot-test and inversion for fft operator for 2d signal
@@ -887,8 +935,10 @@ def test_FFT_2dsignal(par):
     dadj = np.real(dadj.reshape(nt, nx))
     dinv = np.real(dinv.reshape(nt, nx))
 
-    assert_array_almost_equal(d, dadj, decimal=decimal)
-    assert_array_almost_equal(d, dinv, decimal=decimal)
+    # check all signal if nt>nfft and only up to nfft if nfft<nt
+    imax = par["nt"] if par["nfft"] is None else min([par["nt"], par["nfft"]])
+    assert_array_almost_equal(d[:imax], dadj[:imax], decimal=decimal)
+    assert_array_almost_equal(d[:imax], dinv[:imax], decimal=decimal)
 
     if not par["real"]:
         FFTop_fftshift = FFT(
@@ -913,8 +963,8 @@ def test_FFT_2dsignal(par):
         dadj = np.real(dadj.reshape(nt, nx))
         dinv = np.real(dinv.reshape(nt, nx))
 
-        assert_array_almost_equal(d, dadj, decimal=decimal)
-        assert_array_almost_equal(d, dinv, decimal=decimal)
+        assert_array_almost_equal(d[:imax], dadj[:imax], decimal=decimal)
+        assert_array_almost_equal(d[:imax], dinv[:imax], decimal=decimal)
 
     # 2nd dimension
     nfft = par["nx"] if par["nfft"] is None else par["nfft"]
@@ -943,8 +993,10 @@ def test_FFT_2dsignal(par):
     dadj = np.real(dadj.reshape(nt, nx))
     dinv = np.real(dinv.reshape(nt, nx))
 
-    assert_array_almost_equal(d, dadj, decimal=decimal)
-    assert_array_almost_equal(d, dinv, decimal=decimal)
+    # check all signal if nx>nfft and only up to nfft if nfft<nx
+    imax = par["nx"] if par["nfft"] is None else min([par["nx"], par["nfft"]])
+    assert_array_almost_equal(d[:, :imax], dadj[:, :imax], decimal=decimal)
+    assert_array_almost_equal(d[:, :imax], dinv[:, :imax], decimal=decimal)
 
     if not par["real"]:
         FFTop_fftshift = FFT(
@@ -969,12 +1021,25 @@ def test_FFT_2dsignal(par):
         dadj = np.real(dadj.reshape(nt, nx))
         dinv = np.real(dinv.reshape(nt, nx))
 
-        assert_array_almost_equal(d, dadj, decimal=decimal)
-        assert_array_almost_equal(d, dinv, decimal=decimal)
+        assert_array_almost_equal(d[:, :imax], dadj[:, :imax], decimal=decimal)
+        assert_array_almost_equal(d[:, :imax], dinv[:, :imax], decimal=decimal)
 
 
 @pytest.mark.parametrize(
-    "par", [(par1), (par2), (par3), (par4), (par5), (par1w), (par2w), (par3w), (par4w)]
+    "par",
+    [
+        (par1),
+        (par2),
+        (par3),
+        (par4),
+        (par5),
+        (par6),
+        (par1w),
+        (par2w),
+        (par3w),
+        (par4w),
+        (par5w),
+    ],
 )
 def test_FFT_3dsignal(par):
     """Dot-test and inversion for fft operator for 3d signal
@@ -1025,8 +1090,10 @@ def test_FFT_3dsignal(par):
     dadj = np.real(dadj.reshape(nt, nx, ny))
     dinv = np.real(dinv.reshape(nt, nx, ny))
 
-    assert_array_almost_equal(d, dadj, decimal=decimal)
-    assert_array_almost_equal(d, dinv, decimal=decimal)
+    # check all signal if nt>nfft and only up to nfft if nfft<nt
+    imax = nt if nfft is None else min([nt, nfft])
+    assert_array_almost_equal(d[:imax], dadj[:imax], decimal=decimal)
+    assert_array_almost_equal(d[:imax], dinv[:imax], decimal=decimal)
 
     # 2nd dimension
     nfft = par["nx"] if par["nfft"] is None else par["nfft"]
@@ -1063,8 +1130,11 @@ def test_FFT_3dsignal(par):
     dadj = np.real(dadj.reshape(nt, nx, ny))
     dinv = np.real(dinv.reshape(nt, nx, ny))
 
-    assert_array_almost_equal(d, dadj, decimal=decimal)
-    assert_array_almost_equal(d, dinv, decimal=decimal)
+    # check all signal if nx>nfft and only up to nfft if nfft<nx
+    imax = nx if nfft is None else min([nx, nfft])
+    print(d.shape, dadj.shape, nx, nfft)
+    assert_array_almost_equal(d[:, :imax], dadj[:, :imax], decimal=decimal)
+    assert_array_almost_equal(d[:, :imax], dinv[:, :imax], decimal=decimal)
 
     # 3rd dimension
     nfft = par["ny"] if par["nfft"] is None else par["nfft"]
@@ -1101,8 +1171,10 @@ def test_FFT_3dsignal(par):
     dadj = np.real(dadj.reshape(nt, nx, ny))
     dinv = np.real(dinv.reshape(nt, nx, ny))
 
-    assert_array_almost_equal(d, dadj, decimal=decimal)
-    assert_array_almost_equal(d, dinv, decimal=decimal)
+    # check all signal if ny>nfft and only up to nfft if nfft<ny
+    imax = ny if nfft is None else min([ny, nfft])
+    assert_array_almost_equal(d[..., :imax], dadj[..., :imax], decimal=decimal)
+    assert_array_almost_equal(d[..., :imax], dinv[..., :imax], decimal=decimal)
 
     if not par["real"]:
         FFTop_fftshift = FFT(
@@ -1127,11 +1199,11 @@ def test_FFT_3dsignal(par):
         dadj = np.real(dadj.reshape(nt, nx, ny))
         dinv = np.real(dinv.reshape(nt, nx, ny))
 
-        assert_array_almost_equal(d, dadj, decimal=decimal)
-        assert_array_almost_equal(d, dinv, decimal=decimal)
+        assert_array_almost_equal(d[..., :imax], dadj[..., :imax], decimal=decimal)
+        assert_array_almost_equal(d[..., :imax], dinv[..., :imax], decimal=decimal)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par6)])
 def test_FFT2D(par):
     """Dot-test and inversion for FFT2D operator for 2d signal"""
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8
@@ -1184,8 +1256,11 @@ def test_FFT2D(par):
     dadj = np.real(dadj).reshape(par["nt"], par["nx"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"])
 
-    assert_array_almost_equal(d, dadj, decimal=decimal)
-    assert_array_almost_equal(d, dinv, decimal=decimal)
+    # check all signal if nt>nfft and only up to nfft if nfft<nt
+    imax1 = par["nt"] if nfft1 is None else min([par["nt"], nfft1])
+    imax2 = par["nx"] if nfft2 is None else min([par["nx"], nfft2])
+    assert_array_almost_equal(d[:imax1, :imax2], dadj[:imax1, :imax2], decimal=decimal)
+    assert_array_almost_equal(d[:imax1, :imax2], dinv[:imax1, :imax2], decimal=decimal)
 
     # first fft on dir 0
     FFTop = FFT2D(
@@ -1227,11 +1302,12 @@ def test_FFT2D(par):
     dadj = np.real(dadj).reshape(par["nt"], par["nx"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"])
 
-    assert_array_almost_equal(d, dadj, decimal=decimal)
-    assert_array_almost_equal(d, dinv, decimal=decimal)
+    # check all signal if nt>nfft and only up to nfft if nfft<nt
+    assert_array_almost_equal(d[:imax1, :imax2], dadj[:imax1, :imax2], decimal=decimal)
+    assert_array_almost_equal(d[:imax1, :imax2], dinv[:imax1, :imax2], decimal=decimal)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par6)])
 def test_FFT3D(par):
     """Dot-test and inversion for FFTND operator for 3d signal"""
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8
@@ -1286,8 +1362,16 @@ def test_FFT3D(par):
     dadj = np.real(dadj).reshape(par["nt"], par["nx"], par["ny"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"], par["ny"])
 
-    assert_array_almost_equal(d, dadj, decimal=decimal)
-    assert_array_almost_equal(d, dinv, decimal=decimal)
+    # check all signal if nt>nfft and only up to nfft if nfft<nt
+    imax1 = par["nt"] if nfft1 is None else min([par["nt"], nfft1])
+    imax2 = par["nx"] if nfft2 is None else min([par["nx"], nfft2])
+    imax3 = par["ny"] if nfft3 is None else min([par["ny"], nfft3])
+    assert_array_almost_equal(
+        d[:imax1, :imax2, :imax3], dadj[:imax1, :imax2, :imax3], decimal=decimal
+    )
+    assert_array_almost_equal(
+        d[:imax1, :imax2, :imax3], dinv[:imax1, :imax2, :imax3], decimal=decimal
+    )
 
     # first fft on dir 1
     FFTop = FFTND(
@@ -1329,8 +1413,12 @@ def test_FFT3D(par):
     dadj = np.real(dadj).reshape(par["nt"], par["nx"], par["ny"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"], par["ny"])
 
-    assert_array_almost_equal(d, dadj, decimal=decimal)
-    assert_array_almost_equal(d, dinv, decimal=decimal)
+    assert_array_almost_equal(
+        d[:imax1, :imax2, :imax3], dadj[:imax1, :imax2, :imax3], decimal=decimal
+    )
+    assert_array_almost_equal(
+        d[:imax1, :imax2, :imax3], dinv[:imax1, :imax2, :imax3], decimal=decimal
+    )
 
     # first fft on dir 0
     FFTop = FFTND(
@@ -1372,5 +1460,9 @@ def test_FFT3D(par):
     dadj = np.real(dadj).reshape(par["nt"], par["nx"], par["ny"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"], par["ny"])
 
-    assert_array_almost_equal(d, dadj, decimal=decimal)
-    assert_array_almost_equal(d, dinv, decimal=decimal)
+    assert_array_almost_equal(
+        d[:imax1, :imax2, :imax3], dadj[:imax1, :imax2, :imax3], decimal=decimal
+    )
+    assert_array_almost_equal(
+        d[:imax1, :imax2, :imax3], dinv[:imax1, :imax2, :imax3], decimal=decimal
+    )

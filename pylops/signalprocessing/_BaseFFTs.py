@@ -102,6 +102,22 @@ class _BaseFFT(LinearOperator):
             nfft = nffts[0]
         self.nfft = nfft
 
+        # Check if the user provided nnft smaller than n (size of signal in
+        # original domain). If so, raise a warning as this is unlikely a
+        # wanted behavoir (since FFT routines cut some of the input signal
+        # before applying fft, which is lost forever) and set a flag such that
+        # a padding is applied after ifft
+        self.doifftpad = False
+        if self.nfft < self.dims[dir]:
+            self.doifftpad = True
+            self.ifftpad = [(0, 0)] * self.ndim
+            self.ifftpad[self.dir] = (0, self.dims[dir] - self.nfft)
+            warnings.warn(
+                f"nfft={self.nfft} has been selected to be smaller than the size of the original signal (n=self.dims[dir]). "
+                f"This is rarely intended behavior as the original signal will be truncated prior to applying fft, "
+                f"if this is the required behaviour ignore this message."
+            )
+
         if norm == "ortho":
             self.norm = _FFTNorms.ORTHO
         elif norm == "none":
@@ -229,6 +245,26 @@ class _BaseFFTND(LinearOperator):
                     f"{len(self.ifftshift_before)} and {len(self.fftshift_after)}, "
                     "respectively."
                 )
+            )
+
+        # Check if the user provided nnft smaller than n. See _BaseFFT for
+        # details
+        nfftshort = [
+            nfft < self.dims[direction]
+            for direction, nfft in zip(self.dirs, self.nffts)
+        ]
+        if any(nfftshort):
+            self.ifftpad = [(0, 0)] * self.ndim
+            for idir, (direction, nfshort) in enumerate(zip(self.dirs, nfftshort)):
+                if nfshort:
+                    self.ifftpad[direction] = (
+                        0,
+                        self.dims[direction] - self.nffts[idir],
+                    )
+            warnings.warn(
+                f"nffts in directions {np.where(nfftshort)[0]} have been selected to be smaller than the size of the original signal. "
+                f"This is rarely intended behavior as the original signal will be truncated prior to applying fft, "
+                f"if this is the required behaviour ignore this message."
             )
 
         if norm == "ortho":
