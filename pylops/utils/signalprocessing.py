@@ -76,41 +76,57 @@ def nonstationary_convmtx(H, n, hc=0, pad=(0, 0)):
     return C
 
 
-def slope_estimate(d, dz, dx, smooth=20):
+def slope_estimate(d, dz, dx, smooth=5, eps=0):
     r"""Local slope estimation
 
     Local slopes are estimated using the *Structure Tensor* algorithm [1]_.
-    Note that slopes are returned as :math:`arctan(\theta)` where
-    :math:`\theta` is an angle defined in a RHS coordinate system with z axis
-    pointing upward.
+    Slopes are returned as :math:`\tan\theta`, defined
+    in a RHS coordinate system with :math:`z`-axis pointing upward.
+
+    .. note:: For stability purposes, it is important to ensure that the orders
+        of magnitude of the samplings are similar.
 
     Parameters
     ----------
     d : :obj:`np.ndarray`
         Input dataset of size :math:`n_z \times n_x`
     dz : :obj:`float`
-        Sampling in z-axis
+        Sampling in :math:`z`-axis, :math:`\Delta z`
     dx : :obj:`float`
-        Sampling in x-axis
+        Sampling in :math:`x`-axis, :math:`\Delta x`
     smooth : :obj:`float`, optional
-        Lenght of smoothing filter to be applied to the estimated gradients
+        Standard deviation for Gaussian kernel. The standard deviations of the
+        Gaussian filter are given for each axis as a sequence, or as a single number,
+        in which case it is equal for all axes.
+    eps : :obj:`float`, optional
+        Regularization term. All slopes where :math:`|g_{zx}| < \epsilon \max |g_{zx}|`
+        are set to zero. All anisotropies where :math:`\lambda_\text{max} < \epsilon`
+        are also set to zero. See Notes. When using with small values of ``smooth``,
+        start from a very small number (e.g. 1e-10) and start increasing by a power
+        of 10 until results are satisfactory.
 
     Returns
     -------
     slopes : :obj:`np.ndarray`
-        Estimated local slopes
-    linearity : :obj:`np.ndarray`
-        Estimated linearity
+        Estimated local slopes. Unit is that of :math:`\Delta z/\Delta x`.
+    anisotropies : :obj:`np.ndarray`
+        Estimated local anisotropies: :math:`1-\lambda_\text{min}/\lambda_\text{max}`
 
     Notes
     -----
     For each pixel of the input dataset :math:`\mathbf{d}` the local gradients
-    :math:`d \mathbf{d} / dz` and :math:`g_z = d\mathbf{d} \ dx` are computed
+    :math:`g_z = \frac{\partial \mathbf{d}}{\partial z}` and
+    :math:`g_x = \frac{\partial \mathbf{d}}{\partial x}` are computed
     and used to define the following three quantities:
-    :math:`g_{zz} = (d\mathbf{d} / dz) ^ 2`,
-    :math:`g_{xx} = (d\mathbf{d} / dx) ^ 2`, and
-    :math:`g_{zx} = d\mathbf{d} / dz * d\mathbf{d} / dx`. Such quantities are
-    spatially smoothed and at each pixel their smoothed versions are
+
+    .. math::
+        \begin{align}
+        g_{zz} &= \left(\frac{\partial \mathbf{d}}{\partial z}\right)^2\\
+        g_{xx} &= \left(\frac{\partial \mathbf{d}}{\partial x}\right)^2\\
+        g_{zx} &= \frac{\partial \mathbf{d}}{\partial z}\cdot\frac{\partial \mathbf{d}}{\partial x}
+        \end{align}
+
+    They are then spatially smoothed and at each pixel their smoothed versions are
     arranged in a :math:`2 \times 2` matrix called the *smoothed
     gradient-square tensor*:
 
@@ -121,28 +137,51 @@ def slope_estimate(d, dz, dx, smooth=20):
            g_{zx}  & g_{xx}
         \end{bmatrix}
 
-
     Local slopes can be expressed as
-    :math:`p = arctan(\frac{\lambda_{max} - g_{xx}}{g_{zx}})`.
+    :math:`p = \frac{\lambda_\text{max} - g_{zz}}{g_{zx}}`,
+    where :math:`\lambda_\text{max}` is the largest eigenvalue of :math:`\mathbf{G}`.
+
+    Moreover, we can obtain a measure of local anisotropy, defined as
+
+    .. math::
+        a = 1-\lambda_\text{min}/\lambda_\text{max}
+
+    where :math:`\lambda_\text{min}` is the smallest eigenvalue of :math:`\mathbf{G}`.
+    A value of :math:`a = 0`  indicates perfect isotropy whereas :math:`a = 1`
+    indicates perfect anisotropy.
 
     .. [1] Van Vliet, L. J.,  Verbeek, P. W., "Estimators for orientation and
         anisotropy in digitized images", Journal ASCI Imaging Workshop. 1995.
 
     """
+    slopes = np.zeros_like(d)
+    anisos = np.zeros_like(d)
+
     gz, gx = np.gradient(d, dz, dx)
     gzz, gzx, gxx = gz * gz, gz * gx, gx * gx
 
     # smoothing
-    if smooth > 0:
-        gzz = gaussian_filter(gzz, sigma=smooth)
-        gzx = gaussian_filter(gzx, sigma=smooth)
-        gxx = gaussian_filter(gxx, sigma=smooth)
+    gzz = gaussian_filter(gzz, sigma=smooth)
+    gzx = gaussian_filter(gzx, sigma=smooth)
+    gxx = gaussian_filter(gxx, sigma=smooth)
+
+    gmax = np.max(np.abs(gzx))
+    if gmax == 0.0:
+        return slopes, anisos
+
+    gzz /= gmax
+    gzx /= gmax
+    gxx /= gmax
 
     lcommon1 = 0.5 * (gzz + gxx)
     lcommon2 = 0.5 * np.sqrt((gzz - gxx) ** 2 + 4 * gzx ** 2)
     l1 = lcommon1 + lcommon2
     l2 = lcommon1 - lcommon2
-    slopes = np.arctan((l1 - gzz) / gzx)
-    slopes[np.isnan(slopes)] = 0.0
-    linearity = 1 - l2 / l1
-    return slopes, linearity
+
+    regdata = np.abs(gzx) > eps
+    slopes[regdata] = (l1 - gzz)[regdata] / gzx[regdata]
+
+    regdata = np.abs(l1) > eps
+    anisos[regdata] = 1 - l2[regdata] / l1[regdata]
+
+    return slopes, anisos
