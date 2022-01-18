@@ -9,6 +9,7 @@ dependencies:
   - scipy>=1.4.0
   - pyfftw
   - pywavelets
+  - sympy
   - matplotlib
   - ipython
   - pytest
