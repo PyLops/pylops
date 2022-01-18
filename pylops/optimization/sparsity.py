@@ -718,10 +718,12 @@ def ISTA(
     eps : :obj:`float`, optional
         Sparsity damping
     alpha : :obj:`float`, optional
-        Step size (:math:`\alpha \le 1/\lambda_\text{max}(\mathbf{Op}^H\mathbf{Op})`
-        guarantees convergence. If ``None``, the maximum eigenvalue is
-        estimated and the optimal step size is chosen. If provided, the
-        condition will not be checked internally).
+        Step size. To guarantee convergence, ensure
+        :math:`\alpha \le 1/\lambda_\text{max}`, where :math:`\lambda_\text{max}`
+        is the largest eigenvalue of :math:`\mathbf{Op}^H\mathbf{Op}`.
+        If ``None``, the maximum eigenvalue is estimated and the optimal step size
+        is chosen as :math:`1/\lambda_\text{max}`. If provided, the
+        convergence criterion will not be checked internally.
     eigsiter : :obj:`float`, optional
         Number of iterations for eigenvalue estimation if ``alpha=None``
     eigstol : :obj:`float`, optional
@@ -1042,11 +1044,12 @@ def FISTA(
         Number of iterations
     eps : :obj:`float`, optional
         Sparsity damping
-    alpha : :obj:`float`, optional
-        Step size (:math:`\alpha \le 1/\lambda_\text{max}(\mathbf{Op}^H\mathbf{Op})`
-        guarantees convergence. If ``None``, the maximum eigenvalue is
-        estimated and the optimal step size is chosen. If provided, the
-        condition will not be checked internally).
+        Step size. To guarantee convergence, ensure
+        :math:`\alpha \le 1/\lambda_\text{max}`, where :math:`\lambda_\text{max}`
+        is the largest eigenvalue of :math:`\mathbf{Op}^H\mathbf{Op}`.
+        If ``None``, the maximum eigenvalue is estimated and the optimal step size
+        is chosen as :math:`1/\lambda_\text{max}`. If provided, the
+        convergence criterion will not be checked internally.
     eigsiter : :obj:`int`, optional
         Number of iterations for eigenvalue estimation if ``alpha=None``
     eigstol : :obj:`float`, optional

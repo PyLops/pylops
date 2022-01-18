@@ -9,9 +9,9 @@ operator is used for modelling of both 1d and 2d synthetic post-stack seismic
 data from a profile or 2d model of the subsurface acoustic impedence.
 
 .. math::
-    d(t, \theta=0) = \frac{1}{2} w(t) * \frac{d\ln(AI(t))}{\quad dt}
+    d(t, \theta=0) = \frac{1}{2} w(t) * \frac{\mathrm{d}\ln \text{AI}(t)}{\mathrm{d}t}
 
-where :math:`AI(t)` is the acoustic impedance profile and :math:`w(t)` is
+where :math:`\text{AI}(t)` is the acoustic impedance profile and :math:`w(t)` is
 the time domain seismic wavelet. In compact form:
 
 .. math::

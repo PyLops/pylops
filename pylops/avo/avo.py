@@ -442,7 +442,10 @@ def ps(theta, vsvp, n=1):
     Returns
     -------
     G1 : :obj:`np.ndarray`
-        first coefficient for VP :math:`[n_{\theta}  \times  n_\text{vsvp}]`
+        first coefficient for VP :math:`[n_{\theta}  \times  n_\text{vsvp}]`.
+        Since the PS reflection at zero angle is zero, this value is not used and is
+        only available to ensure function signature compatibility with other
+        linearization routines.
     G2 : :obj:`np.ndarray`
         second coefficient for VS :math:`[n_{\theta}  \times  n_\text{vsvp}]`
     G3 : :obj:`np.ndarray`
