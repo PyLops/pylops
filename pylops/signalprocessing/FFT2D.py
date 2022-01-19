@@ -97,9 +97,7 @@ class _FFT2D_numpy(_BaseFFTND):
             y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
         if self.nffts[1] > self.dims[self.dirs[1]]:
             y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
-        if (self.nffts[0] < self.dims[self.dirs[0]]) or (
-            self.nffts[1] < self.dims[self.dirs[1]]
-        ):
+        if self.doifftpad:
             y = np.pad(y, self.ifftpad)
         if not self.clinear:
             y = np.real(y)

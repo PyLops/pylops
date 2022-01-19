@@ -253,7 +253,8 @@ class _BaseFFTND(LinearOperator):
             nfft < self.dims[direction]
             for direction, nfft in zip(self.dirs, self.nffts)
         ]
-        if any(nfftshort):
+        self.doifftpad = any(nfftshort)
+        if self.doifftpad:
             self.ifftpad = [(0, 0)] * self.ndim
             for idir, (direction, nfshort) in enumerate(zip(self.dirs, nfftshort)):
                 if nfshort:

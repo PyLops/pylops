@@ -100,7 +100,7 @@ class _FFT_numpy(_BaseFFT):
             y *= self._scale
 
         if self.nfft > self.dims[self.dir]:
-            y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
+            y = np.take(y, range(0, self.dims[self.dir]), axis=self.dir)
         elif self.nfft < self.dims[self.dir]:
             y = np.pad(y, self.ifftpad)
 
@@ -191,7 +191,7 @@ class _FFT_scipy(_BaseFFT):
             y *= self._scale
 
         if self.nfft > self.dims[self.dir]:
-            y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
+            y = np.take(y, range(0, self.dims[self.dir]), axis=self.dir)
         elif self.nfft < self.dims[self.dir]:
             y = np.pad(y, self.ifftpad)
 
@@ -307,7 +307,7 @@ class _FFT_fftw(_BaseFFT):
         if self.dopad:
             x = np.pad(x, self.pad, "constant", constant_values=0)
         elif self.doifftpad:
-            x = np.take(x, np.arange(0, self.nfft), axis=self.dir)
+            x = np.take(x, range(0, self.nfft), axis=self.dir)
 
         # self.fftplan() always uses byte-alligned self.x as input array and
         # returns self.y as output array. As such, self.x must be copied so as
@@ -352,7 +352,7 @@ class _FFT_fftw(_BaseFFT):
             y *= self._scale
 
         if self.nfft > self.dims[self.dir]:
-            y = np.take(y, np.arange(0, self.dims[self.dir]), axis=self.dir)
+            y = np.take(y, range(0, self.dims[self.dir]), axis=self.dir)
         elif self.nfft < self.dims[self.dir]:
             y = np.pad(y, self.ifftpad)
 

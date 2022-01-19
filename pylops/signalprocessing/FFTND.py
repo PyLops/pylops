@@ -87,12 +87,7 @@ class _FFTND_numpy(_BaseFFTND):
         for direction, nfft in zip(self.dirs, self.nffts):
             if nfft > self.dims[direction]:
                 y = np.take(y, range(self.dims[direction]), axis=direction)
-        if any(
-            [
-                nfft < self.dims[direction]
-                for direction, nfft in zip(self.dirs, self.nffts)
-            ]
-        ):
+        if self.doifftpad:
             y = np.pad(y, self.ifftpad)
         if not self.clinear:
             y = np.real(y)
@@ -180,12 +175,7 @@ class _FFTND_scipy(_BaseFFTND):
         for direction, nfft in zip(self.dirs, self.nffts):
             if nfft > self.dims[direction]:
                 y = np.take(y, range(self.dims[direction]), axis=direction)
-        if any(
-            [
-                nfft < self.dims[direction]
-                for direction, nfft in zip(self.dirs, self.nffts)
-            ]
-        ):
+        if self.doifftpad:
             y = np.pad(y, self.ifftpad)
         if not self.clinear:
             y = np.real(y)
