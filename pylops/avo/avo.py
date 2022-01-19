@@ -142,7 +142,7 @@ def zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta1, element="PdPu"):
     theta1 : :obj:`np.ndarray` or :obj:`float`
         Incident angles in degrees
     element : :obj:`str`, optional
-        specific choice of incident and reflected wave combining
+        Specific choice of incident and reflected wave combining
         any two of the following strings: ``Pd`` P-wave downgoing,
         ``Sd`` S-wave downgoing, ``Pu`` P-wave upgoing,
         ``Su`` S-wave upgoing (e.g., ``PdPu``)
@@ -301,23 +301,23 @@ def akirichards(theta, vsvp, n=1):
     vsvp : :obj:`np.ndarray` or :obj:`float`
         :math:`V_S/V_P` ratio
     n : :obj:`int`, optional
-        number of samples (if ``vsvp`` is a scalar)
+        Number of samples (if ``vsvp`` is a scalar)
 
     Returns
     -------
     G1 : :obj:`np.ndarray`
-        first coefficient of three terms Aki-Richards approximation
+        First coefficient of three terms Aki-Richards approximation
         :math:`[n_\theta  \times  n_\text{vsvp}]`
     G2 : :obj:`np.ndarray`
-        second coefficient of three terms Aki-Richards approximation
+        Second coefficient of three terms Aki-Richards approximation
         :math:`[n_\theta  \times  n_\text{vsvp}]`
     G3 : :obj:`np.ndarray`
-        third coefficient of three terms Aki-Richards approximation
+        Third coefficient of three terms Aki-Richards approximation
         :math:`[n_\theta  \times  n_\text{vsvp}]`
 
     Notes
     -----
-    The three terms Aki-Richards approximation [1]_ is used to compute the
+    The three terms Aki-Richards approximation [1]_, [2]_, is used to compute the
     reflection coefficient as linear combination of contrasts in
     :math:`V_P`, :math:`V_S`, and :math:`\rho.` More specifically:
 
@@ -339,6 +339,8 @@ def akirichards(theta, vsvp, n=1):
         \end{align}
 
     .. [1] https://wiki.seg.org/wiki/AVO_equations
+
+    .. [2] Aki, K., and Richards, P. G. (2002). Quantitative Seismology (2nd ed.). University Science Books.
 
     """
     ncp = get_array_module(theta)
@@ -369,25 +371,25 @@ def fatti(theta, vsvp, n=1):
     vsvp : :obj:`np.ndarray` or :obj:`float`
         :math:`V_S/V_P` ratio
     n : :obj:`int`, optional
-        number of samples (if ``vsvp`` is a scalar)
+        Number of samples (if ``vsvp`` is a scalar)
 
     Returns
     -------
     G1 : :obj:`np.ndarray`
-        first coefficient of three terms Smith-Gidlow approximation
+        First coefficient of three terms Smith-Gidlow approximation
         :math:`[n_{\theta}  \times  n_\text{vsvp}]`
     G2 : :obj:`np.ndarray`
-        second coefficient of three terms Smith-Gidlow approximation
+        Second coefficient of three terms Smith-Gidlow approximation
         :math:`[n_{\theta}  \times  n_\text{vsvp}]`
     G3 : :obj:`np.ndarray`
-        third coefficient of three terms Smith-Gidlow approximation
+        Third coefficient of three terms Smith-Gidlow approximation
         :math:`[n_{\theta}  \times  n_\text{vsvp}]`
 
     Notes
     -----
-    The three terms Fatti approximation [1]_ is used to compute the reflection
+    The three terms Fatti approximation [1]_, [2]_, is used to compute the reflection
     coefficient as linear combination of contrasts in :math:`\text{AI},`
-    :math:`SI`, and :math:`\rho.` More specifically:
+    :math:`\text{SI}`, and :math:`\rho.` More specifically:
 
     .. math::
         R(\theta) = G_1(\theta) \frac{\Delta \text{AI}}{\bar{\text{AI}}} + G_2(\theta)
@@ -407,6 +409,10 @@ def fatti(theta, vsvp, n=1):
         \end{align}
 
     .. [1] https://www.subsurfwiki.org/wiki/Fatti_equation
+
+    .. [2] Jan L. Fatti, George C. Smith, Peter J. Vail, Peter J. Strauss, and Philip R. Levitt, (1994), "Detection of gas in sandstone reservoirs using AVO analysis: A 3-D seismic case history using the Geostack technique," Geophysics 59: 1362-1376.
+
+
 
     """
     ncp = get_array_module(theta)
@@ -437,19 +443,19 @@ def ps(theta, vsvp, n=1):
     vsvp : :obj:`np.ndarray` or :obj:`float`
         :math:`V_S/V_P` ratio
     n : :obj:`int`, optional
-        number of samples (if ``vsvp`` is a scalar)
+        Number of samples (if ``vsvp`` is a scalar)
 
     Returns
     -------
     G1 : :obj:`np.ndarray`
-        first coefficient for VP :math:`[n_{\theta}  \times  n_\text{vsvp}]`.
+        First coefficient for VP :math:`[n_{\theta}  \times  n_\text{vsvp}]`.
         Since the PS reflection at zero angle is zero, this value is not used and is
         only available to ensure function signature compatibility with other
         linearization routines.
     G2 : :obj:`np.ndarray`
-        second coefficient for VS :math:`[n_{\theta}  \times  n_\text{vsvp}]`
+        Second coefficient for VS :math:`[n_{\theta}  \times  n_\text{vsvp}]`
     G3 : :obj:`np.ndarray`
-        third coefficient for density :math:`[n_{\theta}  \times  n_\text{vsvp}]`
+        Third coefficient for density :math:`[n_{\theta}  \times  n_\text{vsvp}]`
 
     Notes
     -----
@@ -520,13 +526,17 @@ class AVOLinearModelling(LinearOperator):
     vsvp : :obj:`np.ndarray` or :obj:`float`
         :math:`V_S/V_P` ratio
     nt0 : :obj:`int`, optional
-        number of samples (if ``vsvp`` is a scalar)
+        Number of samples (if ``vsvp`` is a scalar)
     spatdims : :obj:`int` or :obj:`tuple`, optional
         Number of samples along spatial axis (or axes)
         (``None`` if only one dimension is available)
-    linearization : :obj:`str`, optional
-        choice of linearization: ``akirich``: PP Aki-Richards,
-        ``fatti``: PP Fatti, ``ps``: PS reflection,
+    linearization : `{"akirich", "fatti", "PS"}`, optional
+        * "akirich": Aki-Richards. See :py:func:`pylops.avo.avo.akirichards`.
+
+        * "fatti": Fatti. See :py:func:`pylops.avo.avo.fatti`.
+
+        * "PS": PS. See :py:func:`pylops.avo.avo.ps`.
+
     dtype : :obj:`str`, optional
         Type of elements in input array.
 

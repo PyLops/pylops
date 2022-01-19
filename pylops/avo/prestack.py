@@ -69,12 +69,14 @@ def PrestackLinearModelling(
     spatdims : :obj:`int` or :obj:`tuple`, optional
         Number of samples along spatial axis (or axes)
         (``None`` if only one dimension is available)
-    linearization : :obj:`str` or :obj:`func`, optional
-        * "akirich": Aki-Richards
+    linearization : `{"akirich", "fatti", "PS"}` or :obj:`callable`, optional
+        * "akirich": Aki-Richards. See :py:func:`pylops.avo.avo.akirichards`.
 
-        * "fatti": Fatti
+        * "fatti": Fatti. See :py:func:`pylops.avo.avo.fatti`.
 
-        * "PS": PS, or any function on the form of ``pylops.avo.avo.akirichards``
+        * "PS": PS. See :py:func:`pylops.avo.avo.ps`.
+
+        * Function with the same signature as :py:func:`pylops.avo.avo.akirichards`
     explicit : :obj:`bool`, optional
         Create a chained linear operator (``False``, preferred for large data)
         or a ``MatrixMult`` linear operator with dense matrix
@@ -237,12 +239,14 @@ def PrestackWaveletModelling(
         Index of the center of the wavelet
     vsvp : :obj:`np.ndarray` or :obj:`float`, optional
         :math:`V_S/V_P` ratio
-    linearization : :obj:`str`, optional
-        * "akirich": Aki-Richards
+    linearization : `{"akirich", "fatti", "PS"}` or :obj:`callable`, optional
+        * "akirich": Aki-Richards. See :py:func:`pylops.avo.avo.akirichards`.
 
-        * "fatti": Fatti
+        * "fatti": Fatti. See :py:func:`pylops.avo.avo.fatti`.
 
-        * "PS": PS, or any function on the form of ``pylops.avo.avo.akirichards``
+        * "PS": PS. See :py:func:`pylops.avo.avo.ps`.
+
+        * Function with the same signature as :py:func:`pylops.avo.avo.akirichards`
 
     Returns
     -------
@@ -368,12 +372,15 @@ def PrestackInversion(
     m0 : :obj:`np.ndarray`, optional
         Background model of size :math:`[n_{t_0} \times n_{m}
         \,(\times n_x \times n_y)]`
-    linearization : :obj:`str` or :obj:`list`, optional
-        * "akirich": Aki-Richards
+    linearization : `{"akirich", "fatti", "PS"}` or :obj:`list`, optional
+        * "akirich": Aki-Richards. See :py:func:`pylops.avo.avo.akirichards`.
 
-        * "fatti": Fatti
+        * "fatti": Fatti. See :py:func:`pylops.avo.avo.fatti`.
 
-        * "PS": PS or a combination of them (required only when ``m0`` is ``None``).
+        * "PS": PS. See :py:func:`pylops.avo.avo.ps`.
+
+        * List which is a combination of previous options (required only when ``m0 is None``).
+
     explicit : :obj:`bool`, optional
         Create a chained linear operator (``False``, preferred for large data)
         or a ``MatrixMult`` linear operator with dense matrix

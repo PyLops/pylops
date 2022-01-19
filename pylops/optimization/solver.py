@@ -288,8 +288,9 @@ def lsqr(
         Damping coefficient
     atol, btol : :obj:`float`, optional
         Stopping tolerances. If both are 1.0e-9, the final residual norm
-        should be accurate to about 9 digits. (The final x will usually
-        have fewer correct digits, depending on cond(A) and the size of damp.)
+        should be accurate to about 9 digits. (The solution will usually
+        have fewer correct digits, depending on :math:`\cond(\mathbf{Op})`
+        and the size of ``damp``.)
     conlim : :obj:`float`, optional
         Stopping tolerance on :math:`\cond(\mathbf{Op})`
         exceeds ``conlim``. For square, ``conlim`` could be as large as 1.0e+12.

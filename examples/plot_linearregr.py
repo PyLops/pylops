@@ -20,7 +20,7 @@ As we can express this problem in a matrix form:
 our solution can be obtained by solving the following optimization problem:
 
     .. math::
-        J= ||\mathbf{y} - \mathbf{A} \mathbf{x}||_2
+        J= \|\mathbf{y} - \mathbf{A} \mathbf{x}\|_2
 
 See documentation of :py:class:`pylops.LinearRegression` for more detailed
 definition of the forward problem.

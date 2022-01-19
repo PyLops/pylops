@@ -1,11 +1,11 @@
 """
 01. The LinearOpeator
 =====================
-This first tutorials is aimed at easing the use of the PyLops
+This first tutorial is aimed at easing the use of the PyLops
 library for both new users and developers.
 
 Since PyLops heavily relies  on the use of the
-:py:class:`scipy.sparse.linalg.LinearOperator` class of scipy, we will start
+:py:class:`scipy.sparse.linalg.LinearOperator` class of SciPy, we will start
 by looking at how to initialize a linear operator as well as
 different ways to apply the forward and adjoint operations. Finally we will
 investigate various *special methods*, also called *magic methods*
