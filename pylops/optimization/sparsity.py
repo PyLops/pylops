@@ -750,6 +750,8 @@ def ISTA(
         Decay factor to be applied to thresholding during iterations
     SOp : :obj:`pylops.LinearOperator`, optional
         Regularization operator (use when solving the analysis problem)
+    x0: :obj:`numpy.ndarray`, optional
+        Initial guess
 
     Returns
     -------

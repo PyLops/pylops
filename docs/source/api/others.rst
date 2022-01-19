@@ -18,7 +18,7 @@ Dot-test
     dottest
 
 Describe
-~~~~~~~~
+------
 
 .. currentmodule:: pylops.utils.describe
 
