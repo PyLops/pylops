@@ -97,7 +97,6 @@ def _predict_haar(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
         pred_tmp = traces[ix]
         if adj:
             for irepeat in range(repeat - 1, -1, -1):
-                # print('Slope at', ix * slopejump + iback * repeat + idir * irepeat)
                 pred_tmp = _predict_trace(
                     pred_tmp,
                     t,
@@ -108,7 +107,6 @@ def _predict_haar(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
                 )
         else:
             for irepeat in range(repeat):
-                # print('Slope at', ix * slopejump + iback * repeat + idir * irepeat)
                 pred_tmp = _predict_trace(
                     pred_tmp,
                     t,
@@ -139,14 +137,11 @@ def _predict_lin(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
     pred = np.zeros_like(traces)
     for ix in range(nx):
         pred_tmp = traces[ix]
-        # print('Data+ at', ix * slopejump)
         if adj:
             if not ((ix == 0 and not backward) or (ix == nx - 1 and backward)):
                 pred_tmp1 = traces[ix - idir]
-            # if ix > 0: print('Data- at', (ix - idir) * slopejump)
             for irepeat in range(repeat - 1, -1, -1):
                 if (ix == 0 and not backward) or (ix == nx - 1 and backward):
-                    # print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
                     pred_tmp = _predict_trace(
                         pred_tmp,
                         t,
@@ -157,8 +152,6 @@ def _predict_lin(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
                     )
                     pred_tmp1 = 0
                 else:
-                    # print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
-                    # print('Slope- at', ix * slopejump + iback * repeat - idir * irepeat)
                     pred_tmp = _predict_trace(
                         pred_tmp,
                         t,
@@ -178,10 +171,8 @@ def _predict_lin(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
         else:
             if not ((ix == nx - 1 and not backward) or (ix == 0 and backward)):
                 pred_tmp1 = traces[ix + idir]
-            # if ix < nx - 1: print('Data- at', (ix + idir) * slopejump)
             for irepeat in range(repeat):
                 if (ix == nx - 1 and not backward) or (ix == 0 and backward):
-                    # print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
                     pred_tmp = _predict_trace(
                         pred_tmp,
                         t,
@@ -191,8 +182,6 @@ def _predict_lin(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
                     )
                     pred_tmp1 = 0
                 else:
-                    # print('Slope+ at', ix * slopejump + iback * repeat + idir * irepeat)
-                    # print('Slope- at', (ix + idir) * slopejump + iback * repeat - idir * irepeat)
                     pred_tmp = _predict_trace(
                         pred_tmp,
                         t,
