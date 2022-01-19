@@ -16,7 +16,7 @@ data using 1d profiles or 2d models of different subsurface elastic parameters
 (P-wave velocity, S-wave velocity, and density) as input.
 
 .. math::
-    d(t, \theta) = w(t) * \sum_{i=1}^N G_i(t, \theta) \frac{d\ln(m_i(t))}{dt}
+    d(t, \theta) = w(t) * \sum_{i=1}^N G_i(t, \theta) \frac{\mathrm{d}\ln m_i(t)}{\mathrm{d}t}
 
 where :math:`\mathbf{m}(t)=[V_P(t), V_S(t), \rho(t)]` is a vector containing
 three elastic parameters at time :math:`t`, :math:`G_i(t, \theta)` are the

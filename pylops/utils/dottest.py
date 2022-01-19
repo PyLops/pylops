@@ -31,8 +31,15 @@ def dottest(
     tol : :obj:`float`, optional
         Dottest tolerance
     complexflag : :obj:`bool`, optional
-        generate random vectors with real (0) or complex numbers
-        (1: only model, 2: only data, 3:both)
+        Generate random vectors with
+
+        * ``0``: Real entries for model and data
+
+        * ``1``: Complex entries for model and real entries for data
+
+        * ``2``: Real entries for model and complex entries for data
+
+        * ``3``: Complex entries for model and  data
     raiseerror : :obj:`bool`, optional
         Raise error or simply return ``False`` when dottest fails
     verb : :obj:`bool`, optional
@@ -56,8 +63,8 @@ def dottest(
     within a numerical tolerance:
 
     .. math::
-        (\mathbf{Op}*\mathbf{u})^H*\mathbf{v} =
-        \mathbf{u}^H*(\mathbf{Op}^H*\mathbf{v})
+        (\mathbf{Op}\,\mathbf{u})^H\mathbf{v} =
+        \mathbf{u}^H(\mathbf{Op}^H\mathbf{v})
 
     """
     ncp = get_module(backend)

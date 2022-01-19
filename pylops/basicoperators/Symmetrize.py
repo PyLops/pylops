@@ -39,22 +39,22 @@ class Symmetrize(LinearOperator):
 
     .. math::
         y[i] = \begin{cases}
-        x[i-N],& i\geq N\\
-        x[N-i],& \text{otherwise}
+        x[i-N+1],& i\geq N\\
+        x[N-1-i],& \text{otherwise}
         \end{cases}
 
-    for :math:`i=0,1,2,...,2N-2`, where :math:`N` is the lenght of
+    for :math:`i=0,1,2,\ldots,2N-2`, where :math:`N` is the lenght of
     the input model.
 
     In adjoint mode, the Symmetrize operator assigns the sums of the elements
-    in position :math:`N-i` and :math:`N+i` to position :math:`i` as follows:
+    in position :math:`N-1-i` and :math:`N-1+i` to position :math:`i` as follows:
 
     .. math::
         \begin{multline}
-        x[i] = y[N-i]+y[N+i] \quad \forall i=1,2,...,N-1
+        x[i] = y[N-1-i]+y[N-1+i] \quad \forall i=0,2,\ldots,N-1
         \end{multline}
 
-    apart from the central sample where :math:`x[0] = y[N]`.
+    apart from the central sample where :math:`x[0] = y[N-1]`.
     """
 
     def __init__(self, N, dims=None, dir=0, dtype="float64"):

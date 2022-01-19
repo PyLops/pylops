@@ -53,20 +53,20 @@ class VStack(LinearOperator):
         \begin{bmatrix}
             \mathbf{L}_{1}  \\
             \mathbf{L}_{2}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{L}_{N}
         \end{bmatrix}
         \mathbf{x} =
         \begin{bmatrix}
             \mathbf{L}_{1} \mathbf{x}  \\
             \mathbf{L}_{2} \mathbf{x}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{L}_{N} \mathbf{x}
         \end{bmatrix} =
         \begin{bmatrix}
             \mathbf{y}_{1}  \\
             \mathbf{y}_{2}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{y}_{N}
         \end{bmatrix}
 
@@ -74,16 +74,16 @@ class VStack(LinearOperator):
 
     .. math::
         \begin{bmatrix}
-            \mathbf{L}_{1}^H & \mathbf{L}_{2}^H & ... & \mathbf{L}_{N}^H
+            \mathbf{L}_{1}^H & \mathbf{L}_{2}^H & \ldots & \mathbf{L}_{N}^H
         \end{bmatrix}
         \begin{bmatrix}
             \mathbf{y}_{1}  \\
             \mathbf{y}_{2}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{y}_{N}
         \end{bmatrix} =
         \mathbf{L}_{1}^H \mathbf{y}_1 + \mathbf{L}_{2}^H \mathbf{y}_2 +
-        ... + \mathbf{L}_{N}^H \mathbf{y}_N
+        \ldots + \mathbf{L}_{N}^H \mathbf{y}_N
 
     """
 

@@ -35,7 +35,7 @@ class Flip(LinearOperator):
     in forward mode this is equivalent to:
 
     .. math::
-        y[i] = x[N-i] \quad \forall i=0,1,2,...,N-1
+        y[i] = x[N-1-i] \quad \forall i=0,1,2,\ldots,N-1
 
     where :math:`N` is the lenght of the input model. As this operator is
     self-adjoint, :math:`x` and :math:`y` in the equation above are simply

@@ -30,13 +30,13 @@ class Conj(LinearOperator):
 
     .. math::
 
-        y_{i} = \Re\{x_{i}\} - i\Im\{x_{i}\} \quad \forall i=0,...,N
+        y_{i} = \Re\{x_{i}\} - i\Im\{x_{i}\} \quad \forall i=0,\ldots,N-1
 
     In adjoint mode:
 
     .. math::
 
-        x_{i} = \Re\{y_{i}\} - i\Im\{y_{i}\} \quad \forall i=0,...,N
+        x_{i} = \Re\{y_{i}\} - i\Im\{y_{i}\} \quad \forall i=0,\ldots,N-1
 
     """
 

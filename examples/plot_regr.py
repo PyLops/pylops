@@ -9,7 +9,7 @@ In short, polynomial regression is the problem of finding the best fitting
 coefficients for the following equation:
 
     .. math::
-        y_i = \sum_{n=0}^{order} x_n t_i^n  \qquad \forall i=1,2,...,N
+        y_i = \sum_{n=0}^{order} x_n t_i^n  \qquad \forall i=1,2,\ldots,N
 
 As we can express this problem in a matrix form:
 

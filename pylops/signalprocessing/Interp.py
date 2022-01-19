@@ -167,11 +167,11 @@ def Interp(M, iava, dims=None, dir=0, kind="linear", dtype="float64"):
     .. math::
 
         y_i = (1-w_i) x_{l^{l}_i} + w_i x_{l^{r}_i}
-        \quad \forall i=1,2,...,N
+        \quad \forall i=1,2,\ldots,N
 
-    where :math:`\mathbf{l^l}=[\lfloor l_1 \rfloor, \lfloor l_2 \rfloor,...,
+    where :math:`\mathbf{l^l}=[\lfloor l_1 \rfloor, \lfloor l_2 \rfloor,\ldots,
     \lfloor l_N \rfloor]` and :math:`\mathbf{l^r}=[\lfloor l_1 \rfloor +1,
-    \lfloor l_2 \rfloor +1,...,
+    \lfloor l_2 \rfloor +1,\ldots,
     \lfloor l_N \rfloor +1]` are vectors containing the indeces
     of the original array at which samples are taken, and
     :math:`\mathbf{w}=[l_1 - \lfloor l_1 \rfloor, l_2 - \lfloor l_2 \rfloor,
@@ -185,8 +185,8 @@ def Interp(M, iava, dims=None, dir=0, kind="linear", dtype="float64"):
     :math:`M` can be expressed as:
 
     .. math::
-
-        y_i = \sum_{j=0}^{M} x_j sinc(i-j) \quad \forall i=1,2,...,N
+        \DeclareMathOperator{\sinc}{sinc}
+        y_i = \sum_{j=0}^{M} x_j \sinc(i-j) \quad \forall i=1,2,\ldots,N
 
     This operator can be implemented using the :class:`pylops.MatrixMult`
     operator with a matrix containing the values of the sinc function at all

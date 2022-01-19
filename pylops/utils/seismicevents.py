@@ -13,9 +13,9 @@ def _filterdata(d, nt, wav, wcenter):
 def makeaxis(par):
     r"""Create axes t, x, and y axes
 
-    Create space and time axes from dictionary containing initial values :math:`(ot, ox, oy)`,
-    sampling steps :math:`(dt, dx, dy)` and number of elements :math:`(nt, nx, ny)`
-    for each axis
+    Create space and time axes from dictionary containing initial values ``ot``, ``ox``, ``oy``,
+    sampling steps ``dt``, dx``, ``dy`` and number of elements ``nt``, nx``, ``ny``
+    for each axis.
 
     Parameters
     ----------
@@ -25,13 +25,13 @@ def makeaxis(par):
     Returns
     -------
     t : :obj:`numpy.ndarray`
-        time axis
+        Time axis
     t2 : :obj:`numpy.ndarray`
-        double time axis (symmetric to zero)
+        Symmetric time axis
     x : :obj:`numpy.ndarray`
         x axis
     y : :obj:`numpy.ndarray`
-        y axis (``None``, if :math:`oy, dy, ny` are not provided)
+        y axis (``None``, if ``oy``, ``dy`` or ``ny`` are not provided)
 
     Examples
     --------
@@ -91,7 +91,7 @@ def linear2d(x, t, v, t0, theta, amp, wav):
     .. math::
         t_i(x) = t_{0,i} + p_{x,i} x
 
-    where :math:`p_{x,i}=sin( \theta_i)/v`
+    where :math:`p_{x,i}=\sin( \theta_i)/v`
 
     """
     if isinstance(t0, (float, int)):
@@ -232,7 +232,7 @@ def hyperbolic2d(x, t, t0, vrms, amp, wav):
     Each event is created using the following relation:
 
     .. math::
-        t_i(x) = \sqrt{t_{0,i}^2 + x^2 / v_{rms,i}^2}
+        t_i(x) = \sqrt{t_{0,i}^2 + \frac{x^2}{v_{\text{rms},i}^2}}
 
     """
     if isinstance(t0, (float, int)):
@@ -309,8 +309,8 @@ def linear3d(x, y, t, v, t0, theta, phi, amp, wav):
     .. math::
         t_i(x, y) = t_{0,i} + p_{x,i} x + p_{y,i} y
 
-    where :math:`p_{x,i}=sin( \theta_i)cos( \phi_i)/v`
-    and :math:`p_{x,i}=sin( \theta_i)sin( \phi_i)/v`.
+    where :math:`p_{x,i}=\frac{1}{v} \sin( \theta_i)\cos( \phi_i)`
+    and :math:`p_{x,i}=\frac{1}{v} \sin( \theta_i)\sin( \phi_i)`.
 
     """
     if isinstance(t0, (float, int)):
@@ -387,8 +387,8 @@ def hyperbolic3d(x, y, t, t0, vrms_x, vrms_y, amp, wav):
     Each event is created using the following relation:
 
     .. math::
-        t_i(x, y) = \sqrt{t_{0,i}^2 + x^2 / v_{rms_x, i}^2 +
-        y^2 / v_{rms_y, i}^2}
+        t_i(x, y) = \sqrt{t_{0,i}^2 + \frac{x^2}{v_{\text{rms}_x, i}^2} +
+        \frac{y^2}{v_{\text{rms}_y, i}^2}}
 
     Note that velocities do not have a physical meaning here (compared to the
     corresponding :func:`pylops.utils.seismicevents.hyperbolic2d`), they rather

@@ -32,13 +32,13 @@ class Real(LinearOperator):
 
     .. math::
 
-        y_{i} = \Re\{x_{i}\} \quad \forall i=0,...,N
+        y_{i} = \Re\{x_{i}\} \quad \forall i=0,\ldots,N-1
 
     In adjoint mode:
 
     .. math::
 
-        x_{i} = \Re\{y_{i}\} + 0i \quad \forall i=0,...,N
+        x_{i} = \Re\{y_{i}\} + 0i \quad \forall i=0,\ldots,N-1
 
     """
 

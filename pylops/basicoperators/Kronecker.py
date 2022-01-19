@@ -31,22 +31,22 @@ class Kronecker(LinearOperator):
     Notes
     -----
     The Kronecker product (denoted with :math:`\otimes`) is an operation
-    on two operators :math:`\mathbf{Op_1}` and :math:`\mathbf{Op_2}` of
+    on two operators :math:`\mathbf{Op}_1` and :math:`\mathbf{Op}_2` of
     sizes :math:`\lbrack n_1 \times m_1 \rbrack` and
     :math:`\lbrack n_2 \times m_2 \rbrack` respectively, resulting in a
     block matrix of size :math:`\lbrack n_1 n_2 \times m_1 m_2 \rbrack`.
 
     .. math::
 
-        \mathbf{Op_1} \otimes \mathbf{Op_2} = \begin{bmatrix}
-            Op_1^{1,1} \mathbf{Op_2} &  ... & Op_1^{1,m_1} \mathbf{Op_2}   \\
-            ...                     &  ... & ... \\
-            Op_1^{n_1,1} \mathbf{Op_2} &  ... & Op_1^{n_1,m_1} \mathbf{Op_2}
+        \mathbf{Op}_1 \otimes \mathbf{Op}_2 = \begin{bmatrix}
+            \text{Op}_1^{1,1} \mathbf{Op}_2   &  \ldots & \text{Op}_1^{1,m_1} \mathbf{Op}_2   \\
+            \vdots                            &  \ddots & \vdots \\
+            \text{Op}_1^{n_1,1} \mathbf{Op}_2 &  \ldots & \text{Op}_1^{n_1,m_1} \mathbf{Op}_2
         \end{bmatrix}
 
     The application of the resulting matrix to a vector :math:`\mathbf{x}` of
     size :math:`\lbrack m_1 m_2 \times 1 \rbrack` is equivalent to the
-    application of the second operator :math:`\mathbf{Op_2}` to the rows of
+    application of the second operator :math:`\mathbf{Op}_2` to the rows of
     a matrix of size :math:`\lbrack m_2 \times m_1 \rbrack` obtained by
     reshaping the input vector :math:`\mathbf{x}`, followed by the application
     of the first operator to the transposed matrix produced by the first

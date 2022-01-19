@@ -42,7 +42,7 @@ class Identity(LinearOperator):
 
     .. math::
 
-        y_i = x_i  \quad \forall i=1,2,...,N
+        y_i = x_i  \quad \forall i=1,2,\ldots,N
 
     or in matrix form:
 
@@ -62,16 +62,16 @@ class Identity(LinearOperator):
 
     .. math::
 
-        y_i = x_i  \quad \forall i=1,2,...,N
+        y_i = x_i  \quad \forall i=1,2,\ldots,N
 
     and all the elements of the data :math:`\mathbf{y}` into the first
     :math:`M` elements of model in adjoint mode (other elements are ``O``):
 
     .. math::
 
-        x_i = y_i  \quad \forall i=1,2,...,M
+        x_i = y_i  \quad \forall i=1,2,\ldots,M
 
-        x_i = 0 \quad \forall i=M+1,...,N
+        x_i = 0 \quad \forall i=M+1,\ldots,N
 
     """
 

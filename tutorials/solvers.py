@@ -25,10 +25,10 @@ elements from :math:`\mathbf{x}` at random locations is implemented using
 :py:class:`pylops.Restriction`, and
 
 .. math::
-    \mathbf{y}= [y_1, y_2,...,y_N]^T, \qquad
-    \mathbf{x}= [x_1, x_2,...,x_M]^T, \qquad
+    \mathbf{y}= [y_1, y_2,\ldots,y_N]^T, \qquad
+    \mathbf{x}= [x_1, x_2,\ldots,x_M]^T, \qquad
 
-with :math:`M>>N`.
+with :math:`M \gg N`.
 
 """
 
@@ -97,7 +97,7 @@ plt.title("Data restriction")
 # without regularization*. We aim here to minimize the following cost function:
 #
 #   .. math::
-#        J = ||\mathbf{y} - \mathbf{R} \mathbf{x}||_2^2
+#        J = \|\mathbf{y} - \mathbf{R} \mathbf{x}\|_2^2
 #
 # Depending on the choice of the operator :math:`\mathbf{R}`, such problem can
 # be solved using explicit matrix solvers as well as iterative solvers. In
@@ -236,7 +236,7 @@ xreg = pylops.optimization.leastsquares.RegularizedInversion(
 # We can also write a preconditioned problem, whose cost function is
 #
 #   .. math::
-#       J= ||\mathbf{y} - \mathbf{R} \mathbf{P} \mathbf{p}||_2^2
+#       J= \|\mathbf{y} - \mathbf{R} \mathbf{P} \mathbf{p}\|_2^2
 #
 # where :math:`\mathbf{P}` is the precondioned operator, :math:`\mathbf{p}` is
 # the projected model in the preconditioned space, and
@@ -293,8 +293,8 @@ subax.set_xlim(0.05, 0.3)
 # (i.e., three spikes in the Fourier domain). Our new cost function is:
 #
 #   .. math::
-#        J_1 = ||\mathbf{y} - \mathbf{R} \mathbf{F} \mathbf{p}||_2^2 +
-#              \epsilon ||\mathbf{p}||_1
+#        J_1 = \|\mathbf{y} - \mathbf{R} \mathbf{F} \mathbf{p}\|_2^2 +
+#              \epsilon \|\mathbf{p}\|_1
 #
 # where :math:`\mathbf{F}` is the FFT operator. We will thus use the
 # :py:class:`pylops.optimization.sparsity.ISTA` and
@@ -348,9 +348,9 @@ plt.tight_layout()
 # case we try to solve a constrained problem):
 #
 #   .. math::
-#        J_1 = ||\mathbf{p}||_1
-#              \quad subj.to \quad  ||\mathbf{y} -
-#              \mathbf{R} \mathbf{F} \mathbf{p}||
+#        J_1 = \|\mathbf{p}\|_1
+#              \quad \text{subject to} \quad  \|\mathbf{y} -
+#              \mathbf{R} \mathbf{F} \mathbf{p}\|
 #
 # A very popular solver to solve such kind of cost function is called *spgl1*
 # and can be accessed via :py:class:`pylops.optimization.sparsity.SPGL1`.

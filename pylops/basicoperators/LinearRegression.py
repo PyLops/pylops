@@ -9,7 +9,7 @@ def LinearRegression(taxis, dtype="float64"):
     r"""Linear regression.
 
     Creates an operator that applies linear regression to a set of points.
-    Values along the t-axis  must be provided while initializing the operator.
+    Values along the :math:`t`-axis  must be provided while initializing the operator.
     Intercept and gradient form the model vector to be provided in forward
     mode, while the values of the regression line curve shall be provided
     in adjoint mode.
@@ -17,7 +17,7 @@ def LinearRegression(taxis, dtype="float64"):
     Parameters
     ----------
     taxis : :obj:`numpy.ndarray`
-        Elements along the t-axis.
+        Elements along the :math:`t`-axis.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -32,7 +32,7 @@ def LinearRegression(taxis, dtype="float64"):
     Raises
     ------
     TypeError
-        If ``t`` is not :obj:`numpy.ndarray`.
+        If ``taxis`` is not :obj:`numpy.ndarray`.
 
     See Also
     --------
@@ -43,7 +43,7 @@ def LinearRegression(taxis, dtype="float64"):
     The LinearRegression operator solves the following problem:
 
     .. math::
-        y_i = x_0 + x_1 t_i  \qquad \forall i=1,2,...,N
+        y_i = x_0 + x_1 t_i  \qquad \forall i=1,2,\ldots,N
 
     We can express this problem in a matrix form
 
@@ -53,7 +53,7 @@ def LinearRegression(taxis, dtype="float64"):
     where
 
     .. math::
-        \mathbf{y}= [y_1, y_2,...,y_N]^T, \qquad \mathbf{x}= [x_0, x_1]^T
+        \mathbf{y}= [y_1, y_2,\ldots,y_N]^T, \qquad \mathbf{x}= [x_0, x_1]^T
 
     and
 
@@ -62,7 +62,7 @@ def LinearRegression(taxis, dtype="float64"):
         = \begin{bmatrix}
             1       & t_{1}  \\
             1       & t_{2}  \\
-            ..      & ..     \\
+            \vdots      & \vdots     \\
             1       & t_{N}
         \end{bmatrix}
 

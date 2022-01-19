@@ -7,7 +7,7 @@ and :py:func:`pylops.optimization.leastsquares.lsqr` PyLops solvers
 to minimize the following cost function:
 
 .. math::
-        J = || \mathbf{y} -  \mathbf{Ax} ||_2^2 + \epsilon || \mathbf{x} ||_2^2
+        J = \| \mathbf{y} -  \mathbf{Ax} \|_2^2 + \epsilon \| \mathbf{x} \|_2^2
 
 Note that the LSQR solver behaves in the same way as the scipy's
 :py:func:`scipy.sparse.linalg.lsqr` solver. However, our solver is also able

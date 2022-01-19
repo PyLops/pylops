@@ -231,14 +231,13 @@ def FFT2D(
     forward mode, and to :py:func:`scipy.fft.ifft2` (or :py:func:`scipy.fft.irfft2`
     for real models) in adjoint mode.
 
-    When using `real=True`, the result of the forward is also multiplied by
+    When using ``real=True``, the result of the forward is also multiplied by
     :math:`\sqrt{2}` for all frequency bins except zero and Nyquist, and the input of
     the adjoint is multiplied by :math:`1 / \sqrt{2}` for the same frequencies.
 
     For a real valued input signal, it is advised to use the flag ``real=True``
     as it stores the values of the Fourier transform of the last direction at positive
     frequencies only as values at negative frequencies are simply their complex conjugates.
-
 
     Parameters
     ----------
@@ -255,17 +254,20 @@ def FFT2D(
         equivalent to ``nffts=(None, None)``.
     sampling : :obj:`tuple` or :obj:`float`, optional
         Sampling steps for each direction. When supplied a single value, it is used
-        for both directions. Unlike ``nffts``, ``None``s will not be converted to the
+        for both directions. Unlike ``nffts``, any ``None`` will not be converted to the
         default value.
     norm : `{"ortho", "none", "1/n"}`, optional
-        * "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
-        where :math:`N_F` is the number of samples in the Fourier domain given by
-        product of all elements of ``nffts``.
-        * "none": Does not scale the forward or the adjoint FFT transforms.
-        * "1/n": Scales both the forward and adjoint FFT transforms by
-        :math:`1/N_F`.
-        Note that for "none" and "1/n", the operator is not unitary, that is,
-        the adjoint is not the inverse. To invert the operator, simply use `Op \ y`.
+        - "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
+          where :math:`N_F` is the number of samples in the Fourier domain given by
+          product of all elements of ``nffts``.
+
+        - "none": Does not scale the forward or the adjoint FFT transforms.
+
+        - "1/n": Scales both the forward and adjoint FFT transforms by
+          :math:`1/N_F`.
+
+        .. note:: For "none" and "1/n", the operator is not unitary, that is, the
+          adjoint is not the inverse. To invert the operator, simply use ``Op \ y``.
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
@@ -294,7 +296,7 @@ def FFT2D(
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.
-        In addition, note that the NumPy backend does not support returning ``dtype``s
+        In addition, note that the NumPy backend does not support returning ``dtype``
         different than ``complex128``. As such, when using the NumPy backend, arrays will
         be force-casted to types corresponding to the supplied ``dtype``.
         The SciPy backend supports all precisions natively.
@@ -304,14 +306,15 @@ def FFT2D(
     Attributes
     ----------
     dims_fft : :obj:`tuple`
-        Shape of the array after the forward, but before linearization. E.g.
-        ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
+        Shape of the array after the forward, but before linearization.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
     f1 : :obj:`numpy.ndarray`
         Discrete Fourier Transform sample frequencies along ``dir[0]``
     f2 : :obj:`numpy.ndarray`
         Discrete Fourier Transform sample frequencies along ``dir[1]``
     real : :obj:`bool`
-        When True, uses ``rfft2``/``irfft2``
+        When ``True``, uses ``rfft2``/``irfft2``
     rdtype : :obj:`bool`
         Expected input type to the forward
     cdtype : :obj:`bool`
@@ -323,40 +326,45 @@ def FFT2D(
         ``dtype`` is not a complex type.
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
-        (True) or not (False)
+        (``True``) or not (``False``)
 
     Raises
     ------
     ValueError
-        If ``dims`` has less than two elements.
-        If ``dirs`` does not have exactly two elements.
-        If ``nffts`` or ``sampling`` are not either a single value or a tuple with
-        two elements.
-        If ``norm`` is not one of "ortho", "none", or "1/n".
+        - If ``dims`` has less than two elements.
+        - If ``dirs`` does not have exactly two elements.
+        - If ``nffts`` or ``sampling`` are not either a single value or a tuple with
+          two elements.
+        - If ``norm`` is not one of "ortho", "none", or "1/n".
     NotImplementedError
         If ``engine`` is neither ``numpy``, nor ``scipy``.
 
+    See Also
+    --------
+    FFT: One-dimensional FFT
+    FFTND: N-dimensional FFT
+
     Notes
     -----
-    The FFT2D operator (using `norm="ortho"`) applies the two-dimensional forward
+    The FFT2D operator (using ``norm="ortho"``) applies the two-dimensional forward
     Fourier transform to a signal :math:`d(y, x)` in forward mode:
 
     .. math::
-        D(k_y, k_x) = \mathscr{F} (d) = \frac{1}{\sqrt{N_F}} \int \int d(y, x) e^{-j2\pi k_yy}
-        e^{-j2\pi k_xx} dy dx
+        D(k_y, k_x) = \mathscr{F} (d) = \frac{1}{\sqrt{N_F}} \iint\limits_{-\infty}^\infty d(y, x) e^{-j2\pi k_yy}
+        e^{-j2\pi k_xx} \,\mathrm{d}y \,\mathrm{d}x
 
     Similarly, the  two-dimensional inverse Fourier transform is applied to
     the Fourier spectrum :math:`D(k_y, k_x)` in adjoint mode:
 
     .. math::
-        d(y,x) = \mathscr{F}^{-1} (D) = \frac{1}{\sqrt{N_F}} \int \int D(k_y, k_x) e^{j2\pi k_yy}
-        e^{j2\pi k_xx} dk_y  dk_x
+        d(y,x) = \mathscr{F}^{-1} (D) = \frac{1}{\sqrt{N_F}} \iint\limits_{-\infty}^\infty D(k_y, k_x) e^{j2\pi k_yy}
+        e^{j2\pi k_xx} \,\mathrm{d}k_y  \,\mathrm{d}k_x
 
     where :math:`N_F` is the number of samples in the Fourier domain given by the
     product of the element of ``nffts``.
     Both operators are effectively discretized and solved by a fast iterative
     algorithm known as Fast Fourier Transform. Note that the FFT2D operator
-    (using `norm="ortho"`) is a special operator in that the adjoint is also
+    (using ``norm="ortho"``) is a special operator in that the adjoint is also
     the inverse of the forward mode. For other norms, this does not hold (see ``norm``
     help). However, for any norm, the 2D Fourier transform is Hermitian for real input
     signals.

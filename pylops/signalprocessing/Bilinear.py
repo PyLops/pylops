@@ -26,7 +26,7 @@ class Bilinear(LinearOperator):
     Parameters
     ----------
     iava : :obj:`list` or :obj:`numpy.ndarray`
-         Array of size :math:`[2 \times n_{ava}]` containing
+         Array of size :math:`[2 \times n_\text{ava}]` containing
          pairs of floating indices of locations of available samples
          for interpolation.
     dims : :obj:`list`
@@ -59,7 +59,7 @@ class Bilinear(LinearOperator):
             w^0_{i} (1-w^1_{i}) x_{l^{r,0}_i, l^{l,1}_i} +
             (1-w^0_{i}) w^1_{i} x_{l^{l,0}_i, l^{r,1}_i} +
             w^0_{i} w^1_{i} x_{l^{r,0}_i, l^{r,1}_i}
-        \quad \forall i=1,2,...,M
+        \quad \forall i=1,2,\ldots,M
 
     where :math:`\mathbf{l^{l,0}}=[\lfloor l_1^0 \rfloor,
     \lfloor l_2^0 \rfloor, ..., \lfloor l_N^0 \rfloor]`,

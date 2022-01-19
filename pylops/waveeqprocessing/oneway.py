@@ -103,7 +103,7 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64"):
     Apply positive (forward) phase shift with constant velocity in
     forward mode, and negative (backward) phase shift with constant velocity in
     adjoint mode. Input model and data should be 2- or 3-dimensional arrays
-    in time-space domain of size :math:`[n_t \times n_x (\times n_y)]`.
+    in time-space domain of size :math:`[n_t \times n_x \;(\times n_y)]`.
 
     Parameters
     ----------
@@ -136,16 +136,16 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64"):
     transformation to the input model:
 
     .. math::
-        d(f, k_x, k_y) = m(f, k_x, k_y) *
-        e^{-j \sqrt{\omega^2/v^2 - k_x^2 - k_y^2} \Delta z}
+        d(f, k_x, k_y) = m(f, k_x, k_y)
+        e^{-j \Delta z \sqrt{\omega^2/v^2 - k_x^2 - k_y^2}}
 
     where :math:`v` is the constant propagation velocity and
     :math:`\Delta z` is the propagation depth. In adjoint mode, the data is
     propagated backward using the following transformation:
 
     .. math::
-        m(f, k_x, k_y) = d(f, k_x, k_y) *
-        e^{j \sqrt{\omega^2/v^2 - k_x^2 - k_y^2} \Delta z}
+        m(f, k_x, k_y) = d(f, k_x, k_y)
+        e^{j \Delta z \sqrt{\omega^2/v^2 - k_x^2 - k_y^2}}
 
     Effectively, the input model and data are assumed to be in time-space
     domain and forward Fourier transform is applied to both dimensions, leading
@@ -210,11 +210,11 @@ def Deghosting(
     Parameters
     ----------
     p : :obj:`np.ndarray`
-        Pressure data of of size :math:`\lbrack n_{r_x} (\times n_{r_y})
-        \times n_t \rbrack` (or :math:`\lbrack n_{r_{x,sub}}
-        (\times n_{r_{y,sub}}) \times n_t \rbrack`
+        Pressure data of of size :math:`\lbrack n_{r_x}\,(\times n_{r_y})
+        \times n_t \rbrack` (or :math:`\lbrack n_{r_{x,\text{sub}}}\,
+        (\times n_{r_{y,\text{sub}}}) \times n_t \rbrack`
         in case a ``restriction`` operator is provided. Note that
-        :math:`n_{r_{x,sub}}` (and :math:`n_{r_{y,sub}}`)
+        :math:`n_{r_{x,\text{sub}}}` (and :math:`n_{r_{y,\text{sub}}}`)
         must agree with the size of the output of this operator)
     nt : :obj:`int`
         Number of samples along the time axis
@@ -264,19 +264,19 @@ def Deghosting(
 
     Notes
     -----
-    Up- and down-going components of seismic data (:math:`p^-(x, t)`
-    and :math:`p^+(x, t)`) can be estimated from single-component data
-    (:math:`p(x, t)`) using a ghost model.
+    Up- and down-going components of seismic data :math:`p^-(x, t)`
+    and :math:`p^+(x, t)` can be estimated from single-component data
+    :math:`p(x, t)` using a ghost model.
 
-    The basic idea is that of using a one-way propagator in the f-k domain
+    The basic idea [1]_ is that of using a one-way propagator in the f-k domain
     (also referred to as ghost model) to predict the down-going field
     from the up-going one (excluded the direct arrival and its source
     ghost referred here to as :math:`p_d(x, t)`):
 
     .. math::
-        p^+ - p_d = e^{-j k_z 2 z_{rec}} p^-
+        p^+ - p_d = e^{-j k_z 2 z_\text{rec}} p^-
 
-    where :math:`k_z` is the vertical wavenumber and :math:`z_{rec}` is the
+    where :math:`k_z` is the vertical wavenumber and :math:`z_\text{rec}` is the
     depth of the array of receivers
 
     In a matrix form we can thus write the total wavefield as:
@@ -286,6 +286,10 @@ def Deghosting(
 
     where :math:`\Phi` is one-way propagator implemented via the
     :class:`pylops.waveeqprocessing.PhaseShift` operator.
+
+    .. [1] Amundsen, L., 1993, Wavenumber-based filtering of marine point-source
+       data: GEOPHYSICS, 58, 1335–1348.
+
 
     """
     ndims = p.ndim

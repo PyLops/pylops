@@ -160,12 +160,12 @@ def MDC(
 
     Apply multi-dimensional convolution between two datasets. If
     ``transpose=True``, model and data should be provided after flattening
-    2- or 3-dimensional arrays of size :math:`[n_r (\times n_{vs}) \times n_t]`
-    and :math:`[n_s (\times n_{vs}) \times n_t]` (or :math:`2*n_t-1` for
+    2- or 3-dimensional arrays of size :math:`[n_r \;(\times n_{vs}) \times n_t]`
+    and :math:`[n_s \;(\times n_{vs}) \times n_t]` (or :math:`2n_t-1` for
     ``twosided=True``), respectively. If ``transpose=False``, model and data
     should be provided after flattening 2- or 3-dimensional arrays of size
-    :math:`[n_t \times n_r (\times n_{vs})]` and
-    :math:`[n_t \times n_s (\times n_{vs})]` (or :math:`2*n_t-1` for
+    :math:`[n_t \times n_r \;(\times n_{vs})]` and
+    :math:`[n_t \times n_s \;(\times n_{vs})]` (or :math:`2n_t-1` for
     ``twosided=True``), respectively.
 
     .. warning:: A new implementation of MDC is provided in v1.5.0. This
@@ -179,17 +179,17 @@ def MDC(
     ----------
     G : :obj:`numpy.ndarray`
         Multi-dimensional convolution kernel in frequency domain of size
-        :math:`[n_s \times n_r \times n_{fmax}]` if ``transpose=True``
-        or size :math:`[n_{fmax} \times n_s \times n_r]` if ``transpose=False``
+        :math:`[n_s \times n_r \times n_{f_\text{max}}]` if ``transpose=True``
+        or size :math:`[n_{f_\text{max}} \times n_s \times n_r]` if ``transpose=False``
     nt : :obj:`int`
         Number of samples along time axis for model and data (note that this
-        must be equal to ``2*n_t-1`` when working with ``twosided=True``.
+        must be equal to :math:`2n_t-1` when working with ``twosided=True``.
     nv : :obj:`int`
         Number of samples along virtual source axis
     dt : :obj:`float`, optional
-        Sampling of time integration axis
+        Sampling of time integration axis :math:`\Delta t`
     dr : :obj:`float`, optional
-        Sampling of receiver integration axis
+        Sampling of receiver integration axis :math:`\Delta r`
     twosided : :obj:`bool`, optional
         MDC operator has both negative and positive time (``True``) or
         only positive (``False``)
@@ -205,9 +205,9 @@ def MDC(
         will be removed in v2.0.0 where time/frequency axis will be required
         to be in first dimension for efficiency reasons.
     saveGt : :obj:`bool`, optional
-        Save ``G`` and ``G^H`` to speed up the computation of adjoint of
+        Save ``G`` and ``G.H`` to speed up the computation of adjoint of
         :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
-        ``G^H`` on-the-fly (``False``) Note that ``saveGt=True`` will be
+        ``G.H`` on-the-fly (``False``) Note that ``saveGt=True`` will be
         faster but double the amount of required memory
     conj : :obj:`str`, optional
         Perform Fredholm integral computation with complex conjugate of ``G``
@@ -238,15 +238,15 @@ def MDC(
 
     .. math::
         y(t, s, v) = \mathscr{F}^{-1} \Big( \int_S G(f, s, r)
-        \mathscr{F}(x(t, r, v)) dr \Big)
+        \mathscr{F}(x(t, r, v))\,\mathrm{d}r \Big)
 
     which is discretized as follows:
 
     .. math::
-        y(t, s, v) = \mathscr{F}^{-1} \Big( \sum_{i_r=0}^{n_r}
-        (\sqrt{n_t} * d_t * d_r) G(f, s, i_r) \mathscr{F}(x(t, i_r, v)) \Big)
+        y(t, s, v) = \sqrt{n_t} \Delta t \Delta r\mathscr{F}^{-1} \Big( \sum_{i_r=0}^{n_r}
+        G(f, s, i_r) \mathscr{F}(x(t, i_r, v)) \Big)
 
-    where :math:`(\sqrt{n_t} * d_t * d_r)` is not applied if ``prescaled=True``.
+    where :math:`\sqrt{n_t} \Delta t \Delta r` is not applied if ``prescaled=True``.
 
     This operation can be discretized and performed by means of a
     linear operator
@@ -314,14 +314,14 @@ def MDD(
         :math:`[n_s \times n_r \times n_t]` for ``twosided=False`` or
         ``twosided=True`` and ``add_negative=True``
         (with only positive times) or size
-        :math:`[n_s \times n_r \times 2*n_t-1]` for ``twosided=True`` and
+        :math:`[n_s \times n_r \times 2n_t-1]` for ``twosided=True`` and
         ``add_negative=False``
         (with both positive and negative times)
     d : :obj:`numpy.ndarray`
-        Data in time domain :math:`[n_s (\times n_{vs}) \times n_t]` if
+        Data in time domain :math:`[n_s \,(\times n_{vs}) \times n_t]` if
         ``twosided=False`` or ``twosided=True`` and ``add_negative=True``
         (with only positive times) or size
-        :math:`[n_s (\times n_{vs}) \times 2*n_t-1]` if ``twosided=True``
+        :math:`[n_s \,(\times n_{vs}) \times 2n_t-1]` if ``twosided=True``
     dt : :obj:`float`, optional
         Sampling of time integration axis
     dr : :obj:`float`, optional
@@ -352,9 +352,9 @@ def MDD(
     dottest : :obj:`bool`, optional
         Apply dot-test
     saveGt : :obj:`bool`, optional
-        Save ``G`` and ``G^H`` to speed up the computation of adjoint of
+        Save ``G`` and ``G.H`` to speed up the computation of adjoint of
         :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
-        ``G^H`` on-the-fly (``False``) Note that ``saveGt=True`` will be
+        ``G.H`` on-the-fly (``False``) Note that ``saveGt=True`` will be
         faster but double the amount of required memory
     fftengine : :obj:`str`, optional
         Engine used for fft computation (``numpy``, ``scipy`` or ``fftw``)
@@ -367,21 +367,21 @@ def MDD(
     Returns
     -------
     minv : :obj:`numpy.ndarray`
-        Inverted model of size :math:`[n_r (\times n_{vs}) \times n_t]`
+        Inverted model of size :math:`[n_r \,(\times n_{vs}) \times n_t]`
         for ``twosided=False`` or
-        :math:`[n_r (\times n_vs) \times 2*n_t-1]` for ``twosided=True``
+        :math:`[n_r \,(\times n_vs) \times 2n_t-1]` for ``twosided=True``
     madj : :obj:`numpy.ndarray`
-        Adjoint model of size :math:`[n_r (\times n_{vs}) \times n_t]`
+        Adjoint model of size :math:`[n_r \,(\times n_{vs}) \times n_t]`
         for ``twosided=False`` or
-        :math:`[n_r (\times n_r) \times 2*n_t-1]` for ``twosided=True``
+        :math:`[n_r \,(\times n_r) \times 2n_t-1]` for ``twosided=True``
     psfinv : :obj:`numpy.ndarray`
         Inverted psf of size :math:`[n_r \times n_r \times n_t]`
         for ``twosided=False`` or
-        :math:`[n_r \times n_r \times 2*n_t-1]` for ``twosided=True``
+        :math:`[n_r \times n_r \times 2n_t-1]` for ``twosided=True``
     psfadj : :obj:`numpy.ndarray`
         Adjoint psf of size :math:`[n_r \times n_r \times n_t]`
         for ``twosided=False`` or
-        :math:`[n_r \times n_r \times 2*n_t-1]` for ``twosided=True``
+        :math:`[n_r \times n_r \times 2n_t-1]` for ``twosided=True``
 
     See Also
     --------

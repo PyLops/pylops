@@ -28,7 +28,7 @@ def _hardthreshold(x, thresh):
     r"""Hard thresholding.
 
     Applies hard thresholding to vector ``x`` (equal to the proximity
-    operator for :math:`||\mathbf{x}||_0`) as shown in [1]_.
+    operator for :math:`\|\mathbf{x}\|_0`) as shown in [1]_.
 
     .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
        data reconstruction using a percentile-half-thresholding algorithm”,
@@ -56,7 +56,7 @@ def _softthreshold(x, thresh):
     r"""Soft thresholding.
 
     Applies soft thresholding to vector ``x`` (equal to the proximity
-    operator for :math:`||\mathbf{x}||_1`) as shown in [1]_.
+    operator for :math:`\|\mathbf{x}\|_1`) as shown in [1]_.
 
     .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
        data reconstruction using a percentile-half-thresholding algorithm”,
@@ -88,7 +88,7 @@ def _halfthreshold(x, thresh):
     r"""Half thresholding.
 
     Applies half thresholding to vector ``x`` (equal to the proximity
-    operator for :math:`||\mathbf{x}||_{1/2}^{1/2}`) as shown in [1]_.
+    operator for :math:`\|\mathbf{x}\|_{1/2}^{1/2}`) as shown in [1]_.
 
     .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
        data reconstruction using a percentile-half-thresholding algorithm”,
@@ -354,8 +354,8 @@ def IRLS(
 ):
     r"""Iteratively reweighted least squares.
 
-    Solve an optimization problem with :math:`L1` cost function (data IRLS)
-    or :math:`L1` regularization term (model IRLS) given the operator ``Op``
+    Solve an optimization problem with :math:`L^1` cost function (data IRLS)
+    or :math:`L^1` regularization term (model IRLS) given the operator ``Op``
     and data ``y``.
 
     In the *data IRLS*, the cost function is minimized by iteratively solving a
@@ -416,58 +416,59 @@ def IRLS(
     :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
 
     .. math::
-        J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_1
+        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_1
 
     by a set of outer iterations which require to repeatedly solve a
     weighted least squares problem of the form:
 
     .. math::
-        \mathbf{x}^{(i+1)} = \operatorname*{arg\,min}_\mathbf{x} ||\mathbf{d} -
-        \mathbf{Op} \mathbf{x}||_{2, \mathbf{R}^{(i)}}^2 +
-        \epsilon_I^2 ||\mathbf{x}||_2^2
+        \DeclareMathOperator*{\argmin}{arg\,min}
+        \mathbf{x}^{(i+1)} = \argmin_\mathbf{x} \|\mathbf{d} -
+        \mathbf{Op}\,\mathbf{x}\|_{2, \mathbf{R}^{(i)}}^2 +
+        \epsilon_\mathbf{I}^2 \|\mathbf{x}\|_2^2
 
     where :math:`\mathbf{R}^{(i)}` is a diagonal weight matrix
     whose diagonal elements at iteration :math:`i` are equal to the absolute
     inverses of the residual vector :math:`\mathbf{r}^{(i)} =
-    \mathbf{y} - \mathbf{Op} \mathbf{x}^{(i)}` at iteration :math:`i`.
-    More specifically the j-th element of the diagonal of
+    \mathbf{y} - \mathbf{Op}\,\mathbf{x}^{(i)}` at iteration :math:`i`.
+    More specifically the :math:`j`-th element of the diagonal of
     :math:`\mathbf{R}^{(i)}` is
 
     .. math::
-        R^{(i)}_{j,j} = \frac{1}{|r^{(i)}_j|+\epsilon_R}
+        R^{(i)}_{j,j} = \frac{1}{\left| r^{(i)}_j \right| + \epsilon_\mathbf{R}}
 
     or
 
     .. math::
-        R^{(i)}_{j,j} = \frac{1}{max(|r^{(i)}_j|, \epsilon_R)}
+        R^{(i)}_{j,j} = \frac{1}{\max\{\left|r^{(i)}_j\right|, \epsilon_\mathbf{R}\}}
 
     depending on the choice ``threshR``. In either case,
-    :math:`\epsilon_R` is the user-defined stabilization/thresholding
+    :math:`\epsilon_\mathbf{R}` is the user-defined stabilization/thresholding
     factor [1]_.
 
     Similarly *model IRLS* solves the following optimization problem for the
     operator :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
 
     .. math::
-        J = ||\mathbf{x}||_1 \quad s.t. \quad
-        \mathbf{d} = \mathbf{Op} \mathbf{x}
+        J = \|\mathbf{x}\|_1 \quad \text{subject to} \quad
+        \mathbf{d} = \mathbf{Op}\,\mathbf{x}
 
     by a set of outer iterations which require to repeatedly solve a
     weighted least squares problem of the form [2]_:
 
     .. math::
         \mathbf{x}^{(i+1)} = \operatorname*{arg\,min}_\mathbf{x}
-        ||\mathbf{x}||_{2, \mathbf{R}^{(i)}}^2 \quad s.t. \quad
-        \mathbf{d} = \mathbf{Op} \mathbf{x}
+        \|\mathbf{x}\|_{2, \mathbf{R}^{(i)}}^2 \quad \text{subject to} \quad
+        \mathbf{d} = \mathbf{Op}\,\mathbf{x}
 
     where :math:`\mathbf{R}^{(i)}` is a diagonal weight matrix
     whose diagonal elements at iteration :math:`i` are equal to the absolutes
     of the model vector :math:`\mathbf{x}^{(i)}` at iteration
-    :math:`i`. More specifically the j-th element of the diagonal of
+    :math:`i`. More specifically the :math:`j`-th element of the diagonal of
     :math:`\mathbf{R}^{(i)}` is
 
     .. math::
-        R^{(i)}_{j,j} = |x^{(i)}_j|
+        R^{(i)}_{j,j} = \left|x^{(i)}_j\right|.
 
     .. [1] https://en.wikipedia.org/wiki/Iteratively_reweighted_least_squares
     .. [2] Chartrand, R., and Yin, W. "Iteratively reweighted algorithms for
@@ -505,7 +506,7 @@ def OMP(
 ):
     r"""Orthogonal Matching Pursuit (OMP).
 
-    Solve an optimization problem with :math:`L0` regularization function given
+    Solve an optimization problem with :math:`L^0` regularization function given
     the operator ``Op`` and data ``y``. The operator can be real or complex,
     and should ideally be either square :math:`N=M` or underdetermined
     :math:`N<M`.
@@ -522,7 +523,7 @@ def OMP(
         Number of iterations of inner loop. By choosing ``niter_inner=0``, the
         Matching Pursuit (MP) algorithm is implemented.
     sigma : :obj:`list`
-        Maximum L2 norm of residual. When smaller stop iterations.
+        Maximum :math:`L^2` norm of residual. When smaller stop iterations.
     normalizecols : :obj:`list`, optional
         Normalize columns (``True``) or not (``False``). Note that this can be
         expensive as it requires applying the forward operator
@@ -554,24 +555,26 @@ def OMP(
     :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
 
     .. math::
-            ||\mathbf{x}||_0 \quad  subj. to \quad
-            ||\mathbf{Op}\mathbf{x}-\mathbf{b}||_2^2 <= \sigma^2,
+            \|\mathbf{x}\|_0 \quad  \text{subject to} \quad
+            \|\mathbf{Op}\,\mathbf{x}-\mathbf{b}\|_2^2 \leq \sigma^2,
 
     using Orthogonal Matching Pursuit (OMP). This is a very
     simple iterative algorithm which applies the following step:
 
     .. math::
-        \Lambda_k = \Lambda_{k-1} \cup \{ arg max_j
-        |\mathbf{Op}_j^H \mathbf{r}_k| \} \\
-        \mathbf{x}_k = arg min_{\mathbf{x}}
-        ||\mathbf{Op}_{\Lambda_k} \mathbf{x} - \mathbf{b}||_2^2
+        \DeclareMathOperator*{\argmin}{arg\,min}
+        \DeclareMathOperator*{\argmax}{arg\,max}
+        \Lambda_k = \Lambda_{k-1} \cup \left\{\argmax_j
+        \left|\mathbf{Op}_j^H\,\mathbf{r}_k\right| \right\} \\
+        \mathbf{x}_k = \argmin_{\mathbf{x}}
+        \left\|\mathbf{Op}_{\Lambda_k}\,\mathbf{x} - \mathbf{b}\right\|_2^2
 
     Note that by choosing ``niter_inner=0`` the basic Matching Pursuit (MP)
     algorithm is implemented instead. In other words, instead of solving an
     optimization at each iteration to find the best :math:`\mathbf{x}` for the
     currently selected basis functions, the vector :math:`\mathbf{x}` is just
     updated at the new basis function by taking directly the value from
-    the inner product :math:`\mathbf{Op}_j^H \mathbf{r}_k`.
+    the inner product :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
 
     In this case it is highly reccomended to provide a normalized basis
     function. If different basis have different norms, the solver is likely
@@ -699,7 +702,7 @@ def ISTA(
 ):
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
-    Solve an optimization problem with :math:`L_p, \; p=0, 1/2, 1`
+    Solve an optimization problem with :math:`L^p, \; p=0, 0.5, 1`
     regularization, given the operator ``Op`` and data ``y``. The operator
     can be real or complex, and should ideally be either square :math:`N=M`
     or underdetermined :math:`N<M`.
@@ -715,10 +718,12 @@ def ISTA(
     eps : :obj:`float`, optional
         Sparsity damping
     alpha : :obj:`float`, optional
-        Step size (:math:`\alpha \le 1/\lambda_{max}(\mathbf{Op}^H\mathbf{Op})`
-        guarantees convergence. If ``None``, the maximum eigenvalue is
-        estimated and the optimal step size is chosen. If provided, the
-        condition will not be checked internally).
+        Step size. To guarantee convergence, ensure
+        :math:`\alpha \le 1/\lambda_\text{max}`, where :math:`\lambda_\text{max}`
+        is the largest eigenvalue of :math:`\mathbf{Op}^H\mathbf{Op}`.
+        If ``None``, the maximum eigenvalue is estimated and the optimal step size
+        is chosen as :math:`1/\lambda_\text{max}`. If provided, the
+        convergence criterion will not be checked internally.
     eigsiter : :obj:`float`, optional
         Number of iterations for eigenvalue estimation if ``alpha=None``
     eigstol : :obj:`float`, optional
@@ -779,38 +784,38 @@ def ISTA(
     :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
 
     .. math::
-        J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
-            \epsilon ||\mathbf{x}||_p
+        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_2^2 +
+            \epsilon \|\mathbf{x}\|_p
 
     or the analysis problem:
 
     .. math::
-        J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
-            \epsilon ||\mathbf{SOp}^H\mathbf{x}||_p
+        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_2^2 +
+            \epsilon \|\mathbf{SOp}^H\,\mathbf{x}\|_p
 
     if ``SOp`` is provided. Note that in the first case, ``SOp`` should be
     assimilated in the modelling operator (i.e., ``Op=GOp * SOp``).
 
     The Iterative Shrinkage-Thresholding Algorithms (ISTA) [1]_ is used, where
-    :math:`p=0, 1, 1/2`. This is a very simple iterative algorithm which
+    :math:`p=0, 0.5, 1`. This is a very simple iterative algorithm which
     applies the following step:
 
     .. math::
-        \mathbf{x}^{(i+1)} = T_{(\epsilon \alpha /2, p)} (\mathbf{x}^{(i)} +
-        \alpha \mathbf{Op}^H (\mathbf{d} - \mathbf{Op} \mathbf{x}^{(i)}))
+        \mathbf{x}^{(i+1)} = T_{(\epsilon \alpha /2, p)} \left(\mathbf{x}^{(i)} +
+        \alpha\,\mathbf{Op}^H \left(\mathbf{d} - \mathbf{Op}\,\mathbf{x}^{(i)}\right)\right)
 
     or
 
     .. math::
-        \mathbf{x}^{(i+1)} = \mathbf{SOp}(T_{(\epsilon \alpha /2, p)}
-        (\mathbf{SOp}^H(\mathbf{x}^{(i)} + \alpha \mathbf{Op}^H (\mathbf{d} -
-        \mathbf{Op} \mathbf{x}^{(i)}))))
+        \mathbf{x}^{(i+1)} = \mathbf{SOp}\,\left\{T_{(\epsilon \alpha /2, p)}
+        \mathbf{SOp}^H\,\left(\mathbf{x}^{(i)} + \alpha\,\mathbf{Op}^H \left(\mathbf{d} -
+        \mathbf{Op} \,\mathbf{x}^{(i)}\right)\right)\right\}
 
     where :math:`\epsilon \alpha /2` is the threshold and :math:`T_{(\tau, p)}`
     is the thresholding rule. The most common variant of ISTA uses the
     so-called soft-thresholding rule :math:`T(\tau, p=1)`. Alternatively an
-    hard-thresholding rule is used in the case of `p=0` or a half-thresholding
-    rule is used in the case of `p=1/2`. Finally, percentile bases thresholds
+    hard-thresholding rule is used in the case of :math:`p=0` or a half-thresholding
+    rule is used in the case of :math:`p=1/2`. Finally, percentile bases thresholds
     are also implemented: the damping factor is not used anymore an the
     threshold changes at every iteration based on the computed percentile.
 
@@ -1024,7 +1029,7 @@ def FISTA(
 ):
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
-    Solve an optimization problem with :math:`L_p, \; p=0, 1/2, 1`
+    Solve an optimization problem with :math:`L^p, \; p=0, 0.5, 1`
     regularization, given the operator ``Op`` and data ``y``.
     The operator can be real or complex, and should ideally be either square
     :math:`N=M` or underdetermined :math:`N<M`.
@@ -1039,11 +1044,12 @@ def FISTA(
         Number of iterations
     eps : :obj:`float`, optional
         Sparsity damping
-    alpha : :obj:`float`, optional
-        Step size (:math:`\alpha \le 1/\lambda_{max}(\mathbf{Op}^H\mathbf{Op})`
-        guarantees convergence. If ``None``, the maximum eigenvalue is
-        estimated and the optimal step size is chosen. If provided, the
-        condition will not be checked internally).
+        Step size. To guarantee convergence, ensure
+        :math:`\alpha \le 1/\lambda_\text{max}`, where :math:`\lambda_\text{max}`
+        is the largest eigenvalue of :math:`\mathbf{Op}^H\mathbf{Op}`.
+        If ``None``, the maximum eigenvalue is estimated and the optimal step size
+        is chosen as :math:`1/\lambda_\text{max}`. If provided, the
+        convergence criterion will not be checked internally.
     eigsiter : :obj:`int`, optional
         Number of iterations for eigenvalue estimation if ``alpha=None``
     eigstol : :obj:`float`, optional
@@ -1102,19 +1108,19 @@ def FISTA(
     :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
 
     .. math::
-        J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
-            \epsilon ||\mathbf{x}||_p
+        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_2^2 +
+            \epsilon \|\mathbf{x}\|_p
 
     or the analysis problem:
 
     .. math::
-        J = ||\mathbf{d} - \mathbf{Op} \mathbf{x}||_2^2 +
-            \epsilon ||\mathbf{SOp}^H\mathbf{x}||_p
+        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_2^2 +
+            \epsilon \|\mathbf{SOp}^H\,\mathbf{x}\|_p
 
     if ``SOp`` is provided.
 
     The Fast Iterative Shrinkage-Thresholding Algorithm (FISTA) [1]_ is used,
-    where :math:`p=0, 1, 1/2`. This is a modified version of ISTA solver with
+    where :math:`p=0, 0.5, 1`. This is a modified version of ISTA solver with
     improved convergence properties and limited additional computational cost.
     Similarly to the ISTA solver, the choice of the thresholding algorithm to
     apply at every iteration is based on the choice of :math:`p`.
@@ -1344,45 +1350,45 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
     info : :obj:`dict`
         Dictionary with the following information:
 
-        ``tau``, final value of tau (see sigma above)
+        - ``tau``, final value of tau (see sigma above)
 
-        ``rnorm``, two-norm of the optimal residual
+        - ``rnorm``, two-norm of the optimal residual
 
-        ``rgap``, relative duality gap (an optimality measure)
+        - ``rgap``, relative duality gap (an optimality measure)
 
-        ``gnorm``, Lagrange multiplier of (LASSO)
+        - ``gnorm``, Lagrange multiplier of (LASSO)
 
-        ``stat``,
-           ``1``: found a BPDN solution,
-           ``2``: found a BP solution; exit based on small gradient,
-           ``3``: found a BP solution; exit based on small residual,
-           ``4``: found a LASSO solution,
-           ``5``: error, too many iterations,
-           ``6``: error, linesearch failed,
-           ``7``: error, found suboptimal BP solution,
-           ``8``: error, too many matrix-vector products.
+        - ``stat``, final status of solver
+           * ``1``: found a BPDN solution,
+           * ``2``: found a BP solution; exit based on small gradient,
+           * ``3``: found a BP solution; exit based on small residual,
+           * ``4``: found a LASSO solution,
+           * ``5``: error, too many iterations,
+           * ``6``: error, linesearch failed,
+           * ``7``: error, found suboptimal BP solution,
+           * ``8``: error, too many matrix-vector products.
 
-        ``niters``, number of iterations
+        - ``niters``, number of iterations
 
-        ``nProdA``, number of multiplications with A
+        - ``nProdA``, number of multiplications with A
 
-        ``nProdAt``, number of multiplications with A'
+        - ``nProdAt``, number of multiplications with A'
 
-        ``n_newton``, number of Newton steps
+        - ``n_newton``, number of Newton steps
 
-        ``time_project``, projection time (seconds)
+        - ``time_project``, projection time (seconds)
 
-        ``time_matprod``, matrix-vector multiplications time (seconds)
+        - ``time_matprod``, matrix-vector multiplications time (seconds)
 
-        ``time_total``, total solution time (seconds)
+        - ``time_total``, total solution time (seconds)
 
-        ``niters_lsqr``, number of lsqr iterations (if ``subspace_min=True``)
+        - ``niters_lsqr``, number of lsqr iterations (if ``subspace_min=True``)
 
-        ``xnorm1``, L1-norm model solution history through iterations
+        - ``xnorm1``, L1-norm model solution history through iterations
 
-        ``rnorm2``, L2-norm residual history through iterations
+        - ``rnorm2``, L2-norm residual history through iterations
 
-        ``lambdaa``, Lagrange multiplier history through iterations
+        - ``lambdaa``, Lagrange multiplier history through iterations
 
     Raises
     ------
@@ -1398,15 +1404,16 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
     its cost function is
 
         .. math::
-            ||\mathbf{x}||_1 \quad  subj. to \quad
-            ||\mathbf{Op}\mathbf{S}^H\mathbf{x}-\mathbf{b}||_2^2 <= \sigma,
+            \|\mathbf{x}\|_1 \quad  \text{subject to} \quad
+            \left\|\mathbf{Op}\,\mathbf{S}^H\mathbf{x}-\mathbf{b}\right\|_2^2
+            \leq \sigma,
 
-    while the second problem is the *l1-regularized least-squares or LASSO*
+    while the second problem is the *ℓ₁-regularized least-squares or LASSO*
     problem and its cost function is
 
         .. math::
-            ||\mathbf{Op}\mathbf{S}^H\mathbf{x}-\mathbf{b}||_2^2 \quad  subj.
-            to \quad  ||\mathbf{x}||_1  <= \tau
+            \left\|\mathbf{Op}\,\mathbf{S}^H\mathbf{x}-\mathbf{b}\right\|_2^2
+            \quad \text{subject to} \quad  \|\mathbf{x}\|_1  \leq \tau
 
     .. [1] van den Berg E., Friedlander M.P., "Probing the Pareto frontier
        for basis pursuit solutions", SIAM J. on Scientific Computing,
@@ -1448,16 +1455,17 @@ def SplitBregman(
 ):
     r"""Split Bregman for mixed L2-L1 norms.
 
-    Solve an unconstrained system of equations with mixed L2-L1 regularization
-    terms given the operator ``Op``, a list of L1 regularization terms
-    ``RegsL1``, and an optional list of L2 regularization terms ``RegsL2``.
+    Solve an unconstrained system of equations with mixed :math:`L^2` and :math:`L^1`
+    regularization terms given the operator ``Op``, a list of :math:`L^1`
+    regularization terms ``RegsL1``, and an optional list of :math:`L^2`
+    regularization terms ``RegsL2``.
 
     Parameters
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
     RegsL1 : :obj:`list`
-        L1 regularization operators
+        :math:`L^1` regularization operators
     data : :obj:`numpy.ndarray`
         Data
     niter_outer : :obj:`int`
@@ -1468,19 +1476,19 @@ def SplitBregman(
         for many applications optimal efficiency is obtained when only one
         iteration is performed.
     RegsL2 : :obj:`list`
-        Additional L2 regularization operators
-        (if ``None``, L2 regularization is not added to the problem)
+        Additional :math:`L^2` regularization operators
+        (if ``None``, :math:`L^2` regularization is not added to the problem)
     dataregsL2 : :obj:`list`, optional
-        L2 Regularization data (must have the same number of elements
+        :math:`L^2` Regularization data (must have the same number of elements
         of ``RegsL2`` or equal to ``None`` to use a zero data for every
         regularization operator in ``RegsL2``)
     mu : :obj:`float`, optional
          Data term damping
     epsRL1s : :obj:`list`
-         L1 Regularization dampings (must have the same number of elements
+         :math:`L^1` Regularization dampings (must have the same number of elements
          as ``RegsL1``)
     epsRL2s : :obj:`list`
-         L2 Regularization dampings (must have the same number of elements
+         :math:`L^2` Regularization dampings (must have the same number of elements
          as ``RegsL2``)
     tol : :obj:`float`, optional
         Tolerance. Stop outer iterations if difference between inverted model
@@ -1509,18 +1517,22 @@ def SplitBregman(
     Notes
     -----
     Solve the following system of unconstrained, regularized equations
-    given the operator :math:`\mathbf{Op}` and a set of mixed norm (L2 and L1)
-    regularization terms :math:`\mathbf{R_{L2,i}}` and
-    :math:`\mathbf{R_{L1,i}}`, respectively:
+    given the operator :math:`\mathbf{Op}` and a set of mixed norm
+    (:math:`L^2` and :math:`L^1`)
+    regularization terms :math:`\mathbf{R}_{2,i}` and
+    :math:`\mathbf{R}_{1,i}`, respectively:
 
     .. math::
-        J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x} |||_2^2 +
-        \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
-        \mathbf{R_{L2,i}} \textbf{x} |||_2^2 +
-        \sum_i || \mathbf{R_{L1,i}} \textbf{x} |||_1
+        J = \frac{\mu}{2} \|\textbf{d} - \textbf{Op}\,\textbf{x} \|_2^2 +
+        \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{d}_{\mathbf{R}_{2,i}} -
+        \mathbf{R}_{2,i} \textbf{x} \|_2^2 +
+        \sum_i \epsilon_{\mathbf{R}_{1,i}} \| \mathbf{R}_{1,i} \textbf{x} \|_1
 
-    where :math:`\mu` and :math:`\epsilon_{{R}_{L2,i}}` are the damping factors
-    used to weight the different L2 regularization terms of the cost function.
+    where :math:`\mu` is the reconstruction damping, :math:`\epsilon_{\mathbf{R}_{2,i}}`
+    are the damping factors used to weight the different :math:`L^2` regularization
+    terms of the cost function and :math:`\epsilon_{\mathbf{R}_{1,i}}`
+    are the damping factors used to weight the different :math:`L^1` regularization
+    terms of the cost function.
 
     The generalized Split-Bergman algorithm [1]_ is used to solve such cost
     function: the algorithm is composed of a sequence of unconstrained
@@ -1530,26 +1542,30 @@ def SplitBregman(
     problem:
 
     .. math::
-        J = \mu/2 ||\textbf{d} - \textbf{Op} \textbf{x}||_2^2 +
-        \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
-        \mathbf{R_{L2,i}} \textbf{x}||_2^2 +
-        \sum_i || \textbf{y}_i ||_1 \quad s.t \quad
-        \textbf{y}_i = \mathbf{R_{L1,i}} \textbf{x} \quad \forall i
+        J = \frac{\mu}{2} \|\textbf{d} - \textbf{Op}\,\textbf{x}\|_2^2 +
+        \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{d}_{\mathbf{R}_{2,i}} -
+        \mathbf{R}_{2,i} \textbf{x}\|_2^2 +
+        \sum_i \| \textbf{y}_i \|_1 \quad \text{subject to} \quad
+        \textbf{y}_i = \mathbf{R}_{1,i} \textbf{x} \quad \forall i
 
     and solved as follows:
 
     .. math::
+        \DeclareMathOperator*{\argmin}{arg\,min}
+        \begin{align}
         (\textbf{x}^{k+1}, \textbf{y}_i^{k+1}) =
-        \operatorname*{arg\,min}_{\mathbf{x}, \mathbf{y}_i}
-        ||\textbf{d} - \textbf{Op} \textbf{x}||_2^2 +
-        \sum_i \epsilon_{{R}_{L2,i}}/2 ||\mathbf{d_{{R}_{L2,i}}} -
-        \mathbf{R_{L2,i}} \textbf{x}||_2^2 + \sum_i || \textbf{y}_i ||_1 +
-        \sum_i \epsilon_{{R}_{L1,i}}/2 ||\textbf{y}_i -
-        \mathbf{R_{L1,i}} \textbf{x} - \textbf{b}_i^k||_2^2
+        \argmin_{\mathbf{x}, \mathbf{y}_i}
+        \|\textbf{d} - \textbf{Op}\,\textbf{x}\|_2^2
+        &+ \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{d}_{\mathbf{R}_{2,i}} -
+        \mathbf{R}_{2,i} \textbf{x}\|_2^2 \\
+        &+ \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{1,i}} \|\textbf{y}_i -
+        \mathbf{R}_{1,i} \textbf{x} - \textbf{b}_i^k\|_2^2 \\
+        &+ \sum_i \| \textbf{y}_i \|_1
+        \end{align}
 
     .. math::
         \textbf{b}_i^{k+1}=\textbf{b}_i^k +
-        (\mathbf{R_{L1,i}} \textbf{x}^{k+1} - \textbf{y}^{k+1})
+        (\mathbf{R}_{1,i} \textbf{x}^{k+1} - \textbf{y}^{k+1})
 
     The :py:func:`scipy.sparse.linalg.lsqr` solver and a fast shrinkage
     algorithm are used within a inner loop to solve the first step. The entire

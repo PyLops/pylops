@@ -144,7 +144,7 @@ def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
         Gives the reason for termination
 
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
-        :math:`\mathbf{d} = \mathbf{Op}\mathbf{x}`
+        :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
 
         ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
         problem
@@ -152,7 +152,7 @@ def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
         Iteration number upon termination
     r1norm : :obj:`float`
         :math:`||\mathbf{r}||_2`, where
-        :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\mathbf{x}`
+        :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\,\mathbf{x}`
     r2norm : :obj:`float`
         :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
         \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
@@ -273,6 +273,9 @@ def lsqr(
     Solve an overdetermined system of equations given an operator ``Op`` and
     data ``y`` using LSQR iterations.
 
+    .. math::
+      \DeclareMathOperator{\cond}{cond}
+
     Parameters
     ----------
     Op : :obj:`pylops.LinearOperator`
@@ -285,11 +288,12 @@ def lsqr(
         Damping coefficient
     atol, btol : :obj:`float`, optional
         Stopping tolerances. If both are 1.0e-9, the final residual norm
-        should be accurate to about 9 digits. (The final x will usually
-        have fewer correct digits, depending on cond(A) and the size of damp.)
+        should be accurate to about 9 digits. (The solution will usually
+        have fewer correct digits, depending on :math:`\cond(\mathbf{Op})`
+        and the size of ``damp``.)
     conlim : :obj:`float`, optional
-        Stopping tolerance on :math:`cond(\mathbf{Op})`
-        exceeds conlim. For square, ``conlim`` could be as large as 1.0e+12.
+        Stopping tolerance on :math:`\cond(\mathbf{Op})`
+        exceeds ``conlim``. For square, ``conlim`` could be as large as 1.0e+12.
         For least-squares problems, ``conlim`` should be less than 1.0e+8.
         Maximum precision can be obtained by setting
         ``atol = btol = conlim = 0``, but the number of iterations may
@@ -315,38 +319,38 @@ def lsqr(
         ``0`` means the exact solution is :math:`\mathbf{x}=0`
 
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
-        :math:`\mathbf{y} = \mathbf{Op}\mathbf{x}`
+        :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
 
         ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
         problem
 
-        ``3`` means the estimate of :math:`cond(\bar{\mathbf{Op}})`
-        has exceeded conlim
+        ``3`` means the estimate of :math:`\cond(\overline{\mathbf{Op}})`
+        has exceeded ``conlim``
 
-        ``4`` means :math:`\mathbf{y} - \mathbf{Op}\mathbf{x}` is small enough
+        ``4`` means :math:`\mathbf{y} - \mathbf{Op}\,\mathbf{x}` is small enough
         for this machine
 
         ``5`` means the least-squares solution is good enough for this machine
 
-        ``6`` means :math:`cond(\bar{\mathbf{Op}})` seems to be too large for
+        ``6`` means :math:`\cond(\overline{\mathbf{Op}})` seems to be too large for
         this machine
 
         ``7`` means the iteration limit has been reached
 
     r1norm : :obj:`float`
         :math:`||\mathbf{r}||_2^2`, where
-        :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\mathbf{x}`
+        :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
     r2norm : :obj:`float`
         :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
         \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
         Equal to ``r1norm`` if :math:`\epsilon=0`
     anorm : :obj:`float`
-        Estimate of Frobenius norm of :math:`\bar{\mathbf{Op}} =
+        Estimate of Frobenius norm of :math:`\overline{\mathbf{Op}} =
         [\mathbf{Op} \; \epsilon \mathbf{I}]`
     acond : :obj:`float`
-        Estimate of :math:`cond(\bar{\mathbf{Op}})`
+        Estimate of :math:`\cond(\overline{\mathbf{Op}})`
     arnorm : :obj:`float`
-        Estimate of norm of :math:`cond(\mathbf{Op}^H\mathbf{r}-
+        Estimate of norm of :math:`\cond(\mathbf{Op}^H\mathbf{r}-
         \epsilon^2\mathbf{x})`
     var : :obj:`float`
         Diagonals of :math:`(\mathbf{Op}^H\mathbf{Op})^{-1}` (if ``damp=0``)
@@ -360,7 +364,7 @@ def lsqr(
     Minimize the following functional using LSQR iterations [1]_:
 
     .. math::
-        J = || \mathbf{y} -  \mathbf{Opx} ||_2^2 +
+        J = || \mathbf{y} -  \mathbf{Op}\,\mathbf{x} ||_2^2 +
         \epsilon^2 || \mathbf{x} ||_2^2
 
     where :math:`\epsilon` is the damping coefficient.

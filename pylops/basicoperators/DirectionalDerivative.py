@@ -7,17 +7,21 @@ def FirstDirectionalDerivative(
 ):
     r"""First Directional derivative.
 
-    Apply directional derivative operator to a multi-dimensional
-    array (at least 2 dimensions are required) along either a single common
-    direction or different directions for each point of the array.
+    Apply a directional derivative operator to a multi-dimensional array
+    along either a single common direction or different directions for each
+    point of the array.
+
+    .. note:: At least 2 dimensions are required, consider using
+      :py:func:`pylops.FirstDerivative` for 1d arrays.
+
 
     Parameters
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension.
     v : :obj:`np.ndarray`, optional
-        Single direction (array of size :math:`n_{dims}`) or group of directions
-        (array of size :math:`[n_{dims} \times n_{d0} \times ... \times n_{d_{n_{dims}}}]`)
+        Single direction (array of size :math:`n_\text{dims}`) or group of directions
+        (array of size :math:`[n_\text{dims} \times n_{d_0} \times ... \times n_{d_{n_\text{dims}}}]`)
     sampling : :obj:`tuple`, optional
         Sampling steps for each direction.
     edge : :obj:`bool`, optional
@@ -70,17 +74,20 @@ def FirstDirectionalDerivative(
 def SecondDirectionalDerivative(dims, v, sampling=1, edge=False, dtype="float64"):
     r"""Second Directional derivative.
 
-    Apply second directional derivative operator to a multi-dimensional
-    array (at least 2 dimensions are required) along either a single common
-    direction or different directions for each point of the array.
+    Apply a second directional derivative operator to a multi-dimensional array
+    along either a single common direction or different directions for each
+    point of the array.
+
+    .. note:: At least 2 dimensions are required, consider using
+      :py:func:`pylops.SecondDerivative` for 1d arrays.
 
     Parameters
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension.
     v : :obj:`np.ndarray`, optional
-        Single direction (array of size :math:`n_{dims}`) or group of directions
-        (array of size :math:`[n_{dims} \times n_{d0} \times ... \times n_{d_{n_{dims}}}]`)
+        Single direction (array of size :math:`n_\text{dims}`) or group of directions
+        (array of size :math:`[n_\text{dims} \times n_{d_0} \times ... \times n_{d_{n_\text{dims}}}]`)
     sampling : :obj:`tuple`, optional
         Sampling steps for each direction.
     edge : :obj:`bool`, optional

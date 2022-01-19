@@ -46,21 +46,21 @@ class BlockDiag(LinearOperator):
 
     .. math::
         \begin{bmatrix}
-            \mathbf{L_1}  & \mathbf{0}   &  ... &  \mathbf{0}  \\
-            \mathbf{0}    & \mathbf{L_2} &  ... &  \mathbf{0}  \\
-            ...           & ...          &  ... &  ...         \\
-            \mathbf{0}    & \mathbf{0}   &  ... &  \mathbf{L_N}
+            \mathbf{L_1}  & \mathbf{0}   &  \ldots &  \mathbf{0}  \\
+            \mathbf{0}    & \mathbf{L_2} &  \ldots &  \mathbf{0}  \\
+            \vdots        & \vdots       &  \ddots &  \vdots         \\
+            \mathbf{0}    & \mathbf{0}   &  \ldots &  \mathbf{L_N}
         \end{bmatrix}
         \begin{bmatrix}
             \mathbf{x}_{1}  \\
             \mathbf{x}_{2}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{x}_{N}
         \end{bmatrix} =
         \begin{bmatrix}
             \mathbf{L_1} \mathbf{x}_{1}  \\
             \mathbf{L_2} \mathbf{x}_{2}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{L_N} \mathbf{x}_{N}
         \end{bmatrix}
 
@@ -68,21 +68,21 @@ class BlockDiag(LinearOperator):
 
     .. math::
         \begin{bmatrix}
-            \mathbf{L_1}^H  \quad \mathbf{0}    \quad ... \quad  \mathbf{0}  \\
-            \mathbf{0}    \quad \mathbf{L_2}^H  \quad ... \quad  \mathbf{0}  \\
-            ...           \quad ...             \quad ... \quad  ...         \\
-            \mathbf{0}    \quad \mathbf{0}      \quad ... \quad  \mathbf{L_N}^H
+            \mathbf{L_1}^H  & \mathbf{0}     & \ldots & \mathbf{0}  \\
+            \mathbf{0}      & \mathbf{L_2}^H & \ldots & \mathbf{0}  \\
+            \vdots          & \vdots         & \ddots & \vdots      \\
+            \mathbf{0}      & \mathbf{0}     & \ldots & \mathbf{L_N}^H
         \end{bmatrix}
         \begin{bmatrix}
             \mathbf{y}_{1}  \\
             \mathbf{y}_{2}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{y}_{N}
         \end{bmatrix} =
         \begin{bmatrix}
             \mathbf{L_1}^H \mathbf{y}_{1}  \\
             \mathbf{L_2}^H \mathbf{y}_{2}  \\
-            ...     \\
+            \vdots     \\
             \mathbf{L_N}^H \mathbf{y}_{N}
         \end{bmatrix}
 

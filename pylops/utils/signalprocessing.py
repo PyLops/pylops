@@ -18,15 +18,15 @@ def convmtx(h, n):
     h : :obj:`np.ndarray`
         Convolution filter (1D array)
     n : :obj:`int`
-        Number of columns (if :math:`len(h) < n`) or rows
-        (if :math:`len(h) \geq n`) of convolution matrix
+        Number of columns (if :math:`\text{len}(h) < n`) or rows
+        (if :math:`\text{len}(h) \geq n`) of convolution matrix
 
     Returns
     -------
     C : :obj:`np.ndarray`
-        Convolution matrix of size :math:`len(h)+n-1 \times n`
-        (if :math:`len(h) < n`) or :math:`n \times len(h)+n-1`
-        (if :math:`len(h) \geq n`)
+        Convolution matrix of size :math:`\text{len}(h)+n-1 \times n`
+        (if :math:`\text{len}(h) < n`) or :math:`n \times \text{len}(h)+n-1`
+        (if :math:`\text{len}(h) \geq n`)
 
     """
     ncp = get_array_module(h)
@@ -52,7 +52,7 @@ def nonstationary_convmtx(H, n, hc=0, pad=(0, 0)):
     ----------
     H : :obj:`np.ndarray`
         Convolution filters (2D array of shape
-        :math:`[n_{filters} \times n_{h}]`
+        :math:`[n_\text{filters} \times n_{h}]`
     n : :obj:`int`
         Number of columns of convolution matrix
     hc : :obj:`np.ndarray`, optional

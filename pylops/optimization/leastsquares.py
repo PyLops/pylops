@@ -86,20 +86,20 @@ def NormalEquationsInversion(
     -----
     Solve the following normal equations for a system of regularized equations
     given the operator :math:`\mathbf{Op}`, a data weighting operator
-    :math:`\mathbf{W}`, a list of regularization terms (:math:`\mathbf{R_i}`
-    and/or :math:`\mathbf{N_i}`), the data :math:`\mathbf{d}` and
-    regularization data :math:`\mathbf{d}_{R_i}`, and the damping factors
-    :math:`\epsilon_I`, :math:`\epsilon_{{R}_i}` and :math:`\epsilon_{{N}_i}`:
+    :math:`\mathbf{W}`, a list of regularization terms (:math:`\mathbf{R}_i`
+    and/or :math:`\mathbf{N}_i`), the data :math:`\mathbf{d}` and
+    regularization data :math:`\mathbf{d}_{\mathbf{R}_i}`, and the damping factors
+    :math:`\epsilon_I`, :math:`\epsilon_{\mathbf{R}_i}` and :math:`\epsilon_{\mathbf{N}_i}`:
 
     .. math::
         ( \mathbf{Op}^T \mathbf{W} \mathbf{Op} +
-        \sum_i \epsilon_{{R}_i}^2 \mathbf{R}_i^T \mathbf{R}_i +
-        \sum_i \epsilon_{{N}_i}^2 \mathbf{N}_i +
+        \sum_i \epsilon_{\mathbf{R}_i}^2 \mathbf{R}_i^T \mathbf{R}_i +
+        \sum_i \epsilon_{\mathbf{N}_i}^2 \mathbf{N}_i +
         \epsilon_I^2 \mathbf{I} )  \mathbf{x}
-        = \mathbf{Op}^T \mathbf{W} \mathbf{d} +  \sum_i \epsilon_{{R}_i}^2
-        \mathbf{R}_i^T \mathbf{d}_{R_i}
+        = \mathbf{Op}^T \mathbf{W} \mathbf{d} +  \sum_i \epsilon_{\mathbf{R}_i}^2
+        \mathbf{R}_i^T \mathbf{d}_{\mathbf{R}_i}
 
-    Note that the data term of the regularizations :math:`\mathbf{N_i}` is
+    Note that the data term of the regularizations :math:`\mathbf{N}_i` is
     implicitly assumed to be zero.
 
     """
@@ -195,7 +195,7 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
     .. math::
         \begin{bmatrix}
             \mathbf{Op}    \\
-            \epsilon_{R_1} \mathbf{R}_1 \\
+            \epsilon_{\mathbf{R}_1} \mathbf{R}_1 \\
             ...   \\
             \epsilon_{R_N} \mathbf{R}_N
         \end{bmatrix}
@@ -257,7 +257,7 @@ def RegularizedInversion(
         Gives the reason for termination
 
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
-        :math:`\mathbf{d} = \mathbf{Op}\mathbf{x}`
+        :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
 
         ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
         problem
@@ -265,7 +265,7 @@ def RegularizedInversion(
         Iteration number upon termination
     r1norm : :obj:`float`
         :math:`||\mathbf{r}||_2^2`, where
-        :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\mathbf{x}`
+        :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\,\mathbf{x}`
     r2norm : :obj:`float`
         :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
         \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
@@ -281,22 +281,22 @@ def RegularizedInversion(
     -----
     Solve the following system of regularized equations given the operator
     :math:`\mathbf{Op}`, a data weighting operator :math:`\mathbf{W}^{1/2}`,
-    a list of regularization terms :math:`\mathbf{R_i}`,
+    a list of regularization terms :math:`\mathbf{R}_i`,
     the data :math:`\mathbf{d}` and regularization damping factors
-    :math:`\epsilon_I`: and :math:`\epsilon_{{R}_i}`:
+    :math:`\epsilon_\mathbf{I}`: and :math:`\epsilon_{\mathbf{R}_i}`:
 
     .. math::
         \begin{bmatrix}
             \mathbf{W}^{1/2} \mathbf{Op}    \\
-            \epsilon_{R_1} \mathbf{R}_1 \\
-            ...   \\
-            \epsilon_{R_N} \mathbf{R}_N
+            \epsilon_{\mathbf{R}_1} \mathbf{R}_1 \\
+            \vdots   \\
+            \epsilon_{\mathbf{R}_N} \mathbf{R}_N
         \end{bmatrix} \mathbf{x} =
         \begin{bmatrix}
             \mathbf{W}^{1/2} \mathbf{d}    \\
-            \epsilon_{R_1} \mathbf{d}_{R_1} \\
-            ...   \\
-            \epsilon_{R_N} \mathbf{d}_{R_N} \\
+            \epsilon_{\mathbf{R}_1} \mathbf{d}_{\mathbf{R}_1} \\
+            \vdots   \\
+            \epsilon_{\mathbf{R}_N} \mathbf{d}_{\mathbf{R}_N} \\
         \end{bmatrix}
 
     where the ``Weight`` provided here is equivalent to the
@@ -383,6 +383,7 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_sol
         (:py:func:`scipy.sparse.linalg.lsqr` and
         :py:func:`pylops.optimization.solver.cgls` are used as default for numpy
         and cupy `data`, respectively)
+
     Returns
     -------
     xinv : :obj:`numpy.ndarray`
@@ -391,7 +392,7 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_sol
         Gives the reason for termination
 
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
-        :math:`\mathbf{d} = \mathbf{Op}\mathbf{x}`
+        :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
 
         ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
         problem
@@ -399,7 +400,7 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_sol
         Iteration number upon termination
     r1norm : :obj:`float`
         :math:`||\mathbf{r}||_2^2`, where :math:`\mathbf{r} = \mathbf{d} -
-        \mathbf{Op}\mathbf{x}`
+        \mathbf{Op}\,\mathbf{x}`
     r2norm : :obj:`float`
         :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +  \epsilon^2
         \mathbf{x}^T\mathbf{x}}`. Equal to ``r1norm`` if :math:`\epsilon=0`
@@ -416,10 +417,10 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_sol
     the data :math:`\mathbf{d}`
 
     .. math::
-        \mathbf{d} = \mathbf{Op} (\mathbf{P} \mathbf{p})
+        \mathbf{d} = \mathbf{Op}\,\mathbf{P} \mathbf{m}
 
-    where :math:`\mathbf{p}` is the solution in the preconditioned space
-    and :math:`\mathbf{x} = \mathbf{P}\mathbf{p}` is the solution in the
+    where :math:`\mathbf{m}` is the solution in the preconditioned space
+    and :math:`\mathbf{x} = \mathbf{P}\mathbf{m}` is the solution in the
     original space.
 
     """

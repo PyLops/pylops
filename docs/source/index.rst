@@ -129,6 +129,7 @@ PyLops is a `NUMFOCUS <https://numfocus.org/sponsored-projects/affiliated-projec
    gpu.rst
    extensions.rst
    tutorials/index.rst
+   gallery/index.rst
    FAQs <faq.rst>
 
 .. toctree::
