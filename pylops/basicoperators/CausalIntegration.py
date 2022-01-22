@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -6,7 +8,7 @@ from pylops import LinearOperator
 class CausalIntegration(LinearOperator):
     r"""Causal integration.
 
-    Apply causal integration to a multi-dimensional array along ``dir`` axis.
+    Apply causal integration to a multi-dimensional array along ``axis``.
 
     Parameters
     ----------
@@ -15,8 +17,12 @@ class CausalIntegration(LinearOperator):
     dims : :obj:`list`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+        Axis along which the model is integrated.
     dir : :obj:`int`, optional
-        Direction along which smoothing is applied.
+        .. deprecated:: 2.0.0
+            Use ``axis`` instead.
     sampling : :obj:`float`, optional
         Sampling step ``dx``.
     halfcurrent : :obj:`bool`, optional
@@ -89,7 +95,8 @@ class CausalIntegration(LinearOperator):
         self,
         N,
         dims=None,
-        dir=-1,
+        axis=-1,
+        dir=None,
         sampling=1,
         halfcurrent=True,
         dtype="float64",
@@ -97,7 +104,15 @@ class CausalIntegration(LinearOperator):
         removefirst=False,
     ):
         self.N = N
-        self.dir = dir
+        if dir is not None:
+            warnings.warn(
+                "dir is deprecated in version 2.0.0, use axis instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            self.axis = dir
+        else:
+            self.axis = axis
         self.sampling = sampling
         self.kind = kind
         if kind == "full" and halfcurrent:  # ensure backcompatibility
@@ -106,7 +121,7 @@ class CausalIntegration(LinearOperator):
         # define samples to remove from output
         rf = 0
         if removefirst:
-            rf = 1 if dims is None else self.N // dims[self.dir]
+            rf = 1 if dims is None else self.N // dims[self.axis]
         if dims is None:
             self.dims = [self.N, 1]
             self.dimsd = [self.N - rf, 1]
@@ -118,7 +133,7 @@ class CausalIntegration(LinearOperator):
                 self.dims = dims
                 self.dimsd = list(dims)
                 if self.removefirst:
-                    self.dimsd[self.dir] -= 1
+                    self.dimsd[self.axis] -= 1
                 self.reshape = True
         self.shape = (self.N - rf, self.N)
         self.dtype = np.dtype(dtype)
@@ -127,8 +142,8 @@ class CausalIntegration(LinearOperator):
     def _matvec(self, x):
         if self.reshape:
             x = np.reshape(x, self.dims)
-        if self.dir != -1:
-            x = np.swapaxes(x, self.dir, -1)
+        if self.axis != -1:
+            x = np.swapaxes(x, self.axis, -1)
         y = self.sampling * np.cumsum(x, axis=-1)
         if self.kind in ("half", "trapezoidal"):
             y -= self.sampling * x / 2.0
@@ -136,17 +151,17 @@ class CausalIntegration(LinearOperator):
             y[..., 1:] -= self.sampling * x[..., 0:1] / 2.0
         if self.removefirst:
             y = y[..., 1:]
-        if self.dir != -1:
-            y = np.swapaxes(y, -1, self.dir)
+        if self.axis != -1:
+            y = np.swapaxes(y, -1, self.axis)
         return y.ravel()
 
     def _rmatvec(self, x):
         if self.reshape:
             x = np.reshape(x, self.dimsd)
         if self.removefirst:
-            x = np.insert(x, 0, 0, axis=self.dir)
-        if self.dir != -1:
-            x = np.swapaxes(x, self.dir, -1)
+            x = np.insert(x, 0, 0, axis=self.axis)
+        if self.axis != -1:
+            x = np.swapaxes(x, self.axis, -1)
         xflip = np.flip(x, axis=-1)
         if self.kind == "half":
             y = self.sampling * (np.cumsum(xflip, axis=-1) - xflip / 2.0)
@@ -156,6 +171,6 @@ class CausalIntegration(LinearOperator):
         else:
             y = self.sampling * np.cumsum(xflip, axis=-1)
         y = np.flip(y, axis=-1)
-        if self.dir != -1:
-            y = np.swapaxes(y, -1, self.dir)
+        if self.axis != -1:
+            y = np.swapaxes(y, -1, self.axis)
         return y.ravel()

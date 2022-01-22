@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -6,7 +8,7 @@ from pylops import LinearOperator
 class Flip(LinearOperator):
     r"""Flip along an axis.
 
-    Flip a multi-dimensional array along a specified direction ``dir``.
+    Flip a multi-dimensional array along ``axis``.
 
     Parameters
     ----------
@@ -15,8 +17,13 @@ class Flip(LinearOperator):
     dims : :obj:`list`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+        Axis along which model is flipped.
     dir : :obj:`int`, optional
-        Direction along which flipping is applied.
+        .. deprecated:: 2.0.0
+            Use ``axis`` instead. Note that the default for ``axis`` is -1
+            instead of 0 which was the default for ``dir``.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -43,9 +50,17 @@ class Flip(LinearOperator):
 
     """
 
-    def __init__(self, N, dims=None, dir=0, dtype="float64"):
+    def __init__(self, N, dims=None, axis=-1, dir=None, dtype="float64"):
         self.N = N
-        self.dir = dir
+        if dir is not None:
+            warnings.warn(
+                "dir is deprecated in version 2.0.0, use axis instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            self.axis = dir
+        else:
+            self.axis = axis
         if dims is None:
             self.dims = (self.N,)
             self.reshape = False
@@ -62,7 +77,7 @@ class Flip(LinearOperator):
     def _matvec(self, x):
         if self.reshape:
             x = np.reshape(x, self.dims)
-        y = np.flip(x, axis=self.dir)
+        y = np.flip(x, axis=self.axis)
         if self.reshape:
             y = y.ravel()
         return y

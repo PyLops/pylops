@@ -63,7 +63,7 @@ iava = np.sort(np.random.permutation(np.arange(par["nx"]))[:nxsub])
 
 # restriction operator
 Rop = pylops.Restriction(
-    par["nx"] * par["nt"], iava, dims=(par["nx"], par["nt"]), dir=0, dtype="float64"
+    par["nx"] * par["nt"], iava, dims=(par["nx"], par["nt"]), axis=0, dtype="float64"
 )
 
 # data
@@ -319,7 +319,7 @@ iava = np.sort(np.random.permutation(np.arange(par["nx"]))[:Nsub])
 
 # restriction operator
 Rop = pylops.Restriction(
-    par["nx"] * par["nt"], iava, dims=(par["nx"], par["nt"]), dir=0, dtype="float64"
+    par["nx"] * par["nt"], iava, dims=(par["nx"], par["nt"]), axis=0, dtype="float64"
 )
 
 y = Rop * x.ravel()

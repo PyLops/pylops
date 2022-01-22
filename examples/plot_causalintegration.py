@@ -113,7 +113,7 @@ t = np.arange(nt) * dt + ot
 x = np.outer(np.sin(t), np.ones(nx))
 
 Cop = pylops.CausalIntegration(
-    nt * nx, dims=(nt, nx), sampling=dt, dir=0, halfcurrent=True
+    nt * nx, dims=(nt, nx), sampling=dt, axis=0, halfcurrent=True
 )
 
 y = Cop * x.ravel()

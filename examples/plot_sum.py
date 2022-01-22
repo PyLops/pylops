@@ -19,7 +19,7 @@ x = (np.arange(ny * nx)).reshape(ny, nx)
 
 ###############################################################################
 # We can now create the operator and peform forward and adjoint
-Sop = pylops.Sum(dims=(ny, nx), dir=0)
+Sop = pylops.Sum(dims=(ny, nx), axis=0)
 
 y = Sop * x.ravel()
 xadj = Sop.H * y

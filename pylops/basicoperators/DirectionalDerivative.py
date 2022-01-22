@@ -66,7 +66,7 @@ def FirstDirectionalDerivative(
         Dop = Diagonal(v, dims=[len(dims)] + list(dims), dir=0, dtype=dtype)
     else:
         Dop = Diagonal(v.ravel(), dtype=dtype)
-    Sop = Sum(dims=[len(dims)] + list(dims), dir=0, dtype=dtype)
+    Sop = Sum(dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
     ddop = Sop * Dop * Gop
     return LinearOperator(ddop)
 

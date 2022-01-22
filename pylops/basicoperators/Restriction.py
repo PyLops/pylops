@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import numpy.ma as np_ma
 
@@ -34,8 +36,13 @@ class Restriction(LinearOperator):
     dims : :obj:`list`
         Number of samples for each dimension
         (``None`` if only one dimension is available)
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+        Axis along which restriction is applied to model.
     dir : :obj:`int`, optional
-        Direction along which restriction is applied.
+        .. deprecated:: 2.0.0
+            Use ``axis`` instead. Note that the default for ``axis`` is -1
+            instead of 0 which was the default for ``dir``.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     inplace : :obj:`bool`, optional
@@ -81,10 +88,20 @@ class Restriction(LinearOperator):
 
     """
 
-    def __init__(self, M, iava, dims=None, dir=0, dtype="float64", inplace=True):
+    def __init__(
+        self, M, iava, dims=None, axis=-1, dir=None, dtype="float64", inplace=True
+    ):
         ncp = get_array_module(iava)
         self.M = M
-        self.dir = dir
+        if dir is not None:
+            warnings.warn(
+                "dir is deprecated in version 2.0.0, use axis instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            self.axis = dir
+        else:
+            self.axis = axis
         self.iava = iava
         if dims is None:
             self.N = len(iava)
@@ -96,11 +113,11 @@ class Restriction(LinearOperator):
             else:
                 self.dims = dims  # model dimensions
                 self.dimsd = list(dims)  # data dimensions
-                self.dimsd[self.dir] = len(iava)
+                self.dimsd[self.axis] = len(iava)
                 self.iavareshape = (
-                    [1] * self.dir
+                    [1] * self.axis
                     + [len(self.iava)]
-                    + [1] * (len(self.dims) - self.dir - 1)
+                    + [1] * (len(self.dims) - self.axis - 1)
                 )
                 self.N = np.prod(self.dimsd)
                 self.reshape = True
@@ -109,7 +126,9 @@ class Restriction(LinearOperator):
                 # explicitely create a list of indices in the n-dimensional
                 # model space which will be used in _rmatvec to place the input
                 if ncp != np:
-                    self.iavamask = _compute_iavamask(dims, dir, iava, ncp)
+                    self.iavamask = _compute_iavamask(
+                        self.dims, self.axis, self.iava, ncp
+                    )
         self.inplace = inplace
         self.shape = (self.N, self.M)
         self.dtype = np.dtype(dtype)
@@ -123,7 +142,7 @@ class Restriction(LinearOperator):
             y = x[self.iava]
         else:
             x = ncp.reshape(x, self.dims)
-            y = ncp.take(x, self.iava, axis=self.dir)
+            y = ncp.take(x, self.iava, axis=self.axis)
             y = y.ravel()
         return y
 
@@ -139,13 +158,13 @@ class Restriction(LinearOperator):
             if ncp == np:
                 y = ncp.zeros(self.dims, dtype=self.dtype)
                 ncp.put_along_axis(
-                    y, ncp.reshape(self.iava, self.iavareshape), x, axis=self.dir
+                    y, ncp.reshape(self.iava, self.iavareshape), x, axis=self.axis
                 )
             else:
                 if not hasattr(self, "iavamask"):
                     self.iava = to_cupy_conditional(x, self.iava)
                     self.iavamask = _compute_iavamask(
-                        self.dims, self.dir, self.iava, ncp
+                        self.dims, self.axis, self.iava, ncp
                     )
                 y = ncp.zeros(int(self.M), dtype=self.dtype)
                 y[self.iavamask] = x.ravel()
@@ -176,13 +195,13 @@ class Restriction(LinearOperator):
         y = np_ma.array(np.zeros(self.dims), mask=np.ones(self.dims), dtype=self.dtype)
         if self.reshape:
             x = np.reshape(x, self.dims)
-            x = np.swapaxes(x, self.dir, 0)
-            y = np.swapaxes(y, self.dir, 0)
+            x = np.swapaxes(x, self.axis, 0)
+            y = np.swapaxes(y, self.axis, 0)
         y.mask[iava] = False
         if ncp == np:
             y[iava] = x[self.iava]
         else:
             y[iava] = ncp.asnumpy(x)[iava]
         if self.reshape:
-            y = np.swapaxes(y, 0, self.dir)
+            y = np.swapaxes(y, 0, self.axis)
         return y

@@ -132,7 +132,7 @@ def test_CausalIntegration2d(par):
             par["nt"] * par["nx"],
             dims=(par["nt"], par["nx"]),
             sampling=dt,
-            dir=0,
+            axis=0,
             kind=kind,
             halfcurrent=False,
             removefirst=rf,

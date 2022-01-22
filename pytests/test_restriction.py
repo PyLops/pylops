@@ -77,7 +77,7 @@ def test_Restriction_2dsignal(par):
         par["nx"] * par["nt"],
         iava,
         dims=(par["nx"], par["nt"]),
-        dir=0,
+        axis=0,
         inplace=par["dtype"],
         dtype=par["dtype"],
     )
@@ -105,7 +105,7 @@ def test_Restriction_2dsignal(par):
         par["nx"] * par["nt"],
         iava,
         dims=(par["nx"], par["nt"]),
-        dir=1,
+        axis=1,
         inplace=par["dtype"],
         dtype=par["dtype"],
     )
@@ -143,7 +143,7 @@ def test_Restriction_3dsignal(par):
         par["ny"] * par["nx"] * par["nt"],
         iava,
         dims=(par["ny"], par["nx"], par["nt"]),
-        dir=0,
+        axis=0,
         inplace=par["dtype"],
         dtype=par["dtype"],
     )
@@ -173,7 +173,7 @@ def test_Restriction_3dsignal(par):
         par["ny"] * par["nx"] * par["nt"],
         iava,
         dims=(par["ny"], par["nx"], par["nt"]),
-        dir=1,
+        axis=1,
         inplace=par["dtype"],
         dtype=par["dtype"],
     )
@@ -201,7 +201,7 @@ def test_Restriction_3dsignal(par):
         par["ny"] * par["nx"] * par["nt"],
         iava,
         dims=(par["ny"], par["nx"], par["nt"]),
-        dir=2,
+        axis=2,
         inplace=par["dtype"],
         dtype=par["dtype"],
     )

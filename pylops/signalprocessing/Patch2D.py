@@ -170,7 +170,7 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
                 dimsd[1] * nwin[0],
                 range(win_in, win_end),
                 dims=(nwin[0], dimsd[1]),
-                dir=1,
+                axis=1,
                 dtype=Op.dtype,
             ).H
             for win_in, win_end in zip(dwin1_ins, dwin1_ends)
@@ -184,7 +184,7 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
                 np.prod(dimsd),
                 range(win_in, win_end),
                 dims=dimsd,
-                dir=0,
+                axis=0,
                 dtype=Op.dtype,
             ).H
             for win_in, win_end in zip(dwin0_ins, dwin0_ends)

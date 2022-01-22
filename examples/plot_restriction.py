@@ -95,7 +95,7 @@ perc_subsampling = 0.4
 nxsub = int(np.round(nx * perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(nx))[:nxsub])
 
-Rop = pylops.Restriction(nx * nt, iava, dims=(nx, nt), dir=0, dtype="float64")
+Rop = pylops.Restriction(nx * nt, iava, dims=(nx, nt), axis=0, dtype="float64")
 y = (Rop * x.ravel()).reshape(nxsub, nt)
 ymask = Rop.mask(x)
 

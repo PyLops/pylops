@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -7,7 +9,7 @@ from pylops.utils.backend import get_array_module
 class Symmetrize(LinearOperator):
     r"""Symmetrize along an axis.
 
-    Symmetrize a multi-dimensional array along a specified direction ``dir``.
+    Symmetrize a multi-dimensional array along ``axis``.
 
     Parameters
     ----------
@@ -16,8 +18,13 @@ class Symmetrize(LinearOperator):
     dims : :obj:`list`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+        Axis along which model is symmetrized.
     dir : :obj:`int`, optional
-        Direction along which symmetrization is applied
+        .. deprecated:: 2.0.0
+            Use ``axis`` instead. Note that the default for ``axis`` is -1
+            instead of 0 which was the default for ``dir``.
     dtype : :obj:`str`, optional
         Type of elements in input array
 
@@ -57,9 +64,17 @@ class Symmetrize(LinearOperator):
     apart from the central sample where :math:`x[0] = y[N-1]`.
     """
 
-    def __init__(self, N, dims=None, dir=0, dtype="float64"):
+    def __init__(self, N, dims=None, axis=-1, dir=None, dtype="float64"):
         self.N = N
-        self.dir = dir
+        if dir is not None:
+            warnings.warn(
+                "dir is deprecated in version 2.0.0, use axis instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            self.axis = dir
+        else:
+            self.axis = axis
         if dims is None:
             self.dims = (self.N,)
             self.dimsd = (self.N * 2 - 1,)
@@ -70,9 +85,9 @@ class Symmetrize(LinearOperator):
             else:
                 self.dims = dims
                 self.dimsd = list(dims)
-                self.dimsd[self.dir] = dims[self.dir] * 2 - 1
+                self.dimsd[self.axis] = dims[self.axis] * 2 - 1
                 self.reshape = True
-        self.nsym = self.dims[self.dir]
+        self.nsym = self.dims[self.axis]
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
@@ -82,13 +97,13 @@ class Symmetrize(LinearOperator):
         y = ncp.zeros(self.dimsd, dtype=self.dtype)
         if self.reshape:
             x = ncp.reshape(x, self.dims)
-        if self.dir > 0:  # bring the dimension to symmetrize to first
-            x = ncp.swapaxes(x, self.dir, 0)
-            y = ncp.swapaxes(y, self.dir, 0)
+        if self.axis > 0:  # bring the dimension to symmetrize to first
+            x = ncp.swapaxes(x, self.axis, 0)
+            y = ncp.swapaxes(y, self.axis, 0)
         y[self.nsym - 1 :] = x
         y[: self.nsym - 1] = x[-1:0:-1]
-        if self.dir > 0:
-            y = ncp.swapaxes(y, 0, self.dir)
+        if self.axis > 0:
+            y = ncp.swapaxes(y, 0, self.axis)
         if self.reshape:
             y = y.ravel()
         return y
@@ -97,12 +112,12 @@ class Symmetrize(LinearOperator):
         ncp = get_array_module(x)
         if self.reshape:
             x = ncp.reshape(x, self.dimsd)
-        if self.dir > 0:  # bring the dimension to symmetrize to first
-            x = ncp.swapaxes(x, self.dir, 0)
+        if self.axis > 0:  # bring the dimension to symmetrize to first
+            x = ncp.swapaxes(x, self.axis, 0)
         y = x[self.nsym - 1 :].copy()
         y[1:] += x[self.nsym - 2 :: -1]
-        if self.dir > 0:
-            y = ncp.swapaxes(y, 0, self.dir)
+        if self.axis > 0:
+            y = ncp.swapaxes(y, 0, self.axis)
         if self.reshape:
             y = y.ravel()
         return y

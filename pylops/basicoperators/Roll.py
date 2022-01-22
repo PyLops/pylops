@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -6,7 +8,7 @@ from pylops import LinearOperator
 class Roll(LinearOperator):
     r"""Roll along an axis.
 
-    Roll a multi-dimensional array along a specified direction ``dir`` for
+    Roll a multi-dimensional array along ``axis`` for
     a chosen number of samples (``shift``).
 
     Parameters
@@ -16,8 +18,13 @@ class Roll(LinearOperator):
     dims : :obj:`list`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+        Axis along which model is rolled.
     dir : :obj:`int`, optional
-        Direction along which rolling is applied.
+        .. deprecated:: 2.0.0
+            Use ``axis`` instead. Note that the default for ``axis`` is -1
+            instead of 0 which was the default for ``dir``.
     shift : :obj:`int`, optional
         Number of samples by which elements are shifted
     dtype : :obj:`str`, optional
@@ -39,9 +46,17 @@ class Roll(LinearOperator):
 
     """
 
-    def __init__(self, N, dims=None, dir=0, shift=1, dtype="float64"):
+    def __init__(self, N, dims=None, axis=-1, dir=None, shift=1, dtype="float64"):
         self.N = N
-        self.dir = dir
+        if dir is not None:
+            warnings.warn(
+                "dir is deprecated in version 2.0.0, use axis instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            self.axis = dir
+        else:
+            self.axis = axis
         if dims is None:
             self.dims = (self.N,)
             self.reshape = False
@@ -59,11 +74,11 @@ class Roll(LinearOperator):
     def _matvec(self, x):
         if self.reshape:
             x = np.reshape(x, self.dims)
-        y = np.roll(x, shift=self.shift, axis=self.dir)
+        y = np.roll(x, shift=self.shift, axis=self.axis)
         return y.ravel()
 
     def _rmatvec(self, x):
         if self.reshape:
             x = np.reshape(x, self.dims)
-        y = np.roll(x, shift=-self.shift, axis=self.dir)
+        y = np.roll(x, shift=-self.shift, axis=self.axis)
         return y.ravel()

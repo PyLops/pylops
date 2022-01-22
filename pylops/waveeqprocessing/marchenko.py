@@ -401,7 +401,7 @@ class Marchenko:
         Rollop = Roll(
             self.nt2 * self.ns,
             dims=(self.nt2, self.ns),
-            dir=0,
+            axis=0,
             shift=-1,
             dtype=self.dtype,
         )
