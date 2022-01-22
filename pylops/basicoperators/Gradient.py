@@ -67,7 +67,7 @@ def Gradient(dims, sampling=1, edge=False, dtype="float64", kind="centered"):
             FirstDerivative(
                 np.prod(dims),
                 dims=dims,
-                dir=idir,
+                axis=idir,
                 sampling=sampling[idir],
                 edge=edge,
                 kind=kind,

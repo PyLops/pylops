@@ -111,7 +111,7 @@ def _PoststackLinearModelling(
         Dop = _FirstDerivative(
             np.prod(np.array(dims)),
             dims=dims,
-            dir=0,
+            axis=0,
             sampling=1.0,
             kind=kind,
             dtype=dtype,
@@ -392,7 +392,7 @@ def PoststackInversion(
             elif dims == 2:
                 Regop = Laplacian((nt0, nx), dtype=PPop.dtype)
             else:
-                Regop = Laplacian((nt0, nx, ny), dirs=(1, 2), dtype=PPop.dtype)
+                Regop = Laplacian((nt0, nx, ny), axes=(1, 2), dtype=PPop.dtype)
 
             minv = RegularizedInversion(
                 PPop,
@@ -410,20 +410,20 @@ def PoststackInversion(
                 RegL2op = None
             elif dims == 2:
                 RegL1op = FirstDerivative(
-                    nt0 * nx, dims=(nt0, nx), dir=0, kind="forward", dtype=PPop.dtype
+                    nt0 * nx, dims=(nt0, nx), axis=0, kind="forward", dtype=PPop.dtype
                 )
                 RegL2op = SecondDerivative(
-                    nt0 * nx, dims=(nt0, nx), dir=1, dtype=PPop.dtype
+                    nt0 * nx, dims=(nt0, nx), axis=1, dtype=PPop.dtype
                 )
             else:
                 RegL1op = FirstDerivative(
                     nt0 * nx * ny,
                     dims=(nt0, nx, ny),
-                    dir=0,
+                    axis=0,
                     kind="forward",
                     dtype=PPop.dtype,
                 )
-                RegL2op = Laplacian((nt0, nx, ny), dirs=(1, 2), dtype=PPop.dtype)
+                RegL2op = Laplacian((nt0, nx, ny), axes=(1, 2), dtype=PPop.dtype)
 
             if "mu" in kwargs_solver.keys():
                 mu = kwargs_solver["mu"]

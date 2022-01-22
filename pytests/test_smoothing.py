@@ -30,7 +30,7 @@ def test_Smoothing1D(par):
 
     # 1d kernel on 2d signal
     D1op = Smoothing1D(
-        nsmooth=5, dims=(par["ny"], par["nx"]), dir=par["dir"], dtype="float64"
+        nsmooth=5, dims=(par["ny"], par["nx"]), axis=par["dir"], dtype="float64"
     )
     assert dottest(D1op, par["ny"] * par["nx"], par["ny"] * par["nx"])
 
@@ -43,7 +43,7 @@ def test_Smoothing1D(par):
     D1op = Smoothing1D(
         nsmooth=5,
         dims=(par["nz"], par["ny"], par["nx"]),
-        dir=par["dir"],
+        axis=par["dir"],
         dtype="float64",
     )
     assert dottest(

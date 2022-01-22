@@ -1,9 +1,12 @@
+import warnings
+
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops.signalprocessing import Convolve2D
 
 
-def Smoothing2D(nsmooth, dims, nodir=None, dtype="float64"):
+def Smoothing2D(nsmooth, dims, axes=(-2, -1), nodir=None, dtype="float64"):
     r"""2D Smoothing.
 
     Apply smoothing to model (and data) along two directions of a
@@ -15,9 +18,14 @@ def Smoothing2D(nsmooth, dims, nodir=None, dtype="float64"):
         Lenght of smoothing operator in 1st and 2nd dimensions (must be odd)
     dims : :obj:`tuple`
         Number of samples for each dimension
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+        Axes along which model (and data) are smoothed.
     nodir : :obj:`int`, optional
         Direction along which smoothing is **not** applied (set to ``None`` for 2d
         arrays)
+        .. deprecated:: 2.0.0
+            Use ``axes`` instead. Note that ``axes`` applies along axes instead.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -56,6 +64,18 @@ def Smoothing2D(nsmooth, dims, nodir=None, dtype="float64"):
         nsmooth[0] += 1
     if nsmooth[1] % 2 == 0:
         nsmooth[1] += 1
+    if nodir is not None:
+        warnings.warn(
+            "nodir is deprecated in version 2.0.0, use axes instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        noaxis = nodir
+    else:
+        axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
+        noaxis = tuple(ax for ax in range(len(dims)) if ax not in axes)
+        if len(noaxis) == 1:
+            noaxis = noaxis[0]
 
     h = np.ones((nsmooth[0], nsmooth[1])) / float(nsmooth[0] * nsmooth[1])
     return Convolve2D(
@@ -63,6 +83,6 @@ def Smoothing2D(nsmooth, dims, nodir=None, dtype="float64"):
         h=h,
         offset=[(nsmooth[0] - 1) / 2, (nsmooth[1] - 1) / 2],
         dims=dims,
-        nodir=nodir,
+        nodir=noaxis,
         dtype=dtype,
     )

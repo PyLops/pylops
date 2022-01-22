@@ -92,10 +92,10 @@ fig.tight_layout()
 # modelling operator both in a least-squares sense and using TV-reg.
 Dop = [
     pylops.FirstDerivative(
-        ny * nx, dims=(nx, ny), dir=0, edge=True, kind="backward", dtype=np.float64
+        ny * nx, dims=(nx, ny), axis=0, edge=True, kind="backward", dtype=np.float64
     ),
     pylops.FirstDerivative(
-        ny * nx, dims=(nx, ny), dir=1, edge=True, kind="backward", dtype=np.float64
+        ny * nx, dims=(nx, ny), axis=1, edge=True, kind="backward", dtype=np.float64
     ),
 ]
 D2op = pylops.Laplacian(dims=(nx, ny), edge=True, dtype=np.float64)

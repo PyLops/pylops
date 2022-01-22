@@ -1,11 +1,20 @@
+import warnings
+
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops.basicoperators import SecondDerivative
 from pylops.LinearOperator import aslinearoperator
 
 
 def Laplacian(
-    dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1), edge=False, dtype="float64"
+    dims,
+    axes=(-2, -1),
+    dirs=None,
+    weights=(1, 1),
+    sampling=(1, 1),
+    edge=False,
+    dtype="float64",
 ):
     r"""Laplacian.
 
@@ -18,6 +27,13 @@ def Laplacian(
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension.
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+        Axes along which the Laplacian is applied.
+    dirs : :obj:`int`, optional
+        .. deprecated:: 2.0.0
+            Use ``axes`` instead. Note that the default for ``axes`` is (-2, -1)
+            instead of (0, 1) which was the default for ``dirs``.
     dirs : :obj:`tuple`, optional
         Directions along which laplacian is applied.
     weights : :obj:`tuple`, optional
@@ -48,10 +64,21 @@ def Laplacian(
                   / (\Delta x \Delta y)
 
     """
+    if dirs is not None:
+        warnings.warn(
+            "dirs is deprecated in version 2.0.0, use axes instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        axes = dirs
+    else:
+        axes = axes
+    axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
+
     l2op = weights[0] * SecondDerivative(
         np.prod(dims),
         dims=dims,
-        dir=dirs[0],
+        axis=axes[0],
         sampling=sampling[0],
         edge=edge,
         dtype=dtype,
@@ -59,7 +86,7 @@ def Laplacian(
     l2op += weights[1] * SecondDerivative(
         np.prod(dims),
         dims=dims,
-        dir=dirs[1],
+        axis=axes[1],
         sampling=sampling[1],
         edge=edge,
         dtype=dtype,

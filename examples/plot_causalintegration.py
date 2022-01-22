@@ -121,7 +121,7 @@ y = y.reshape(nt, nx)
 yn = y + np.random.normal(0, 4e-1, y.shape)
 
 # Numerical derivative
-Dop = pylops.FirstDerivative(nt * nx, dims=(nt, nx), dir=0, sampling=dt)
+Dop = pylops.FirstDerivative(nt * nx, dims=(nt, nx), axis=0, sampling=dt)
 xder = Dop * yn.ravel()
 xder = xder.reshape(nt, nx)
 

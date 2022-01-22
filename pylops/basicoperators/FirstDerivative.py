@@ -1,4 +1,7 @@
+import warnings
+
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
@@ -17,8 +20,13 @@ class FirstDerivative(LinearOperator):
     dims : :obj:`tuple`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+        Axis along which derivative is applied.
     dir : :obj:`int`, optional
-        Direction along which the derivative is applied.
+        .. deprecated:: 2.0.0
+            Use ``axis`` instead. Note that the default for ``axis`` is -1
+            instead of 0 which was the default for ``dir``.
     sampling : :obj:`float`, optional
         Sampling step :math:`\Delta x`.
     edge : :obj:`bool`, optional
@@ -65,7 +73,8 @@ class FirstDerivative(LinearOperator):
         self,
         N,
         dims=None,
-        dir=0,
+        axis=-1,
+        dir=None,
         sampling=1.0,
         edge=False,
         dtype="float64",
@@ -83,7 +92,16 @@ class FirstDerivative(LinearOperator):
             else:
                 self.dims = dims
                 self.reshape = True
-        self.dir = dir if dir >= 0 else len(self.dims) + dir
+        if dir is not None:
+            warnings.warn(
+                "dir is deprecated in version 2.0.0, use axis instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            axis = dir
+        else:
+            axis = axis
+        self.axis = normalize_axis_index(axis, len(self.dims))
         self.kind = kind
         self.shape = (self.N, self.N)
         self.dtype = np.dtype(dtype)
@@ -110,12 +128,12 @@ class FirstDerivative(LinearOperator):
             y[:-1] = (x[1:] - x[:-1]) / self.sampling
         else:
             x = ncp.reshape(x, self.dims)
-            if self.dir > 0:  # need to bring the dim. to derive to first dim.
-                x = ncp.swapaxes(x, self.dir, 0)
+            if self.axis > 0:  # need to bring the dim. to derive to first dim.
+                x = ncp.swapaxes(x, self.axis, 0)
             y = ncp.zeros(x.shape, self.dtype)
             y[:-1] = (x[1:] - x[:-1]) / self.sampling
-            if self.dir > 0:
-                y = ncp.swapaxes(y, 0, self.dir)
+            if self.axis > 0:
+                y = ncp.swapaxes(y, 0, self.axis)
             y = y.ravel()
         return y
 
@@ -128,13 +146,13 @@ class FirstDerivative(LinearOperator):
             y[1:] += x[:-1] / self.sampling
         else:
             x = ncp.reshape(x, self.dims)
-            if self.dir > 0:  # need to bring the dim. to derive to first dim.
-                x = ncp.swapaxes(x, self.dir, 0)
+            if self.axis > 0:  # need to bring the dim. to derive to first dim.
+                x = ncp.swapaxes(x, self.axis, 0)
             y = ncp.zeros(x.shape, self.dtype)
             y[:-1] -= x[:-1] / self.sampling
             y[1:] += x[:-1] / self.sampling
-            if self.dir > 0:
-                y = ncp.swapaxes(y, 0, self.dir)
+            if self.axis > 0:
+                y = ncp.swapaxes(y, 0, self.axis)
             y = y.ravel()
         return y
 
@@ -149,15 +167,15 @@ class FirstDerivative(LinearOperator):
                 y[-1] = (x[-1] - x[-2]) / self.sampling
         else:
             x = ncp.reshape(x, self.dims)
-            if self.dir > 0:  # need to bring the dim. to derive to first dim.
-                x = ncp.swapaxes(x, self.dir, 0)
+            if self.axis > 0:  # need to bring the dim. to derive to first dim.
+                x = ncp.swapaxes(x, self.axis, 0)
             y = ncp.zeros(x.shape, self.dtype)
             y[1:-1] = (0.5 * x[2:] - 0.5 * x[0:-2]) / self.sampling
             if self.edge:
                 y[0] = (x[1] - x[0]) / self.sampling
                 y[-1] = (x[-1] - x[-2]) / self.sampling
-            if self.dir > 0:
-                y = ncp.swapaxes(y, 0, self.dir)
+            if self.axis > 0:
+                y = ncp.swapaxes(y, 0, self.axis)
             y = y.ravel()
         return y
 
@@ -175,8 +193,8 @@ class FirstDerivative(LinearOperator):
                 y[-1] += x[-1] / self.sampling
         else:
             x = ncp.reshape(x, self.dims)
-            if self.dir > 0:  # need to bring the dim. to derive to first dim.
-                x = ncp.swapaxes(x, self.dir, 0)
+            if self.axis > 0:  # need to bring the dim. to derive to first dim.
+                x = ncp.swapaxes(x, self.axis, 0)
             y = ncp.zeros(x.shape, self.dtype)
             y[0:-2] -= (0.5 * x[1:-1]) / self.sampling
             y[2:] += (0.5 * x[1:-1]) / self.sampling
@@ -185,8 +203,8 @@ class FirstDerivative(LinearOperator):
                 y[1] += x[0] / self.sampling
                 y[-2] -= x[-1] / self.sampling
                 y[-1] += x[-1] / self.sampling
-            if self.dir > 0:
-                y = ncp.swapaxes(y, 0, self.dir)
+            if self.axis > 0:
+                y = ncp.swapaxes(y, 0, self.axis)
             y = y.ravel()
         return y
 
@@ -198,12 +216,12 @@ class FirstDerivative(LinearOperator):
             y[1:] = (x[1:] - x[:-1]) / self.sampling
         else:
             x = ncp.reshape(x, self.dims)
-            if self.dir > 0:  # need to bring the dim. to derive to first dim.
-                x = ncp.swapaxes(x, self.dir, 0)
+            if self.axis > 0:  # need to bring the dim. to derive to first dim.
+                x = ncp.swapaxes(x, self.axis, 0)
             y = ncp.zeros(x.shape, self.dtype)
             y[1:] = (x[1:] - x[:-1]) / self.sampling
-            if self.dir > 0:
-                y = ncp.swapaxes(y, 0, self.dir)
+            if self.axis > 0:
+                y = ncp.swapaxes(y, 0, self.axis)
             y = y.ravel()
         return y
 
@@ -216,12 +234,12 @@ class FirstDerivative(LinearOperator):
             y[1:] += x[1:] / self.sampling
         else:
             x = ncp.reshape(x, self.dims)
-            if self.dir > 0:  # need to bring the dim. to derive to first dim.
-                x = ncp.swapaxes(x, self.dir, 0)
+            if self.axis > 0:  # need to bring the dim. to derive to first dim.
+                x = ncp.swapaxes(x, self.axis, 0)
             y = ncp.zeros(x.shape, self.dtype)
             y[:-1] -= x[1:] / self.sampling
             y[1:] += x[1:] / self.sampling
-            if self.dir > 0:
-                y = ncp.swapaxes(y, 0, self.dir)
+            if self.axis > 0:
+                y = ncp.swapaxes(y, 0, self.axis)
             y = y.ravel()
         return y

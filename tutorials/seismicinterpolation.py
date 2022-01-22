@@ -113,7 +113,7 @@ axs[1].axis("tight")
 
 # smooth inversion
 D2op = pylops.SecondDerivative(
-    par["nx"] * par["nt"], dims=(par["nx"], par["nt"]), dir=0, dtype="float64"
+    par["nx"] * par["nt"], dims=(par["nx"], par["nt"]), axis=0, dtype="float64"
 )
 
 xsmooth, _, _ = pylops.waveeqprocessing.SeismicInterpolation(

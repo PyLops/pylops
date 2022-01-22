@@ -241,9 +241,9 @@ def SeismicInterpolation(
         prec = False
         dotcflag = 0
         if ndims == 3 and iava1 is not None:
-            Regop = Laplacian(dims=dims, dirs=(0, 1), dtype=dtype)
+            Regop = Laplacian(dims=dims, axes=(0, 1), dtype=dtype)
         else:
-            Regop = SecondDerivative(np.prod(dims), dims=(dims), dir=0, dtype=dtype)
+            Regop = SecondDerivative(np.prod(dims), dims=(dims), axis=0, dtype=dtype)
         SIop = Rop
     elif kind == "fk":
         prec = True

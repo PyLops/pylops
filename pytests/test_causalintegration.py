@@ -169,7 +169,7 @@ def test_CausalIntegration2d(par):
             Dop = FirstDerivative(
                 par["nt"] * par["nx"],
                 dims=(par["nt"], par["nx"]),
-                dir=0,
+                axis=0,
                 sampling=dt,
                 dtype=par["dtype"],
             )

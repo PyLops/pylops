@@ -39,13 +39,13 @@ def test_Kroneker(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_Kroneker_Derivative(par):
     """Use Kronecker operator to apply the Derivative operator over one axis
-    and compare with FirstDerivative(... dir=axis)
+    and compare with FirstDerivative(... axis=axis)
     """
     Dop = FirstDerivative(par["ny"], sampling=1, edge=True, dtype="float32")
     D2op = FirstDerivative(
         par["ny"] * par["nx"],
         dims=(par["ny"], par["nx"]),
-        dir=0,
+        axis=0,
         sampling=1,
         edge=True,
         dtype="float32",

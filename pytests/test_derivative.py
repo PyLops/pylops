@@ -108,7 +108,7 @@ def test_FirstDerivative_centered(par):
     D1op = FirstDerivative(
         par["ny"] * par["nx"],
         dims=(par["ny"], par["nx"]),
-        dir=0,
+        axis=0,
         sampling=par["dy"],
         edge=par["edge"],
         dtype="float32",
@@ -125,7 +125,7 @@ def test_FirstDerivative_centered(par):
     D1op = FirstDerivative(
         par["ny"] * par["nx"],
         dims=(par["ny"], par["nx"]),
-        dir=1,
+        axis=1,
         sampling=par["dx"],
         edge=par["edge"],
         dtype="float32",
@@ -142,7 +142,7 @@ def test_FirstDerivative_centered(par):
     D1op = FirstDerivative(
         par["nz"] * par["ny"] * par["nx"],
         dims=(par["nz"], par["ny"], par["nx"]),
-        dir=0,
+        axis=0,
         sampling=par["dz"],
         edge=par["edge"],
         dtype="float32",
@@ -168,7 +168,7 @@ def test_FirstDerivative_centered(par):
     D1op = FirstDerivative(
         par["nz"] * par["ny"] * par["nx"],
         dims=(par["nz"], par["ny"], par["nx"]),
-        dir=1,
+        axis=1,
         sampling=par["dy"],
         edge=par["edge"],
         dtype="float32",
@@ -192,7 +192,7 @@ def test_FirstDerivative_centered(par):
     D1op = FirstDerivative(
         par["nz"] * par["ny"] * par["nx"],
         dims=(par["nz"], par["ny"], par["nx"]),
-        dir=2,
+        axis=2,
         sampling=par["dx"],
         edge=par["edge"],
         dtype="float32",
@@ -229,7 +229,7 @@ def test_FirstDerivative_forwaback(par):
         D1op = FirstDerivative(
             par["ny"] * par["nx"],
             dims=(par["ny"], par["nx"]),
-            dir=0,
+            axis=0,
             sampling=par["dy"],
             edge=par["edge"],
             kind=kind,
@@ -241,7 +241,7 @@ def test_FirstDerivative_forwaback(par):
         D1op = FirstDerivative(
             par["ny"] * par["nx"],
             dims=(par["ny"], par["nx"]),
-            dir=1,
+            axis=1,
             sampling=par["dx"],
             edge=par["edge"],
             kind=kind,
@@ -253,7 +253,7 @@ def test_FirstDerivative_forwaback(par):
         D1op = FirstDerivative(
             par["nz"] * par["ny"] * par["nx"],
             dims=(par["nz"], par["ny"], par["nx"]),
-            dir=0,
+            axis=0,
             sampling=par["dz"],
             edge=par["edge"],
             kind=kind,
@@ -270,7 +270,7 @@ def test_FirstDerivative_forwaback(par):
         D1op = FirstDerivative(
             par["nz"] * par["ny"] * par["nx"],
             dims=(par["nz"], par["ny"], par["nx"]),
-            dir=1,
+            axis=1,
             sampling=par["dy"],
             edge=par["edge"],
             kind=kind,
@@ -287,7 +287,7 @@ def test_FirstDerivative_forwaback(par):
         D1op = FirstDerivative(
             par["nz"] * par["ny"] * par["nx"],
             dims=(par["nz"], par["ny"], par["nx"]),
-            dir=2,
+            axis=2,
             sampling=par["dx"],
             edge=par["edge"],
             kind=kind,
@@ -333,7 +333,7 @@ def test_SecondDerivative(par):
     D2op = SecondDerivative(
         par["ny"] * par["nx"],
         dims=(par["ny"], par["nx"]),
-        dir=0,
+        axis=0,
         sampling=par["dy"],
         edge=par["edge"],
         dtype="float32",
@@ -352,7 +352,7 @@ def test_SecondDerivative(par):
     D2op = SecondDerivative(
         par["ny"] * par["nx"],
         dims=(par["ny"], par["nx"]),
-        dir=1,
+        axis=1,
         sampling=par["dx"],
         edge=par["edge"],
         dtype="float32",
@@ -371,7 +371,7 @@ def test_SecondDerivative(par):
     D2op = SecondDerivative(
         par["nz"] * par["ny"] * par["nx"],
         dims=(par["ny"], par["nx"], par["nz"]),
-        dir=0,
+        axis=0,
         sampling=par["dy"],
         edge=par["edge"],
         dtype="float32",
@@ -396,7 +396,7 @@ def test_SecondDerivative(par):
     D2op = SecondDerivative(
         par["nz"] * par["ny"] * par["nx"],
         dims=(par["ny"], par["nx"], par["nz"]),
-        dir=1,
+        axis=1,
         sampling=par["dx"],
         edge=par["edge"],
         dtype="float32",
@@ -421,7 +421,7 @@ def test_SecondDerivative(par):
     D2op = SecondDerivative(
         par["nz"] * par["ny"] * par["nx"],
         dims=(par["ny"], par["nx"], par["nz"]),
-        dir=2,
+        axis=2,
         sampling=par["dz"],
         edge=par["edge"],
         dtype="float32",
@@ -451,7 +451,7 @@ def test_Laplacian(par):
     # 2d - symmetrical
     Dlapop = Laplacian(
         (par["ny"], par["nx"]),
-        dirs=(0, 1),
+        axes=(0, 1),
         weights=(1, 1),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
@@ -462,7 +462,7 @@ def test_Laplacian(par):
     # 2d - asymmetrical
     Dlapop = Laplacian(
         (par["ny"], par["nx"]),
-        dirs=(0, 1),
+        axes=(0, 1),
         weights=(1, 2),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
@@ -473,7 +473,7 @@ def test_Laplacian(par):
     # 3d - symmetrical on 1st and 2nd direction
     Dlapop = Laplacian(
         (par["nz"], par["ny"], par["nx"]),
-        dirs=(0, 1),
+        axes=(0, 1),
         weights=(1, 1),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
@@ -489,7 +489,7 @@ def test_Laplacian(par):
     # 3d - symmetrical on 1st and 2nd direction
     Dlapop = Laplacian(
         (par["nz"], par["ny"], par["nx"]),
-        dirs=(0, 1),
+        axes=(0, 1),
         weights=(1, 1),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
@@ -610,7 +610,7 @@ def test_SecondDirectionalDerivative_verticalderivative(par):
     Fop = FirstDerivative(
         par["ny"] * par["nx"],
         (par["ny"], par["nx"]),
-        dir=0,
+        axis=0,
         edge=par["edge"],
         dtype="float32",
     )
