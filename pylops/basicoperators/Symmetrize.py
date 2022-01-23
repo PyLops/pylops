@@ -27,7 +27,7 @@ class Symmetrize(LinearOperator):
         .. deprecated:: 2.0
             Use ``axis`` instead. Note that the default for ``axis`` is -1
             instead of 0 which was the default for ``dir``.
-            
+
     dtype : :obj:`str`, optional
         Type of elements in input array
 
