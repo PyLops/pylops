@@ -19,10 +19,10 @@ class Symmetrize(LinearOperator):
         Number of samples for each dimension
         (``None`` if only one dimension is available)
     axis : :obj:`int`, optional
-        .. versionadded:: 2.0.0
+        .. versionadded:: 2.0
         Axis along which model is symmetrized.
     dir : :obj:`int`, optional
-        .. deprecated:: 2.0.0
+        .. deprecated:: 2.0
             Use ``axis`` instead. Note that the default for ``axis`` is -1
             instead of 0 which was the default for ``dir``.
     dtype : :obj:`str`, optional
@@ -68,7 +68,7 @@ class Symmetrize(LinearOperator):
         self.N = N
         if dir is not None:
             warnings.warn(
-                "dir is deprecated in version 2.0.0, use axis instead.",
+                "dir is deprecated in version 2.0, use axis instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )

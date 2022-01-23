@@ -28,10 +28,10 @@ def Laplacian(
     dims : :obj:`tuple`
         Number of samples for each dimension.
     axes : :obj:`int`, optional
-        .. versionadded:: 2.0.0
+        .. versionadded:: 2.0
         Axes along which the Laplacian is applied.
     dirs : :obj:`int`, optional
-        .. deprecated:: 2.0.0
+        .. deprecated:: 2.0
             Use ``axes`` instead. Note that the default for ``axes`` is (-2, -1)
             instead of (0, 1) which was the default for ``dirs``.
     dirs : :obj:`tuple`, optional
@@ -66,7 +66,7 @@ def Laplacian(
     """
     if dirs is not None:
         warnings.warn(
-            "dirs is deprecated in version 2.0.0, use axes instead.",
+            "dirs is deprecated in version 2.0, use axes instead.",
             category=DeprecationWarning,
             stacklevel=2,
         )

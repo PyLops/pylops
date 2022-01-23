@@ -22,7 +22,7 @@ def cg(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
     niter : :obj:`int`, optional
         Number of iterations
     damp : :obj:`float`, optional
-        *Deprecated*, will be removed in v2.0.0
+        *Deprecated*, will be removed in v2.0
     tol : :obj:`float`, optional
         Tolerance on residual norm
     show : :obj:`bool`, optional
