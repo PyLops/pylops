@@ -144,6 +144,8 @@ def NormalEquationsInversion(
     if x0 is not None:
         y_normal = y_normal - Op_normal * x0
     if ncp == np:
+        if "atol" not in kwargs_solver:
+            kwargs_solver["atol"] = "legacy"
         xinv, istop = sp_cg(Op_normal, y_normal, **kwargs_solver)
     else:
         xinv = cg(

@@ -107,7 +107,10 @@ def _halfthreshold(x, thresh):
         Tresholded vector
 
     """
-    phi = 2.0 / 3.0 * np.arccos((thresh / 8.0) * (np.abs(x) / 3.0) ** (-1.5))
+    arg = np.ones_like(x)
+    arg[x != 0] = (thresh / 8.0) * (np.abs(x[x != 0]) / 3.0) ** (-1.5)
+    arg = np.clip(arg, -1, 1)
+    phi = 2.0 / 3.0 * np.arccos(arg)
     x1 = 2.0 / 3.0 * x * (1 + np.cos(2.0 * np.pi / 3.0 - phi))
     # x1[np.abs(x) <= 1.5 * thresh ** (2. / 3.)] = 0
     x1[np.abs(x) <= (54 ** (1.0 / 3.0) / 4.0) * thresh ** (2.0 / 3.0)] = 0
