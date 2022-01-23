@@ -47,10 +47,10 @@ def Block(ops, nproc=1, dtype=None):
 
     .. math::
         \begin{bmatrix}
-            \mathbf{L_{1,1}}  & \mathbf{L_{1,2}} &  \ldots & \mathbf{L_{1,M}}  \\
-            \mathbf{L_{2,1}}  & \mathbf{L_{2,2}} &  \ldots & \mathbf{L_{2,M}}  \\
+            \mathbf{L}_{1,1}  & \mathbf{L}_{1,2} &  \ldots & \mathbf{L}_{1,M}  \\
+            \mathbf{L}_{2,1}  & \mathbf{L}_{2,2} &  \ldots & \mathbf{L}_{2,M}  \\
             \vdots            & \vdots           &  \ddots & \vdots            \\
-            \mathbf{L_{N,1}}  & \mathbf{L_{N,2}} &  \ldots & \mathbf{L_{N,M}}
+            \mathbf{L}_{N,1}  & \mathbf{L}_{N,2} &  \ldots & \mathbf{L}_{N,M}
         \end{bmatrix}
         \begin{bmatrix}
             \mathbf{x}_{1}  \\
@@ -59,26 +59,23 @@ def Block(ops, nproc=1, dtype=None):
             \mathbf{x}_{M}
         \end{bmatrix} =
         \begin{bmatrix}
-            \mathbf{L_{1,1}} \mathbf{x}_{1} + \mathbf{L_{1,2}} \mathbf{x}_{2} +
-            \mathbf{L_{1,M}} \mathbf{x}_{M} \\
-            \mathbf{L_{2,1}} \mathbf{x}_{1} + \mathbf{L_{2,2}} \mathbf{x}_{2} +
-            \mathbf{L_{2,M}} \mathbf{x}_{M} \\
+            \mathbf{L}_{1,1} \mathbf{x}_{1} + \mathbf{L}_{1,2} \mathbf{x}_{2} +
+            \mathbf{L}_{1,M} \mathbf{x}_{M} \\
+            \mathbf{L}_{2,1} \mathbf{x}_{1} + \mathbf{L}_{2,2} \mathbf{x}_{2} +
+            \mathbf{L}_{2,M} \mathbf{x}_{M} \\
             \vdots     \\
-            \mathbf{L_{N,1}} \mathbf{x}_{1} + \mathbf{L_{N,2}} \mathbf{x}_{2} +
-            \mathbf{L_{N,M}} \mathbf{x}_{M}
+            \mathbf{L}_{N,1} \mathbf{x}_{1} + \mathbf{L}_{N,2} \mathbf{x}_{2} +
+            \mathbf{L}_{N,M} \mathbf{x}_{M}
         \end{bmatrix}
 
     while its application in adjoint mode leads to
 
     .. math::
         \begin{bmatrix}
-            \mathbf{L_{1,1}}^H  & \mathbf{L_{2,1}}^H &  \ldots &
-            \mathbf{L_{N,1}}^H  \\
-            \mathbf{L_{1,2}}^H  & \mathbf{L_{2,2}}^H &  \ldots &
-            \mathbf{L_{N,2}}^H  \\
-            \vdots                 & \vdots                &  \ddots & \vdots \\
-            \mathbf{L_{1,M}}^H  & \mathbf{L_{2,M}}^H &  \ldots &
-            \mathbf{L_{N,M}}^H  \\
+            \mathbf{L}_{1,1}^H  & \mathbf{L}_{2,1}^H & \ldots & \mathbf{L}_{N,1}^H  \\
+            \mathbf{L}_{1,2}^H  & \mathbf{L}_{2,2}^H & \ldots & \mathbf{L}_{N,2}^H  \\
+            \vdots              & \vdots             & \ddots & \vdots \\
+            \mathbf{L}_{1,M}^H  & \mathbf{L}_{2,M}^H & \ldots & \mathbf{L}_{N,M}^H
         \end{bmatrix}
         \begin{bmatrix}
             \mathbf{y}_{1}  \\
@@ -87,16 +84,16 @@ def Block(ops, nproc=1, dtype=None):
             \mathbf{y}_{N}
         \end{bmatrix} =
         \begin{bmatrix}
-            \mathbf{L_{1,1}}^H \mathbf{y}_{1} +
-            \mathbf{L_{2,1}}^H \mathbf{y}_{2} +
-            \mathbf{L_{N,1}}^H \mathbf{y}_{N} \\
-            \mathbf{L_{1,2}}^H \mathbf{y}_{1} +
-            \mathbf{L_{2,2}}^H \mathbf{y}_{2} +
-            \mathbf{L_{N,2}}^H \mathbf{y}_{N} \\
+            \mathbf{L}_{1,1}^H \mathbf{y}_{1} +
+            \mathbf{L}_{2,1}^H \mathbf{y}_{2} +
+            \mathbf{L}_{N,1}^H \mathbf{y}_{N} \\
+            \mathbf{L}_{1,2}^H \mathbf{y}_{1} +
+            \mathbf{L}_{2,2}^H \mathbf{y}_{2} +
+            \mathbf{L}_{N,2}^H \mathbf{y}_{N} \\
             \vdots     \\
-            \mathbf{L_{1,M}}^H \mathbf{y}_{1} +
-            \mathbf{L_{2,M}}^H \mathbf{y}_{2} +
-            \mathbf{L_{N,M}}^H \mathbf{y}_{N}
+            \mathbf{L}_{1,M}^H \mathbf{y}_{1} +
+            \mathbf{L}_{2,M}^H \mathbf{y}_{2} +
+            \mathbf{L}_{N,M}^H \mathbf{y}_{N}
         \end{bmatrix}
 
     """
