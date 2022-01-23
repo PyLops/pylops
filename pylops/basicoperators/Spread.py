@@ -165,11 +165,11 @@ class Spread(LinearOperator):
         table=None,
         dtable=None,
         fh=None,
-        interp=False,
+        interp=None,
         engine="numpy",
         dtype="float64",
     ):
-        if not engine in ["numpy", "numba"]:
+        if engine not in ["numpy", "numba"]:
             raise KeyError("engine must be numpy or numba")
         if engine == "numba" and jit is not None:
             self.engine = "numba"
@@ -188,8 +188,10 @@ class Spread(LinearOperator):
 
         # find out if mapping is in table of function handle
         if table is None and fh is None:
-            raise NotImplementedError("provide either table or fh...")
+            raise NotImplementedError("provide either table or fh.")
         elif table is not None:
+            if fh is not None:
+                raise ValueError("provide only one of table or fh.")
             if self.table.shape != (self.nx0, self.nt0, self.nx):
                 raise ValueError("table must have shape [nx0 x nt0 x nx]")
             self.usetable = True
@@ -211,6 +213,8 @@ class Spread(LinearOperator):
             else:
                 if len(fh(0, 0)) == 2:
                     self.interp = True
+        if interp is not None and self.interp != interp:
+            logging.warning("interp has been overridden to %r.", self.interp)
         self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
