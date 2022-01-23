@@ -22,11 +22,14 @@ class FirstDerivative(LinearOperator):
         (``None`` if only one dimension is available)
     axis : :obj:`int`, optional
         .. versionadded:: 2.0
+
         Axis along which derivative is applied.
     dir : :obj:`int`, optional
+
         .. deprecated:: 2.0
             Use ``axis`` instead. Note that the default for ``axis`` is -1
             instead of 0 which was the default for ``dir``.
+
     sampling : :obj:`float`, optional
         Sampling step :math:`\Delta x`.
     edge : :obj:`bool`, optional

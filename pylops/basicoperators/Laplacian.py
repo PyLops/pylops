@@ -29,11 +29,14 @@ def Laplacian(
         Number of samples for each dimension.
     axes : :obj:`int`, optional
         .. versionadded:: 2.0
+
         Axes along which the Laplacian is applied.
     dirs : :obj:`int`, optional
+
         .. deprecated:: 2.0
             Use ``axes`` instead. Note that the default for ``axes`` is (-2, -1)
             instead of (0, 1) which was the default for ``dirs``.
+
     dirs : :obj:`tuple`, optional
         Directions along which laplacian is applied.
     weights : :obj:`tuple`, optional

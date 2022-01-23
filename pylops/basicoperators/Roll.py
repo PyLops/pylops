@@ -20,11 +20,14 @@ class Roll(LinearOperator):
         (``None`` if only one dimension is available)
     axis : :obj:`int`, optional
         .. versionadded:: 2.0
+
         Axis along which model is rolled.
     dir : :obj:`int`, optional
+
         .. deprecated:: 2.0
             Use ``axis`` instead. Note that the default for ``axis`` is -1
             instead of 0 which was the default for ``dir``.
+
     shift : :obj:`int`, optional
         Number of samples by which elements are shifted
     dtype : :obj:`str`, optional

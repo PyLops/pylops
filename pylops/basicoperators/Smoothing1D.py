@@ -19,11 +19,14 @@ def Smoothing1D(nsmooth, dims, axis=-1, dir=None, dtype="float64"):
         Number of samples for each dimension
     axis : :obj:`int`, optional
         .. versionadded:: 2.0
+
         Axis along which model (and data) are smoothed.
     dir : :obj:`int`, optional
+
         .. deprecated:: 2.0
             Use ``axis`` instead. Note that the default for ``axis`` is -1
             instead of 0 which was the default for ``dir``.
+
     dtype : :obj:`str`, optional
         Type of elements in input array.
 

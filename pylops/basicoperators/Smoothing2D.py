@@ -18,14 +18,17 @@ def Smoothing2D(nsmooth, dims, axes=(-2, -1), nodir=None, dtype="float64"):
         Lenght of smoothing operator in 1st and 2nd dimensions (must be odd)
     dims : :obj:`tuple`
         Number of samples for each dimension
-    axis : :obj:`int`, optional
+    axes : :obj:`int`, optional
         .. versionadded:: 2.0
+
         Axes along which model (and data) are smoothed.
     nodir : :obj:`int`, optional
         Direction along which smoothing is **not** applied (set to ``None`` for 2d
         arrays)
+
         .. deprecated:: 2.0
             Use ``axes`` instead. Note that ``axes`` applies along axes instead.
+
     dtype : :obj:`str`, optional
         Type of elements in input array.
 

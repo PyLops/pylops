@@ -19,10 +19,13 @@ class CausalIntegration(LinearOperator):
         (``None`` if only one dimension is available)
     axis : :obj:`int`, optional
         .. versionadded:: 2.0
+
         Axis along which the model is integrated.
     dir : :obj:`int`, optional
+
         .. deprecated:: 2.0
             Use ``axis`` instead.
+
     sampling : :obj:`float`, optional
         Sampling step ``dx``.
     halfcurrent : :obj:`bool`, optional

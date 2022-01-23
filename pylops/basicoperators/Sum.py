@@ -19,10 +19,13 @@ class Sum(LinearOperator):
         Number of samples for each dimension
     axis : :obj:`int`, optional
         .. versionadded:: 2.0
+
         Axis along which model is summed.
     dir : :obj:`int`, optional
+
         .. deprecated:: 2.0
             Use ``axis`` instead.
+
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
