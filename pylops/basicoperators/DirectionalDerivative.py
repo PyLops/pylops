@@ -8,7 +8,7 @@ def FirstDirectionalDerivative(
     r"""First Directional derivative.
 
     Apply a directional derivative operator to a multi-dimensional array
-    along either a single common direction or different directions for each
+    along either a single common axis or different axes for each
     point of the array.
 
     .. note:: At least 2 dimensions are required, consider using
@@ -75,7 +75,7 @@ def SecondDirectionalDerivative(dims, v, sampling=1, edge=False, dtype="float64"
     r"""Second Directional derivative.
 
     Apply a second directional derivative operator to a multi-dimensional array
-    along either a single common direction or different directions for each
+    along either a single common axis or different axes for each
     point of the array.
 
     .. note:: At least 2 dimensions are required, consider using
