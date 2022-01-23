@@ -79,11 +79,12 @@ def _assign_name(Op, Ops, names):
         name = proposedname
     else:
         # Propose a new name until an unused character is found
+        origname = proposedname
         while proposedname in names:
             proposedname = random.choice(string.ascii_letters).upper() + suffix
         name = proposedname
         print(
-            f"The user has used the same name {proposedname} for two distinct operators, "
+            f"The user has used the same name {origname} for two distinct operators, "
             f"changing name of operator {type(Op).__name__} to {name}..."
         )
     Op.name = name

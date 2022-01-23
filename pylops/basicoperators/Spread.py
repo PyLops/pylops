@@ -28,9 +28,13 @@ class Spread(LinearOperator):
 
     Spread values from the input model vector arranged as a 2-dimensional
     array of size :math:`[n_{x_0} \times n_{t_0}]` into the data vector of size
-    :math:`[n_x \times n_t]`. Spreading is performed along parametric curves
-    provided as look-up table of pre-computed indices (``table``)
-    or computed on-the-fly using a function handle (``fh``).
+    :math:`[n_x \times n_t]`. Note that the value at each single pair
+    :math:`(x_0, t_0)` in the input is spreaded over the entire :math:`x` axis
+    in the output.
+
+    Spreading is performed along parametric curves provided as look-up table
+    of pre-computed indices (``table``) or computed on-the-fly using a
+    function handle (``fh``).
 
     In adjont mode, values from the data vector are instead stacked
     along the same parametric curves.
@@ -40,10 +44,11 @@ class Spread(LinearOperator):
     dims : :obj:`tuple`
         Dimensions of model vector (vector will be reshaped internally into
         a two-dimensional array of size :math:`[n_{x_0} \times n_{t_0}]`,
-        where the first dimension is the spreading/stacking direction)
+        where the first dimension is the spreading direction)
     dimsd : :obj:`tuple`
-        Dimensions of model vector (vector will be reshaped internal into
-        a two-dimensional array of size :math:`[n_x \times n_t]`)
+        Dimensions of data vector (vector will be reshaped internal into
+        a two-dimensional array of size :math:`[n_x \times n_t]`,
+        where the first dimension is the stacking direction)
     table : :obj:`np.ndarray`, optional
         Look-up table of indeces of size
         :math:`[n_{x_0} \times n_{t_0} \times n_x]` (if ``None`` use function
@@ -53,10 +58,9 @@ class Spread(LinearOperator):
         :math:`[n_{x_0} \times n_{t_0} \times n_x]` (if ``None`` use function
         handle ``fh``)
     fh : :obj:`np.ndarray`, optional
-        Function handle that returns an index (and a fractional value in case
-        of ``interp=True``) to be used for spreading/stacking given indices
-        in :math:`x_0` and :math:`t` axes (if ``None`` use look-up table
-        ``table``)
+        Function handle that returns a list of time indices (and fractional values
+        for spreading with linear interpolation) to be used for spreading/stacking
+        (if ``None`` use look-up table ``table``)
     interp : :obj:`bool`, optional
         Apply linear interpolation (``True``) or nearest interpolation
         (``False``) during stacking/spreading along parametric curve. To be
@@ -93,10 +97,12 @@ class Spread(LinearOperator):
     :math:`[n_x \times n_t]`:
 
     .. math::
-        m(x_0, t_0) \rightarrow d(x, t=f(x_0, x, t_0))
+        m(x_0, t_0) \rightarrow d(x, t=f(x_0, x, t_0)) \; \forall x
 
-    where :math:`f(x_0, x, t)` is a mapping function that returns a value t
-    given values :math:`x_0`, :math:`x`, and  :math:`t_0`.
+    where :math:`f(x_0, x, t)` is a mapping function that returns a value :math:`t`
+    given values :math:`x_0`, :math:`x`, and  :math:`t_0`. Note that for each
+    :math:`(x_0, t_0)` pair, spreading is done over the entire :math:`x` axis
+    in the data domain.
 
     In adjoint mode, the model is reconstructed by means of the following
     stacking operation:

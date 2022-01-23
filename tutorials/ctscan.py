@@ -28,7 +28,7 @@ np.random.seed(10)
 # such a type:
 #
 # .. math::
-#    t(r,\theta; x) = tan(90-\theta)*x + r/sin(\theta)
+#    t(r,\theta; x) = \tan(90°-\theta)x + \frac{r}{\sin(\theta)}
 #
 # where :math:`\theta` is the angle between the x-axis (:math:`x`) and
 # the perpendicular to the summation line and :math:`r` is the distance

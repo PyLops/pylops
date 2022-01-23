@@ -16,13 +16,15 @@ the complex-valued problem:
 or the real-valued augmented system
 
 .. math::
+    \DeclareMathOperator{\Real}{Re}
+    \DeclareMathOperator{\Imag}{Im}
    \begin{bmatrix}
-       Re(\mathbf{y})  \\
-       Im(\mathbf{y})
+       \Real(\mathbf{y})  \\
+       \Imag(\mathbf{y})
    \end{bmatrix} =
    \begin{bmatrix}
-       Re(\mathbf{A})  \\
-       Im(\mathbf{A})
+       \Real(\mathbf{A})  \\
+       \Imag(\mathbf{A})
    \end{bmatrix}  \mathbf{x}
 
 Whilst we already know how to solve the first problem, let's see how we can

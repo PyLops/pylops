@@ -14,8 +14,8 @@ a linear operator of such a kind:
 
 .. math::
         d(\mathbf{x_r}, \mathbf{x_s}, t) =
-        w(t) * \int_V G(\mathbf{x}, \mathbf{x_s}, t)
-        G(\mathbf{x_r}, \mathbf{x}, t) m(\mathbf{x}) d\mathbf{x}
+        w(t) * \int\limits_V G(\mathbf{x}, \mathbf{x_s}, t)
+        G(\mathbf{x_r}, \mathbf{x}, t) m(\mathbf{x})\,\mathrm{d}\mathbf{x}
 
 where :math:`m(\mathbf{x})` is the reflectivity
 at every location in the subsurface, :math:`G(\mathbf{x}, \mathbf{x_s}, t)`

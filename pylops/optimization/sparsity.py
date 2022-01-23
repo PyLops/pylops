@@ -30,9 +30,9 @@ def _hardthreshold(x, thresh):
     Applies hard thresholding to vector ``x`` (equal to the proximity
     operator for :math:`\|\mathbf{x}\|_0`) as shown in [1]_.
 
-    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
-       data reconstruction using a percentile-half-thresholding algorithm”,
-       Journal of Geophysics and Engineering, vol. 11. 2014.
+    .. [1] Chen, F., Shen, L., Suter, B.W., “Computing the proximity
+       operator of the ℓp norm with 0 < p < 1”,
+       IET Signal Processing, vol. 10. 2016.
 
     Parameters
     ----------
@@ -58,9 +58,9 @@ def _softthreshold(x, thresh):
     Applies soft thresholding to vector ``x`` (equal to the proximity
     operator for :math:`\|\mathbf{x}\|_1`) as shown in [1]_.
 
-    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
-       data reconstruction using a percentile-half-thresholding algorithm”,
-       Journal of Geophysics and Engineering, vol. 11. 2014.
+    .. [1] Chen, F., Shen, L., Suter, B.W., “Computing the proximity
+       operator of the ℓp norm with 0 < p < 1”,
+       IET Signal Processing, vol. 10. 2016.
 
     Parameters
     ----------
@@ -90,9 +90,9 @@ def _halfthreshold(x, thresh):
     Applies half thresholding to vector ``x`` (equal to the proximity
     operator for :math:`\|\mathbf{x}\|_{1/2}^{1/2}`) as shown in [1]_.
 
-    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
-       data reconstruction using a percentile-half-thresholding algorithm”,
-       Journal of Geophysics and Engineering, vol. 11. 2014.
+    .. [1] Chen, F., Shen, L., Suter, B.W., “Computing the proximity
+       operator of the ℓp norm with 0 < p < 1”,
+       IET Signal Processing, vol. 10. 2016.
 
     Parameters
     ----------
@@ -107,7 +107,10 @@ def _halfthreshold(x, thresh):
         Tresholded vector
 
     """
-    phi = 2.0 / 3.0 * np.arccos((thresh / 8.0) * (np.abs(x) / 3.0) ** (-1.5))
+    arg = np.ones_like(x)
+    arg[x != 0] = (thresh / 8.0) * (np.abs(x[x != 0]) / 3.0) ** (-1.5)
+    arg = np.clip(arg, -1, 1)
+    phi = 2.0 / 3.0 * np.arccos(arg)
     x1 = 2.0 / 3.0 * x * (1 + np.cos(2.0 * np.pi / 3.0 - phi))
     # x1[np.abs(x) <= 1.5 * thresh ** (2. / 3.)] = 0
     x1[np.abs(x) <= (54 ** (1.0 / 3.0) / 4.0) * thresh ** (2.0 / 3.0)] = 0
@@ -718,10 +721,12 @@ def ISTA(
     eps : :obj:`float`, optional
         Sparsity damping
     alpha : :obj:`float`, optional
-        Step size (:math:`\alpha \le 1/\lambda_\text{max}(\mathbf{Op}^H\mathbf{Op})`
-        guarantees convergence. If ``None``, the maximum eigenvalue is
-        estimated and the optimal step size is chosen. If provided, the
-        condition will not be checked internally).
+        Step size. To guarantee convergence, ensure
+        :math:`\alpha \le 1/\lambda_\text{max}`, where :math:`\lambda_\text{max}`
+        is the largest eigenvalue of :math:`\mathbf{Op}^H\mathbf{Op}`.
+        If ``None``, the maximum eigenvalue is estimated and the optimal step size
+        is chosen as :math:`1/\lambda_\text{max}`. If provided, the
+        convergence criterion will not be checked internally.
     eigsiter : :obj:`float`, optional
         Number of iterations for eigenvalue estimation if ``alpha=None``
     eigstol : :obj:`float`, optional
@@ -748,6 +753,8 @@ def ISTA(
         Decay factor to be applied to thresholding during iterations
     SOp : :obj:`pylops.LinearOperator`, optional
         Regularization operator (use when solving the analysis problem)
+    x0: :obj:`numpy.ndarray`, optional
+        Initial guess
 
     Returns
     -------
@@ -1042,11 +1049,12 @@ def FISTA(
         Number of iterations
     eps : :obj:`float`, optional
         Sparsity damping
-    alpha : :obj:`float`, optional
-        Step size (:math:`\alpha \le 1/\lambda_\text{max}(\mathbf{Op}^H\mathbf{Op})`
-        guarantees convergence. If ``None``, the maximum eigenvalue is
-        estimated and the optimal step size is chosen. If provided, the
-        condition will not be checked internally).
+        Step size. To guarantee convergence, ensure
+        :math:`\alpha \le 1/\lambda_\text{max}`, where :math:`\lambda_\text{max}`
+        is the largest eigenvalue of :math:`\mathbf{Op}^H\mathbf{Op}`.
+        If ``None``, the maximum eigenvalue is estimated and the optimal step size
+        is chosen as :math:`1/\lambda_\text{max}`. If provided, the
+        convergence criterion will not be checked internally.
     eigsiter : :obj:`int`, optional
         Number of iterations for eigenvalue estimation if ``alpha=None``
     eigstol : :obj:`float`, optional

@@ -16,7 +16,7 @@ precondition sparsity-promoting inverse problems.
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.ndimage import gaussian_filter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import pylops
 from pylops.signalprocessing.Seislet import _predict_trace
@@ -28,24 +28,27 @@ np.random.seed(10)
 # To start we import a 2d image and estimate the local slopes of the image.
 im = np.load("../testdata/python.npy")[..., 0]
 im = im / 255.0 - 0.5
-im = gaussian_filter(im, sigma=2)
 
-slopes, linearity = pylops.utils.signalprocessing.slope_estimate(im, 1.0, 1.0, smooth=7)
+slopes, anisotropy = pylops.utils.signalprocessing.slope_estimate(im, smooth=7)
+angles = -np.rad2deg(np.arctan(slopes))
 
-fig, axs = plt.subplots(1, 3, figsize=(12, 4))
+###############################################################################
+fig, axs = plt.subplots(1, 3, figsize=(12, 4), sharex=True, sharey=True)
 iax = axs[0].imshow(im, cmap="viridis", origin="lower")
 axs[0].set_title("Data")
-axs[0].axis("tight")
-iax = axs[1].imshow(
-    -np.rad2deg(slopes), cmap="seismic", origin="lower", vmin=-90, vmax=90
-)
-axs[1].set_title("Slopes (degrees)")
-plt.colorbar(iax, ax=axs[1])
-axs[1].axis("tight")
-iax = axs[2].imshow(linearity, cmap="hot", origin="lower", vmin=0, vmax=1)
-axs[2].set_title("Linearity")
-plt.colorbar(iax, ax=axs[2])
-axs[2].axis("tight")
+cax = make_axes_locatable(axs[0]).append_axes("right", size="5%", pad=0.05)
+cax.axis("off")
+
+iax = axs[1].imshow(angles, cmap="RdBu_r", origin="lower", vmin=-90, vmax=90)
+axs[1].set_title("Angle of incline [°]")
+cax = make_axes_locatable(axs[1]).append_axes("right", size="5%", pad=0.05)
+cb = fig.colorbar(iax, cax=cax, orientation="vertical")
+
+iax = axs[2].imshow(anisotropy, cmap="Reds", origin="lower", vmin=0, vmax=1)
+axs[2].set_title("Anisotropy")
+cax = make_axes_locatable(axs[2]).append_axes("right", size="5%", pad=0.05)
+cb = fig.colorbar(iax, cax=cax, orientation="vertical")
+fig.tight_layout()
 
 ###############################################################################
 # We can now repeat the same using some seismic data. We will first define
@@ -55,25 +58,26 @@ axs[2].axis("tight")
 
 # Reflectivity model
 nx, nt = 2 ** 7, 121
-dx, dt = 4, 0.004
+dx, dt = 0.01, 0.004
 x, t = np.arange(nx) * dx, np.arange(nt) * dt
 
+nspike = nt // 8
 refl = np.zeros(nt)
-it = np.sort(np.random.permutation(np.arange(10, nt - 20))[: nt // 8])
-refl[it] = np.random.normal(0.0, 1.0, nt // 8)
+it = np.sort(np.random.permutation(range(10, nt - 20))[:nspike])
+refl[it] = np.random.normal(0.0, 1.0, nspike)
 
 # Wavelet
 ntwav = 41
 f0 = 30
-wav = pylops.utils.wavelets.ricker(np.arange(ntwav) * 0.004, f0)[0]
-wavc = np.argmax(wav)
+twav = np.arange(ntwav) * dt
+wav, *_ = pylops.utils.wavelets.ricker(twav, f0)
 
 # Input trace
 trace = np.convolve(refl, wav, mode="same")
 
 # Slopes
-theta = np.linspace(0, 30, nx)
-slope = np.outer(np.ones(nt), np.deg2rad(theta) * dt / dx)
+theta = np.deg2rad(np.linspace(0, 30, nx))
+slope = np.outer(np.ones(nt), np.tan(theta) * dt / dx)
 
 # Model data
 d = np.zeros((nt, nx))
@@ -83,31 +87,40 @@ for ix in range(nx):
     d[:, ix] = tr
 
 # Estimate slopes
-slope_est = -pylops.utils.signalprocessing.slope_estimate(d, dt, dx, smooth=10)[0]
+slope_est, _ = pylops.utils.signalprocessing.slope_estimate(d, dt, dx, smooth=10)
+slope_est *= -1
 
-fig, axs = plt.subplots(1, 3, figsize=(12, 5))
-axs[0].imshow(d, cmap="gray", vmin=-1, vmax=1, extent=(x[0], x[-1], t[-1], t[0]))
-axs[0].set_title("Data")
-axs[0].axis("tight")
-axs[1].imshow(
-    np.rad2deg(slope) * dx / dt,
-    cmap="seismic",
-    vmin=0,
-    vmax=40,
-    extent=(x[0], x[-1], t[-1], t[0]),
+###############################################################################
+fig, axs = plt.subplots(2, 2, figsize=(6, 6), sharex=True, sharey=True)
+
+opts = dict(aspect="auto", extent=(x[0], x[-1], t[-1], t[0]))
+iax = axs[0, 0].imshow(d, cmap="gray", vmin=-1, vmax=1, **opts)
+axs[0, 0].set(title="Data", ylabel="Time [s]")
+cax = make_axes_locatable(axs[0, 0]).append_axes("right", size="5%", pad=0.05)
+fig.colorbar(iax, cax=cax, orientation="vertical")
+
+opts.update(dict(cmap="RdBu_r", vmin=np.min(slope), vmax=np.max(slope)))
+iax = axs[0, 1].imshow(slope, **opts)
+axs[0, 1].set(title="True Slope")
+cax = make_axes_locatable(axs[0, 1]).append_axes("right", size="5%", pad=0.05)
+fig.colorbar(iax, cax=cax, orientation="vertical")
+cax.set_ylabel("[s/km]")
+
+iax = axs[1, 0].imshow(np.abs(slope - slope_est), **opts)
+axs[1, 0].set(
+    title="Estimate absolute error", ylabel="Time [s]", xlabel="Position [km]"
 )
-axs[1].set_title("True Slopes")
-axs[1].axis("tight")
-iax = axs[2].imshow(
-    np.rad2deg(slope_est) * dx / dt,
-    cmap="seismic",
-    vmin=0,
-    vmax=40,
-    extent=(x[0], x[-1], t[-1], t[0]),
-)
-axs[2].set_title("Estimated Slopes")
-plt.colorbar(iax, ax=axs[2])
-axs[2].axis("tight")
+cax = make_axes_locatable(axs[1, 0]).append_axes("right", size="5%", pad=0.05)
+fig.colorbar(iax, cax=cax, orientation="vertical")
+cax.set_ylabel("[s/km]")
+
+iax = axs[1, 1].imshow(slope_est, **opts)
+axs[1, 1].set(title="Estimated Slope", xlabel="Position [km]")
+cax = make_axes_locatable(axs[1, 1]).append_axes("right", size="5%", pad=0.05)
+fig.colorbar(iax, cax=cax, orientation="vertical")
+cax.set_ylabel("[s/km]")
+
+fig.tight_layout()
 
 ###############################################################################
 # As you can see the Structure Tensor algorithm is a very fast, general purpose

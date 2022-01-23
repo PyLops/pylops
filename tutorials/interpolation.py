@@ -23,7 +23,7 @@ The input and output signals are:
 .. math::
    \mathbf{y}= [y_1, y_2,\ldots,y_N]^T, \qquad \mathbf{x}= [x_1, x_2,\ldots,x_M]^T, \qquad
 
-with :math:`M>>N`.
+with :math:`M \gg N`.
 
 """
 import matplotlib.pyplot as plt
