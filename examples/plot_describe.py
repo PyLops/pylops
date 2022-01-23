@@ -47,7 +47,7 @@ D = A + C
 describe(D)
 
 ###############################################################################
-# So good so far. Let's see what happens if we accidentally call two different
+# So far so good. Let's see what happens if we accidentally call two different
 # operators with the same name. You will see that PyLops catches that and
 # changes the name for us (and provides us with a nice warning!)
 
@@ -67,4 +67,4 @@ describe(H)
 ###############################################################################
 # Finally, note that you can get the best out of the describe method if working
 # inside a Jupyter notebook. There, the mathematical expression will be
-# rendered using a LeTex format!
+# rendered using a LeTex format! See an example `notebook <https://github.com/mrava87/pylops_notebooks/blob/master/developement/Sympy.ipynb>`_.
