@@ -252,7 +252,7 @@ class _FFT_fftw(_BaseFFT):
         )
         if self.cdtype != np.complex128:
             warnings.warn(
-                f"fftw backend returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
+                f"fftw backend returns complex128 dtype. To respect the passed dtype, data will be cast to {self.cdtype}."
             )
 
         self.dims_t = self.dims.copy()
@@ -417,6 +417,8 @@ def FFT(
     sampling : :obj:`float`, optional
         Sampling step ``dt``.
     norm : `{"ortho", "none", "1/n"}`, optional
+        .. versionadded:: 1.17
+
         - "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
           where :math:`N_F` is the number of samples in the Fourier domain given by ``nfft``.
 
@@ -427,13 +429,18 @@ def FFT(
 
         .. note:: For "none" and "1/n", the operator is not unitary, that is, the
           adjoint is not the inverse. To invert the operator, simply use ``Op \ y``.
+
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
         model is real.
     fftshift : :obj:`bool`, optional
-        Note: ``fftshift`` is deprecated, use ``ifftshift_before``.
+        .. deprecated:: 1.17
+
+            Use ``ifftshift_before``.
     ifftshift_before : :obj:`bool`, optional
+        .. versionadded:: 1.17
+
         Apply ifftshift (``True``) or not (``False``) to model vector (before FFT).
         Consider using this option when the model vector's respective axis is symmetric
         with respect to the zero value sample. This will shift the zero value sample to
@@ -442,6 +449,8 @@ def FFT(
         Transform.
         Defaults to not applying ifftshift.
     fftshift_after : :obj:`bool`, optional
+        .. versionadded:: 1.17
+
         Apply fftshift (``True``) or not (``False``) to data vector (after FFT).
         Consider using this option when you require frequencies to be arranged
         naturally, from negative to positive. When not applying fftshift after FFT,
@@ -450,6 +459,9 @@ def FFT(
     engine : :obj:`str`, optional
         Engine used for fft computation (``numpy``, ``fftw``, or ``scipy``). Choose
         ``numpy`` when working with cupy arrays.
+
+        .. note:: Since version 1.17, accepts "scipy".
+
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.
@@ -480,6 +492,8 @@ def FFT(
     shape : :obj:`tuple`
         Operator shape
     clinear : :obj:`bool`
+        .. versionadded:: 1.17
+
         Operator is complex-linear. Is false when either ``real=True`` or when
         ``dtype`` is not a complex type.
     explicit : :obj:`bool`

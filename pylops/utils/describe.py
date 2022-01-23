@@ -224,6 +224,8 @@ def _describe(Op):
 def describe(Op):
     """Describe a PyLops operator
 
+    .. versionadded:: 1.17
+
     Convert a PyLops operator into a ``sympy`` mathematical formula.
     This routine is useful both for debugging and educational purposes.
 
