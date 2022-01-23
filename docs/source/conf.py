@@ -84,7 +84,7 @@ master_doc = 'index'
 # General information about the project
 year = datetime.date.today().year
 project = 'PyLops'
-copyright = '{}, Matteo Ravasi'.format(year)
+copyright = '{}, PyLops Development Team'.format(year)
 
 # Version
 version = __version__
