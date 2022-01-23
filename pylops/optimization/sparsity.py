@@ -58,9 +58,9 @@ def _softthreshold(x, thresh):
     Applies soft thresholding to vector ``x`` (equal to the proximity
     operator for :math:`\|\mathbf{x}\|_1`) as shown in [1]_.
 
-    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
-       data reconstruction using a percentile-half-thresholding algorithm”,
-       Journal of Geophysics and Engineering, vol. 11. 2014.
+    .. [1] Chen, F., Shen, L., Suter, B.W., “Computing the proximity
+       operator of the ℓp norm with 0 < p < 1”,
+       IET Signal Processing, vol. 10. 2016.
 
     Parameters
     ----------
