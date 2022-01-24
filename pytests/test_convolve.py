@@ -143,7 +143,7 @@ def test_Convolve1D(par):
             h=h1,
             offset=par["offset"],
             dims=(par["ny"], par["nx"]),
-            dir=par["dir"],
+            axis=par["dir"],
             dtype="float64",
         )
         assert dottest(Cop, par["ny"] * par["nx"], par["ny"] * par["nx"])
@@ -163,7 +163,7 @@ def test_Convolve1D(par):
         h=h1,
         offset=par["offset"],
         dims=(par["nz"], par["ny"], par["nx"]),
-        dir=par["dir"],
+        axis=par["dir"],
         dtype="float64",
     )
     assert dottest(
@@ -264,7 +264,7 @@ def test_Convolve3D(par):
         h=h3,
         offset=par["offset"],
         dims=[par["nz"], par["ny"], par["nx"], par["nt"]],
-        dirs=[0, 1, 2],
+        axes=[0, 1, 2],
         dtype="float64",
     )
     assert dottest(

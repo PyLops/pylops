@@ -89,7 +89,7 @@ def Smoothing1D(nsmooth, dims, axis=-1, dir=None, dtype="float64"):
         n,
         np.ones(nsmooth) / float(nsmooth),
         dims=dims,
-        dir=axis,
+        axis=axis,
         offset=(nsmooth - 1) / 2,
         dtype=dtype,
     )

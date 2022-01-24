@@ -1,4 +1,7 @@
+import warnings
+
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils.backend import (
@@ -36,8 +39,7 @@ class Convolve1D(LinearOperator):
     r"""1D convolution operator.
 
     Apply one-dimensional convolution with a compact filter to model (and data)
-    along a specific direction of a multi-dimensional array depending on the
-    choice of ``dir``.
+    along an ``axis`` of a multi-dimensional array.
 
     Parameters
     ----------
@@ -50,8 +52,16 @@ class Convolve1D(LinearOperator):
     dims : :obj:`tuple`
         Number of samples for each dimension
         (``None`` if only one dimension is available)
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0
+
+        Axis along which convolution is applied
     dir : :obj:`int`, optional
-        Direction along which convolution is applied
+
+        .. deprecated:: 2.0
+            Use ``axis`` instead. Note that the default for ``axis`` is -1
+            instead of 0 which was the default for ``dir``.
+
     method : :obj:`str`, optional
         Method used to calculate the convolution (``direct``, ``fft``,
         or ``overlapadd``). Note that only ``direct`` and ``fft`` are allowed
@@ -115,7 +125,9 @@ class Convolve1D(LinearOperator):
 
     """
 
-    def __init__(self, N, h, offset=0, dims=None, dir=0, dtype="float64", method=None):
+    def __init__(
+        self, N, h, offset=0, dims=None, axis=-1, dir=None, dtype="float64", method=None
+    ):
         if offset > len(h) - 1:
             raise ValueError("offset must be smaller than len(h) - 1")
         self.h = h
@@ -135,13 +147,21 @@ class Convolve1D(LinearOperator):
             )
         self.hstar = np.flip(self.h, axis=-1)
         self.dimsorig = dims
+        if dir is not None:
+            warnings.warn(
+                "dir is deprecated in version 2.0, use axis instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            axis = dir
+        else:
+            axis = axis
         if dims is not None:
             # add dimensions to filter to match dimensions of model and data
             hdims = [1] * len(dims)
-            hdims[dir] = len(self.h)
+            hdims[axis] = len(self.h)
             self.h = self.h.reshape(hdims)
             self.hstar = self.hstar.reshape(hdims)
-        self.dir = dir
         if dims is None:
             self.dims = np.array([N, 1])
             self.reshape = False
@@ -151,6 +171,8 @@ class Convolve1D(LinearOperator):
             else:
                 self.dims = np.array(dims)
                 self.reshape = True
+        self.axis = normalize_axis_index(axis, len(self.dims))
+
         # choose method and function handle
         self.convfunc, self.method = _choose_convfunc(h, method, self.dimsorig)
         self.shape = (np.prod(self.dims), np.prod(self.dims))

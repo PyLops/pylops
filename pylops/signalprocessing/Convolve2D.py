@@ -1,12 +1,18 @@
+import warnings
+
+from numpy.core.multiarray import normalize_axis_index
+
 from pylops.signalprocessing import ConvolveND
 
 
-def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype="float64", method="fft"):
+def Convolve2D(
+    N, h, dims, offset=(0, 0), axes=(-2, -1), nodir=None, dtype="float64", method="fft"
+):
     r"""2D convolution operator.
 
     Apply two-dimensional convolution with a compact filter to model
-    (and data) along a pair of specific directions of a two or
-    three-dimensional array depending on the choice of ``nodir``.
+    (and data) along a pair of ``axes`` of a two or
+    three-dimensional array.
 
     Parameters
     ----------
@@ -17,10 +23,18 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype="float64", method="f
     dims : :obj:`list`
         Number of samples for each dimension
     offset : :obj:`tuple`, optional
-        Indeces of the center of the compact filter
+        Indices of the center of the compact filter
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0
+
+        Axes along which convolution is applied
     nodir : :obj:`int`, optional
-        Direction along which convolution is NOT applied
-        (set to ``None`` for 2d arrays)
+        Direction along which smoothing is **not** applied (set to ``None`` for 2d
+        arrays)
+
+        .. deprecated:: 2.0
+            Use ``axes`` instead. Note that ``axes`` applies along axes instead.
+
     dtype : :obj:`str`, optional
         Type of elements in input array.
     method : :obj:`str`, optional
@@ -73,14 +87,20 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype="float64", method="f
     """
     if h.ndim != 2:
         raise ValueError("h must be 2-dimensional")
-    if nodir is None:
-        dirs = (0, 1)
-    elif nodir == 0:
-        dirs = (1, 2)
-    elif nodir == 1:
-        dirs = (0, 2)
+    if nodir is not None:
+        warnings.warn(
+            "nodir is deprecated in version 2.0, use axes instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        if nodir == 0:
+            axes = (1, 2)
+        elif nodir == 1:
+            axes = (0, 2)
+        else:
+            axes = (0, 1)
     else:
-        dirs = (0, 1)
+        axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
 
-    cop = ConvolveND(N, h, dims, offset=offset, dirs=dirs, method=method, dtype=dtype)
+    cop = ConvolveND(N, h, dims, offset=offset, axes=axes, method=method, dtype=dtype)
     return cop

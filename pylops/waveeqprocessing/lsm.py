@@ -267,7 +267,7 @@ def Demigration(
         )
 
         cop = Convolve1D(
-            ns * nr * nt, h=wav, offset=wavcenter, dims=(ns * nr, nt), dir=1
+            ns * nr * nt, h=wav, offset=wavcenter, dims=(ns * nr, nt), axis=1
         )
         demop = cop * sop
     else:

@@ -1,4 +1,7 @@
+import warnings
+
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils.backend import (
@@ -13,8 +16,7 @@ class ConvolveND(LinearOperator):
     r"""ND convolution operator.
 
     Apply n-dimensional convolution with a compact filter to model
-    (and data) along a set of directions ``dirs`` of a n-dimensional
-    array.
+    (and data) along the ``axes`` of a n-dimensional array.
 
     Parameters
     ----------
@@ -26,9 +28,17 @@ class ConvolveND(LinearOperator):
         Number of samples for each dimension
     offset : :obj:`tuple`, optional
         Indices of the center of the compact filter
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0
+
+        Axes along which convolution is applied
     dirs : :obj:`tuple`, optional
         Directions along which convolution is applied
         (set to ``None`` for filter of same dimension as input vector)
+
+        .. deprecated:: 2.0
+            Use ``axes`` instead.
+
     method : :obj:`str`, optional
         Method used to calculate the convolution (``direct`` or ``fft``).
     dtype : :obj:`str`, optional
@@ -53,12 +63,33 @@ class ConvolveND(LinearOperator):
     """
 
     def __init__(
-        self, N, h, dims, offset=None, dirs=None, method="fft", dtype="float64"
+        self,
+        N,
+        h,
+        dims,
+        offset=None,
+        axes=None,
+        dirs=None,
+        method="fft",
+        dtype="float64",
     ):
         ncp = get_array_module(h)
         self.h = h
         self.nh = np.array(self.h.shape)
-        self.dirs = np.arange(len(dims)) if dirs is None else np.array(dirs)
+        if dirs is not None:
+            warnings.warn(
+                "dirs is deprecated in version 2.0, use axes instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            axes = dirs
+        else:
+            axes = axes
+        self.axes = (
+            np.arange(len(dims))
+            if axes is None
+            else np.array([normalize_axis_index(ax, len(dims)) for ax in axes])
+        )
 
         # padding
         if offset is None:
@@ -84,8 +115,8 @@ class ConvolveND(LinearOperator):
         # find out which directions are used for convolution and define offsets
         if len(dims) != len(self.nh):
             dimsh = np.ones(len(dims), dtype=int)
-            for idir, dir in enumerate(self.dirs):
-                dimsh[dir] = self.nh[idir]
+            for iax, ax in enumerate(self.axes):
+                dimsh[ax] = self.nh[iax]
             self.h = self.h.reshape(dimsh)
 
         if np.prod(dims) != N:

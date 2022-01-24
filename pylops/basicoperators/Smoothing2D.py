@@ -9,8 +9,8 @@ from pylops.signalprocessing import Convolve2D
 def Smoothing2D(nsmooth, dims, axes=(-2, -1), nodir=None, dtype="float64"):
     r"""2D Smoothing.
 
-    Apply smoothing to model (and data) along two directions of a
-    multi-dimensional array depending on the choice of ``nodir``.
+    Apply smoothing to model (and data) along two ``axes`` of a
+    multi-dimensional array.
 
     Parameters
     ----------
@@ -73,12 +73,14 @@ def Smoothing2D(nsmooth, dims, axes=(-2, -1), nodir=None, dtype="float64"):
             category=DeprecationWarning,
             stacklevel=2,
         )
-        noaxis = nodir
+        if nodir == 0:
+            axes = (1, 2)
+        elif nodir == 1:
+            axes = (0, 2)
+        else:
+            axes = (0, 1)
     else:
         axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
-        noaxis = tuple(ax for ax in range(len(dims)) if ax not in axes)
-        if len(noaxis) == 1:
-            noaxis = noaxis[0]
 
     h = np.ones((nsmooth[0], nsmooth[1])) / float(nsmooth[0] * nsmooth[1])
     return Convolve2D(
@@ -86,6 +88,6 @@ def Smoothing2D(nsmooth, dims, axes=(-2, -1), nodir=None, dtype="float64"):
         h=h,
         offset=[(nsmooth[0] - 1) / 2, (nsmooth[1] - 1) / 2],
         dims=dims,
-        nodir=noaxis,
+        axes=axes,
         dtype=dtype,
     )
