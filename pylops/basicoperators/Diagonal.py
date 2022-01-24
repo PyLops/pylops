@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -22,8 +24,16 @@ class Diagonal(LinearOperator):
     dims : :obj:`list`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0
+
+        Axis along which multiplication is applied.
     dir : :obj:`int`, optional
-        Direction along which multiplication is applied.
+
+        .. deprecated:: 2.0
+            Use ``axis`` instead. Note that the default for ``axis`` is -1
+            instead of 0 which was the default for ``dir``.
+
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -55,17 +65,27 @@ class Diagonal(LinearOperator):
 
     """
 
-    def __init__(self, diag, dims=None, dir=0, dtype="float64"):
+    def __init__(self, diag, dims=None, axis=-1, dir=None, dtype="float64"):
         ncp = get_array_module(diag)
         self.diag = diag.ravel()
         self.complex = True if ncp.iscomplexobj(self.diag) else False
+        if dir is not None:
+            warnings.warn(
+                "dir is deprecated in version 2.0, use axis instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            axis = dir
+        else:
+            axis = axis
+
         if dims is None:
             self.shape = (len(self.diag), len(self.diag))
             self.dims = None
             self.reshape = False
         else:
             diagdims = [1] * len(dims)
-            diagdims[dir] = dims[dir]
+            diagdims[axis] = dims[axis]
             self.diag = self.diag.reshape(diagdims)
             self.shape = (np.prod(dims), np.prod(dims))
             self.dims = dims

@@ -190,7 +190,7 @@ def PrestackLinearModelling(
             np.prod(np.array(dims)),
             h=wav,
             offset=len(wav) // 2,
-            dir=0,
+            axis=0,
             dims=dims,
             dtype=dtype,
         )
@@ -601,7 +601,7 @@ def PrestackInversion(
             if isinstance(epsI, (list, tuple)):
                 if len(epsI) != nm:
                     raise ValueError("epsI must be a scalar or a list of" "size nm")
-                RegI = Diagonal(np.array(epsI), dims=(nt0, nm, nspatprod), dir=1)
+                RegI = Diagonal(np.array(epsI), dims=(nt0, nm, nspatprod), axis=1)
             else:
                 RegI = epsI * Identity(nt0 * nm * nspatprod)
 

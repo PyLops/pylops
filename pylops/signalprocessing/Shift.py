@@ -83,7 +83,7 @@ def Shift(
         dimsdiag = list(dims)
         dimsdiag[dir] = len(Fop.f)
     shift = np.exp(-1j * 2 * np.pi * Fop.f * shift)
-    Sop = Diagonal(shift, dims=dimsdiag, dir=dir, dtype=Fop.cdtype)
+    Sop = Diagonal(shift, dims=dimsdiag, axis=dir, dtype=Fop.cdtype)
     Op = Fop.H * Sop * Fop
     # force dtype to that of input (FFT always upcasts it to complex)
     Op.dtype = dtype

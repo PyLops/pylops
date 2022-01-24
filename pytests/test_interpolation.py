@@ -141,7 +141,7 @@ def test_Interp_2dsignal(par):
         par["nx"] * par["nt"],
         iava,
         dims=(par["nx"], par["nt"]),
-        dir=0,
+        axis=0,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -157,7 +157,7 @@ def test_Interp_2dsignal(par):
         par["nx"] * par["nt"],
         iava + 0.3,
         dims=(par["nx"], par["nt"]),
-        dir=0,
+        axis=0,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -171,7 +171,7 @@ def test_Interp_2dsignal(par):
             par["nx"] * par["nt"],
             iava_rep + 0.3,
             dims=(par["nx"], par["nt"]),
-            dir=0,
+            axis=0,
             kind=par["kind"],
             dtype=par["dtype"],
         )
@@ -192,7 +192,7 @@ def test_Interp_2dsignal(par):
         par["nx"] * par["nt"],
         iava,
         dims=(par["nx"], par["nt"]),
-        dir=1,
+        axis=1,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -208,7 +208,7 @@ def test_Interp_2dsignal(par):
         par["nx"] * par["nt"],
         iava + 0.3,
         dims=(par["nx"], par["nt"]),
-        dir=1,
+        axis=1,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -244,7 +244,7 @@ def test_Interp_3dsignal(par):
         par["ny"] * par["nx"] * par["nt"],
         iava,
         dims=(par["ny"], par["nx"], par["nt"]),
-        dir=0,
+        axis=0,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -260,7 +260,7 @@ def test_Interp_3dsignal(par):
         par["ny"] * par["nx"] * par["nt"],
         iava + 0.3,
         dims=(par["ny"], par["nx"], par["nt"]),
-        dir=0,
+        axis=0,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -280,7 +280,7 @@ def test_Interp_3dsignal(par):
             par["ny"] * par["nx"] * par["nt"],
             iava_rep + 0.3,
             dims=(par["ny"], par["nx"], par["nt"]),
-            dir=0,
+            axis=0,
             kind=par["kind"],
             dtype=par["dtype"],
         )
@@ -301,7 +301,7 @@ def test_Interp_3dsignal(par):
         par["ny"] * par["nx"] * par["nt"],
         iava,
         dims=(par["ny"], par["nx"], par["nt"]),
-        dir=1,
+        axis=1,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -317,7 +317,7 @@ def test_Interp_3dsignal(par):
         par["ny"] * par["nx"] * par["nt"],
         iava + 0.3,
         dims=(par["ny"], par["nx"], par["nt"]),
-        dir=1,
+        axis=1,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -344,7 +344,7 @@ def test_Interp_3dsignal(par):
         par["ny"] * par["nx"] * par["nt"],
         iava,
         dims=(par["ny"], par["nx"], par["nt"]),
-        dir=2,
+        axis=2,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -360,7 +360,7 @@ def test_Interp_3dsignal(par):
         par["ny"] * par["nx"] * par["nt"],
         iava + 0.3,
         dims=(par["ny"], par["nx"], par["nt"]),
-        dir=2,
+        axis=2,
         kind=par["kind"],
         dtype=par["dtype"],
     )

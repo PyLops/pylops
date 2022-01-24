@@ -63,7 +63,7 @@ def FirstDirectionalDerivative(
     """
     Gop = Gradient(dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype)
     if v.ndim == 1:
-        Dop = Diagonal(v, dims=[len(dims)] + list(dims), dir=0, dtype=dtype)
+        Dop = Diagonal(v, dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
     else:
         Dop = Diagonal(v.ravel(), dtype=dtype)
     Sop = Sum(dims=[len(dims)] + list(dims), axis=0, dtype=dtype)

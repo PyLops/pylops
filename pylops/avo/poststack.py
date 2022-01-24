@@ -95,7 +95,7 @@ def _PoststackLinearModelling(
                 np.prod(np.array(dims)),
                 h=wav,
                 offset=len(wav) // 2,
-                dir=0,
+                axis=0,
                 dims=dims,
                 dtype=dtype,
                 **args_Convolve1D
