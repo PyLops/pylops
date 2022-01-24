@@ -43,7 +43,7 @@ class LinearOperator(spLinearOperator):
         Operator contains a matrix that can be solved explicitly
         (``True``) or not (``False``)
     clinear : :obj:`bool`
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         Operator is complex-linear.
     """

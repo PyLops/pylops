@@ -417,7 +417,7 @@ def FFT(
     sampling : :obj:`float`, optional
         Sampling step ``dt``.
     norm : `{"ortho", "none", "1/n"}`, optional
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         - "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
           where :math:`N_F` is the number of samples in the Fourier domain given by ``nfft``.
@@ -435,11 +435,11 @@ def FFT(
         (``False``). Used to enforce that the output of adjoint of a real
         model is real.
     fftshift : :obj:`bool`, optional
-        .. deprecated:: 1.17
+        .. deprecated:: 1.17.0
 
             Use ``ifftshift_before``.
     ifftshift_before : :obj:`bool`, optional
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         Apply ifftshift (``True``) or not (``False``) to model vector (before FFT).
         Consider using this option when the model vector's respective axis is symmetric
@@ -449,7 +449,7 @@ def FFT(
         Transform.
         Defaults to not applying ifftshift.
     fftshift_after : :obj:`bool`, optional
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         Apply fftshift (``True``) or not (``False``) to data vector (after FFT).
         Consider using this option when you require frequencies to be arranged
@@ -460,7 +460,7 @@ def FFT(
         Engine used for fft computation (``numpy``, ``fftw``, or ``scipy``). Choose
         ``numpy`` when working with cupy arrays.
 
-        .. note:: Since version 1.17, accepts "scipy".
+        .. note:: Since version 1.17.0, accepts "scipy".
 
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
@@ -492,7 +492,7 @@ def FFT(
     shape : :obj:`tuple`
         Operator shape
     clinear : :obj:`bool`
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         Operator is complex-linear. Is false when either ``real=True`` or when
         ``dtype`` is not a complex type.

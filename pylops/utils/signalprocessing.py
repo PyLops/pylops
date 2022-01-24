@@ -94,13 +94,13 @@ def slope_estimate(d, dz=1.0, dx=1.0, smooth=5, eps=0):
         Sampling in :math:`z`-axis, :math:`\Delta z`
 
         .. warning::
-            Since version 1.17, defaults to 1.0.
+            Since version 1.17.0, defaults to 1.0.
 
     dx : :obj:`float`
         Sampling in :math:`x`-axis, :math:`\Delta x`
 
         .. warning::
-            Since version 1.17, defaults to 1.0.
+            Since version 1.17.0, defaults to 1.0.
 
     smooth : :obj:`float`, optional
         Standard deviation for Gaussian kernel. The standard deviations of the
@@ -108,10 +108,10 @@ def slope_estimate(d, dz=1.0, dx=1.0, smooth=5, eps=0):
         in which case it is equal for all axes.
 
         .. warning::
-            Default changed in version 1.17 to 5 from previous value of 20.
+            Default changed in version 1.17.0 to 5 from previous value of 20.
 
     eps : :obj:`float`, optional
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         Regularization term. All slopes where :math:`|g_{zx}| < \epsilon \max |g_{zx}|`
         are set to zero. All anisotropies where :math:`\lambda_\text{max} < \epsilon`
@@ -125,14 +125,14 @@ def slope_estimate(d, dz=1.0, dx=1.0, smooth=5, eps=0):
         Estimated local slopes. Unit is that of :math:`\Delta z/\Delta x`.
 
         .. warning::
-            Prior to version 1.17, erroneously returned angles in radians instead of
+            Prior to version 1.17.0, erroneously returned angles in radians instead of
             slopes.
 
     anisotropies : :obj:`np.ndarray`
         Estimated local anisotropies: :math:`1-\lambda_\text{min}/\lambda_\text{max}`
 
         .. note::
-            Since 1.17, changed name from ``linearity`` to ``anisotropies``.
+            Since 1.17.0, changed name from ``linearity`` to ``anisotropies``.
             Definition remains the same.
 
 

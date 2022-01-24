@@ -242,7 +242,7 @@ def FFTND(
         for all directions. Unlike ``nffts``, any ``None`` will not be converted to the
         default value.
     norm : `{"ortho", "none", "1/n"}`, optional
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         - "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
           where :math:`N_F` is the number of samples in the Fourier domain given by
@@ -263,7 +263,7 @@ def FFTND(
         dimension to which the FFTND operator is applied (last element of
         ``dirs``)
     ifftshift_before : :obj:`tuple` or :obj:`bool`, optional
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         Apply ifftshift (``True``) or not (``False``) to model vector (before FFT).
         Consider using this option when the model vector's respective axis is symmetric
@@ -274,7 +274,7 @@ def FFTND(
         When passing a single value, the shift will the same for every direction. Pass
         a tuple to specify which dimensions are shifted.
     fftshift_after : :obj:`tuple` or :obj:`bool`, optional
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         Apply fftshift (``True``) or not (``False``) to data vector (after FFT).
         Consider using this option when you require frequencies to be arranged
@@ -284,7 +284,7 @@ def FFTND(
         When passing a single value, the shift will the same for every direction. Pass
         a tuple to specify which dimensions are shifted.
     engine : :obj:`str`, optional
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         Engine used for fft computation (``numpy`` or ``scipy``).
     dtype : :obj:`str`, optional
@@ -315,7 +315,7 @@ def FFTND(
     shape : :obj:`tuple`
         Operator shape
     clinear : :obj:`bool`
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         Operator is complex-linear. Is false when either ``real=True`` or when
         ``dtype`` is not a complex type.

@@ -107,7 +107,7 @@ def _halfthreshold(x, thresh):
         Tresholded vector
 
         .. warning::
-            Since version 1.17 does not produce ``np.nan`` on bad input.
+            Since version 1.17.0 does not produce ``np.nan`` on bad input.
 
     """
     arg = np.ones_like(x)

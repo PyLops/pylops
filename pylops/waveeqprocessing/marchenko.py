@@ -139,7 +139,7 @@ class Marchenko:
         ``prescaled=True``, the ``R`` is assumed to have been pre-scaled by
         the user.
     fftengine : :obj:`str`, optional
-        .. versionadded:: 1.17
+        .. versionadded:: 1.17.0
 
         Engine used for fft computation (``numpy``, ``scipy`` or ``fftw``)
 
