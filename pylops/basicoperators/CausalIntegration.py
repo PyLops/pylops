@@ -18,19 +18,19 @@ class CausalIntegration(LinearOperator):
         Number of samples for each dimension
         (``None`` if only one dimension is available)
     axis : :obj:`int`, optional
-        .. versionadded:: 2.0
+        .. versionadded:: 2.0.0
 
         Axis along which the model is integrated.
     dir : :obj:`int`, optional
 
-        .. deprecated:: 2.0
+        .. deprecated:: 2.0.0
             Use ``axis`` instead.
 
     sampling : :obj:`float`, optional
         Sampling step ``dx``.
     halfcurrent : :obj:`bool`, optional
         Add half of current value (``True``) or the entire value (``False``).
-        This will be *deprecated* in v2.0, use instead `kind=half` to obtain
+        This will be *deprecated* in v2.0.0, use instead `kind=half` to obtain
         the same behaviour.
     dtype : :obj:`str`, optional
         Type of elements in input array.
@@ -109,7 +109,7 @@ class CausalIntegration(LinearOperator):
         self.N = N
         if dir is not None:
             warnings.warn(
-                "dir is deprecated in version 2.0, use axis instead.",
+                "dir is deprecated in version 2.0.0, use axis instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )

@@ -109,7 +109,7 @@ class Marchenko:
         provided in time, ``R`` should not be of complex type. Note that the
         reflection response should have already been multiplied by 2.
     R1 : :obj:`bool`, optional
-        *Deprecated*, will be removed in v2.0. Simply kept for
+        *Deprecated*, will be removed in v2.0.0. Simply kept for
         back-compatibility with previous implementation
     dt : :obj:`float`, optional
         Sampling of time integration axis
@@ -326,7 +326,7 @@ class Marchenko:
         dottest : :obj:`bool`, optional
             Apply dot-test
         fast : :obj:`bool`
-            *Deprecated*, will be removed in v2.0
+            *Deprecated*, will be removed in v2.0.0
         usematmul : :obj:`bool`, optional
             Use :func:`numpy.matmul` (``True``) or for-loop with :func:`numpy.dot`
             (``False``) in :py:class:`pylops.signalprocessing.Fredholm1` operator.

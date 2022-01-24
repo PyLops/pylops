@@ -25,14 +25,14 @@ def Convolve2D(
     offset : :obj:`tuple`, optional
         Indices of the center of the compact filter
     axes : :obj:`int`, optional
-        .. versionadded:: 2.0
+        .. versionadded:: 2.0.0
 
         Axes along which convolution is applied
     nodir : :obj:`int`, optional
         Direction along which smoothing is **not** applied (set to ``None`` for 2d
         arrays)
 
-        .. deprecated:: 2.0
+        .. deprecated:: 2.0.0
             Use ``axes`` instead. Note that ``axes`` applies along axes instead.
 
     dtype : :obj:`str`, optional
@@ -89,7 +89,7 @@ def Convolve2D(
         raise ValueError("h must be 2-dimensional")
     if nodir is not None:
         warnings.warn(
-            "nodir is deprecated in version 2.0, use axes instead.",
+            "nodir is deprecated in version 2.0.0, use axes instead.",
             category=DeprecationWarning,
             stacklevel=2,
         )

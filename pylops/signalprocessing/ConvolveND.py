@@ -29,14 +29,14 @@ class ConvolveND(LinearOperator):
     offset : :obj:`tuple`, optional
         Indices of the center of the compact filter
     axes : :obj:`int`, optional
-        .. versionadded:: 2.0
+        .. versionadded:: 2.0.0
 
         Axes along which convolution is applied
     dirs : :obj:`tuple`, optional
         Directions along which convolution is applied
         (set to ``None`` for filter of same dimension as input vector)
 
-        .. deprecated:: 2.0
+        .. deprecated:: 2.0.0
             Use ``axes`` instead.
 
     method : :obj:`str`, optional
@@ -78,7 +78,7 @@ class ConvolveND(LinearOperator):
         self.nh = np.array(self.h.shape)
         if dirs is not None:
             warnings.warn(
-                "dirs is deprecated in version 2.0, use axes instead.",
+                "dirs is deprecated in version 2.0.0, use axes instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )

@@ -18,12 +18,12 @@ def Smoothing1D(nsmooth, dims, axis=-1, dir=None, dtype="float64"):
     dims : :obj:`tuple` or :obj:`int`
         Number of samples for each dimension
     axis : :obj:`int`, optional
-        .. versionadded:: 2.0
+        .. versionadded:: 2.0.0
 
         Axis along which model (and data) are smoothed.
     dir : :obj:`int`, optional
 
-        .. deprecated:: 2.0
+        .. deprecated:: 2.0.0
             Use ``axis`` instead. Note that the default for ``axis`` is -1
             instead of 0 which was the default for ``dir``.
 
@@ -77,7 +77,7 @@ def Smoothing1D(nsmooth, dims, axis=-1, dir=None, dtype="float64"):
 
     if dir is not None:
         warnings.warn(
-            "dir is deprecated in version 2.0, use axis instead.",
+            "dir is deprecated in version 2.0.0, use axis instead.",
             category=DeprecationWarning,
             stacklevel=2,
         )

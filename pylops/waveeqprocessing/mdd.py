@@ -58,7 +58,7 @@ def _MDC(
         "end-users can continue using the operator in the same way. "
         "Nevertheless, it is now recommended to start using the "
         "operator with transpose=True, as this behaviour will "
-        "become default in version v2.0 and the behaviour with "
+        "become default in version v2.0.0 and the behaviour with "
         "transpose=False will be deprecated.",
         FutureWarning,
     )
@@ -173,7 +173,7 @@ def MDC(
       can use the operator in the same way as they used to do with the previous
       one. Nevertheless, it is now reccomended to use the operator with
       ``transpose=False``, as this behaviour will become default in version
-      v2.0 and the behaviour with ``transpose=True`` will be deprecated.
+      v2.0.0 and the behaviour with ``transpose=True`` will be deprecated.
 
     Parameters
     ----------
@@ -194,15 +194,15 @@ def MDC(
         MDC operator has both negative and positive time (``True``) or
         only positive (``False``)
     fast : :obj:`bool`, optional
-        *Deprecated*, will be removed in v2.0
+        *Deprecated*, will be removed in v2.0.0
     dtype : :obj:`str`, optional
-        *Deprecated*, will be removed in v2.0
+        *Deprecated*, will be removed in v2.0.0
     fftengine : :obj:`str`, optional
         Engine used for fft computation (``numpy``, ``scipy`` or ``fftw``)
     transpose : :obj:`bool`, optional
         Transpose ``G`` and inputs such that time/frequency is placed in first
         dimension. This allows back-compatibility with v1.4.0 and older but
-        will be removed in v2.0 where time/frequency axis will be required
+        will be removed in v2.0.0 where time/frequency axis will be required
         to be in first dimension for efficiency reasons.
     saveGt : :obj:`bool`, optional
         Save ``G`` and ``G.H`` to speed up the computation of adjoint of
