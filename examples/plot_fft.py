@@ -74,7 +74,7 @@ f0 = 10
 nfft = 2 ** 10
 d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(nx) + 1)
 
-FFTop = pylops.signalprocessing.FFT(dims=(nt, nx), dir=0, nfft=nfft, sampling=dt)
+FFTop = pylops.signalprocessing.FFT(dims=(nt, nx), axis=0, nfft=nfft, sampling=dt)
 D = FFTop * d.ravel()
 
 # Adjoint = inverse for FFT

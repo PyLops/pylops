@@ -186,7 +186,7 @@ def test_FFT_small_real(par):
 
     FFTop = FFT(
         dims=x.shape,
-        dir=0,
+        axis=0,
         norm=norm,
         real=True,
         ifftshift_before=ifftshift_before,
@@ -259,7 +259,7 @@ def test_FFT_random_real(par):
 
     FFTop = FFT(
         dims=x.shape,
-        dir=axis,
+        axis=axis,
         ifftshift_before=ifftshift_before,
         real=True,
         dtype=dtype,
@@ -303,7 +303,7 @@ def test_FFT_small_complex(par):
 
     FFTop = FFT(
         dims=x.shape,
-        dir=0,
+        axis=0,
         norm=norm,
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
@@ -377,7 +377,7 @@ def test_FFT_random_complex(par):
 
     FFTop = FFT(
         dims=x.shape,
-        dir=axis,
+        axis=axis,
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
         dtype=dtype,
@@ -453,7 +453,7 @@ def test_FFT2D_random_real(par):
 
     FFTop = FFT2D(
         dims=x.shape,
-        dirs=axes,
+        axes=axes,
         ifftshift_before=ifftshift_before,
         real=True,
         dtype=dtype,
@@ -519,7 +519,7 @@ def test_FFT2D_random_complex(par):
 
     FFTop = FFT2D(
         dims=x.shape,
-        dirs=axes,
+        axes=axes,
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
         dtype=dtype,
@@ -595,7 +595,7 @@ def test_FFTND_random_real(par):
 
     FFTop = FFTND(
         dims=x.shape,
-        dirs=axes,
+        axes=axes,
         ifftshift_before=ifftshift_before,
         real=True,
         dtype=dtype,
@@ -661,7 +661,7 @@ def test_FFTND_random_complex(par):
 
     FFTop = FFTND(
         dims=x.shape,
-        dirs=axes,
+        axes=axes,
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
         dtype=dtype,
@@ -726,7 +726,7 @@ def test_FFT2D_small_complex(par):
 
     FFTop = FFT2D(
         dims=x.shape,
-        dirs=(0, 1),
+        axes=(0, 1),
         norm=norm,
         dtype=dtype,
     )
@@ -773,7 +773,7 @@ def test_FFTND_small_complex(par):
 
     FFTop = FFTND(
         dims=x.shape,
-        dirs=(0, 1),
+        axes=(0, 1),
         norm=norm,
         dtype=dtype,
     )
@@ -912,7 +912,7 @@ def test_FFT_2dsignal(par):
     nfft = par["nt"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
         dims=(nt, nx),
-        dir=0,
+        axis=0,
         nfft=nfft,
         sampling=dt,
         real=par["real"],
@@ -943,7 +943,7 @@ def test_FFT_2dsignal(par):
     if not par["real"]:
         FFTop_fftshift = FFT(
             dims=(nt, nx),
-            dir=0,
+            axis=0,
             nfft=nfft,
             sampling=dt,
             real=par["real"],
@@ -970,7 +970,7 @@ def test_FFT_2dsignal(par):
     nfft = par["nx"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
         dims=(nt, nx),
-        dir=1,
+        axis=1,
         nfft=nfft,
         sampling=dt,
         real=par["real"],
@@ -1001,7 +1001,7 @@ def test_FFT_2dsignal(par):
     if not par["real"]:
         FFTop_fftshift = FFT(
             dims=(nt, nx),
-            dir=1,
+            axis=1,
             nfft=nfft,
             sampling=dt,
             real=par["real"],
@@ -1059,7 +1059,7 @@ def test_FFT_3dsignal(par):
     nfft = par["nt"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
         dims=(nt, nx, ny),
-        dir=0,
+        axis=0,
         nfft=nfft,
         sampling=dt,
         real=par["real"],
@@ -1099,7 +1099,7 @@ def test_FFT_3dsignal(par):
     nfft = par["nx"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
         dims=(nt, nx, ny),
-        dir=1,
+        axis=1,
         nfft=nfft,
         sampling=dt,
         real=par["real"],
@@ -1140,7 +1140,7 @@ def test_FFT_3dsignal(par):
     nfft = par["ny"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
         dims=(nt, nx, ny),
-        dir=2,
+        axis=2,
         nfft=nfft,
         sampling=dt,
         real=par["real"],
@@ -1179,7 +1179,7 @@ def test_FFT_3dsignal(par):
     if not par["real"]:
         FFTop_fftshift = FFT(
             dims=(nt, nx, ny),
-            dir=2,
+            axis=2,
             nfft=nfft,
             sampling=dt,
             real=par["real"],
@@ -1222,7 +1222,7 @@ def test_FFT2D(par):
         nffts=(nfft1, nfft2),
         sampling=(dt, dx),
         real=par["real"],
-        dirs=(0, 1),
+        axes=(0, 1),
     )
 
     if par["real"]:
@@ -1268,7 +1268,7 @@ def test_FFT2D(par):
         nffts=(nfft2, nfft1),
         sampling=(dx, dt),
         real=par["real"],
-        dirs=(1, 0),
+        axes=(1, 0),
     )
 
     if par["real"]:
@@ -1326,7 +1326,7 @@ def test_FFT3D(par):
     FFTop = FFTND(
         dims=(par["nt"], par["nx"], par["ny"]),
         nffts=(nfft1, nfft2, nfft3),
-        dirs=(0, 1, 2),
+        axes=(0, 1, 2),
         sampling=(dt, dx, dy),
         real=par["real"],
     )
@@ -1377,7 +1377,7 @@ def test_FFT3D(par):
     FFTop = FFTND(
         dims=(par["nt"], par["nx"], par["ny"]),
         nffts=(nfft1, nfft3, nfft2),
-        dirs=(0, 2, 1),
+        axes=(0, 2, 1),
         sampling=(dt, dy, dx),
         real=par["real"],
     )
@@ -1424,7 +1424,7 @@ def test_FFT3D(par):
     FFTop = FFTND(
         dims=(par["nt"], par["nx"], par["ny"]),
         nffts=(nfft2, nfft3, nfft1),
-        dirs=(1, 2, 0),
+        axes=(1, 2, 0),
         sampling=(dx, dy, dt),
         real=par["real"],
     )

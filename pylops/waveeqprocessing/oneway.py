@@ -165,11 +165,11 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64"):
     else:
         dims = (nt, kx.size, ky.size)
         dimsfft = (freq.size, kx.size, ky.size)
-    Fop = FFT(dims, dir=0, nfft=nt, real=True, dtype=dtype)
-    Kxop = FFT(dimsfft, dir=1, nfft=kx.size, real=False, fftshift=True, dtype=dtypefft)
+    Fop = FFT(dims, axis=0, nfft=nt, real=True, dtype=dtype)
+    Kxop = FFT(dimsfft, axis=1, nfft=kx.size, real=False, fftshift=True, dtype=dtypefft)
     if ky is not None:
         Kyop = FFT(
-            dimsfft, dir=2, nfft=ky.size, real=False, fftshift=True, dtype=dtypefft
+            dimsfft, axis=2, nfft=ky.size, real=False, fftshift=True, dtype=dtypefft
         )
     Pop = _PhaseShift(vel, dz, freq, kx, ky, dtypefft)
     if ky is None:

@@ -15,7 +15,7 @@ class _FFT2D_numpy(_BaseFFTND):
     def __init__(
         self,
         dims,
-        dirs=(0, 1),
+        axes=(-2, -1),
         nffts=None,
         sampling=1.0,
         norm="ortho",
@@ -26,7 +26,7 @@ class _FFT2D_numpy(_BaseFFTND):
     ):
         super().__init__(
             dims=dims,
-            dirs=dirs,
+            axes=axes,
             nffts=nffts,
             sampling=sampling,
             norm=norm,
@@ -43,7 +43,7 @@ class _FFT2D_numpy(_BaseFFTND):
         # checks
         if self.ndim < 2:
             raise ValueError("FFT2D requires at least two input dimensions")
-        if self.ndirs != 2:
+        if self.naxes != 2:
             raise ValueError("FFT2D must be applied along exactly two dimensions")
 
         self.f1, self.f2 = self.fs
@@ -60,50 +60,50 @@ class _FFT2D_numpy(_BaseFFTND):
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.ifftshift_before.any():
-            x = np.fft.ifftshift(x, axes=self.dirs[self.ifftshift_before])
+            x = np.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = np.fft.rfft2(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+            y = np.fft.rfft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
-            y = np.swapaxes(y, -1, self.dirs[-1])
+            y = np.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
-            y = np.swapaxes(y, self.dirs[-1], -1)
+            y = np.swapaxes(y, self.axes[-1], -1)
         else:
-            y = np.fft.fft2(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+            y = np.fft.fft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         y = y.astype(self.cdtype)
         if self.fftshift_after.any():
-            y = np.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
+            y = np.fft.fftshift(y, axes=self.axes[self.fftshift_after])
         return y.ravel()
 
     def _rmatvec(self, x):
         x = np.reshape(x, self.dims_fft)
         if self.fftshift_after.any():
-            x = np.fft.ifftshift(x, axes=self.dirs[self.fftshift_after])
+            x = np.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
-            x = np.swapaxes(x, -1, self.dirs[-1])
+            x = np.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
-            x = np.swapaxes(x, self.dirs[-1], -1)
-            y = np.fft.irfft2(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+            x = np.swapaxes(x, self.axes[-1], -1)
+            y = np.fft.irfft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         else:
-            y = np.fft.ifft2(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+            y = np.fft.ifft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
-        if self.nffts[0] > self.dims[self.dirs[0]]:
-            y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
-        if self.nffts[1] > self.dims[self.dirs[1]]:
-            y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
+        if self.nffts[0] > self.dims[self.axes[0]]:
+            y = np.take(y, range(self.dims[self.axes[0]]), axis=self.axes[0])
+        if self.nffts[1] > self.dims[self.axes[1]]:
+            y = np.take(y, range(self.dims[self.axes[1]]), axis=self.axes[1])
         if self.doifftpad:
             y = np.pad(y, self.ifftpad)
         if not self.clinear:
             y = np.real(y)
         y = y.astype(self.rdtype)
         if self.ifftshift_before.any():
-            y = np.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
+            y = np.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y.ravel()
 
     def __truediv__(self, y):
@@ -118,7 +118,7 @@ class _FFT2D_scipy(_BaseFFTND):
     def __init__(
         self,
         dims,
-        dirs=(0, 1),
+        axes=(-2, -1),
         nffts=None,
         sampling=1.0,
         norm="ortho",
@@ -129,7 +129,7 @@ class _FFT2D_scipy(_BaseFFTND):
     ):
         super().__init__(
             dims=dims,
-            dirs=dirs,
+            axes=axes,
             nffts=nffts,
             sampling=sampling,
             norm=norm,
@@ -142,7 +142,7 @@ class _FFT2D_scipy(_BaseFFTND):
         # checks
         if self.ndim < 2:
             raise ValueError("FFT2D requires at least two input dimensions")
-        if self.ndirs != 2:
+        if self.naxes != 2:
             raise ValueError("FFT2D must be applied along exactly two dimensions")
 
         self.f1, self.f2 = self.fs
@@ -159,44 +159,44 @@ class _FFT2D_scipy(_BaseFFTND):
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.ifftshift_before.any():
-            x = scipy.fft.ifftshift(x, axes=self.dirs[self.ifftshift_before])
+            x = scipy.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = scipy.fft.rfft2(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+            y = scipy.fft.rfft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
-            y = np.swapaxes(y, -1, self.dirs[-1])
+            y = np.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
-            y = np.swapaxes(y, self.dirs[-1], -1)
+            y = np.swapaxes(y, self.axes[-1], -1)
         else:
-            y = scipy.fft.fft2(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+            y = scipy.fft.fft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after.any():
-            y = scipy.fft.fftshift(y, axes=self.dirs[self.fftshift_after])
+            y = scipy.fft.fftshift(y, axes=self.axes[self.fftshift_after])
         return y.ravel()
 
     def _rmatvec(self, x):
         x = np.reshape(x, self.dims_fft)
         if self.fftshift_after.any():
-            x = scipy.fft.ifftshift(x, axes=self.dirs[self.fftshift_after])
+            x = scipy.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
-            x = np.swapaxes(x, -1, self.dirs[-1])
+            x = np.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
-            x = np.swapaxes(x, self.dirs[-1], -1)
-            y = scipy.fft.irfft2(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+            x = np.swapaxes(x, self.axes[-1], -1)
+            y = scipy.fft.irfft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         else:
-            y = scipy.fft.ifft2(x, s=self.nffts, axes=self.dirs, **self._norm_kwargs)
+            y = scipy.fft.ifft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
-        y = np.take(y, range(self.dims[self.dirs[0]]), axis=self.dirs[0])
-        y = np.take(y, range(self.dims[self.dirs[1]]), axis=self.dirs[1])
+        y = np.take(y, range(self.dims[self.axes[0]]), axis=self.axes[0])
+        y = np.take(y, range(self.dims[self.axes[1]]), axis=self.axes[1])
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before.any():
-            y = scipy.fft.fftshift(y, axes=self.dirs[self.ifftshift_before])
+            y = scipy.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y.ravel()
 
     def __truediv__(self, y):
@@ -207,7 +207,8 @@ class _FFT2D_scipy(_BaseFFTND):
 
 def FFT2D(
     dims,
-    dirs=(0, 1),
+    axes=(-2, -1),
+    dirs=None,
     nffts=None,
     sampling=1.0,
     norm="ortho",
@@ -219,8 +220,8 @@ def FFT2D(
 ):
     r"""Two dimensional Fast-Fourier Transform.
 
-    Apply two dimensional Fast-Fourier Transform (FFT) to any pair of axes of a
-    multi-dimensional array depending on the choice of ``dirs``.
+    Apply two dimensional Fast-Fourier Transform (FFT) to any pair of ``axes`` of a
+    multi-dimensional array.
 
     Using the default NumPy engine, the FFT operator is an overload to either the NumPy
     :py:func:`numpy.fft.fft2` (or :py:func:`numpy.fft.rfft2` for real models) in
@@ -243,13 +244,21 @@ def FFT2D(
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension
-    dirs : :obj:`tuple`, optional
-        Pair of directions along which FFT2D is applied
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0
+
+        Pair of axes along which FFT2D is applied
+    dirs : :obj:`int`, optional
+
+        .. deprecated:: 2.0
+            Use ``axes`` instead. Note that the default for ``axes`` is (-2, -1)
+            instead of (0, 1) which was the default for ``dirs``.
+
     nffts : :obj:`tuple` or :obj:`int`, optional
         Number of samples in Fourier Transform for each direction. In case only one
         dimension needs to be specified, use ``None`` for the other dimension in the
         tuple. The direction with None will use ``dims[dir]`` as ``nfft``. When
-        supplying a tuple, the order must agree with that of ``dirs``. When a single
+        supplying a tuple, the order must agree with that of ``axes``. When a single
         value is passed, it will be used for both directions. As such the default is
         equivalent to ``nffts=(None, None)``.
     sampling : :obj:`tuple` or :obj:`float`, optional
@@ -273,7 +282,7 @@ def FFT2D(
         (``False``). Used to enforce that the output of adjoint of a real
         model is real. Note that the real FFT is applied only to the first
         dimension to which the FFT2D operator is applied (last element of
-        ``dirs``)
+        ``axes``)
     ifftshift_before : :obj:`tuple` or :obj:`bool`, optional
         Apply ifftshift (``True``) or not (``False``) to model vector (before FFT).
         Consider using this option when the model vector's respective axis is symmetric
@@ -332,7 +341,7 @@ def FFT2D(
     ------
     ValueError
         - If ``dims`` has less than two elements.
-        - If ``dirs`` does not have exactly two elements.
+        - If ``axes`` does not have exactly two elements.
         - If ``nffts`` or ``sampling`` are not either a single value or a tuple with
           two elements.
         - If ``norm`` is not one of "ortho", "none", or "1/n".
@@ -370,10 +379,20 @@ def FFT2D(
     signals.
 
     """
+    if dirs is not None:
+        warnings.warn(
+            "dirs is deprecated in version 2.0, use axes instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        axes = dirs
+    else:
+        axes = axes
+
     if engine == "numpy":
         f = _FFT2D_numpy(
             dims=dims,
-            dirs=dirs,
+            axes=axes,
             nffts=nffts,
             sampling=sampling,
             norm=norm,
@@ -385,7 +404,7 @@ def FFT2D(
     elif engine == "scipy":
         f = _FFT2D_scipy(
             dims=dims,
-            dirs=dirs,
+            axes=axes,
             nffts=nffts,
             sampling=sampling,
             norm=norm,

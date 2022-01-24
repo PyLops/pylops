@@ -65,7 +65,7 @@ def test_Shift2D(par):
     Sop = Shift(
         (par["nt"], par["nx"]),
         shift,
-        dir=0,
+        axis=0,
         real=True if par["imag"] == 0 else False,
         dtype=par["dtype"],
     )
@@ -87,7 +87,7 @@ def test_Shift2D(par):
     Sop = Shift(
         (par["nx"], par["nt"]),
         shift,
-        dir=1,
+        axis=1,
         real=True if par["imag"] == 0 else False,
         dtype=par["dtype"],
     )

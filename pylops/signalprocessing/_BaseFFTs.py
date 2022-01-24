@@ -76,7 +76,7 @@ class _BaseFFT(LinearOperator):
     def __init__(
         self,
         dims,
-        dir=0,
+        axis=0,
         nfft=None,
         sampling=1.0,
         norm="ortho",
@@ -90,12 +90,12 @@ class _BaseFFT(LinearOperator):
 
         self.ndim = len(self.dims)
 
-        dirs = _value_or_list_like_to_array(dir)
-        _raise_on_wrong_dtype(dirs, np.integer, "dir")
-        self.dir = normalize_axis_index(dirs[0], self.ndim)
+        axes = _value_or_list_like_to_array(axis)
+        _raise_on_wrong_dtype(axes, np.integer, "axis")
+        self.axis = normalize_axis_index(axes[0], self.ndim)
 
         if nfft is None:
-            nfft = self.dims[self.dir]
+            nfft = self.dims[self.axis]
         else:
             nffts = _value_or_list_like_to_array(nfft)
             _raise_on_wrong_dtype(nffts, np.integer, "nfft")
@@ -108,10 +108,10 @@ class _BaseFFT(LinearOperator):
         # before applying fft, which is lost forever) and set a flag such that
         # a padding is applied after ifft
         self.doifftpad = False
-        if self.nfft < self.dims[dir]:
+        if self.nfft < self.dims[self.axis]:
             self.doifftpad = True
             self.ifftpad = [(0, 0)] * self.ndim
-            self.ifftpad[self.dir] = (0, self.dims[dir] - self.nfft)
+            self.ifftpad[self.axis] = (0, self.dims[self.axis] - self.nfft)
             warnings.warn(
                 f"nfft={self.nfft} has been selected to be smaller than the size of the original signal (n=self.dims[dir]). "
                 f"This is rarely intended behavior as the original signal will be truncated prior to applying fft, "
@@ -152,7 +152,7 @@ class _BaseFFT(LinearOperator):
             self.f = np.fft.fftshift(self.f)
 
         self.dims_fft = self.dims.copy()
-        self.dims_fft[self.dir] = self.nfft // 2 + 1 if self.real else self.nfft
+        self.dims_fft[self.axis] = self.nfft // 2 + 1 if self.real else self.nfft
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
 
         # Find types to enforce to forward and adjoint outputs. This is
@@ -183,7 +183,7 @@ class _BaseFFTND(LinearOperator):
     def __init__(
         self,
         dims,
-        dirs=None,
+        axes=None,
         nffts=None,
         sampling=1.0,
         norm="ortho",
@@ -197,51 +197,51 @@ class _BaseFFTND(LinearOperator):
 
         self.ndim = len(self.dims)
 
-        dirs = _value_or_list_like_to_array(dirs)
-        _raise_on_wrong_dtype(dirs, np.integer, "dirs")
-        self.dirs = np.array([normalize_axis_index(d, self.ndim) for d in dirs])
-        self.ndirs = len(self.dirs)
-        if self.ndirs != len(np.unique(self.dirs)):
+        axes = _value_or_list_like_to_array(axes)
+        _raise_on_wrong_dtype(axes, np.integer, "axes")
+        self.axes = np.array([normalize_axis_index(d, self.ndim) for d in axes])
+        self.naxes = len(self.axes)
+        if self.naxes != len(np.unique(self.axes)):
             warnings.warn(
                 "At least one direction is repeated. This may cause unexpected results."
             )
 
-        nffts = _value_or_list_like_to_array(nffts, repeat=self.ndirs)
+        nffts = _value_or_list_like_to_array(nffts, repeat=self.naxes)
         if len(nffts[np.equal(nffts, None)]) > 0:  # Found None(s) in nffts
             nffts[np.equal(nffts, None)] = np.array(
-                [self.dims[d] for d, n in zip(dirs, nffts) if n is None]
+                [self.dims[d] for d, n in zip(axes, nffts) if n is None]
             )
             nffts = nffts.astype(self.dims.dtype)
         self.nffts = nffts
         _raise_on_wrong_dtype(self.nffts, np.integer, "nffts")
 
-        sampling = _value_or_list_like_to_array(sampling, repeat=self.ndirs)
+        sampling = _value_or_list_like_to_array(sampling, repeat=self.naxes)
         if np.issubdtype(sampling.dtype, np.integer):  # Promote to float64 if integer
             sampling = sampling.astype(np.float64)
         self.sampling = sampling
         _raise_on_wrong_dtype(self.sampling, np.floating, "sampling")
 
         self.ifftshift_before = _value_or_list_like_to_array(
-            ifftshift_before, repeat=self.ndirs
+            ifftshift_before, repeat=self.naxes
         )
         _raise_on_wrong_dtype(self.ifftshift_before, bool, "ifftshift_before")
 
         self.fftshift_after = _value_or_list_like_to_array(
-            fftshift_after, repeat=self.ndirs
+            fftshift_after, repeat=self.naxes
         )
         _raise_on_wrong_dtype(self.fftshift_after, bool, "fftshift_after")
 
         if (
-            self.ndirs != len(self.nffts)
-            or self.ndirs != len(self.sampling)
-            or self.ndirs != len(self.ifftshift_before)
-            or self.ndirs != len(self.fftshift_after)
+            self.naxes != len(self.nffts)
+            or self.naxes != len(self.sampling)
+            or self.naxes != len(self.ifftshift_before)
+            or self.naxes != len(self.fftshift_after)
         ):
             raise ValueError(
                 (
-                    "`dirs`, `nffts`, `sampling`, `ifftshift_before` and "
+                    "`axes`, `nffts`, `sampling`, `ifftshift_before` and "
                     "`fftshift_after` must the have same number of elements. Received "
-                    f"{self.ndirs}, {len(self.nffts)}, {len(self.sampling)}, "
+                    f"{self.naxes}, {len(self.nffts)}, {len(self.sampling)}, "
                     f"{len(self.ifftshift_before)} and {len(self.fftshift_after)}, "
                     "respectively."
                 )
@@ -251,12 +251,12 @@ class _BaseFFTND(LinearOperator):
         # details
         nfftshort = [
             nfft < self.dims[direction]
-            for direction, nfft in zip(self.dirs, self.nffts)
+            for direction, nfft in zip(self.axes, self.nffts)
         ]
         self.doifftpad = any(nfftshort)
         if self.doifftpad:
             self.ifftpad = [(0, 0)] * self.ndim
-            for idir, (direction, nfshort) in enumerate(zip(self.dirs, nfftshort)):
+            for idir, (direction, nfshort) in enumerate(zip(self.axes, nfftshort)):
                 if nfshort:
                     self.ifftpad[direction] = (
                         0,
@@ -309,9 +309,9 @@ class _BaseFFTND(LinearOperator):
                 fs[-1] = np.fft.fftshift(fs[-1])
         self.fs = tuple(fs)
         self.dims_fft = self.dims.copy()
-        self.dims_fft[self.dirs] = self.nffts
+        self.dims_fft[self.axes] = self.nffts
         if self.real:
-            self.dims_fft[self.dirs[-1]] = self.nffts[-1] // 2 + 1
+            self.dims_fft[self.axes[-1]] = self.nffts[-1] // 2 + 1
         self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
         self.rdtype = get_real_dtype(dtype) if self.real else np.dtype(dtype)
         self.cdtype = get_complex_dtype(dtype)
