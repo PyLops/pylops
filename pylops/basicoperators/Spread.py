@@ -28,9 +28,13 @@ class Spread(LinearOperator):
 
     Spread values from the input model vector arranged as a 2-dimensional
     array of size :math:`[n_{x_0} \times n_{t_0}]` into the data vector of size
-    :math:`[n_x \times n_t]`. Spreading is performed along parametric curves
-    provided as look-up table of pre-computed indices (``table``)
-    or computed on-the-fly using a function handle (``fh``).
+    :math:`[n_x \times n_t]`. Note that the value at each single pair
+    :math:`(x_0, t_0)` in the input is spread over the entire :math:`x` axis
+    in the output.
+
+    Spreading is performed along parametric curves provided as look-up table
+    of pre-computed indices (``table``) or computed on-the-fly using a
+    function handle (``fh``).
 
     In adjont mode, values from the data vector are instead stacked
     along the same parametric curves.
@@ -40,28 +44,67 @@ class Spread(LinearOperator):
     dims : :obj:`tuple`
         Dimensions of model vector (vector will be reshaped internally into
         a two-dimensional array of size :math:`[n_{x_0} \times n_{t_0}]`,
-        where the first dimension is the spreading/stacking direction)
+        where the first dimension is the spreading direction)
     dimsd : :obj:`tuple`
-        Dimensions of model vector (vector will be reshaped internal into
-        a two-dimensional array of size :math:`[n_x \times n_t]`)
+        Dimensions of data vector (vector will be reshaped internal into
+        a two-dimensional array of size :math:`[n_x \times n_t]`,
+        where the first dimension is the stacking direction)
     table : :obj:`np.ndarray`, optional
-        Look-up table of indeces of size
+        Look-up table of indices of size
         :math:`[n_{x_0} \times n_{t_0} \times n_x]` (if ``None`` use function
-        handle ``fh``)
+        handle ``fh``). When ``dtable`` is not provided, the  ``data`` will be created
+        as follows
+
+        .. code-block:: python
+
+            data[ix, table[ix0, it0, ix]] += model[ix0, it0]
+
+        .. note::
+            When using ``table`` without ``dtable``, its elements must be
+            between 0 and :math:`n_{t_0} - 1` (or ``numpy.nan``).
+
     dtable : :obj:`np.ndarray`, optional
         Look-up table of decimals remainders for linear interpolation of size
         :math:`[n_{x_0} \times n_{t_0} \times n_x]` (if ``None`` use function
-        handle ``fh``)
-    fh : :obj:`np.ndarray`, optional
-        Function handle that returns an index (and a fractional value in case
-        of ``interp=True``) to be used for spreading/stacking given indices
-        in :math:`x_0` and :math:`t` axes (if ``None`` use look-up table
-        ``table``)
+        handle ``fh``). When provided, the ``data`` will be created as follows
+
+        .. code-block:: python
+
+            data[ix, table[ix0, it0, ix]]     += (1 - dtable[ix0, it0, ix]) * model[ix0, it0]
+            data[ix, table[ix0, it0, ix] + 1] +=      dtable[ix0, it0, ix]  * model[ix0, it0]
+
+        .. note::
+            When using ``table`` and ``dtable``, the elements of ``table`` indices must be
+            between 0 and :math:`n_{t_0} - 2`  (or ``numpy.nan``).
+
+    fh : :obj:`callable`, optional
+        If ``None`` will use look-up table ``table``. When provided, should be a
+        function which takes indices ``ix0`` and ``it0`` and returns
+        an array of size :math:`n_x` containing each respective time index.
+        Alternatively, if linear interpolation is required, it should output in
+        addition to the time indices, a weight for interpolation with linear
+        interpolation, to be used as follows
+
+        .. code-block:: python
+
+            data[ix, index]     += (1 - dindices[ix]) * model[ix0, it0]
+            data[ix, index + 1] +=      dindices[ix]  * model[ix0, it0]
+
+        where ``index`` refers to a time index in the first array returned by ``fh``
+        and ``dindices`` refers to the weight in the second array returned by ``fh``.
+
+        .. note::
+            When using ``fh`` with one output (time indices), the time indices must be
+            between 0 and :math:`n_{t_0} - 1` (or ``numpy.nan``). When using ``fh`` with two outputs
+            (time indices and weights), they must be within the between 0 and
+            :math:`n_{t_0} - 2` (or ``numpy.nan``).
+
     interp : :obj:`bool`, optional
-        Apply linear interpolation (``True``) or nearest interpolation
-        (``False``) during stacking/spreading along parametric curve. To be
-        used only if ``engine='numba'``, inferred directly from the number of
-        outputs of ``fh`` for ``engine='numpy'``
+        Use only if engine ``engine='numba'``. Apply linear interpolation (``True``)
+        or nearest interpolation (``False``) during stacking/spreading along
+        parametric curve.
+        When using ``engine="numpy"``, it will be inferred directly from ``fh`` or
+        the presence of ``dtable``.
     engine : :obj:`str`, optional
         Engine used for fft computation (``numpy`` or ``numba``). Note that
         ``numba`` can only be used when providing a look-up table
@@ -93,10 +136,12 @@ class Spread(LinearOperator):
     :math:`[n_x \times n_t]`:
 
     .. math::
-        m(x_0, t_0) \rightarrow d(x, t=f(x_0, x, t_0))
+        m(x_0, t_0) \rightarrow d(x, t=f(x_0, x, t_0)) \quad \forall x
 
-    where :math:`f(x_0, x, t)` is a mapping function that returns a value t
-    given values :math:`x_0`, :math:`x`, and  :math:`t_0`.
+    where :math:`f(x_0, x, t)` is a mapping function that returns a value :math:`t`
+    given values :math:`x_0`, :math:`x`, and  :math:`t_0`. Note that for each
+    :math:`(x_0, t_0)` pair, spreading is done over the entire :math:`x` axis
+    in the data domain.
 
     In adjoint mode, the model is reconstructed by means of the following
     stacking operation:
@@ -120,11 +165,11 @@ class Spread(LinearOperator):
         table=None,
         dtable=None,
         fh=None,
-        interp=False,
+        interp=None,
         engine="numpy",
         dtype="float64",
     ):
-        if not engine in ["numpy", "numba"]:
+        if engine not in ["numpy", "numba"]:
             raise KeyError("engine must be numpy or numba")
         if engine == "numba" and jit is not None:
             self.engine = "numba"
@@ -143,8 +188,10 @@ class Spread(LinearOperator):
 
         # find out if mapping is in table of function handle
         if table is None and fh is None:
-            raise NotImplementedError("provide either table or fh...")
+            raise NotImplementedError("provide either table or fh.")
         elif table is not None:
+            if fh is not None:
+                raise ValueError("provide only one of table or fh.")
             if self.table.shape != (self.nx0, self.nt0, self.nx):
                 raise ValueError("table must have shape [nx0 x nt0 x nx]")
             self.usetable = True
@@ -166,6 +213,8 @@ class Spread(LinearOperator):
             else:
                 if len(fh(0, 0)) == 2:
                     self.interp = True
+        if interp is not None and self.interp != interp:
+            logging.warning("interp has been overridden to %r.", self.interp)
         self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
