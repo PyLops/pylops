@@ -7,9 +7,13 @@ from pylops.basicoperators import Spread
 try:
     from numba import jit
 
-    from ._Radon3D_numba import (_create_table_numba, _hyperbolic_numba,
-                                 _indices_3d_numba, _indices_3d_onthefly_numba,
-                                 _linear_numba, _parabolic_numba)
+    from ._Radon3D_numba import (
+        _create_table_numba,
+        _hyperbolic_numba,
+        _indices_3d_onthefly_numba,
+        _linear_numba,
+        _parabolic_numba,
+    )
 except ModuleNotFoundError:
     jit = None
 
@@ -210,7 +214,7 @@ def Radon3D(
 
     """
     # engine
-    if not engine in ["numpy", "numba"]:
+    if engine not in ["numpy", "numba"]:
         raise KeyError("engine must be numpy or numba")
     if engine == "numba" and jit is None:
         engine = "numpy"
