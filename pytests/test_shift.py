@@ -56,7 +56,7 @@ def test_Shift2D(par):
     np.random.seed(0)
     shift = 5.5
 
-    # 1st dir
+    # 1st axis
     x = (
         gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
         + par["imag"] * gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
@@ -78,7 +78,7 @@ def test_Shift2D(par):
     xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, show=0)[0]
     assert_array_almost_equal(x.ravel(), xlsqr, decimal=1)
 
-    # 2nd dir
+    # 2nd axis
     x = (
         gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
         + par["imag"] * gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]

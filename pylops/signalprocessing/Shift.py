@@ -66,7 +66,7 @@ def Shift(
     Raises
     ------
     ValueError
-        If ``dims`` is provided and ``dir`` is bigger than ``len(dims)``
+        If ``dims`` is provided and ``axis`` is bigger than ``len(dims)``
     NotImplementedError
         If ``engine`` is neither ``numpy``, ``scipy``, nor ``fftw``
 

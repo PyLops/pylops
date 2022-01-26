@@ -1216,7 +1216,7 @@ def test_FFT2D(par):
     d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(par["nx"]) + 1)
     d = d.astype(par["dtype"])
 
-    # first fft on dir 1
+    # first fft on axis 1
     FFTop = FFT2D(
         dims=(par["nt"], par["nx"]),
         nffts=(nfft1, nfft2),
@@ -1262,7 +1262,7 @@ def test_FFT2D(par):
     assert_array_almost_equal(d[:imax1, :imax2], dadj[:imax1, :imax2], decimal=decimal)
     assert_array_almost_equal(d[:imax1, :imax2], dinv[:imax1, :imax2], decimal=decimal)
 
-    # first fft on dir 0
+    # first fft on axis 0
     FFTop = FFT2D(
         dims=(par["nt"], par["nx"]),
         nffts=(nfft2, nfft1),
@@ -1322,7 +1322,7 @@ def test_FFT3D(par):
     d = np.tile(d[:, :, np.newaxis], [1, 1, par["ny"]])
     d = d.astype(par["dtype"])
 
-    # first fft on dir 2
+    # first fft on axis 2
     FFTop = FFTND(
         dims=(par["nt"], par["nx"], par["ny"]),
         nffts=(nfft1, nfft2, nfft3),
@@ -1373,7 +1373,7 @@ def test_FFT3D(par):
         d[:imax1, :imax2, :imax3], dinv[:imax1, :imax2, :imax3], decimal=decimal
     )
 
-    # first fft on dir 1
+    # first fft on axis 1
     FFTop = FFTND(
         dims=(par["nt"], par["nx"], par["ny"]),
         nffts=(nfft1, nfft3, nfft2),
@@ -1420,7 +1420,7 @@ def test_FFT3D(par):
         d[:imax1, :imax2, :imax3], dinv[:imax1, :imax2, :imax3], decimal=decimal
     )
 
-    # first fft on dir 0
+    # first fft on axis 0
     FFTop = FFTND(
         dims=(par["nt"], par["nx"], par["ny"]),
         nffts=(nfft2, nfft3, nfft1),

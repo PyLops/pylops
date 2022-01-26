@@ -257,10 +257,10 @@ def FFT2D(
     nffts : :obj:`tuple` or :obj:`int`, optional
         Number of samples in Fourier Transform for each direction. In case only one
         dimension needs to be specified, use ``None`` for the other dimension in the
-        tuple. The direction with None will use ``dims[dir]`` as ``nfft``. When
-        supplying a tuple, the order must agree with that of ``axes``. When a single
-        value is passed, it will be used for both directions. As such the default is
-        equivalent to ``nffts=(None, None)``.
+        tuple. The direction with None will use ``(dims[axes[0]], dims[axes[1]])``
+        as ``nffts``. When supplying a tuple, the order must agree with that
+        of ``axes``. When a single value is passed, it will be used for both
+        directions. As such the default is equivalent to ``nffts=(None, None)``.
     sampling : :obj:`tuple` or :obj:`float`, optional
         Sampling steps for each direction. When supplied a single value, it is used
         for both directions. Unlike ``nffts``, any ``None`` will not be converted to the
@@ -324,9 +324,9 @@ def FFT2D(
 
         For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
     f1 : :obj:`numpy.ndarray`
-        Discrete Fourier Transform sample frequencies along ``dir[0]``
+        Discrete Fourier Transform sample frequencies along ``axes[0]``
     f2 : :obj:`numpy.ndarray`
-        Discrete Fourier Transform sample frequencies along ``dir[1]``
+        Discrete Fourier Transform sample frequencies along ``axes[1]``
     real : :obj:`bool`
         When ``True``, uses ``rfft2``/``irfft2``
     rdtype : :obj:`bool`

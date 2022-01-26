@@ -14,8 +14,8 @@ class Diagonal(LinearOperator):
 
     This operator can also broadcast; in this case the input vector is
     reshaped into its dimensions ``dims`` and the element-wise multiplication
-    with ``diag`` is perfomed on the direction ``dir``. Note that the
-    vector ``diag`` will need to have size equal to ``dims[dir]``.
+    with ``diag`` is perfomed along ``axis``. Note that the
+    vector ``diag`` will need to have size equal to ``dims[axis]``.
 
     Parameters
     ----------

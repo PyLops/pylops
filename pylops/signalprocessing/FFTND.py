@@ -242,10 +242,10 @@ def FFTND(
     nffts : :obj:`tuple` or :obj:`int`, optional
         Number of samples in Fourier Transform for each direction. In case only one
         dimension needs to be specified, use ``None`` for the other dimension in the
-        tuple. The direction with None will use ``dims[dir]`` as ``nfft``. When
-        supplying a tuple, the order must agree with that of ``dirs``. When a single
-        value is passed, it will be used for both directions. As such the default is
-        equivalent to ``nffts=(None,..., None)``.
+        tuple. The direction with None will use ``dims[axis]`` for each ``axis`` in
+        ``axes`` as ``nffts``. When supplying a tuple, the order must agree with that
+        of ``axes``. When a single value is passed, it will be used for both
+        directions. As such the default is equivalent to ``nffts=(None, ..., None)``.
     sampling : :obj:`tuple` or :obj:`float`, optional
         Sampling steps for each direction. When supplied a single value, it is used
         for all directions. Unlike ``nffts``, any ``None`` will not be converted to the
@@ -314,7 +314,7 @@ def FFTND(
         For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
     fs : :obj:`tuple`
         Each element of the tuple corresponds to the Discrete Fourier Transform
-        sample frequencies along the respective direction given by ``dirs``.
+        sample frequencies along the respective direction given by ``axes``.
     real : :obj:`bool`
         When ``True``, uses ``rfftn``/``irfftn``
     rdtype : :obj:`bool`

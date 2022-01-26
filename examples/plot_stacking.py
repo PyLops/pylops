@@ -268,7 +268,7 @@ print("xinv = ", x)
 # :py:class:`pylops.FirstDerivative` to the second dimension of the model.
 #
 # Note that for those operators whose implementation allows their application
-# to a single axis via the ``dir`` parameter, using the Kronecker product
+# to a single axis via the ``axis`` parameter, using the Kronecker product
 # would lead to slower performance. Nevertheless, the Kronecker product allows
 # any other operator to be applied to a single dimension.
 Nv, Nh = 11, 21

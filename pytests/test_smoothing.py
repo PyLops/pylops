@@ -6,12 +6,12 @@ from scipy.sparse.linalg import lsqr
 from pylops.basicoperators import Smoothing1D, Smoothing2D
 from pylops.utils import dottest
 
-par1 = {"nz": 10, "ny": 30, "nx": 20, "dir": 0}  # even, first direction
-par2 = {"nz": 11, "ny": 51, "nx": 31, "dir": 0}  # odd, first direction
-par3 = {"nz": 10, "ny": 30, "nx": 20, "dir": 1}  # even, second direction
-par4 = {"nz": 11, "ny": 51, "nx": 31, "dir": 1}  # odd, second direction
-par5 = {"nz": 10, "ny": 30, "nx": 20, "dir": 2}  # even, third direction
-par6 = {"nz": 11, "ny": 51, "nx": 31, "dir": 2}  # odd, third direction
+par1 = {"nz": 10, "ny": 30, "nx": 20, "axis": 0}  # even, first direction
+par2 = {"nz": 11, "ny": 51, "nx": 31, "axis": 0}  # odd, first direction
+par3 = {"nz": 10, "ny": 30, "nx": 20, "axis": 1}  # even, second direction
+par4 = {"nz": 11, "ny": 51, "nx": 31, "axis": 1}  # odd, second direction
+par5 = {"nz": 10, "ny": 30, "nx": 20, "axis": 2}  # even, third direction
+par6 = {"nz": 11, "ny": 51, "nx": 31, "axis": 2}  # odd, third direction
 
 np.random.seed(0)
 
@@ -30,7 +30,7 @@ def test_Smoothing1D(par):
 
     # 1d kernel on 2d signal
     D1op = Smoothing1D(
-        nsmooth=5, dims=(par["ny"], par["nx"]), axis=par["dir"], dtype="float64"
+        nsmooth=5, dims=(par["ny"], par["nx"]), axis=par["axis"], dtype="float64"
     )
     assert dottest(D1op, par["ny"] * par["nx"], par["ny"] * par["nx"])
 
@@ -43,7 +43,7 @@ def test_Smoothing1D(par):
     D1op = Smoothing1D(
         nsmooth=5,
         dims=(par["nz"], par["ny"], par["nx"]),
-        axis=par["dir"],
+        axis=par["axis"],
         dtype="float64",
     )
     assert dottest(
@@ -63,7 +63,7 @@ def test_Smoothing1D(par):
 def test_Smoothing2D(par):
     """Dot-test for smoothing"""
     # 2d kernel on 2d signal
-    if par["dir"] < 2:
+    if par["axis"] < 2:
         D2op = Smoothing2D(nsmooth=(5, 5), dims=(par["ny"], par["nx"]), dtype="float64")
         assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], tol=1e-3)
 
@@ -88,7 +88,7 @@ def test_Smoothing2D(par):
     D2op = Smoothing2D(
         nsmooth=(5, 5),
         dims=(par["nz"], par["ny"], par["nx"]),
-        nodir=par["dir"],
+        nodir=par["axis"],
         dtype="float64",
     )
     assert dottest(
@@ -102,7 +102,7 @@ def test_Smoothing2D(par):
     y = D2op * x
     y = y.reshape(par["nz"], par["ny"], par["nx"])
 
-    if par["dir"] == 0:
+    if par["axis"] == 0:
         assert_array_almost_equal(
             y[par["nz"] // 2, par["ny"] // 2 - 2 : par["ny"] // 2 + 3, par["nx"] // 2],
             np.ones(5) / 25,
@@ -111,7 +111,7 @@ def test_Smoothing2D(par):
             y[par["nz"] // 2, par["ny"] // 2, par["nx"] // 2 - 2 : par["nx"] // 2 + 3],
             np.ones(5) / 25,
         )
-    elif par["dir"] == 1:
+    elif par["axis"] == 1:
         assert_array_almost_equal(
             y[par["nz"] // 2 - 2 : par["nz"] // 2 + 3, par["ny"] // 2, par["nx"] // 2],
             np.ones(5) / 25,
@@ -120,7 +120,7 @@ def test_Smoothing2D(par):
             y[par["nz"] // 2, par["ny"] // 2, par["nx"] // 2 - 2 : par["nx"] // 2 + 3],
             np.ones(5) / 25,
         )
-    elif par["dir"] == 2:
+    elif par["axis"] == 2:
         assert_array_almost_equal(
             y[par["nz"] // 2 - 2 : par["nz"] // 2 + 3, par["ny"] // 2, par["nx"] // 2],
             np.ones(5) / 25,

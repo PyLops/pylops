@@ -7,14 +7,14 @@ from pylops import LinearOperator
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 
 
-def _compute_iavamask(dims, dir, iava, ncp):
+def _compute_iavamask(dims, axis, iava, ncp):
     """Compute restriction mask when using cupy arrays"""
     otherdims = np.array(dims)
-    otherdims = np.delete(otherdims, dir)
-    iavamask = ncp.zeros(dims[dir], dtype=int)
+    otherdims = np.delete(otherdims, axis)
+    iavamask = ncp.zeros(dims[axis], dtype=int)
     iavamask[iava] = 1
     iavamask = ncp.moveaxis(
-        ncp.broadcast_to(iavamask, list(otherdims) + [dims[dir]]), -1, dir
+        ncp.broadcast_to(iavamask, list(otherdims) + [dims[axis]]), -1, axis
     )
     iavamask = ncp.where(iavamask.ravel() == 1)[0]
     return iavamask

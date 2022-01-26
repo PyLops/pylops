@@ -41,7 +41,7 @@ class Sum(LinearOperator):
     -----
     Given a two dimensional array, the *Sum* operator re-arranges
     the input model into a multi-dimensional array
-    of size ``dims`` and sums values along direction ``dir``:
+    of size ``dims`` and sums values along ``axis``:
 
     .. math::
 

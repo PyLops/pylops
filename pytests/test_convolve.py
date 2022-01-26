@@ -21,42 +21,42 @@ par1_1d = {
     "ny": 51,
     "nx": 31,
     "offset": nfilt[0] // 2,
-    "dir": 0,
+    "axis": 0,
 }  # zero phase, first direction
 par2_1d = {
     "nz": 21,
     "ny": 61,
     "nx": 31,
     "offset": 0,
-    "dir": 0,
+    "axis": 0,
 }  # non-zero phase, first direction
 par3_1d = {
     "nz": 21,
     "ny": 51,
     "nx": 31,
     "offset": nfilt[0] // 2,
-    "dir": 1,
+    "axis": 1,
 }  # zero phase, second direction
 par4_1d = {
     "nz": 21,
     "ny": 61,
     "nx": 31,
     "offset": nfilt[0] // 2 - 1,
-    "dir": 1,
+    "axis": 1,
 }  # non-zero phase, second direction
 par5_1d = {
     "nz": 21,
     "ny": 51,
     "nx": 31,
     "offset": nfilt[0] // 2,
-    "dir": 2,
+    "axis": 2,
 }  # zero phase, third direction
 par6_1d = {
     "nz": 21,
     "ny": 61,
     "nx": 31,
     "offset": nfilt[0] // 2 - 1,
-    "dir": 2,
+    "axis": 2,
 }  # non-zero phase, third direction
 
 par1_2d = {
@@ -64,42 +64,42 @@ par1_2d = {
     "ny": 51,
     "nx": 31,
     "offset": (nfilt[0] // 2, nfilt[1] // 2),
-    "dir": 0,
+    "axis": 0,
 }  # zero phase, first direction
 par2_2d = {
     "nz": 21,
     "ny": 61,
     "nx": 31,
     "offset": (nfilt[0] // 2 - 1, nfilt[1] // 2 + 1),
-    "dir": 0,
+    "axis": 0,
 }  # non-zero phase, first direction
 par3_2d = {
     "nz": 21,
     "ny": 51,
     "nx": 31,
     "offset": (nfilt[0] // 2, nfilt[1] // 2),
-    "dir": 1,
+    "axis": 1,
 }  # zero phase, second direction
 par4_2d = {
     "nz": 21,
     "ny": 61,
     "nx": 31,
     "offset": (nfilt[0] // 2 - 1, nfilt[1] // 2 + 1),
-    "dir": 1,
+    "axis": 1,
 }  # non-zero phase, second direction
 par5_2d = {
     "nz": 21,
     "ny": 51,
     "nx": 31,
     "offset": (nfilt[0] // 2, nfilt[1] // 2),
-    "dir": 2,
+    "axis": 2,
 }  # zero phase, third direction
 par6_2d = {
     "nz": 21,
     "ny": 61,
     "nx": 31,
     "offset": (nfilt[0] // 2 - 1, nfilt[1] // 2 + 1),
-    "dir": 2,
+    "axis": 2,
 }  # non-zero phase, third direction
 
 par1_3d = {
@@ -108,7 +108,7 @@ par1_3d = {
     "nx": 31,
     "nt": 5,
     "offset": (nfilt[0] // 2, nfilt[1] // 2, nfilt[2] // 2),
-    "dir": 0,
+    "axis": 0,
 }  # zero phase, all directions
 par2_3d = {
     "nz": 21,
@@ -116,7 +116,7 @@ par2_3d = {
     "nx": 31,
     "nt": 5,
     "offset": (nfilt[0] // 2 - 1, nfilt[1] // 2 + 1, nfilt[2] // 2 + 1),
-    "dir": 0,
+    "axis": 0,
 }  # non-zero phase, first direction
 
 
@@ -127,7 +127,7 @@ def test_Convolve1D(par):
     """Dot-test and inversion for Convolve1D operator"""
     np.random.seed(10)
     # 1D
-    if par["dir"] == 0:
+    if par["axis"] == 0:
         Cop = Convolve1D(par["nx"], h=h1, offset=par["offset"], dtype="float64")
         assert dottest(Cop, par["nx"], par["nx"])
 
@@ -137,13 +137,13 @@ def test_Convolve1D(par):
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 1D on 2D
-    if par["dir"] < 2:
+    if par["axis"] < 2:
         Cop = Convolve1D(
             par["ny"] * par["nx"],
             h=h1,
             offset=par["offset"],
             dims=(par["ny"], par["nx"]),
-            axis=par["dir"],
+            axis=par["axis"],
             dtype="float64",
         )
         assert dottest(Cop, par["ny"] * par["nx"], par["ny"] * par["nx"])
@@ -163,7 +163,7 @@ def test_Convolve1D(par):
         h=h1,
         offset=par["offset"],
         dims=(par["nz"], par["ny"], par["nx"]),
-        axis=par["dir"],
+        axis=par["axis"],
         dtype="float64",
     )
     assert dottest(
@@ -187,7 +187,7 @@ def test_Convolve1D(par):
 def test_Convolve2D(par):
     """Dot-test and inversion for Convolve2D operator"""
     # 2D on 2D
-    if par["dir"] == 2:
+    if par["axis"] == 2:
         Cop = Convolve2D(
             par["ny"] * par["nx"],
             h=h2,
@@ -212,7 +212,7 @@ def test_Convolve2D(par):
         h=h2,
         offset=par["offset"],
         dims=[par["nz"], par["ny"], par["nx"]],
-        nodir=par["dir"],
+        nodir=par["axis"],
         dtype="float64",
     )
     assert dottest(

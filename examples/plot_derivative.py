@@ -126,7 +126,7 @@ plt.subplots_adjust(top=0.8)
 
 ###############################################################################
 # We can also apply the second derivative to the second direction of
-# our data (``dir=1``)
+# our data (``axis=1``)
 D2op = pylops.SecondDerivative(nx * ny, dims=(nx, ny), axis=1, dtype="float64")
 B = np.reshape(D2op * np.ndarray.flatten(A), (nx, ny))
 
