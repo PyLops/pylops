@@ -257,6 +257,8 @@ def FFT2D(
         for both directions. Unlike ``nffts``, any ``None`` will not be converted to the
         default value.
     norm : `{"ortho", "none", "1/n"}`, optional
+        .. versionadded:: 1.17.0
+
         - "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
           where :math:`N_F` is the number of samples in the Fourier domain given by
           product of all elements of ``nffts``.
@@ -268,6 +270,7 @@ def FFT2D(
 
         .. note:: For "none" and "1/n", the operator is not unitary, that is, the
           adjoint is not the inverse. To invert the operator, simply use ``Op \ y``.
+
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
@@ -292,6 +295,8 @@ def FFT2D(
         When passing a single value, the shift will the same for every direction. Pass
         a tuple to specify which dimensions are shifted.
     engine : :obj:`str`, optional
+        .. versionadded:: 1.17.0
+
         Engine used for fft computation (``numpy`` or ``scipy``).
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
@@ -322,6 +327,8 @@ def FFT2D(
     shape : :obj:`tuple`
         Operator shape
     clinear : :obj:`bool`
+        .. versionadded:: 1.17.0
+
         Operator is complex-linear. Is false when either ``real=True`` or when
         ``dtype`` is not a complex type.
     explicit : :obj:`bool`

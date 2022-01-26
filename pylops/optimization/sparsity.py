@@ -106,6 +106,9 @@ def _halfthreshold(x, thresh):
     x1 : :obj:`numpy.ndarray`
         Tresholded vector
 
+        .. warning::
+            Since version 1.17.0 does not produce ``np.nan`` on bad input.
+
     """
     arg = np.ones_like(x)
     arg[x != 0] = (thresh / 8.0) * (np.abs(x[x != 0]) / 3.0) ** (-1.5)

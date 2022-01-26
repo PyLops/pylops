@@ -48,9 +48,9 @@ class Regression(LinearOperator):
     The Regression operator solves the following problem:
 
     .. math::
-        y_i = \sum_{n=0}^\text{order} x_n t_i^n  \qquad \forall i=1,2,\ldots,N
+        y_i = \sum_{n=0}^\text{order} x_n t_i^n  \qquad \forall i=0,1,\ldots,N-1
 
-    where :math:`N` represents the order of the chosen polynomial. We can
+    where :math:`N` represents the number of points in ``taxis``. We can
     express this problem in a matrix form
 
     .. math::
@@ -59,7 +59,7 @@ class Regression(LinearOperator):
     where
 
     .. math::
-        \mathbf{y}= [y_1, y_2,\ldots,y_N]^T,
+        \mathbf{y}= [y_0, y_1,\ldots,y_{N-1}]^T,
         \qquad \mathbf{x}= [x_0, x_1,\ldots,x_\text{order}]^T
 
     and
@@ -67,11 +67,11 @@ class Regression(LinearOperator):
     .. math::
         \mathbf{A}
         = \begin{bmatrix}
+            1      & t_{0}  & t_{0}^2 & \ldots & t_{0}^\text{order}  \\
             1      & t_{1}  & t_{1}^2 & \ldots & t_{1}^\text{order}  \\
-            1      & t_{2}  & t_{2}^2 & \ldots & t_{1}^\text{order}  \\
             \vdots & \vdots & \vdots  & \ddots & \vdots             \\
-            1      & t_{N}  & t_{N}^2 & \ldots & t_{N}^\text{order}
-        \end{bmatrix}
+            1      & t_{N-1}  & t_{N-1}^2 & \ldots & t_{N-1}^\text{order}
+        \end{bmatrix}_{N\times \text{order}+1}
 
     """
 
