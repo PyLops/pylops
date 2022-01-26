@@ -64,6 +64,9 @@ def NormalEquationsInversion(
         :py:func:`pylops.optimization.solver.cg` are used as default for numpy
         and cupy `data`, respectively)
 
+        .. note::
+            When user does not supply ``atol``, it is set to "legacy".
+
     Returns
     -------
     xinv : :obj:`numpy.ndarray`

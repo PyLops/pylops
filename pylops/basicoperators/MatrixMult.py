@@ -69,7 +69,7 @@ class MatrixMult(LinearOperator):
         if np.iscomplexobj(A) and not np.iscomplexobj(np.ones(1, dtype=self.dtype)):
             self.dtype = A.dtype
             logging.warning(
-                "Matrix A is a complex object, dtype " "casted to %s" % self.dtype
+                "Matrix A is a complex object, dtype cast to %s" % self.dtype
             )
 
     def _matvec(self, x):

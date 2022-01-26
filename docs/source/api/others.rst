@@ -8,7 +8,7 @@ performing universal tasks that are used by several operators or simply within o
 the preparation of input data and subsequent visualization of results.
 
 Dot-test
-------
+--------
 
 .. currentmodule:: pylops.utils
 
@@ -18,7 +18,7 @@ Dot-test
     dottest
 
 Describe
-------
+--------
 
 .. currentmodule:: pylops.utils.describe
 
@@ -28,7 +28,7 @@ Describe
     describe
 
 Estimators
-------
+----------
 
 .. currentmodule:: pylops.utils
 
@@ -40,7 +40,7 @@ Estimators
     trace_nahutchpp
 
 Scalability test
-------
+----------------
 
 .. currentmodule:: pylops.utils
 
@@ -50,7 +50,7 @@ Scalability test
     scalability_test
 
 Synthetics
-------
+----------
 
 .. currentmodule:: pylops.utils
 
@@ -74,7 +74,7 @@ Synthetics
 
 
 Signal-processing
-------
+-----------------
 
 .. currentmodule:: pylops.utils
 
@@ -99,7 +99,7 @@ Tapers
 
 
 Wavelets
-------
+--------
 
 .. currentmodule:: pylops.utils
 
@@ -111,7 +111,7 @@ Wavelets
 
 
 Geophysical Reservoir characterization
-------
+--------------------------------------
 
 .. currentmodule:: pylops.avo
 

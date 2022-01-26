@@ -37,7 +37,7 @@ class _FFTND_numpy(_BaseFFTND):
         )
         if self.cdtype != np.complex128:
             warnings.warn(
-                f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
+                f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be cast to {self.cdtype}."
             )
 
         self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
@@ -251,6 +251,8 @@ def FFTND(
         for all directions. Unlike ``nffts``, any ``None`` will not be converted to the
         default value.
     norm : `{"ortho", "none", "1/n"}`, optional
+        .. versionadded:: 1.17.0
+
         - "ortho": Scales forward and adjoint FFT transforms with :math:`1/\sqrt{N_F}`,
           where :math:`N_F` is the number of samples in the Fourier domain given by
           product of all elements of ``nffts``.
@@ -262,6 +264,7 @@ def FFTND(
 
         .. note:: For "none" and "1/n", the operator is not unitary, that is, the
           adjoint is not the inverse. To invert the operator, simply use ``Op \ y``.
+
     real : :obj:`bool`, optional
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
@@ -269,6 +272,8 @@ def FFTND(
         dimension to which the FFTND operator is applied (last element of
         ``dirs``)
     ifftshift_before : :obj:`tuple` or :obj:`bool`, optional
+        .. versionadded:: 1.17.0
+
         Apply ifftshift (``True``) or not (``False``) to model vector (before FFT).
         Consider using this option when the model vector's respective axis is symmetric
         with respect to the zero value sample. This will shift the zero value sample to
@@ -278,6 +283,8 @@ def FFTND(
         When passing a single value, the shift will the same for every direction. Pass
         a tuple to specify which dimensions are shifted.
     fftshift_after : :obj:`tuple` or :obj:`bool`, optional
+        .. versionadded:: 1.17.0
+
         Apply fftshift (``True``) or not (``False``) to data vector (after FFT).
         Consider using this option when you require frequencies to be arranged
         naturally, from negative to positive. When not applying fftshift after FFT,
@@ -286,13 +293,15 @@ def FFTND(
         When passing a single value, the shift will the same for every direction. Pass
         a tuple to specify which dimensions are shifted.
     engine : :obj:`str`, optional
+        .. versionadded:: 1.17.0
+
         Engine used for fft computation (``numpy`` or ``scipy``).
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.
         In addition, note that the NumPy backend does not support returning ``dtype``
         different than ``complex128``. As such, when using the NumPy backend, arrays will
-        be force-casted to types corresponding to the supplied ``dtype``.
+        be force-cast to types corresponding to the supplied ``dtype``.
         The SciPy backend supports all precisions natively.
         Under both backends, when a real ``dtype`` is supplied, a real result will be
         enforced on the result of the ``rmatvec`` and the input of the ``matvec``.
@@ -315,6 +324,8 @@ def FFTND(
     shape : :obj:`tuple`
         Operator shape
     clinear : :obj:`bool`
+        .. versionadded:: 1.17.0
+
         Operator is complex-linear. Is false when either ``real=True`` or when
         ``dtype`` is not a complex type.
     explicit : :obj:`bool`

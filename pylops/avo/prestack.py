@@ -232,7 +232,7 @@ def PrestackWaveletModelling(
         variable will define that of the operator
     theta : :obj:`int`
         Incident angles in degrees. Must have same ``dtype`` of ``m`` (or
-        it will be automatically casted to it)
+        it will be automatically cast to it)
     nwav : :obj:`np.ndarray`
         Number of samples of wavelet to be applied/estimated
     wavc : :obj:`int`, optional

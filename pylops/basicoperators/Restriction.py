@@ -73,18 +73,18 @@ class Restriction(LinearOperator):
 
     .. math::
 
-        y_i = x_{l_i}  \quad \forall i=1,2,\ldots,N
+        y_i = x_{l_i}  \quad \forall i=0,1,\ldots,N-1
 
-    where :math:`\mathbf{l}=[l_1, l_2,\ldots, l_N]` is a vector containing the indeces
+    where :math:`\mathbf{l}=[l_0, l_1,\ldots, l_{N-1}]` is a vector containing the indeces
     of the original array at which samples are taken.
 
     Conversely, in adjoint mode the available values in the data vector
     :math:`\mathbf{y}` are placed at locations
-    :math:`\mathbf{l}=[l_1, l_2,\ldots, l_M]` in the model vector:
+    :math:`\mathbf{l}=[l_0, l_1,\ldots, l_{M-1}]` in the model vector:
 
     .. math::
 
-        x_{l_i} = y_i  \quad \forall i=1,2,\ldots,N
+        x_{l_i} = y_i  \quad \forall i=0,1,\ldots,N-1
 
     and :math:`x_{j}=0` for :math:`j \neq l_i` (i.e., at all other locations in input
     vector).

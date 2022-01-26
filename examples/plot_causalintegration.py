@@ -19,7 +19,7 @@ plt.close("all")
 ###############################################################################
 # Let's start with a 1D example. Define the input parameters: number of samples
 # of input signal (``nt``), sampling step (``dt``) as well as the input
-# signal which will be equal to :math:`x(t)=sin(t)`:
+# signal which will be equal to :math:`x(t)=\sin(t)`:
 nt = 81
 dt = 0.3
 t = np.arange(nt) * dt
@@ -28,7 +28,7 @@ x = np.sin(t)
 ###############################################################################
 # We can now create our causal integration operator and apply it to the input
 # signal. We can also compute the analytical integral
-# :math:`y(t)=\int sin(t)dt=-cos(t)` and compare the results. We can also
+# :math:`y(t)=\int \sin(t)\,\mathrm{d}t=-\cos(t)` and compare the results. We can also
 # invert the integration operator and by remembering that this is equivalent
 # to a first order derivative, we will compare our inverted model with the
 # result obtained by simply applying the :py:class:`pylops.FirstDerivative`
@@ -37,7 +37,7 @@ x = np.sin(t)
 # Note that, as explained in details in :py:class:`pylops.CausalIntegration`,
 # integration has no unique solution, as any constant :math:`c` can be added
 # to the integrated signal :math:`y`, for example if :math:`x(t)=t^2` the
-# :math:`y(t) = \int t^2 dt = \frac{t^3}{3} + c`. We thus subtract first
+# :math:`y(t) = \int t^2 \,\mathrm{d}t = \frac{t^3}{3} + c`. We thus subtract first
 # sample from the analytical integral to obtain the same result as the
 # numerical one.
 

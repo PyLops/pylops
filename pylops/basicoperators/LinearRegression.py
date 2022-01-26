@@ -43,7 +43,7 @@ def LinearRegression(taxis, dtype="float64"):
     The LinearRegression operator solves the following problem:
 
     .. math::
-        y_i = x_0 + x_1 t_i  \qquad \forall i=1,2,\ldots,N
+        y_i = x_0 + x_1 t_i  \qquad \forall i=0,1,\ldots,N-1
 
     We can express this problem in a matrix form
 
@@ -53,17 +53,17 @@ def LinearRegression(taxis, dtype="float64"):
     where
 
     .. math::
-        \mathbf{y}= [y_1, y_2,\ldots,y_N]^T, \qquad \mathbf{x}= [x_0, x_1]^T
+        \mathbf{y}= [y_0, y_1,\ldots,y_{N-1}]^T, \qquad \mathbf{x}= [x_0, x_1]^T
 
     and
 
     .. math::
         \mathbf{A}
         = \begin{bmatrix}
+            1       & t_{0}  \\
             1       & t_{1}  \\
-            1       & t_{2}  \\
             \vdots      & \vdots     \\
-            1       & t_{N}
+            1       & t_{N-1}
         \end{bmatrix}
 
     Note that this is a particular case of the :py:class:`pylops.Regression`

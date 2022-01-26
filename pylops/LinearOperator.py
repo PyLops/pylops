@@ -42,7 +42,10 @@ class LinearOperator(spLinearOperator):
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
         (``True``) or not (``False``)
+    clinear : :obj:`bool`
+        .. versionadded:: 1.17.0
 
+        Operator is complex-linear.
     """
 
     def __init__(self, Op=None, explicit=False, clinear=None):
@@ -773,7 +776,7 @@ class _ScaledLinearOperator(spLinearOperator):
     Modified version of scipy _ScaledLinearOperator which uses a modified
     _get_dtype where the scalar and operator types are passed separately to
     np.find_common_type. Passing them together does lead to problems when using
-    np.float32 operators which are casted to no.float64
+    np.float32 operators which are cast to np.float64
 
     """
 
