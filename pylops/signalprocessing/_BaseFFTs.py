@@ -113,7 +113,7 @@ class _BaseFFT(LinearOperator):
             self.ifftpad = [(0, 0)] * self.ndim
             self.ifftpad[self.axis] = (0, self.dims[self.axis] - self.nfft)
             warnings.warn(
-                f"nfft={self.nfft} has been selected to be smaller than the size of the original signal (n=self.dims[axis]). "
+                f"nfft={self.nfft} has been selected to be smaller than the size of the original signal (self.dims[axis]={self.dims[axis]}). "
                 f"This is rarely intended behavior as the original signal will be truncated prior to applying fft, "
                 f"if this is the required behaviour ignore this message."
             )
