@@ -135,6 +135,7 @@ def Sliding3D(
                 range(win_in, win_end),
                 dims=(nwin[0], dimsd[1], dimsd[2]),
                 dir=1,
+                dtype=Op.dtype,
             ).H
             for win_in, win_end in zip(dwin1_ins, dwin1_ends)
         ]
@@ -143,7 +144,13 @@ def Sliding3D(
     combining1 = BlockDiag([hstack] * nwins0)
     combining0 = HStack(
         [
-            Restriction(np.prod(dimsd), range(win_in, win_end), dims=dimsd, dir=0).H
+            Restriction(
+                np.prod(dimsd),
+                range(win_in, win_end),
+                dims=dimsd,
+                dir=0,
+                dtype=Op.dtype,
+            ).H
             for win_in, win_end in zip(dwin0_ins, dwin0_ends)
         ]
     )
