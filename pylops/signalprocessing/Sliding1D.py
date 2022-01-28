@@ -103,7 +103,7 @@ def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False):
 
     combining = HStack(
         [
-            Restriction(dimd, np.arange(win_in, win_end)).H
+            Restriction(dimd, np.arange(win_in, win_end), dtype=Op.dtype).H
             for win_in, win_end in zip(dwin_ins, dwin_ends)
         ]
     )
