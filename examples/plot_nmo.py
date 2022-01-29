@@ -125,7 +125,7 @@ def interpolate_vrms(t0_picks, vrms_picks, taxis, smooth=None):
     points = np.zeros((len(t0_picks) + 2,))
     points[0] = taxis[0]
     points[-1] = taxis[-1]
-    points[1:-1] = t0s_true
+    points[1:-1] = t0_picks
 
     # Sampled values of slowness (in s/km)
     values = np.zeros((len(vrms_picks) + 2,))
