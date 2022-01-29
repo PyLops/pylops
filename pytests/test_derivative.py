@@ -304,8 +304,8 @@ def test_FirstDerivative_forwaback(par):
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par1e), (par2e), (par3e), (par4e)]
 )
-def test_SecondDerivative(par):
-    """Dot-test and forward for SecondDerivative operator
+def test_SecondDerivative_centered(par):
+    """Dot-test and forward for SecondDerivative operator (centered stencil)
     The test is based on the fact that the central stencil is exact for polynomials of
     degree 3.
     """
@@ -441,6 +441,107 @@ def test_SecondDerivative(par):
     df = df.reshape(par["ny"], par["nx"], par["nz"])
 
     assert_array_almost_equal(df[:, :, 1:-1], dfana[:, :, 1:-1], decimal=1)
+
+
+@pytest.mark.parametrize(
+    "par", [(par1), (par2), (par3), (par4), (par1e), (par2e), (par3e), (par4e)]
+)
+def test_SecondDerivative_forward(par):
+    """Dot-test for SecondDerivative operator (forward stencil).
+    Note that the analytical expression cannot be validated in this case
+    """
+    x = par["dx"] * np.arange(par["nx"])
+    y = par["dy"] * np.arange(par["ny"])
+    z = par["dz"] * np.arange(par["nz"])
+
+    xx, yy = np.meshgrid(x, y)  # produces arrays of size (ny,nx)
+    xxx, yyy, zzz = np.meshgrid(x, y, z)  # produces arrays of size (ny,nx,nz)
+
+    # 1d
+    D2op = SecondDerivative(
+        par["nx"], sampling=par["dx"], edge=par["edge"], kind="forward", dtype="float32"
+    )
+    assert dottest(D2op, par["nx"], par["nx"], tol=1e-3)
+
+    # 2d - derivative on 1st direction
+    D2op = SecondDerivative(
+        par["ny"] * par["nx"],
+        dims=(par["ny"], par["nx"]),
+        dir=0,
+        sampling=par["dy"],
+        edge=par["edge"],
+        kind="forward",
+        dtype="float32",
+    )
+
+    assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], tol=1e-3)
+
+    # 2d - derivative on 2nd direction
+    D2op = SecondDerivative(
+        par["ny"] * par["nx"],
+        dims=(par["ny"], par["nx"]),
+        dir=1,
+        sampling=par["dx"],
+        edge=par["edge"],
+        kind="forward",
+        dtype="float32",
+    )
+
+    assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], tol=1e-3)
+
+    # 3d - derivative on 1st direction
+    D2op = SecondDerivative(
+        par["nz"] * par["ny"] * par["nx"],
+        dims=(par["ny"], par["nx"], par["nz"]),
+        dir=0,
+        sampling=par["dy"],
+        edge=par["edge"],
+        kind="forward",
+        dtype="float32",
+    )
+
+    assert dottest(
+        D2op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        tol=1e-3,
+    )
+
+    # 3d - derivative on 2nd direction
+    D2op = SecondDerivative(
+        par["nz"] * par["ny"] * par["nx"],
+        dims=(par["ny"], par["nx"], par["nz"]),
+        dir=1,
+        sampling=par["dx"],
+        edge=par["edge"],
+        kind="forward",
+        dtype="float32",
+    )
+
+    assert dottest(
+        D2op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        tol=1e-3,
+    )
+
+    # 3d - derivative on 3rd direction
+    D2op = SecondDerivative(
+        par["nz"] * par["ny"] * par["nx"],
+        dims=(par["ny"], par["nx"], par["nz"]),
+        dir=2,
+        sampling=par["dz"],
+        edge=par["edge"],
+        kind="forward",
+        dtype="float32",
+    )
+
+    assert dottest(
+        D2op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["ny"] * par["nx"] * par["nz"],
+        tol=1e-3,
+    )
 
 
 @pytest.mark.parametrize(
