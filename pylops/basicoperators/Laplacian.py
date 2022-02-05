@@ -36,6 +36,11 @@ def Laplacian(
     l2op : :obj:`pylops.LinearOperator`
         Laplacian linear operator
 
+    Raises
+    ------
+    ValueError
+        If ``dirs``. ``weights``, and ``sampling`` do not have the same size
+
     Notes
     -----
     The Laplacian operator applies a second derivative along two directions of
@@ -48,6 +53,9 @@ def Laplacian(
                   / (\Delta x \Delta y)
 
     """
+    if not (len(dirs) == len(weights) == len(sampling)):
+        raise ValueError("dirs, weights, and sampling have different size")
+
     l2op = weights[0] * SecondDerivative(
         np.prod(dims),
         dims=dims,
@@ -56,12 +64,14 @@ def Laplacian(
         edge=edge,
         dtype=dtype,
     )
-    l2op += weights[1] * SecondDerivative(
-        np.prod(dims),
-        dims=dims,
-        dir=dirs[1],
-        sampling=sampling[1],
-        edge=edge,
-        dtype=dtype,
-    )
+
+    for dir, samp, weight in zip(dirs[1:], sampling[1:], weights[1:]):
+        l2op += weight * SecondDerivative(
+            np.prod(dims),
+            dims=dims,
+            dir=dir,
+            sampling=samp,
+            edge=edge,
+            dtype=dtype,
+        )
     return aslinearoperator(l2op)
