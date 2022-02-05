@@ -1,3 +1,36 @@
+# 1.17.0
+* Added `pylops.utils.describe.describe` method
+* Added `fftengine` to `pylops.waveeqprocessing.Marchenko`
+* Added `ifftshift_before` and `fftshift_after` optional input parameters in
+  `pylops.signalprocessing.FFT`
+* Added `norm` optional input parameter to `pylops.signalprocessing.FFT2D` and
+  `pylops.signalprocessing.FFTND`
+* Added `scipy` backend to `pylops.signalprocessing.FFT` and
+  `pylops.signalprocessing.FFT2D` and `pylops.signalprocessing.FFTND`
+* Added `eps` optional input parameter in
+  `pylops.utils.signalprocessing.slope_estimate`
+* Added pre-commit hooks
+* Improved  pre-commit hooks
+* Vectorized `pylops.utils.signalprocessing.slope_estimate`
+* Handlexd `nfft<nt` case in `pylops.signalprocessing.FFT` and
+  `pylops.signalprocessing.FFT2D` and `pylops.signalprocessing.FFTND`
+* Introduced automatic casting of dtype in `pylops.MatrixMult
+* Improved documentation and definition of optinal parameters
+  of `pylops.Spread`
+* Major clean up of documentation and mathematical formulas
+* Major refractoring of the inner structure of `pylops.signalprocessing.FFT` and
+  `pylops.signalprocessing.FFT2D` and `pylops.signalprocessing.FFTND`
+* Reduced warnings in test suite
+* Reduced computational time of `test_wavedecomposition` in the test suite
+* Fixed bug in `pylops.signalprocessing.Sliding1D`,
+  `pylops.signalprocessing.Sliding2D` and
+  `pylops.signalprocessing.Sliding3D` where the `dtype` of the Restriction
+  operator is inffered from `Op`
+* Fixed bug in `pylops.signalprocessing.Radon2D` and
+  `pylops.signalprocessing.Radon3D` when using centered spatial axes
+* Fixed scaling in `pylops.signalprocessing.FFT` with `real=True` to pass the
+  dot-test
+
 # 1.16.0
 * Added `pylops.utils.estimators` module for trace estimation
 * Added `x0` in `pylops.optimization.sparsity.ISTA` and

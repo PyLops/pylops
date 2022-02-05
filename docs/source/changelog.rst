@@ -3,19 +3,57 @@
 Changelog
 =========
 
+Version 1.17.0
+--------------
+
+*Released on: 29/01/2022*
+
+* Added :py:class:`pylops.utils.describe.describe` method
+* Added ``fftengine`` to :py:class:`pylops.waveeqprocessing.Marchenko`
+* Added ``ifftshift_before`` and ``fftshift_after`` optional input parameters in
+  :py:class:`pylops.signalprocessing.FFT`
+* Added ``norm`` optional input parameter to :py:class:`pylops.signalprocessing.FFT2D` and
+  :py:class:`pylops.signalprocessing.FFTND`
+* Added ``scipy`` backend to :py:class:`pylops.signalprocessing.FFT` and
+  :py:class:`pylops.signalprocessing.FFT2D` and :py:class:`pylops.signalprocessing.FFTND`
+* Added ``eps`` optional input parameter in
+  :py:func:`pylops.utils.signalprocessing.slope_estimate`
+* Added pre-commit hooks
+* Improved  pre-commit hooks
+* Vectorized :py:func:`pylops.utils.signalprocessing.slope_estimate`
+* Handlexd ``nfft<nt`` case in :py:class:`pylops.signalprocessing.FFT` and
+  :py:class:`pylops.signalprocessing.FFT2D` and :py:class:`pylops.signalprocessing.FFTND`
+* Introduced automatic casting of dtype in :py:class:`pylops.MatrixMult`
+* Improved documentation and definition of optinal parameters
+  of :py:class:`pylops.Spread`
+* Major clean up of documentation and mathematical formulas
+* Major refractoring of the inner structure of :py:class:`pylops.signalprocessing.FFT` and
+  :py:class:`pylops.signalprocessing.FFT2D` and :py:class:`pylops.signalprocessing.FFTND`
+* Reduced warnings in test suite
+* Reduced computational time of ``test_wavedecomposition`` in the test suite
+* Fixed bug in :py:class:`pylops.signalprocessing.Sliding1D`,
+  :py:class:`pylops.signalprocessing.Sliding2D` and
+  :py:class:`pylops.signalprocessing.Sliding3D` where the ``dtype`` of the Restriction
+  operator is inffered from ``Op``
+* Fixed bug in :py:class:`pylops.signalprocessing.Radon2D` and
+  :py:class:`pylops.signalprocessing.Radon3D` when using centered spatial axes
+* Fixed scaling in :py:class:`pylops.signalprocessing.FFT` with ``real=True`` to pass the
+  dot-test
+
 Version 1.16.0
 --------------
 
 *Released on: 11/12/2021*
 
-* Added `pylops.utils.estimators` module for trace estimation
-* Added `x0` in `pylops.optimization.sparsity.ISTA` and
-  `pylops.optimization.sparsity.FISTA` to handle non-zero initial guess
-* Modified `pylops.optimization.sparsity.ISTA` and
-  `pylops.optimization.sparsity.FISTA` to handle multiple right hand sides
-* Modified creation of `haxis` in `pylops.signalprocessing.Radon2D` and
-  `pylops.signalprocessing.Radon3D` to allow for uncentered spatial axes
-* Fixed `_rmatvec` for explicit in `pylops.LinearOperator._ColumnLinearOperator`
+* Added :py:mod:`pylops.utils.estimators` submodule for trace estimation
+* Added `x0` in :py:func:`pylops.optimization.sparsity.ISTA` and
+  :py:func:`pylops.optimization.sparsity.FISTA` to handle non-zero initial guess
+* Modified :py:func:`pylops.optimization.sparsity.ISTA` and
+  :py:func:`pylops.optimization.sparsity.FISTA` to handle multiple right hand sides
+* Modified creation of `haxis` in :py:class:`pylops.signalprocessing.Radon2D` and
+  :py:class:`pylops.signalprocessing.Radon3D` to allow for uncentered spatial axes
+* Fixed `_rmatvec` for explicit in :py:class:`pylops.LinearOperator._ColumnLinearOperator`
+
 
 Version 1.15.0
 --------------
