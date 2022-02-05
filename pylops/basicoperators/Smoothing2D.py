@@ -69,7 +69,7 @@ def Smoothing2D(nsmooth, dims, axes=(-2, -1), nodir=None, dtype="float64"):
         nsmooth[1] += 1
     if nodir is not None:
         warnings.warn(
-            "nodir is deprecated in version 2.0.0, use axes instead.",
+            "nodir will be deprecated in version 2.0.0, use axes instead.",
             category=DeprecationWarning,
             stacklevel=2,
         )

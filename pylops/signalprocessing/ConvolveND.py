@@ -78,7 +78,7 @@ class ConvolveND(LinearOperator):
         self.nh = np.array(self.h.shape)
         if dirs is not None:
             warnings.warn(
-                "dirs is deprecated in version 2.0.0, use axes instead.",
+                "dirs will be deprecated in version 2.0.0, use axes instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )

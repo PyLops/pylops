@@ -76,7 +76,7 @@ class SecondDerivative(LinearOperator):
                 self.reshape = True
         if dir is not None:
             warnings.warn(
-                "dir is deprecated in version 2.0.0, use axis instead.",
+                "dir will be deprecated in version 2.0.0, use axis instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )

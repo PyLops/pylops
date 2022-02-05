@@ -89,7 +89,7 @@ def Convolve2D(
         raise ValueError("h must be 2-dimensional")
     if nodir is not None:
         warnings.warn(
-            "nodir is deprecated in version 2.0.0, use axes instead.",
+            "nodir will be deprecated in version 2.0.0, use axes instead.",
             category=DeprecationWarning,
             stacklevel=2,
         )
