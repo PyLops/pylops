@@ -44,9 +44,7 @@ def radoncurve(x, r, theta):
     )
 
 
-x = np.load(
-    "/Users/ravasim/Desktop/KAUST/OpenSource/pylops/testdata/optimization/shepp_logan_phantom.npy"
-).T
+x = np.load("../testdata/optimization/shepp_logan_phantom.npy").T
 x = x / x.max()
 nx, ny = x.shape
 
