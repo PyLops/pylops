@@ -603,6 +603,22 @@ def test_Laplacian(par):
         tol=1e-3,
     )
 
+    # 3d - symmetrical on all directions
+    Dlapop = Laplacian(
+        (par["nz"], par["ny"], par["nx"]),
+        dirs=(0, 1, 2),
+        weights=(1, 1, 1),
+        sampling=(par["dz"], par["dx"], par["dx"]),
+        edge=par["edge"],
+        dtype="float32",
+    )
+    assert dottest(
+        Dlapop,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        tol=1e-3,
+    )
+
 
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par1e), (par2e), (par3e), (par4e)]
