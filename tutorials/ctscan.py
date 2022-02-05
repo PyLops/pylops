@@ -44,9 +44,11 @@ def radoncurve(x, r, theta):
     )
 
 
-x = np.load("../testdata/optimization/shepp_logan_phantom.npy")
+x = np.load(
+    "/Users/ravasim/Desktop/KAUST/OpenSource/pylops/testdata/optimization/shepp_logan_phantom.npy"
+).T
 x = x / x.max()
-ny, nx = x.shape
+nx, ny = x.shape
 
 ntheta = 150
 theta = np.linspace(0.0, 180.0, ntheta, endpoint=False)
@@ -62,8 +64,8 @@ RLop = pylops.signalprocessing.Radon2D(
     dtype="float64",
 )
 
-y = RLop.H * x.T.ravel()
-y = y.reshape(ntheta, ny).T
+y = RLop.H * x.ravel()
+y = y.reshape(ntheta, ny)
 
 ###############################################################################
 # We can now first perform the adjoint, which in the medical imaging literature
@@ -72,20 +74,21 @@ y = y.reshape(ntheta, ny).T
 # This is the first step of a common reconstruction technique, named filtered
 # back-projection, which simply applies a correction filter in the
 # frequency domain to the adjoint model.
-xrec = RLop * y.T.ravel()
-xrec = xrec.reshape(nx, ny).T
+xrec = RLop * y.ravel()
+xrec = xrec.reshape(nx, ny)
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 4))
-axs[0].imshow(x, vmin=0, vmax=1, cmap="gray")
+axs[0].imshow(x.T, vmin=0, vmax=1, cmap="gray")
 axs[0].set_title("Model")
 axs[0].axis("tight")
-axs[1].imshow(y, cmap="gray")
+axs[1].imshow(y.T, cmap="gray")
 axs[1].set_title("Data")
 axs[1].axis("tight")
-axs[2].imshow(xrec, cmap="gray")
+axs[2].imshow(xrec.T, cmap="gray")
 axs[2].set_title("Adjoint model")
 axs[2].axis("tight")
 fig.tight_layout()
+
 
 ###############################################################################
 # Finally we take advantage of our different solvers and try to invert the
@@ -102,9 +105,9 @@ D2op = pylops.Laplacian(dims=(nx, ny), edge=True, dtype=np.float64)
 
 # L2
 xinv_sm = pylops.optimization.leastsquares.RegularizedInversion(
-    RLop.H, [D2op], y.T.ravel(), epsRs=[1e1], **dict(iter_lim=20)
+    RLop.H, [D2op], y.ravel(), epsRs=[1e1], **dict(iter_lim=20)
 )
-xinv_sm = np.real(xinv_sm.reshape(nx, ny)).T
+xinv_sm = np.real(xinv_sm.reshape(nx, ny))
 
 # TV
 mu = 1.5
@@ -115,7 +118,7 @@ niterinner = 4
 xinv, niter = pylops.optimization.sparsity.SplitBregman(
     RLop.H,
     Dop,
-    y.T.ravel(),
+    y.ravel(),
     niter,
     niterinner,
     mu=mu,
@@ -125,16 +128,16 @@ xinv, niter = pylops.optimization.sparsity.SplitBregman(
     show=False,
     **dict(iter_lim=20, damp=1e-2)
 )
-xinv = np.real(xinv.reshape(nx, ny)).T
+xinv = np.real(xinv.reshape(nx, ny))
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 4))
-axs[0].imshow(x, vmin=0, vmax=1, cmap="gray")
+axs[0].imshow(x.T, vmin=0, vmax=1, cmap="gray")
 axs[0].set_title("Model")
 axs[0].axis("tight")
-axs[1].imshow(xinv_sm, vmin=0, vmax=1, cmap="gray")
+axs[1].imshow(xinv_sm.T, vmin=0, vmax=1, cmap="gray")
 axs[1].set_title("L2 Inversion")
 axs[1].axis("tight")
-axs[2].imshow(xinv, vmin=0, vmax=1, cmap="gray")
+axs[2].imshow(xinv.T, vmin=0, vmax=1, cmap="gray")
 axs[2].set_title("TV-Reg Inversion")
 axs[2].axis("tight")
 fig.tight_layout()
