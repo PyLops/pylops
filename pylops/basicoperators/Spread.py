@@ -106,7 +106,7 @@ class Spread(LinearOperator):
         When using ``engine="numpy"``, it will be inferred directly from ``fh`` or
         the presence of ``dtable``.
     engine : :obj:`str`, optional
-        Engine used for fft computation (``numpy`` or ``numba``). Note that
+        Engine used for spread computation (``numpy`` or ``numba``). Note that
         ``numba`` can only be used when providing a look-up table
     dtype : :obj:`str`, optional
         Type of elements in input array.

@@ -5,7 +5,13 @@ from pylops.LinearOperator import aslinearoperator
 
 
 def Laplacian(
-    dims, dirs=(0, 1), weights=(1, 1), sampling=(1, 1), edge=False, dtype="float64"
+    dims,
+    dirs=(0, 1),
+    weights=(1, 1),
+    sampling=(1, 1),
+    edge=False,
+    dtype="float64",
+    kind="centered",
 ):
     r"""Laplacian.
 
@@ -27,9 +33,11 @@ def Laplacian(
         Sampling steps for each direction
     edge : :obj:`bool`, optional
         Use reduced order derivative at edges (``True``) or
-        ignore them (``False``)
+        ignore them (``False``) for centered derivative
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    kind : :obj:`str`, optional
+        Derivative kind (``forward``, ``centered``, or ``backward``)
 
     Returns
     -------
@@ -62,9 +70,10 @@ def Laplacian(
         dir=dirs[0],
         sampling=sampling[0],
         edge=edge,
+        kind=kind,
         dtype=dtype,
     )
-
+    
     for dir, samp, weight in zip(dirs[1:], sampling[1:], weights[1:]):
         l2op += weight * SecondDerivative(
             np.prod(dims),
@@ -74,4 +83,5 @@ def Laplacian(
             edge=edge,
             dtype=dtype,
         )
+    
     return aslinearoperator(l2op)
