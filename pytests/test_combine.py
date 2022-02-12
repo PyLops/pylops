@@ -171,7 +171,9 @@ def test_BlockDiag(par):
         BDop, 2 * par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
     )
 
-    xlsqr = lsqr(BDop, BDop * x, damp=1e-20, iter_lim=500, show=0)[0]
+    xlsqr = lsqr(
+        BDop, BDop * x, damp=1e-20, iter_lim=500, atol=1e-8, btol=1e-8, show=0
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
     # use numpy matrix directly in the definition of the operator

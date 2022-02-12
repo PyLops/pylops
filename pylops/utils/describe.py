@@ -1,12 +1,24 @@
 import random
 import string
 
-from scipy.sparse.linalg.interface import (
-    _AdjointLinearOperator,
-    _ProductLinearOperator,
-    _SumLinearOperator,
-    _TransposedLinearOperator,
-)
+import scipy as sp
+
+# need to check scipy version since the interface submodule changed into
+# _interface from scipy>=1.8.0
+if int(sp.__version__.split(".")[1]) < 8:
+    from scipy.sparse.linalg.interface import (
+        _AdjointLinearOperator,
+        _ProductLinearOperator,
+        _SumLinearOperator,
+        _TransposedLinearOperator,
+    )
+else:
+    from scipy.sparse.linalg._interface import (
+        _AdjointLinearOperator,
+        _ProductLinearOperator,
+        _SumLinearOperator,
+        _TransposedLinearOperator,
+    )
 
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, VStack

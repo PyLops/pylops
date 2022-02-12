@@ -11,8 +11,13 @@ from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
 from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse.linalg import lsqr, spsolve
-from scipy.sparse.linalg.interface import _ProductLinearOperator
 
+# need to check scipy version since the interface submodule changed into
+# _interface from scipy>=1.8.0
+if int(sp.__version__.split(".")[1]) < 8:
+    from scipy.sparse.linalg.interface import _ProductLinearOperator
+else:
+    from scipy.sparse.linalg._interface import _ProductLinearOperator
 from pylops.optimization.solver import cgls
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
@@ -298,7 +303,7 @@ class LinearOperator(spLinearOperator):
         else:
             if isinstance(y, np.ndarray):
                 # numpy backend
-                xest = lsqr(self, y, iter_lim=niter)[0]
+                xest = lsqr(self, y, iter_lim=niter, atol=1e-8, btol=1e-8)[0]
             else:
                 # cupy backend
                 ncp = get_array_module(y)

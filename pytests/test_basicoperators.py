@@ -44,7 +44,9 @@ def test_Regression(par):
     assert dottest(LRop, par["ny"], order + 1)
 
     x = np.array([1.0, 2.0, 0.0, 3.0, -1.0], dtype=np.float32)
-    xlsqr = lsqr(LRop, LRop * x, damp=1e-10, iter_lim=300, show=0)[0]
+    xlsqr = lsqr(
+        LRop, LRop * x, damp=1e-10, iter_lim=300, atol=1e-8, btol=1e-8, show=0
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
     y = LRop * x
