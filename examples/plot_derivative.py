@@ -83,7 +83,7 @@ nx, ny = 11, 21
 A = np.zeros((nx, ny))
 A[nx // 2, ny // 2] = 1.0
 
-D1op = pylops.FirstDerivative(nx * ny, dims=(nx, ny), dir=0, dtype="float64")
+D1op = pylops.FirstDerivative((nx, ny), dir=0, dtype="float64")
 B = np.reshape(D1op * A.ravel(), (nx, ny))
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))

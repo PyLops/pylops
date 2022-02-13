@@ -203,14 +203,7 @@ def PrestackLinearModelling(
         # Create derivative operator
         dimsm = list(dims)
         dimsm[1] = AVOop.npars
-        Dop = FirstDerivative(
-            np.prod(np.array(dimsm)),
-            dims=dimsm,
-            dir=0,
-            sampling=1.0,
-            kind=kind,
-            dtype=dtype,
-        )
+        Dop = FirstDerivative(dimsm, dir=0, sampling=1.0, kind=kind, dtype=dtype)
         Preop = Cop * AVOop * Dop
     return Preop
 
@@ -634,16 +627,12 @@ def PrestackInversion(
                 RegL1op = FirstDerivative(nt0 * nm, dtype=PPop.dtype)
                 RegL2op = None
             elif dims == 2:
-                RegL1op = FirstDerivative(
-                    nt0 * nx * nm, dims=(nt0, nm, nx), dir=0, dtype=PPop.dtype
-                )
+                RegL1op = FirstDerivative((nt0, nm, nx), dir=0, dtype=PPop.dtype)
                 RegL2op = SecondDerivative(
                     nt0 * nx * nm, dims=(nt0, nm, nx), dir=2, dtype=PPop.dtype
                 )
             else:
-                RegL1op = FirstDerivative(
-                    nt0 * nx * ny * nm, dims=(nt0, nm, nx, ny), dir=0, dtype=PPop.dtype
-                )
+                RegL1op = FirstDerivative((nt0, nm, nx, ny), dir=0, dtype=PPop.dtype)
                 RegL2op = Laplacian((nt0, nm, nx, ny), dirs=(2, 3), dtype=PPop.dtype)
             if dims == 1:
                 if epsI is not None:
