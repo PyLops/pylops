@@ -129,8 +129,7 @@ def test_CausalIntegration2d(par):
 
     for kind, rf in itertools.product(("full", "half", "trapezoidal"), (False, True)):
         Cop = CausalIntegration(
-            par["nt"] * par["nx"],
-            dims=(par["nt"], par["nx"]),
+            (par["nt"], par["nx"]),
             sampling=dt,
             dir=0,
             kind=kind,
