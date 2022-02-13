@@ -19,7 +19,8 @@ def _nearestinterp(M, iava, dims=None, dir=0, dtype="float64"):
     """Nearest neighbour interpolation."""
     iava = np.round(iava).astype(int)
     _checkunique(iava)
-    return Restriction(M, iava, dims=dims, dir=dir, dtype=dtype), iava
+    dims = dims if dims is not None else M
+    return Restriction(dims, iava, dir=dir, dtype=dtype), iava
 
 
 def _linearinterp(M, iava, dims=None, dir=0, dtype="float64"):
@@ -29,6 +30,7 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype="float64"):
     if np.issubdtype(iava.dtype, np.integer):
         iava = iava.astype(np.float64)
     if dims is None:
+        dims = M
         lastsample = M
         dimsd = None
     else:
@@ -55,9 +57,9 @@ def _linearinterp(M, iava, dims=None, dir=0, dtype="float64"):
 
     # create operators
     Op = Diagonal(1 - weights, dims=dimsd, dir=dir, dtype=dtype) * Restriction(
-        M, iva_l, dims=dims, dir=dir, dtype=dtype
+        dims, iva_l, dir=dir, dtype=dtype
     ) + Diagonal(weights, dims=dimsd, dir=dir, dtype=dtype) * Restriction(
-        M, iva_r, dims=dims, dir=dir, dtype=dtype
+        dims, iva_r, dir=dir, dtype=dtype
     )
     return Op, iava
 

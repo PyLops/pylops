@@ -131,9 +131,8 @@ def Sliding3D(
     hstack = HStack(
         [
             Restriction(
-                dimsd[1] * dimsd[2] * nwin[0],
+                (nwin[0], dimsd[1], dimsd[2]),
                 range(win_in, win_end),
-                dims=(nwin[0], dimsd[1], dimsd[2]),
                 dir=1,
                 dtype=Op.dtype,
             ).H
@@ -145,9 +144,8 @@ def Sliding3D(
     combining0 = HStack(
         [
             Restriction(
-                np.prod(dimsd),
+                dimsd,
                 range(win_in, win_end),
-                dims=dimsd,
                 dir=0,
                 dtype=Op.dtype,
             ).H
