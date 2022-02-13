@@ -5,7 +5,8 @@ import scipy as sp
 
 # need to check scipy version since the interface submodule changed into
 # _interface from scipy>=1.8.0
-if int(sp.__version__.split(".")[1]) < 8:
+sp_version = sp.__version__.split(".")
+if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
     from scipy.sparse.linalg.interface import (
         _AdjointLinearOperator,
         _ProductLinearOperator,
