@@ -321,8 +321,7 @@ def test_SecondDerivative_centered(par):
 
     # 2d - derivative on 1st direction
     D2op = SecondDerivative(
-        par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"]),
+        (par["ny"], par["nx"]),
         dir=0,
         sampling=par["dy"],
         edge=par["edge"],
@@ -340,8 +339,7 @@ def test_SecondDerivative_centered(par):
 
     # 2d - derivative on 2nd direction
     D2op = SecondDerivative(
-        par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"]),
+        (par["ny"], par["nx"]),
         dir=1,
         sampling=par["dx"],
         edge=par["edge"],
@@ -359,8 +357,7 @@ def test_SecondDerivative_centered(par):
 
     # 3d - derivative on 1st direction
     D2op = SecondDerivative(
-        par["nz"] * par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"], par["nz"]),
+        (par["ny"], par["nx"], par["nz"]),
         dir=0,
         sampling=par["dy"],
         edge=par["edge"],
@@ -384,8 +381,7 @@ def test_SecondDerivative_centered(par):
 
     # 3d - derivative on 2nd direction
     D2op = SecondDerivative(
-        par["nz"] * par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"], par["nz"]),
+        (par["ny"], par["nx"], par["nz"]),
         dir=1,
         sampling=par["dx"],
         edge=par["edge"],
@@ -409,8 +405,7 @@ def test_SecondDerivative_centered(par):
 
     # 3d - derivative on 3rd direction
     D2op = SecondDerivative(
-        par["nz"] * par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"], par["nz"]),
+        (par["ny"], par["nx"], par["nz"]),
         dir=2,
         sampling=par["dz"],
         edge=par["edge"],
@@ -455,8 +450,7 @@ def test_SecondDerivative_forward(par):
 
     # 2d - derivative on 1st direction
     D2op = SecondDerivative(
-        par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"]),
+        (par["ny"], par["nx"]),
         dir=0,
         sampling=par["dy"],
         edge=par["edge"],
@@ -468,8 +462,7 @@ def test_SecondDerivative_forward(par):
 
     # 2d - derivative on 2nd direction
     D2op = SecondDerivative(
-        par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"]),
+        (par["ny"], par["nx"]),
         dir=1,
         sampling=par["dx"],
         edge=par["edge"],
@@ -481,8 +474,7 @@ def test_SecondDerivative_forward(par):
 
     # 3d - derivative on 1st direction
     D2op = SecondDerivative(
-        par["nz"] * par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"], par["nz"]),
+        (par["ny"], par["nx"], par["nz"]),
         dir=0,
         sampling=par["dy"],
         edge=par["edge"],
@@ -499,8 +491,7 @@ def test_SecondDerivative_forward(par):
 
     # 3d - derivative on 2nd direction
     D2op = SecondDerivative(
-        par["nz"] * par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"], par["nz"]),
+        (par["ny"], par["nx"], par["nz"]),
         dir=1,
         sampling=par["dx"],
         edge=par["edge"],
@@ -517,8 +508,7 @@ def test_SecondDerivative_forward(par):
 
     # 3d - derivative on 3rd direction
     D2op = SecondDerivative(
-        par["nz"] * par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"], par["nz"]),
+        (par["ny"], par["nx"], par["nz"]),
         dir=2,
         sampling=par["dz"],
         edge=par["edge"],

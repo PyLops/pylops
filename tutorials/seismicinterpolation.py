@@ -112,9 +112,7 @@ axs[1].axis("tight")
 #        \epsilon \|\mathbf{F}^H \mathbf{x}\|_1
 
 # smooth inversion
-D2op = pylops.SecondDerivative(
-    par["nx"] * par["nt"], dims=(par["nx"], par["nt"]), dir=0, dtype="float64"
-)
+D2op = pylops.SecondDerivative((par["nx"], par["nt"]), dir=0, dtype="float64")
 
 xsmooth, _, _ = pylops.waveeqprocessing.SeismicInterpolation(
     y,

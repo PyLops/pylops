@@ -406,9 +406,7 @@ def PoststackInversion(
                 RegL1op = FirstDerivative(
                     (nt0, nx), dir=0, kind="forward", dtype=PPop.dtype
                 )
-                RegL2op = SecondDerivative(
-                    nt0 * nx, dims=(nt0, nx), dir=1, dtype=PPop.dtype
-                )
+                RegL2op = SecondDerivative((nt0, nx), dir=1, dtype=PPop.dtype)
             else:
                 RegL1op = FirstDerivative(
                     (nt0, nx, ny), dir=0, kind="forward", dtype=PPop.dtype

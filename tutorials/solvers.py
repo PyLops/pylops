@@ -179,7 +179,7 @@ plt.title("Data reconstruction without regularization")
 #                    \mathbf{R^Ty}
 
 # Create regularization operator
-D2op = pylops.SecondDerivative(N, dims=None, dtype="float64")
+D2op = pylops.SecondDerivative(N, dtype="float64")
 
 # Regularized inversion
 epsR = np.sqrt(0.1)
