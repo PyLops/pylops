@@ -92,13 +92,7 @@ def _PoststackLinearModelling(
         # Create wavelet operator
         if len(wav.shape) == 1:
             Cop = _Convolve1D(
-                np.prod(np.array(dims)),
-                h=wav,
-                offset=len(wav) // 2,
-                dir=0,
-                dims=dims,
-                dtype=dtype,
-                **args_Convolve1D
+                dims, h=wav, offset=len(wav) // 2, dir=0, dtype=dtype, **args_Convolve1D
             )
         else:
             Cop = _MatrixMult(

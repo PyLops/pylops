@@ -139,10 +139,9 @@ def test_Convolve1D(par):
     # 1D on 2D
     if par["dir"] < 2:
         Cop = Convolve1D(
-            par["ny"] * par["nx"],
+            (par["ny"], par["nx"]),
             h=h1,
             offset=par["offset"],
-            dims=(par["ny"], par["nx"]),
             dir=par["dir"],
             dtype="float64",
         )
@@ -159,10 +158,9 @@ def test_Convolve1D(par):
 
     # 1D on 3D
     Cop = Convolve1D(
-        par["nz"] * par["ny"] * par["nx"],
+        (par["nz"], par["ny"], par["nx"]),
         h=h1,
         offset=par["offset"],
-        dims=(par["nz"], par["ny"], par["nx"]),
         dir=par["dir"],
         dtype="float64",
     )

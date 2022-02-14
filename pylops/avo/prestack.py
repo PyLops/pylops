@@ -187,11 +187,10 @@ def PrestackLinearModelling(
     else:
         # Create wavelet operator
         Cop = Convolve1D(
-            np.prod(np.array(dims)),
+            dims,
             h=wav,
             offset=len(wav) // 2,
             dir=0,
-            dims=dims,
             dtype=dtype,
         )
 
