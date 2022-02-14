@@ -226,12 +226,10 @@ def SeismicInterpolation(
 
     # create restriction/interpolation operator
     if iava.dtype == float:
-        Rop = Interp(np.prod(dims), iava, dims=dims, dir=0, kind="linear", dtype=dtype)
+        Rop = Interp(dims, iava, dir=0, kind="linear", dtype=dtype)
         if ndims == 3 and iava1 is not None:
             dims1 = (len(iava), nrec[1], dimsd[2])
-            Rop1 = Interp(
-                np.prod(dims1), iava1, dims=dims1, dir=1, kind="linear", dtype=dtype
-            )
+            Rop1 = Interp(dims1, iava1, dir=1, kind="linear", dtype=dtype)
             Rop = Rop1 * Rop
     else:
         Rop = Restriction(dims, iava, dir=0, dtype=dtype)
