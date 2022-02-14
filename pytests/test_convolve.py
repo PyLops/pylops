@@ -187,10 +187,9 @@ def test_Convolve2D(par):
     # 2D on 2D
     if par["dir"] == 2:
         Cop = Convolve2D(
-            par["ny"] * par["nx"],
+            (par["ny"], par["nx"]),
             h=h2,
             offset=par["offset"],
-            dims=(par["ny"], par["nx"]),
             dtype="float64",
         )
         assert dottest(Cop, par["ny"] * par["nx"], par["ny"] * par["nx"])
@@ -206,10 +205,9 @@ def test_Convolve2D(par):
 
     # 2D on 3D
     Cop = Convolve2D(
-        par["nz"] * par["ny"] * par["nx"],
+        (par["nz"], par["ny"], par["nx"]),
         h=h2,
         offset=par["offset"],
-        dims=[par["nz"], par["ny"], par["nx"]],
         nodir=par["dir"],
         dtype="float64",
     )
@@ -234,10 +232,9 @@ def test_Convolve3D(par):
     """Dot-test and inversion for ConvolveND operator"""
     # 3D on 3D
     Cop = ConvolveND(
-        par["nz"] * par["ny"] * par["nx"],
+        (par["nz"], par["ny"], par["nx"]),
         h=h3,
         offset=par["offset"],
-        dims=[par["nz"], par["ny"], par["nx"]],
         dtype="float64",
     )
     assert dottest(
@@ -258,10 +255,9 @@ def test_Convolve3D(par):
 
     # 3D on 4D (only modelling)
     Cop = ConvolveND(
-        par["nz"] * par["ny"] * par["nx"] * par["nt"],
+        (par["nz"], par["ny"], par["nx"], par["nt"]),
         h=h3,
         offset=par["offset"],
-        dims=[par["nz"], par["ny"], par["nx"], par["nt"]],
         dirs=[0, 1, 2],
         dtype="float64",
     )

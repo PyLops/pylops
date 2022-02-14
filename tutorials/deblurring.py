@@ -39,7 +39,7 @@ fig.colorbar(him, ax=ax)
 ax.axis("tight")
 
 Cop = pylops.signalprocessing.Convolve2D(
-    Nz * Nx, h=h, offset=(nh[0] // 2, nh[1] // 2), dims=(Nz, Nx), dtype="float32"
+    (Nz, Nx), h=h, offset=(nh[0] // 2, nh[1] // 2), dtype="float32"
 )
 
 ###############################################################################

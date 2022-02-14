@@ -59,10 +59,9 @@ def Smoothing2D(nsmooth, dims, nodir=None, dtype="float64"):
 
     h = np.ones((nsmooth[0], nsmooth[1])) / float(nsmooth[0] * nsmooth[1])
     return Convolve2D(
-        np.prod(np.array(dims)),
+        dims,
         h=h,
         offset=[(nsmooth[0] - 1) / 2, (nsmooth[1] - 1) / 2],
-        dims=dims,
         nodir=nodir,
         dtype=dtype,
     )
