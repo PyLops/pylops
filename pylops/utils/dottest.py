@@ -120,7 +120,7 @@ def dottest(
     if not passed and raiseerror:
         raise ValueError(f"Dot test failed, v^H(Opu)={yy} - u^H(Op^Hv)={xx}")
     elif verb:
-        passed_str = ['failed', 'passed'][passed]
-        print(f"Dot test {passed_str}, v^H(Opu)={yy} - u^H(Op^Hv)={xx}")
+        passed_status = "passed" if passed else "failed"
+        print(f"Dot test {passed_status}, v^H(Opu)={yy} - u^H(Op^Hv)={xx}")
 
     return passed
