@@ -114,12 +114,8 @@ def dottest(
         """True if xx and yy are  the same within tolerance."""
         return np.abs((yy - xx) / ((yy + xx + 1e-15) / 2)) < tol
 
-    # evaluate if dot test is passed
-    if complexflag == 0:
-        passed = passes(xx, yy)
-    else:
-        # Check both real and imag parts
-        passed = passes(np.real(xx), np.real(yy)) and passes(np.imag(xx), np.imag(yy))
+    # evaluate if dot test is passed (both real and imag parts)
+    passed = passes(np.real(xx), np.real(yy)) and passes(np.imag(xx), np.imag(yy))
 
     if not passed and raiseerror:
         raise ValueError(f"Dot test failed, v^H(Opu)={yy} - u^H(Op^Hv)={xx}")
