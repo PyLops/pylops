@@ -1,3 +1,11 @@
+# 1.18.0
+* Added `NMO` example to gallery
+* Extended `pylops.basicoperators.Laplacian` to N-dimensional arrays
+* Added `forward` kind to `pylops.basicoperators.SecondDerivative` and
+  `pylops.basicoperators.Laplacian`
+* Added `chirp-sliding` kind to `pylops.waveeqprocessing.seismicinterpolation.SeismicInterpolation`
+* Fixed bug due to the new internal structure of `LinearOperator` submodule introduced in `scipy1.8.0`
+
 # 1.17.0
 * Added `pylops.utils.describe.describe` method
 * Added `fftengine` to `pylops.waveeqprocessing.Marchenko`
@@ -235,7 +243,7 @@
 * Added ``niter`` option to ``pylops.LinearOperator.eigs` method
 * Added ``show`` option to ``pylops.optimization.sparsity.ISTA`` and
  ``pylops.optimization.sparsity.FISTA`` solvers
-* Added ``pylops.waveequprocessing.seismicinterpolation``,
+* Added ``pylops.waveeqprocessing.seismicinterpolation``,
  ``pylops.waveequprocessing.waveeqdecomposition` and
  ``pylops.waveequprocessing.lsm`` submodules
 * Added tests for ``engine`` in various operators

@@ -3,6 +3,19 @@
 Changelog
 =========
 
+Version 1.18.0
+--------------
+
+*Released on: 19/02/2022*
+
+* Added `NMO` example to gallery
+* Extended :py:func:`pylops.Laplacian` to N-dimensional arrays
+* Added `forward` kind to :py:class:`pylops.SecondDerivative` and
+  :py:func:`pylops.Laplacian`
+* Added `chirp-sliding` kind to :py:func:`pylops.waveeqprocessing.seismicinterpolation.SeismicInterpolation`
+* Fixed bug due to the new internal structure of `LinearOperator` submodule introduced in `scipy1.8.0`
+
+
 Version 1.17.0
 --------------
 

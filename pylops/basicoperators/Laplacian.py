@@ -15,6 +15,7 @@ def Laplacian(
     sampling=(1, 1),
     edge=False,
     dtype="float64",
+    kind="centered",
 ):
     r"""Laplacian.
 
@@ -46,14 +47,21 @@ def Laplacian(
         Sampling steps for each direction
     edge : :obj:`bool`, optional
         Use reduced order derivative at edges (``True``) or
-        ignore them (``False``)
+        ignore them (``False``) for centered derivative
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    kind : :obj:`str`, optional
+        Derivative kind (``forward``, ``centered``, or ``backward``)
 
     Returns
     -------
     l2op : :obj:`pylops.LinearOperator`
         Laplacian linear operator
+
+    Raises
+    ------
+    ValueError
+        If ``axes``. ``weights``, and ``sampling`` do not have the same size
 
     Notes
     -----
@@ -77,6 +85,8 @@ def Laplacian(
     else:
         axes = axes
     axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
+    if not (len(axes) == len(weights) == len(sampling)):
+        raise ValueError("axes, weights, and sampling have different size")
 
     l2op = weights[0] * SecondDerivative(
         np.prod(dims),
@@ -84,14 +94,19 @@ def Laplacian(
         axis=axes[0],
         sampling=sampling[0],
         edge=edge,
+        kind=kind,
         dtype=dtype,
     )
-    l2op += weights[1] * SecondDerivative(
-        np.prod(dims),
-        dims=dims,
-        axis=axes[1],
-        sampling=sampling[1],
-        edge=edge,
-        dtype=dtype,
-    )
+
+    for ax, samp, weight in zip(axes[1:], sampling[1:], weights[1:]):
+        l2op += weight * SecondDerivative(
+            np.prod(dims),
+            dims=dims,
+            axis=ax,
+            sampling=samp,
+            edge=edge,
+            kind=kind,
+            dtype=dtype,
+        )
+
     return aslinearoperator(l2op)

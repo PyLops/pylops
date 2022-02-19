@@ -163,7 +163,7 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode="eikonal"):
 def Demigration(
     z, x, t, srcs, recs, vel, wav, wavcenter, y=None, trav=None, mode="eikonal"
 ):
-    r"""Kirchoff Demigration operator.
+    r"""Kirchhoff Demigration operator.
 
     Traveltime based seismic demigration/migration operator.
 

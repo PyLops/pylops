@@ -73,8 +73,8 @@ def SeismicInterpolation(
         signal. Can be used only in case of 3-dimensional data.
     kind : :obj:`str`, optional
         Type of inversion: ``fk`` (default), ``spatial``, ``radon-linear``,
-        ``chirpradon-linear``, ``radon-parabolic`` or , ``radon-hyperbolic``
-        and ``sliding``
+        ``chirpradon-linear``, ``radon-parabolic`` , ``radon-hyperbolic``,
+        ``sliding``, or ``chirp-sliding``
     nffts : :obj:`int` or :obj:`tuple`, optional
         nffts : :obj:`tuple`, optional
         Number of samples in Fourier Transform for each direction.
@@ -100,29 +100,33 @@ def SeismicInterpolation(
     paxis : :obj:`np.ndarray`, optional
         First Radon axis. Required for ``kind='radon-linear'``,
         ``kind='chirpradon-linear'``, ``kind='radon-parabolic'``,
-        ``kind='radon-hyperbolic'`` and ``kind='sliding'``
+        ``kind='radon-hyperbolic'``, ``kind='sliding'``, and
+        ``kind='chirp-sliding'``
     p1axis : :obj:`np.ndarray`, optional
         Second Radon axis. Required for ``kind='radon-linear'``,
         ``kind='chirpradon-linear'``, ``kind='radon-parabolic'``,
-        ``kind='radon-hyperbolic'`` and ``kind='sliding'``
+        ``kind='radon-hyperbolic'``, ``kind='sliding'``, and
+        ``kind='chirp-sliding'``
     centeredh : :obj:`bool`, optional
         Assume centered spatial axis (``True``) or not (``False``).
         Required for ``kind='radon-linear'``, ``kind='radon-parabolic'``
         and ``kind='radon-hyperbolic'``
     nwins : :obj:`int` or :obj:`tuple`, optional
-        Number of windows. Required for ``kind='sliding'``
+        Number of windows. Required for ``kind='sliding'`` and
+        ``kind='chirp-sliding'``
     nwin : :obj:`int` or :obj:`tuple`, optional
-        Number of samples of window. Required for ``kind='sliding'``
+        Number of samples of window. Required for ``kind='sliding'`` and
+        ``kind='chirp-sliding'``
     nover : :obj:`int` or :obj:`tuple`, optional
         Number of samples of overlapping part of window. Required for
-        ``kind='sliding'``
+        ``kind='sliding'`` and ``kind='chirp-sliding'``
     design : :obj:`bool`, optional
         Print number of sliding window (``True``) or not (``False``) when
-        using ``kind='sliding'``
+        using ``kind='sliding'`` and ``kind='chirp-sliding'``
     engine : :obj:`str`, optional
         Engine used for Radon computations (``numpy/numba``
         for ``Radon2D`` and ``Radon3D`` or ``numpy/fftw``
-        for ``ChirpRadon2D`` and ``ChirpRadon3D`` or )
+        for ``ChirpRadon2D`` and ``ChirpRadon3D``)
     dottest : :obj:`bool`, optional
         Apply dot-test
     **kwargs_solver
@@ -322,7 +326,7 @@ def SeismicInterpolation(
             )
             dimsp = (paxis.size, taxis.size)
         SIop = Rop * Pop
-    elif kind == "sliding":
+    elif kind in ("sliding", "chirp-sliding"):
         prec = True
         dotcflag = 0
         if ndims == 3:
@@ -334,7 +338,7 @@ def SeismicInterpolation(
                 -dspat1 * nwin[1] // 2, dspat1 * nwin[1] // 2, nwin[1]
             )
             dimsslid = (nspat, nspat1, taxis.size)
-            if ncp == np:
+            if kind == "sliding":
                 npaxis, np1axis = paxis.size, p1axis.size
                 Op = Radon3D(
                     taxis,
@@ -364,7 +368,7 @@ def SeismicInterpolation(
             nspat = spataxis.size
             spataxis_local = np.linspace(-dspat * nwin // 2, dspat * nwin // 2, nwin)
             dimsslid = (nspat, taxis.size)
-            if ncp == np:
+            if kind == "sliding":
                 npaxis = paxis.size
                 Op = Radon2D(
                     taxis,
@@ -385,7 +389,7 @@ def SeismicInterpolation(
     else:
         raise KeyError(
             "kind must be spatial, fk, radon-linear, "
-            "radon-parabolic, radon-hyperbolic or sliding"
+            "radon-parabolic, radon-hyperbolic, sliding or chirp-sliding"
         )
 
     # dot-test

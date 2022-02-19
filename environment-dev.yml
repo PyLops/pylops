@@ -5,6 +5,7 @@ channels:
   - numba
 dependencies:
   - python>=3.6.4
+  - pip
   - numpy>=1.15.0
   - scipy>=1.4.0
   - pyfftw

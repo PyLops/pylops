@@ -15,12 +15,14 @@ from pylops.avo.avo import (
 from pylops.avo.prestack import AVOLinearModelling
 from pylops.utils import dottest
 
+np.random.seed(0)
+
 # Create medium parameters for single contrast
 vp1, vs1, rho1 = 2200.0, 1300.0, 2000  # upper medium
 vp0, vs0, rho0 = 2300.0, 1400.0, 2100  # lower medium
 
 # Create medium parameters for multiple contrasts
-nt0 = 501
+nt0 = 201
 dt0 = 0.004
 t0 = np.arange(nt0) * dt0
 vp = 1200 + np.arange(nt0) + filtfilt(np.ones(5) / 5.0, 1, np.random.normal(0, 80, nt0))
@@ -126,5 +128,7 @@ def test_AVOLinearModelling(par):
     )
     assert dottest(AVOop, ntheta * nt0, 3 * nt0)
 
-    minv = lsqr(AVOop, AVOop * m, damp=1e-20, iter_lim=1000, show=0)[0]
+    minv = lsqr(
+        AVOop, AVOop * m, damp=1e-20, iter_lim=1000, atol=1e-8, btol=1e-8, show=0
+    )[0]
     assert_array_almost_equal(m, minv, decimal=3)
