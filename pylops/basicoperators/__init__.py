@@ -27,9 +27,9 @@ A list of operators present in pylops.basicoperators :
     Block                           Block operator.
     BlockDiag                       Block-diagonal operator.
     Kronecker                       Kronecker operator.
-    Real   	                        Real operator.
-    Imag   	                        Imag operator.
-    Conj   	                        Conj operator.
+    Real                            Real operator.
+    Imag                            Imag operator.
+    Conj                            Conj operator.
     Smoothing1D     	            1D Smoothing.
     Smoothing2D	                    2D Smoothing.
     FirstDerivative 	            First derivative.
@@ -41,38 +41,41 @@ A list of operators present in pylops.basicoperators :
 
 """
 
-from .Block import *
-from .BlockDiag import *
-from .CausalIntegration import *
-from .Conj import *
-from .Diagonal import *
-from .DirectionalDerivative import *
-from .FirstDerivative import *
-from .Flip import *
 from .FunctionOperator import *
-from .Gradient import *
-from .HStack import *
-from .Identity import *
-from .Imag import *
-from .Kronecker import *
-from .Laplacian import *
+from .MemoizeOperator import *
+from .Regression import *
 from .LinearRegression import *
 from .MatrixMult import *
-from .MemoizeOperator import *
-from .Pad import *
-from .Real import *
-from .Regression import *
+from .Diagonal import *
+from .Zero import *
+from .Identity import *
 from .Restriction import *
+from .Flip import *
+from .Symmetrize import *
+from .Spread import *
+from .Transpose import *
 from .Roll import *
-from .SecondDerivative import *
+from .Pad import *
+from .Sum import *
+
+from .VStack import *
+from .HStack import *
+from .Block import *
+from .BlockDiag import *
+from .Kronecker import *
+from .Real import *
+from .Imag import *
+from .Conj import *
+
 from .Smoothing1D import *
 from .Smoothing2D import *
-from .Spread import *
-from .Sum import *
-from .Symmetrize import *
-from .Transpose import *
-from .VStack import *
-from .Zero import *
+
+from .CausalIntegration import *
+from .FirstDerivative import *
+from .SecondDerivative import *
+from .Laplacian import *
+from .Gradient import *
+from .DirectionalDerivative import *
 
 __all__ = [
     "FunctionOperator",

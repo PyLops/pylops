@@ -44,6 +44,9 @@ utils
     Utility routines
 
 """
+from .LinearOperator import LinearOperator
+from .basicoperators import *
+
 from . import (
     avo,
     basicoperators,
@@ -54,8 +57,7 @@ from . import (
 )
 from .avo.poststack import *
 from .avo.prestack import *
-from .basicoperators import *
-from .LinearOperator import LinearOperator
+from .optimization.solver import *
 from .optimization.leastsquares import *
 from .optimization.sparsity import *
 from .utils.seismicevents import *
