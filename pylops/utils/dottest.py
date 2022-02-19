@@ -112,7 +112,7 @@ def dottest(
 
     def passes(xx, yy, tol=tol):
         """True if xx and yy are  the same within tolerance."""
-        return np.abs((yy - xx) / ((yy + xx + 1e-15) / 2)) < tol
+        return abs((yy - xx) / ((yy + xx + 1e-15) / 2)) < tol
 
     # evaluate if dot test is passed (both real and imag parts)
     passed = passes(np.real(xx), np.real(yy)) and passes(np.imag(xx), np.imag(yy))
