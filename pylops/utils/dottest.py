@@ -110,50 +110,21 @@ def dottest(
     # complex numbers in subsequent prints also when using cupy arrays.
     xx, yy = np.array([to_numpy(xx)])[0], np.array([to_numpy(yy)])[0]
 
+    def passes(xx, yy, tol=tol):
+        """True if xx and yy are  the same within tolerance."""
+        return np.abs((yy - xx) / ((yy + xx + 1e-15) / 2)) < tol
+
     # evaluate if dot test is passed
     if complexflag == 0:
-        if np.abs((yy - xx) / ((yy + xx + 1e-15) / 2)) < tol:
-            if verb:
-                print("Dot test passed, v^T(Opu)=%f - u^T(Op^Tv)=%f" % (yy, xx))
-            return True
-        else:
-            if raiseerror:
-                raise ValueError(
-                    "Dot test failed, v^T(Opu)=%f - u^T(Op^Tv)=%f" % (yy, xx)
-                )
-            if verb:
-                print("Dot test failed, v^T(Opu)=%f - u^T(Op^Tv)=%f" % (yy, xx))
-            return False
+        passed = passes(xx, yy)
     else:
         # Check both real and imag parts
-        checkreal = (
-            np.abs(
-                (np.real(yy) - np.real(xx)) / ((np.real(yy) + np.real(xx) + 1e-15) / 2)
-            )
-            < tol
-        )
-        checkimag = (
-            np.abs(
-                (np.imag(yy) - np.imag(xx)) / ((np.imag(yy) + np.imag(xx) + 1e-15) / 2)
-            )
-            < tol
-        )
-        if checkreal and checkimag:
-            if verb:
-                print(
-                    "Dot test passed, v^T(Opu)=%f%+fi - u^T(Op^Tv)=%f%+fi"
-                    % (yy.real, yy.imag, xx.real, xx.imag)
-                )
-            return True
-        else:
-            if raiseerror:
-                raise ValueError(
-                    "Dot test failed, v^H(Opu)=%f%+fi "
-                    "- u^H(Op^Hv)=%f%+fi" % (yy.real, yy.imag, xx.real, xx.imag)
-                )
-            if verb:
-                print(
-                    "Dot test failed, v^H(Opu)=%f%+fi - u^H(Op^Hv)=%f%+fi"
-                    % (yy.real, yy.imag, xx.real, xx.imag)
-                )
-            return False
+        passed = passes(np.real(xx), np.real(yy)) and passes(np.imag(xx), np.imag(yy))
+
+    if not passed and raiseerror:
+        raise ValueError(f"Dot test failed, v^H(Opu)={yy} - u^H(Op^Hv)={xx}")
+    elif verb:
+        passed_str = ['failed', 'passed'][passed]
+        print(f"Dot test {passed_str}, v^H(Opu)={yy} - u^H(Op^Hv)={xx}")
+
+    return passed
