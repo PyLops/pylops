@@ -1,61 +1,67 @@
-# isort: skip_file
+"""
+PyLops
+======
+
+Linear operators and inverse problems are at the core of many of the most used
+algorithms in signal processing, image processing, and remote sensing.
+When dealing with small-scale problems, the Python numerical scientific
+libraries `numpy <http://www.numpy.org>`_
+and `scipy <http://www.scipy.org/scipylib/index.html>`_  allow to perform most
+of the underlying matrix operations (e.g., computation of matrix-vector
+products and manipulation of matrices) in a simple and expressive way.
+
+Many useful operators, however, do not lend themselves to an explicit matrix
+representation when used to solve large-scale problems. PyLops operators,
+on the other hand, still represent a matrix and can be treated in a similar
+way, but do not rely on the explicit creation of a dense (or sparse) matrix
+itself. Conversely, the forward and adjoint operators are represented by small
+pieces of codes that mimic the effect of the matrix on a vector or
+another matrix.
+
+Luckily, many iterative methods (e.g. cg, lsqr) do not need to know the
+individual entries of a matrix to solve a linear system. Such solvers only
+require the computation of forward and adjoint matrix-vector products as
+done for any of the PyLops operators.
+
+PyLops provides
+  1. A general construct for creating Linear Operators
+  2. An extensive set of commonly used linear operators
+  3. A set of least-squares and sparse solvers for linear operators.
+
+Available subpackages
+---------------------
+basicoperators
+    Basic Linear Operators
+signalprocessing
+    Linear Operators for Signal Processing operations
+avo
+    Linear Operators for Seismic Reservoir Characterization
+waveeqprocessing
+    Linear Operators for Wave Equation oriented processing
+optimization
+    Solvers
+utils
+    Utility routines
+
+"""
+from . import (
+    avo,
+    basicoperators,
+    optimization,
+    signalprocessing,
+    utils,
+    waveeqprocessing,
+)
+from .avo.poststack import *
+from .avo.prestack import *
+from .basicoperators import *
 from .LinearOperator import LinearOperator
-from .basicoperators import Regression
-from .basicoperators import LinearRegression
-from .basicoperators import MatrixMult
-from .basicoperators import Identity
-from .basicoperators import Zero
-from .basicoperators import Diagonal
-from .basicoperators import Flip
-from .basicoperators import Symmetrize
-from .basicoperators import Spread
-from .basicoperators import Transpose
-from .basicoperators import Roll
-from .basicoperators import Pad
-from .basicoperators import Sum
-from .basicoperators import FunctionOperator
-from .basicoperators import MemoizeOperator
-
-from .basicoperators import VStack
-from .basicoperators import HStack
-from .basicoperators import Block
-from .basicoperators import BlockDiag
-from .basicoperators import Kronecker
-from .basicoperators import Real
-from .basicoperators import Imag
-from .basicoperators import Conj
-
-from .basicoperators import CausalIntegration
-from .basicoperators import FirstDerivative
-from .basicoperators import SecondDerivative
-from .basicoperators import Laplacian
-from .basicoperators import Gradient
-from .basicoperators import FirstDirectionalDerivative
-from .basicoperators import SecondDirectionalDerivative
-from .basicoperators import Restriction
-from .basicoperators import Smoothing1D
-from .basicoperators import Smoothing2D
-
-from .avo.poststack import PoststackLinearModelling
-from .avo.prestack import PrestackWaveletModelling, PrestackLinearModelling
-
-from .optimization.solver import cg, cgls
-from .optimization.leastsquares import NormalEquationsInversion, RegularizedInversion
-from .optimization.leastsquares import PreconditionedInversion
-from .optimization.sparsity import IRLS, OMP, ISTA, FISTA, SPGL1, SplitBregman
-
-from .utils.seismicevents import makeaxis, linear2d, parabolic2d
-from .utils.tapers import hanningtaper, cosinetaper, taper2d, taper3d
-from .utils.wavelets import ricker, gaussian
+from .optimization.leastsquares import *
+from .optimization.sparsity import *
+from .utils.seismicevents import *
+from .utils.tapers import *
 from .utils.utils import Report
-from .utils.deps import *
-
-from . import avo
-from . import basicoperators
-from . import optimization
-from . import signalprocessing
-from . import utils
-from . import waveeqprocessing
+from .utils.wavelets import *
 
 try:
     from .version import version as __version__
