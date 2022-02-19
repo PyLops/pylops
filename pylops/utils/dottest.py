@@ -7,11 +7,13 @@ def dottest(
     Op,
     nr=None,
     nc=None,
-    tol=1e-6,
+    rtol=1e-6,
+    atol=1e-21,
     complexflag=0,
     raiseerror=True,
     verb=False,
     backend="numpy",
+    **kwargs,
 ):
     r"""Dot test.
 
@@ -28,8 +30,10 @@ def dottest(
         Number of rows of operator (i.e., elements in data)
     nc : :obj:`int`
         Number of columns of operator (i.e., elements in model)
-    tol : :obj:`float`, optional
-        Dottest tolerance
+    rtol : :obj:`float`, optional
+        Relative dottest tolerance
+    atol : :obj:`float`, optional
+        Absolute dottest tolerance
     complexflag : :obj:`bool`, optional
         Generate random vectors with
 
@@ -67,6 +71,9 @@ def dottest(
         \mathbf{u}^H(\mathbf{Op}^H\mathbf{v})
 
     """
+    # Backwards compatibility for ``tol`` keyword:
+    rtol = kwargs.pop("tol", rtol)
+
     ncp = get_module(backend)
 
     if nr is None:
@@ -110,12 +117,8 @@ def dottest(
     # complex numbers in subsequent prints also when using cupy arrays.
     xx, yy = np.array([to_numpy(xx)])[0], np.array([to_numpy(yy)])[0]
 
-    def passes(xx, yy, tol=tol):
-        """True if xx and yy are  the same within tolerance."""
-        return abs((yy - xx) / ((yy + xx + 1e-15) / 2)) < tol
-
-    # evaluate if dot test is passed (both real and imag parts)
-    passed = passes(np.real(xx), np.real(yy)) and passes(np.imag(xx), np.imag(yy))
+    # evaluate if dot test passed
+    passed = np.isclose(xx, yy, rtol, atol)
 
     if not passed and raiseerror:
         raise ValueError(f"Dot test failed, v^H(Opu)={yy} - u^H(Op^Hv)={xx}")
