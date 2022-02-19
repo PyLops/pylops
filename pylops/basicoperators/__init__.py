@@ -41,6 +41,8 @@ A list of operators present in pylops.basicoperators :
 
 """
 
+# isort: skip_file
+
 from .FunctionOperator import *
 from .MemoizeOperator import *
 from .Regression import *

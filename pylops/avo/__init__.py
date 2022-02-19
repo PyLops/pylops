@@ -20,10 +20,17 @@ and a list of applications:
 
 """
 
-# from .poststack import *
-# from .prestack import *
+# isort: skip_file
+
+from .poststack import *
+from .prestack import *
 
 
-# __all__ = ['AVOLinearModelling', 'PoststackLinearModelling',
-#           'PrestackWaveletModelling', 'PrestackLinearModelling',
-#           'PoststackInversion', 'PrestackInversion']
+__all__ = [
+    "AVOLinearModelling",
+    "PoststackLinearModelling",
+    "PrestackWaveletModelling",
+    "PrestackLinearModelling",
+    "PoststackInversion",
+    "PrestackInversion",
+]
