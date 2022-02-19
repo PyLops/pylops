@@ -123,7 +123,7 @@ def test_WavefieldDecomposition2D(par, create_data2D):
         ntaper=ntaper,
         dottest=True,
         dtype="complex128",
-        **dict(damp=1e-10, iter_lim=10)
+        **dict(damp=1e-10, atol=1e-8, btol=1e-8, iter_lim=10)
     )
     assert np.linalg.norm(p2d_minus_est - p2d_minus) / np.linalg.norm(p2d_minus) < 2e-1
     assert np.linalg.norm(p2d_plus_est - p2d_plus) / np.linalg.norm(p2d_plus) < 2e-1
@@ -169,7 +169,7 @@ def test_WavefieldDecomposition3D(par, create_data3D):
         ntaper=ntaper,
         dottest=True,
         dtype="complex128",
-        **dict(damp=1e-10, iter_lim=10, show=2)
+        **dict(damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=2)
     )
     assert np.linalg.norm(p3d_minus_est - p3d_minus) / np.linalg.norm(p3d_minus) < 3e-1
     assert np.linalg.norm(p3d_plus_est - p3d_plus) / np.linalg.norm(p3d_plus) < 3e-1
