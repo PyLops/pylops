@@ -393,8 +393,6 @@ def FFT2D(
             stacklevel=2,
         )
         axes = dirs
-    else:
-        axes = axes
 
     if engine == "numpy":
         f = _FFT2D_numpy(

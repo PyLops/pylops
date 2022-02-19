@@ -82,8 +82,6 @@ def Smoothing1D(nsmooth, dims, axis=-1, dir=None, dtype="float64"):
             stacklevel=2,
         )
         axis = dir
-    else:
-        axis = axis
 
     return Convolve1D(
         n,

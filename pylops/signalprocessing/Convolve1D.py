@@ -154,8 +154,6 @@ class Convolve1D(LinearOperator):
                 stacklevel=2,
             )
             axis = dir
-        else:
-            axis = axis
         if dims is not None:
             # add dimensions to filter to match dimensions of model and data
             hdims = [1] * len(dims)

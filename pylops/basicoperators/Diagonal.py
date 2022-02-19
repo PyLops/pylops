@@ -76,8 +76,6 @@ class Diagonal(LinearOperator):
                 stacklevel=2,
             )
             axis = dir
-        else:
-            axis = axis
 
         if dims is None:
             self.shape = (len(self.diag), len(self.diag))

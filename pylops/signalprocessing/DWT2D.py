@@ -95,8 +95,6 @@ class DWT2D(LinearOperator):
                 stacklevel=2,
             )
             axes = dirs
-        else:
-            axes = axes
 
         # define padding for length to be power of 2
         ndimpow2 = [max(2 ** ceil(log(dims[ax], 2)), 2 ** level) for ax in axes]

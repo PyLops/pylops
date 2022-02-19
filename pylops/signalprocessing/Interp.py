@@ -208,8 +208,6 @@ def Interp(M, iava, dims=None, axis=-1, dir=None, kind="linear", dtype="float64"
             stacklevel=2,
         )
         axis = dir
-    else:
-        axis = axis
 
     if kind == "nearest":
         interpop, iava = _nearestinterp(M, iava, dims=dims, axis=axis, dtype=dtype)

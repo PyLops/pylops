@@ -90,8 +90,6 @@ def Shift(
             stacklevel=2,
         )
         axis = dir
-    else:
-        axis = axis
 
     Fop = FFT(
         dims,

@@ -386,8 +386,6 @@ def FFTND(
             stacklevel=2,
         )
         axes = dirs
-    else:
-        axes = axes
 
     if engine == "numpy":
         f = _FFTND_numpy(

@@ -82,8 +82,6 @@ def Laplacian(
             stacklevel=2,
         )
         axes = dirs
-    else:
-        axes = axes
     axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
     if not (len(axes) == len(weights) == len(sampling)):
         raise ValueError("axes, weights, and sampling have different size")

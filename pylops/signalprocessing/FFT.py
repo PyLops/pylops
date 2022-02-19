@@ -554,8 +554,7 @@ def FFT(
             stacklevel=2,
         )
         axis = dir
-    else:
-        axis = axis
+
     # Use fftshift if supplied, otherwise use ifftshift_before
     # If neither are supplied, set to False
     if fftshift is not None:

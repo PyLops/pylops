@@ -83,8 +83,6 @@ class ConvolveND(LinearOperator):
                 stacklevel=2,
             )
             axes = dirs
-        else:
-            axes = axes
         self.axes = (
             np.arange(len(dims))
             if axes is None

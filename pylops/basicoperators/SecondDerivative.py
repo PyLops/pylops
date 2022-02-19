@@ -101,8 +101,6 @@ class SecondDerivative(LinearOperator):
                 stacklevel=2,
             )
             axis = dir
-        else:
-            axis = axis
         self.axis = normalize_axis_index(axis, len(self.dims))
         self.kind = kind
         self.shape = (self.N, self.N)
