@@ -125,7 +125,7 @@ N = 10
 d = np.arange(N)
 Dop = pylops.Diagonal(d)
 
-dottest(Dop, N, N, tol=1e-6, complexflag=0, verb=True)
+dottest(Dop, N, N, rtol=1e-6, complexflag=0, verb=True)
 
 ###############################################################################
 # We move now to a more complicated operator, the :py:func:`pylops.signalprocessing.FFT`

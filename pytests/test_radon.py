@@ -158,7 +158,7 @@ def test_Radon2D(par):
         engine=par["engine"],
         dtype="float64",
     )
-    assert dottest(Rop, par["nhx"] * par["nt"], par["npx"] * par["nt"], tol=1e-3)
+    assert dottest(Rop, par["nhx"] * par["nt"], par["npx"] * par["nt"], rtol=1e-3)
 
     y = Rop * x.ravel()
     y1 = R1op * x.ravel()
@@ -223,7 +223,7 @@ def test_Radon3D(par):
             Rop,
             par["nhy"] * par["nhx"] * par["nt"],
             par["npy"] * par["npx"] * par["nt"],
-            tol=1e-3,
+            rtol=1e-3,
         )
         y = Rop * x.ravel()
         y1 = R1op * x.ravel()
