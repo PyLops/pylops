@@ -1,4 +1,3 @@
-import warnings
 import numpy as np
 
 from pylops.utils.backend import get_module, to_numpy
@@ -14,7 +13,6 @@ def dottest(
     raiseerror=True,
     verb=False,
     backend="numpy",
-    tol=None,  # deprecated, use rtol
 ):
     r"""Dot test.
 
@@ -53,15 +51,11 @@ def dottest(
     backend : :obj:`str`, optional
         Backend used for dot test computations (``numpy`` or ``cupy``). This
         parameter will be used to choose how to create the random vectors.
-    tol : :obj:`float`, optional
-        Dottest tolerance
-        .. deprecated:: 2.0.0
-            Use ``rtol`` instead.
 
     Raises
     ------
-    ValueError
-        If dot-test is not verified within chosen tolerance.
+    AssertionError
+        If dot-test is not verified within chosen tolerances.
 
     Notes
     -----
@@ -77,14 +71,6 @@ def dottest(
         \mathbf{u}^H(\mathbf{Op}^H\mathbf{v})
 
     """
-    if tol is not None:
-        warnings.warn(
-            "tol will be deprecated in version 2.0.0, use rtol instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        rtol = tol
-
     ncp = get_module(backend)
 
     if nr is None:
@@ -125,10 +111,13 @@ def dottest(
     # evaluate if dot test passed
     passed = np.isclose(xx, yy, rtol, atol)
 
-    if not passed and raiseerror:
-        raise ValueError(f"Dot test failed, v^H(Opu)={yy} - u^H(Op^Hv)={xx}")
-    elif verb:
+    # verbosity or error raising
+    if (not passed and raiseerror) or verb:
         passed_status = "passed" if passed else "failed"
-        print(f"Dot test {passed_status}, v^H(Opu)={yy} - u^H(Op^Hv)={xx}")
+        msg = f"Dot test {passed_status}, v^H(Opu)={yy} - u^H(Op^Hv)={xx}"
+        if not passed and raiseerror:
+            raise AssertionError(msg)
+        else:
+            print(msg)
 
     return passed
