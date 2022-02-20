@@ -66,7 +66,7 @@ def test_PhaseShift_2dsignal(par):
     kx = np.fft.fftshift(np.fft.fftfreq(par["nx"], 1.0))
 
     Pop = PhaseShift(vel, zprop, par["nt"], freq, kx, dtype=par["dtype"])
-    assert dottest(Pop, par["nt"] * par["nx"], par["nt"] * par["nx"], tol=1e-5)
+    assert dottest(Pop, par["nt"] * par["nx"], par["nt"] * par["nx"], rtol=1e-5)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
@@ -83,7 +83,7 @@ def test_PhaseShift_3dsignal(par):
         Pop,
         par["nt"] * par["nx"] * par["ny"],
         par["nt"] * par["nx"] * par["ny"],
-        tol=1e-5,
+        rtol=1e-5,
     )
 
 

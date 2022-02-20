@@ -50,7 +50,7 @@ def test_Smoothing1D(par):
         D1op,
         par["nz"] * par["ny"] * par["nx"],
         par["nz"] * par["ny"] * par["nx"],
-        tol=1e-3,
+        rtol=1e-3,
     )
 
     x = np.random.normal(0, 1, (par["nz"], par["ny"], par["nx"])).ravel()
@@ -65,7 +65,7 @@ def test_Smoothing2D(par):
     # 2d kernel on 2d signal
     if par["dir"] < 2:
         D2op = Smoothing2D(nsmooth=(5, 5), dims=(par["ny"], par["nx"]), dtype="float64")
-        assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], tol=1e-3)
+        assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
 
         # forward
         x = np.zeros((par["ny"], par["nx"]))
