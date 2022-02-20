@@ -33,6 +33,7 @@ def dottest(
         Number of columns of operator (i.e., elements in model)
     rtol : :obj:`float`, optional
         Relative dottest tolerance
+        .. versionadded:: 1.18.1
     complexflag : :obj:`bool`, optional
         Generate random vectors with
 
@@ -52,7 +53,7 @@ def dottest(
         parameter will be used to choose how to create the random vectors.
     atol : :obj:`float`, optional
         Absolute dottest tolerance
-        .. versionadded:: 2.0.0
+        .. versionadded:: 1.18.1
     tol : :obj:`float`, optional
         Dottest tolerance
         .. deprecated:: 2.0.0
