@@ -90,22 +90,15 @@ def dottest(
         raise AssertionError("Provided nr and nc do not match operator shape")
 
     # make u and v vectors
-    if complexflag != 0:
-        rdtype = np.real(np.ones(1, Op.dtype)).dtype
+    rdtype = np.ones(1, Op.dtype).real.dtype
 
-    if complexflag in (0, 2):
-        u = ncp.random.randn(nc).astype(Op.dtype)
-    else:
-        u = ncp.random.randn(nc).astype(rdtype) + 1j * ncp.random.randn(nc).astype(
-            rdtype
-        )
+    u = ncp.random.randn(nc).astype(rdtype)
+    if complexflag not in (0, 2):
+        u = u + 1j * ncp.random.randn(nc).astype(rdtype)
 
-    if complexflag in (0, 1):
-        v = ncp.random.randn(nr).astype(Op.dtype)
-    else:
-        v = ncp.random.randn(nr).astype(rdtype) + 1j * ncp.random.randn(nr).astype(
-            rdtype
-        )
+    v = ncp.random.randn(nr).astype(rdtype)
+    if complexflag not in (0, 1):
+        v = v + 1j * ncp.random.randn(nr).astype(rdtype)
 
     y = Op.matvec(u)  # Op * u
     x = Op.rmatvec(v)  # Op'* v
