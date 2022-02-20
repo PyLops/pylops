@@ -13,7 +13,7 @@ def dottest(
     raiseerror=True,
     verb=False,
     backend="numpy",
-    **kwargs,
+    tol=None,
 ):
     r"""Dot test.
 
@@ -71,8 +71,13 @@ def dottest(
         \mathbf{u}^H(\mathbf{Op}^H\mathbf{v})
 
     """
-    # Backwards compatibility for ``tol`` keyword:
-    rtol = kwargs.pop("tol", rtol)
+    if tol is not None:
+        warnings.warn(
+            "tol will be deprecated in version 2.0.0, use rtol instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        rtol = tol
 
     ncp = get_module(backend)
 
