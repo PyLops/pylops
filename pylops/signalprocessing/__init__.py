@@ -7,13 +7,13 @@ processing algorithms with forward and adjoint functionalities.
 
 A list of operators present in pylops.signalprocessing:
 
-    Convolve1D	                    1D convolution operator.
-    Convolve2D	                    2D convolution operator.
-    ConvolveND	                    ND convolution operator.
-    Interp          	            Interpolation operator.
-    Bilinear                    	Bilinear interpolation operator.
+    Convolve1D                      1D convolution operator.
+    Convolve2D                      2D convolution operator.
+    ConvolveND                      ND convolution operator.
+    Interp                          Interpolation operator.
+    Bilinear                        Bilinear interpolation operator.
     FFT                             One dimensional Fast-Fourier Transform.
-    FFT2D                       	Two dimensional Fast-Fourier Transform.
+    FFT2D                           Two dimensional Fast-Fourier Transform.
     FFTND                           N-dimensional Fast-Fourier Transform.
     Shift                           Fractional Shift operator.
     DWT                             One dimensional Wavelet operator.
@@ -21,13 +21,11 @@ A list of operators present in pylops.signalprocessing:
     Seislet                         Two dimensional Seislet operator.
     Radon2D	                        Two dimensional Radon transform.
     Radon3D	                        Three dimensional Radon transform.
-    Sliding2D	                    2D Sliding transform operator.
-    Sliding3D	                    3D Sliding transform operator.
-    Fredholm1	                    Fredholm integral of first kind.
+    Sliding2D                       2D Sliding transform operator.
+    Sliding3D                       3D Sliding transform operator.
+    Fredholm1                       Fredholm integral of first kind.
 
 """
-
-# isort: skip_file
 
 from .FFT import *
 from .FFT2D import *

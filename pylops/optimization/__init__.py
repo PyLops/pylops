@@ -19,11 +19,11 @@ and wrappers for regularized or preconditioned inversion in pylops.optimization.
 
 and sparsity-promoting solvers in pylops.optimization.sparsity:
 
-    IRLS	                        Iteratively reweighted least squares.
+    IRLS                            Iteratively reweighted least squares.
     OMP	                            Orthogonal Matching Pursuit (OMP).
     ISTA                            Iterative Soft Thresholding Algorithm.
     FISTA                           Fast Iterative Soft Thresholding Algorithm.
     SPGL1                           Spectral Projected-Gradient for L1 norm.
-    SplitBregman	                Split Bregman for mixed L2-L1 norms.
+    SplitBregman                    Split Bregman for mixed L2-L1 norms.
 
 """

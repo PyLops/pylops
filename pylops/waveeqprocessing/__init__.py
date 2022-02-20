@@ -26,8 +26,6 @@ and a list of applications:
 
 """
 
-# isort: skip_file
-
 from .lsm import *
 from .marchenko import *
 from .mdd import *

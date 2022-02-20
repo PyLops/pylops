@@ -7,12 +7,12 @@ operations provided by numpy providing forward and adjoint functionalities.
 
 A list of operators present in pylops.basicoperators :
 
-    MatrixMult	                    Matrix multiplication.
+    MatrixMult                      Matrix multiplication.
     Identity                        Identity operator.
-    Zero         	                Zero operator.
-    Diagonal     	                Diagonal operator.
-    Transpose   	                Transpose operator.
-    Flip        	                Flip along an axis.
+    Zero                            Zero operator.
+    Diagonal                        Diagonal operator.
+    Transpose                       Transpose operator.
+    Flip                            Flip along an axis.
     Roll                            Roll along an axis.
     Pad                             Pad operator.
     Sum                             Sum operator.
@@ -30,18 +30,15 @@ A list of operators present in pylops.basicoperators :
     Real                            Real operator.
     Imag                            Imag operator.
     Conj                            Conj operator.
-    Smoothing1D     	            1D Smoothing.
+    Smoothing1D                     1D Smoothing.
     Smoothing2D	                    2D Smoothing.
-    FirstDerivative 	            First derivative.
-    SecondDerivative 	            Second derivative.
-    Laplacian 	                    Laplacian.
-    Gradient 	                    Gradient.
+    FirstDerivative                 First derivative.
+    SecondDerivative                Second derivative.
+    Laplacian                       Laplacian.
+    Gradient                        Gradient.
     FirstDirectionalDerivative      First Directional derivative.
     SecondDirectionalDerivative     Second Directional derivative.
-
 """
-
-# isort: skip_file
 
 from .FunctionOperator import *
 from .MemoizeOperator import *
