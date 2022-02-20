@@ -296,7 +296,7 @@ class NMO(LinearOperator):
 # and adjoint transforms truly are adjoints of each other.
 
 NMOOp = NMO(t, x, vel_t)
-dottest(NMOOp, *NMOOp.shape, tol=1e-4)
+dottest(NMOOp, *NMOOp.shape, rtol=1e-4)
 
 ###############################################################################
 # NMO using :py:class:`pylops.Spread`
@@ -370,7 +370,7 @@ SpreadNMO = Spread(
     dtable=nmo_dtable,  # Table of weights for linear interpolation
     engine="numba",  # numba or numpy
 ).H  # To perform NMO *correction*, we need the adjoint
-dottest(SpreadNMO, *SpreadNMO.shape, tol=1e-4)
+dottest(SpreadNMO, *SpreadNMO.shape, rtol=1e-4)
 
 ###############################################################################
 # We see it passes the dot test, but are the results right? Let's find out.

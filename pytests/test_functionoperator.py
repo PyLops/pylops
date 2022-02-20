@@ -28,7 +28,7 @@ for nr, nc, dtype in itertools.product(*PARS_LISTS):
             "nc": nc,
             "imag": 0 if dtype.startswith("float") else 1j,
             "dtype": dtype,
-            "tol": 1e-3 if dtype in ["float32", "complex64"] else 1e-6,
+            "rtol": 1e-3 if dtype in ["float32", "complex64"] else 1e-6,
         }
     ]
 
@@ -61,7 +61,7 @@ def test_FunctionOperator(par):
         par["nr"],
         par["nc"],
         complexflag=0 if par["imag"] == 0 else 3,
-        tol=par["tol"],
+        rtol=par["rtol"],
     )
 
     x = (np.ones(par["nc"]) + np.ones(par["nc"]) * par["imag"]).astype(par["dtype"])
