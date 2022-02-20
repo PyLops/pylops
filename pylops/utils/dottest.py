@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 
 from pylops.utils.backend import get_module, to_numpy
@@ -8,11 +9,11 @@ def dottest(
     nr=None,
     nc=None,
     rtol=1e-6,
+    atol=1e-21,
     complexflag=0,
     raiseerror=True,
     verb=False,
     backend="numpy",
-    atol=1e-21,
     tol=None,  # deprecated, use rtol
 ):
     r"""Dot test.
@@ -32,6 +33,9 @@ def dottest(
         Number of columns of operator (i.e., elements in model)
     rtol : :obj:`float`, optional
         Relative dottest tolerance
+    atol : :obj:`float`, optional
+        Absolute dottest tolerance
+        .. versionadded:: 2.0.0
     complexflag : :obj:`bool`, optional
         Generate random vectors with
 
@@ -49,8 +53,10 @@ def dottest(
     backend : :obj:`str`, optional
         Backend used for dot test computations (``numpy`` or ``cupy``). This
         parameter will be used to choose how to create the random vectors.
-    atol : :obj:`float`, optional
-        Absolute dottest tolerance
+    tol : :obj:`float`, optional
+        Dottest tolerance
+        .. deprecated:: 2.0.0
+            Use ``rtol`` instead.
 
     Raises
     ------
