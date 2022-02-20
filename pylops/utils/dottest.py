@@ -86,7 +86,8 @@ def dottest(
     if nc is None:
         nc = Op.shape[1]
 
-    assert (nr, nc) == Op.shape, "Provided nr and nc do not match operator shape"
+    if (nr, nc) != Op.shape:
+        raise AssertionError("Provided nr and nc do not match operator shape")
 
     # make u and v vectors
     if complexflag != 0:
