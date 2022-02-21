@@ -1,6 +1,7 @@
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_array
 from pylops.utils.backend import (
     get_convolve,
     get_fftconvolve,
@@ -41,15 +42,12 @@ class Convolve1D(LinearOperator):
 
     Parameters
     ----------
-    N : :obj:`int`
-        Number of samples in model.
+    dims : :obj:`list` or :obj:`int`
+        Number of samples for each dimension
     h : :obj:`numpy.ndarray`
         1d compact filter to be convolved to input signal
     offset : :obj:`int`
         Index of the center of the compact filter
-    dims : :obj:`tuple`
-        Number of samples for each dimension
-        (``None`` if only one dimension is available)
     dir : :obj:`int`, optional
         Direction along which convolution is applied
     method : :obj:`str`, optional
@@ -115,7 +113,10 @@ class Convolve1D(LinearOperator):
 
     """
 
-    def __init__(self, N, h, offset=0, dims=None, dir=0, dtype="float64", method=None):
+    def __init__(self, dims, h, offset=0, dir=0, dtype="float64", method=None):
+        self.dims = _value_or_list_like_to_array(dims)
+        self.dir = dir
+
         if offset > len(h) - 1:
             raise ValueError("offset must be smaller than len(h) - 1")
         self.h = h
@@ -135,22 +136,13 @@ class Convolve1D(LinearOperator):
             )
         self.hstar = np.flip(self.h, axis=-1)
         self.dimsorig = dims
-        if dims is not None:
-            # add dimensions to filter to match dimensions of model and data
-            hdims = [1] * len(dims)
-            hdims[dir] = len(self.h)
-            self.h = self.h.reshape(hdims)
-            self.hstar = self.hstar.reshape(hdims)
-        self.dir = dir
-        if dims is None:
-            self.dims = np.array([N, 1])
-            self.reshape = False
-        else:
-            if np.prod(dims) != N:
-                raise ValueError("product of dims must equal N!")
-            else:
-                self.dims = np.array(dims)
-                self.reshape = True
+
+        # add dimensions to filter to match dimensions of model and data
+        hdims = np.ones(len(self.dims), dtype=int)
+        hdims[self.dir] = len(self.h)
+        self.h = self.h.reshape(hdims)
+        self.hstar = self.hstar.reshape(hdims)
+
         # choose method and function handle
         self.convfunc, self.method = _choose_convfunc(h, method, self.dimsorig)
         self.shape = (np.prod(self.dims), np.prod(self.dims))
@@ -163,12 +155,9 @@ class Convolve1D(LinearOperator):
             self.convfunc, self.method = _choose_convfunc(
                 self.h, self.method, self.dimsorig
             )
-        if not self.reshape:
-            y = self.convfunc(x.squeeze(), self.h, mode="same", method=self.method)
-        else:
-            x = np.reshape(x, self.dims)
-            y = self.convfunc(x, self.h, mode="same")
-            y = y.ravel()
+        x = np.reshape(x, self.dims)
+        y = self.convfunc(x, self.h, mode="same")
+        y = y.ravel()
         return y
 
     def _rmatvec(self, x):
@@ -177,10 +166,7 @@ class Convolve1D(LinearOperator):
             self.convfunc, self.method = _choose_convfunc(
                 self.hstar, self.method, self.dimsorig
             )
-        if not self.reshape:
-            y = self.convfunc(x.squeeze(), self.hstar, mode="same", method=self.method)
-        else:
-            x = np.reshape(x, self.dims)
-            y = self.convfunc(x, self.hstar, mode="same")
-            y = y.ravel()
+        x = np.reshape(x, self.dims)
+        y = self.convfunc(x, self.hstar, mode="same")
+        y = y.ravel()
         return y

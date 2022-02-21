@@ -27,8 +27,8 @@ plt.close("all")
 ###############################################################################
 # Let's start by defining two second derivatives :py:class:`pylops.SecondDerivative`
 # that we will be using in this example.
-D2hop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=1, dtype="float32")
-D2vop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=0, dtype="float32")
+D2hop = pylops.SecondDerivative((11, 21), dir=1, dtype="float32")
+D2vop = pylops.SecondDerivative((11, 21), dir=0, dtype="float32")
 
 ###############################################################################
 # Chaining of operators represents the simplest concatenation that

@@ -112,16 +112,14 @@ ot = 0
 t = np.arange(nt) * dt + ot
 x = np.outer(np.sin(t), np.ones(nx))
 
-Cop = pylops.CausalIntegration(
-    nt * nx, dims=(nt, nx), sampling=dt, dir=0, halfcurrent=True
-)
+Cop = pylops.CausalIntegration((nt, nx), sampling=dt, dir=0, halfcurrent=True)
 
 y = Cop * x.ravel()
 y = y.reshape(nt, nx)
 yn = y + np.random.normal(0, 4e-1, y.shape)
 
 # Numerical derivative
-Dop = pylops.FirstDerivative(nt * nx, dims=(nt, nx), dir=0, sampling=dt)
+Dop = pylops.FirstDerivative((nt, nx), dir=0, sampling=dt)
 xder = Dop * yn.ravel()
 xder = xder.reshape(nt, nx)
 

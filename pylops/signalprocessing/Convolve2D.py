@@ -1,7 +1,8 @@
 from pylops.signalprocessing import ConvolveND
+from pylops.utils._internal import _value_or_list_like_to_array
 
 
-def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype="float64", method="fft"):
+def Convolve2D(dims, h, offset=(0, 0), nodir=None, dtype="float64", method="fft"):
     r"""2D convolution operator.
 
     Apply two-dimensional convolution with a compact filter to model
@@ -10,12 +11,10 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype="float64", method="f
 
     Parameters
     ----------
-    N : :obj:`int`
-        Number of samples in model
+    dims : :obj:`list` or :obj:`int`
+        Number of samples for each dimension
     h : :obj:`numpy.ndarray`
         2d compact filter to be convolved to input signal
-    dims : :obj:`list`
-        Number of samples for each dimension
     offset : :obj:`tuple`, optional
         Indeces of the center of the compact filter
     nodir : :obj:`int`, optional
@@ -82,5 +81,5 @@ def Convolve2D(N, h, dims, offset=(0, 0), nodir=None, dtype="float64", method="f
     else:
         dirs = (0, 1)
 
-    cop = ConvolveND(N, h, dims, offset=offset, dirs=dirs, method=method, dtype=dtype)
+    cop = ConvolveND(dims, h, offset=offset, dirs=dirs, method=method, dtype=dtype)
     return cop

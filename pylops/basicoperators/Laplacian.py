@@ -28,7 +28,7 @@ def Laplacian(
         Directions along which laplacian is applied.
     weights : :obj:`tuple`, optional
         Weight to apply to each direction (real laplacian operator if
-        ``weights=[1,1]``)
+        ``weights=(1, 1)``)
     sampling : :obj:`tuple`, optional
         Sampling steps for each direction
     edge : :obj:`bool`, optional
@@ -65,23 +65,12 @@ def Laplacian(
         raise ValueError("dirs, weights, and sampling have different size")
 
     l2op = weights[0] * SecondDerivative(
-        np.prod(dims),
-        dims=dims,
-        dir=dirs[0],
-        sampling=sampling[0],
-        edge=edge,
-        kind=kind,
-        dtype=dtype,
+        dims, dir=dirs[0], sampling=sampling[0], edge=edge, kind=kind, dtype=dtype
     )
-    
+
     for dir, samp, weight in zip(dirs[1:], sampling[1:], weights[1:]):
         l2op += weight * SecondDerivative(
-            np.prod(dims),
-            dims=dims,
-            dir=dir,
-            sampling=samp,
-            edge=edge,
-            dtype=dtype,
+            dims, dir=dir, sampling=samp, edge=edge, dtype=dtype
         )
-    
+
     return aslinearoperator(l2op)

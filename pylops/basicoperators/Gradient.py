@@ -65,8 +65,7 @@ def Gradient(dims, sampling=1, edge=False, dtype="float64", kind="centered"):
     gop = VStack(
         [
             FirstDerivative(
-                np.prod(dims),
-                dims=dims,
+                dims,
                 dir=idir,
                 sampling=sampling[idir],
                 edge=edge,

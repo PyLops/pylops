@@ -266,9 +266,7 @@ def Demigration(
             dims=dims, dimsd=(ns * nr, nt), table=itrav, dtable=travd, engine="numba"
         )
 
-        cop = Convolve1D(
-            ns * nr * nt, h=wav, offset=wavcenter, dims=(ns * nr, nt), dir=1
-        )
+        cop = Convolve1D((ns * nr, nt), h=wav, offset=wavcenter, dir=1)
         demop = cop * sop
     else:
         raise NotImplementedError("method must be analytic or eikonal")

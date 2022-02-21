@@ -92,10 +92,9 @@ nh = [11, 5]
 h = np.ones((nh[0], nh[1]))
 
 Cop = pylops.signalprocessing.Convolve2D(
-    nt * nx,
+    (nt, nx),
     h=h,
     offset=(int(nh[0]) / 2, int(nh[1]) / 2),
-    dims=(nt, nx),
     dtype="float32",
 )
 y = Cop * x.ravel()

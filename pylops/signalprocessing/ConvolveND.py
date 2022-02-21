@@ -1,6 +1,7 @@
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_array
 from pylops.utils.backend import (
     get_array_module,
     get_convolve,
@@ -18,12 +19,10 @@ class ConvolveND(LinearOperator):
 
     Parameters
     ----------
-    N : :obj:`int`
-        Number of samples in model
+    dims : :obj:`list` or :obj:`int`
+        Number of samples for each dimension
     h : :obj:`numpy.ndarray`
         nd compact filter to be convolved to input signal
-    dims : :obj:`list`
-        Number of samples for each dimension
     offset : :obj:`tuple`, optional
         Indices of the center of the compact filter
     dirs : :obj:`tuple`, optional
@@ -52,13 +51,12 @@ class ConvolveND(LinearOperator):
 
     """
 
-    def __init__(
-        self, N, h, dims, offset=None, dirs=None, method="fft", dtype="float64"
-    ):
+    def __init__(self, dims, h, offset=None, dirs=None, method="fft", dtype="float64"):
         ncp = get_array_module(h)
+        self.dims = _value_or_list_like_to_array(dims)
         self.h = h
         self.nh = np.array(self.h.shape)
-        self.dirs = np.arange(len(dims)) if dirs is None else np.array(dirs)
+        self.dirs = np.arange(len(self.dims)) if dirs is None else np.array(dirs)
 
         # padding
         if offset is None:
@@ -82,19 +80,13 @@ class ConvolveND(LinearOperator):
         self.nh = self.h.shape
 
         # find out which directions are used for convolution and define offsets
-        if len(dims) != len(self.nh):
-            dimsh = np.ones(len(dims), dtype=int)
+        if len(self.dims) != len(self.nh):
+            dimsh = np.ones(len(self.dims), dtype=int)
             for idir, dir in enumerate(self.dirs):
                 dimsh[dir] = self.nh[idir]
             self.h = self.h.reshape(dimsh)
 
-        if np.prod(dims) != N:
-            raise ValueError("product of dims must equal N!")
-        else:
-            self.dims = np.array(dims)
-            self.reshape = True
-
-        # convolve and correate functions
+        # convolve and correlate functions
         self.convolve = get_convolve(h)
         self.correlate = get_correlate(h)
         self.method = method
