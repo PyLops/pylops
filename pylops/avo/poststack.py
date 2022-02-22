@@ -92,11 +92,10 @@ def _PoststackLinearModelling(
         # Create wavelet operator
         if len(wav.shape) == 1:
             Cop = _Convolve1D(
-                np.prod(np.array(dims)),
+                dims,
                 h=wav,
                 offset=len(wav) // 2,
                 axis=0,
-                dims=dims,
                 dtype=dtype,
                 **args_Convolve1D
             )
@@ -109,13 +108,7 @@ def _PoststackLinearModelling(
             )
         # Create derivative operator
         Dop = _FirstDerivative(
-            np.prod(np.array(dims)),
-            dims=dims,
-            axis=0,
-            sampling=1.0,
-            kind=kind,
-            dtype=dtype,
-            **args_FirstDerivative
+            dims, axis=0, sampling=1.0, kind=kind, dtype=dtype, **args_FirstDerivative
         )
         Pop = Cop * Dop
     return Pop
@@ -410,18 +403,12 @@ def PoststackInversion(
                 RegL2op = None
             elif dims == 2:
                 RegL1op = FirstDerivative(
-                    nt0 * nx, dims=(nt0, nx), axis=0, kind="forward", dtype=PPop.dtype
+                    (nt0, nx), axis=0, kind="forward", dtype=PPop.dtype
                 )
-                RegL2op = SecondDerivative(
-                    nt0 * nx, dims=(nt0, nx), axis=1, dtype=PPop.dtype
-                )
+                RegL2op = SecondDerivative((nt0, nx), dir=1, dtype=PPop.dtype)
             else:
                 RegL1op = FirstDerivative(
-                    nt0 * nx * ny,
-                    dims=(nt0, nx, ny),
-                    axis=0,
-                    kind="forward",
-                    dtype=PPop.dtype,
+                    (nt0, nx, ny), axis=0, kind="forward", dtype=PPop.dtype
                 )
                 RegL2op = Laplacian((nt0, nx, ny), axes=(1, 2), dtype=PPop.dtype)
 

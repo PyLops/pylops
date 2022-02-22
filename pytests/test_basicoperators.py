@@ -222,8 +222,7 @@ def test_Flip2D(par):
 
     for axis in [0, 1]:
         Fop = Flip(
-            par["ny"] * par["nx"],
-            dims=(par["ny"], par["nx"]),
+            (par["ny"], par["nx"]),
             axis=axis,
             dtype=par["dtype"],
         )
@@ -271,8 +270,7 @@ def test_Flip3D(par):
 
     for axis in [0, 1, 2]:
         Fop = Flip(
-            par["ny"] * par["nx"] * par["nx"],
-            dims=(par["ny"], par["nx"], par["nx"]),
+            (par["ny"], par["nx"], par["nx"]),
             axis=axis,
             dtype=par["dtype"],
         )
@@ -314,8 +312,7 @@ def test_Symmetrize2D(par):
 
     for axis in [0, 1]:
         Sop = Symmetrize(
-            par["ny"] * par["nx"],
-            dims=(par["ny"], par["nx"]),
+            (par["ny"], par["nx"]),
             axis=axis,
             dtype=par["dtype"],
         )
@@ -362,8 +359,7 @@ def test_Symmetrize3D(par):
 
     for axis in [0, 1, 2]:
         Sop = Symmetrize(
-            par["ny"] * par["nx"] * par["nx"],
-            dims=(par["ny"], par["nx"], par["nx"]),
+            (par["ny"], par["nx"], par["nx"]),
             axis=axis,
             dtype=par["dtype"],
         )
@@ -402,8 +398,7 @@ def test_Roll2D(par):
 
     for axis in [0, 1]:
         Rop = Roll(
-            par["ny"] * par["nx"],
-            dims=(par["ny"], par["nx"]),
+            (par["ny"], par["nx"]),
             axis=axis,
             shift=-2,
             dtype=par["dtype"],
@@ -451,8 +446,7 @@ def test_Roll3D(par):
 
     for axis in [0, 1, 2]:
         Rop = Roll(
-            par["ny"] * par["nx"] * par["nx"],
-            dims=(par["ny"], par["nx"], par["nx"]),
+            (par["ny"], par["nx"], par["nx"]),
             axis=axis,
             shift=3,
             dtype=par["dtype"],

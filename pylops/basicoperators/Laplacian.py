@@ -38,11 +38,9 @@ def Laplacian(
             Use ``axes`` instead. Note that the default for ``axes`` is (-2, -1)
             instead of (0, 1) which was the default for ``dirs``.
 
-    dirs : :obj:`tuple`, optional
-        Directions along which laplacian is applied.
     weights : :obj:`tuple`, optional
         Weight to apply to each direction (real laplacian operator if
-        ``weights=[1,1]``)
+        ``weights=(1, 1)``)
     sampling : :obj:`tuple`, optional
         Sampling steps for each direction
     edge : :obj:`bool`, optional
@@ -87,24 +85,12 @@ def Laplacian(
         raise ValueError("axes, weights, and sampling have different size")
 
     l2op = weights[0] * SecondDerivative(
-        np.prod(dims),
-        dims=dims,
-        axis=axes[0],
-        sampling=sampling[0],
-        edge=edge,
-        kind=kind,
-        dtype=dtype,
+        dims, axis=axes[0], sampling=sampling[0], edge=edge, kind=kind, dtype=dtype
     )
 
     for ax, samp, weight in zip(axes[1:], sampling[1:], weights[1:]):
         l2op += weight * SecondDerivative(
-            np.prod(dims),
-            dims=dims,
-            axis=ax,
-            sampling=samp,
-            edge=edge,
-            kind=kind,
-            dtype=dtype,
+            dims, axis=ax, sampling=samp, edge=edge, dtype=dtype
         )
 
     return aslinearoperator(l2op)

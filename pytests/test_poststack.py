@@ -96,11 +96,11 @@ def test_PoststackLinearModelling1d(par):
     """
     # Dense
     PPop_dense = PoststackLinearModelling(wav, nt0=nt0, explicit=True)
-    assert dottest(PPop_dense, nt0, nt0, tol=1e-4)
+    assert dottest(PPop_dense, nt0, nt0, rtol=1e-4)
 
     # Linear operator
     PPop = PoststackLinearModelling(wav, nt0=nt0, explicit=False)
-    assert dottest(PPop, nt0, nt0, tol=1e-4)
+    assert dottest(PPop, nt0, nt0, rtol=1e-4)
 
     # Compare data
     d = PPop * m.ravel()
@@ -133,11 +133,11 @@ def test_PoststackLinearModelling1d_nonstationary(par):
     """
     # Dense
     PPop_dense = PoststackLinearModelling(wavs, nt0=nt0, explicit=True)
-    assert dottest(PPop_dense, nt0, nt0, tol=1e-4)
+    assert dottest(PPop_dense, nt0, nt0, rtol=1e-4)
 
     # Linear operator
     PPop = PoststackLinearModelling(wavs, nt0=nt0, explicit=False)
-    assert dottest(PPop, nt0, nt0, tol=1e-4)
+    assert dottest(PPop, nt0, nt0, rtol=1e-4)
 
     # Compare data
     d = PPop * m.ravel()
@@ -171,11 +171,11 @@ def test_PoststackLinearModelling2d(par):
 
     # Dense
     PPop_dense = PoststackLinearModelling(wav, nt0=nz, spatdims=nx, explicit=True)
-    assert dottest(PPop_dense, nz * nx, nz * nx, tol=1e-4)
+    assert dottest(PPop_dense, nz * nx, nz * nx, rtol=1e-4)
 
     # Linear operator
     PPop = PoststackLinearModelling(wav, nt0=nz, spatdims=nx, explicit=False)
-    assert dottest(PPop, nz * nx, nz * nx, tol=1e-4)
+    assert dottest(PPop, nz * nx, nz * nx, rtol=1e-4)
 
     # Compare data
     d = (PPop * m2d.ravel()).reshape(nz, nx)

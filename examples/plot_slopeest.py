@@ -12,24 +12,34 @@ smoothing, or interpolation. When slopes are used with the
 compressed and the sparse nature of the Seislet transform can also be used to
 precondition sparsity-promoting inverse problems.
 
+We will show examples of a variety of different settings, including a comparison
+with the original implementation in [1].
+
+.. [1] van Vliet, L. J.,  Verbeek, P. W., "Estimators for orientation and
+    anisotropy in digitized images", Journal ASCI Imaging Workshop. 1995.
+
 """
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.image import imread
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import pylops
 from pylops.signalprocessing.Seislet import _predict_trace
+from pylops.utils.signalprocessing import slope_estimate
 
 plt.close("all")
 np.random.seed(10)
 
 ###############################################################################
+# Python logo
+# -----------
 # To start we import a 2d image and estimate the local slopes of the image.
 im = np.load("../testdata/python.npy")[..., 0]
 im = im / 255.0 - 0.5
 
-slopes, anisotropy = pylops.utils.signalprocessing.slope_estimate(im, smooth=7)
+slopes, anisotropy = slope_estimate(im, smooth=7)
 angles = -np.rad2deg(np.arctan(slopes))
 
 ###############################################################################
@@ -51,6 +61,8 @@ cb = fig.colorbar(iax, cax=cax, orientation="vertical")
 fig.tight_layout()
 
 ###############################################################################
+# Seismic data
+# ------------
 # We can now repeat the same using some seismic data. We will first define
 # a single trace and a slope field, apply such slope field to the trace
 # recursively to create the other traces of the data and finally try to recover
@@ -87,7 +99,7 @@ for ix in range(nx):
     d[:, ix] = tr
 
 # Estimate slopes
-slope_est, _ = pylops.utils.signalprocessing.slope_estimate(d, dt, dx, smooth=10)
+slope_est, _ = slope_estimate(d, dt, dx, smooth=10)
 slope_est *= -1
 
 ###############################################################################
@@ -123,6 +135,120 @@ cax.set_ylabel("[s/km]")
 fig.tight_layout()
 
 ###############################################################################
+# Concentric circles
+# ------------------
+# The original paper by van Vliet and Verbeek [1] has an example with concentric
+# circles. We recover their original images and compare our implementation with
+# theirs.
+def rgb2gray(rgb):
+    return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
+
+
+circles_input = rgb2gray(imread("../testdata/slope_estimate/concentric.png"))
+circles_angles = rgb2gray(imread("../testdata/slope_estimate/concentric_angles.png"))
+
+slope, anisos_sm0 = slope_estimate(circles_input, smooth=0)
+angles_sm0 = np.rad2deg(np.arctan(slope))
+
+slope, anisos_sm4 = slope_estimate(circles_input, smooth=4)
+angles_sm4 = np.rad2deg(np.arctan(slope))
+
+###############################################################################
+fig, axs = plt.subplots(2, 3, figsize=(6, 4), sharex=True, sharey=True)
+axs[0, 0].imshow(circles_input, cmap="gray", aspect="equal")
+axs[0, 0].set(title="Original Image")
+cax = make_axes_locatable(axs[0, 0]).append_axes("right", size="5%", pad=0.05)
+cax.axis("off")
+
+axs[1, 0].imshow(-circles_angles, cmap="RdBu_r")
+axs[1, 0].set(title="Original Angles")
+cax = make_axes_locatable(axs[1, 0]).append_axes("right", size="5%", pad=0.05)
+cax.axis("off")
+
+im = axs[0, 1].imshow(angles_sm0, cmap="RdBu_r", vmin=-90, vmax=90)
+cax = make_axes_locatable(axs[0, 1]).append_axes("right", size="5%", pad=0.05)
+cb = fig.colorbar(im, cax=cax, orientation="vertical")
+axs[0, 1].set(title="Angles (smooth=0)")
+
+im = axs[1, 1].imshow(angles_sm4, cmap="RdBu_r", vmin=-90, vmax=90)
+cax = make_axes_locatable(axs[1, 1]).append_axes("right", size="5%", pad=0.05)
+cb = fig.colorbar(im, cax=cax, orientation="vertical")
+axs[1, 1].set(title="Angles (smooth=4)")
+
+im = axs[0, 2].imshow(anisos_sm0, cmap="Reds", vmin=0, vmax=1)
+cax = make_axes_locatable(axs[0, 2]).append_axes("right", size="5%", pad=0.05)
+cb = fig.colorbar(im, cax=cax, orientation="vertical")
+axs[0, 2].set(title="Anisotropy (smooth=0)")
+
+im = axs[1, 2].imshow(anisos_sm4, cmap="Reds", vmin=0, vmax=1)
+cax = make_axes_locatable(axs[1, 2]).append_axes("right", size="5%", pad=0.05)
+cb = fig.colorbar(im, cax=cax, orientation="vertical")
+axs[1, 2].set(title="Anisotropy (smooth=4)")
+
+for ax in axs.ravel():
+    ax.axis("off")
+fig.tight_layout()
+
+
+###############################################################################
+# Core samples
+# ------------------
+# The original paper by van Vliet and Verbeek [1] also has an example with images
+# of core samples. Since the original paper does not have a scale with which to
+# plot the angles, we have chosen ours it to match their image as closely as
+# possible.
+
+core_input = rgb2gray(imread("../testdata/slope_estimate/core_sample.png"))
+core_angles = rgb2gray(imread("../testdata/slope_estimate/core_sample_orientation.png"))
+core_aniso = rgb2gray(imread("../testdata/slope_estimate/core_sample_anisotropy.png"))
+
+
+slope, anisos_sm4 = slope_estimate(core_input, smooth=4)
+angles_sm4 = np.rad2deg(np.arctan(slope))
+
+slope, anisos_sm8 = slope_estimate(core_input, smooth=8)
+angles_sm8 = np.rad2deg(np.arctan(slope))
+
+###############################################################################
+fig, axs = plt.subplots(1, 6, figsize=(10, 6))
+
+axs[0].imshow(core_input, cmap="gray_r", aspect="equal")
+axs[0].set(title="Original\nImage")
+cax = make_axes_locatable(axs[0]).append_axes("right", size="20%", pad=0.05)
+cax.axis("off")
+
+axs[1].imshow(-core_angles, cmap="YlGnBu_r")
+axs[1].set(title="Original\nAngles")
+cax = make_axes_locatable(axs[1]).append_axes("right", size="20%", pad=0.05)
+cax.axis("off")
+
+im = axs[2].imshow(angles_sm8, cmap="YlGnBu_r", vmin=-49, vmax=-11)
+cax = make_axes_locatable(axs[2]).append_axes("right", size="20%", pad=0.05)
+cb = fig.colorbar(im, cax=cax, orientation="vertical")
+axs[2].set(title="Angles\n(smooth=8)")
+
+im = axs[3].imshow(angles_sm4, cmap="YlGnBu_r", vmin=-49, vmax=-11)
+cax = make_axes_locatable(axs[3]).append_axes("right", size="20%", pad=0.05)
+cb = fig.colorbar(im, cax=cax, orientation="vertical")
+axs[3].set(title="Angles\n(smooth=4)")
+
+im = axs[4].imshow(anisos_sm8, cmap="Reds", vmin=0, vmax=1)
+cax = make_axes_locatable(axs[4]).append_axes("right", size="20%", pad=0.05)
+cb = fig.colorbar(im, cax=cax, orientation="vertical")
+axs[4].set(title="Anisotropy\n(smooth=8)")
+
+im = axs[5].imshow(anisos_sm4, cmap="Reds", vmin=0, vmax=1)
+cax = make_axes_locatable(axs[5]).append_axes("right", size="20%", pad=0.05)
+cb = fig.colorbar(im, cax=cax, orientation="vertical")
+axs[5].set(title="Anisotropy\n(smooth=4)")
+
+for ax in axs.ravel():
+    ax.axis("off")
+fig.tight_layout()
+
+###############################################################################
+# Final considerations
+# --------------------
 # As you can see the Structure Tensor algorithm is a very fast, general purpose
 # algorithm that can be used to estimate local slopes to input datasets of
-# very different nature.
+# very different natures.

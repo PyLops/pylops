@@ -167,11 +167,7 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
     hstack = HStack(
         [
             Restriction(
-                dimsd[1] * nwin[0],
-                range(win_in, win_end),
-                dims=(nwin[0], dimsd[1]),
-                axis=1,
-                dtype=Op.dtype,
+                (nwin[0], dimsd[1]), range(win_in, win_end), axis=1, dtype=Op.dtype
             ).H
             for win_in, win_end in zip(dwin1_ins, dwin1_ends)
         ]
@@ -180,13 +176,7 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
     combining1 = BlockDiag([hstack] * nwins0)
     combining0 = HStack(
         [
-            Restriction(
-                np.prod(dimsd),
-                range(win_in, win_end),
-                dims=dimsd,
-                axis=0,
-                dtype=Op.dtype,
-            ).H
+            Restriction(dimsd, range(win_in, win_end), axis=0, dtype=Op.dtype).H
             for win_in, win_end in zip(dwin0_ins, dwin0_ends)
         ]
     )

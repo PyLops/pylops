@@ -6,7 +6,7 @@ from pylops.signalprocessing import ConvolveND
 
 
 def Convolve2D(
-    N, h, dims, offset=(0, 0), axes=(-2, -1), nodir=None, dtype="float64", method="fft"
+    dims, h, offset=(0, 0), axes=(-2, -1), nodir=None, dtype="float64", method="fft"
 ):
     r"""2D convolution operator.
 
@@ -16,12 +16,10 @@ def Convolve2D(
 
     Parameters
     ----------
-    N : :obj:`int`
-        Number of samples in model
+    dims : :obj:`list` or :obj:`int`
+        Number of samples for each dimension
     h : :obj:`numpy.ndarray`
         2d compact filter to be convolved to input signal
-    dims : :obj:`list`
-        Number of samples for each dimension
     offset : :obj:`tuple`, optional
         Indices of the center of the compact filter
     axes : :obj:`int`, optional
@@ -102,5 +100,5 @@ def Convolve2D(
     else:
         axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
 
-    cop = ConvolveND(N, h, dims, offset=offset, axes=axes, method=method, dtype=dtype)
+    cop = ConvolveND(dims, h, offset=offset, axes=axes, method=method, dtype=dtype)
     return cop

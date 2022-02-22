@@ -62,9 +62,7 @@ nxsub = int(np.round(par["nx"] * perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(par["nx"]))[:nxsub])
 
 # restriction operator
-Rop = pylops.Restriction(
-    par["nx"] * par["nt"], iava, dims=(par["nx"], par["nt"]), axis=0, dtype="float64"
-)
+Rop = pylops.Restriction((par["nx"], par["nt"]), iava, axis=0, dtype="float64")
 
 # data
 y = Rop * x.ravel()
@@ -112,9 +110,7 @@ axs[1].axis("tight")
 #        \epsilon \|\mathbf{F}^H \mathbf{x}\|_1
 
 # smooth inversion
-D2op = pylops.SecondDerivative(
-    par["nx"] * par["nt"], dims=(par["nx"], par["nt"]), axis=0, dtype="float64"
-)
+D2op = pylops.SecondDerivative((par["nx"], par["nt"]), axis=0, dtype="float64")
 
 xsmooth, _, _ = pylops.waveeqprocessing.SeismicInterpolation(
     y,
@@ -318,9 +314,7 @@ Nsub = int(np.round(par["nx"] * perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(par["nx"]))[:Nsub])
 
 # restriction operator
-Rop = pylops.Restriction(
-    par["nx"] * par["nt"], iava, dims=(par["nx"], par["nt"]), axis=0, dtype="float64"
-)
+Rop = pylops.Restriction((par["nx"], par["nt"]), iava, axis=0, dtype="float64")
 
 y = Rop * x.ravel()
 xadj = Rop.H * y.ravel()

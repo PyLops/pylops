@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_array
 
 
 class Roll(LinearOperator):
@@ -13,11 +14,8 @@ class Roll(LinearOperator):
 
     Parameters
     ----------
-    N : :obj:`int`
-        Number of samples in model.
-    dims : :obj:`list`, optional
+    dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
-        (``None`` if only one dimension is available)
     axis : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
@@ -49,39 +47,29 @@ class Roll(LinearOperator):
 
     """
 
-    def __init__(self, N, dims=None, axis=-1, dir=None, shift=1, dtype="float64"):
-        self.N = N
+    def __init__(self, dims, axis=-1, dir=None, shift=1, dtype="float64"):
         if dir is not None:
             warnings.warn(
                 "dir will be deprecated in version 2.0.0, use axis instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
-            self.axis = dir
-        else:
-            self.axis = axis
-        if dims is None:
-            self.dims = (self.N,)
-            self.reshape = False
-        else:
-            if np.prod(dims) != self.N:
-                raise ValueError("product of dims must equal N")
-            else:
-                self.dims = dims
-                self.reshape = True
+            axis = dir
+
+        self.dims = _value_or_list_like_to_array(dims)
+        self.axis = axis
+        N = np.prod(self.dims)
         self.shift = shift
-        self.shape = (self.N, self.N)
+        self.shape = (N, N)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
-        if self.reshape:
-            x = np.reshape(x, self.dims)
+        x = np.reshape(x, self.dims)
         y = np.roll(x, shift=self.shift, axis=self.axis)
         return y.ravel()
 
     def _rmatvec(self, x):
-        if self.reshape:
-            x = np.reshape(x, self.dims)
+        x = np.reshape(x, self.dims)
         y = np.roll(x, shift=-self.shift, axis=self.axis)
         return y.ravel()

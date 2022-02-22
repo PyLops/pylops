@@ -48,18 +48,10 @@ _, x2d = linear2d(yaxis, taxis, v, t0, theta, amp, wav)
 _, x3d = linear3d(xaxis, yaxis, taxis, v, t0, theta, phi, amp, wav)
 
 # Create restriction operator
-Rop2d = Restriction(
-    par["ny"] * par["nt"], iava, dims=(par["ny"], par["nt"]), axis=0, dtype="float64"
-)
+Rop2d = Restriction((par["ny"], par["nt"]), iava, axis=0, dtype="float64")
 y2d = Rop2d * x2d.ravel()
 y2d = y2d.reshape(nysub, par["nt"])
-Rop3d = Restriction(
-    par["ny"] * par["nx"] * par["nt"],
-    iava,
-    dims=(par["ny"], par["nx"], par["nt"]),
-    axis=0,
-    dtype="float64",
-)
+Rop3d = Restriction((par["ny"], par["nx"], par["nt"]), iava, axis=0, dtype="float64")
 y3d = Rop3d * x3d.ravel()
 y3d = y3d.reshape(nysub, par["nx"], par["nt"])
 

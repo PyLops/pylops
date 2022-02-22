@@ -148,10 +148,10 @@ axs[2].axis("tight")
 
 Dop = [
     pylops.FirstDerivative(
-        ny * nx, dims=(ny, nx), axis=0, edge=False, kind="backward", dtype=np.complex128
+        dims=(ny, nx), axis=0, edge=False, kind="backward", dtype=np.complex128
     ),
     pylops.FirstDerivative(
-        ny * nx, dims=(ny, nx), axis=1, edge=False, kind="backward", dtype=np.complex128
+        dims=(ny, nx), axis=1, edge=False, kind="backward", dtype=np.complex128
     ),
 ]
 

@@ -74,12 +74,7 @@ def test_Restriction_2dsignal(par):
     iava = np.sort(np.random.permutation(np.arange(par["nx"]))[:Nsub])
 
     Rop = Restriction(
-        par["nx"] * par["nt"],
-        iava,
-        dims=(par["nx"], par["nt"]),
-        axis=0,
-        inplace=par["dtype"],
-        dtype=par["dtype"],
+        (par["nx"], par["nt"]), iava, axis=0, inplace=par["dtype"], dtype=par["dtype"]
     )
     assert dottest(
         Rop,
@@ -102,12 +97,7 @@ def test_Restriction_2dsignal(par):
     iava = np.sort(np.random.permutation(np.arange(par["nt"]))[:Nsub])
 
     Rop = Restriction(
-        par["nx"] * par["nt"],
-        iava,
-        dims=(par["nx"], par["nt"]),
-        axis=1,
-        inplace=par["dtype"],
-        dtype=par["dtype"],
+        (par["nx"], par["nt"]), iava, axis=1, inplace=par["dtype"], dtype=par["dtype"]
     )
     assert dottest(
         Rop,
@@ -140,9 +130,8 @@ def test_Restriction_3dsignal(par):
     iava = np.sort(np.random.permutation(np.arange(par["ny"]))[:Nsub])
 
     Rop = Restriction(
-        par["ny"] * par["nx"] * par["nt"],
+        (par["ny"], par["nx"], par["nt"]),
         iava,
-        dims=(par["ny"], par["nx"], par["nt"]),
         axis=0,
         inplace=par["dtype"],
         dtype=par["dtype"],
@@ -170,9 +159,8 @@ def test_Restriction_3dsignal(par):
     iava = np.sort(np.random.permutation(np.arange(par["nx"]))[:Nsub])
 
     Rop = Restriction(
-        par["ny"] * par["nx"] * par["nt"],
+        (par["ny"], par["nx"], par["nt"]),
         iava,
-        dims=(par["ny"], par["nx"], par["nt"]),
         axis=1,
         inplace=par["dtype"],
         dtype=par["dtype"],
@@ -198,9 +186,8 @@ def test_Restriction_3dsignal(par):
     iava = np.sort(np.random.permutation(np.arange(par["nt"]))[:Nsub])
 
     Rop = Restriction(
-        par["ny"] * par["nx"] * par["nt"],
+        (par["ny"], par["nx"], par["nt"]),
         iava,
-        dims=(par["ny"], par["nx"], par["nt"]),
         axis=2,
         inplace=par["dtype"],
         dtype=par["dtype"],

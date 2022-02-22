@@ -129,8 +129,7 @@ def test_CausalIntegration2d(par):
 
     for kind, rf in itertools.product(("full", "half", "trapezoidal"), (False, True)):
         Cop = CausalIntegration(
-            par["nt"] * par["nx"],
-            dims=(par["nt"], par["nx"]),
+            (par["nt"], par["nx"]),
             sampling=dt,
             axis=0,
             kind=kind,
@@ -167,11 +166,7 @@ def test_CausalIntegration2d(par):
 
             # numerical derivative
             Dop = FirstDerivative(
-                par["nt"] * par["nx"],
-                dims=(par["nt"], par["nx"]),
-                axis=0,
-                sampling=dt,
-                dtype=par["dtype"],
+                (par["nt"], par["nx"]), axis=0, sampling=dt, dtype=par["dtype"]
             )
             xder = Dop * y.ravel()
             xder = xder.reshape(par["nt"], par["nx"])

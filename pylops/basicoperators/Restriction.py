@@ -2,8 +2,10 @@ import warnings
 
 import numpy as np
 import numpy.ma as np_ma
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_array
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 
 
@@ -29,13 +31,10 @@ class Restriction(LinearOperator):
 
     Parameters
     ----------
-    M : :obj:`int`
-        Number of samples in model.
+    dims : :obj:`list` or :obj:`int`
+        Number of samples for each dimension
     iava : :obj:`list` or :obj:`numpy.ndarray`
         Integer indices of available samples for data selection.
-    dims : :obj:`list`
-        Number of samples for each dimension
-        (``None`` if only one dimension is available)
     axis : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
@@ -75,7 +74,7 @@ class Restriction(LinearOperator):
 
         y_i = x_{l_i}  \quad \forall i=0,1,\ldots,N-1
 
-    where :math:`\mathbf{l}=[l_0, l_1,\ldots, l_{N-1}]` is a vector containing the indeces
+    where :math:`\mathbf{l}=[l_0, l_1,\ldots, l_{N-1}]` is a vector containing the indices
     of the original array at which samples are taken.
 
     Conversely, in adjoint mode the available values in the data vector
@@ -91,49 +90,31 @@ class Restriction(LinearOperator):
 
     """
 
-    def __init__(
-        self, M, iava, dims=None, axis=-1, dir=None, dtype="float64", inplace=True
-    ):
-        ncp = get_array_module(iava)
-        self.M = M
+    def __init__(self, dims, iava, axis=-1, dir=None, dtype="float64", inplace=True):
         if dir is not None:
             warnings.warn(
                 "dir will be deprecated in version 2.0.0, use axis instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
-            self.axis = dir
-        else:
-            self.axis = axis
-        self.iava = iava
-        if dims is None:
-            self.N = len(iava)
-            self.dims = (self.M,)
-            self.reshape = False
-        else:
-            if np.prod(dims) != self.M:
-                raise ValueError("product of dims must equal M!")
-            else:
-                self.dims = dims  # model dimensions
-                self.dimsd = list(dims)  # data dimensions
-                self.dimsd[self.axis] = len(iava)
-                self.iavareshape = (
-                    [1] * self.axis
-                    + [len(self.iava)]
-                    + [1] * (len(self.dims) - self.axis - 1)
-                )
-                self.N = np.prod(self.dimsd)
-                self.reshape = True
+            axis = dir
 
-                # currently cupy does not support put_along_axis, so we need to
-                # explicitely create a list of indices in the n-dimensional
-                # model space which will be used in _rmatvec to place the input
-                if ncp != np:
-                    self.iavamask = _compute_iavamask(
-                        self.dims, self.axis, self.iava, ncp
-                    )
+        ncp = get_array_module(iava)
+        self.dims = _value_or_list_like_to_array(dims)
+        self.axis = normalize_axis_index(axis, len(self.dims))
+        self.iava = iava
+        self.dimsd = self.dims.copy()  # data dimensions
+        self.dimsd[self.axis] = len(iava)
+        self.iavareshape = np.ones(len(self.dims), dtype=int)
+        self.iavareshape[self.axis] = len(self.iava)
+
+        # currently cupy does not support put_along_axis, so we need to
+        # explicitely create a list of indices in the n-dimensional
+        # model space which will be used in _rmatvec to place the input
+        if ncp != np:
+            self.iavamask = _compute_iavamask(dims, dir, iava, ncp)
         self.inplace = inplace
-        self.shape = (self.N, self.M)
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
@@ -141,37 +122,28 @@ class Restriction(LinearOperator):
         ncp = get_array_module(x)
         if not self.inplace:
             x = x.copy()
-        if not self.reshape:
-            y = x[self.iava]
-        else:
-            x = ncp.reshape(x, self.dims)
-            y = ncp.take(x, self.iava, axis=self.axis)
-            y = y.ravel()
+        x = ncp.reshape(x, self.dims)
+        y = ncp.take(x, self.iava, axis=self.axis)
+        y = y.ravel()
         return y
 
     def _rmatvec(self, x):
         ncp = get_array_module(x)
         if not self.inplace:
             x = x.copy()
-        if not self.reshape:
+        x = ncp.reshape(x, self.dimsd)
+        if ncp == np:
             y = ncp.zeros(self.dims, dtype=self.dtype)
-            y[self.iava] = x
+            ncp.put_along_axis(
+                y, ncp.reshape(self.iava, self.iavareshape), x, axis=self.axis
+            )
         else:
-            x = ncp.reshape(x, self.dimsd)
-            if ncp == np:
-                y = ncp.zeros(self.dims, dtype=self.dtype)
-                ncp.put_along_axis(
-                    y, ncp.reshape(self.iava, self.iavareshape), x, axis=self.axis
-                )
-            else:
-                if not hasattr(self, "iavamask"):
-                    self.iava = to_cupy_conditional(x, self.iava)
-                    self.iavamask = _compute_iavamask(
-                        self.dims, self.axis, self.iava, ncp
-                    )
-                y = ncp.zeros(int(self.M), dtype=self.dtype)
-                y[self.iavamask] = x.ravel()
-            y = y.ravel()
+            if not hasattr(self, "iavamask"):
+                self.iava = to_cupy_conditional(x, self.iava)
+                self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
+            y = ncp.zeros(self.shape[-1], dtype=self.dtype)
+            y[self.iavamask] = x.ravel()
+        y = y.ravel()
         return y
 
     def mask(self, x):
@@ -196,8 +168,8 @@ class Restriction(LinearOperator):
             iava = self.iava.copy()
 
         y = np_ma.array(np.zeros(self.dims), mask=np.ones(self.dims), dtype=self.dtype)
-        if self.reshape:
-            x = np.reshape(x, self.dims)
+        x = np.reshape(x, self.dims)
+        if self.axis > 0:
             x = np.swapaxes(x, self.axis, 0)
             y = np.swapaxes(y, self.axis, 0)
         y.mask[iava] = False
@@ -205,6 +177,6 @@ class Restriction(LinearOperator):
             y[iava] = x[self.iava]
         else:
             y[iava] = ncp.asnumpy(x)[iava]
-        if self.reshape:
+        if self.axis > 0:
             y = np.swapaxes(y, 0, self.axis)
         return y

@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_array
 
 
 class CausalIntegration(LinearOperator):
@@ -12,11 +13,8 @@ class CausalIntegration(LinearOperator):
 
     Parameters
     ----------
-    N : :obj:`int`
-        Number of samples in model.
-    dims : :obj:`list`, optional
+    dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
-        (``None`` if only one dimension is available)
     axis : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
@@ -96,8 +94,7 @@ class CausalIntegration(LinearOperator):
 
     def __init__(
         self,
-        N,
-        dims=None,
+        dims,
         axis=-1,
         dir=None,
         sampling=1,
@@ -106,45 +103,30 @@ class CausalIntegration(LinearOperator):
         kind="full",
         removefirst=False,
     ):
-        self.N = N
         if dir is not None:
             warnings.warn(
                 "dir will be deprecated in version 2.0.0, use axis instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
-            self.axis = dir
-        else:
-            self.axis = axis
+            axis = dir
+
+        self.dims = _value_or_list_like_to_array(dims)
+        self.axis = axis
         self.sampling = sampling
         self.kind = kind
         if kind == "full" and halfcurrent:  # ensure backcompatibility
             self.kind = "half"
         self.removefirst = removefirst
-        # define samples to remove from output
-        rf = 0
-        if removefirst:
-            rf = 1 if dims is None else self.N // dims[self.axis]
-        if dims is None:
-            self.dims = [self.N, 1]
-            self.dimsd = [self.N - rf, 1]
-            self.reshape = False
-        else:
-            if np.prod(dims) != self.N:
-                raise ValueError("product of dims must equal N!")
-            else:
-                self.dims = dims
-                self.dimsd = list(dims)
-                if self.removefirst:
-                    self.dimsd[self.axis] -= 1
-                self.reshape = True
-        self.shape = (self.N - rf, self.N)
+        self.dimsd = self.dims.copy()
+        if self.removefirst:
+            self.dimsd[self.axis] -= 1
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
-        if self.reshape:
-            x = np.reshape(x, self.dims)
+        x = np.reshape(x, self.dims)
         if self.axis != -1:
             x = np.swapaxes(x, self.axis, -1)
         y = self.sampling * np.cumsum(x, axis=-1)
@@ -159,8 +141,7 @@ class CausalIntegration(LinearOperator):
         return y.ravel()
 
     def _rmatvec(self, x):
-        if self.reshape:
-            x = np.reshape(x, self.dimsd)
+        x = np.reshape(x, self.dimsd)
         if self.removefirst:
             x = np.insert(x, 0, 0, axis=self.axis)
         if self.axis != -1:

@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_array
 
 
 class Flip(LinearOperator):
@@ -12,11 +13,8 @@ class Flip(LinearOperator):
 
     Parameters
     ----------
-    N : :obj:`int`
-        Number of samples in model.
-    dims : :obj:`list`, optional
+    dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
-        (``None`` if only one dimension is available)
     axis : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
@@ -47,42 +45,32 @@ class Flip(LinearOperator):
     .. math::
         y[i] = x[N-1-i] \quad \forall i=0,1,2,\ldots,N-1
 
-    where :math:`N` is the lenght of the input model. As this operator is
+    where :math:`N` is the dimension of the input model along ``dir``. As this operator is
     self-adjoint, :math:`x` and :math:`y` in the equation above are simply
     swapped in adjoint mode.
 
     """
 
-    def __init__(self, N, dims=None, axis=-1, dir=None, dtype="float64"):
-        self.N = N
+    def __init__(self, dims, axis=-1, dir=None, dtype="float64"):
         if dir is not None:
             warnings.warn(
                 "dir will be deprecated in version 2.0.0, use axis instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
-            self.axis = dir
-        else:
-            self.axis = axis
-        if dims is None:
-            self.dims = (self.N,)
-            self.reshape = False
-        else:
-            if np.prod(dims) != self.N:
-                raise ValueError("product of dims must equal N")
-            else:
-                self.dims = dims
-                self.reshape = True
-        self.shape = (self.N, self.N)
+            axis = dir
+
+        self.dims = _value_or_list_like_to_array(dims)
+        self.axis = axis
+        N = np.prod(self.dims)
+        self.shape = (N, N)
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
-        if self.reshape:
-            x = np.reshape(x, self.dims)
+        x = np.reshape(x, self.dims)
         y = np.flip(x, axis=self.axis)
-        if self.reshape:
-            y = y.ravel()
+        y = y.ravel()
         return y
 
     def _rmatvec(self, x):

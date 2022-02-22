@@ -135,13 +135,7 @@ def Sliding2D(Op, dims, dimsd, nwin, nover, tapertype="hanning", design=False):
 
     combining = HStack(
         [
-            Restriction(
-                np.prod(dimsd),
-                range(win_in, win_end),
-                dims=dimsd,
-                axis=0,
-                dtype=Op.dtype,
-            ).H
+            Restriction(dimsd, range(win_in, win_end), axis=0, dtype=Op.dtype).H
             for win_in, win_end in zip(dwin_ins, dwin_ends)
         ]
     )

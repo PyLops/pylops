@@ -43,12 +43,7 @@ def test_Kroneker_Derivative(par):
     """
     Dop = FirstDerivative(par["ny"], sampling=1, edge=True, dtype="float32")
     D2op = FirstDerivative(
-        par["ny"] * par["nx"],
-        dims=(par["ny"], par["nx"]),
-        axis=0,
-        sampling=1,
-        edge=True,
-        dtype="float32",
+        (par["ny"], par["nx"]), axis=0, sampling=1, edge=True, dtype="float32"
     )
 
     Kop = Kronecker(Dop, Identity(par["nx"], dtype=par["dtype"]), dtype=par["dtype"])

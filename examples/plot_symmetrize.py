@@ -49,7 +49,7 @@ plt.legend()
 nt, nx = 10, 6
 x = np.outer(np.arange(nt), np.ones(nx))
 
-Sop = pylops.Symmetrize(nt * nx, dims=(nt, nx), axis=0)
+Sop = pylops.Symmetrize((nt, nx), axis=0)
 y = Sop * x.ravel()
 xadj = Sop.H * y.ravel()
 xinv = Sop / y
@@ -75,7 +75,7 @@ plt.subplots_adjust(top=0.8)
 
 
 x = np.outer(np.ones(nt), np.arange(nx))
-Sop = pylops.Symmetrize(nt * nx, dims=(nt, nx), axis=1)
+Sop = pylops.Symmetrize(dims=(nt, nx), axis=1)
 
 y = Sop * x.ravel()
 xadj = Sop.H * y.ravel()

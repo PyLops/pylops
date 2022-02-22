@@ -5,6 +5,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, MatrixMult, Restriction, Transpose
+from pylops.utils._internal import _value_or_list_like_to_array
 from pylops.utils.backend import get_array_module
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -16,27 +17,24 @@ def _checkunique(iava):
         raise ValueError("Repeated values in iava array")
 
 
-def _nearestinterp(M, iava, dims=None, axis=0, dtype="float64"):
+def _nearestinterp(dims, iava, axis=0, dtype="float64"):
     """Nearest neighbour interpolation."""
     iava = np.round(iava).astype(int)
     _checkunique(iava)
-    return Restriction(M, iava, dims=dims, axis=axis, dtype=dtype), iava
+    return Restriction(dims, iava, axis=axis, dtype=dtype), iava
 
 
-def _linearinterp(M, iava, dims=None, axis=0, dtype="float64"):
+def _linearinterp(dims, iava, axis=0, dtype="float64"):
     """Linear interpolation."""
     ncp = get_array_module(iava)
 
     if np.issubdtype(iava.dtype, np.integer):
         iava = iava.astype(np.float64)
-    if dims is None:
-        lastsample = M
-        dimsd = None
-    else:
-        lastsample = dims[axis]
-        dimsd = list(dims)
-        dimsd[axis] = len(iava)
-        dimsd = tuple(dimsd)
+
+    lastsample = dims[axis]
+    dimsd = list(dims)
+    dimsd[axis] = len(iava)
+    dimsd = tuple(dimsd)
 
     # ensure that samples are not beyond the last sample, in that case set to
     # penultimate sample and raise a warning
@@ -56,31 +54,28 @@ def _linearinterp(M, iava, dims=None, axis=0, dtype="float64"):
 
     # create operators
     Op = Diagonal(1 - weights, dims=dimsd, axis=axis, dtype=dtype) * Restriction(
-        M, iva_l, dims=dims, axis=axis, dtype=dtype
+        dims, iva_l, axis=axis, dtype=dtype
     ) + Diagonal(weights, dims=dimsd, axis=axis, dtype=dtype) * Restriction(
-        M, iva_r, dims=dims, axis=axis, dtype=dtype
+        dims, iva_r, axis=axis, dtype=dtype
     )
     return Op, iava
 
 
-def _sincinterp(M, iava, dims=None, axis=0, dtype="float64"):
+def _sincinterp(dims, iava, axis=0, dtype="float64"):
     """Sinc interpolation."""
     ncp = get_array_module(iava)
-
     _checkunique(iava)
 
     # create sinc interpolation matrix
-    nreg = M if dims is None else dims[axis]
+    nreg = dims[axis]
     ireg = ncp.arange(nreg)
     sinc = ncp.tile(iava[:, np.newaxis], (1, nreg)) - ncp.tile(ireg, (len(iava), 1))
     sinc = ncp.sinc(sinc)
 
     # identify additional dimensions and create MatrixMult operator
-    otherdims = None
-    if dims is not None:
-        otherdims = ncp.array(dims)
-        otherdims = ncp.roll(otherdims, -axis)
-        otherdims = otherdims[1:]
+    otherdims = ncp.array(dims)
+    otherdims = ncp.roll(otherdims, -axis)
+    otherdims = otherdims[1:]
     Op = MatrixMult(sinc, dims=otherdims, dtype=dtype)
 
     # create Transpose operator that brings axis to first dimension
@@ -95,7 +90,7 @@ def _sincinterp(M, iava, dims=None, axis=0, dtype="float64"):
     return Op
 
 
-def Interp(M, iava, dims=None, axis=-1, dir=None, kind="linear", dtype="float64"):
+def Interp(dims, iava, axis=-1, dir=None, kind="linear", dtype="float64"):
     r"""Interpolation operator.
 
     Apply interpolation along ``axis``
@@ -125,13 +120,10 @@ def Interp(M, iava, dims=None, axis=-1, dir=None, kind="linear", dtype="float64"
 
     Parameters
     ----------
-    M : :obj:`int`
-        Number of samples in model.
+    dims : :obj:`list` or :obj:`int`
+        Number of samples for each dimension
     iava : :obj:`list` or :obj:`numpy.ndarray`
          Floating indices of locations of available samples for interpolation.
-    dims : :obj:`list`, optional
-        Number of samples for each dimension
-        (``None`` if only one dimension is available)
     axis : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
@@ -209,12 +201,14 @@ def Interp(M, iava, dims=None, axis=-1, dir=None, kind="linear", dtype="float64"
         )
         axis = dir
 
+    dims = _value_or_list_like_to_array(dims)
+
     if kind == "nearest":
-        interpop, iava = _nearestinterp(M, iava, dims=dims, axis=axis, dtype=dtype)
+        interpop, iava = _nearestinterp(dims, iava, axis=axis, dtype=dtype)
     elif kind == "linear":
-        interpop, iava = _linearinterp(M, iava, dims=dims, axis=axis, dtype=dtype)
+        interpop, iava = _linearinterp(dims, iava, axis=axis, dtype=dtype)
     elif kind == "sinc":
-        interpop = _sincinterp(M, iava, dims=dims, axis=axis, dtype=dtype)
+        interpop = _sincinterp(dims, iava, axis=axis, dtype=dtype)
     else:
         raise NotImplementedError("kind is not correct...")
     return LinearOperator(interpop), iava
