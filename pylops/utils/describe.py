@@ -235,7 +235,7 @@ def _describe(Op):
 
 
 def describe(Op):
-    r"""Describe a PyLops operator
+    """Describe a PyLops operator
 
     .. versionadded:: 1.17.0
 

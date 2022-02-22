@@ -245,7 +245,7 @@ class Marchenko:
             "even when R is provided in frequency domain. It is "
             "recommended to start using the operator without the R1 "
             "input as this behaviour will become default in "
-            "version v2.0 and R1 will be removed from the inputs.",
+            "version v2.0.0 and R1 will be removed from the inputs.",
             FutureWarning,
         )
         # Save inputs into class

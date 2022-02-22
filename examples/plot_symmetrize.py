@@ -75,7 +75,7 @@ plt.subplots_adjust(top=0.8)
 
 
 x = np.outer(np.ones(nt), np.arange(nx))
-Sop = pylops.Symmetrize(dims=(nt, nx), axis=1)
+Sop = pylops.Symmetrize((nt, nx), axis=1)
 
 y = Sop * x.ravel()
 xadj = Sop.H * y.ravel()

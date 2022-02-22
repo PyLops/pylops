@@ -84,9 +84,9 @@ class _FFTND_numpy(_BaseFFTND):
             y = np.fft.ifftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
-        for direction, nfft in zip(self.axes, self.nffts):
-            if nfft > self.dims[direction]:
-                y = np.take(y, range(self.dims[direction]), axis=direction)
+        for ax, nfft in zip(self.axes, self.nffts):
+            if nfft > self.dims[ax]:
+                y = np.take(y, range(self.dims[ax]), axis=ax)
         if self.doifftpad:
             y = np.pad(y, self.ifftpad)
         if not self.clinear:
@@ -172,9 +172,9 @@ class _FFTND_scipy(_BaseFFTND):
             y = scipy.fft.ifftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
-        for direction, nfft in zip(self.axes, self.nffts):
-            if nfft > self.dims[direction]:
-                y = np.take(y, range(self.dims[direction]), axis=direction)
+        for ax, nfft in zip(self.axes, self.nffts):
+            if nfft > self.dims[ax]:
+                y = np.take(y, range(self.dims[ax]), axis=ax)
         if self.doifftpad:
             y = np.pad(y, self.ifftpad)
         if not self.clinear:
@@ -222,7 +222,7 @@ def FFTND(
     :math:`1 / \sqrt{2}` for the same frequencies.
 
     For a real valued input signal, it is advised to use the flag ``real=True``
-    as it stores the values of the Fourier transform of the last direction at positive
+    as it stores the values of the Fourier transform of the last axis in ``axes`` at positive
     frequencies only as values at negative frequencies are simply their complex conjugates.
 
     Parameters
@@ -240,12 +240,12 @@ def FFTND(
             instead of (0, 1, 2) which was the default for ``dirs``.
 
     nffts : :obj:`tuple` or :obj:`int`, optional
-        Number of samples in Fourier Transform for each direction. In case only one
+        Number of samples in Fourier Transform for each axis in ``axes``. In case only one
         dimension needs to be specified, use ``None`` for the other dimension in the
-        tuple. The direction with None will use ``dims[axis]`` for each ``axis`` in
-        ``axes`` as ``nffts``. When supplying a tuple, the order must agree with that
-        of ``axes``. When a single value is passed, it will be used for both
-        directions. As such the default is equivalent to ``nffts=(None, ..., None)``.
+        tuple. An axis with ``None`` will use ``dims[axis]`` as ``nfft``.
+        When supplying a tuple, the length must agree with that
+        of ``axes``. When a single value is passed, it will be used for all
+        ``axes`. As such the default is equivalent to ``nffts=(None, ..., None)``.
     sampling : :obj:`tuple` or :obj:`float`, optional
         Sampling steps for each direction. When supplied a single value, it is used
         for all directions. Unlike ``nffts``, any ``None`` will not be converted to the
