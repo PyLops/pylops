@@ -27,6 +27,27 @@ def _value_or_list_like_to_array(value_or_list_like, repeat=1):
     return out
 
 
+def _value_or_list_like_to_tuple(value_or_list_like, repeat=1):
+    """Convert an object which is either single value or a list-like to a tuple.
+
+    Parameters
+    ----------
+    value_or_list_like
+        Single value or list-like.
+    repeat : `obj`:`int`
+        Size of resulting array if value is passed. If list is passed, it is ignored.
+
+    Returns
+    -------
+    out : `obj`:`tuple`
+        When the input is a single value, returned an array with `repeat` samples
+        containing that value. When the input is a list-like object, converts it to a
+        tuple.
+
+    """
+    return tuple(_value_or_list_like_to_array(value_or_list_like, repeat=repeat))
+
+
 def _raise_on_wrong_dtype(arr, dtype, name):
     """Raises an error if dtype of `arr` is not a subdtype of `dtype`.
 
