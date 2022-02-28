@@ -4,7 +4,7 @@ import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_array
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module
 
 
@@ -73,13 +73,13 @@ class SecondDerivative(LinearOperator):
         dtype="float64",
         kind="centered",
     ):
-        self.dims = _value_or_list_like_to_array(dims)
+        self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
         self.axis = normalize_axis_index(axis, len(self.dims))
         self.sampling = sampling
         self.edge = edge
         self.kind = kind
-        N = np.prod(self.dims)
-        self.shape = (N, N)
+
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 

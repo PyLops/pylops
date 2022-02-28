@@ -179,7 +179,7 @@ class Spread(LinearOperator):
             self.engine = "numpy"
 
         # axes
-        self.dims, self.dimsd = dims, dimsd
+        self.dims, self.dimsd = tuple(dims), tuple(dimsd)
         self.nx0, self.nt0 = self.dims[0], self.dims[1]
         self.nx, self.nt = self.dimsd[0], self.dimsd[1]
         self.table = table

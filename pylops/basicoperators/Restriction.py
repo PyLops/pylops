@@ -5,7 +5,7 @@ import numpy.ma as np_ma
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_array
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 
 
@@ -86,11 +86,12 @@ class Restriction(LinearOperator):
 
     def __init__(self, dims, iava, axis=-1, dtype="float64", inplace=True):
         ncp = get_array_module(iava)
-        self.dims = _value_or_list_like_to_array(dims)
+        self.dims = _value_or_list_like_to_tuple(dims)
         self.axis = normalize_axis_index(axis, len(self.dims))
         self.iava = iava
-        self.dimsd = self.dims.copy()  # data dimensions
-        self.dimsd[self.axis] = len(iava)
+        dimsd = list(self.dims)  # data dimensions
+        dimsd[self.axis] = len(iava)
+        self.dimsd = tuple(dimsd)
         self.iavareshape = np.ones(len(self.dims), dtype=int)
         self.iavareshape[self.axis] = len(self.iava)
 
@@ -100,6 +101,7 @@ class Restriction(LinearOperator):
         if ncp != np:
             self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
         self.inplace = inplace
+
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False

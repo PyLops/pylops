@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_array
+from pylops.utils._internal import _value_or_list_like_to_tuple
 
 
 class Flip(LinearOperator):
@@ -46,10 +46,10 @@ class Flip(LinearOperator):
     """
 
     def __init__(self, dims, axis=-1, dtype="float64"):
-        self.dims = _value_or_list_like_to_array(dims)
+        self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
         self.axis = axis
-        N = np.prod(self.dims)
-        self.shape = (N, N)
+
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 

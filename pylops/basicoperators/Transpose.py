@@ -1,6 +1,8 @@
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_tuple
 
 
 class Transpose(LinearOperator):
@@ -46,22 +48,24 @@ class Transpose(LinearOperator):
     """
 
     def __init__(self, dims, axes, dtype="float64"):
-        self.dims = list(dims)
-        self.axes = list(axes)
+        self.dims = _value_or_list_like_to_tuple(dims)
+        ndims = len(self.dims)
+        self.axes = [normalize_axis_index(ax, ndims) for ax in axes]
 
         # find out if all axes are present only once in axes
-        ndims = len(self.dims)
         if len(np.unique(self.axes)) != ndims:
             raise ValueError("axes must contain each direction once")
 
         # find out how axes should be transposed in adjoint mode
         self.axesd = np.zeros(ndims, dtype=int)
-        self.dimsd = np.zeros(ndims, dtype=int)
         self.axesd[self.axes] = np.arange(ndims, dtype=int)
-        self.dimsd[self.axesd] = self.dims
+
+        dimsd = np.zeros(ndims, dtype=int)
+        dimsd[self.axesd] = self.dims
+        self.dimsd = tuple(dimsd)
         self.axesd = list(self.axesd)
 
-        self.shape = (np.prod(self.dims), np.prod(self.dims))
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 

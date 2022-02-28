@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 
 
@@ -64,28 +65,26 @@ class Diagonal(LinearOperator):
         self.diag = diag.ravel()
         self.complex = True if ncp.iscomplexobj(self.diag) else False
 
-        if dims is None:
-            self.shape = (len(self.diag), len(self.diag))
-            self.dims = None
-            self.reshape = False
-        else:
-            diagdims = [1] * len(dims)
-            diagdims[axis] = dims[axis]
-            self.diag = self.diag.reshape(diagdims)
-            self.shape = (np.prod(dims), np.prod(dims))
-            self.dims = dims
-            self.reshape = True
+        ncp = get_array_module(diag)
+        self.diag = diag.ravel()
+        self.complex = True if ncp.iscomplexobj(self.diag) else False
+        self.dims = self.dimsd = (
+            (len(self.diag),) if dims is None else _value_or_list_like_to_tuple(dims)
+        )
+
+        diagdims = np.ones_like(self.dims)
+        diagdims[axis] = self.dims[axis]
+        self.diag = self.diag.reshape(diagdims)
+
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         if type(self.diag) != type(x):
             self.diag = to_cupy_conditional(x, self.diag)
-        if not self.reshape:
-            y = self.diag * x.ravel()
-        else:
-            x = x.reshape(self.dims)
-            y = self.diag * x
+        x = x.reshape(self.dims)
+        y = self.diag * x
         return y.ravel()
 
     def _rmatvec(self, x):
@@ -95,11 +94,8 @@ class Diagonal(LinearOperator):
             diagadj = self.diag.conj()
         else:
             diagadj = self.diag
-        if not self.reshape:
-            y = diagadj * x.ravel()
-        else:
-            x = x.reshape(self.dims)
-            y = diagadj * x
+        x = x.reshape(self.dims)
+        y = diagadj * x
         return y.ravel()
 
     def matrix(self):
