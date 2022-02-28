@@ -112,7 +112,7 @@ class Restriction(LinearOperator):
         # explicitely create a list of indices in the n-dimensional
         # model space which will be used in _rmatvec to place the input
         if ncp != np:
-            self.iavamask = _compute_iavamask(dims, dir, iava, ncp)
+            self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
         self.inplace = inplace
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
