@@ -56,18 +56,17 @@ class Sum(LinearOperator):
     """
 
     def __init__(self, dims, axis=-1, dir=None, dtype="float64"):
-        if len(dims) == 1:
-            dims = (dims[0], 1)  # to avoid reducing matvec to a scalar
-        self.dims = dims
         if dir is not None:
             warnings.warn(
                 "dir will be deprecated in version 2.0.0, use axis instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
-            self.axis = dir
-        else:
-            self.axis = axis
+            axis = dir
+        if len(dims) == 1:
+            dims = (dims[0], 1)  # to avoid reducing matvec to a scalar
+        self.dims = dims
+        self.axis = axis
         # data dimensions
         self.dims_d = list(dims).copy()
         self.dims_d.pop(self.axis)
