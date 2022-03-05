@@ -19,7 +19,7 @@ This Python library is inspired by the MATLAB [Spot – A Linear-Operator Toolbo
 Linear operators and inverse problems are at the core of many of the most used algorithms
 in signal processing, image processing, and remote sensing. When dealing with small-scale problems,
 the Python numerical scientific libraries [numpy](http://www.numpy.org)
-and [scipy](https://www.scipy.org/scipylib/index.html) allow the performance of many
+and [scipy](https://www.scipy.org/scipylib/index.html) allow allow performing many
 of the underlying matrix operations (e.g., computation of matrix-vector products and manipulation of matrices)
 in a simple and compact way.
 
