@@ -19,7 +19,7 @@ This Python library is inspired by the MATLAB [Spot – A Linear-Operator Toolbo
 Linear operators and inverse problems are at the core of many of the most used algorithms
 in signal processing, image processing, and remote sensing. When dealing with small-scale problems,
 the Python numerical scientific libraries [numpy](http://www.numpy.org)
-and [scipy](https://www.scipy.org/scipylib/index.html) allow to perform many
+and [scipy](https://www.scipy.org/scipylib/index.html) allow allow performing many
 of the underlying matrix operations (e.g., computation of matrix-vector products and manipulation of matrices)
 in a simple and compact way.
 
@@ -70,7 +70,7 @@ xinv = Dlop / y
 ```
 
 Note how this second approach does not require creating a dense matrix, reducing both the memory load and the computational cost of
-applying a derivative to an input vector x. Moreover, the code becomes even more compact and espressive than in the previous case
+applying a derivative to an input vector x. Moreover, the code becomes even more compact and expressive than in the previous case
 letting the user focus on the formulation of equations of the forward problem to be solved by inversion.
 
 
