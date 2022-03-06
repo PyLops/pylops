@@ -19,12 +19,6 @@ class Flip(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which model is flipped.
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
-
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -45,21 +39,13 @@ class Flip(LinearOperator):
     .. math::
         y[i] = x[N-1-i] \quad \forall i=0,1,2,\ldots,N-1
 
-    where :math:`N` is the dimension of the input model along ``dir``. As this operator is
+    where :math:`N` is the dimension of the input model along ``axis``. As this operator is
     self-adjoint, :math:`x` and :math:`y` in the equation above are simply
     swapped in adjoint mode.
 
     """
 
-    def __init__(self, dims, axis=-1, dir=None, dtype="float64"):
-        if dir is not None:
-            warnings.warn(
-                "dir will be deprecated in version 2.0.0, use axis instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axis = dir
-
+    def __init__(self, dims, axis=-1, dtype="float64"):
         self.dims = _value_or_list_like_to_array(dims)
         self.axis = axis
         N = np.prod(self.dims)

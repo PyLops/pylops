@@ -10,7 +10,6 @@ from pylops.LinearOperator import aslinearoperator
 def Laplacian(
     dims,
     axes=(-2, -1),
-    dirs=None,
     weights=(1, 1),
     sampling=(1, 1),
     edge=False,
@@ -32,12 +31,6 @@ def Laplacian(
         .. versionadded:: 2.0.0
 
         Axes along which the Laplacian is applied.
-    dirs : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axes`` instead. Note that the default for ``axes`` is (-2, -1)
-            instead of (0, 1) which was the default for ``dirs``.
-
     weights : :obj:`tuple`, optional
         Weight to apply to each direction (real laplacian operator if
         ``weights=(1, 1)``)
@@ -73,13 +66,6 @@ def Laplacian(
                   / (\Delta x \Delta y)
 
     """
-    if dirs is not None:
-        warnings.warn(
-            "dirs will be deprecated in version 2.0.0, use axes instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        axes = dirs
     axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
     if not (len(axes) == len(weights) == len(sampling)):
         raise ValueError("axes, weights, and sampling have different size")

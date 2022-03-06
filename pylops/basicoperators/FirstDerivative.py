@@ -22,12 +22,6 @@ class FirstDerivative(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which derivative is applied.
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
-
     sampling : :obj:`float`, optional
         Sampling step :math:`\Delta x`.
     edge : :obj:`bool`, optional
@@ -74,20 +68,11 @@ class FirstDerivative(LinearOperator):
         self,
         dims,
         axis=-1,
-        dir=None,
         sampling=1.0,
         edge=False,
         dtype="float64",
         kind="centered",
     ):
-        if dir is not None:
-            warnings.warn(
-                "dir will be deprecated in version 2.0.0, use axis instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axis = dir
-
         self.dims = _value_or_list_like_to_array(dims)
         self.axis = normalize_axis_index(axis, len(self.dims))
         self.sampling = sampling

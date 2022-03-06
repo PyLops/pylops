@@ -19,11 +19,6 @@ class CausalIntegration(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which the model is integrated.
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead.
-
     sampling : :obj:`float`, optional
         Sampling step ``dx``.
     halfcurrent : :obj:`bool`, optional
@@ -96,21 +91,12 @@ class CausalIntegration(LinearOperator):
         self,
         dims,
         axis=-1,
-        dir=None,
         sampling=1,
         halfcurrent=True,
         dtype="float64",
         kind="full",
         removefirst=False,
     ):
-        if dir is not None:
-            warnings.warn(
-                "dir will be deprecated in version 2.0.0, use axis instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axis = dir
-
         self.dims = _value_or_list_like_to_array(dims)
         self.axis = axis
         self.sampling = sampling

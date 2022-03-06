@@ -28,12 +28,6 @@ class Diagonal(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which multiplication is applied.
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
-
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -65,17 +59,10 @@ class Diagonal(LinearOperator):
 
     """
 
-    def __init__(self, diag, dims=None, axis=-1, dir=None, dtype="float64"):
+    def __init__(self, diag, dims=None, axis=-1, dtype="float64"):
         ncp = get_array_module(diag)
         self.diag = diag.ravel()
         self.complex = True if ncp.iscomplexobj(self.diag) else False
-        if dir is not None:
-            warnings.warn(
-                "dir will be deprecated in version 2.0.0, use axis instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axis = dir
 
         if dims is None:
             self.shape = (len(self.diag), len(self.diag))

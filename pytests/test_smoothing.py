@@ -85,10 +85,12 @@ def test_Smoothing2D(par):
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 2d kernel on 3d signal
+    axes = list(range(3))
+    axes.remove(par["axis"])
     D2op = Smoothing2D(
         nsmooth=(5, 5),
         dims=(par["nz"], par["ny"], par["nx"]),
-        nodir=par["axis"],
+        axes=axes,
         dtype="float64",
     )
     assert dottest(

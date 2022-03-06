@@ -54,12 +54,6 @@ class Convolve1D(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which convolution is applied
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
-
     method : :obj:`str`, optional
         Method used to calculate the convolution (``direct``, ``fft``,
         or ``overlapadd``). Note that only ``direct`` and ``fft`` are allowed
@@ -123,17 +117,7 @@ class Convolve1D(LinearOperator):
 
     """
 
-    def __init__(
-        self, dims, h, offset=0, axis=-1, dir=None, dtype="float64", method=None
-    ):
-        if dir is not None:
-            warnings.warn(
-                "dir will be deprecated in version 2.0.0, use axis instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axis = dir
-
+    def __init__(self, dims, h, offset=0, axis=-1, dtype="float64", method=None):
         self.dims = _value_or_list_like_to_array(dims)
         self.axis = axis
 

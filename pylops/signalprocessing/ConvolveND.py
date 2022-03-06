@@ -31,13 +31,6 @@ class ConvolveND(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axes along which convolution is applied
-    dirs : :obj:`tuple`, optional
-        Directions along which convolution is applied
-        (set to ``None`` for filter of same dimension as input vector)
-
-        .. deprecated:: 2.0.0
-            Use ``axes`` instead.
-
     method : :obj:`str`, optional
         Method used to calculate the convolution (``direct`` or ``fft``).
     dtype : :obj:`str`, optional
@@ -67,18 +60,9 @@ class ConvolveND(LinearOperator):
         h,
         offset=None,
         axes=(-2, -1),
-        dirs=None,
         method="fft",
         dtype="float64",
     ):
-        if dirs is not None:
-            warnings.warn(
-                "dirs will be deprecated in version 2.0.0, use axes instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axes = dirs
-
         ncp = get_array_module(h)
         self.dims = _value_or_list_like_to_array(dims)
         self.axes = (

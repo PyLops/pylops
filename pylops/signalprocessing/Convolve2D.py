@@ -5,9 +5,7 @@ from numpy.core.multiarray import normalize_axis_index
 from pylops.signalprocessing import ConvolveND
 
 
-def Convolve2D(
-    dims, h, offset=(0, 0), axes=(-2, -1), nodir=None, dtype="float64", method="fft"
-):
+def Convolve2D(dims, h, offset=(0, 0), axes=(-2, -1), dtype="float64", method="fft"):
     r"""2D convolution operator.
 
     Apply two-dimensional convolution with a compact filter to model
@@ -26,13 +24,6 @@ def Convolve2D(
         .. versionadded:: 2.0.0
 
         Axes along which convolution is applied
-    nodir : :obj:`int`, optional
-        Direction along which smoothing is **not** applied (set to ``None`` for 2d
-        arrays)
-
-        .. deprecated:: 2.0.0
-            Use ``axes`` instead. Note that ``axes`` applies along axes instead.
-
     dtype : :obj:`str`, optional
         Type of elements in input array.
     method : :obj:`str`, optional
@@ -85,20 +76,5 @@ def Convolve2D(
     """
     if h.ndim != 2:
         raise ValueError("h must be 2-dimensional")
-    if nodir is not None:
-        warnings.warn(
-            "nodir will be deprecated in version 2.0.0, use axes instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        if nodir == 0:
-            axes = (1, 2)
-        elif nodir == 1:
-            axes = (0, 2)
-        else:
-            axes = (0, 1)
-    else:
-        axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
-
     cop = ConvolveND(dims, h, offset=offset, axes=axes, method=method, dtype=dtype)
     return cop

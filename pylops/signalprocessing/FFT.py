@@ -371,7 +371,6 @@ class _FFT_fftw(_BaseFFT):
 def FFT(
     dims,
     axis=-1,
-    dir=None,
     nfft=None,
     sampling=1.0,
     norm="ortho",
@@ -415,12 +414,6 @@ def FFT(
         .. versionadded:: 2.0.0
 
         Axis along which FFT is applied
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
-
     nfft : :obj:`int`, optional
         Number of samples in Fourier Transform (same as input if ``nfft=None``)
     sampling : :obj:`float`, optional
@@ -547,14 +540,6 @@ def FFT(
     signals.
 
     """
-    if dir is not None:
-        warnings.warn(
-            "dir will be deprecated in version 2.0.0, use axis instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        axis = dir
-
     # Use fftshift if supplied, otherwise use ifftshift_before
     # If neither are supplied, set to False
     if fftshift is not None:

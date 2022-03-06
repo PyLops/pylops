@@ -5,7 +5,7 @@ import numpy as np
 from pylops.signalprocessing import Convolve1D
 
 
-def Smoothing1D(nsmooth, dims, axis=-1, dir=None, dtype="float64"):
+def Smoothing1D(nsmooth, dims, axis=-1, dtype="float64"):
     r"""1D Smoothing.
 
     Apply smoothing to model (and data) to a multi-dimensional array
@@ -21,12 +21,6 @@ def Smoothing1D(nsmooth, dims, axis=-1, dir=None, dtype="float64"):
         .. versionadded:: 2.0.0
 
         Axis along which model (and data) are smoothed.
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
-
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -71,19 +65,6 @@ def Smoothing1D(nsmooth, dims, axis=-1, dir=None, dtype="float64"):
     """
     if nsmooth % 2 == 0:
         nsmooth += 1
-
-    if dir is not None:
-        warnings.warn(
-            "dir will be deprecated in version 2.0.0, use axis instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        axis = dir
-
-    return Convolve1D(
-        dims,
-        np.ones(nsmooth) / float(nsmooth),
-        axis=axis,
-        offset=(nsmooth - 1) / 2,
-        dtype=dtype,
-    )
+    h = np.ones(nsmooth) / float(nsmooth)
+    offset = (nsmooth - 1) / 2
+    return Convolve1D(dims, h, axis=axis, offset=offset, dtype=dtype)

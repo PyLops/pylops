@@ -39,12 +39,6 @@ class Restriction(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which restriction is applied to model.
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
-
     dtype : :obj:`str`, optional
         Type of elements in input array.
     inplace : :obj:`bool`, optional
@@ -90,15 +84,7 @@ class Restriction(LinearOperator):
 
     """
 
-    def __init__(self, dims, iava, axis=-1, dir=None, dtype="float64", inplace=True):
-        if dir is not None:
-            warnings.warn(
-                "dir will be deprecated in version 2.0.0, use axis instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axis = dir
-
+    def __init__(self, dims, iava, axis=-1, dtype="float64", inplace=True):
         ncp = get_array_module(iava)
         self.dims = _value_or_list_like_to_array(dims)
         self.axis = normalize_axis_index(axis, len(self.dims))

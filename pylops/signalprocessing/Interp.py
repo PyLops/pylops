@@ -90,7 +90,7 @@ def _sincinterp(dims, iava, axis=0, dtype="float64"):
     return Op
 
 
-def Interp(dims, iava, axis=-1, dir=None, kind="linear", dtype="float64"):
+def Interp(dims, iava, axis=-1, kind="linear", dtype="float64"):
     r"""Interpolation operator.
 
     Apply interpolation along ``axis``
@@ -128,11 +128,6 @@ def Interp(dims, iava, axis=-1, dir=None, kind="linear", dtype="float64"):
         .. versionadded:: 2.0.0
 
         Axis along which interpolation is applied.
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
     kind : :obj:`str`, optional
         Kind of interpolation (``nearest``, ``linear``, and ``sinc`` are
         currently supported)
@@ -193,14 +188,6 @@ def Interp(dims, iava, axis=-1, dir=None, kind="linear", dtype="float64"):
     :math:`i,j` possible combinations.
 
     """
-    if dir is not None:
-        warnings.warn(
-            "dir will be deprecated in version 2.0.0, use axis instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        axis = dir
-
     dims = _value_or_list_like_to_array(dims)
 
     if kind == "nearest":

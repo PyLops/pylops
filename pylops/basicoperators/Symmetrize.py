@@ -21,12 +21,6 @@ class Symmetrize(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which model is symmetrized.
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
-
     dtype : :obj:`str`, optional
         Type of elements in input array
 
@@ -66,15 +60,7 @@ class Symmetrize(LinearOperator):
     apart from the central sample where :math:`x[0] = y[N-1]`.
     """
 
-    def __init__(self, dims, axis=-1, dir=None, dtype="float64"):
-        if dir is not None:
-            warnings.warn(
-                "dir will be deprecated in version 2.0.0, use axis instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axis = dir
-
+    def __init__(self, dims, axis=-1, dtype="float64"):
         self.dims = _value_or_list_like_to_array(dims)
         self.axis = axis
         self.dimsd = self.dims.copy()

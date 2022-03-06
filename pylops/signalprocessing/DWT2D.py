@@ -44,12 +44,6 @@ class DWT2D(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which DWT2D is applied
-    dirs : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axes`` instead. Note that the default for ``axes`` is (-2, -1)
-            instead of (0, 1) which was the default for ``dirs``.
-
     wavelet : :obj:`str`, optional
         Name of wavelet type. Use :func:`pywt.wavelist(kind='discrete')` for
         a list of available wavelets.
@@ -81,20 +75,10 @@ class DWT2D(LinearOperator):
 
     """
 
-    def __init__(
-        self, dims, axes=(-2, -1), dirs=None, wavelet="haar", level=1, dtype="float64"
-    ):
+    def __init__(self, dims, axes=(-2, -1), wavelet="haar", level=1, dtype="float64"):
         if pywt is None:
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
-
-        if dirs is not None:
-            warnings.warn(
-                "dirs will be deprecated in version 2.0.0, use axes instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axes = dirs
 
         # define padding for length to be power of 2
         ndimpow2 = [max(2 ** ceil(log(dims[ax], 2)), 2 ** level) for ax in axes]

@@ -59,12 +59,6 @@ class DWT(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which DWT is applied
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
-
     wavelet : :obj:`str`, optional
         Name of wavelet type. Use :func:`pywt.wavelist(kind='discrete')` for
         a list of
@@ -102,22 +96,13 @@ class DWT(LinearOperator):
 
     """
 
-    def __init__(
-        self, dims, axis=-1, dir=None, wavelet="haar", level=1, dtype="float64"
-    ):
+    def __init__(self, dims, axis=-1, wavelet="haar", level=1, dtype="float64"):
         if pywt is None:
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
 
         if isinstance(dims, int):
             dims = (dims,)
-        if dir is not None:
-            warnings.warn(
-                "dir will be deprecated in version 2.0.0, use axis instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axis = dir
 
         # define padding for length to be power of 2
         ndimpow2 = max(2 ** ceil(log(dims[axis], 2)), 2 ** level)

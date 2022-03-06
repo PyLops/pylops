@@ -10,7 +10,6 @@ def Shift(
     dims,
     shift,
     axis=-1,
-    dir=None,
     nfft=None,
     sampling=1.0,
     real=False,
@@ -20,8 +19,8 @@ def Shift(
 ):
     r"""Shift operator
 
-    Apply fractional shift in the frequency domain along a specific direction
-    ``dir`` of a multi-dimensional array of size ``dim``.
+    Apply fractional shift in the frequency domain along an ``axis``
+    of a multi-dimensional array of size ``dims``.
 
     Parameters
     ----------
@@ -33,11 +32,6 @@ def Shift(
         .. versionadded:: 2.0.0
 
         Axis along which shift is applied
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
     nfft : :obj:`int`, optional
         Number of samples in Fourier Transform (same as input if ``nfft=None``)
     sampling : :obj:`float`, optional
@@ -83,14 +77,6 @@ def Shift(
     chosen ``shift``.
 
     """
-    if dir is not None:
-        warnings.warn(
-            "dir will be deprecated in version 2.0.0, use axis instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        axis = dir
-
     Fop = FFT(
         dims,
         axis=axis,

@@ -21,11 +21,6 @@ class Sum(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which model is summed.
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead.
-
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -55,14 +50,7 @@ class Sum(LinearOperator):
 
     """
 
-    def __init__(self, dims, axis=-1, dir=None, dtype="float64"):
-        if dir is not None:
-            warnings.warn(
-                "dir will be deprecated in version 2.0.0, use axis instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axis = dir
+    def __init__(self, dims, axis=-1, dtype="float64"):
         if len(dims) == 1:
             dims = (dims[0], 1)  # to avoid reducing matvec to a scalar
         self.dims = dims

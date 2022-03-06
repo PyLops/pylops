@@ -204,11 +204,13 @@ def test_Convolve2D(par):
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 2D on 3D
+    axes = list(range(3))
+    axes.remove(par["axis"])
     Cop = Convolve2D(
         (par["nz"], par["ny"], par["nx"]),
         h=h2,
         offset=par["offset"],
-        nodir=par["axis"],
+        axes=axes,
         dtype="float64",
     )
     assert dottest(

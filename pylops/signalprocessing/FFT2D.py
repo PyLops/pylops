@@ -208,7 +208,6 @@ class _FFT2D_scipy(_BaseFFTND):
 def FFT2D(
     dims,
     axes=(-2, -1),
-    dirs=None,
     nffts=None,
     sampling=1.0,
     norm="ortho",
@@ -248,12 +247,6 @@ def FFT2D(
         .. versionadded:: 2.0.0
 
         Pair of axes along which FFT2D is applied
-    dirs : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axes`` instead. Note that the default for ``axes`` is (-2, -1)
-            instead of (0, 1) which was the default for ``dirs``.
-
     nffts : :obj:`tuple` or :obj:`int`, optional
         Number of samples in Fourier Transform for each axis in ``axes``. In case only one
         dimension needs to be specified, use ``None`` for the other dimension in the
@@ -386,14 +379,6 @@ def FFT2D(
     signals.
 
     """
-    if dirs is not None:
-        warnings.warn(
-            "dirs will be deprecated in version 2.0.0, use axes instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        axes = dirs
-
     if engine == "numpy":
         f = _FFT2D_numpy(
             dims=dims,

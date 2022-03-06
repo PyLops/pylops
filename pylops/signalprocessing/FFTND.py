@@ -192,7 +192,6 @@ class _FFTND_scipy(_BaseFFTND):
 def FFTND(
     dims,
     axes=(-3, -2, -1),
-    dirs=None,
     nffts=None,
     sampling=1.0,
     norm="ortho",
@@ -233,12 +232,6 @@ def FFTND(
         .. versionadded:: 2.0.0
 
         Axes (or axis) along which FFTND is applied
-    dirs : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axes`` instead. Note that the default for ``axes`` is (-3, -2, -1)
-            instead of (0, 1, 2) which was the default for ``dirs``.
-
     nffts : :obj:`tuple` or :obj:`int`, optional
         Number of samples in Fourier Transform for each axis in ``axes``. In case only one
         dimension needs to be specified, use ``None`` for the other dimension in the
@@ -270,7 +263,7 @@ def FFTND(
         (``False``). Used to enforce that the output of adjoint of a real
         model is real. Note that the real FFT is applied only to the first
         dimension to which the FFTND operator is applied (last element of
-        ``dirs``)
+        ``axes``)
     ifftshift_before : :obj:`tuple` or :obj:`bool`, optional
         .. versionadded:: 1.17.0
 
@@ -379,14 +372,6 @@ def FFTND(
     for real input signals.
 
     """
-    if dirs is not None:
-        warnings.warn(
-            "dirs will be deprecated in version 2.0.0, use axes instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        axes = dirs
-
     if engine == "numpy":
         f = _FFTND_numpy(
             dims=dims,

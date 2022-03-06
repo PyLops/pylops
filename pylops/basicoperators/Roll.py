@@ -20,12 +20,6 @@ class Roll(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which model is rolled.
-    dir : :obj:`int`, optional
-
-        .. deprecated:: 2.0.0
-            Use ``axis`` instead. Note that the default for ``axis`` is -1
-            instead of 0 which was the default for ``dir``.
-
     shift : :obj:`int`, optional
         Number of samples by which elements are shifted
     dtype : :obj:`str`, optional
@@ -47,15 +41,7 @@ class Roll(LinearOperator):
 
     """
 
-    def __init__(self, dims, axis=-1, dir=None, shift=1, dtype="float64"):
-        if dir is not None:
-            warnings.warn(
-                "dir will be deprecated in version 2.0.0, use axis instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            axis = dir
-
+    def __init__(self, dims, axis=-1, shift=1, dtype="float64"):
         self.dims = _value_or_list_like_to_array(dims)
         self.axis = axis
         N = np.prod(self.dims)
