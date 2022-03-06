@@ -17,14 +17,14 @@ def _checkunique(iava):
         raise ValueError("Repeated values in iava array")
 
 
-def _nearestinterp(dims, iava, axis=0, dtype="float64"):
+def _nearestinterp(dims, iava, axis=-1, dtype="float64"):
     """Nearest neighbour interpolation."""
     iava = np.round(iava).astype(int)
     _checkunique(iava)
     return Restriction(dims, iava, axis=axis, dtype=dtype), iava
 
 
-def _linearinterp(dims, iava, axis=0, dtype="float64"):
+def _linearinterp(dims, iava, axis=-1, dtype="float64"):
     """Linear interpolation."""
     ncp = get_array_module(iava)
 

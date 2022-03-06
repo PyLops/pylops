@@ -24,7 +24,7 @@ class _BaseFFT(LinearOperator):
     def __init__(
         self,
         dims,
-        axis=0,
+        axis=-1,
         nfft=None,
         sampling=1.0,
         norm="ortho",
