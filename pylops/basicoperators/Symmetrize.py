@@ -74,24 +74,20 @@ class Symmetrize(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.dimsd, dtype=self.dtype)
         x = ncp.reshape(x, self.dims)
-        if self.axis > 0:  # bring the dimension to symmetrize to first
-            x = ncp.swapaxes(x, self.axis, 0)
-            y = ncp.swapaxes(y, self.axis, 0)
-        y[self.nsym - 1 :] = x
-        y[: self.nsym - 1] = x[-1:0:-1]
-        if self.axis > 0:
-            y = ncp.swapaxes(y, 0, self.axis)
+        x = ncp.swapaxes(x, self.axis, -1)
+        y = ncp.swapaxes(y, self.axis, -1)
+        y[..., self.nsym - 1 :] = x
+        y[..., : self.nsym - 1] = x[..., -1:0:-1]
+        y = ncp.swapaxes(y, -1, self.axis)
         y = y.ravel()
         return y
 
     def _rmatvec(self, x):
         ncp = get_array_module(x)
         x = ncp.reshape(x, self.dimsd)
-        if self.axis > 0:  # bring the dimension to symmetrize to first
-            x = ncp.swapaxes(x, self.axis, 0)
-        y = x[self.nsym - 1 :].copy()
-        y[1:] += x[self.nsym - 2 :: -1]
-        if self.axis > 0:
-            y = ncp.swapaxes(y, 0, self.axis)
+        x = ncp.swapaxes(x, self.axis, -1)
+        y = x[..., self.nsym - 1 :].copy()
+        y[..., 1:] += x[..., self.nsym - 2 :: -1]
+        y = ncp.swapaxes(y, -1, self.axis)
         y = y.ravel()
         return y
