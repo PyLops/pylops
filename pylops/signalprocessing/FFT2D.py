@@ -79,7 +79,7 @@ class _FFT2D_numpy(_BaseFFTND):
         return y.ravel()
 
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dims_fft)
+        x = np.reshape(x, self.dimsd)
         if self.fftshift_after.any():
             x = np.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
@@ -177,7 +177,7 @@ class _FFT2D_scipy(_BaseFFTND):
         return y.ravel()
 
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dims_fft)
+        x = np.reshape(x, self.dimsd)
         if self.fftshift_after.any():
             x = scipy.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
@@ -312,10 +312,14 @@ def FFT2D(
 
     Attributes
     ----------
-    dims_fft : :obj:`tuple`
+    dimsd : :obj:`tuple`
         Shape of the array after the forward, but before linearization.
 
-        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    dims_fft : :obj:`tuple`
+
+        .. deprecated:: 2.0.0
+            Use ``dimsd`` instead.
     f1 : :obj:`numpy.ndarray`
         Discrete Fourier Transform sample frequencies along ``axes[0]``
     f2 : :obj:`numpy.ndarray`

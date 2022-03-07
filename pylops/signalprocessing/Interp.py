@@ -5,7 +5,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, MatrixMult, Restriction, Transpose
-from pylops.utils._internal import _value_or_list_like_to_array
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -188,7 +188,7 @@ def Interp(dims, iava, axis=-1, kind="linear", dtype="float64"):
     :math:`i,j` possible combinations.
 
     """
-    dims = _value_or_list_like_to_array(dims)
+    dims = _value_or_list_like_to_tuple(dims)
 
     if kind == "nearest":
         interpop, iava = _nearestinterp(dims, iava, axis=axis, dtype=dtype)
@@ -198,4 +198,4 @@ def Interp(dims, iava, axis=-1, kind="linear", dtype="float64"):
         interpop = _sincinterp(dims, iava, axis=axis, dtype=dtype)
     else:
         raise NotImplementedError("kind is not correct...")
-    return LinearOperator(interpop), iava
+    return interpop, iava

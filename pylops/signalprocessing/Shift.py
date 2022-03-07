@@ -95,6 +95,7 @@ def Shift(
     shift = np.exp(-1j * 2 * np.pi * Fop.f * shift)
     Sop = Diagonal(shift, dims=dimsdiag, axis=axis, dtype=Fop.cdtype)
     Op = Fop.H * Sop * Fop
+    Op.dims = Op.dimsd = Fop.dims
     # force dtype to that of input (FFT always upcasts it to complex)
     Op.dtype = dtype
     return Op

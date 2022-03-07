@@ -84,8 +84,8 @@ class Bilinear(LinearOperator):
 
         # define dimension of data
         ndims = len(dims)
-        self.dims = dims
-        self.dimsd = [len(iava[1])] + list(dims[2:])
+        self.dims = tuple(dims)
+        self.dimsd = tuple([len(iava[1])] + list(dims[2:]))
 
         # find indices and weights
         self.iava_t = ncp.floor(iava[0]).astype(int)

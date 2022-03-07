@@ -80,17 +80,18 @@ class DWT2D(LinearOperator):
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
 
+        self.dims = tuple(dims)
         # define padding for length to be power of 2
-        ndimpow2 = [max(2 ** ceil(log(dims[ax], 2)), 2 ** level) for ax in axes]
-        pad = [(0, 0)] * len(dims)
+        ndimpow2 = [max(2 ** ceil(log(self.dims[ax], 2)), 2 ** level) for ax in axes]
+        pad = [(0, 0)] * len(self.dims)
         for i, ax in enumerate(axes):
-            pad[ax] = (0, ndimpow2[i] - dims[ax])
-        self.pad = Pad(dims, pad)
-        self.dims = dims
+            pad[ax] = (0, ndimpow2[i] - self.dims[ax])
+        self.pad = Pad(self.dims, pad)
         self.axes = axes
-        self.dimsd = list(dims)
+        dimsd = list(self.dims)
         for i, ax in enumerate(axes):
-            self.dimsd[ax] = ndimpow2[i]
+            dimsd[ax] = ndimpow2[i]
+        self.dimsd = tuple(dimsd)
 
         # apply transform once again to find out slices
         _, self.sl = pywt.coeffs_to_array(
@@ -106,7 +107,8 @@ class DWT2D(LinearOperator):
         self.wavelet = wavelet
         self.waveletadj = _adjointwavelet(wavelet)
         self.level = level
-        self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
+
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 

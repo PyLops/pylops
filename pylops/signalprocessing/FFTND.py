@@ -70,7 +70,7 @@ class _FFTND_numpy(_BaseFFTND):
         return y.ravel()
 
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dims_fft)
+        x = np.reshape(x, self.dimsd)
         if self.fftshift_after.any():
             x = np.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
@@ -158,7 +158,7 @@ class _FFTND_scipy(_BaseFFTND):
         return y.ravel()
 
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dims_fft)
+        x = np.reshape(x, self.dimsd)
         if self.fftshift_after.any():
             x = scipy.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
@@ -301,10 +301,14 @@ def FFTND(
 
     Attributes
     ----------
-    dims_fft : :obj:`tuple`
+    dimsd : :obj:`tuple`
         Shape of the array after the forward, but before linearization.
 
-        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    dims_fft : :obj:`tuple`
+
+        .. deprecated:: 2.0.0
+            Use ``dimsd`` instead.
     fs : :obj:`tuple`
         Each element of the tuple corresponds to the Discrete Fourier Transform
         sample frequencies along the respective direction given by ``axes``.
