@@ -119,24 +119,6 @@ class _BaseFFT(LinearOperator):
         self.clinear = False if self.real or np.issubdtype(dtype, np.floating) else True
         self.explicit = False
 
-    @property
-    def dims_fft(self):
-        warnings.warn(
-            "dims_fft is deprecated in version 2.0.0, use dimsd instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.dimsd
-
-    @dims_fft.setter
-    def dims_fft(self, value):
-        warnings.warn(
-            "dims_fft is deprecated in version 2.0.0, use dimsd instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.dimsd = value
-
     def _matvec(self, x):
         raise NotImplementedError(
             "_BaseFFT does not provide _matvec. It must be implemented separately."
@@ -291,24 +273,6 @@ class _BaseFFTND(LinearOperator):
         self.dtype = self.cdtype
         self.clinear = False if self.real or np.issubdtype(dtype, np.floating) else True
         self.explicit = False
-
-    @property
-    def dims_fft(self):
-        warnings.warn(
-            "dims_fft is deprecated in version 2.0.0, use dimsd instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.dimsd
-
-    @dims_fft.setter
-    def dims_fft(self, value):
-        warnings.warn(
-            "dims_fft is deprecated in version 2.0.0, use dimsd instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.dimsd = value
 
     def _matvec(self, x):
         raise NotImplementedError(

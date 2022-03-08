@@ -484,10 +484,6 @@ def FFT(
         Shape of the array after the forward, but before linearization.
 
         For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
-    dims_fft : :obj:`tuple`
-
-        .. deprecated:: 2.0.0
-            Use ``dimsd`` instead.
     f : :obj:`numpy.ndarray`
         Discrete Fourier Transform sample frequencies
     real : :obj:`bool`

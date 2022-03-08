@@ -305,10 +305,6 @@ def FFTND(
         Shape of the array after the forward, but before linearization.
 
         For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
-    dims_fft : :obj:`tuple`
-
-        .. deprecated:: 2.0.0
-            Use ``dimsd`` instead.
     fs : :obj:`tuple`
         Each element of the tuple corresponds to the Discrete Fourier Transform
         sample frequencies along the respective direction given by ``axes``.
