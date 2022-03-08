@@ -1,13 +1,16 @@
+import warnings
+
+from numpy.core.multiarray import normalize_axis_index
+
 from pylops.signalprocessing import ConvolveND
-from pylops.utils._internal import _value_or_list_like_to_array
 
 
-def Convolve2D(dims, h, offset=(0, 0), nodir=None, dtype="float64", method="fft"):
+def Convolve2D(dims, h, offset=(0, 0), axes=(-2, -1), dtype="float64", method="fft"):
     r"""2D convolution operator.
 
     Apply two-dimensional convolution with a compact filter to model
-    (and data) along a pair of specific directions of a two or
-    three-dimensional array depending on the choice of ``nodir``.
+    (and data) along a pair of ``axes`` of a two or
+    three-dimensional array.
 
     Parameters
     ----------
@@ -16,10 +19,11 @@ def Convolve2D(dims, h, offset=(0, 0), nodir=None, dtype="float64", method="fft"
     h : :obj:`numpy.ndarray`
         2d compact filter to be convolved to input signal
     offset : :obj:`tuple`, optional
-        Indeces of the center of the compact filter
-    nodir : :obj:`int`, optional
-        Direction along which convolution is NOT applied
-        (set to ``None`` for 2d arrays)
+        Indices of the center of the compact filter
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axes along which convolution is applied
     dtype : :obj:`str`, optional
         Type of elements in input array.
     method : :obj:`str`, optional
@@ -72,14 +76,5 @@ def Convolve2D(dims, h, offset=(0, 0), nodir=None, dtype="float64", method="fft"
     """
     if h.ndim != 2:
         raise ValueError("h must be 2-dimensional")
-    if nodir is None:
-        dirs = (0, 1)
-    elif nodir == 0:
-        dirs = (1, 2)
-    elif nodir == 1:
-        dirs = (0, 2)
-    else:
-        dirs = (0, 1)
-
-    cop = ConvolveND(dims, h, offset=offset, dirs=dirs, method=method, dtype=dtype)
+    cop = ConvolveND(dims, h, offset=offset, axes=axes, method=method, dtype=dtype)
     return cop

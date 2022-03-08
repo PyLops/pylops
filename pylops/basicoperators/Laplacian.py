@@ -1,4 +1,7 @@
+import warnings
+
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops.basicoperators import SecondDerivative
 from pylops.LinearOperator import aslinearoperator
@@ -6,7 +9,7 @@ from pylops.LinearOperator import aslinearoperator
 
 def Laplacian(
     dims,
-    dirs=(0, 1),
+    axes=(-2, -1),
     weights=(1, 1),
     sampling=(1, 1),
     edge=False,
@@ -24,8 +27,10 @@ def Laplacian(
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension.
-    dirs : :obj:`tuple`, optional
-        Directions along which laplacian is applied.
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axes along which the Laplacian is applied.
     weights : :obj:`tuple`, optional
         Weight to apply to each direction (real laplacian operator if
         ``weights=(1, 1)``)
@@ -47,7 +52,7 @@ def Laplacian(
     Raises
     ------
     ValueError
-        If ``dirs``. ``weights``, and ``sampling`` do not have the same size
+        If ``axes``. ``weights``, and ``sampling`` do not have the same size
 
     Notes
     -----
@@ -61,16 +66,17 @@ def Laplacian(
                   / (\Delta x \Delta y)
 
     """
-    if not (len(dirs) == len(weights) == len(sampling)):
-        raise ValueError("dirs, weights, and sampling have different size")
+    axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
+    if not (len(axes) == len(weights) == len(sampling)):
+        raise ValueError("axes, weights, and sampling have different size")
 
     l2op = weights[0] * SecondDerivative(
-        dims, dir=dirs[0], sampling=sampling[0], edge=edge, kind=kind, dtype=dtype
+        dims, axis=axes[0], sampling=sampling[0], edge=edge, kind=kind, dtype=dtype
     )
 
-    for dir, samp, weight in zip(dirs[1:], sampling[1:], weights[1:]):
+    for ax, samp, weight in zip(axes[1:], sampling[1:], weights[1:]):
         l2op += weight * SecondDerivative(
-            dims, dir=dir, sampling=samp, edge=edge, dtype=dtype
+            dims, axis=ax, sampling=samp, edge=edge, dtype=dtype
         )
 
     return aslinearoperator(l2op)

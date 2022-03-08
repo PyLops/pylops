@@ -95,7 +95,7 @@ print("x =\n%s" % x)
 
 # 1st dim
 d = np.arange(nx)
-Dop = pylops.Diagonal(d, dims=(nx, ny), dir=0)
+Dop = pylops.Diagonal(d, dims=(nx, ny), axis=0)
 
 y = Dop * x.ravel()
 y1 = Dop.H * x.ravel()
@@ -105,7 +105,7 @@ print("1st dim: xadj = D'*x =\n%s " % y1.reshape(nx, ny))
 
 # 2nd dim
 d = np.arange(ny)
-Dop = pylops.Diagonal(d, dims=(nx, ny), dir=1)
+Dop = pylops.Diagonal(d, dims=(nx, ny), axis=1)
 
 y = Dop * x.ravel()
 y1 = Dop.H * x.ravel()

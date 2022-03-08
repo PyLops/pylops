@@ -28,7 +28,7 @@ class _FFT_numpy(_BaseFFT):
     def __init__(
         self,
         dims,
-        dir=0,
+        axis=-1,
         nfft=None,
         sampling=1.0,
         norm="ortho",
@@ -39,7 +39,7 @@ class _FFT_numpy(_BaseFFT):
     ):
         super().__init__(
             dims=dims,
-            dir=dir,
+            axis=axis,
             nfft=nfft,
             sampling=sampling,
             norm=norm,
@@ -64,21 +64,21 @@ class _FFT_numpy(_BaseFFT):
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.ifftshift_before:
-            x = np.fft.ifftshift(x, axes=self.dir)
+            x = np.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = np.fft.rfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+            y = np.fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
-            y = np.swapaxes(y, -1, self.dir)
+            y = np.swapaxes(y, -1, self.axis)
             y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
-            y = np.swapaxes(y, self.dir, -1)
+            y = np.swapaxes(y, self.axis, -1)
         else:
-            y = np.fft.fft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+            y = np.fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after:
-            y = np.fft.fftshift(y, axes=self.dir)
+            y = np.fft.fftshift(y, axes=self.axis)
         y = y.ravel()
         y = y.astype(self.cdtype)
         return y
@@ -86,28 +86,28 @@ class _FFT_numpy(_BaseFFT):
     def _rmatvec(self, x):
         x = np.reshape(x, self.dims_fft)
         if self.fftshift_after:
-            x = np.fft.ifftshift(x, axes=self.dir)
+            x = np.fft.ifftshift(x, axes=self.axis)
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
-            x = np.swapaxes(x, -1, self.dir)
+            x = np.swapaxes(x, -1, self.axis)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
-            x = np.swapaxes(x, self.dir, -1)
-            y = np.fft.irfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+            x = np.swapaxes(x, self.axis, -1)
+            y = np.fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         else:
-            y = np.fft.ifft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+            y = np.fft.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
 
-        if self.nfft > self.dims[self.dir]:
-            y = np.take(y, range(0, self.dims[self.dir]), axis=self.dir)
-        elif self.nfft < self.dims[self.dir]:
+        if self.nfft > self.dims[self.axis]:
+            y = np.take(y, range(0, self.dims[self.axis]), axis=self.axis)
+        elif self.nfft < self.dims[self.axis]:
             y = np.pad(y, self.ifftpad)
 
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before:
-            y = np.fft.fftshift(y, axes=self.dir)
+            y = np.fft.fftshift(y, axes=self.axis)
         y = y.ravel()
         y = y.astype(self.rdtype)
         return y
@@ -124,7 +124,7 @@ class _FFT_scipy(_BaseFFT):
     def __init__(
         self,
         dims,
-        dir=0,
+        axis=-1,
         nfft=None,
         sampling=1.0,
         norm="ortho",
@@ -135,7 +135,7 @@ class _FFT_scipy(_BaseFFT):
     ):
         super().__init__(
             dims=dims,
-            dir=dir,
+            axis=axis,
             nfft=nfft,
             sampling=sampling,
             norm=norm,
@@ -156,49 +156,49 @@ class _FFT_scipy(_BaseFFT):
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.ifftshift_before:
-            x = scipy.fft.ifftshift(x, axes=self.dir)
+            x = scipy.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = scipy.fft.rfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+            y = scipy.fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
-            y = np.swapaxes(y, -1, self.dir)
+            y = np.swapaxes(y, -1, self.axis)
             y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
-            y = np.swapaxes(y, self.dir, -1)
+            y = np.swapaxes(y, self.axis, -1)
         else:
-            y = scipy.fft.fft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+            y = scipy.fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after:
-            y = scipy.fft.fftshift(y, axes=self.dir)
+            y = scipy.fft.fftshift(y, axes=self.axis)
         y = y.ravel()
         return y
 
     def _rmatvec(self, x):
         x = np.reshape(x, self.dims_fft)
         if self.fftshift_after:
-            x = scipy.fft.ifftshift(x, axes=self.dir)
+            x = scipy.fft.ifftshift(x, axes=self.axis)
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
-            x = np.swapaxes(x, -1, self.dir)
+            x = np.swapaxes(x, -1, self.axis)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
-            x = np.swapaxes(x, self.dir, -1)
-            y = scipy.fft.irfft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+            x = np.swapaxes(x, self.axis, -1)
+            y = scipy.fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         else:
-            y = scipy.fft.ifft(x, n=self.nfft, axis=self.dir, **self._norm_kwargs)
+            y = scipy.fft.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
 
-        if self.nfft > self.dims[self.dir]:
-            y = np.take(y, range(0, self.dims[self.dir]), axis=self.dir)
-        elif self.nfft < self.dims[self.dir]:
+        if self.nfft > self.dims[self.axis]:
+            y = np.take(y, range(0, self.dims[self.axis]), axis=self.axis)
+        elif self.nfft < self.dims[self.axis]:
             y = np.pad(y, self.ifftpad)
 
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before:
-            y = scipy.fft.fftshift(y, axes=self.dir)
+            y = scipy.fft.fftshift(y, axes=self.axis)
         y = y.ravel()
         return y
 
@@ -214,7 +214,7 @@ class _FFT_fftw(_BaseFFT):
     def __init__(
         self,
         dims,
-        dir=0,
+        axis=-1,
         nfft=None,
         sampling=1.0,
         norm="ortho",
@@ -241,7 +241,7 @@ class _FFT_fftw(_BaseFFT):
 
         super().__init__(
             dims=dims,
-            dir=dir,
+            axis=axis,
             nfft=nfft,
             sampling=sampling,
             norm=norm,
@@ -256,21 +256,21 @@ class _FFT_fftw(_BaseFFT):
             )
 
         self.dims_t = self.dims.copy()
-        self.dims_t[self.dir] = self.nfft
+        self.dims_t[self.axis] = self.nfft
 
         # define padding(fftw requires the user to provide padded input signal)
         self.pad = np.zeros((self.ndim, 2), dtype=int)
         if self.real:
             if self.nfft % 2:
-                self.pad[self.dir, 1] = (
-                    2 * (self.dims_fft[self.dir] - 1) + 1 - self.dims[self.dir]
+                self.pad[self.axis, 1] = (
+                    2 * (self.dims_fft[self.axis] - 1) + 1 - self.dims[self.axis]
                 )
             else:
-                self.pad[self.dir, 1] = (
-                    2 * (self.dims_fft[self.dir] - 1) - self.dims[self.dir]
+                self.pad[self.axis, 1] = (
+                    2 * (self.dims_fft[self.axis] - 1) - self.dims[self.axis]
                 )
         else:
-            self.pad[self.dir, 1] = self.dims_fft[self.dir] - self.dims[self.dir]
+            self.pad[self.axis, 1] = self.dims_fft[self.axis] - self.dims[self.axis]
         self.dopad = True if np.sum(self.pad) > 0 else False
 
         # create empty arrays and plans for fft/ifft
@@ -292,22 +292,22 @@ class _FFT_fftw(_BaseFFT):
             self._scale = 1.0 / self.nfft
 
         self.fftplan = pyfftw.FFTW(
-            self.x, self.y, axes=(self.dir,), direction="FFTW_FORWARD", **kwargs_fftw
+            self.x, self.y, axes=(self.axis,), direction="FFTW_FORWARD", **kwargs_fftw
         )
         self.ifftplan = pyfftw.FFTW(
-            self.y, self.x, axes=(self.dir,), direction="FFTW_BACKWARD", **kwargs_fftw
+            self.y, self.x, axes=(self.axis,), direction="FFTW_BACKWARD", **kwargs_fftw
         )
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
         if self.ifftshift_before:
-            x = np.fft.ifftshift(x, axes=self.dir)
+            x = np.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
             x = np.real(x)
         if self.dopad:
             x = np.pad(x, self.pad, "constant", constant_values=0)
         elif self.doifftpad:
-            x = np.take(x, range(0, self.nfft), axis=self.dir)
+            x = np.take(x, range(0, self.nfft), axis=self.axis)
 
         # self.fftplan() always uses byte-alligned self.x as input array and
         # returns self.y as output array. As such, self.x must be copied so as
@@ -319,17 +319,17 @@ class _FFT_fftw(_BaseFFT):
 
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
-            y = np.swapaxes(y, -1, self.dir)
+            y = np.swapaxes(y, -1, self.axis)
             y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
-            y = np.swapaxes(y, self.dir, -1)
+            y = np.swapaxes(y, self.axis, -1)
         if self.fftshift_after:
-            y = np.fft.fftshift(y, axes=self.dir)
+            y = np.fft.fftshift(y, axes=self.axis)
         return y.ravel()
 
     def _rmatvec(self, x):
         x = np.reshape(x, self.dims_fft)
         if self.fftshift_after:
-            x = np.fft.ifftshift(x, axes=self.dir)
+            x = np.fft.ifftshift(x, axes=self.axis)
 
         # self.ifftplan() always uses byte-alligned self.y as input array.
         # We copy here so we don't need to copy again in the case of `real=True`,
@@ -339,9 +339,9 @@ class _FFT_fftw(_BaseFFT):
 
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
-            x = np.swapaxes(x, -1, self.dir)
+            x = np.swapaxes(x, -1, self.axis)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
-            x = np.swapaxes(x, self.dir, -1)
+            x = np.swapaxes(x, self.axis, -1)
 
         # self.ifftplan() always returns self.x, which must be copied so as not
         # to be overwritten on a subsequent call to _rmatvec.
@@ -351,13 +351,13 @@ class _FFT_fftw(_BaseFFT):
         elif self.norm is _FFTNorms.NONE:
             y *= self._scale
 
-        if self.nfft > self.dims[self.dir]:
-            y = np.take(y, range(0, self.dims[self.dir]), axis=self.dir)
-        elif self.nfft < self.dims[self.dir]:
+        if self.nfft > self.dims[self.axis]:
+            y = np.take(y, range(0, self.dims[self.axis]), axis=self.axis)
+        elif self.nfft < self.dims[self.axis]:
             y = np.pad(y, self.ifftpad)
 
         if self.ifftshift_before:
-            y = np.fft.fftshift(y, axes=self.dir)
+            y = np.fft.fftshift(y, axes=self.axis)
         if not self.clinear:
             y = np.real(y)
         return y.ravel()
@@ -370,7 +370,7 @@ class _FFT_fftw(_BaseFFT):
 
 def FFT(
     dims,
-    dir=0,
+    axis=-1,
     nfft=None,
     sampling=1.0,
     norm="ortho",
@@ -384,7 +384,7 @@ def FFT(
 ):
     r"""One dimensional Fast-Fourier Transform.
 
-    Apply Fast-Fourier Transform (FFT) along a specific direction ``dir`` of a
+    Apply Fast-Fourier Transform (FFT) along an ``axis`` of a
     multi-dimensional array of size ``dim``.
 
     Using the default NumPy engine, the FFT operator is an overload to either the NumPy
@@ -410,8 +410,10 @@ def FFT(
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension
-    dir : :obj:`int`, optional
-        Direction along which FFT is applied.
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which FFT is applied
     nfft : :obj:`int`, optional
         Number of samples in Fourier Transform (same as input if ``nfft=None``)
     sampling : :obj:`float`, optional
@@ -503,7 +505,7 @@ def FFT(
     Raises
     ------
     ValueError
-        - If ``dims`` is provided and ``dir`` is bigger than ``len(dims)``.
+        - If ``dims`` is provided and ``axis`` is bigger than ``len(dims)``.
         - If ``norm`` is not one of "ortho", "none", or "1/n".
     NotImplementedError
         If ``engine`` is neither ``numpy``, ``fftw``, nor ``scipy``.
@@ -559,7 +561,7 @@ def FFT(
     if engine == "fftw" and pyfftw is not None:
         f = _FFT_fftw(
             dims,
-            dir=dir,
+            axis=axis,
             nfft=nfft,
             sampling=sampling,
             norm=norm,
@@ -574,7 +576,7 @@ def FFT(
             logging.warning(pyfftw_message)
         f = _FFT_numpy(
             dims,
-            dir=dir,
+            axis=axis,
             nfft=nfft,
             sampling=sampling,
             norm=norm,
@@ -586,7 +588,7 @@ def FFT(
     elif engine == "scipy":
         f = _FFT_scipy(
             dims,
-            dir=dir,
+            axis=axis,
             nfft=nfft,
             sampling=sampling,
             norm=norm,

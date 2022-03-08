@@ -27,8 +27,8 @@ plt.close("all")
 ###############################################################################
 # Let's start by defining two second derivatives :py:class:`pylops.SecondDerivative`
 # that we will be using in this example.
-D2hop = pylops.SecondDerivative((11, 21), dir=1, dtype="float32")
-D2vop = pylops.SecondDerivative((11, 21), dir=0, dtype="float32")
+D2hop = pylops.SecondDerivative(dims=(11, 21), axis=1, dtype="float32")
+D2vop = pylops.SecondDerivative(dims=(11, 21), axis=0, dtype="float32")
 
 ###############################################################################
 # Chaining of operators represents the simplest concatenation that
@@ -268,7 +268,7 @@ print("xinv = ", x)
 # :py:class:`pylops.FirstDerivative` to the second dimension of the model.
 #
 # Note that for those operators whose implementation allows their application
-# to a single axis via the ``dir`` parameter, using the Kronecker product
+# to a single axis via the ``axis`` parameter, using the Kronecker product
 # would lead to slower performance. Nevertheless, the Kronecker product allows
 # any other operator to be applied to a single dimension.
 Nv, Nh = 11, 21

@@ -33,7 +33,7 @@ def test_Diagonal_2dsignal(par):
     for idim, ddim in enumerate((par["nx"], par["nt"])):
         d = np.arange(ddim) + 1.0 + par["imag"] * (np.arange(ddim) + 1.0)
 
-        Dop = Diagonal(d, dims=(par["nx"], par["nt"]), dir=idim, dtype=par["dtype"])
+        Dop = Diagonal(d, dims=(par["nx"], par["nt"]), axis=idim, dtype=par["dtype"])
         assert dottest(
             Dop,
             par["nx"] * par["nt"],
@@ -56,7 +56,7 @@ def test_Diagonal_3dsignal(par):
         d = np.arange(ddim) + 1.0 + par["imag"] * (np.arange(ddim) + 1.0)
 
         Dop = Diagonal(
-            d, dims=(par["ny"], par["nx"], par["nt"]), dir=idim, dtype=par["dtype"]
+            d, dims=(par["ny"], par["nx"], par["nt"]), axis=idim, dtype=par["dtype"]
         )
         assert dottest(
             Dop,

@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -7,7 +9,7 @@ from pylops.utils.backend import get_array_module
 class Sum(LinearOperator):
     r"""Sum operator.
 
-    Sum along an axis of a multi-dimensional
+    Sum along ``axis`` of a multi-dimensional
     array (at least 2 dimensions are required) in forward model, and spread
     along the same axis in adjoint mode.
 
@@ -15,8 +17,10 @@ class Sum(LinearOperator):
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension
-    dir : :obj:`int`
-        Direction along which summation is performed.
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which model is summed.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -32,7 +36,7 @@ class Sum(LinearOperator):
     -----
     Given a two dimensional array, the *Sum* operator re-arranges
     the input model into a multi-dimensional array
-    of size ``dims`` and sums values along direction ``dir``:
+    of size ``dims`` and sums values along ``axis``:
 
     .. math::
 
@@ -46,17 +50,17 @@ class Sum(LinearOperator):
 
     """
 
-    def __init__(self, dims, dir, dtype="float64"):
+    def __init__(self, dims, axis=-1, dtype="float64"):
         if len(dims) == 1:
             dims = (dims[0], 1)  # to avoid reducing matvec to a scalar
         self.dims = dims
-        self.dir = dir
+        self.axis = axis
         # data dimensions
         self.dims_d = list(dims).copy()
-        self.dims_d.pop(dir)
-        # array of ones with dims of model in dir for np.tile in adjoint mode
+        self.dims_d.pop(self.axis)
+        # array of ones with dims of model in self.axis for np.tile in adjoint mode
         self.tile = np.ones(len(dims), dtype=int)
-        self.tile[dir] = self.dims[dir]
+        self.tile[self.axis] = self.dims[self.axis]
         self.dtype = np.dtype(dtype)
         self.shape = (np.prod(self.dims_d), np.prod(dims))
         self.explicit = False
@@ -64,12 +68,12 @@ class Sum(LinearOperator):
     def _matvec(self, x):
         ncp = get_array_module(x)
         y = x.reshape(self.dims)
-        y = ncp.sum(y, axis=self.dir)
+        y = ncp.sum(y, axis=self.axis)
         return y.ravel()
 
     def _rmatvec(self, x):
         ncp = get_array_module(x)
         y = x.reshape(self.dims_d)
-        y = ncp.expand_dims(y, self.dir)
+        y = ncp.expand_dims(y, self.axis)
         y = ncp.tile(y, self.tile)
         return y.ravel()

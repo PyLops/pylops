@@ -1,4 +1,7 @@
+import warnings
+
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_array
@@ -37,8 +40,7 @@ class Convolve1D(LinearOperator):
     r"""1D convolution operator.
 
     Apply one-dimensional convolution with a compact filter to model (and data)
-    along a specific direction of a multi-dimensional array depending on the
-    choice of ``dir``.
+    along an ``axis`` of a multi-dimensional array.
 
     Parameters
     ----------
@@ -48,8 +50,10 @@ class Convolve1D(LinearOperator):
         1d compact filter to be convolved to input signal
     offset : :obj:`int`
         Index of the center of the compact filter
-    dir : :obj:`int`, optional
-        Direction along which convolution is applied
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which convolution is applied
     method : :obj:`str`, optional
         Method used to calculate the convolution (``direct``, ``fft``,
         or ``overlapadd``). Note that only ``direct`` and ``fft`` are allowed
@@ -113,9 +117,9 @@ class Convolve1D(LinearOperator):
 
     """
 
-    def __init__(self, dims, h, offset=0, dir=0, dtype="float64", method=None):
+    def __init__(self, dims, h, offset=0, axis=-1, dtype="float64", method=None):
         self.dims = _value_or_list_like_to_array(dims)
-        self.dir = dir
+        self.axis = axis
 
         if offset > len(h) - 1:
             raise ValueError("offset must be smaller than len(h) - 1")
@@ -139,7 +143,7 @@ class Convolve1D(LinearOperator):
 
         # add dimensions to filter to match dimensions of model and data
         hdims = np.ones(len(self.dims), dtype=int)
-        hdims[self.dir] = len(self.h)
+        hdims[self.axis] = len(self.h)
         self.h = self.h.reshape(hdims)
         self.hstar = self.hstar.reshape(hdims)
 

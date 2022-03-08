@@ -94,7 +94,7 @@ def _MDC(
 
     Fop = _FFT(
         dims=(nt, nr, nv),
-        dir=0,
+        axis=0,
         real=True,
         ifftshift_before=twosided,
         dtype=rdtype,
@@ -102,7 +102,7 @@ def _MDC(
     )
     F1op = _FFT(
         dims=(nt, ns, nv),
-        dir=0,
+        axis=0,
         real=True,
         ifftshift_before=False,
         dtype=rdtype,

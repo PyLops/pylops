@@ -57,8 +57,8 @@ imdeblur = pylops.optimization.leastsquares.NormalEquationsInversion(
 
 Wop = pylops.signalprocessing.DWT2D((Nz, Nx), wavelet="haar", level=3)
 Dop = [
-    pylops.FirstDerivative((Nz, Nx), dir=0, edge=False),
-    pylops.FirstDerivative((Nz, Nx), dir=1, edge=False),
+    pylops.FirstDerivative((Nz, Nx), axis=0, edge=False),
+    pylops.FirstDerivative((Nz, Nx), axis=1, edge=False),
 ]
 DWop = Dop + [
     Wop,

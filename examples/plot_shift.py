@@ -52,10 +52,10 @@ plt.tight_layout()
 
 shift = 10.5 * dt
 
-# 1st dir
+# 1st axis
 wav2d = np.outer(wav, np.ones(10))
 Op = pylops.signalprocessing.Shift(
-    (nt, 10), shift, dir=0, sampling=dt, real=True, dtype=np.float64
+    (nt, 10), shift, axis=0, sampling=dt, real=True, dtype=np.float64
 )
 wav2dshift = (Op * wav2d.ravel()).reshape(nt, 10)
 wav2dshiftback = (Op.H * wav2dshift.ravel()).reshape(nt, 10)
@@ -72,10 +72,10 @@ axs[2].set_title("Adjoint")
 axs[2].axis("tight")
 fig.tight_layout()
 
-# 2nd dir
+# 2nd axis
 wav2d = np.outer(wav, np.ones(10)).T
 Op = pylops.signalprocessing.Shift(
-    (10, nt), shift, dir=1, sampling=dt, real=True, dtype=np.float64
+    (10, nt), shift, axis=1, sampling=dt, real=True, dtype=np.float64
 )
 wav2dshift = (Op * wav2d.ravel()).reshape(10, nt)
 wav2dshiftback = (Op.H * wav2dshift.ravel()).reshape(10, nt)

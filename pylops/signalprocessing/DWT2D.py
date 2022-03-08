@@ -1,4 +1,5 @@
 import logging
+import warnings
 from math import ceil, log
 
 import numpy as np
@@ -12,6 +13,14 @@ try:
     import pywt
 except ModuleNotFoundError:
     pywt = None
+    pywt_message = (
+        "Pywt package not installed. "
+        'Run "pip install PyWavelets" or '
+        'conda install pywavelets".'
+    )
+except Exception as e:
+    pywt = None
+    pywt_message = "Failed to import pywt (error:%s)." % e
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -19,7 +28,7 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 class DWT2D(LinearOperator):
     """Two dimensional Wavelet operator.
 
-    Apply 2D-Wavelet Transform along two directions ``dirs`` of a
+    Apply 2D-Wavelet Transform along two ``axes`` of a
     multi-dimensional array of size ``dims``.
 
     Note that the Wavelet operator is an overload of the ``pywt``
@@ -31,8 +40,10 @@ class DWT2D(LinearOperator):
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension
-    dirs : :obj:`tuple`, optional
-        Direction along which DWT2D is applied.
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which DWT2D is applied
     wavelet : :obj:`str`, optional
         Name of wavelet type. Use :func:`pywt.wavelist(kind='discrete')` for
         a list of available wavelets.
@@ -64,27 +75,22 @@ class DWT2D(LinearOperator):
 
     """
 
-    def __init__(self, dims, dirs=(0, 1), wavelet="haar", level=1, dtype="float64"):
+    def __init__(self, dims, axes=(-2, -1), wavelet="haar", level=1, dtype="float64"):
         if pywt is None:
-            raise ModuleNotFoundError(
-                "The wavelet operator requires "
-                "the pywt package t be installed. "
-                'Run "pip install PyWavelets" or '
-                '"conda install pywavelets".'
-            )
+            raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
 
         # define padding for length to be power of 2
-        ndimpow2 = [max(2 ** ceil(log(dims[dir], 2)), 2 ** level) for dir in dirs]
+        ndimpow2 = [max(2 ** ceil(log(dims[ax], 2)), 2 ** level) for ax in axes]
         pad = [(0, 0)] * len(dims)
-        for i, dir in enumerate(dirs):
-            pad[dir] = (0, ndimpow2[i] - dims[dir])
+        for i, ax in enumerate(axes):
+            pad[ax] = (0, ndimpow2[i] - dims[ax])
         self.pad = Pad(dims, pad)
         self.dims = dims
-        self.dirs = dirs
+        self.axes = axes
         self.dimsd = list(dims)
-        for i, dir in enumerate(dirs):
-            self.dimsd[dir] = ndimpow2[i]
+        for i, ax in enumerate(axes):
+            self.dimsd[ax] = ndimpow2[i]
 
         # apply transform once again to find out slices
         _, self.sl = pywt.coeffs_to_array(
@@ -93,9 +99,9 @@ class DWT2D(LinearOperator):
                 wavelet=wavelet,
                 level=level,
                 mode="periodization",
-                axes=self.dirs,
+                axes=self.axes,
             ),
-            axes=self.dirs,
+            axes=self.axes,
         )
         self.wavelet = wavelet
         self.waveletadj = _adjointwavelet(wavelet)
@@ -113,9 +119,9 @@ class DWT2D(LinearOperator):
                 wavelet=self.wavelet,
                 level=self.level,
                 mode="periodization",
-                axes=self.dirs,
+                axes=self.axes,
             ),
-            axes=(self.dirs),
+            axes=(self.axes),
         )[0]
         return y.ravel()
 
@@ -123,7 +129,7 @@ class DWT2D(LinearOperator):
         x = np.reshape(x, self.dimsd)
         x = pywt.array_to_coeffs(x, self.sl, output_format="wavedec2")
         y = pywt.waverec2(
-            x, wavelet=self.waveletadj, mode="periodization", axes=self.dirs
+            x, wavelet=self.waveletadj, mode="periodization", axes=self.axes
         )
         y = self.pad.rmatvec(y.ravel())
         return y

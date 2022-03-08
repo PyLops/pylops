@@ -66,13 +66,13 @@ def Gradient(dims, sampling=1, edge=False, dtype="float64", kind="centered"):
         [
             FirstDerivative(
                 dims,
-                dir=idir,
-                sampling=sampling[idir],
+                axis=iax,
+                sampling=sampling[iax],
                 edge=edge,
                 kind=kind,
                 dtype=dtype,
             )
-            for idir in range(ndims)
+            for iax in range(ndims)
         ]
     )
     return gop

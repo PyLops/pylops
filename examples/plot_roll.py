@@ -37,7 +37,7 @@ plt.legend()
 ny, nx = 10, 5
 x = np.arange(ny * nx).reshape(ny, nx)
 
-Rop = pylops.Roll((ny, nx), dir=1, shift=-2)
+Rop = pylops.Roll(dims=(ny, nx), axis=1, shift=-2)
 
 y = Rop * x.ravel()
 xadj = Rop.H * y

@@ -131,7 +131,7 @@ def test_CausalIntegration2d(par):
         Cop = CausalIntegration(
             (par["nt"], par["nx"]),
             sampling=dt,
-            dir=0,
+            axis=0,
             kind=kind,
             halfcurrent=False,
             removefirst=rf,
@@ -166,7 +166,7 @@ def test_CausalIntegration2d(par):
 
             # numerical derivative
             Dop = FirstDerivative(
-                (par["nt"], par["nx"]), dir=0, sampling=dt, dtype=par["dtype"]
+                (par["nt"], par["nx"]), axis=0, sampling=dt, dtype=par["dtype"]
             )
             xder = Dop * y.ravel()
             xder = xder.reshape(par["nt"], par["nx"])

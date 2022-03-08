@@ -143,7 +143,7 @@ h = np.ones((3, 5, 3))
 offset = [1, 2, 1]
 
 Cop = pylops.signalprocessing.ConvolveND(
-    nx * ny * nz, h=h, offset=offset, dims=[ny, nx, nz], dirs=[0, 1, 2], dtype="float32"
+    dims=(ny, nx, nz), h=h, offset=offset, axes=(0, 1, 2), dtype="float32"
 )
 y = Cop * x.ravel()
 xinv = lsqr(Cop, y, damp=0, iter_lim=300, show=0)[0]

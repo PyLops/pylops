@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -7,14 +9,16 @@ from pylops.utils._internal import _value_or_list_like_to_array
 class Flip(LinearOperator):
     r"""Flip along an axis.
 
-    Flip a multi-dimensional array along a specified direction ``dir``.
+    Flip a multi-dimensional array along ``axis``.
 
     Parameters
     ----------
     dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
-    dir : :obj:`int`, optional
-        Direction along which flipping is applied.
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which model is flipped.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -35,15 +39,15 @@ class Flip(LinearOperator):
     .. math::
         y[i] = x[N-1-i] \quad \forall i=0,1,2,\ldots,N-1
 
-    where :math:`N` is the dimension of the input model along ``dir``. As this operator is
+    where :math:`N` is the dimension of the input model along ``axis``. As this operator is
     self-adjoint, :math:`x` and :math:`y` in the equation above are simply
     swapped in adjoint mode.
 
     """
 
-    def __init__(self, dims, dir=0, dtype="float64"):
-        self.dir = dir
+    def __init__(self, dims, axis=-1, dtype="float64"):
         self.dims = _value_or_list_like_to_array(dims)
+        self.axis = axis
         N = np.prod(self.dims)
         self.shape = (N, N)
         self.dtype = np.dtype(dtype)
@@ -51,7 +55,7 @@ class Flip(LinearOperator):
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
-        y = np.flip(x, axis=self.dir)
+        y = np.flip(x, axis=self.axis)
         y = y.ravel()
         return y
 

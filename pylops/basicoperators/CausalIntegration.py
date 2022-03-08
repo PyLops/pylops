@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -7,14 +9,16 @@ from pylops.utils._internal import _value_or_list_like_to_array
 class CausalIntegration(LinearOperator):
     r"""Causal integration.
 
-    Apply causal integration to a multi-dimensional array along ``dir`` axis.
+    Apply causal integration to a multi-dimensional array along ``axis``.
 
     Parameters
     ----------
     dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
-    dir : :obj:`int`, optional
-        Direction along which array is integrated.
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which the model is integrated.
     sampling : :obj:`float`, optional
         Sampling step ``dx``.
     halfcurrent : :obj:`bool`, optional
@@ -86,7 +90,7 @@ class CausalIntegration(LinearOperator):
     def __init__(
         self,
         dims,
-        dir=-1,
+        axis=-1,
         sampling=1,
         halfcurrent=True,
         dtype="float64",
@@ -94,7 +98,7 @@ class CausalIntegration(LinearOperator):
         removefirst=False,
     ):
         self.dims = _value_or_list_like_to_array(dims)
-        self.dir = dir
+        self.axis = axis
         self.sampling = sampling
         self.kind = kind
         if kind == "full" and halfcurrent:  # ensure backcompatibility
@@ -102,15 +106,15 @@ class CausalIntegration(LinearOperator):
         self.removefirst = removefirst
         self.dimsd = self.dims.copy()
         if self.removefirst:
-            self.dimsd[self.dir] -= 1
+            self.dimsd[self.axis] -= 1
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
-        if self.dir != -1:
-            x = np.swapaxes(x, self.dir, -1)
+        if self.axis != -1:
+            x = np.swapaxes(x, self.axis, -1)
         y = self.sampling * np.cumsum(x, axis=-1)
         if self.kind in ("half", "trapezoidal"):
             y -= self.sampling * x / 2.0
@@ -118,16 +122,16 @@ class CausalIntegration(LinearOperator):
             y[..., 1:] -= self.sampling * x[..., 0:1] / 2.0
         if self.removefirst:
             y = y[..., 1:]
-        if self.dir != -1:
-            y = np.swapaxes(y, -1, self.dir)
+        if self.axis != -1:
+            y = np.swapaxes(y, -1, self.axis)
         return y.ravel()
 
     def _rmatvec(self, x):
         x = np.reshape(x, self.dimsd)
         if self.removefirst:
-            x = np.insert(x, 0, 0, axis=self.dir)
-        if self.dir != -1:
-            x = np.swapaxes(x, self.dir, -1)
+            x = np.insert(x, 0, 0, axis=self.axis)
+        if self.axis != -1:
+            x = np.swapaxes(x, self.axis, -1)
         xflip = np.flip(x, axis=-1)
         if self.kind == "half":
             y = self.sampling * (np.cumsum(xflip, axis=-1) - xflip / 2.0)
@@ -137,6 +141,6 @@ class CausalIntegration(LinearOperator):
         else:
             y = self.sampling * np.cumsum(xflip, axis=-1)
         y = np.flip(y, axis=-1)
-        if self.dir != -1:
-            y = np.swapaxes(y, -1, self.dir)
+        if self.axis != -1:
+            y = np.swapaxes(y, -1, self.axis)
         return y.ravel()

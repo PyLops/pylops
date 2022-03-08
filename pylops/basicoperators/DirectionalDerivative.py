@@ -8,7 +8,7 @@ def FirstDirectionalDerivative(
     r"""First Directional derivative.
 
     Apply a directional derivative operator to a multi-dimensional array
-    along either a single common direction or different directions for each
+    along either a single common axis or different axes for each
     point of the array.
 
     .. note:: At least 2 dimensions are required, consider using
@@ -63,10 +63,10 @@ def FirstDirectionalDerivative(
     """
     Gop = Gradient(dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype)
     if v.ndim == 1:
-        Dop = Diagonal(v, dims=[len(dims)] + list(dims), dir=0, dtype=dtype)
+        Dop = Diagonal(v, dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
     else:
         Dop = Diagonal(v.ravel(), dtype=dtype)
-    Sop = Sum(dims=[len(dims)] + list(dims), dir=0, dtype=dtype)
+    Sop = Sum(dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
     ddop = Sop * Dop * Gop
     return LinearOperator(ddop)
 
@@ -75,7 +75,7 @@ def SecondDirectionalDerivative(dims, v, sampling=1, edge=False, dtype="float64"
     r"""Second Directional derivative.
 
     Apply a second directional derivative operator to a multi-dimensional array
-    along either a single common direction or different directions for each
+    along either a single common axis or different axes for each
     point of the array.
 
     .. note:: At least 2 dimensions are required, consider using

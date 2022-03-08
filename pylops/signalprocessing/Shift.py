@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops.basicoperators import Diagonal
@@ -7,7 +9,7 @@ from pylops.signalprocessing import FFT
 def Shift(
     dims,
     shift,
-    dir=0,
+    axis=-1,
     nfft=None,
     sampling=1.0,
     real=False,
@@ -17,8 +19,8 @@ def Shift(
 ):
     r"""Shift operator
 
-    Apply fractional shift in the frequency domain along a specific direction
-    ``dir`` of a multi-dimensional array of size ``dim``.
+    Apply fractional shift in the frequency domain along an ``axis``
+    of a multi-dimensional array of size ``dims``.
 
     Parameters
     ----------
@@ -26,8 +28,10 @@ def Shift(
         Number of samples for each dimension
     shift : :obj:`float`
         Fractional shift to apply in the same unit as ``sampling``.
-    dir : :obj:`int`, optional
-        Direction along which FFT is applied.
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which shift is applied
     nfft : :obj:`int`, optional
         Number of samples in Fourier Transform (same as input if ``nfft=None``)
     sampling : :obj:`float`, optional
@@ -56,7 +60,7 @@ def Shift(
     Raises
     ------
     ValueError
-        If ``dims`` is provided and ``dir`` is bigger than ``len(dims)``
+        If ``dims`` is provided and ``axis`` is bigger than ``len(dims)``
     NotImplementedError
         If ``engine`` is neither ``numpy``, ``scipy``, nor ``fftw``
 
@@ -73,17 +77,23 @@ def Shift(
     chosen ``shift``.
 
     """
-    # TODO: Use offer the same keywords as new FFT
     Fop = FFT(
-        dims, dir, nfft, sampling, real=real, engine=engine, dtype=dtype, **kwargs_fftw
+        dims,
+        axis=axis,
+        nfft=nfft,
+        sampling=sampling,
+        real=real,
+        engine=engine,
+        dtype=dtype,
+        **kwargs_fftw
     )
     if isinstance(dims, int):
         dimsdiag = None
     else:
         dimsdiag = list(dims)
-        dimsdiag[dir] = len(Fop.f)
+        dimsdiag[axis] = len(Fop.f)
     shift = np.exp(-1j * 2 * np.pi * Fop.f * shift)
-    Sop = Diagonal(shift, dims=dimsdiag, dir=dir, dtype=Fop.cdtype)
+    Sop = Diagonal(shift, dims=dimsdiag, axis=axis, dtype=Fop.cdtype)
     Op = Fop.H * Sop * Fop
     # force dtype to that of input (FFT always upcasts it to complex)
     Op.dtype = dtype

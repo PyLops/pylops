@@ -190,7 +190,7 @@ def PrestackLinearModelling(
             dims,
             h=wav,
             offset=len(wav) // 2,
-            dir=0,
+            axis=0,
             dtype=dtype,
         )
 
@@ -202,7 +202,7 @@ def PrestackLinearModelling(
         # Create derivative operator
         dimsm = list(dims)
         dimsm[1] = AVOop.npars
-        Dop = FirstDerivative(dimsm, dir=0, sampling=1.0, kind=kind, dtype=dtype)
+        Dop = FirstDerivative(dimsm, axis=0, sampling=1.0, kind=kind, dtype=dtype)
         Preop = Cop * AVOop * Dop
     return Preop
 
@@ -593,7 +593,7 @@ def PrestackInversion(
             if isinstance(epsI, (list, tuple)):
                 if len(epsI) != nm:
                     raise ValueError("epsI must be a scalar or a list of" "size nm")
-                RegI = Diagonal(np.array(epsI), dims=(nt0, nm, nspatprod), dir=1)
+                RegI = Diagonal(np.array(epsI), dims=(nt0, nm, nspatprod), axis=1)
             else:
                 RegI = epsI * Identity(nt0 * nm * nspatprod)
 
@@ -602,9 +602,9 @@ def PrestackInversion(
             if dims == 1:
                 Regop = SecondDerivative((nt0, nm), dtype=PPop.dtype)
             elif dims == 2:
-                Regop = Laplacian((nt0, nm, nx), dirs=(0, 2), dtype=PPop.dtype)
+                Regop = Laplacian((nt0, nm, nx), axes=(0, 2), dtype=PPop.dtype)
             else:
-                Regop = Laplacian((nt0, nm, nx, ny), dirs=(2, 3), dtype=PPop.dtype)
+                Regop = Laplacian((nt0, nm, nx, ny), axes=(2, 3), dtype=PPop.dtype)
             if epsI is None:
                 Regop = (Regop,)
                 epsR = (epsR,)
@@ -626,11 +626,11 @@ def PrestackInversion(
                 RegL1op = FirstDerivative(nt0 * nm, dtype=PPop.dtype)
                 RegL2op = None
             elif dims == 2:
-                RegL1op = FirstDerivative((nt0, nm, nx), dir=0, dtype=PPop.dtype)
-                RegL2op = SecondDerivative((nt0, nm, nx), dir=2, dtype=PPop.dtype)
+                RegL1op = FirstDerivative((nt0, nm, nx), axis=0, dtype=PPop.dtype)
+                RegL2op = SecondDerivative((nt0, nm, nx), axis=2, dtype=PPop.dtype)
             else:
-                RegL1op = FirstDerivative((nt0, nm, nx, ny), dir=0, dtype=PPop.dtype)
-                RegL2op = Laplacian((nt0, nm, nx, ny), dirs=(2, 3), dtype=PPop.dtype)
+                RegL1op = FirstDerivative((nt0, nm, nx, ny), axis=0, dtype=PPop.dtype)
+                RegL2op = Laplacian((nt0, nm, nx, ny), axes=(2, 3), dtype=PPop.dtype)
             if dims == 1:
                 if epsI is not None:
                     RegL2op = (RegI,)

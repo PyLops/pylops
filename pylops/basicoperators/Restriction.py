@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import numpy.ma as np_ma
 from numpy.core.multiarray import normalize_axis_index
@@ -7,14 +9,14 @@ from pylops.utils._internal import _value_or_list_like_to_array
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 
 
-def _compute_iavamask(dims, dir, iava, ncp):
+def _compute_iavamask(dims, axis, iava, ncp):
     """Compute restriction mask when using cupy arrays"""
     otherdims = np.array(dims)
-    otherdims = np.delete(otherdims, dir)
-    iavamask = ncp.zeros(dims[dir], dtype=int)
+    otherdims = np.delete(otherdims, axis)
+    iavamask = ncp.zeros(dims[axis], dtype=int)
     iavamask[iava] = 1
     iavamask = ncp.moveaxis(
-        ncp.broadcast_to(iavamask, list(otherdims) + [dims[dir]]), -1, dir
+        ncp.broadcast_to(iavamask, list(otherdims) + [dims[axis]]), -1, axis
     )
     iavamask = ncp.where(iavamask.ravel() == 1)[0]
     return iavamask
@@ -33,8 +35,10 @@ class Restriction(LinearOperator):
         Number of samples for each dimension
     iava : :obj:`list` or :obj:`numpy.ndarray`
         Integer indices of available samples for data selection.
-    dir : :obj:`int`, optional
-        Direction along which restriction is applied.
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which restriction is applied to model.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     inplace : :obj:`bool`, optional
@@ -80,21 +84,21 @@ class Restriction(LinearOperator):
 
     """
 
-    def __init__(self, dims, iava, dir=0, dtype="float64", inplace=True):
+    def __init__(self, dims, iava, axis=-1, dtype="float64", inplace=True):
         ncp = get_array_module(iava)
         self.dims = _value_or_list_like_to_array(dims)
-        self.dir = normalize_axis_index(dir, len(self.dims))
+        self.axis = normalize_axis_index(axis, len(self.dims))
         self.iava = iava
         self.dimsd = self.dims.copy()  # data dimensions
-        self.dimsd[self.dir] = len(iava)
+        self.dimsd[self.axis] = len(iava)
         self.iavareshape = np.ones(len(self.dims), dtype=int)
-        self.iavareshape[self.dir] = len(self.iava)
+        self.iavareshape[self.axis] = len(self.iava)
 
         # currently cupy does not support put_along_axis, so we need to
         # explicitely create a list of indices in the n-dimensional
         # model space which will be used in _rmatvec to place the input
         if ncp != np:
-            self.iavamask = _compute_iavamask(dims, dir, iava, ncp)
+            self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
         self.inplace = inplace
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
@@ -105,7 +109,7 @@ class Restriction(LinearOperator):
         if not self.inplace:
             x = x.copy()
         x = ncp.reshape(x, self.dims)
-        y = ncp.take(x, self.iava, axis=self.dir)
+        y = ncp.take(x, self.iava, axis=self.axis)
         y = y.ravel()
         return y
 
@@ -117,12 +121,12 @@ class Restriction(LinearOperator):
         if ncp == np:
             y = ncp.zeros(self.dims, dtype=self.dtype)
             ncp.put_along_axis(
-                y, ncp.reshape(self.iava, self.iavareshape), x, axis=self.dir
+                y, ncp.reshape(self.iava, self.iavareshape), x, axis=self.axis
             )
         else:
             if not hasattr(self, "iavamask"):
                 self.iava = to_cupy_conditional(x, self.iava)
-                self.iavamask = _compute_iavamask(self.dims, self.dir, self.iava, ncp)
+                self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
             y = ncp.zeros(self.shape[-1], dtype=self.dtype)
             y[self.iavamask] = x.ravel()
         y = y.ravel()
@@ -151,14 +155,14 @@ class Restriction(LinearOperator):
 
         y = np_ma.array(np.zeros(self.dims), mask=np.ones(self.dims), dtype=self.dtype)
         x = np.reshape(x, self.dims)
-        if self.dir > 0:
-            x = np.swapaxes(x, self.dir, 0)
-            y = np.swapaxes(y, self.dir, 0)
+        if self.axis > 0:
+            x = np.swapaxes(x, self.axis, 0)
+            y = np.swapaxes(y, self.axis, 0)
         y.mask[iava] = False
         if ncp == np:
             y[iava] = x[self.iava]
         else:
             y[iava] = ncp.asnumpy(x)[iava]
-        if self.dir > 0:
-            y = np.swapaxes(y, 0, self.dir)
+        if self.axis > 0:
+            y = np.swapaxes(y, 0, self.axis)
         return y

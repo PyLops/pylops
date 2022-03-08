@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 
@@ -10,14 +12,17 @@ class SecondDerivative(LinearOperator):
     r"""Second derivative.
 
     Apply a second derivative using a three-point stencil finite-difference
-    approximation.
+    approximation along ``axis``.
 
     Parameters
     ----------
     dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
-    dir : :obj:`int`, optional
-        Direction along which the derivative is applied.
+        (``None`` if only one dimension is available)
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which derivative is applied.
     sampling : :obj:`float`, optional
         Sampling step :math:`\Delta x`.
     edge : :obj:`bool`, optional
@@ -60,12 +65,18 @@ class SecondDerivative(LinearOperator):
     """
 
     def __init__(
-        self, dims, dir=0, sampling=1, edge=False, dtype="float64", kind="centered"
+        self,
+        dims,
+        axis=-1,
+        sampling=1,
+        edge=False,
+        dtype="float64",
+        kind="centered",
     ):
         self.dims = _value_or_list_like_to_array(dims)
+        self.axis = normalize_axis_index(axis, len(self.dims))
         self.sampling = sampling
         self.edge = edge
-        self.dir = normalize_axis_index(dir, len(self.dims))
         self.kind = kind
         N = np.prod(self.dims)
         self.shape = (N, N)
@@ -89,52 +100,52 @@ class SecondDerivative(LinearOperator):
     def _matvec_forward(self, x):
         ncp = get_array_module(x)
         x = ncp.reshape(x, self.dims)
-        if self.dir > 0:  # need to bring the dim. to derive to first dim.
-            x = ncp.swapaxes(x, self.dir, 0)
+        if self.axis > 0:  # need to bring the dim. to derive to first dim.
+            x = ncp.swapaxes(x, self.axis, 0)
         y = ncp.zeros(x.shape, self.dtype)
         y[:-2, ...] = x[2:, ...] - 2 * x[1:-1, ...] + x[0:-2, ...]
         y /= self.sampling ** 2
-        if self.dir > 0:
-            y = ncp.swapaxes(y, 0, self.dir)
+        if self.axis > 0:
+            y = ncp.swapaxes(y, 0, self.axis)
         y = y.ravel()
         return y
 
     def _rmatvec_forward(self, x):
         ncp = get_array_module(x)
         x = ncp.reshape(x, self.dims)
-        if self.dir > 0:  # need to bring the dim. to derive to first dim.
-            x = ncp.swapaxes(x, self.dir, 0)
+        if self.axis > 0:  # need to bring the dim. to derive to first dim.
+            x = ncp.swapaxes(x, self.axis, 0)
         y = ncp.zeros(x.shape, self.dtype)
         y[0:-2, ...] += x[:-2, ...]
         y[1:-1, ...] -= 2 * x[:-2, ...]
         y[2:, ...] += x[:-2, ...]
         y /= self.sampling ** 2
-        if self.dir > 0:
-            y = ncp.swapaxes(y, 0, self.dir)
+        if self.axis > 0:
+            y = ncp.swapaxes(y, 0, self.axis)
         y = y.ravel()
         return y
 
     def _matvec_centered(self, x):
         ncp = get_array_module(x)
         x = ncp.reshape(x, self.dims)
-        if self.dir > 0:  # need to bring the dim. to derive to first dim.
-            x = ncp.swapaxes(x, self.dir, 0)
+        if self.axis > 0:  # need to bring the dim. to derive to first dim.
+            x = ncp.swapaxes(x, self.axis, 0)
         y = ncp.zeros(x.shape, self.dtype)
         y[1:-1, ...] = x[2:, ...] - 2 * x[1:-1, ...] + x[0:-2, ...]
         if self.edge:
             y[0, ...] = x[0, ...] - 2 * x[1, ...] + x[2, ...]
             y[-1, ...] = x[-3, ...] - 2 * x[-2, ...] + x[-1, ...]
         y /= self.sampling ** 2
-        if self.dir > 0:
-            y = ncp.swapaxes(y, 0, self.dir)
+        if self.axis > 0:
+            y = ncp.swapaxes(y, 0, self.axis)
         y = y.ravel()
         return y
 
     def _rmatvec_centered(self, x):
         ncp = get_array_module(x)
         x = ncp.reshape(x, self.dims)
-        if self.dir > 0:  # need to bring the dim. to derive to first dim.
-            x = ncp.swapaxes(x, self.dir, 0)
+        if self.axis > 0:  # need to bring the dim. to derive to first dim.
+            x = ncp.swapaxes(x, self.axis, 0)
         y = ncp.zeros(x.shape, self.dtype)
         y[0:-2, ...] += x[1:-1, ...]
         y[1:-1, ...] -= 2 * x[1:-1, ...]
@@ -147,7 +158,7 @@ class SecondDerivative(LinearOperator):
             y[-2, ...] -= 2 * x[-1, ...]
             y[-1, ...] += x[-1, ...]
         y /= self.sampling ** 2
-        if self.dir > 0:
-            y = ncp.swapaxes(y, 0, self.dir)
+        if self.axis > 0:
+            y = ncp.swapaxes(y, 0, self.axis)
         y = y.ravel()
         return y

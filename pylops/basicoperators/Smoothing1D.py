@@ -1,22 +1,26 @@
+import warnings
+
 import numpy as np
 
 from pylops.signalprocessing import Convolve1D
 
 
-def Smoothing1D(nsmooth, dims, dir=0, dtype="float64"):
+def Smoothing1D(nsmooth, dims, axis=-1, dtype="float64"):
     r"""1D Smoothing.
 
-    Apply smoothing to model (and data) along a specific direction of a
-    multi-dimensional array depending on the choice of ``dir``.
+    Apply smoothing to model (and data) to a multi-dimensional array
+    along ``axis``.
 
     Parameters
     ----------
     nsmooth : :obj:`int`
-        Lenght of smoothing operator (must be odd)
+        Length of smoothing operator (must be odd)
     dims : :obj:`tuple` or :obj:`int`
         Number of samples for each dimension
-    dir : :obj:`int`, optional
-        Direction along which smoothing is applied
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which model (and data) are smoothed.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -61,11 +65,6 @@ def Smoothing1D(nsmooth, dims, dir=0, dtype="float64"):
     """
     if nsmooth % 2 == 0:
         nsmooth += 1
-
-    return Convolve1D(
-        dims,
-        np.ones(nsmooth) / float(nsmooth),
-        dir=dir,
-        offset=(nsmooth - 1) / 2,
-        dtype=dtype,
-    )
+    h = np.ones(nsmooth) / float(nsmooth)
+    offset = (nsmooth - 1) / 2
+    return Convolve1D(dims, h, axis=axis, offset=offset, dtype=dtype)

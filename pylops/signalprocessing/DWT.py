@@ -1,4 +1,5 @@
 import logging
+import warnings
 from math import ceil, log
 
 import numpy as np
@@ -42,7 +43,7 @@ def _adjointwavelet(wavelet):
 class DWT(LinearOperator):
     """One dimensional Wavelet operator.
 
-    Apply 1D-Wavelet Transform along a specific direction ``dir`` of a
+    Apply 1D-Wavelet Transform along an ``axis`` of a
     multi-dimensional array of size ``dims``.
 
     Note that the Wavelet operator is an overload of the ``pywt``
@@ -54,8 +55,10 @@ class DWT(LinearOperator):
     ----------
     dims : :obj:`int` or :obj:`tuple`
         Number of samples for each dimension
-    dir : :obj:`int`, optional
-        Direction along which DWT is applied.
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which DWT is applied
     wavelet : :obj:`str`, optional
         Name of wavelet type. Use :func:`pywt.wavelist(kind='discrete')` for
         a list of
@@ -93,7 +96,7 @@ class DWT(LinearOperator):
 
     """
 
-    def __init__(self, dims, dir=0, wavelet="haar", level=1, dtype="float64"):
+    def __init__(self, dims, axis=-1, wavelet="haar", level=1, dtype="float64"):
         if pywt is None:
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
@@ -102,14 +105,14 @@ class DWT(LinearOperator):
             dims = (dims,)
 
         # define padding for length to be power of 2
-        ndimpow2 = max(2 ** ceil(log(dims[dir], 2)), 2 ** level)
+        ndimpow2 = max(2 ** ceil(log(dims[axis], 2)), 2 ** level)
         pad = [(0, 0)] * len(dims)
-        pad[dir] = (0, ndimpow2 - dims[dir])
+        pad[axis] = (0, ndimpow2 - dims[axis])
         self.pad = Pad(dims, pad)
         self.dims = dims
-        self.dir = dir
+        self.axis = axis
         self.dimsd = list(dims)
-        self.dimsd[self.dir] = ndimpow2
+        self.dimsd[self.axis] = ndimpow2
 
         # apply transform to find out slices
         _, self.sl = pywt.coeffs_to_array(
@@ -118,9 +121,9 @@ class DWT(LinearOperator):
                 wavelet=wavelet,
                 level=level,
                 mode="periodization",
-                axes=(self.dir,),
+                axes=(self.axis,),
             ),
-            axes=(self.dir,),
+            axes=(self.axis,),
         )
 
         self.wavelet = wavelet
@@ -141,9 +144,9 @@ class DWT(LinearOperator):
                 wavelet=self.wavelet,
                 level=self.level,
                 mode="periodization",
-                axes=(self.dir,),
+                axes=(self.axis,),
             ),
-            axes=(self.dir,),
+            axes=(self.axis,),
         )[0]
         return y.ravel()
 
@@ -152,7 +155,7 @@ class DWT(LinearOperator):
             x = np.reshape(x, self.dimsd)
         x = pywt.array_to_coeffs(x, self.sl, output_format="wavedecn")
         y = pywt.waverecn(
-            x, wavelet=self.waveletadj, mode="periodization", axes=(self.dir,)
+            x, wavelet=self.waveletadj, mode="periodization", axes=(self.axis,)
         )
         y = self.pad.rmatvec(y.ravel())
         return y

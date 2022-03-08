@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -12,8 +14,8 @@ class Diagonal(LinearOperator):
 
     This operator can also broadcast; in this case the input vector is
     reshaped into its dimensions ``dims`` and the element-wise multiplication
-    with ``diag`` is perfomed on the direction ``dir``. Note that the
-    vector ``diag`` will need to have size equal to ``dims[dir]``.
+    with ``diag`` is perfomed along ``axis``. Note that the
+    vector ``diag`` will need to have size equal to ``dims[axis]``.
 
     Parameters
     ----------
@@ -22,8 +24,10 @@ class Diagonal(LinearOperator):
     dims : :obj:`list`, optional
         Number of samples for each dimension
         (``None`` if only one dimension is available)
-    dir : :obj:`int`, optional
-        Direction along which multiplication is applied.
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which multiplication is applied.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -55,17 +59,18 @@ class Diagonal(LinearOperator):
 
     """
 
-    def __init__(self, diag, dims=None, dir=0, dtype="float64"):
+    def __init__(self, diag, dims=None, axis=-1, dtype="float64"):
         ncp = get_array_module(diag)
         self.diag = diag.ravel()
         self.complex = True if ncp.iscomplexobj(self.diag) else False
+
         if dims is None:
             self.shape = (len(self.diag), len(self.diag))
             self.dims = None
             self.reshape = False
         else:
             diagdims = [1] * len(dims)
-            diagdims[dir] = dims[dir]
+            diagdims[axis] = dims[axis]
             self.diag = self.diag.reshape(diagdims)
             self.shape = (np.prod(dims), np.prod(dims))
             self.dims = dims

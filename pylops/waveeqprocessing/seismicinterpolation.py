@@ -226,16 +226,16 @@ def SeismicInterpolation(
 
     # create restriction/interpolation operator
     if iava.dtype == float:
-        Rop = Interp(dims, iava, dir=0, kind="linear", dtype=dtype)
+        Rop = Interp(dims, iava, axis=0, kind="linear", dtype=dtype)
         if ndims == 3 and iava1 is not None:
             dims1 = (len(iava), nrec[1], dimsd[2])
-            Rop1 = Interp(dims1, iava1, dir=1, kind="linear", dtype=dtype)
+            Rop1 = Interp(dims1, iava1, axis=1, kind="linear", dtype=dtype)
             Rop = Rop1 * Rop
     else:
-        Rop = Restriction(dims, iava, dir=0, dtype=dtype)
+        Rop = Restriction(dims, iava, axis=0, dtype=dtype)
         if ndims == 3 and iava1 is not None:
             dims1 = (len(iava), nrec[1], dimsd[2])
-            Rop1 = Restriction(dims1, iava1, dir=1, dtype=dtype)
+            Rop1 = Restriction(dims1, iava1, axis=1, dtype=dtype)
             Rop = Rop1 * Rop
 
     # create other operators for inversion
@@ -243,9 +243,9 @@ def SeismicInterpolation(
         prec = False
         dotcflag = 0
         if ndims == 3 and iava1 is not None:
-            Regop = Laplacian(dims=dims, dirs=(0, 1), dtype=dtype)
+            Regop = Laplacian(dims=dims, axes=(0, 1), dtype=dtype)
         else:
-            Regop = SecondDerivative(dims, dir=0, dtype=dtype)
+            Regop = SecondDerivative(dims, axis=0, dtype=dtype)
         SIop = Rop
     elif kind == "fk":
         prec = True

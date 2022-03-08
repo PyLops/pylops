@@ -22,7 +22,7 @@ def test_unknown_wavelet(par):
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT_1dsignal(par):
     """Dot-test and inversion for DWT operator for 1d signal"""
-    DWTop = DWT(dims=[par["nt"]], dir=0, wavelet="haar", level=3)
+    DWTop = DWT(dims=[par["nt"]], axis=0, wavelet="haar", level=3)
     x = np.random.normal(0.0, 1.0, par["nt"]) + par["imag"] * np.random.normal(
         0.0, 1.0, par["nt"]
     )
@@ -42,8 +42,8 @@ def test_DWT_1dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT_2dsignal(par):
     """Dot-test and inversion for DWT operator for 2d signal"""
-    for dir in [0, 1]:
-        DWTop = DWT(dims=(par["nt"], par["nx"]), dir=dir, wavelet="haar", level=3)
+    for axis in [0, 1]:
+        DWTop = DWT(dims=(par["nt"], par["nx"]), axis=axis, wavelet="haar", level=3)
         x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"])) + par[
             "imag"
         ] * np.random.normal(0.0, 1.0, (par["nt"], par["nx"]))
@@ -66,9 +66,9 @@ def test_DWT_2dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT_3dsignal(par):
     """Dot-test and inversion for DWT operator for 3d signal"""
-    for dir in [0, 1, 2]:
+    for axis in [0, 1, 2]:
         DWTop = DWT(
-            dims=(par["nt"], par["nx"], par["ny"]), dir=dir, wavelet="haar", level=3
+            dims=(par["nt"], par["nx"], par["ny"]), axis=axis, wavelet="haar", level=3
         )
         x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"])) + par[
             "imag"
@@ -92,7 +92,7 @@ def test_DWT_3dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT2D_2dsignal(par):
     """Dot-test and inversion for DWT2D operator for 2d signal"""
-    DWTop = DWT2D(dims=(par["nt"], par["nx"]), dirs=(0, 1), wavelet="haar", level=3)
+    DWTop = DWT2D(dims=(par["nt"], par["nx"]), axes=(0, 1), wavelet="haar", level=3)
     x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"])) + par[
         "imag"
     ] * np.random.normal(0.0, 1.0, (par["nt"], par["nx"]))
@@ -112,9 +112,9 @@ def test_DWT2D_2dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT2D_3dsignal(par):
     """Dot-test and inversion for DWT operator for 3d signal"""
-    for dirs in [(0, 1), (0, 2), (1, 2)]:
+    for axes in [(0, 1), (0, 2), (1, 2)]:
         DWTop = DWT2D(
-            dims=(par["nt"], par["nx"], par["ny"]), dirs=dirs, wavelet="haar", level=3
+            dims=(par["nt"], par["nx"], par["ny"]), axes=axes, wavelet="haar", level=3
         )
         x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"])) + par[
             "imag"

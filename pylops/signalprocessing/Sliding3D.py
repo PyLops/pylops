@@ -133,7 +133,7 @@ def Sliding3D(
             Restriction(
                 (nwin[0], dimsd[1], dimsd[2]),
                 range(win_in, win_end),
-                dir=1,
+                axis=1,
                 dtype=Op.dtype,
             ).H
             for win_in, win_end in zip(dwin1_ins, dwin1_ends)
@@ -146,7 +146,7 @@ def Sliding3D(
             Restriction(
                 dimsd,
                 range(win_in, win_end),
-                dir=0,
+                axis=0,
                 dtype=Op.dtype,
             ).H
             for win_in, win_end in zip(dwin0_ins, dwin0_ends)

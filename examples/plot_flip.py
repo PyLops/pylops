@@ -40,7 +40,7 @@ plt.legend()
 # first flip the model along the first axis and then along the second axis
 nt, nx = 10, 5
 x = np.outer(np.arange(nt), np.ones(nx))
-Fop = pylops.Flip((nt, nx), dir=0)
+Fop = pylops.Flip((nt, nx), axis=0)
 y = Fop * x.ravel()
 xadj = Fop.H * y.ravel()
 y = y.reshape(nt, nx)
@@ -64,7 +64,7 @@ plt.subplots_adjust(top=0.8)
 
 
 x = np.outer(np.ones(nt), np.arange(nx))
-Fop = pylops.Flip((nt, nx), dir=1)
+Fop = pylops.Flip(dims=(nt, nx), axis=1)
 y = Fop * x.ravel()
 xadj = Fop.H * y.ravel()
 y = y.reshape(nt, nx)

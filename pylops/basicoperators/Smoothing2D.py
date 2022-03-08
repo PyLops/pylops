@@ -1,13 +1,16 @@
+import warnings
+
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops.signalprocessing import Convolve2D
 
 
-def Smoothing2D(nsmooth, dims, nodir=None, dtype="float64"):
+def Smoothing2D(nsmooth, dims, axes=(-2, -1), dtype="float64"):
     r"""2D Smoothing.
 
-    Apply smoothing to model (and data) along two directions of a
-    multi-dimensional array depending on the choice of ``nodir``.
+    Apply smoothing to model (and data) along two ``axes`` of a
+    multi-dimensional array.
 
     Parameters
     ----------
@@ -15,9 +18,10 @@ def Smoothing2D(nsmooth, dims, nodir=None, dtype="float64"):
         Lenght of smoothing operator in 1st and 2nd dimensions (must be odd)
     dims : :obj:`tuple`
         Number of samples for each dimension
-    nodir : :obj:`int`, optional
-        Direction along which smoothing is **not** applied (set to ``None`` for 2d
-        arrays)
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axes along which model (and data) are smoothed.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -56,12 +60,6 @@ def Smoothing2D(nsmooth, dims, nodir=None, dtype="float64"):
         nsmooth[0] += 1
     if nsmooth[1] % 2 == 0:
         nsmooth[1] += 1
-
     h = np.ones((nsmooth[0], nsmooth[1])) / float(nsmooth[0] * nsmooth[1])
-    return Convolve2D(
-        dims,
-        h=h,
-        offset=[(nsmooth[0] - 1) / 2, (nsmooth[1] - 1) / 2],
-        nodir=nodir,
-        dtype=dtype,
-    )
+    offset = [(nsmooth[0] - 1) / 2, (nsmooth[1] - 1) / 2]
+    return Convolve2D(dims, h=h, offset=offset, axes=axes, dtype=dtype)

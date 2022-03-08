@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -8,14 +10,17 @@ from pylops.utils.backend import get_array_module
 class Symmetrize(LinearOperator):
     r"""Symmetrize along an axis.
 
-    Symmetrize a multi-dimensional array along a specified direction ``dir``.
+    Symmetrize a multi-dimensional array along ``axis``.
 
     Parameters
     ----------
     dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
-    dir : :obj:`int`, optional
-        Direction along which symmetrization is applied
+        (``None`` if only one dimension is available)
+    axis : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axis along which model is symmetrized.
     dtype : :obj:`str`, optional
         Type of elements in input array
 
@@ -55,12 +60,12 @@ class Symmetrize(LinearOperator):
     apart from the central sample where :math:`x[0] = y[N-1]`.
     """
 
-    def __init__(self, dims, dir=0, dtype="float64"):
+    def __init__(self, dims, axis=-1, dtype="float64"):
         self.dims = _value_or_list_like_to_array(dims)
-        self.dir = dir
+        self.axis = axis
         self.dimsd = self.dims.copy()
-        self.dimsd[self.dir] = self.dims[self.dir] * 2 - 1
-        self.nsym = self.dims[self.dir]
+        self.dimsd[self.axis] = self.dims[self.axis] * 2 - 1
+        self.nsym = self.dims[self.axis]
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
@@ -69,24 +74,24 @@ class Symmetrize(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.dimsd, dtype=self.dtype)
         x = ncp.reshape(x, self.dims)
-        if self.dir > 0:  # bring the dimension to symmetrize to first
-            x = ncp.swapaxes(x, self.dir, 0)
-            y = ncp.swapaxes(y, self.dir, 0)
+        if self.axis > 0:  # bring the dimension to symmetrize to first
+            x = ncp.swapaxes(x, self.axis, 0)
+            y = ncp.swapaxes(y, self.axis, 0)
         y[self.nsym - 1 :] = x
         y[: self.nsym - 1] = x[-1:0:-1]
-        if self.dir > 0:
-            y = ncp.swapaxes(y, 0, self.dir)
+        if self.axis > 0:
+            y = ncp.swapaxes(y, 0, self.axis)
         y = y.ravel()
         return y
 
     def _rmatvec(self, x):
         ncp = get_array_module(x)
         x = ncp.reshape(x, self.dimsd)
-        if self.dir > 0:  # bring the dimension to symmetrize to first
-            x = ncp.swapaxes(x, self.dir, 0)
+        if self.axis > 0:  # bring the dimension to symmetrize to first
+            x = ncp.swapaxes(x, self.axis, 0)
         y = x[self.nsym - 1 :].copy()
         y[1:] += x[self.nsym - 2 :: -1]
-        if self.dir > 0:
-            y = ncp.swapaxes(y, 0, self.dir)
+        if self.axis > 0:
+            y = ncp.swapaxes(y, 0, self.axis)
         y = y.ravel()
         return y

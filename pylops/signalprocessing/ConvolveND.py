@@ -1,4 +1,7 @@
+import warnings
+
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_array
@@ -14,8 +17,7 @@ class ConvolveND(LinearOperator):
     r"""ND convolution operator.
 
     Apply n-dimensional convolution with a compact filter to model
-    (and data) along a set of directions ``dirs`` of a n-dimensional
-    array.
+    (and data) along the ``axes`` of a n-dimensional array.
 
     Parameters
     ----------
@@ -25,9 +27,10 @@ class ConvolveND(LinearOperator):
         nd compact filter to be convolved to input signal
     offset : :obj:`tuple`, optional
         Indices of the center of the compact filter
-    dirs : :obj:`tuple`, optional
-        Directions along which convolution is applied
-        (set to ``None`` for filter of same dimension as input vector)
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0.0
+
+        Axes along which convolution is applied
     method : :obj:`str`, optional
         Method used to calculate the convolution (``direct`` or ``fft``).
     dtype : :obj:`str`, optional
@@ -51,12 +54,24 @@ class ConvolveND(LinearOperator):
 
     """
 
-    def __init__(self, dims, h, offset=None, dirs=None, method="fft", dtype="float64"):
+    def __init__(
+        self,
+        dims,
+        h,
+        offset=None,
+        axes=(-2, -1),
+        method="fft",
+        dtype="float64",
+    ):
         ncp = get_array_module(h)
         self.dims = _value_or_list_like_to_array(dims)
+        self.axes = (
+            np.arange(len(self.dims))
+            if axes is None
+            else np.array([normalize_axis_index(ax, len(self.dims)) for ax in axes])
+        )
         self.h = h
         self.nh = np.array(self.h.shape)
-        self.dirs = np.arange(len(self.dims)) if dirs is None else np.array(dirs)
 
         # padding
         if offset is None:
@@ -82,8 +97,8 @@ class ConvolveND(LinearOperator):
         # find out which directions are used for convolution and define offsets
         if len(self.dims) != len(self.nh):
             dimsh = np.ones(len(self.dims), dtype=int)
-            for idir, dir in enumerate(self.dirs):
-                dimsh[dir] = self.nh[idir]
+            for iax, ax in enumerate(self.axes):
+                dimsh[ax] = self.nh[iax]
             self.h = self.h.reshape(dimsh)
 
         # convolve and correlate functions
