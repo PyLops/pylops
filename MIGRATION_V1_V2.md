@@ -13,3 +13,4 @@ should be used as a checklist when converting a piece of code using PyLops from 
   When calling it with purely positional arguments, note that after `rtol` comes now first `atol` before `complexflag`.
   When using `raiseerror=True` it now emits an `AttributeError` instead of a `ValueError`.
 - `dims_fft` in the FFT operators is deprecated in favor of `dimsd`.
+- `dims_d` in `Sum` is deprecated in favor or `dimsd`
