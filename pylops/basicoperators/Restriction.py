@@ -155,14 +155,12 @@ class Restriction(LinearOperator):
 
         y = np_ma.array(np.zeros(self.dims), mask=np.ones(self.dims), dtype=self.dtype)
         x = np.reshape(x, self.dims)
-        if self.axis > 0:
-            x = np.swapaxes(x, self.axis, 0)
-            y = np.swapaxes(y, self.axis, 0)
-        y.mask[iava] = False
+        x = np.swapaxes(x, self.axis, -1)
+        y = np.swapaxes(y, self.axis, -1)
+        y.mask[..., iava] = False
         if ncp == np:
-            y[iava] = x[self.iava]
+            y[..., iava] = x[..., self.iava]
         else:
-            y[iava] = ncp.asnumpy(x)[iava]
-        if self.axis > 0:
-            y = np.swapaxes(y, 0, self.axis)
+            y[..., iava] = ncp.asnumpy(x)[..., iava]
+        y = np.swapaxes(y, -1, self.axis)
         return y

@@ -113,8 +113,7 @@ class CausalIntegration(LinearOperator):
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)
-        if self.axis != -1:
-            x = np.swapaxes(x, self.axis, -1)
+        x = np.swapaxes(x, self.axis, -1)
         y = self.sampling * np.cumsum(x, axis=-1)
         if self.kind in ("half", "trapezoidal"):
             y -= self.sampling * x / 2.0
@@ -122,16 +121,14 @@ class CausalIntegration(LinearOperator):
             y[..., 1:] -= self.sampling * x[..., 0:1] / 2.0
         if self.removefirst:
             y = y[..., 1:]
-        if self.axis != -1:
-            y = np.swapaxes(y, -1, self.axis)
+        y = np.swapaxes(y, -1, self.axis)
         return y.ravel()
 
     def _rmatvec(self, x):
         x = np.reshape(x, self.dimsd)
         if self.removefirst:
             x = np.insert(x, 0, 0, axis=self.axis)
-        if self.axis != -1:
-            x = np.swapaxes(x, self.axis, -1)
+        x = np.swapaxes(x, self.axis, -1)
         xflip = np.flip(x, axis=-1)
         if self.kind == "half":
             y = self.sampling * (np.cumsum(xflip, axis=-1) - xflip / 2.0)
@@ -141,6 +138,5 @@ class CausalIntegration(LinearOperator):
         else:
             y = self.sampling * np.cumsum(xflip, axis=-1)
         y = np.flip(y, axis=-1)
-        if self.axis != -1:
-            y = np.swapaxes(y, -1, self.axis)
+        y = np.swapaxes(y, -1, self.axis)
         return y.ravel()
