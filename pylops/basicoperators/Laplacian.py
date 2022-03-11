@@ -84,4 +84,9 @@ def Laplacian(
     l2op = aslinearoperator(l2op)
     l2op.dims = dims
     l2op.dimsd = dimsd
+    l2op.axes = axes
+    l2op.weights = weights
+    l2op.sampling = sampling
+    l2op.edge = edge
+    l2op.kind = kind
     return l2op

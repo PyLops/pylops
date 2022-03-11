@@ -1,10 +1,9 @@
 import logging
-import warnings
 
 import numpy as np
 
-from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, MatrixMult, Restriction, Transpose
+from pylops.LinearOperator import aslinearoperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module
 
@@ -58,7 +57,7 @@ def _linearinterp(dims, iava, axis=-1, dtype="float64"):
     ) + Diagonal(weights, dims=dimsd, axis=axis, dtype=dtype) * Restriction(
         dims, iva_r, axis=axis, dtype=dtype
     )
-    return Op, iava
+    return Op, iava, dims, dimsd
 
 
 def _sincinterp(dims, iava, axis=0, dtype="float64"):
@@ -76,18 +75,18 @@ def _sincinterp(dims, iava, axis=0, dtype="float64"):
     otherdims = ncp.array(dims)
     otherdims = ncp.roll(otherdims, -axis)
     otherdims = otherdims[1:]
-    Op = MatrixMult(sinc, dims=otherdims, dtype=dtype)
+    Op = MatrixMult(sinc, otherdims=otherdims, dtype=dtype)
 
     # create Transpose operator that brings axis to first dimension
+    dimsd = list(dims)
+    dimsd[axis] = len(iava)
     if axis > 0:
         axes = np.arange(len(dims), dtype=int)
         axes = np.roll(axes, -axis)
-        dimsd = list(dims)
-        dimsd[axis] = len(iava)
         Top = Transpose(dims, axes=axes, dtype=dtype)
         T1op = Transpose(dimsd, axes=axes, dtype=dtype)
         Op = T1op.H * Op * Top
-    return Op
+    return Op, dims, dimsd
 
 
 def Interp(dims, iava, axis=-1, kind="linear", dtype="float64"):
@@ -193,9 +192,15 @@ def Interp(dims, iava, axis=-1, kind="linear", dtype="float64"):
     if kind == "nearest":
         interpop, iava = _nearestinterp(dims, iava, axis=axis, dtype=dtype)
     elif kind == "linear":
-        interpop, iava = _linearinterp(dims, iava, axis=axis, dtype=dtype)
+        interpop, iava, dims, dimsd = _linearinterp(dims, iava, axis=axis, dtype=dtype)
     elif kind == "sinc":
-        interpop = _sincinterp(dims, iava, axis=axis, dtype=dtype)
+        interpop, dims, dimsd = _sincinterp(dims, iava, axis=axis, dtype=dtype)
     else:
         raise NotImplementedError("kind is not correct...")
+    # add dims and dimsd to composite operators (not needed for neareast as
+    # interpop is a Restriction operator already
+    if kind != "nearest":
+        interpop = aslinearoperator(interpop)
+        interpop.dims = dims
+        interpop.dimsd = dimsd
     return interpop, iava

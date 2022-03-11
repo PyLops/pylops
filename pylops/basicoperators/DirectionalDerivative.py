@@ -14,7 +14,6 @@ def FirstDirectionalDerivative(
     .. note:: At least 2 dimensions are required, consider using
       :py:func:`pylops.FirstDerivative` for 1d arrays.
 
-
     Parameters
     ----------
     dims : :obj:`tuple`
