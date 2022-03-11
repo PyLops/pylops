@@ -182,7 +182,7 @@ def PrestackLinearModelling(
 
         # Combine operators
         M = ncp.dot(C, ncp.dot(G, D))
-        Preop = MatrixMult(M, dims=spatdims, dtype=dtype)
+        Preop = MatrixMult(M, otherdims=spatdims, dtype=dtype)
 
     else:
         # Create wavelet operator
@@ -504,7 +504,7 @@ def PrestackInversion(
         ]
         if explicit:
             PPop = MatrixMult(
-                np.vstack([Op.A for Op in PPop]), dims=nspat, dtype=PPop[0].A.dtype
+                np.vstack([Op.A for Op in PPop]), otherdims=nspat, dtype=PPop[0].A.dtype
             )
         else:
             PPop = VStack(PPop)
@@ -560,7 +560,7 @@ def PrestackInversion(
                     minv = get_lstsq(data)(PP, datarn, **kwargs_solver)[0]
                 else:
                     # solve regularized normal equations simultaneously
-                    PPop_reg = MatrixMult(PP, dims=nspatprod)
+                    PPop_reg = MatrixMult(PP, otherdims=nspatprod)
                     if ncp == np:
                         minv = lsqr(PPop_reg, datarn.ravel(), **kwargs_solver)[0]
                     else:
@@ -574,7 +574,7 @@ def PrestackInversion(
             #    # create regularized normal eqs. and solve them simultaneously
             #    PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0*nm)
             #    datarn = PPop.A.T * datar.reshape(nt0*ntheta, nspatprod)
-            #    PPop_reg = MatrixMult(PP, dims=ntheta*nspatprod)
+            #    PPop_reg = MatrixMult(PP, otherdims=ntheta*nspatprod)
             #    minv = lstsq(PPop_reg, datarn.ravel(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop

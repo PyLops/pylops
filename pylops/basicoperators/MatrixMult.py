@@ -5,6 +5,7 @@ import scipy as sp
 from scipy.sparse.linalg import inv
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_array
 from pylops.utils.backend import get_array_module
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -20,7 +21,7 @@ class MatrixMult(LinearOperator):
     ----------
     A : :obj:`numpy.ndarray` or :obj:`scipy.sparse` matrix
         Matrix.
-    dims : :obj:`tuple`, optional
+    otherdims : :obj:`tuple`, optional
         Number of samples for each other dimension of model
         (model/data will be reshaped and ``A`` applied multiple times
         to each column of the model/data).
@@ -29,6 +30,10 @@ class MatrixMult(LinearOperator):
 
     Attributes
     ----------
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before linearization.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
@@ -39,30 +44,29 @@ class MatrixMult(LinearOperator):
 
     """
 
-    def __init__(self, A, dims=None, dtype="float64"):
+    def __init__(self, A, otherdims=None, dtype="float64"):
         ncp = get_array_module(A)
         self.A = A
         if isinstance(A, ncp.ndarray):
             self.complex = np.iscomplexobj(A)
         else:
             self.complex = np.iscomplexobj(A.data)
-        if dims is None:
+        if otherdims is None:
+            self.dims, self.dimsd = A.shape[1], A.shape[0]
             self.reshape = False
             self.shape = A.shape
             self.explicit = True
         else:
-            if isinstance(dims, int):
-                dims = (dims,)
+            otherdims = _value_or_list_like_to_array(otherdims)
+            self.otherdims = np.array(otherdims, dtype=int)
+            self.dims, self.dimsd = np.insert(
+                self.otherdims, 0, self.A.shape[1]
+            ), np.insert(self.otherdims, 0, self.A.shape[0])
+            self.dimsflatten, self.dimsdflatten = np.insert(
+                [np.prod(self.otherdims)], 0, self.A.shape[1]
+            ), np.insert([np.prod(self.otherdims)], 0, self.A.shape[0])
             self.reshape = True
-            self.dims = np.array(dims, dtype=int)
-            self.reshapedims = [
-                np.insert([np.prod(self.dims)], 0, self.A.shape[1]),
-                np.insert([np.prod(self.dims)], 0, self.A.shape[0]),
-            ]
-            self.shape = (
-                A.shape[0] * np.prod(self.dims),
-                A.shape[1] * np.prod(self.dims),
-            )
+            self.shape = (np.prod(self.dimsd), np.prod(self.dims))
             self.explicit = False
         self.dtype = np.dtype(dtype)
         # Check dtype for correctness (upcast to complex when A is complex)
@@ -75,7 +79,7 @@ class MatrixMult(LinearOperator):
     def _matvec(self, x):
         ncp = get_array_module(x)
         if self.reshape:
-            x = ncp.reshape(x, self.reshapedims[0])
+            x = ncp.reshape(x, self.dimsflatten)
         y = self.A.dot(x)
         if self.reshape:
             return y.ravel()
@@ -85,7 +89,7 @@ class MatrixMult(LinearOperator):
     def _rmatvec(self, x):
         ncp = get_array_module(x)
         if self.reshape:
-            x = ncp.reshape(x, self.reshapedims[1])
+            x = ncp.reshape(x, self.dimsdflatten)
         if self.complex:
             y = (self.A.T.dot(x.conj())).conj()
         else:
