@@ -102,9 +102,6 @@ class DWT(LinearOperator):
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
 
-        if isinstance(dims, int):
-            dims = (dims,)
-
         self.dims = _value_or_list_like_to_tuple(dims)
         # define padding for length to be power of 2
         ndimpow2 = max(2 ** ceil(log(self.dims[axis], 2)), 2 ** level)
