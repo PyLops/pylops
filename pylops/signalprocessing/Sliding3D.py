@@ -1,8 +1,7 @@
 import logging
 
-import numpy as np
-
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
+from pylops.LinearOperator import aslinearoperator
 from pylops.signalprocessing.Sliding2D import _slidingsteps
 from pylops.utils.tapers import taper3d
 
@@ -152,5 +151,12 @@ def Sliding3D(
             for win_in, win_end in zip(dwin0_ins, dwin0_ends)
         ]
     )
-    Sop = combining0 * combining1 * OOp
+    Sop = aslinearoperator(combining0 * combining1 * OOp)
+    Sop.dims, Sop.dimsd = (
+        nwins0,
+        nwins1,
+        int(dims[0] // nwins0),
+        int(dims[1] // nwins1),
+        dims[2],
+    ), dimsd
     return Sop
