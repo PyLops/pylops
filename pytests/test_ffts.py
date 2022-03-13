@@ -748,7 +748,7 @@ def test_FFT2D_small_complex(par):
 
     # Compute FFT with FFTop and compare with y_true
     y = FFTop * x.ravel()
-    y = y.reshape(FFTop.dims_fft)
+    y = y.reshape(FFTop.dimsd)
     assert_array_almost_equal(y, y_true, decimal=decimal)
     assert dottest(FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal))
 
@@ -795,7 +795,7 @@ def test_FFTND_small_complex(par):
 
     # Compute FFT with FFTop and compare with y_true
     y = FFTop * x.ravel()
-    y = y.reshape(FFTop.dims_fft)
+    y = y.reshape(FFTop.dimsd)
     assert_array_almost_equal(y, y_true, decimal=decimal)
     assert dottest(FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal))
 

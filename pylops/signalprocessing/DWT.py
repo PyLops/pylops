@@ -6,6 +6,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.basicoperators import Pad
+from pylops.utils._internal import _value_or_list_like_to_tuple
 
 try:
     import pywt
@@ -101,18 +102,16 @@ class DWT(LinearOperator):
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
 
-        if isinstance(dims, int):
-            dims = (dims,)
-
+        self.dims = _value_or_list_like_to_tuple(dims)
         # define padding for length to be power of 2
-        ndimpow2 = max(2 ** ceil(log(dims[axis], 2)), 2 ** level)
-        pad = [(0, 0)] * len(dims)
-        pad[axis] = (0, ndimpow2 - dims[axis])
-        self.pad = Pad(dims, pad)
-        self.dims = dims
+        ndimpow2 = max(2 ** ceil(log(self.dims[axis], 2)), 2 ** level)
+        pad = [(0, 0)] * len(self.dims)
+        pad[axis] = (0, ndimpow2 - self.dims[axis])
+        self.pad = Pad(self.dims, pad)
         self.axis = axis
-        self.dimsd = list(dims)
-        self.dimsd[self.axis] = ndimpow2
+        dimsd = list(self.dims)
+        dimsd[self.axis] = ndimpow2
+        self.dimsd = tuple(dimsd)
 
         # apply transform to find out slices
         _, self.sl = pywt.coeffs_to_array(
@@ -130,7 +129,8 @@ class DWT(LinearOperator):
         self.waveletadj = _adjointwavelet(wavelet)
         self.level = level
         self.reshape = True if len(self.dims) > 1 else False
-        self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
+
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 

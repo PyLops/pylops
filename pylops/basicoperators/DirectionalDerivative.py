@@ -14,7 +14,6 @@ def FirstDirectionalDerivative(
     .. note:: At least 2 dimensions are required, consider using
       :py:func:`pylops.FirstDerivative` for 1d arrays.
 
-
     Parameters
     ----------
     dims : :obj:`tuple`
@@ -67,8 +66,10 @@ def FirstDirectionalDerivative(
     else:
         Dop = Diagonal(v.ravel(), dtype=dtype)
     Sop = Sum(dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
-    ddop = Sop * Dop * Gop
-    return LinearOperator(ddop)
+    ddop = LinearOperator(Sop * Dop * Gop)
+    ddop.dims = ddop.dimsd = dims
+    ddop.sampling = sampling
+    return ddop
 
 
 def SecondDirectionalDerivative(dims, v, sampling=1, edge=False, dtype="float64"):
@@ -118,5 +119,7 @@ def SecondDirectionalDerivative(dims, v, sampling=1, edge=False, dtype="float64"
     in the literature.
     """
     Dop = FirstDirectionalDerivative(dims, v, sampling=sampling, edge=edge, dtype=dtype)
-    ddop = -Dop.H * Dop
-    return LinearOperator(ddop)
+    ddop = LinearOperator(-Dop.H * Dop)
+    ddop.dims = ddop.dimsd = dims
+    ddop.sampling = sampling
+    return ddop

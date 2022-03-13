@@ -1,6 +1,7 @@
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module
 
 
@@ -43,7 +44,9 @@ class Imag(LinearOperator):
     """
 
     def __init__(self, dims, dtype="complex128"):
-        self.shape = (np.prod(np.array(dims)), np.prod(np.array(dims)))
+        self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
+
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.rdtype = np.real(np.ones(1, self.dtype)).dtype
         self.explicit = False

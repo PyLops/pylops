@@ -84,7 +84,7 @@ class _FFT_numpy(_BaseFFT):
         return y
 
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dims_fft)
+        x = np.reshape(x, self.dimsd)
         if self.fftshift_after:
             x = np.fft.ifftshift(x, axes=self.axis)
         if self.real:
@@ -175,7 +175,7 @@ class _FFT_scipy(_BaseFFT):
         return y
 
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dims_fft)
+        x = np.reshape(x, self.dimsd)
         if self.fftshift_after:
             x = scipy.fft.ifftshift(x, axes=self.axis)
         if self.real:
@@ -255,29 +255,30 @@ class _FFT_fftw(_BaseFFT):
                 f"fftw backend returns complex128 dtype. To respect the passed dtype, data will be cast to {self.cdtype}."
             )
 
-        self.dims_t = self.dims.copy()
-        self.dims_t[self.axis] = self.nfft
+        dims_t = list(self.dims)
+        dims_t[self.axis] = self.nfft
+        self.dims_t = dims_t
 
         # define padding(fftw requires the user to provide padded input signal)
         self.pad = np.zeros((self.ndim, 2), dtype=int)
         if self.real:
             if self.nfft % 2:
                 self.pad[self.axis, 1] = (
-                    2 * (self.dims_fft[self.axis] - 1) + 1 - self.dims[self.axis]
+                    2 * (self.dimsd[self.axis] - 1) + 1 - self.dims[self.axis]
                 )
             else:
                 self.pad[self.axis, 1] = (
-                    2 * (self.dims_fft[self.axis] - 1) - self.dims[self.axis]
+                    2 * (self.dimsd[self.axis] - 1) - self.dims[self.axis]
                 )
         else:
-            self.pad[self.axis, 1] = self.dims_fft[self.axis] - self.dims[self.axis]
+            self.pad[self.axis, 1] = self.dimsd[self.axis] - self.dims[self.axis]
         self.dopad = True if np.sum(self.pad) > 0 else False
 
         # create empty arrays and plans for fft/ifft
         self.x = pyfftw.empty_aligned(
             self.dims_t, dtype=self.rdtype if real else self.cdtype
         )
-        self.y = pyfftw.empty_aligned(self.dims_fft, dtype=self.cdtype)
+        self.y = pyfftw.empty_aligned(self.dimsd, dtype=self.cdtype)
 
         # Use FFTW without norm-related keywords above. In this case, FFTW standard
         # behavior is to scale with 1/N on the inverse transform. The _scale below
@@ -327,7 +328,7 @@ class _FFT_fftw(_BaseFFT):
         return y.ravel()
 
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dims_fft)
+        x = np.reshape(x, self.dimsd)
         if self.fftshift_after:
             x = np.fft.ifftshift(x, axes=self.axis)
 
@@ -479,10 +480,10 @@ def FFT(
 
     Attributes
     ----------
-    dims_fft : :obj:`tuple`
+    dimsd : :obj:`tuple`
         Shape of the array after the forward, but before linearization.
 
-        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dims_fft)``.
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     f : :obj:`numpy.ndarray`
         Discrete Fourier Transform sample frequencies
     real : :obj:`bool`

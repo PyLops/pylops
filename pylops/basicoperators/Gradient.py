@@ -1,6 +1,7 @@
 import numpy as np
 
 from pylops.basicoperators import FirstDerivative, VStack
+from pylops.utils._internal import _value_or_list_like_to_tuple
 
 
 def Gradient(dims, sampling=1, edge=False, dtype="float64", kind="centered"):
@@ -58,9 +59,9 @@ def Gradient(dims, sampling=1, edge=False, dtype="float64", kind="centered"):
     axes are instead summed together.
 
     """
+    dims = _value_or_list_like_to_tuple(dims)
     ndims = len(dims)
-    if isinstance(sampling, (int, float)):
-        sampling = [sampling] * ndims
+    sampling = _value_or_list_like_to_tuple(sampling, repeat=ndims)
 
     gop = VStack(
         [
@@ -75,4 +76,9 @@ def Gradient(dims, sampling=1, edge=False, dtype="float64", kind="centered"):
             for iax in range(ndims)
         ]
     )
+    gop.dims = dims
+    gop.dimsd = (ndims, *gop.dims)
+    gop.sampling = sampling
+    gop.edge = edge
+    gop.kind = kind
     return gop

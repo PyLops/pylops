@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_array
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module
 
 
@@ -61,11 +61,13 @@ class Symmetrize(LinearOperator):
     """
 
     def __init__(self, dims, axis=-1, dtype="float64"):
-        self.dims = _value_or_list_like_to_array(dims)
+        self.dims = _value_or_list_like_to_tuple(dims)
         self.axis = axis
-        self.dimsd = self.dims.copy()
-        self.dimsd[self.axis] = self.dims[self.axis] * 2 - 1
+        dimsd = list(self.dims)
+        dimsd[self.axis] = self.dims[self.axis] * 2 - 1
+        self.dimsd = tuple(dimsd)
         self.nsym = self.dims[self.axis]
+
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False

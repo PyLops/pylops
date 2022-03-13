@@ -70,13 +70,23 @@ def Laplacian(
     if not (len(axes) == len(weights) == len(sampling)):
         raise ValueError("axes, weights, and sampling have different size")
 
-    l2op = weights[0] * SecondDerivative(
+    l2op = SecondDerivative(
         dims, axis=axes[0], sampling=sampling[0], edge=edge, kind=kind, dtype=dtype
     )
+    dims, dimsd = l2op.dims, l2op.dimsd
 
+    l2op *= weights[0]
     for ax, samp, weight in zip(axes[1:], sampling[1:], weights[1:]):
         l2op += weight * SecondDerivative(
             dims, axis=ax, sampling=samp, edge=edge, dtype=dtype
         )
 
-    return aslinearoperator(l2op)
+    l2op = aslinearoperator(l2op)
+    l2op.dims = dims
+    l2op.dimsd = dimsd
+    l2op.axes = axes
+    l2op.weights = weights
+    l2op.sampling = sampling
+    l2op.edge = edge
+    l2op.kind = kind
+    return l2op

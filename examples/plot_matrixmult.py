@@ -196,11 +196,11 @@ print("lsqr solution xest= %s" % xest)
 #
 # and apply it using the same implementation of the
 # :py:class:`pylops.MatrixMult` operator by simply telling the operator how we
-# want the model to be organized through the ``dims`` input parameter.
+# want the model to be organized through the ``otherdims`` input parameter.
 A = np.array([[1.0, 2.0], [4.0, 5.0]])
 x = np.array([[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
 
-Aop = pylops.MatrixMult(A, dims=(3,), dtype="float64")
+Aop = pylops.MatrixMult(A, otherdims=(3,), dtype="float64")
 y = Aop * x.ravel()
 
 xest, istop, itn, r1norm, r2norm = lsqr(Aop, y, damp=1e-10, iter_lim=10, show=0)[0:5]

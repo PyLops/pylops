@@ -1,6 +1,7 @@
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_tuple
 
 
 class Pad(LinearOperator):
@@ -60,14 +61,19 @@ class Pad(LinearOperator):
     def __init__(self, dims, pad, dtype="float64"):
         if np.any(np.array(pad) < 0):
             raise ValueError("Padding must be positive or zero")
-        self.dims = dims
+        self.reshape = False if isinstance(dims, int) else True
+        self.dims = _value_or_list_like_to_tuple(dims)
         self.pad = pad
-        self.reshape = False if isinstance(self.dims, int) else True
         if self.reshape:
-            self.dimsd = [dim + p[0] + p[1] for dim, p in zip(dims, pad)]
+            dimsd = [
+                dim + before + after
+                for dim, (before, after) in zip(self.dims, self.pad)
+            ]
         else:
-            self.dimsd = dims + pad[0] + pad[1]
-        self.shape = (np.prod(np.array(self.dimsd)), np.prod(np.array(self.dims)))
+            dimsd = [self.dims[0] + pad[0] + pad[1]]
+        self.dimsd = tuple(dimsd)
+
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
@@ -82,8 +88,8 @@ class Pad(LinearOperator):
     def _rmatvec(self, x):
         if self.reshape:
             y = x.reshape(self.dimsd)
-            for ax, pad in enumerate(self.pad):
-                y = np.take(y, np.arange(pad[0], pad[0] + self.dims[ax]), axis=ax)
+            for ax, (before, _) in enumerate(self.pad):
+                y = np.take(y, np.arange(before, before + self.dims[ax]), axis=ax)
         else:
-            y = x[self.pad[0] : self.pad[0] + self.dims]
+            y = x[self.pad[0] : self.pad[0] + self.dims[0]]
         return y.ravel()

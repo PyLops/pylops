@@ -386,17 +386,18 @@ class Seislet(LinearOperator):
             raise NotImplementedError("kind should be haar or linear")
 
         # define padding for length to be power of 2
-        dims = slopes.shape
-        ndimpow2 = 2 ** ceil(log(dims[0], 2))
-        pad = [(0, 0)] * len(dims)
-        pad[0] = (0, ndimpow2 - dims[0])
-        self.pad = Pad(dims, pad)
-        self.dims = list(dims)
-        self.dims[0] = ndimpow2
-        self.nx, self.nt = self.dims
+        self.dims = slopes.shape
+        dimsd = list(self.dims)
+        ndimpow2 = 2 ** ceil(log(dimsd[0], 2))
+        pad = [(0, 0)] * len(dimsd)
+        pad[0] = (0, ndimpow2 - dimsd[0])
+        self.pad = Pad(dimsd, pad)
+        dimsd[0] = ndimpow2
+        self.dimsd = dimsd
+        self.nx, self.nt = self.dimsd
 
         # define levels
-        nlevels_max = int(np.log2(self.dims[0]))
+        nlevels_max = int(np.log2(self.dimsd[0]))
         self.levels_size = np.flip(np.array([2 ** i for i in range(nlevels_max)]))
         if level is not None:
             self.levels_size = self.levels_size[:level]
@@ -408,15 +409,15 @@ class Seislet(LinearOperator):
         self.levels_cum = np.insert(self.levels_cum, 0, 0)
 
         self.dx, self.dt = sampling
-        self.slopes = (self.pad * slopes.ravel()).reshape(self.dims)
+        self.slopes = (self.pad * slopes.ravel()).reshape(self.dimsd)
         self.inv = inv
-        self.shape = (int(np.prod(self.slopes.size)), int(np.prod(slopes.size)))
+        self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
     def _matvec(self, x):
         x = self.pad.matvec(x)
-        x = np.reshape(x, self.dims)
+        x = np.reshape(x, self.dimsd)
         y = np.zeros((np.sum(self.levels_size) + self.levels_size[-1], self.nt))
         for ilevel in range(self.level):
             odd = x[1::2]
@@ -437,7 +438,7 @@ class Seislet(LinearOperator):
 
     def _rmatvec(self, x):
         if not self.inv:
-            x = np.reshape(x, self.dims)
+            x = np.reshape(x, self.dimsd)
             y = x[self.levels_cum[-1] :]
             for ilevel in range(self.level, 0, -1):
                 res = x[self.levels_cum[ilevel - 1] : self.levels_cum[ilevel]]
@@ -472,7 +473,7 @@ class Seislet(LinearOperator):
         return y
 
     def inverse(self, x):
-        x = np.reshape(x, self.dims)
+        x = np.reshape(x, self.dimsd)
         y = x[self.levels_cum[-1] :]
         for ilevel in range(self.level, 0, -1):
             res = x[self.levels_cum[ilevel - 1] : self.levels_cum[ilevel]]

@@ -87,7 +87,7 @@ def _PoststackLinearModelling(
         M = ncp.dot(C, D)
         if sparse:
             M = get_csc_matrix(wav)(M)
-        Pop = _MatrixMult(M, dims=spatdims, dtype=dtype, **args_MatrixMult)
+        Pop = _MatrixMult(M, otherdims=spatdims, dtype=dtype, **args_MatrixMult)
     else:
         # Create wavelet operator
         if len(wav.shape) == 1:
@@ -102,7 +102,7 @@ def _PoststackLinearModelling(
         else:
             Cop = _MatrixMult(
                 nonstationary_convmtx(wav, nt0, hc=wav.shape[1] // 2, pad=(nt0, nt0)),
-                dims=spatdims,
+                otherdims=spatdims,
                 dtype=dtype,
                 **args_MatrixMult
             )
@@ -350,7 +350,7 @@ def PoststackInversion(
                     minv = get_lstsq(data)(PP, datarn, **kwargs_solver)[0]
                 else:
                     # solve regularized normal equations simultaneously
-                    PPop_reg = MatrixMult(PP, dims=nspatprod)
+                    PPop_reg = MatrixMult(PP, otherdims=nspatprod)
                     if ncp == np:
                         minv = lsqr(PPop_reg, datar.ravel(), **kwargs_solver)[0]
                     else:
@@ -364,7 +364,7 @@ def PoststackInversion(
                 # create regularized normal eqs. and solve them simultaneously
                 PP = ncp.dot(PPop.A.T, PPop.A) + epsI * ncp.eye(nt0, dtype=PPop.A.dtype)
                 datarn = PPop.A.T * datar.reshape(nt0, nspatprod)
-                PPop_reg = MatrixMult(PP, dims=nspatprod)
+                PPop_reg = MatrixMult(PP, otherdims=nspatprod)
                 minv = get_lstsq(data)(PPop_reg.A, datarn.ravel(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop

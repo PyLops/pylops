@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module
 
 
@@ -51,18 +52,20 @@ class Sum(LinearOperator):
     """
 
     def __init__(self, dims, axis=-1, dtype="float64"):
-        if len(dims) == 1:
-            dims = (dims[0], 1)  # to avoid reducing matvec to a scalar
-        self.dims = dims
+        dims = _value_or_list_like_to_tuple(dims)
+        # to avoid reducing matvec to a scalar
+        self.dims = (dims[0], 1) if len(dims) == 1 else dims
         self.axis = axis
         # data dimensions
-        self.dims_d = list(dims).copy()
-        self.dims_d.pop(self.axis)
+        dimsd = list(dims).copy()
+        dimsd.pop(self.axis)
+        self.dimsd = dimsd
         # array of ones with dims of model in self.axis for np.tile in adjoint mode
         self.tile = np.ones(len(dims), dtype=int)
         self.tile[self.axis] = self.dims[self.axis]
+
         self.dtype = np.dtype(dtype)
-        self.shape = (np.prod(self.dims_d), np.prod(dims))
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.explicit = False
 
     def _matvec(self, x):
@@ -73,7 +76,7 @@ class Sum(LinearOperator):
 
     def _rmatvec(self, x):
         ncp = get_array_module(x)
-        y = x.reshape(self.dims_d)
+        y = x.reshape(self.dimsd)
         y = ncp.expand_dims(y, self.axis)
         y = ncp.tile(y, self.tile)
         return y.ravel()

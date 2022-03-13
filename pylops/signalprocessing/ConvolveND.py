@@ -4,7 +4,7 @@ import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_array
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import (
     get_array_module,
     get_convolve,
@@ -64,7 +64,7 @@ class ConvolveND(LinearOperator):
         dtype="float64",
     ):
         ncp = get_array_module(h)
-        self.dims = _value_or_list_like_to_array(dims)
+        self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
         self.axes = (
             np.arange(len(self.dims))
             if axes is None
@@ -106,7 +106,7 @@ class ConvolveND(LinearOperator):
         self.correlate = get_correlate(h)
         self.method = method
 
-        self.shape = (np.prod(self.dims), np.prod(self.dims))
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 

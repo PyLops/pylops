@@ -127,7 +127,7 @@ def test_MatrixMult_repeated(par):
     G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32") + par[
         "imag"
     ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32")
-    Gop = MatrixMult(G, dims=5, dtype=par["dtype"])
+    Gop = MatrixMult(G, otherdims=5, dtype=par["dtype"])
     assert dottest(
         Gop, par["ny"] * 5, par["nx"] * 5, complexflag=0 if par["imag"] == 1 else 3
     )

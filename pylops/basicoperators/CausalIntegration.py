@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_array
+from pylops.utils._internal import _value_or_list_like_to_tuple
 
 
 class CausalIntegration(LinearOperator):
@@ -97,16 +97,18 @@ class CausalIntegration(LinearOperator):
         kind="full",
         removefirst=False,
     ):
-        self.dims = _value_or_list_like_to_array(dims)
+        self.dims = _value_or_list_like_to_tuple(dims)
         self.axis = axis
         self.sampling = sampling
         self.kind = kind
         if kind == "full" and halfcurrent:  # ensure backcompatibility
             self.kind = "half"
         self.removefirst = removefirst
-        self.dimsd = self.dims.copy()
+        dimsd = list(self.dims)
         if self.removefirst:
-            self.dimsd[self.axis] -= 1
+            dimsd[self.axis] -= 1
+        self.dimsd = tuple(dimsd)
+
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False

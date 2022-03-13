@@ -6,7 +6,11 @@ import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
-from pylops.utils._internal import _raise_on_wrong_dtype, _value_or_list_like_to_array
+from pylops.utils._internal import (
+    _raise_on_wrong_dtype,
+    _value_or_list_like_to_array,
+    _value_or_list_like_to_tuple,
+)
 from pylops.utils.backend import get_complex_dtype, get_real_dtype
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -33,8 +37,8 @@ class _BaseFFT(LinearOperator):
         fftshift_after=False,
         dtype="complex128",
     ):
-        self.dims = _value_or_list_like_to_array(dims)
-        _raise_on_wrong_dtype(self.dims, np.integer, "dims")
+        self.dims = _value_or_list_like_to_tuple(dims)
+        _raise_on_wrong_dtype(np.array(self.dims), np.integer, "dims")
 
         self.ndim = len(self.dims)
 
@@ -99,10 +103,11 @@ class _BaseFFT(LinearOperator):
                 )
             self.f = np.fft.fftshift(self.f)
 
-        self.dims_fft = self.dims.copy()
-        self.dims_fft[self.axis] = self.nfft // 2 + 1 if self.real else self.nfft
-        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
+        dimsd = list(self.dims)
+        dimsd[self.axis] = self.nfft // 2 + 1 if self.real else self.nfft
+        self.dimsd = tuple(dimsd)
 
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         # Find types to enforce to forward and adjoint outputs. This is
         # required as np.fft.fft always returns complex128 even if input is
         # float32 or less. Moreover, when choosing real=True, the type of the
@@ -140,8 +145,8 @@ class _BaseFFTND(LinearOperator):
         fftshift_after=False,
         dtype="complex128",
     ):
-        self.dims = _value_or_list_like_to_array(dims)
-        _raise_on_wrong_dtype(self.dims, np.integer, "dims")
+        self.dims = _value_or_list_like_to_tuple(dims)
+        _raise_on_wrong_dtype(np.array(self.dims), np.integer, "dims")
 
         self.ndim = len(self.dims)
 
@@ -159,7 +164,7 @@ class _BaseFFTND(LinearOperator):
             nffts[np.equal(nffts, None)] = np.array(
                 [self.dims[d] for d, n in zip(axes, nffts) if n is None]
             )
-            nffts = nffts.astype(self.dims.dtype)
+            nffts = nffts.astype(np.array(self.dims).dtype)
         self.nffts = nffts
         _raise_on_wrong_dtype(self.nffts, np.integer, "nffts")
 
@@ -256,11 +261,13 @@ class _BaseFFTND(LinearOperator):
                 )
                 fs[-1] = np.fft.fftshift(fs[-1])
         self.fs = tuple(fs)
-        self.dims_fft = self.dims.copy()
-        self.dims_fft[self.axes] = self.nffts
+        dimsd = np.array(self.dims)
+        dimsd[self.axes] = self.nffts
         if self.real:
-            self.dims_fft[self.axes[-1]] = self.nffts[-1] // 2 + 1
-        self.shape = (int(np.prod(self.dims_fft)), int(np.prod(self.dims)))
+            dimsd[self.axes[-1]] = self.nffts[-1] // 2 + 1
+        self.dimsd = tuple(dimsd)
+
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.rdtype = get_real_dtype(dtype) if self.real else np.dtype(dtype)
         self.cdtype = get_complex_dtype(dtype)
         self.dtype = self.cdtype

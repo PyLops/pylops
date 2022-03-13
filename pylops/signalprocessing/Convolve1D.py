@@ -1,10 +1,9 @@
 import warnings
 
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_array
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import (
     get_convolve,
     get_fftconvolve,
@@ -118,7 +117,7 @@ class Convolve1D(LinearOperator):
     """
 
     def __init__(self, dims, h, offset=0, axis=-1, dtype="float64", method=None):
-        self.dims = _value_or_list_like_to_array(dims)
+        self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
         self.axis = axis
 
         if offset > len(h) - 1:
@@ -149,7 +148,7 @@ class Convolve1D(LinearOperator):
 
         # choose method and function handle
         self.convfunc, self.method = _choose_convfunc(h, method, self.dimsorig)
-        self.shape = (np.prod(self.dims), np.prod(self.dims))
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
