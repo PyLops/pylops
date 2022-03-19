@@ -53,8 +53,8 @@ def cg(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
         print(
             "CG\n"
             "-----------------------------------------------------------\n"
-            "The Operator Op has %d rows and %d cols\n"
-            "tol = %10e\tniter = %d" % (Op.shape[0], Op.shape[1], tol, niter)
+            f"The Operator Op has {Op.shape[0]} rows and {Op.shape[1]} cols\n"
+            f"tol = {tol:10e}\tniter = {niter}"
         )
         print("-----------------------------------------------------------")
         head1 = "    Itn           x[0]              r2norm"
@@ -92,19 +92,13 @@ def cg(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
                 if not np.iscomplex(x[0]):
-                    msg = "%6g        %11.4e        %11.4e" % (iiter, x[0], cost[iiter])
+                    msg = f"{iiter:6g}        {x[0]:11.4e}        {cost[iiter]:11.4e}"
                 else:
-                    msg = "%6g     %4.1e+%4.1ej     %11.4e" % (
-                        iiter,
-                        np.real(x[0]),
-                        np.imag(x[0]),
-                        cost[iiter],
-                    )
+                    msg = f"{iiter:6g}    {np.real(x[0]):4.1e} + {np.imag(x[0]):4.1e}j    {cost[iiter]:11.4e}"
                 print(msg)
     if show:
         print(
-            "\nIterations = %d        Total time (s) = %.2f"
-            % (iiter, time.time() - tstart)
+            f"\nIterations = {iiter}        Total time (s) = {time.time() - tstart:.2f}"
         )
         print("-----------------------------------------------------------------\n")
     return x, iiter, cost[:iiter]
@@ -178,9 +172,8 @@ def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
         print(
             "CGLS\n"
             "-----------------------------------------------------------\n"
-            "The Operator Op has %d rows and %d cols\n"
-            "damp = %10e\ttol = %10e\tniter = %d"
-            % (Op.shape[0], Op.shape[1], damp, tol, niter)
+            f"The Operator Op has{Op.shape[0]} rows and {Op.shape[1]} cols\n"
+            f"damp = {damp:10e}\ttol = {tol:10e}\tniter = {niter}"
         )
         print("-----------------------------------------------------------")
         head1 = "    Itn           x[0]              r1norm          r2norm"
@@ -226,25 +219,19 @@ def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
                 if not np.iscomplex(x[0]):
-                    msg = "%6g        %11.4e        %11.4e     %11.4e" % (
-                        iiter,
-                        x[0],
-                        cost[iiter],
-                        cost1[iiter],
+                    msg = (
+                        f"{iiter:6g}        {x[0]:11.4e}        "
+                        f"{cost[iiter]:11.4e}     {cost1[iiter]:11.4e}"
                     )
                 else:
-                    msg = "%6g     %4.1e+%4.1ej     %11.4e     %11.4e" % (
-                        iiter,
-                        np.real(x[0]),
-                        np.imag(x[0]),
-                        cost[iiter],
-                        cost1[iiter],
+                    msg = (
+                        f"{iiter:6g}    {np.real(x[0]):4.1e} + {np.imag(x[0]):4.1e}j    "
+                        f"{cost[iiter]:11.4e}     {cost1[iiter]:11.4e}"
                     )
                 print(msg)
     if show:
         print(
-            "\nIterations = %d        Total time (s) = %.2f"
-            % (iiter, time.time() - tstart)
+            f"\nIterations = {iiter}        Total time (s) = {time.time() - tstart:.2f}"
         )
         print("-----------------------------------------------------------------\n")
 
@@ -397,10 +384,10 @@ def lsqr(
         tstart = time.time()
         print("LSQR")
         print("-------------------------------------------------")
-        str1 = "The Operator Op has %d rows and %d cols" % (m, n)
-        str2 = "damp = %20.14e     calc_var = %6g" % (damp, calc_var)
-        str3 = "atol = %8.2e                 conlim = %8.2e" % (atol, conlim)
-        str4 = "btol = %8.2e                 niter = %8g" % (btol, niter)
+        str1 = f"The Operator Op has {m} rows and {n} cols"
+        str2 = f"damp = {damp:20.14e}     calc_var = {calc_var:6g}"
+        str3 = f"atol = {atol:8.2e}                 conlim = {conlim:8.2e}"
+        str4 = f"btol = {btol:8.2e}                 niter = {niter:8g}"
         print(str1)
         print(str2)
         print(str3)
@@ -465,9 +452,9 @@ def lsqr(
         print(head1 + head2)
         test1 = 1
         test2 = alfa / beta
-        str1 = "%6g %12.5e" % (itn, x[0])
-        str2 = " %10.3e %10.3e" % (r1norm, r2norm)
-        str3 = "  %8.1e %8.1e" % (test1, test2)
+        str1 = f"{itn:6g} {x[0]:12.5e}"
+        str2 = f" {r1norm:10.3e} {r2norm:10.3e}"
+        str3 = f"  {test1:8.1e} {test2:8.1e}"
         print(str1 + str2 + str3)
 
     # main iteration loop
@@ -594,10 +581,10 @@ def lsqr(
                 or test1 <= 10 * rtol
                 or istop != 0
             ):
-                str1 = "%6g %12.5e" % (itn, x[0])
-                str2 = " %10.3e %10.3e" % (r1norm, r2norm)
-                str3 = "  %8.1e %8.1e" % (test1, test2)
-                str4 = " %8.1e %8.1e" % (anorm, acond)
+                str1 = f"{itn:6g} {x[0]:12.5e}"
+                str2 = f" {r1norm:10.3e} {r2norm:10.3e}"
+                str3 = f"  {test1:8.1e} {test2:8.1e}"
+                str4 = f" {anorm:8.1e} {acond:8.1e}"
                 print(str1 + str2 + str3 + str4)
         if istop > 0:
             break
@@ -605,13 +592,13 @@ def lsqr(
     # Print the stopping condition.
     if show:
         print(" ")
-        print("LSQR finished, %s" % msg[istop])
+        print(f"LSQR finished, {msg[istop]}")
         print(" ")
-        str1 = "istop =%8g   r1norm =%8.1e" % (istop, r1norm)
-        str2 = "anorm =%8.1e   arnorm =%8.1e" % (anorm, arnorm)
-        str3 = "itn   =%8g   r2norm =%8.1e" % (itn, r2norm)
-        str4 = "acond =%8.1e   xnorm  =%8.1e" % (acond, xnorm)
-        str5 = "Total time (s) = %.2f" % (time.time() - tstart)
+        str1 = f"istop ={istop:8g}   r1norm ={r1norm:8.1e}"
+        str2 = f"anorm ={anorm:8.1e}   arnorm ={arnorm:8.1e}"
+        str3 = f"itn   ={itn:8g}   r2norm ={r2norm:8.1e}"
+        str4 = f"acond ={acond:8.1e}   xnorm  ={xnorm:8.1e}"
+        str5 = f"Total time (s) = {time.time() - tstart:.2f}"
         print(str1 + "   " + str2)
         print(str3 + "   " + str4)
         print(str5)
