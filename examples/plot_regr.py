@@ -122,7 +122,7 @@ xirls, nouter, xirls_hist, rw_hist = pylops.optimization.sparsity.IRLS(
     tolIRLS=tolIRLS,
     returnhistory=True,
 )
-print("IRLS converged at %d iterations..." % nouter)
+print(f"IRLS converged at {nouter} iterations...")
 
 plt.figure(figsize=(5, 7))
 plt.plot(

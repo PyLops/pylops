@@ -43,8 +43,8 @@ xest, istop, nit, r1norm, r2norm, cost_cgls = pylops.optimization.solver.cgls(
     Aop, y, x0=np.zeros_like(x), niter=10, tol=1e-10, show=True
 )
 
-print("x= %s" % x)
-print("cgls solution xest= %s" % xest)
+print(f"x= {x}")
+print(f"cgls solution xest= {xest}")
 
 ###############################################################################
 # And the lsqr solver to invert this matrix
@@ -64,8 +64,9 @@ y = Aop * x
     cost_lsqr,
 ) = pylops.optimization.solver.lsqr(Aop, y, x0=np.zeros_like(x), niter=10, show=True)
 
-print("x= %s" % x)
-print("lsqr solution xest= %s" % xest)
+print(f"x= {x}")
+print(f"lsqr solution xest= {xest}")
+
 
 ###############################################################################
 # Finally we show that the L2 norm of the residual of the two solvers decays

@@ -70,25 +70,26 @@ plt.plot(
     np.array([t.min(), t.max()]) * x[1] + x[0],
     "k",
     lw=4,
-    label=r"true: $x_0$ = %.2f, $x_1$ = %.2f" % (x[0], x[1]),
+    label=rf"true: $x_0$ = {x[0]:.2f}, $x_1$ = {x[1]:.2f}",
 )
 plt.plot(
     np.array([t.min(), t.max()]),
     np.array([t.min(), t.max()]) * xest[1] + xest[0],
     "--r",
     lw=4,
-    label=r"est noise-free: $x_0$ = %.2f, $x_1$ = %.2f" % (xest[0], xest[1]),
+    label=rf"est noise-free: $x_0$ = {xest[0]:.2f}, $x_1$ = {xest[1]:.2f}",
 )
 plt.plot(
     np.array([t.min(), t.max()]),
     np.array([t.min(), t.max()]) * xnest[1] + xnest[0],
     "--g",
     lw=4,
-    label=r"est noisy: $x_0$ = %.2f, $x_1$ = %.2f" % (xnest[0], xnest[1]),
+    label=rf"est noisy: $x_0$ = {xnest[0]:.2f}, $x_1$ = {xnest[1]:.2f}",
 )
 plt.scatter(t, y, c="r", s=70)
 plt.scatter(t, yn, c="g", s=70)
 plt.legend()
+plt.tight_layout()
 
 ###############################################################################
 # Once that we have estimated the best fitting coefficients :math:`\mathbf{x}`
@@ -103,6 +104,7 @@ plt.plot(t1, y1, "r", label="New axis")
 plt.scatter(t, y, c="k", s=70)
 plt.scatter(t1, y1, c="r", s=40)
 plt.legend()
+plt.tight_layout()
 
 ###############################################################################
 # We consider now the case where some of the observations have large errors.
@@ -133,7 +135,7 @@ xirls, nouter, xirls_hist, rw_hist = pylops.optimization.sparsity.IRLS(
     tolIRLS=tolIRLS,
     returnhistory=True,
 )
-print("IRLS converged at %d iterations..." % nouter)
+print(f"IRLS converged at {nouter} iterations...")
 
 plt.figure(figsize=(5, 7))
 plt.plot(
@@ -141,25 +143,26 @@ plt.plot(
     np.array([t.min(), t.max()]) * x[1] + x[0],
     "k",
     lw=4,
-    label=r"true: $x_0$ = %.2f, $x_1$ = %.2f" % (x[0], x[1]),
+    label=rf"true: $x_0$ = {x[0]:.2f}, $x_1$ = {x[1]:.2f}",
 )
 plt.plot(
     np.array([t.min(), t.max()]),
     np.array([t.min(), t.max()]) * xnest[1] + xnest[0],
     "--r",
     lw=4,
-    label=r"L2: $x_0$ = %.2f, $x_1$ = %.2f" % (xnest[0], xnest[1]),
+    label=rf"L2: $x_0$ = {xnest[0]:.2f}, $x_1$ = {xnest[1]:.2f}",
 )
 plt.plot(
     np.array([t.min(), t.max()]),
     np.array([t.min(), t.max()]) * xirls[1] + xirls[0],
     "--g",
     lw=4,
-    label=r"L1 - IRSL: $x_0$ = %.2f, $x_1$ = %.2f" % (xirls[0], xirls[1]),
+    label=rf"L1 - IRSL: $x_0$ = {xirls[0]:.2f}, $x_1$ = {xirls[1]:.2f}",
 )
 plt.scatter(t, y, c="r", s=70)
 plt.scatter(t, yn, c="g", s=70)
 plt.legend()
+plt.tight_layout()
 
 ###############################################################################
 # Let's finally take a look at the convergence of IRLS. First we visualize

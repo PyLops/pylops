@@ -88,6 +88,7 @@ ax.set_yticks(np.arange(M - 1) + 0.5)
 ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
+plt.tight_layout()
 
 gs = pltgs.GridSpec(1, 6)
 fig = plt.figure(figsize=(7, 3))
@@ -126,6 +127,7 @@ ax.set_yticks(np.arange(N - 1) + 0.5)
 ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
+plt.tight_layout()
 
 ###############################################################################
 # Let's also plot the matrix eigenvalues
@@ -156,6 +158,7 @@ plt.plot(xest, "--r", lw=2, label="Noise-free")
 plt.plot(xnest, "--g", lw=2, label="Noisy")
 plt.title("Matrix inversion", size=16, fontweight="bold")
 plt.legend()
+plt.tight_layout()
 
 ###############################################################################
 # And we can also use a sparse matrix from the :obj:`scipy.sparse`
@@ -168,12 +171,12 @@ Aop = pylops.MatrixMult(A, dtype="float64")
 y = Aop * x
 xest = Aop / y
 
-print("A= %s" % Aop.A.todense())
-print("A^-1=", Aop.inv().todense())
-print("eigs=", Aop.eigs())
-print("x= %s" % x)
-print("y= %s" % y)
-print("lsqr solution xest= %s" % xest)
+print(f"A= {Aop.A.todense()}")
+print(f"A^-1= {Aop.inv().todense()}")
+print(f"eigs= {Aop.eigs()}")
+print(f"x= {x}")
+print(f"y= {y}")
+print(f"lsqr solution xest= {xest}")
 
 ###############################################################################
 # Finally, in several circumstances the input model :math:`\mathbf{x}` may
@@ -206,7 +209,7 @@ y = Aop * x.ravel()
 xest, istop, itn, r1norm, r2norm = lsqr(Aop, y, damp=1e-10, iter_lim=10, show=0)[0:5]
 xest = xest.reshape(3, 2)
 
-print("A= %s" % A)
-print("x= %s" % x)
-print("y= %s" % y)
-print("lsqr solution xest= %s" % xest)
+print(f"A= {A}")
+print(f"x= {x}")
+print(f"y={y}")
+print(f"lsqr solution xest= {xest}")
