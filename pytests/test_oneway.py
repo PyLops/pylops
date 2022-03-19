@@ -107,5 +107,4 @@ def test_Deghosting_2dsignal(par, create_data2D):
         **dict(damp=1e-10, iter_lim=60)
     )
 
-    print(np.linalg.norm(p2d_minus_inv - p2d_minus) / np.linalg.norm(p2d_minus))
     assert np.linalg.norm(p2d_minus_inv - p2d_minus) / np.linalg.norm(p2d_minus) < 3e-1

@@ -231,8 +231,6 @@ def test_WeightedInversion(par):
         returninfo=False,
         **dict(damp=0, iter_lim=5, show=0)
     )
-    print(xne)
-    print(xreg)
     assert_array_almost_equal(xne, xreg, decimal=3)
 
 
