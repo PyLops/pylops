@@ -172,7 +172,7 @@ def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
         print(
             "CGLS\n"
             "-----------------------------------------------------------\n"
-            f"The Operator Op has{Op.shape[0]} rows and {Op.shape[1]} cols\n"
+            f"The Operator Op has {Op.shape[0]} rows and {Op.shape[1]} cols\n"
             f"damp = {damp:10e}\ttol = {tol:10e}\tniter = {niter}"
         )
         print("-----------------------------------------------------------")
