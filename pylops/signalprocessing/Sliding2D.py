@@ -31,7 +31,7 @@ def _slidingsteps(ntr, nwin, nover):
 
     """
     if nwin > ntr:
-        raise ValueError("nwin=%d is bigger than ntr=%d..." % (nwin, ntr))
+        raise ValueError(f"nwin={nwin} is bigger than ntr={ntr}...")
     step = nwin - nover
     starts = np.arange(0, ntr - nwin + 1, step, dtype=int)
     ends = starts + nwin
@@ -117,16 +117,16 @@ def Sliding2D(Op, dims, dimsd, nwin, nover, tapertype="hanning", design=False):
     # check that identified number of windows agrees with mode size
     if design:
         logging.warning("%d windows required...", nwins)
-        logging.warning("model wins - start:%s, end:%s", str(mwin_ins), str(mwin_ends))
-        logging.warning("data wins - start:%s, end:%s", str(dwin_ins), str(dwin_ends))
+        logging.warning("model wins - start:%s, end:%s", mwin_ins, mwin_ends)
+        logging.warning("data wins - start:%s, end:%s", dwin_ins, dwin_ends)
     if nwins * Op.shape[1] // dims[1] != dims[0]:
         raise ValueError(
-            "Model shape (dims=%s) is not consistent with chosen "
-            "number of windows. Choose dims[0]=%d for the "
+            f"Model shape (dims={dims}) is not consistent with chosen "
+            f"number of windows. Choose dims[0]={nwins * Op.shape[1] // dims[1]} for the "
             "operator to work with estimated number of windows, "
             "or create the operator with design=True to find "
             "out the optimal number of windows for the current "
-            "model size..." % (str(dims), nwins * Op.shape[1] // dims[1])
+            "model size..."
         )
     # transform to apply
     if tapertype is None:

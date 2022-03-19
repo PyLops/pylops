@@ -70,9 +70,9 @@ Iop = pylops.Identity(N, M, dtype="int")
 y = Iop * x
 xadj = Iop.H * y
 
-print("x = %s " % x)
-print("I*x = %s " % y)
-print("I'*y = %s " % xadj)
+print(f"x = {x} ")
+print(f"I*x = {y} ")
+print(f"I'*y = {xadj} ")
 
 ###############################################################################
 # and model bigger than data
@@ -83,9 +83,9 @@ Iop = pylops.Identity(N, M, dtype="int")
 y = Iop * x
 xadj = Iop.H * y
 
-print("x = %s " % x)
-print("I*x = %s " % y)
-print("I'*y = %s " % xadj)
+print(f"x = {x} ")
+print(f"I*x = {y} ")
+print(f"I'*y = {xadj} ")
 
 ###############################################################################
 # Note that this operator can be useful in many real-life applications when for example

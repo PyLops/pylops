@@ -23,9 +23,9 @@ x = np.arange(dims) + 1.0
 y = Pop * x
 xadj = Pop.H * y
 
-print("x = %s " % x)
-print("P*x = %s " % y)
-print("P'*y = %s " % xadj)
+print(f"x = {x}")
+print(f"P*x = {y}")
+print(f"P'*y = {xadj}")
 
 ###############################################################################
 # We move now to a multi-dimensional case. We pad the input model

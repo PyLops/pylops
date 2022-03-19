@@ -76,7 +76,7 @@ fig.colorbar(im, ax=ax, ticks=[0, N], pad=0.3, shrink=0.7)
 # simplest case where each element is multipled by a different value
 nx, ny = 3, 5
 x = np.ones((nx, ny))
-print("x =\n%s" % x)
+print(f"x =\n{x}")
 
 d = np.arange(nx * ny).reshape(nx, ny)
 Dop = pylops.Diagonal(d)
@@ -84,14 +84,14 @@ Dop = pylops.Diagonal(d)
 y = Dop * x.ravel()
 y1 = Dop.H * x.ravel()
 
-print("y = D*x =\n%s" % y.reshape(nx, ny))
-print("xadj = D'*x =\n%s " % y1.reshape(nx, ny))
+print(f"y = D*x =\n{y.reshape(nx, ny)}")
+print(f"xadj = D'*x =\n{y1.reshape(nx, ny)}")
 
 ###############################################################################
 # And we now broadcast
 nx, ny = 3, 5
 x = np.ones((nx, ny))
-print("x =\n%s" % x)
+print(f"x =\n{x}")
 
 # 1st dim
 d = np.arange(nx)
@@ -100,8 +100,8 @@ Dop = pylops.Diagonal(d, dims=(nx, ny), axis=0)
 y = Dop * x.ravel()
 y1 = Dop.H * x.ravel()
 
-print("1st dim: y = D*x =\n%s" % y.reshape(nx, ny))
-print("1st dim: xadj = D'*x =\n%s " % y1.reshape(nx, ny))
+print(f"1st dim: y = D*x =\n{y.reshape(nx, ny)}")
+print(f"1st dim: xadj = D'*x =\n{y1.reshape(nx, ny)}")
 
 # 2nd dim
 d = np.arange(ny)
@@ -110,5 +110,5 @@ Dop = pylops.Diagonal(d, dims=(nx, ny), axis=1)
 y = Dop * x.ravel()
 y1 = Dop.H * x.ravel()
 
-print("2nd dim: y = D*x =\n%s" % y.reshape(nx, ny))
-print("2nd dim: xadj = D'*x =\n%s " % y1.reshape(nx, ny))
+print(f"2nd dim: y = D*x =\n{y.reshape(nx, ny)}")
+print(f"2nd dim: xadj = D'*x =\n{y1.reshape(nx, ny)}")

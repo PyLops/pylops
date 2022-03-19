@@ -85,16 +85,16 @@ def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False):
     # check that identified number of windows agrees with mode size
     if design:
         logging.warning("%d windows required...", nwins)
-        logging.warning("model wins - start:%s, end:%s", str(mwin_ins), str(mwin_ends))
-        logging.warning("data wins - start:%s, end:%s", str(dwin_ins), str(dwin_ends))
+        logging.warning("model wins - start:%s, end:%s", mwin_ins, mwin_ends)
+        logging.warning("data wins - start:%s, end:%s", dwin_ins, dwin_ends)
     if nwins * Op.shape[1] != dim:
         raise ValueError(
-            "Model shape (dim=%d) is not consistent with chosen "
-            "number of windows. Choose dim=%d for the "
+            f"Model shape (dim={dim}) is not consistent with chosen "
+            f"number of windows. Choose dim={nwins * Op.shape[1]} for the "
             "operator to work with estimated number of windows, "
             "or create the operator with design=True to find "
             "out the optimal number of windows for the current "
-            "model size..." % (dim, nwins * Op.shape[1])
+            "model size..."
         )
     # transform to apply
     if tapertype is None:

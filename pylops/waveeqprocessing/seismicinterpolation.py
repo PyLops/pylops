@@ -42,7 +42,7 @@ def SeismicInterpolation(
     design=False,
     engine="numba",
     dottest=False,
-    **kwargs_solver
+    **kwargs_solver,
 ):
     r"""Seismic interpolation (or regularization).
 
@@ -256,7 +256,7 @@ def SeismicInterpolation(
                 if spataxis is None or spat1axis is None or taxis is None:
                     raise ValueError(
                         "Provide either sampling or spataxis, "
-                        "spat1axis and taxis for kind=%s" % kind
+                        f"spat1axis and taxis for kind=%{kind}"
                     )
                 else:
                     sampling = (
@@ -271,7 +271,7 @@ def SeismicInterpolation(
                 if spataxis is None or taxis is None:
                     raise ValueError(
                         "Provide either sampling or spataxis, "
-                        "and taxis for kind=%s" % kind
+                        f"and taxis for kind={kind}"
                     )
                 else:
                     sampling = (

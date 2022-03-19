@@ -253,12 +253,12 @@ y = AB.dot(x)
 yop = ABop * x
 xinv = ABop / yop
 
-print("AB = \n", AB)
+print(f"AB = \n {AB}")
 
-print("x = ", x)
-print("y = ", y)
-print("yop = ", yop)
-print("xinv = ", x)
+print(f"x = {x}")
+print(f"y = {y}")
+print(f"yop = {yop}")
+print(f"xinv = {xinv}")
 
 ###############################################################################
 # We can also use :py:class:`pylops.Kronecker` to do something more
