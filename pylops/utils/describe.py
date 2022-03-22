@@ -84,11 +84,13 @@ def _assign_name(Op, Ops, names):
     # English vocabulary (26 characters)
     suffix = str(len(names) // 26) * (len(names) // 26 > 0)
 
-    # Propose a new name, where a random letter is chosen if Op does not
-    # have a name
-    proposedname = (
-        getattr(Op, "name", random.choice(string.ascii_letters).upper()) + suffix
-    )
+    # Propose a new name, where a random letter
+    # is chosen if Op does not have a name or the name is set to None
+    if getattr(Op, "name", None) is None:
+        proposedname = random.choice(string.ascii_letters).upper() + suffix
+    else:
+        proposedname = Op.name + suffix
+
     if proposedname not in names or (Ops[proposedname][1] == id(Op)):
         # Assign the proposed name if this is not yet in use or if it is
         # used by the same operator. Note that an operator may reapper
@@ -162,17 +164,20 @@ def _describe(Op):
     """
     Ops = {}
     if type(Op) not in compositeops:
-        # A native PyLops operator has been found, assign a name and store
-        # it as MatrixSymbol
-        name = _assign_name(Op, Ops, list(Ops.keys()))
+        # A native PyLops operator has been found, assign a name
+        # or if a name has been given to the operator treat as
+        # it is (this is useful when users do not want an operator to be
+        # further disected into its components) and store it as MatrixSymbol
+        name = getattr(Op, "name", None)
+        if name is None:
+            name = _assign_name(Op, Ops, list(Ops.keys()))
         Ops[name] = (type(Op).__name__, id(Op))
         Opsym = MatrixSymbol(Op.name, 1, 1)
     else:
         if type(Op) == LinearOperator:
             # A LinearOperator has been found, either extract Op and start to
             # describe it or if a name has been given to the operator treat as
-            # it is (this is useful when users do not want an operator to be
-            # further disected into its components
+            # it is and store it as MatrixSymbol
             name = getattr(Op, "name", None)
             if name is None:
                 Opsym, Ops_ = _describe(Op.Op)
