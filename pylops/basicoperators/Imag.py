@@ -18,6 +18,10 @@ class Imag(LinearOperator):
         Number of samples for each dimension
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -43,14 +47,13 @@ class Imag(LinearOperator):
 
     """
 
-    def __init__(self, dims, dtype="complex128"):
+    def __init__(self, dims, dtype="complex128", name="I"):
         self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
 
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.rdtype = np.real(np.ones(1, self.dtype)).dtype
-        self.explicit = False
-        self.clinear = False
+        super().__init__(explicit=False, clinear=False, name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)

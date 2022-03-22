@@ -18,6 +18,10 @@ class MemoizeOperator(LinearOperator):
     max_neval : :obj:`int`, optional
         Maximum number of previous evaluations stored,
         use ``np.inf`` for infinite memory
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -29,11 +33,8 @@ class MemoizeOperator(LinearOperator):
 
     """
 
-    def __init__(self, Op, max_neval=10):
-        self.Op = Op
-        self.shape = Op.shape
-        self.dtype = np.dtype(Op.dtype)
-        self.explicit = False
+    def __init__(self, Op, max_neval=10, name="M"):
+        super().__init__(Op=Op, explicit=False, clinear=None, name=name)
 
         self.max_neval = max_neval
         self.store = []  # Store a list of Tuples (x, y)

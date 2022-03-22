@@ -1,3 +1,4 @@
+import logging
 import random
 import string
 
@@ -46,6 +47,8 @@ compositeops = (
     BlockDiag,
 )
 
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+
 
 def _in_notebook():
     """Check if code is running inside notebook"""
@@ -79,7 +82,8 @@ def _assign_name(Op, Ops, names):
     # Add a suffix when all letters of the alphabet are already in use. This
     # decision is made by counting the length of the names list and using the
     # English vocabulary (26 characters)
-    suffix = "1" * (len(names) // 26)
+    suffix = str(len(names) // 26) * (len(names) // 26 > 0)
+
     # Propose a new name, where a random letter is chosen if Op does not
     # have a name
     proposedname = (
@@ -96,7 +100,7 @@ def _assign_name(Op, Ops, names):
         while proposedname in names:
             proposedname = random.choice(string.ascii_letters).upper() + suffix
         name = proposedname
-        print(
+        logging.warning(
             f"The user has used the same name {origname} for two distinct operators, "
             f"changing name of operator {type(Op).__name__} to {name}..."
         )

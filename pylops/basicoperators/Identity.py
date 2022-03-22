@@ -25,6 +25,10 @@ class Identity(LinearOperator):
         Work inplace (``True``) or make a new copy (``False``). By default,
         data is a reference to the model (in forward) and model is a reference
         to the data (in adjoint).
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -75,12 +79,12 @@ class Identity(LinearOperator):
 
     """
 
-    def __init__(self, N, M=None, dtype="float64", inplace=True):
+    def __init__(self, N, M=None, dtype="float64", inplace=True, name="I"):
         M = N if M is None else M
         self.inplace = inplace
         self.shape = (N, M)
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)

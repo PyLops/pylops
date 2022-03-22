@@ -19,6 +19,10 @@ class Kronecker(LinearOperator):
         Second operator
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -55,7 +59,7 @@ class Kronecker(LinearOperator):
 
     """
 
-    def __init__(self, Op1, Op2, dtype="float64"):
+    def __init__(self, Op1, Op2, dtype="float64", name="K"):
         self.Op1 = Op1
         self.Op2 = Op2
         self.Op1H = self.Op1.H
@@ -65,7 +69,7 @@ class Kronecker(LinearOperator):
             self.Op1.shape[1] * self.Op2.shape[1],
         )
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         x = x.reshape(self.Op1.shape[1], self.Op2.shape[1])

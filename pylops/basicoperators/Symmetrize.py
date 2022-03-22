@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 
 from pylops import LinearOperator
@@ -23,6 +21,10 @@ class Symmetrize(LinearOperator):
         Axis along which model is symmetrized.
     dtype : :obj:`str`, optional
         Type of elements in input array
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -60,7 +62,7 @@ class Symmetrize(LinearOperator):
     apart from the central sample where :math:`x[0] = y[N-1]`.
     """
 
-    def __init__(self, dims, axis=-1, dtype="float64"):
+    def __init__(self, dims, axis=-1, dtype="float64", name="S"):
         self.dims = _value_or_list_like_to_tuple(dims)
         self.axis = axis
         dimsd = list(self.dims)
@@ -70,7 +72,7 @@ class Symmetrize(LinearOperator):
 
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)

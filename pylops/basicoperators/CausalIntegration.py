@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 
 from pylops import LinearOperator
@@ -31,6 +29,10 @@ class CausalIntegration(LinearOperator):
         Integration kind (``full``, ``half``, or ``trapezoidal``).
     removefirst : :obj:`bool`, optional
         Remove first sample (``True``) or not (``False``).
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -96,6 +98,7 @@ class CausalIntegration(LinearOperator):
         dtype="float64",
         kind="full",
         removefirst=False,
+        name="C",
     ):
         self.dims = _value_or_list_like_to_tuple(dims)
         self.axis = axis
@@ -111,7 +114,7 @@ class CausalIntegration(LinearOperator):
 
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)

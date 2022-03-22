@@ -22,6 +22,10 @@ class Pad(LinearOperator):
         the number of samples to pad in each dimension
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -58,7 +62,7 @@ class Pad(LinearOperator):
 
     """
 
-    def __init__(self, dims, pad, dtype="float64"):
+    def __init__(self, dims, pad, dtype="float64", name="P"):
         if np.any(np.array(pad) < 0):
             raise ValueError("Padding must be positive or zero")
         self.reshape = False if isinstance(dims, int) else True
@@ -75,7 +79,7 @@ class Pad(LinearOperator):
 
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         if self.reshape:

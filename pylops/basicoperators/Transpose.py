@@ -21,6 +21,10 @@ class Transpose(LinearOperator):
         Direction along which transposition is applied
     dtype : :obj:`str`, optional
         Type of elements in input array
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -47,7 +51,7 @@ class Transpose(LinearOperator):
 
     """
 
-    def __init__(self, dims, axes, dtype="float64"):
+    def __init__(self, dims, axes, dtype="float64", name="T"):
         self.dims = _value_or_list_like_to_tuple(dims)
         ndims = len(self.dims)
         self.axes = [normalize_axis_index(ax, ndims) for ax in axes]
@@ -67,7 +71,7 @@ class Transpose(LinearOperator):
 
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         y = x.reshape(self.dims)

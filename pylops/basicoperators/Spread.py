@@ -110,6 +110,10 @@ class Spread(LinearOperator):
         ``numba`` can only be used when providing a look-up table
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -168,6 +172,7 @@ class Spread(LinearOperator):
         interp=None,
         engine="numpy",
         dtype="float64",
+        name="S",
     ):
         if engine not in ["numpy", "numba"]:
             raise KeyError("engine must be numpy or numba")
@@ -217,7 +222,7 @@ class Spread(LinearOperator):
             logging.warning("interp has been overridden to %r.", self.interp)
         self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec_numpy(self, x):
         x = x.reshape(self.dims)

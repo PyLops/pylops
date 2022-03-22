@@ -27,6 +27,10 @@ class MatrixMult(LinearOperator):
         to each column of the model/data).
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -44,7 +48,7 @@ class MatrixMult(LinearOperator):
 
     """
 
-    def __init__(self, A, otherdims=None, dtype="float64"):
+    def __init__(self, A, otherdims=None, dtype="float64", name="M"):
         ncp = get_array_module(A)
         self.A = A
         if isinstance(A, ncp.ndarray):
@@ -55,7 +59,7 @@ class MatrixMult(LinearOperator):
             self.dims, self.dimsd = A.shape[1], A.shape[0]
             self.reshape = False
             self.shape = A.shape
-            self.explicit = True
+            explicit = True
         else:
             otherdims = _value_or_list_like_to_array(otherdims)
             self.otherdims = np.array(otherdims, dtype=int)
@@ -67,7 +71,7 @@ class MatrixMult(LinearOperator):
             ), np.insert([np.prod(self.otherdims)], 0, self.A.shape[0])
             self.reshape = True
             self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-            self.explicit = False
+            explicit = False
         self.dtype = np.dtype(dtype)
         # Check dtype for correctness (upcast to complex when A is complex)
         if np.iscomplexobj(A) and not np.iscomplexobj(np.ones(1, dtype=self.dtype)):
@@ -75,6 +79,7 @@ class MatrixMult(LinearOperator):
             logging.warning(
                 "Matrix A is a complex object, dtype cast to %s" % self.dtype
             )
+        super().__init__(explicit=explicit, clinear=True, name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)

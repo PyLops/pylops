@@ -31,6 +31,10 @@ class Diagonal(LinearOperator):
         Axis along which multiplication is applied.
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -60,7 +64,7 @@ class Diagonal(LinearOperator):
 
     """
 
-    def __init__(self, diag, dims=None, axis=-1, dtype="float64"):
+    def __init__(self, diag, dims=None, axis=-1, dtype="float64", name="D"):
         ncp = get_array_module(diag)
         self.diag = diag.ravel()
         self.complex = True if ncp.iscomplexobj(self.diag) else False
@@ -78,7 +82,7 @@ class Diagonal(LinearOperator):
 
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         if type(self.diag) != type(x):

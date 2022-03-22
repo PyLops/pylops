@@ -25,6 +25,10 @@ class Regression(LinearOperator):
         Order of the regressed polynomial.
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -75,7 +79,7 @@ class Regression(LinearOperator):
 
     """
 
-    def __init__(self, taxis, order, dtype="float64"):
+    def __init__(self, taxis, order, dtype="float64", name="R"):
         ncp = get_array_module(taxis)
         if not isinstance(taxis, ncp.ndarray):
             logging.error("t must be numpy.ndarray...")
@@ -85,7 +89,7 @@ class Regression(LinearOperator):
         self.order = order
         self.shape = (len(self.taxis), self.order + 1)
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)
