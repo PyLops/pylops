@@ -1,4 +1,47 @@
+from functools import wraps
+
 import numpy as np
+
+
+def reshape_flatten(forward=True):
+    """Decorator for the common reshape/flatten pattern used in many operators.
+
+    Example
+    =======
+    A ``_matvec`` (forward) function can be simplified from
+
+    .. code-block:: python
+
+        def _matvec(self, x):
+            x = np.reshape(x, self.dims)
+            y = do_things_to_reshaped(y)
+            y = y.ravel()
+            return y
+
+    to
+
+    .. code-block:: python
+        @reshape_flatten()
+        def _matvec(self, x):
+            y = do_things_to_reshaped(y)
+            return y
+
+    Similarly, an ``_rmatvec`` (adjoint) function can be simplified with by calling
+    ``reshape_flatten`` with ``forward=False``.
+
+    """
+    inp_dims = "dims" if forward else "dimsd"
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, x):
+            x = x.reshape(getattr(self, inp_dims))
+            y = func(self, x)
+            return y.ravel()
+
+        return wrapper
+
+    return decorator
 
 
 def _value_or_list_like_to_array(value_or_list_like, repeat=1):
