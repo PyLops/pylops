@@ -239,6 +239,10 @@ class Seislet(LinearOperator):
         can access the inverse directly as method of this class.
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -373,6 +377,7 @@ class Seislet(LinearOperator):
         kind="haar",
         inv=False,
         dtype="float64",
+        name="S",
     ):
         if len(sampling) != 2:
             raise ValueError("provide two sampling steps")
@@ -413,7 +418,7 @@ class Seislet(LinearOperator):
         self.inv = inv
         self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         x = self.pad.matvec(x)

@@ -216,6 +216,7 @@ def FFT2D(
     fftshift_after=False,
     dtype="complex128",
     engine="numpy",
+    name="F",
 ):
     r"""Two dimensional Fast-Fourier Transform.
 
@@ -309,6 +310,10 @@ def FFT2D(
         The SciPy backend supports all precisions natively.
         Under both backends, when a real ``dtype`` is supplied, a real result will be
         enforced on the result of the ``rmatvec`` and the input of the ``matvec``.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -405,4 +410,5 @@ def FFT2D(
         )
     else:
         raise NotImplementedError("engine must be numpy or scipy")
+    f.name = name
     return f

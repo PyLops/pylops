@@ -54,6 +54,10 @@ class ChirpRadon3D(LinearOperator):
         Engine used for fft computation (``numpy`` or ``fftw``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
     **kwargs_fftw
             Arbitrary keyword arguments for :py:class:`pyfftw.FTTW`
             (reccomended: ``flags=('FFTW_ESTIMATE', ), threads=NTHREADS``)
@@ -83,6 +87,7 @@ class ChirpRadon3D(LinearOperator):
         pmax,
         engine="numpy",
         dtype="float64",
+        name="C",
         **kwargs_fftw
     ):
         self.dt = taxis[1] - taxis[0]
@@ -96,7 +101,7 @@ class ChirpRadon3D(LinearOperator):
         self.kwargs_fftw = kwargs_fftw
         self.shape = (self.nt * self.nx * self.ny, self.nt * self.nx * self.ny)
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         x = x.reshape(self.ny, self.nx, self.nt)

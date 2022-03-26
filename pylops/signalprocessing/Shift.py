@@ -15,6 +15,7 @@ def Shift(
     real=False,
     engine="numpy",
     dtype="complex128",
+    name="S",
     **kwargs_fftw
 ):
     r"""Shift operator
@@ -45,6 +46,10 @@ def Shift(
         ``numpy`` when working with CuPy arrays.
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
     **kwargs_fftw
             Arbitrary keyword arguments
             for :py:class:`pyfftw.FTTW`
@@ -98,4 +103,5 @@ def Shift(
     Op.dims = Op.dimsd = Fop.dims
     # force dtype to that of input (FFT always upcasts it to complex)
     Op.dtype = dtype
+    Op.name = name
     return Op

@@ -89,7 +89,7 @@ def _sincinterp(dims, iava, axis=0, dtype="float64"):
     return Op, dims, dimsd
 
 
-def Interp(dims, iava, axis=-1, kind="linear", dtype="float64"):
+def Interp(dims, iava, axis=-1, kind="linear", dtype="float64", name="I"):
     r"""Interpolation operator.
 
     Apply interpolation along ``axis``
@@ -132,6 +132,10 @@ def Interp(dims, iava, axis=-1, kind="linear", dtype="float64"):
         currently supported)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -197,6 +201,7 @@ def Interp(dims, iava, axis=-1, kind="linear", dtype="float64"):
         interpop, dims, dimsd = _sincinterp(dims, iava, axis=axis, dtype=dtype)
     else:
         raise NotImplementedError("kind is not correct...")
+    interpop.name = name
     # add dims and dimsd to composite operators (not needed for neareast as
     # interpop is a Restriction operator already
     if kind != "nearest":

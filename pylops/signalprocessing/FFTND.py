@@ -200,6 +200,7 @@ def FFTND(
     fftshift_after=False,
     dtype="complex128",
     engine="scipy",
+    name="F",
 ):
     r"""N-dimensional Fast-Fourier Transform.
 
@@ -298,6 +299,10 @@ def FFTND(
         The SciPy backend supports all precisions natively.
         Under both backends, when a real ``dtype`` is supplied, a real result will be
         enforced on the result of the ``rmatvec`` and the input of the ``matvec``.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -398,4 +403,5 @@ def FFTND(
         )
     else:
         raise NotImplementedError("engine must be numpy or scipy")
+    f.name = name
     return f

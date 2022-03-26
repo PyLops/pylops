@@ -116,6 +116,7 @@ def Radon2D(
     onthefly=False,
     engine="numpy",
     dtype="float64",
+    name="R",
 ):
     r"""Two dimensional Radon transform.
 
@@ -155,6 +156,10 @@ def Radon2D(
         Engine used for computation (``numpy`` or ``numba``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -276,4 +281,5 @@ def Radon2D(
             engine=engine,
             dtype=dtype,
         )
+    r2op.name = name
     return r2op
