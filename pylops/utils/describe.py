@@ -78,6 +78,11 @@ def _assign_name(Op, Ops, names):
     names : :obj:`list`
         List of currently assigned names
 
+    Returns
+    -------
+    name : :obj:`str`
+        Name assigned to operator
+
     """
     # Add a suffix when all letters of the alphabet are already in use. This
     # decision is made by counting the length of the names list and using the
@@ -123,6 +128,13 @@ def _describeop(Op, Ops, names):
     names : :obj:`list`
         List of currently assigned names
 
+    Returns
+    -------
+    Op0 : :obj:`sympy.MatrixSymbol`
+        Sympy equivalent od Linear Operator ``Op``
+    Ops_ : :obj:`dict`
+        New or updated dictionary of Operators
+
     """
     if type(Op) not in compositeops:
         # A native PyLops operator has been found, assign a name and store
@@ -137,18 +149,18 @@ def _describeop(Op, Ops, names):
         # further disected into its components
         name = getattr(Op, "name", None)
         if name is None:
-            Op0, Ops_ = _describe(Op.Op)
+            Op0, Ops_, names = _describe(Op.Op, Ops, names)
         else:
             Ops_ = {name: (type(Op).__name__, id(Op))}
             Op0 = MatrixSymbol(name, 1, 1)
     else:
         # When finding a composite operator, send it again to the _describe
         # method
-        Op0, Ops_ = _describe(Op)
+        Op0, Ops_, names = _describe(Op, Ops, names)
     return Op0, Ops_
 
 
-def _describe(Op):
+def _describe(Op, Ops, names):
     """Core steps to describe a composite operator. This is done recursively.
 
     Parameters
@@ -161,8 +173,14 @@ def _describe(Op):
     names : :obj:`list`
         List of currently assigned names
 
+    Returns
+    -------
+    Opsym : :obj:`sympy.MatrixSymbol`
+        Sympy equivalent od Linear Operator ``Op``
+    Ops : :obj:`dict`
+        Dictionary of Operators
+
     """
-    Ops = {}
     if type(Op) not in compositeops:
         # A native PyLops operator has been found, assign a name
         # or if a name has been given to the operator treat as
@@ -173,6 +191,7 @@ def _describe(Op):
             name = _assign_name(Op, Ops, list(Ops.keys()))
         Ops[name] = (type(Op).__name__, id(Op))
         Opsym = MatrixSymbol(Op.name, 1, 1)
+        names.update(name)
     else:
         if type(Op) == LinearOperator:
             # A LinearOperator has been found, either extract Op and start to
@@ -180,21 +199,22 @@ def _describe(Op):
             # it is and store it as MatrixSymbol
             name = getattr(Op, "name", None)
             if name is None:
-                Opsym, Ops_ = _describe(Op.Op)
+                Opsym, Ops_, names = _describe(Op.Op, Ops, names)
                 Ops.update(Ops_)
             else:
                 Ops[name] = (type(Op).__name__, id(Op))
                 Opsym = MatrixSymbol(Op.name, 1, 1)
+                names.update(name)
         elif type(Op) == _AdjointLinearOperator:
             # An adjoint LinearOperator has been found, describe it and attach
             # the adjoint symbol to its sympy representation
-            Opsym, Ops_ = _describe(Op.args[0])
+            Opsym, Ops_, names = _describe(Op.args[0], Ops, names)
             Opsym = Opsym.adjoint()
             Ops.update(Ops_)
         elif type(Op) == _TransposedLinearOperator:
             # A transposed LinearOperator has been found, describe it and
             # attach the transposed symbol to its sympy representation
-            Opsym, Ops_ = _describe(Op.args[0])
+            Opsym, Ops_, names = _describe(Op.args[0], Ops, names)
             Opsym = Opsym.T
             Ops.update(Ops_)
         elif type(Op) == _ScaledLinearOperator:
@@ -203,35 +223,42 @@ def _describe(Op):
             # scaling could either on the left or right side of the operator,
             # so we need to try both
             if isinstance(Op.args[0], LinearOperator):
-                Opsym, Ops_ = _describeop(Op.args[0], Ops, list(Ops.keys()))
+                Opsym, Ops_ = _describeop(Op.args[0], Ops, names)
                 Opsym = Op.args[1] * Opsym
                 Ops.update(Ops_)
+                names.update(list(Ops_.keys()))
             else:
-                Opsym, Ops_ = _describeop(Op.args[1], Ops, list(Ops.keys()))
+                Opsym, Ops_ = _describeop(Op.args[1], Ops, names)
                 Opsym = Op.args[1] * Opsym
                 Ops.update(Ops_)
+                names.update(list(Ops_.keys()))
         elif type(Op) == _SumLinearOperator:
             # A sum LinearOperator has been found, describe both operators
             # either side of the plus sign and sum their sympy representations
-            Opsym0, Ops_ = _describeop(Op.args[0], Ops, list(Ops.keys()))
+            Opsym0, Ops_ = _describeop(Op.args[0], Ops, names)
             Ops.update(Ops_)
-            Opsym1, Ops_ = _describeop(Op.args[1], Ops, list(Ops.keys()))
+            names.update(list(Ops_.keys()))
+            Opsym1, Ops_ = _describeop(Op.args[1], Ops, names)
             Ops.update(Ops_)
+            names.update(list(Ops_.keys()))
             Opsym = Opsym0 + Opsym1
         elif type(Op) == _ProductLinearOperator:
             # Same as sum LinearOperator but for product
-            Opsym0, Ops_ = _describeop(Op.args[0], Ops, list(Ops.keys()))
+            Opsym0, Ops_ = _describeop(Op.args[0], Ops, names)
             Ops.update(Ops_)
-            Opsym1, Ops_ = _describeop(Op.args[1], Ops, list(Ops.keys()))
+            names.update(list(Ops_.keys()))
+            Opsym1, Ops_ = _describeop(Op.args[1], Ops, names)
             Ops.update(Ops_)
+            names.update(list(Ops_.keys()))
             Opsym = Opsym0 * Opsym1
         elif type(Op) in (VStack, HStack, BlockDiag):
             # A special composite operator has been found, stack its components
             # horizontally, vertically, or along a diagonal
             Opsyms = []
             for op in Op.ops:
-                Opsym, Ops_ = _describeop(op, Ops, list(Ops.keys()))
+                Opsym, Ops_ = _describeop(op, Ops, names)
                 Opsyms.append(Opsym)
+                names.update(list(Ops_.keys()))
                 Ops.update(Ops_)
             Ops.update(Ops_)
             if type(Op) == VStack:
@@ -240,7 +267,7 @@ def _describe(Op):
                 Opsym = BlockMatrix(Opsyms)
             elif type(Op) == BlockDiag:
                 Opsym = BlockDiagMatrix(*Opsyms)
-    return Opsym, Ops
+    return Opsym, Ops, names
 
 
 def describe(Op):
@@ -265,7 +292,9 @@ def describe(Op):
 
     """
     # Describe the operator
-    Opsym, Ops = _describe(Op)
+    Ops = {}
+    names = set()
+    Opsym, Ops, names = _describe(Op, Ops=Ops, names=names)
     # Clean up Ops from id
     Ops = {op: Ops[op][0] for op in Ops.keys()}
     # Check if this command is run in a Jupyter notebook or normal shell and
