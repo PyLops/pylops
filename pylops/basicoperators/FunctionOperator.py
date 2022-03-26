@@ -69,7 +69,7 @@ class FunctionOperator(LinearOperator):
             self.dtype = kwargs["dtype"]
         except KeyError:
             self.dtype = "float64"
-        super().__init__(explicit=False, clinear=True, name=kwargs.get("name", None))
+        super().__init__(explicit=False, clinear=True, name=kwargs.get("name", "F"))
         super().__init__()
 
         self.f = f
