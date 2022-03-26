@@ -40,6 +40,7 @@ def PrestackLinearModelling(
     linearization="akirich",
     explicit=False,
     kind="centered",
+    name=None,
 ):
     r"""Pre-stack linearized seismic modelling operator.
 
@@ -83,6 +84,10 @@ def PrestackLinearModelling(
         (``True``, preferred for small data)
     kind : :obj:`str`, optional
         Derivative kind (``forward`` or ``centered``).
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -204,11 +209,19 @@ def PrestackLinearModelling(
         dimsm[1] = AVOop.npars
         Dop = FirstDerivative(dimsm, axis=0, sampling=1.0, kind=kind, dtype=dtype)
         Preop = Cop * AVOop * Dop
+
+    Preop.name = name
     return Preop
 
 
 def PrestackWaveletModelling(
-    m, theta, nwav, wavc=None, vsvp=0.5, linearization="akirich"
+    m,
+    theta,
+    nwav,
+    wavc=None,
+    vsvp=0.5,
+    linearization="akirich",
+    name=None,
 ):
     r"""Pre-stack linearized seismic modelling operator for wavelet.
 
@@ -239,6 +252,10 @@ def PrestackWaveletModelling(
         * "PS": PS. See :py:func:`pylops.avo.avo.ps`.
 
         * Function with the same signature as :py:func:`pylops.avo.avo.akirichards`
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -323,6 +340,7 @@ def PrestackWaveletModelling(
             for itheta in range(ntheta)
         ]
     )
+    Mconv.name = name
     return Mconv
 
 
