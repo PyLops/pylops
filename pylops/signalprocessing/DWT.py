@@ -19,7 +19,7 @@ except ModuleNotFoundError:
     )
 except Exception as e:
     pywt = None
-    pywt_message = "Failed to import pywt (error:%s)." % e
+    pywt_message = f"Failed to import pywt (error:{e})."
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -28,7 +28,7 @@ def _checkwavelet(wavelet):
     """Check that wavelet belongs to pywt.wavelist"""
     wavelist = pywt.wavelist(kind="discrete")
     if wavelet not in wavelist:
-        raise ValueError("'%s' not in family set = %s" % (wavelet, wavelist))
+        raise ValueError(f"'{wavelet}' not in family set = {wavelist}")
 
 
 def _adjointwavelet(wavelet):

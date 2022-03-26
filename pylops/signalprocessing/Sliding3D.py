@@ -106,33 +106,28 @@ def Sliding3D(
         logging.warning("(%d,%d) windows required...", nwins0, nwins1)
         logging.warning(
             "model wins - start0:%s, end0:%s, start1:%s, end1:%s",
-            str(mwin0_ins),
-            str(mwin0_ends),
-            str(mwin1_ins),
-            str(mwin1_ends),
+            mwin0_ins,
+            mwin0_ends,
+            mwin1_ins,
+            mwin1_ends,
         )
         logging.warning(
             "data wins - start0:%s, end0:%s, start1:%s, end1:%s",
-            str(dwin0_ins),
-            str(dwin0_ends),
-            str(dwin1_ins),
-            str(dwin1_ends),
+            dwin0_ins,
+            dwin0_ends,
+            dwin1_ins,
+            dwin1_ends,
         )
 
     if nwins * Op.shape[1] // dims[2] != dims[0] * dims[1]:
         raise ValueError(
-            "Model shape (dims=%s) is not consistent with chosen "
-            "number of windows. Choose dims[0]=%d and "
-            "dims[1]=%d for the operator to work with "
+            f"Model shape (dims={dims}) is not consistent with chosen "
+            f"number of windows. Choose dims[0]={nwins0 * Op.shape[1] // (nop[1] * dims[2])} and "
+            f"dims[1]={nwins1 * Op.shape[1] // (nop[0] * dims[2])} for the operator to work with "
             "estimated number of windows, or create "
             "the operator with design=True to find out the"
             "optimal number of windows for the current "
             "model size..."
-            % (
-                str(dims),
-                nwins0 * Op.shape[1] // (nop[1] * dims[2]),
-                nwins1 * Op.shape[1] // (nop[0] * dims[2]),
-            )
         )
     # transform to apply
     if tapertype is None:

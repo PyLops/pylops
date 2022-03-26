@@ -1132,7 +1132,6 @@ def test_FFT_3dsignal(par):
 
     # check all signal if nx>nfft and only up to nfft if nfft<nx
     imax = nx if nfft is None else min([nx, nfft])
-    print(d.shape, dadj.shape, nx, nfft)
     assert_array_almost_equal(d[:, :imax], dadj[:, :imax], decimal=decimal)
     assert_array_almost_equal(d[:, :imax], dinv[:, :imax], decimal=decimal)
 

@@ -20,7 +20,7 @@ except ModuleNotFoundError:
     )
 except Exception as e:
     pywt = None
-    pywt_message = "Failed to import pywt (error:%s)." % e
+    pywt_message = f"Failed to import pywt (error:{e})."
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 

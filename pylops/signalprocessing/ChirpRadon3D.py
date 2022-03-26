@@ -19,7 +19,7 @@ except ModuleNotFoundError:
     )
 except Exception as e:
     pyfftw = None
-    pyfftw_message = "Failed to import pyfftw (error:%s), use numpy." % e
+    pyfftw_message = f"Failed to import pyfftw (error:{e}), use numpy."
 
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -88,7 +88,7 @@ class ChirpRadon3D(LinearOperator):
         engine="numpy",
         dtype="float64",
         name="C",
-        **kwargs_fftw
+        **kwargs_fftw,
     ):
         self.dt = taxis[1] - taxis[0]
         self.dy = hyaxis[1] - hyaxis[0]

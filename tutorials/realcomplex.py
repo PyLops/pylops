@@ -62,7 +62,7 @@ y = Aop @ x
 A1op = Aop.toreal(forw=False, adj=True)
 xinv = A1op.div(y)
 
-print("xinv=%s\n" % xinv)
+print(f"xinv={xinv}\n")
 
 ###############################################################################
 # Let's now see how we formulate the second problem
@@ -74,4 +74,4 @@ A1op = pylops.VStack([Arop, Aiop])
 y1 = np.concatenate([np.real(y), np.imag(y)])
 xinv1 = np.real(A1op.div(y1))
 
-print("xinv1=%s\n" % xinv1)
+print(f"xinv1={xinv1}\n")

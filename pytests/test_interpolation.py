@@ -85,7 +85,6 @@ def test_sincinterp():
     iava = tsub[20:-20] / (dtsub * ntsub)  # exclude edges
     SI1op, iava = Interp(nt, iava, kind="sinc", dtype="float64")
     y = SI1op * x
-    print(np.max(np.abs(xsub[20:-20] - y)))
     assert_array_almost_equal(xsub[20:-20], y, decimal=1)
 
 

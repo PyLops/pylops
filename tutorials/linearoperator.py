@@ -193,8 +193,8 @@ d = 1j * (np.arange(n) + 1.0)
 x = np.ones(n)
 Dop = pylops.Diagonal(d)
 
-print("y = Dx = ", Dop * x)
-print("y = conj(D)x = ", Dop.conj() * x)
+print(f"y = Dx = {Dop * x}")
+print(f"y = conj(D)x = {Dop.conj() * x}")
 
 ###############################################################################
 # At this point, the concept of linear operator may sound abstract.
@@ -219,7 +219,7 @@ plt.colorbar()
 Dop1 = Dop - Dop.conj()
 
 y = Dop1 * x
-print("x = (Dop - conj(Dop))/y = ", Dop1 / y)
+print(f"x = (Dop - conj(Dop))/y = {Dop1 / y}")
 
 D1 = Dop1.todense()
 

@@ -72,10 +72,9 @@ Zop = pylops.Zero(N, M, dtype="int")
 y = Zop * x
 xadj = Zop.H * y
 
-print("x = %s" % x)
-print("0*x = %s" % y)
-print("0'*y = %s" % xadj)
-
+print(f"x = {x}")
+print(f"0*x = {y}")
+print(f"0'*y = {xadj}")
 
 ###############################################################################
 # and model bigger than data
@@ -86,9 +85,9 @@ Zop = pylops.Zero(N, M, dtype="int")
 y = Zop * x
 xadj = Zop.H * y
 
-print("x = %s" % x)
-print("0*x = %s" % y)
-print("0'*y = %s" % xadj)
+print(f"x = {x}")
+print(f"0*x = {y}")
+print(f"0'*y = {xadj}")
 
 ###############################################################################
 # Note that this operator can be useful in many real-life applications when for

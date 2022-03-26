@@ -21,7 +21,7 @@ except ModuleNotFoundError:
     spgl1_message = "Spgl1 not installed. " 'Run "pip install spgl1".'
 except Exception as e:
     spgl1 = None
-    spgl1_message = "Failed to import spgl1 (error:%s)." % e
+    spgl1_message = f"Failed to import spgl1 (error:{e})."
 
 
 def _hardthreshold(x, thresh):
@@ -212,7 +212,7 @@ def _IRLS_data(
     x0=None,
     tolIRLS=1e-10,
     returnhistory=False,
-    **kwargs_solver
+    **kwargs_solver,
 ):
     r"""Iteratively reweighted least squares with L1 data term"""
     ncp = get_array_module(data)
@@ -274,7 +274,7 @@ def _IRLS_model(
     x0=None,
     tolIRLS=1e-10,
     returnhistory=False,
-    **kwargs_solver
+    **kwargs_solver,
 ):
     r"""Iteratively reweighted least squares with L1 model term"""
     ncp = get_array_module(data)
@@ -290,15 +290,12 @@ def _IRLS_model(
     if ncp == np:
         xinv = Op.H @ lsqr(Op @ Op.H + (epsI ** 2) * Iop, data, **kwargs_solver)[0]
     else:
-        xinv = (
-            Op.H
-            @ cgls(
-                Op @ Op.H + (epsI ** 2) * Iop,
-                data,
-                ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
-                **kwargs_solver
-            )[0]
-        )
+        xinv = Op.H @ cgls(
+            Op @ Op.H + (epsI ** 2) * Iop,
+            data,
+            ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
+            **kwargs_solver,
+        )[0]
     if returnhistory:
         xinv_hist[0] = xinv
     for iiter in range(nouter):
@@ -321,7 +318,7 @@ def _IRLS_model(
                     Op @ R @ Op.H + epsI ** 2 * Iop,
                     data,
                     ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
-                    **kwargs_solver
+                    **kwargs_solver,
                 )[0]
             )
         # save history
@@ -356,7 +353,7 @@ def IRLS(
     tolIRLS=1e-10,
     returnhistory=False,
     kind="data",
-    **kwargs_solver
+    **kwargs_solver,
 ):
     r"""Iteratively reweighted least squares.
 
@@ -497,7 +494,7 @@ def IRLS(
         x0=x0,
         tolIRLS=tolIRLS,
         returnhistory=returnhistory,
-        **kwargs_solver
+        **kwargs_solver,
     )
 
 
@@ -597,10 +594,9 @@ def OMP(
         print(
             algname
             + "-----------------------------------------------------------------\n"
-            "The Operator Op has %d rows and %d cols\n"
-            "sigma = %.2e\tniter_outer = %d\tniter_inner = %d\n"
-            "normalization=%s"
-            % (Op.shape[0], Op.shape[1], sigma, niter_outer, niter_inner, normalizecols)
+            f"The Operator Op has {Op.shape[0]} rows and {Op.shape[1]} cols\n"
+            f"sigma = {sigma:.2e}\tniter_outer = {niter_outer}\tniter_inner = {niter_inner}\n"
+            f"normalization={normalizecols}"
         )
     # find normalization factor for each column
     if normalizecols:
@@ -674,14 +670,13 @@ def OMP(
         cost[iiter] = np.linalg.norm(res)
         if show:
             if iiter < 10 or niter_outer - iiter < 10 or iiter % 10 == 0:
-                msg = "%6g        %12.5e" % (iiter + 1, cost[iiter])
+                msg = f"{iiter + 1:6g}        {cost[iiter]:12.5e}"
                 print(msg)
     xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
     xinv[cols] = ncp.array(x)
     if show:
         print(
-            "\nIterations = %d        Total time (s) = %.2f"
-            % (iiter, time.time() - tstart)
+            f"\nIterations = {iiter}        Total time (s) = {time.time() - tstart:.2f}"
         )
         print("-----------------------------------------------------------------\n")
     return xinv, iiter, cost
@@ -879,11 +874,10 @@ def ISTA(
     if show:
         tstart = time.time()
         print(
-            "ISTA optimization (%s thresholding)\n"
+            f"ISTA optimization ({threshkind} thresholding)\n"
             "-----------------------------------------------------------\n"
-            "The Operator Op has %d rows and %d cols\n"
-            "eps = %10e\ttol = %10e\tniter = %d"
-            % (threshkind, Op.shape[0], Op.shape[1], eps, tol, niter)
+            f"The Operator Op has {Op.shape[0]} rows and {Op.shape[1]} cols\n"
+            f"eps = {eps:10e}\ttol = {tol:10e}\tniter = {niter}"
         )
     # step size
     if alpha is None:
@@ -897,7 +891,7 @@ def ISTA(
                     neigs=1,
                     symmetric=True,
                     niter=eigsiter,
-                    **dict(tol=eigstol, which="LM")
+                    **dict(tol=eigstol, which="LM"),
                 )[0]
             )
         else:
@@ -913,9 +907,9 @@ def ISTA(
 
     if show:
         if perc is None:
-            print("alpha = %10e\tthresh = %10e" % (alpha, thresh))
+            print(f"alpha = {alpha:10e}\tthresh = {thresh:10e}")
         else:
-            print("alpha = %10e\tperc = %.1f" % (alpha, perc))
+            print(f"alpha = {alpha:10e}\tperc = {perc:.1f}")
         print("-----------------------------------------------------------\n")
         head1 = "   Itn       x[0]        r2norm     r12norm     xupdate"
         print(head1)
@@ -951,9 +945,9 @@ def ISTA(
             normres = np.linalg.norm(res)
             if normres > normresold:
                 raise ValueError(
-                    "ISTA stopped at iteration %d due to "
+                    f"ISTA stopped at iteration {iiter} due to "
                     "residual increasing, consider modifying "
-                    "eps and/or alpha..." % iiter
+                    "eps and/or alpha..."
                 )
             else:
                 normresold = normres
@@ -987,18 +981,15 @@ def ISTA(
 
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
-                msg = "%6g  %12.5e  %10.3e   %9.3e  %10.3e" % (
-                    iiter + 1,
-                    to_numpy(xinv[:2])[0],
-                    costdata,
-                    costdata + costreg,
-                    xupdate,
+                msg = (
+                    f"{iiter + 1:6g}  {to_numpy(xinv[:2])[0]:12.5e}  "
+                    f"{costdata:10.3e}   {costdata + costreg:9.3e}  {xupdate:10.3e}"
                 )
                 print(msg)
 
         # check tolerance
         if xupdate < tol:
-            logging.warning("update smaller that tolerance for " "iteration %d" % iiter)
+            logging.warning("update smaller that tolerance for " "iteration %d", iiter)
             niter = iiter
             break
 
@@ -1007,8 +998,7 @@ def ISTA(
 
     if show:
         print(
-            "\nIterations = %d        Total time (s) = %.2f"
-            % (niter, time.time() - tstart)
+            f"\nIterations = {niter}        Total time (s) = {time.time() - tstart:.2f}"
         )
         print("---------------------------------------------------------\n")
     if returninfo:
@@ -1184,11 +1174,10 @@ def FISTA(
     if show:
         tstart = time.time()
         print(
-            "FISTA optimization (%s thresholding)\n"
+            f"FISTA optimization ({threshkind} thresholding)\n"
             "-----------------------------------------------------------\n"
-            "The Operator Op has %d rows and %d cols\n"
-            "eps = %10e\ttol = %10e\tniter = %d"
-            % (threshkind, Op.shape[0], Op.shape[1], eps, tol, niter)
+            f"The Operator Op has {Op.shape[0]} rows and {Op.shape[1]} cols\n"
+            f"eps = {eps:10e}\ttol = {tol:10e}\tniter = {niter}"
         )
     # step size
     if alpha is None:
@@ -1202,7 +1191,7 @@ def FISTA(
                     neigs=1,
                     symmetric=True,
                     niter=eigsiter,
-                    **dict(tol=eigstol, which="LM")
+                    **dict(tol=eigstol, which="LM"),
                 )
             )[0]
         else:
@@ -1218,9 +1207,9 @@ def FISTA(
 
     if show:
         if perc is None:
-            print("alpha = %10e\tthresh = %10e" % (alpha, thresh))
+            print(f"alpha = {alpha:10e}\tthresh = {thresh:10e}")
         else:
-            print("alpha = %10e\tperc = %.1f" % (alpha, perc))
+            print(f"alpha = {alpha:10e}\tperc = {perc:.1f}")
         print("-----------------------------------------------------------\n")
         head1 = "   Itn       x[0]        r2norm     r12norm     xupdate"
         print(head1)
@@ -1287,12 +1276,9 @@ def FISTA(
 
         if show:
             if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
-                msg = "%6g  %12.5e  %10.3e   %9.3e  %10.3e" % (
-                    iiter + 1,
-                    to_numpy(xinv[:2])[0],
-                    costdata,
-                    costdata + costreg,
-                    xupdate,
+                msg = (
+                    f"{iiter + 1:6g}  {to_numpy(xinv[:2])[0]:12.5e}  "
+                    f"{costdata:10.3e}   {costdata + costreg:9.3e}  {xupdate:10.3e}"
                 )
                 print(msg)
 
@@ -1306,8 +1292,7 @@ def FISTA(
 
     if show:
         print(
-            "\nIterations = %d        Total time (s) = %.2f"
-            % (niter, time.time() - tstart)
+            f"\nIterations = {niter}        Total time (s) = {time.time() - tstart:.2f}"
         )
         print("---------------------------------------------------------\n")
     if returninfo:
@@ -1436,7 +1421,7 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
         tau=tau,
         sigma=sigma,
         x0=x0,
-        **kwargs_spgl1
+        **kwargs_spgl1,
     )
 
     xinv = pinv.copy() if SOp is None else SOp.H * pinv
@@ -1459,7 +1444,7 @@ def SplitBregman(
     x0=None,
     restart=False,
     show=False,
-    **kwargs_lsqr
+    **kwargs_lsqr,
 ):
     r"""Split Bregman for mixed L2-L1 norms.
 
@@ -1591,19 +1576,9 @@ def SplitBregman(
         print(
             "Split-Bregman optimization\n"
             "---------------------------------------------------------\n"
-            "The Operator Op has %d rows and %d cols\n"
-            "niter_outer = %3d     niter_inner = %3d   tol = %2.2e\n"
-            "mu = %2.2e         epsL1 = %s\t  epsL2 = %s     "
-            % (
-                Op.shape[0],
-                Op.shape[1],
-                niter_outer,
-                niter_inner,
-                tol,
-                mu,
-                str(epsRL1s),
-                str(epsRL2s),
-            )
+            f"The Operator Op has {Op.shape[0]} rows and {Op.shape[1]} cols\n"
+            f"niter_outer = {niter_outer:3d}     niter_inner = {niter_inner:3d}   tol = {tol:2.2e}\n"
+            f"mu = {mu:2.2e}         epsL1 = {epsRL1s}\t  epsL2 = {epsRL2s}     "
         )
         print("---------------------------------------------------------\n")
         head1 = "   Itn          x[0]           r2norm          r12norm"
@@ -1644,7 +1619,7 @@ def SplitBregman(
                 dataregs=dataregs,
                 epsRs=epsRs,
                 x0=x0 if restart else xinv,
-                **kwargs_lsqr
+                **kwargs_lsqr,
             )
             # Shrinkage
             d = [
@@ -1672,18 +1647,15 @@ def SplitBregman(
             cost = (
                 costdata + ncp.sum(ncp.array(costregL2)) + ncp.sum(ncp.array(costregL1))
             )
-            msg = "%6g  %12.5e       %10.3e        %9.3e" % (
-                ncp.abs(itn_out),
-                ncp.real(xinv[0]),
-                costdata,
-                cost,
+            msg = (
+                f"{ncp.abs(itn_out):6g}  {ncp.real(xinv[0]):12.5e}       "
+                f"{costdata:10.3e}        {cost:9.3e}"
             )
             print(msg)
 
     if show:
         print(
-            "\nIterations = %d        Total time (s) = %.2f"
-            % (itn_out, time.time() - tstart)
+            f"\nIterations = {itn_out}        Total time (s) = {time.time() - tstart:.2f}"
         )
         print("---------------------------------------------------------\n")
     return xinv, itn_out

@@ -23,9 +23,7 @@ def hanningtaper(nmask, ntap):
     if ntap > 0:
         if (nmask // ntap) < 2:
             ntap_min = nmask / 2 if nmask % 2 == 0 else (nmask - 1) / 2
-            raise ValueError(
-                "ntap=%d must be smaller or " "equal than %d" % (ntap, ntap_min)
-            )
+            raise ValueError(f"ntap={ntap} must be smaller or equal than {ntap_min}")
     han_win = np.hanning(ntap * 2 - 1)
     st_tpr = han_win[
         :ntap,

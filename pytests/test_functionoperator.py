@@ -36,7 +36,6 @@ for nr, nc, dtype in itertools.product(*PARS_LISTS):
 @pytest.mark.parametrize("par", PARS)
 def test_FunctionOperator(par):
     """Dot-test and inversion for FunctionOperator operator."""
-    print(par)
     np.random.seed(10)
     G = (
         np.random.normal(0, 1, (par["nr"], par["nc"]))

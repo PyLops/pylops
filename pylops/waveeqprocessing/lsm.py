@@ -19,7 +19,7 @@ except ModuleNotFoundError:
     )
 except Exception as e:
     skfmm = None
-    skfmm_message = "Failed to import skfmm (error:%s)." % e
+    skfmm_message = f"Failed to import skfmm (error:{e})."
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 

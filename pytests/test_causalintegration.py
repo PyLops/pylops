@@ -138,7 +138,6 @@ def test_CausalIntegration2d(par):
             dtype=par["dtype"],
         )
         rf1 = 1 if rf else 0
-        print(Cop.shape, (par["nt"] - rf1) * par["nx"], par["nt"] * par["nx"])
         assert dottest(
             Cop,
             (par["nt"] - rf1) * par["nx"],
