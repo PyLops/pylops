@@ -474,12 +474,32 @@ class LinearOperator(spLinearOperator):
             self._copy_attributes(Op)
             return Op
         else:
-            if x.ndim == 1:  # or x.ndim == 2 and x.shape[1] == 1:
-                return self.matvec(x)
+            dims = getattr(self, "dims", None)
+            dimsd = getattr(self, "dimsd", None)
+
+            reshape_out = False
+            if x.shape == dims and dimsd is not None:
+                reshape_out = True
+                x = x.ravel()
+
+            if x.ndim == 1:
+                y = self.matvec(x)
+                if reshape_out:
+                    y = y.reshape(dimsd)
+                return y
             elif x.ndim == 2:
                 return self.matmat(x)
             else:
-                raise ValueError("expected 1-d or 2-d array or matrix, got %r" % x)
+                raise ValueError(
+                    (
+                        "Wrong shape.\nFor vector multiplication, expects either a 1d "
+                        "array or, an ndarray of size `dims` when `dims` and `dimsd` "
+                        "both are available.\n"
+                        "For matrix multiplication, expects a 2d array with its first "
+                        f"dimension is equal to {self.shape[1]}.\n"
+                        f"Instead, received an array of shape {x.shape}."
+                    )
+                )
 
     def div(self, y, niter=100, densesolver="scipy"):
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
