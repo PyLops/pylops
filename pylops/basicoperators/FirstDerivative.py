@@ -31,6 +31,10 @@ class FirstDerivative(LinearOperator):
         Type of elements in input array.
     kind : :obj:`str`, optional
         Derivative kind (``forward``, ``centered``, or ``backward``).
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -72,16 +76,13 @@ class FirstDerivative(LinearOperator):
         edge=False,
         dtype="float64",
         kind="centered",
+        name="F",
     ):
         self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
         self.axis = normalize_axis_index(axis, len(self.dims))
         self.sampling = sampling
         self.edge = edge
         self.kind = kind
-
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        self.explicit = False
 
         # choose _matvec and _rmatvec kind
         if self.kind == "forward":
@@ -95,6 +96,10 @@ class FirstDerivative(LinearOperator):
             self._rmatvec = self._rmatvec_backward
         else:
             raise NotImplementedError("kind must be forward, centered, " "or backward")
+
+        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
+        self.dtype = np.dtype(dtype)
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec_forward(self, x):
         ncp = get_array_module(x)

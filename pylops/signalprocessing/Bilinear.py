@@ -33,6 +33,10 @@ class Bilinear(LinearOperator):
         Number of samples for each dimension
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -76,7 +80,7 @@ class Bilinear(LinearOperator):
 
     """
 
-    def __init__(self, iava, dims, dtype="float64"):
+    def __init__(self, iava, dims, dtype="float64", name="B"):
         ncp = get_array_module(iava)
 
         # check non-unique pairs (works only with numpy arrays)
@@ -103,7 +107,7 @@ class Bilinear(LinearOperator):
 
         self.shape = (np.prod(np.array(self.dimsd)), np.prod(np.array(self.dims)))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)

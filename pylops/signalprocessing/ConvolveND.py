@@ -35,6 +35,10 @@ class ConvolveND(LinearOperator):
         Method used to calculate the convolution (``direct`` or ``fft``).
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -62,6 +66,7 @@ class ConvolveND(LinearOperator):
         axes=(-2, -1),
         method="fft",
         dtype="float64",
+        name="C",
     ):
         ncp = get_array_module(h)
         self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
@@ -108,7 +113,7 @@ class ConvolveND(LinearOperator):
 
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         # correct type of h if different from x and choose methods accordingly

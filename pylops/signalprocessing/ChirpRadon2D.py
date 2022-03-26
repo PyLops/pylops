@@ -33,6 +33,10 @@ class ChirpRadon2D(LinearOperator):
         :math:`p_{x, \text{max}}=c_0 \,\mathrm{d}y/\mathrm{d}t`.
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -51,7 +55,7 @@ class ChirpRadon2D(LinearOperator):
 
     """
 
-    def __init__(self, taxis, haxis, pmax, dtype="float64"):
+    def __init__(self, taxis, haxis, pmax, dtype="float64", name="C"):
         self.dt = taxis[1] - taxis[0]
         self.dh = haxis[1] - haxis[0]
         self.nt, self.nh = taxis.size, haxis.size
@@ -59,7 +63,7 @@ class ChirpRadon2D(LinearOperator):
 
         self.shape = (self.nt * self.nh, self.nt * self.nh)
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         x = x.reshape(self.nh, self.nt)

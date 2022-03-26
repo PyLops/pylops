@@ -24,6 +24,10 @@ class Roll(LinearOperator):
         Number of samples by which elements are shifted
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -41,14 +45,14 @@ class Roll(LinearOperator):
 
     """
 
-    def __init__(self, dims, axis=-1, shift=1, dtype="float64"):
+    def __init__(self, dims, axis=-1, shift=1, dtype="float64", name="R"):
         self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
         self.axis = axis
         self.shift = shift
 
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         x = np.reshape(x, self.dims)

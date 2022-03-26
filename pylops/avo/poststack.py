@@ -4,6 +4,7 @@ import numpy as np
 from scipy.sparse.linalg import lsqr
 
 from pylops import FirstDerivative, Laplacian, MatrixMult, SecondDerivative
+from pylops.LinearOperator import aslinearoperator
 from pylops.optimization.leastsquares import RegularizedInversion
 from pylops.optimization.solver import cgls
 from pylops.optimization.sparsity import SplitBregman
@@ -115,7 +116,7 @@ def _PoststackLinearModelling(
 
 
 def PoststackLinearModelling(
-    wav, nt0, spatdims=None, explicit=False, sparse=False, kind="centered"
+    wav, nt0, spatdims=None, explicit=False, sparse=False, kind="centered", name=None
 ):
     r"""Post-stack linearized seismic modelling operator.
 
@@ -145,6 +146,10 @@ def PoststackLinearModelling(
     sparse : :obj:`bool`, optional
         Create a sparse matrix (``True``) or dense  (``False``) when
         ``explicit=True``
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -182,9 +187,11 @@ def PoststackLinearModelling(
     the wavelet.
 
     """
-    return _PoststackLinearModelling(
+    Pop = _PoststackLinearModelling(
         wav, nt0, spatdims=spatdims, explicit=explicit, sparse=sparse, kind=kind
     )
+    Pop.name = name
+    return Pop
 
 
 def PoststackInversion(

@@ -30,10 +30,9 @@ class MemoizeOperator(LinearOperator):
     """
 
     def __init__(self, Op, max_neval=10):
-        self.Op = Op
-        self.shape = Op.shape
-        self.dtype = np.dtype(Op.dtype)
-        self.explicit = False
+        super().__init__(
+            Op=Op, explicit=False, clinear=None, name=getattr(Op, "name", None)
+        )
 
         self.max_neval = max_neval
         self.store = []  # Store a list of Tuples (x, y)

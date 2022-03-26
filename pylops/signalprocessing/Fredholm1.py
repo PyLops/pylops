@@ -35,6 +35,10 @@ class Fredholm1(LinearOperator):
         choice.
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -79,7 +83,7 @@ class Fredholm1(LinearOperator):
 
     """
 
-    def __init__(self, G, nz=1, saveGt=True, usematmul=True, dtype="float64"):
+    def __init__(self, G, nz=1, saveGt=True, usematmul=True, dtype="float64", name="F"):
         self.nz = nz
         self.nsl, self.nx, self.ny = G.shape
         self.G = G
@@ -88,7 +92,7 @@ class Fredholm1(LinearOperator):
         self.usematmul = usematmul
         self.shape = (self.nsl * self.nx * self.nz, self.nsl * self.ny * self.nz)
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)

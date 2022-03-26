@@ -5,7 +5,9 @@ from numpy.core.multiarray import normalize_axis_index
 from pylops.signalprocessing import ConvolveND
 
 
-def Convolve2D(dims, h, offset=(0, 0), axes=(-2, -1), dtype="float64", method="fft"):
+def Convolve2D(
+    dims, h, offset=(0, 0), axes=(-2, -1), dtype="float64", method="fft", name="C"
+):
     r"""2D convolution operator.
 
     Apply two-dimensional convolution with a compact filter to model
@@ -28,6 +30,10 @@ def Convolve2D(dims, h, offset=(0, 0), axes=(-2, -1), dtype="float64", method="f
         Type of elements in input array.
     method : :obj:`str`, optional
         Method used to calculate the convolution (``direct`` or ``fft``).
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -77,4 +83,5 @@ def Convolve2D(dims, h, offset=(0, 0), axes=(-2, -1), dtype="float64", method="f
     if h.ndim != 2:
         raise ValueError("h must be 2-dimensional")
     cop = ConvolveND(dims, h, offset=offset, axes=axes, method=method, dtype=dtype)
+    cop.name = name
     return cop

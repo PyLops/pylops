@@ -60,6 +60,10 @@ class Convolve1D(LinearOperator):
         when ``dims`` is provided.
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -116,7 +120,9 @@ class Convolve1D(LinearOperator):
 
     """
 
-    def __init__(self, dims, h, offset=0, axis=-1, dtype="float64", method=None):
+    def __init__(
+        self, dims, h, offset=0, axis=-1, dtype="float64", method=None, name="C"
+    ):
         self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
         self.axis = axis
 
@@ -150,7 +156,7 @@ class Convolve1D(LinearOperator):
         self.convfunc, self.method = _choose_convfunc(h, method, self.dimsorig)
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         if type(self.h) != type(x):

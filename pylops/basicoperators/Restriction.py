@@ -45,6 +45,10 @@ class Restriction(LinearOperator):
         Work inplace (``True``) or make a new copy (``False``). By default,
         data is a reference to the model (in forward) and model is a reference
         to the data (in adjoint).
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -84,7 +88,7 @@ class Restriction(LinearOperator):
 
     """
 
-    def __init__(self, dims, iava, axis=-1, dtype="float64", inplace=True):
+    def __init__(self, dims, iava, axis=-1, dtype="float64", inplace=True, name="R"):
         ncp = get_array_module(iava)
         self.dims = _value_or_list_like_to_tuple(dims)
         self.axis = normalize_axis_index(axis, len(self.dims))
@@ -96,7 +100,7 @@ class Restriction(LinearOperator):
         self.iavareshape[self.axis] = len(self.iava)
 
         # currently cupy does not support put_along_axis, so we need to
-        # explicitely create a list of indices in the n-dimensional
+        # explicitly create a list of indices in the n-dimensional
         # model space which will be used in _rmatvec to place the input
         if ncp != np:
             self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
@@ -105,6 +109,7 @@ class Restriction(LinearOperator):
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)

@@ -9,9 +9,18 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def Sliding3D(
-    Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False, nproc=1
+    Op,
+    dims,
+    dimsd,
+    nwin,
+    nover,
+    nop,
+    tapertype="hanning",
+    design=False,
+    nproc=1,
+    name="S",
 ):
-    """3D Sliding transform operator.
+    """3D Sliding transform operator.w
 
     Apply a transform operator ``Op`` repeatedly to patches of the model
     vector in forward mode and patches of the data vector in adjoint mode.
@@ -60,6 +69,10 @@ def Sliding3D(
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
     design : :obj:`bool`, optional
         Print number sliding window (``True``) or not (``False``)
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -154,4 +167,5 @@ def Sliding3D(
         int(dims[1] // nwins1),
         dims[2],
     ), dimsd
+    Sop.name = name
     return Sop

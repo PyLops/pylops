@@ -45,16 +45,21 @@ class LinearOperator(spLinearOperator):
     ----------
     Op : :obj:`scipy.sparse.linalg.LinearOperator` or :obj:`scipy.sparse.linalg._ProductLinearOperator` or :obj:`scipy.sparse.linalg._SumLinearOperator`
         Operator
-    explicit : :obj:`bool`
+    explicit : :obj:`bool`, optional
         Operator contains a matrix that can be solved explicitly
         (``True``) or not (``False``)
-    clinear : :obj:`bool`
+    clinear : :obj:`bool`, optional
         .. versionadded:: 1.17.0
 
         Operator is complex-linear.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+
     """
 
-    def __init__(self, Op=None, explicit=False, clinear=None):
+    def __init__(self, Op=None, explicit=False, clinear=None, name=None):
         self.explicit = explicit
         if Op is not None:
             self.Op = Op
@@ -63,6 +68,7 @@ class LinearOperator(spLinearOperator):
             self.clinear = getattr(self.Op, "clinear", True)
         if clinear is not None:
             self.clinear = clinear
+        self.name = name
 
     def _matvec(self, x):
         if callable(self.Op._matvec):

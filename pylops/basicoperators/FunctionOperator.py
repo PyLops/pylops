@@ -36,6 +36,10 @@ class FunctionOperator(LinearOperator):
         Number of columns (length of model vector).
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -65,8 +69,7 @@ class FunctionOperator(LinearOperator):
             self.dtype = kwargs["dtype"]
         except KeyError:
             self.dtype = "float64"
-        self.explicit = False
-
+        super().__init__(explicit=False, clinear=True, name=kwargs.get("name", "F"))
         super().__init__()
 
         self.f = f

@@ -155,6 +155,7 @@ def MDC(
     conj=False,
     usematmul=False,
     prescaled=False,
+    name="M",
 ):
     r"""Multi-dimensional convolution.
 
@@ -220,6 +221,10 @@ def MDC(
         spatial and temporal summations. In case ``prescaled=True``, the
         kernel is assumed to have been pre-scaled when passed to the MDC
         routine.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Raises
     ------
@@ -265,7 +270,7 @@ def MDC(
        pp. 1335-1364. 2011.
 
     """
-    return _MDC(
+    MOp = _MDC(
         G,
         nt,
         nv,
@@ -281,6 +286,8 @@ def MDC(
         args_FFT={"engine": fftengine},
         args_Fredholm1={"usematmul": usematmul},
     )
+    MOp.name = name
+    return MOp
 
 
 def MDD(

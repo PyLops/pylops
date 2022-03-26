@@ -10,7 +10,7 @@ from pylops.utils.tapers import taper
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False):
+def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False, name="S"):
     r"""1D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to slices of the model
@@ -50,6 +50,10 @@ def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False):
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
     design : :obj:`bool`, optional
         Print number of sliding window (``True``) or not (``False``)
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -110,4 +114,5 @@ def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False):
     )
     Sop = aslinearoperator(combining * OOp)
     Sop.dims, Sop.dimsd = (nwins, int(dim // nwins)), dimd
+    Sop.name = name
     return Sop

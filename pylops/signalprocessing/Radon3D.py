@@ -122,6 +122,7 @@ def Radon3D(
     onthefly=False,
     engine="numpy",
     dtype="float64",
+    name="R",
 ):
     r"""Three dimensional Radon transform.
 
@@ -164,6 +165,10 @@ def Radon3D(
         Engine used for computation (``numpy`` or ``numba``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -334,4 +339,5 @@ def Radon3D(
             engine=engine,
             dtype=dtype,
         )
+    r3op.name = name
     return r3op

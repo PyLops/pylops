@@ -381,6 +381,7 @@ def FFT(
     fftshift_after=False,
     engine="numpy",
     dtype="complex128",
+    name="F",
     **kwargs_fftw,
 ):
     r"""One dimensional Fast-Fourier Transform.
@@ -474,6 +475,10 @@ def FFT(
         The SciPy backend supports all precisions natively.
         Under all backends, when a real ``dtype`` is supplied, a real result will be
         enforced on the result of the ``rmatvec`` and the input of the ``matvec``.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
     **kwargs_fftw
             Arbitrary keyword arguments
             for :py:class:`pyfftw.FTTW`
@@ -600,4 +605,5 @@ def FFT(
         )
     else:
         raise NotImplementedError("engine must be numpy, fftw or scipy")
+    f.name = name
     return f

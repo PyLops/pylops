@@ -539,6 +539,10 @@ class AVOLinearModelling(LinearOperator):
 
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -578,6 +582,7 @@ class AVOLinearModelling(LinearOperator):
         spatdims=None,
         linearization="akirich",
         dtype="float64",
+        name="A",
     ):
         self.ncp = get_array_module(theta)
 
@@ -613,7 +618,7 @@ class AVOLinearModelling(LinearOperator):
             self.nt0 * self.npars * nspatdims,
         )
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         if self.spatdims is None:

@@ -10,7 +10,9 @@ from pylops.utils.tapers import taper2d
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False):
+def Patch2D(
+    Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False, name="P"
+):
     """2D Patch transform operator.
 
     Apply a transform operator ``Op`` repeatedly to patches of the model
@@ -57,6 +59,10 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
     design : :obj:`bool`, optional
         Print number of sliding window (``True``) or not (``False``)
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -188,4 +194,5 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
         int(dims[0] // nwins0),
         int(dims[1] // nwins1),
     ), dimsd
+    Pop.name = name
     return Pop

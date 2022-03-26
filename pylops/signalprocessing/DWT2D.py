@@ -51,6 +51,10 @@ class DWT2D(LinearOperator):
         Number of scaling levels (must be >=0).
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -75,7 +79,9 @@ class DWT2D(LinearOperator):
 
     """
 
-    def __init__(self, dims, axes=(-2, -1), wavelet="haar", level=1, dtype="float64"):
+    def __init__(
+        self, dims, axes=(-2, -1), wavelet="haar", level=1, dtype="float64", name="D"
+    ):
         if pywt is None:
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
@@ -110,7 +116,7 @@ class DWT2D(LinearOperator):
 
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         x = self.pad.matvec(x)

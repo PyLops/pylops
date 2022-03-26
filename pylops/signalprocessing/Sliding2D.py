@@ -38,7 +38,9 @@ def _slidingsteps(ntr, nwin, nover):
     return starts, ends
 
 
-def Sliding2D(Op, dims, dimsd, nwin, nover, tapertype="hanning", design=False):
+def Sliding2D(
+    Op, dims, dimsd, nwin, nover, tapertype="hanning", design=False, name="S"
+):
     """2D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to slices of the model
@@ -82,6 +84,10 @@ def Sliding2D(Op, dims, dimsd, nwin, nover, tapertype="hanning", design=False):
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
     design : :obj:`bool`, optional
         Print number of sliding window (``True``) or not (``False``)
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -142,4 +148,5 @@ def Sliding2D(Op, dims, dimsd, nwin, nover, tapertype="hanning", design=False):
     )
     Sop = aslinearoperator(combining * OOp)
     Sop.dims, Sop.dimsd = (nwins, int(dims[0] // nwins), dims[1]), dimsd
+    Sop.name = name
     return Sop
