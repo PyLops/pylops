@@ -161,7 +161,18 @@ def _traveltime_table(z, x, srcs, recs, vel, y=None, mode="eikonal"):
 
 
 def Demigration(
-    z, x, t, srcs, recs, vel, wav, wavcenter, y=None, trav=None, mode="eikonal"
+    z,
+    x,
+    t,
+    srcs,
+    recs,
+    vel,
+    wav,
+    wavcenter,
+    y=None,
+    trav=None,
+    mode="eikonal",
+    name="D",
 ):
     r"""Kirchhoff Demigration operator.
 
@@ -197,6 +208,10 @@ def Demigration(
         Traveltime table of size
         :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack` (to be provided if
         ``mode='byot'``)
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -270,6 +285,7 @@ def Demigration(
         demop = cop * sop
     else:
         raise NotImplementedError("method must be analytic or eikonal")
+    demop.name = name
     return demop
 
 

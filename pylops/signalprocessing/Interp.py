@@ -201,11 +201,11 @@ def Interp(dims, iava, axis=-1, kind="linear", dtype="float64", name="I"):
         interpop, dims, dimsd = _sincinterp(dims, iava, axis=axis, dtype=dtype)
     else:
         raise NotImplementedError("kind is not correct...")
-    interpop.name = name
     # add dims and dimsd to composite operators (not needed for neareast as
     # interpop is a Restriction operator already
     if kind != "nearest":
         interpop = aslinearoperator(interpop)
         interpop.dims = dims
         interpop.dimsd = dimsd
+        interpop.name = name
     return interpop, iava

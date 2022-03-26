@@ -4,6 +4,7 @@ import numpy as np
 from scipy.sparse.linalg import lsqr
 
 from pylops import Diagonal, Identity, LinearOperator, Pad
+from pylops.LinearOperator import aslinearoperator
 from pylops.signalprocessing import FFT
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import to_cupy_conditional
@@ -97,7 +98,7 @@ class _PhaseShift(LinearOperator):
         return y.ravel()
 
 
-def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64"):
+def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64", name="P"):
     r"""Phase shift operator
 
     Apply positive (forward) phase shift with constant velocity in
@@ -123,6 +124,10 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64"):
         (centered around 0) of size :math:`[n_y \times 1]`.
     dtype : :obj:`str`, optional
         Type of elements in input array
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -187,7 +192,9 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64"):
     # We know this is correct because forward and inverse FFTs are applied at
     # the beginning and end of this combined operator
     Pop.dtype = dtype
-    return LinearOperator(Pop)
+    Pop = aslinearoperator(Pop)
+    Pop.name = name
+    return Pop
 
 
 def Deghosting(

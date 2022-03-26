@@ -221,6 +221,7 @@ def PressureToVelocity(
     topressure=False,
     backend="numpy",
     dtype="complex128",
+    name="P",
 ):
     r"""Pressure to Vertical velocity conversion.
 
@@ -260,6 +261,10 @@ def PressureToVelocity(
         (``numpy`` or ``cupy``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -338,6 +343,7 @@ def PressureToVelocity(
 
     # create conversion operator
     Cop = FFTop.H * OBLop * FFTop
+    Cop.name = name
     return Cop
 
 
@@ -354,6 +360,7 @@ def UpDownComposition2D(
     scaling=1.0,
     backend="numpy",
     dtype="complex128",
+    name="U",
 ):
     r"""2D Up-down wavefield composition.
 
@@ -397,6 +404,10 @@ def UpDownComposition2D(
         (``numpy`` or ``cupy``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -504,6 +515,7 @@ def UpDownComposition2D(
         )
         * BlockDiag([FFTop, FFTop])
     )
+    UDop.name = name
     return UDop
 
 
@@ -520,6 +532,7 @@ def UpDownComposition3D(
     scaling=1.0,
     backend="numpy",
     dtype="complex128",
+    name="U",
 ):
     r"""3D Up-down wavefield composition.
 
@@ -563,6 +576,10 @@ def UpDownComposition3D(
         (``numpy`` or ``cupy``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -622,6 +639,7 @@ def UpDownComposition3D(
         )
         * BlockDiag([FFTop, FFTop])
     )
+    UDop.name = name
     return UDop
 
 
