@@ -181,14 +181,22 @@ def _describe(Op, Ops, names):
         Dictionary of Operators
 
     """
+    # Check if a name has been given to the operator and store it as
+    # MatrixSymbol (this is useful when users do not want an operator to be
+    # further disected into its components)
+    name = getattr(Op, "name", None)
+    if name is not None:
+        Ops[name] = (type(Op).__name__, id(Op))
+        Opsym = MatrixSymbol(Op.name, 1, 1)
+        names.update(name)
+        return Opsym, Ops, names
+
+    # Given that no name has been assigned, interpret the operator further
     if type(Op) not in compositeops:
         # A native PyLops operator has been found, assign a name
         # or if a name has been given to the operator treat as
-        # it is (this is useful when users do not want an operator to be
-        # further disected into its components) and store it as MatrixSymbol
-        name = getattr(Op, "name", None)
-        if name is None:
-            name = _assign_name(Op, Ops, list(Ops.keys()))
+        # it is and store it as MatrixSymbol
+        name = _assign_name(Op, Ops, list(Ops.keys()))
         Ops[name] = (type(Op).__name__, id(Op))
         Opsym = MatrixSymbol(Op.name, 1, 1)
         names.update(name)
@@ -197,14 +205,8 @@ def _describe(Op, Ops, names):
             # A LinearOperator has been found, either extract Op and start to
             # describe it or if a name has been given to the operator treat as
             # it is and store it as MatrixSymbol
-            name = getattr(Op, "name", None)
-            if name is None:
-                Opsym, Ops_, names = _describe(Op.Op, Ops, names)
-                Ops.update(Ops_)
-            else:
-                Ops[name] = (type(Op).__name__, id(Op))
-                Opsym = MatrixSymbol(Op.name, 1, 1)
-                names.update(name)
+            Opsym, Ops_, names = _describe(Op.Op, Ops, names)
+            Ops.update(Ops_)
         elif type(Op) == _AdjointLinearOperator:
             # An adjoint LinearOperator has been found, describe it and attach
             # the adjoint symbol to its sympy representation
