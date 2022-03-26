@@ -1,7 +1,7 @@
 import numpy as np
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_list_like_to_tuple, reshape_flatten
 from pylops.utils.backend import get_array_module
 
 
@@ -74,24 +74,22 @@ class Symmetrize(LinearOperator):
         self.dtype = np.dtype(dtype)
         super().__init__(explicit=False, clinear=True, name=name)
 
+    @reshape_flatten()
     def _matvec(self, x):
         ncp = get_array_module(x)
         y = ncp.zeros(self.dimsd, dtype=self.dtype)
-        x = ncp.reshape(x, self.dims)
         x = ncp.swapaxes(x, self.axis, -1)
         y = ncp.swapaxes(y, self.axis, -1)
         y[..., self.nsym - 1 :] = x
         y[..., : self.nsym - 1] = x[..., -1:0:-1]
         y = ncp.swapaxes(y, -1, self.axis)
-        y = y.ravel()
         return y
 
+    @reshape_flatten(forward=False)
     def _rmatvec(self, x):
         ncp = get_array_module(x)
-        x = ncp.reshape(x, self.dimsd)
         x = ncp.swapaxes(x, self.axis, -1)
         y = x[..., self.nsym - 1 :].copy()
         y[..., 1:] += x[..., self.nsym - 2 :: -1]
         y = ncp.swapaxes(y, -1, self.axis)
-        y = y.ravel()
         return y
