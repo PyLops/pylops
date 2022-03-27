@@ -828,7 +828,7 @@ def ISTA(
        pp. 1413-1457. 2004.
 
     """
-    if not threshkind in [
+    if threshkind not in [
         "hard",
         "soft",
         "half",
@@ -1128,7 +1128,7 @@ def FISTA(
        Imaging Sciences, vol. 2, pp. 183-202. 2009.
 
     """
-    if not threshkind in [
+    if threshkind not in [
         "hard",
         "soft",
         "half",

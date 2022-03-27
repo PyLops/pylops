@@ -47,7 +47,6 @@ utils
 
 from .LinearOperator import LinearOperator
 from .basicoperators import *
-
 from . import (
     avo,
     basicoperators,

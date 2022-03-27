@@ -1,7 +1,4 @@
-import warnings
-
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
 
 from pylops.signalprocessing import Convolve2D
 

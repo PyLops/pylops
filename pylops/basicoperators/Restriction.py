@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import numpy.ma as np_ma
 from numpy.core.multiarray import normalize_axis_index

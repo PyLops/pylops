@@ -4,7 +4,6 @@ import numpy as np
 from scipy.sparse.linalg import lsqr
 
 from pylops import FirstDerivative, Laplacian, MatrixMult, SecondDerivative
-from pylops.LinearOperator import aslinearoperator
 from pylops.optimization.leastsquares import RegularizedInversion
 from pylops.optimization.solver import cgls
 from pylops.optimization.sparsity import SplitBregman

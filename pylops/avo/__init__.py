@@ -23,7 +23,6 @@ and a list of applications:
 from .poststack import *
 from .prestack import *
 
-
 __all__ = [
     "AVOLinearModelling",
     "PoststackLinearModelling",
