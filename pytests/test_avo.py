@@ -62,8 +62,8 @@ def test_zoeppritz():
 def test_zoeppritz_and_approx_zeroangle():
     """Validate zoeppritz and approximations at zero incident angle"""
     # Create composite parameters
-    ai0, si0, vpvs0 = vp0 * rho0, vs0 * rho0, vp0 / vs0
-    ai1, si1, vpvs1 = vp1 * rho1, vs1 * rho1, vp1 / vs1
+    ai0, si0, _ = vp0 * rho0, vs0 * rho0, vp0 / vs0
+    ai1, si1, _ = vp1 * rho1, vs1 * rho1, vp1 / vs1
 
     # Zoeppritz
     rpp_zoep = zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta[0])

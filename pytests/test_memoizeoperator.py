@@ -1,10 +1,9 @@
 import numpy as np
 import pytest
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import assert_array_almost_equal
 
 from pylops import MemoizeOperator
-from pylops.basicoperators import Diagonal, HStack, MatrixMult, VStack, Zero
-from pylops.optimization.solver import cgls
+from pylops.basicoperators import MatrixMult, VStack
 
 par1 = {"ny": 11, "nx": 11, "imag": 0, "dtype": "float32"}  # square real
 par1j = {"ny": 11, "nx": 11, "imag": 1j, "dtype": "complex64"}  # square imag
@@ -45,7 +44,7 @@ def test_memoize_evals(par):
         (par1j),
     ],
 )
-def test_memoize_evals(par):
+def test_memoize_evals_2(par):
     """Inversion of problem with real model and complex data, using two
     equivalent approaches: 1. complex operator enforcing the output of adjoint
     to be real, 2. joint system of equations for real and complex parts

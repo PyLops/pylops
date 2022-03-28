@@ -74,8 +74,8 @@ def test_dense_skinny(par):
     Dop = Diagonal(diag, dtype=par["dtype"])
     Zop = Zero(par["nx"], 3, dtype=par["dtype"])
     Op = HStack([Dop, Zop])
-    O = np.hstack((D, np.zeros((par["nx"], 3))))
-    assert_array_equal(Op.todense(), O)
+    OOp = np.hstack((D, np.zeros((par["nx"], 3))))
+    assert_array_equal(Op.todense(), OOp)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
@@ -213,8 +213,8 @@ def test_rlinear(par):
     Op_left = OpR_left * OpM
     Op_right = OpM * OpR_right
 
-    assert Op_left.clinear == False
-    assert Op_right.clinear == False
+    assert Op_left.clinear is False
+    assert Op_right.clinear is False
 
     # forward
     x = np.random.randn(par["nx"])

@@ -8,7 +8,6 @@ This operator returns the real part of the data in forward and adjoint mode,
 but the forward output will be a real number, while the adjoint output will
 be a complex number with a zero-valued imaginary part.
 """
-import matplotlib.gridspec as pltgs
 import matplotlib.pyplot as plt
 import numpy as np
 

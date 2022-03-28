@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import assert_array_almost_equal
 from scipy.sparse.linalg import lsqr
 
 from pylops.basicoperators import Smoothing1D, Smoothing2D

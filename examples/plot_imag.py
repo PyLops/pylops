@@ -8,7 +8,6 @@ This operator returns the imaginary part of the data as a real value in
 forward mode, and the real part of the model as an imaginary value in
 adjoint mode (with zero real part).
 """
-import matplotlib.gridspec as pltgs
 import matplotlib.pyplot as plt
 import numpy as np
 

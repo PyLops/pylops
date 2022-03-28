@@ -1,5 +1,3 @@
-from importlib import util
-
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
@@ -32,10 +30,10 @@ PAR = {
 # currently required for Travis as since we moved to Python3.8 it has
 # stopped working
 try:
-    import skfmm
+    import skfmm  # noqa: F401
 
     skfmm_enabled = True
-except:
+except ImportError:
     skfmm_enabled = False
 
 v0 = 500

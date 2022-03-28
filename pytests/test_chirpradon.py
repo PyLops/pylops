@@ -4,7 +4,7 @@ from numpy.testing import assert_array_almost_equal
 from pylops.optimization.sparsity import FISTA
 from pylops.signalprocessing import ChirpRadon2D, ChirpRadon3D
 from pylops.utils import dottest
-from pylops.utils.seismicevents import *
+from pylops.utils.seismicevents import linear2d, linear3d, makeaxis
 from pylops.utils.wavelets import ricker
 
 par1 = {

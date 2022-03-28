@@ -4,7 +4,6 @@ Bilinear Interpolation
 This example shows how to use the :py:class:`pylops.signalprocessing.Bilinar`
 operator to perform bilinear interpolation to a 2-dimensional input vector.
 """
-import matplotlib.gridspec as pltgs
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import misc
