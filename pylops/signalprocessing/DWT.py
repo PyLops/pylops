@@ -1,5 +1,4 @@
 import logging
-import warnings
 from math import ceil, log
 
 import numpy as np

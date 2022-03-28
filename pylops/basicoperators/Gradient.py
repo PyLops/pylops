@@ -1,5 +1,3 @@
-import numpy as np
-
 from pylops.basicoperators import FirstDerivative, VStack
 from pylops.utils._internal import _value_or_list_like_to_tuple
 

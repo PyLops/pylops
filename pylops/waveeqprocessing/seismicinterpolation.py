@@ -16,7 +16,6 @@ from pylops.signalprocessing import (
     Sliding2D,
     Sliding3D,
 )
-from pylops.utils.backend import get_array_module
 from pylops.utils.dottest import dottest as Dottest
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -203,8 +202,6 @@ def SeismicInterpolation(
           in 3-dimensional case
 
     """
-    ncp = get_array_module(data)
-
     dtype = data.dtype
     ndims = data.ndim
     if ndims == 1 or ndims > 3:

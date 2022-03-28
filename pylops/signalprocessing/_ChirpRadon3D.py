@@ -4,7 +4,7 @@ from pylops.utils.backend import get_array_module
 
 try:
     import pyfftw
-except:
+except ImportError:
     pyfftw = None
 
 

@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 
 from pylops.signalprocessing import Convolve1D

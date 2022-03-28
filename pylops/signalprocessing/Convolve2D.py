@@ -1,7 +1,3 @@
-import warnings
-
-from numpy.core.multiarray import normalize_axis_index
-
 from pylops.signalprocessing import ConvolveND
 
 
