@@ -4,7 +4,6 @@ Padding
 This example shows how to use the :py:class:`pylops.Pad` operator to zero-pad a
 model
 """
-import matplotlib.gridspec as pltgs
 import matplotlib.pyplot as plt
 import numpy as np
 

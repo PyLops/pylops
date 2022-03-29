@@ -7,7 +7,6 @@ operator.
 This operator returns the complex conjugate in both forward and adjoint
 modes (it is self adjoint).
 """
-import matplotlib.gridspec as pltgs
 import matplotlib.pyplot as plt
 import numpy as np
 

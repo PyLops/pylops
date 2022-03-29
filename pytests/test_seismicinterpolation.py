@@ -1,4 +1,4 @@
-import multiprocessing
+# import multiprocessing
 
 import numpy as np
 import pytest

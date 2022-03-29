@@ -3,7 +3,7 @@ import pytest
 
 from pylops.basicoperators import Identity
 from pylops.utils import dottest
-from pylops.utils.seismicevents import hyperbolic2d, hyperbolic3d, makeaxis
+from pylops.utils.seismicevents import hyperbolic2d, makeaxis
 from pylops.utils.wavelets import ricker
 from pylops.waveeqprocessing.oneway import Deghosting, PhaseShift
 

@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_equal
-from scipy.sparse.linalg import lsqr
 
 from pylops.basicoperators import Transpose
 from pylops.utils import dottest

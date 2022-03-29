@@ -313,7 +313,7 @@ def test_VStack_rlinear(par):
     Rop = Real(dims=(par["nx"],), dtype=par["dtype"])
 
     VSop = VStack([Rop, MatrixMult(G, dtype=par["dtype"])], dtype=par["dtype"])
-    assert VSop.clinear == False
+    assert VSop.clinear is False
     assert dottest(
         VSop, par["nx"] + par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3
     )
@@ -337,7 +337,7 @@ def test_HStack_rlinear(par):
     Rop = Real(dims=(par["ny"],), dtype=par["dtype"])
 
     HSop = HStack([Rop, MatrixMult(G, dtype=par["dtype"])], dtype=par["dtype"])
-    assert HSop.clinear == False
+    assert HSop.clinear is False
     assert dottest(
         HSop, par["ny"], par["nx"] + par["ny"], complexflag=0 if par["imag"] == 0 else 3
     )
@@ -363,7 +363,7 @@ def test_BlockDiag_rlinear(par):
     Rop = Real(dims=(par["nx"],), dtype=par["dtype"])
 
     BDop = BlockDiag([Rop, MatrixMult(G, dtype=par["dtype"])], dtype=par["dtype"])
-    assert BDop.clinear == False
+    assert BDop.clinear is False
     assert dottest(
         BDop,
         par["nx"] + par["ny"],
