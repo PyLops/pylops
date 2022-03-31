@@ -15,7 +15,7 @@ def _choose_convfunc(x, method, dims):
 
     Choose and return the function handle to be used for convolution
     """
-    if dims is None:
+    if isinstance(dims, (int, float)):
         if method is None:
             method = "direct"
         if method not in ("direct", "fft"):
