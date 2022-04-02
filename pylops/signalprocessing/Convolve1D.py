@@ -15,7 +15,7 @@ def _choose_convfunc(x, method, dims):
 
     Choose and return the function handle to be used for convolution
     """
-    if dims is None:
+    if len(dims) == 1:
         if method is None:
             method = "direct"
         if method not in ("direct", "fft"):
@@ -142,7 +142,6 @@ class Convolve1D(LinearOperator):
                 mode="constant",
             )
         self.hstar = np.flip(self.h, axis=-1)
-        self.dimsorig = dims
 
         # add dimensions to filter to match dimensions of model and data
         hdims = np.ones(len(self.dims), dtype=int)
@@ -151,7 +150,7 @@ class Convolve1D(LinearOperator):
         self.hstar = self.hstar.reshape(hdims)
 
         # choose method and function handle
-        self.convfunc, self.method = _choose_convfunc(h, method, self.dimsorig)
+        self.convfunc, self.method = _choose_convfunc(h, method, self.dims)
         self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         self.dtype = np.dtype(dtype)
         super().__init__(explicit=False, clinear=True, name=name)
@@ -160,7 +159,7 @@ class Convolve1D(LinearOperator):
         if type(self.h) != type(x):
             self.h = to_cupy_conditional(x, self.h)
             self.convfunc, self.method = _choose_convfunc(
-                self.h, self.method, self.dimsorig
+                self.h, self.method, self.dims
             )
         x = np.reshape(x, self.dims)
         y = self.convfunc(x, self.h, mode="same")
@@ -171,7 +170,7 @@ class Convolve1D(LinearOperator):
         if type(self.hstar) != type(x):
             self.hstar = to_cupy_conditional(x, self.hstar)
             self.convfunc, self.method = _choose_convfunc(
-                self.hstar, self.method, self.dimsorig
+                self.hstar, self.method, self.dims
             )
         x = np.reshape(x, self.dims)
         y = self.convfunc(x, self.hstar, mode="same")
