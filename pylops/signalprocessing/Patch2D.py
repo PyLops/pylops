@@ -11,7 +11,16 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def Patch2D(
-    Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False, name="P"
+    Op,
+    dims,
+    dimsd,
+    nwin,
+    nover,
+    nop,
+    tapertype="hanning",
+    scalings=None,
+    design=False,
+    name="P",
 ):
     """2D Patch transform operator.
 
@@ -57,6 +66,9 @@ def Patch2D(
         Size of model in the transformed domain
     tapertype : :obj:`str`, optional
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
+    scalings : :obj:`tuple` or :obj:`list`, optional
+         Set of scalings to apply to each patch. If ``None``, no scale will be
+         applied
     design : :obj:`bool`, optional
         Print number of sliding window (``True``) or not (``False``)
     name : :obj:`str`, optional
@@ -163,12 +175,20 @@ def Patch2D(
             "optimal number of windows for the current "
             "model size..."
         )
+
+    # define scalings
+    if scalings is None:
+        scalings = [1.0] * nwins
+
     # transform to apply
     if tapertype is None:
-        OOp = BlockDiag([Op for _ in range(nwins)])
+        OOp = BlockDiag([scalings[itap] * Op for itap in range(nwins)])
     else:
         OOp = BlockDiag(
-            [Diagonal(taps[itap].ravel(), dtype=Op.dtype) * Op for itap in range(nwins)]
+            [
+                scalings[itap] * Diagonal(taps[itap].ravel(), dtype=Op.dtype) * Op
+                for itap in range(nwins)
+            ]
         )
 
     hstack = HStack(
