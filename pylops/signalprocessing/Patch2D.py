@@ -3,13 +3,25 @@ import logging
 import numpy as np
 
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
+from pylops.LinearOperator import aslinearoperator
 from pylops.signalprocessing.Sliding2D import _slidingsteps
 from pylops.utils.tapers import taper2d
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False):
+def Patch2D(
+    Op,
+    dims,
+    dimsd,
+    nwin,
+    nover,
+    nop,
+    tapertype="hanning",
+    scalings=None,
+    design=False,
+    name="P",
+):
     """2D Patch transform operator.
 
     Apply a transform operator ``Op`` repeatedly to patches of the model
@@ -54,8 +66,15 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
         Size of model in the transformed domain
     tapertype : :obj:`str`, optional
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
+    scalings : :obj:`tuple` or :obj:`list`, optional
+        Set of scalings to apply to each patch. If ``None``, no scale will be
+        applied
     design : :obj:`bool`, optional
         Print number of sliding window (``True``) or not (``False``)
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -134,44 +153,48 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
         logging.warning("%d-%d windows required...", nwins0, nwins1)
         logging.warning(
             "model wins - start:%s, end:%s / start:%s, end:%s",
-            str(mwin0_ins),
-            str(mwin0_ends),
-            str(mwin1_ins),
-            str(mwin1_ends),
+            mwin0_ins,
+            mwin0_ends,
+            mwin1_ins,
+            mwin1_ends,
         )
         logging.warning(
             "data wins - start:%s, end:%s / start:%s, end:%s",
-            str(dwin0_ins),
-            str(dwin0_ends),
-            str(dwin1_ins),
-            str(dwin1_ends),
+            dwin0_ins,
+            dwin0_ends,
+            dwin1_ins,
+            dwin1_ends,
         )
     if nwins0 * nop[0] != dims[0] or nwins1 * nop[1] != dims[1]:
         raise ValueError(
-            "Model shape (dims=%s) is not consistent with chosen "
-            "number of windows. Choose dims[0]=%d and "
-            "dims[1]=%d for the operator to work with "
+            f"Model shape (dims={dims}) is not consistent with chosen "
+            f"number of windows. Choose dims[0]={nwins0 * nop[0]} and "
+            f"dims[1]={nwins1 * nop[1]} for the operator to work with "
             "estimated number of windows, or create "
             "the operator with design=True to find out the"
             "optimal number of windows for the current "
-            "model size..." % (str(dims), nwins0 * nop[0], nwins1 * nop[1])
+            "model size..."
         )
+
+    # define scalings
+    if scalings is None:
+        scalings = [1.0] * nwins
+
     # transform to apply
     if tapertype is None:
-        OOp = BlockDiag([Op for _ in range(nwins)])
+        OOp = BlockDiag([scalings[itap] * Op for itap in range(nwins)])
     else:
         OOp = BlockDiag(
-            [Diagonal(taps[itap].ravel(), dtype=Op.dtype) * Op for itap in range(nwins)]
+            [
+                scalings[itap] * Diagonal(taps[itap].ravel(), dtype=Op.dtype) * Op
+                for itap in range(nwins)
+            ]
         )
 
     hstack = HStack(
         [
             Restriction(
-                dimsd[1] * nwin[0],
-                range(win_in, win_end),
-                dims=(nwin[0], dimsd[1]),
-                dir=1,
-                dtype=Op.dtype,
+                (nwin[0], dimsd[1]), range(win_in, win_end), axis=1, dtype=Op.dtype
             ).H
             for win_in, win_end in zip(dwin1_ins, dwin1_ends)
         ]
@@ -180,15 +203,16 @@ def Patch2D(Op, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
     combining1 = BlockDiag([hstack] * nwins0)
     combining0 = HStack(
         [
-            Restriction(
-                np.prod(dimsd),
-                range(win_in, win_end),
-                dims=dimsd,
-                dir=0,
-                dtype=Op.dtype,
-            ).H
+            Restriction(dimsd, range(win_in, win_end), axis=0, dtype=Op.dtype).H
             for win_in, win_end in zip(dwin0_ins, dwin0_ends)
         ]
     )
-    Pop = combining0 * combining1 * OOp
+    Pop = aslinearoperator(combining0 * combining1 * OOp)
+    Pop.dims, Pop.dimsd = (
+        nwins0,
+        nwins1,
+        int(dims[0] // nwins0),
+        int(dims[1] // nwins1),
+    ), dimsd
+    Pop.name = name
     return Pop
