@@ -141,8 +141,25 @@ Geophysical subsurface characterization
 Solvers
 -------
 
-Basic
-~~~~~
+.. currentmodule:: pylops.optimization
+
+.. autosummary::
+   :toctree: generated/
+
+    basesolver.Solver
+
+Basic (class-based)
+~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.optimization
+
+.. autosummary::
+   :toctree: generated/
+
+    solver.CG
+
+Basic (function-based)
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. currentmodule:: pylops.optimization
 

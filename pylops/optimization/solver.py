@@ -2,10 +2,202 @@ import time
 
 import numpy as np
 
+from pylops.optimization.basesolver import Solver
 from pylops.utils.backend import get_array_module
 
 
-def cg(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
+class CG(Solver):
+    r"""Conjugate gradient
+
+    Solve a square system of equations given an operator ``Op`` and
+    data ``y`` using conjugate gradient iterations.
+
+    Parameters
+    ----------
+    Op : :obj:`pylops.LinearOperator`
+        Operator to invert of size :math:`[N \times N]`
+    y : :obj:`np.ndarray`
+        Data of size :math:`[N \times 1]`
+
+    Attributes
+    ----------
+    x : :obj:`np.ndarray`
+        Estimated model of size :math:`[N \times 1]`
+    iit : :obj:`int`
+        Number of executed iterations
+    cost : :obj:`numpy.ndarray`, optional
+        History of the L2 norm of the residual
+
+    Notes
+    -----
+    Solve the :math:`\mathbf{y} = \mathbf{Opx}` problem using conjugate gradient
+    iterations [1]_.
+
+    .. [1] Hestenes, M R., Stiefel, E., “Methods of Conjugate Gradients for Solving
+       Linear Systems”, Journal of Research of the National Bureau of Standards.
+       vol. 49. 1952.
+
+    """
+
+    def __init__(self, Op, y):
+        self.Op = Op
+        self.y = y
+        self.ncp = get_array_module(y)
+
+    def _print_setup(self):
+        self.tstart = time.time()
+        if self.niter is None:
+            strpar = "tol = {self.tol:10e}\tniter = {self.niter}"
+        else:
+            strpar = "tol = {self.tol:10e}"
+        print(
+            "CG\n"
+            "-----------------------------------------------------------\n"
+            f"The Operator Op has {self.Op.shape[0]} rows and {self.Op.shape[1]} cols\n"
+        )
+        print(strpar)
+        print("-----------------------------------------------------------")
+        head1 = "    Itn           x[0]              r2norm"
+        print(head1)
+
+    def _print_step(self):
+        if not np.iscomplex(self.x[0]):
+            msg = f"{self.iiter:6g}        {self.x[0]:11.4e}        {self.cost[self.iiter]:11.4e}"
+        else:
+            msg = f"{self.iiter:6g}    {np.real(self.x[0]):4.1e} + {np.imag(self.x[0]):4.1e}j    {self.cost[self.iiter]:11.4e}"
+        print(msg)
+
+    def _print_finalize(self):
+        print(
+            f"\nIterations = {self.iiter}        Total time (s) = {time.time() - self.tstart:.2f}"
+        )
+        print("-----------------------------------------------------------------\n")
+
+    def setup(self, x0=None, niter=None, tol=1e-4, show=False):
+        """Setup solver
+
+        Parameters
+        ----------
+        x0 : :obj:`np.ndarray`, optional
+            Initial guess
+        niter : :obj:`int`, optional
+            Number of iterations
+        tol : :obj:`float`, optional
+            Tolerance on residual norm
+        show : :obj:`bool`, optional
+            Display setup log
+
+        """
+        self.tol = tol
+        self.niter = niter
+        if show:
+            self._print_setup()
+
+        # initialize solver
+        self.x0 = x0
+        if self.x0 is None:
+            self.x = self.ncp.zeros(self.Op.shape[1], dtype=self.y.dtype)
+            self.r = self.y.copy()
+        else:
+            self.x = self.x0.copy()
+            self.r = self.y - self.Op.matvec(self.x)
+        self.c = self.r.copy()
+        self.kold = self.ncp.abs(self.r.dot(self.r.conj()))
+
+        # create variables to track the residual norm and iterations
+        self.cost = []
+        self.cost.append(np.sqrt(self.kold))
+        self.iiter = 0
+
+    def step(self, show=False):
+        """Run one step of solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display iteration log
+
+        """
+        Opc = self.Op.matvec(self.c)
+        cOpc = self.ncp.abs(self.c.dot(Opc.conj()))
+        a = self.kold / cOpc
+        self.x += a * self.c
+        self.r -= a * Opc
+        k = self.ncp.abs(self.r.dot(self.r.conj()))
+        b = k / self.kold
+        self.c = self.r + b * self.c
+        self.kold = k
+        self.iiter += 1
+        self.cost.append(np.sqrt(self.kold))
+        if show:
+            self._print_step()
+
+    def finalize(self, show=False):
+        """Finalize solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display finalize log
+
+        """
+        if show:
+            self._print_finalize()
+        self.cost = np.array(self.cost)
+
+    def callback(self):
+        """Callback routine
+
+        This routine must be passed by the user as follows (when using the `solve`
+        method it will be automatically invoked after each step of the solve)
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from pylops.basicoperators import Identity
+        >>> from pylops.optimization.solver import CG
+        >>> def callback():
+        ...     print('Running callback')
+        ...
+        >>> I = Identity(10)
+        >>> I
+        <10x10 Identity with dtype=float64>
+        >>> cgsolve = CG(I, np.ones(10))
+        >>> cgsolve.callback = callback
+
+        >>> cgsolve.callback()
+        Running callback
+        """
+        pass
+
+    def solve(self, x0=None, niter=10, tol=1e-4, show=False):
+        """Run entire solver
+
+        Parameters
+        ----------
+        x0 : :obj:`np.ndarray`, optional
+            Initial guess
+        niter : :obj:`int`, optional
+            Number of iterations
+        tol : :obj:`float`, optional
+            Tolerance on residual norm
+        show : :obj:`bool`, optional
+            Display setup log
+
+        """
+        self.setup(x0=x0, niter=niter, tol=tol, show=show)
+        while self.iiter < niter and self.kold > self.tol:
+            show = (
+                True
+                if self.iiter < 10 or niter - self.iiter < 10 or self.iiter % 10 == 0
+                else False
+            )
+            self.step(show)
+            self.callback()
+        self.finalize(show)
+
+
+def cg(Op, y, x0, niter=10, tol=1e-4, show=False, callback=None):
     r"""Conjugate gradient
 
     Solve a square system of equations given an operator ``Op`` and
@@ -28,8 +220,7 @@ def cg(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
     show : :obj:`bool`, optional
         Display iterations log
     callback : :obj:`callable`, optional
-        Function with signature (``callback(x)``) to call after each iteration
-        where ``x`` is the current model vector
+        Function with no inputs to call after each iteration
 
     Returns
     -------
@@ -46,62 +237,11 @@ def cg(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
     using conjugate gradient iterations.
 
     """
-    ncp = get_array_module(y)
-
-    if show:
-        tstart = time.time()
-        print(
-            "CG\n"
-            "-----------------------------------------------------------\n"
-            f"The Operator Op has {Op.shape[0]} rows and {Op.shape[1]} cols\n"
-            f"tol = {tol:10e}\tniter = {niter}"
-        )
-        print("-----------------------------------------------------------")
-        head1 = "    Itn           x[0]              r2norm"
-        print(head1)
-
-    if x0 is None:
-        x = ncp.zeros(Op.shape[1], dtype=y.dtype)
-        r = y.copy()
-    else:
-        x = x0.copy()
-        r = y - Op.matvec(x)
-    c = r.copy()
-    kold = ncp.abs(r.dot(r.conj()))
-
-    cost = np.zeros(niter + 1)
-    cost[0] = np.sqrt(kold)
-    iiter = 0
-    while iiter < niter and kold > tol:
-        Opc = Op.matvec(c)
-        cOpc = ncp.abs(c.dot(Opc.conj()))
-        a = kold / cOpc
-        x += a * c
-        r -= a * Opc
-        k = ncp.abs(r.dot(r.conj()))
-        b = k / kold
-        c = r + b * c
-        kold = k
-        iiter += 1
-        cost[iiter] = np.sqrt(kold)
-
-        # run callback
-        if callback is not None:
-            callback(x)
-
-        if show:
-            if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
-                if not np.iscomplex(x[0]):
-                    msg = f"{iiter:6g}        {x[0]:11.4e}        {cost[iiter]:11.4e}"
-                else:
-                    msg = f"{iiter:6g}    {np.real(x[0]):4.1e} + {np.imag(x[0]):4.1e}j    {cost[iiter]:11.4e}"
-                print(msg)
-    if show:
-        print(
-            f"\nIterations = {iiter}        Total time (s) = {time.time() - tstart:.2f}"
-        )
-        print("-----------------------------------------------------------------\n")
-    return x, iiter, cost[:iiter]
+    cgsolve = CG(Op, y)
+    if callback is not None:
+        cgsolve.callback = callback
+    cgsolve.solve(x0=x0, tol=tol, niter=niter, show=show)
+    return cgsolve.x, cgsolve.iiter, cgsolve.cost
 
 
 def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
