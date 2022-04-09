@@ -20,4 +20,3 @@ jobs:
         with:
           ignore: "E203, E501, W503, E402"
           max-line-length: "88"
-          path: "pylops"
