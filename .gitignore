@@ -25,6 +25,7 @@ pylops/version.py
 .ipynb_checkpoints/
 notebooks
 TODO
+.vscode/
 
 # Documentation #
 docs/build
