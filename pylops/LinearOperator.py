@@ -13,6 +13,7 @@ from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
 from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse.linalg import lsqr, spsolve
+from scipy.sparse.sputils import isintlike, isshape
 
 # need to check scipy version since the interface submodule changed into
 # _interface from scipy>=1.8.0
@@ -47,14 +48,24 @@ class LinearOperator(spLinearOperator):
     Parameters
     ----------
     Op : :obj:`scipy.sparse.linalg.LinearOperator` or :obj:`scipy.sparse.linalg._ProductLinearOperator` or :obj:`scipy.sparse.linalg._SumLinearOperator`
-        Operator
+        Operator. If other arguments are provided, they will overwrite those obtained from ``Op``.
+    shape : :obj:`tuple(int, int)`, optional
+        Shape of operator. If not provided, obtained from ``dims`` and ``dimsd``.
+    dims : :obj:`tuple(int, ..., int)`, optional
+        .. versionadded:: 2.0.0
+
+        Dimensions of model. If not provided, ``(self.shape[1],)`` is used.
+    dimsd : :obj:`tuple(int, ..., int)`, optional
+        .. versionadded:: 2.0.0
+
+        Dimensions of data. If not provided, ``(self.shape[0],)`` is used.
     explicit : :obj:`bool`, optional
         Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
+        (``True``) or not (``False``). Defaults to ``False``.
     clinear : :obj:`bool`, optional
         .. versionadded:: 1.17.0
 
-        Operator is complex-linear.
+        Operator is complex-linear. Defaults to ``True``.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -62,16 +73,185 @@ class LinearOperator(spLinearOperator):
 
     """
 
-    def __init__(self, Op=None, explicit=False, clinear=None, name=None):
-        self.explicit = explicit
+    def __init__(
+        self,
+        Op=None,
+        dtype=None,
+        shape=None,
+        dims=None,
+        dimsd=None,
+        clinear=None,
+        explicit=None,
+        name=None,
+    ):
         if Op is not None:
             self.Op = Op
-            self.shape = self.Op.shape
-            self.dtype = self.Op.dtype
-            self.clinear = getattr(self.Op, "clinear", True)
+            # All Operators must have shape and dtype
+            dtype = self.Op.dtype if dtype is None else dtype
+            shape = self.Op.shape if shape is None else shape
+            # Optionally, some operators have other attributes
+            dims = getattr(Op, "dims", (Op.shape[1],)) if dims is None else dims
+            dimsd = getattr(Op, "dimsd", (Op.shape[0],)) if dimsd is None else dimsd
+            clinear = getattr(Op, "clinear", True) if clinear is None else clinear
+            explicit = (
+                getattr(self.Op, "explicit", False) if explicit is None else explicit
+            )
+            if explicit and hasattr(Op, "A"):
+                self.A = Op.A
+            name = getattr(Op, "name", None) if name is None else name
+
+        if dtype is not None:
+            self.dtype = dtype
+        if shape is not None:
+            self.shape = shape
+        if dims is not None:
+            self.dims = dims
+        if dimsd is not None:
+            self.dimsd = dimsd
         if clinear is not None:
             self.clinear = clinear
+        if explicit is not None:
+            self.explicit = explicit
         self.name = name
+
+    @property
+    def shape(self):
+        _shape = getattr(self, "_shape", None)
+        if _shape is None:  # Cannot find shape, falling back on dims and dimsd
+            dims = getattr(self, "_dims", None)
+            dimsd = getattr(self, "_dimsd", None)
+            if dims is None or dimsd is None:  # Cannot find both dims and dimsd, error
+                raise AttributeError(
+                    (
+                        f"'{self.__class__.__name__}' object has no attribute 'shape' "
+                        "nor both fallback attributes ('dims', 'dimsd')"
+                    )
+                )
+            _shape = (np.prod(dimsd), np.prod(dims))
+            self._shape = _shape  # Update to not redo everything above on next call
+        return _shape
+
+    @shape.setter
+    def shape(self, new_shape):
+        new_shape = tuple(new_shape)
+        if not isshape(new_shape):
+            raise ValueError(f"invalid shape %{new_shape:r} (must be 2-d)")
+        dims = getattr(self, "_dims", None)
+        dimsd = getattr(self, "_dimsd", None)
+        if dims is not None and dimsd is not None:  # Found dims and dimsd
+            if np.prod(dimsd) != new_shape[0] and np.prod(dims) != new_shape[1]:
+                raise ValueError("New shape incompatible with dims and dimsd")
+            elif np.prod(dimsd) != new_shape[0]:
+                raise ValueError("New shape incompatible with dimsd")
+            elif np.prod(dims) != new_shape[1]:
+                raise ValueError("New shape incompatible with dims")
+        self._shape = new_shape
+
+    @shape.deleter
+    def shape(self):
+        del self._shape
+
+    @property
+    def dims(self):
+        _dims = getattr(self, "_dims", None)
+        if _dims is None:
+            shape = getattr(self, "_shape", None)
+            if shape is None:
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' object has no attributes 'dims' or 'shape'"
+                )
+            _dims = (shape[1],)
+        return _dims
+
+    @dims.setter
+    def dims(self, new_dims):
+        new_dims = tuple(new_dims)
+        shape = getattr(self, "_shape", None)
+        if shape is None:  # shape not set yet
+            self._dims = new_dims
+        else:
+            if np.prod(new_dims) == self.shape[1]:
+                self._dims = new_dims
+            else:
+                raise ValueError("dims incompatible with shape[1]")
+
+    @dims.deleter
+    def dims(self):
+        del self._dims
+
+    @property
+    def dimsd(self):
+        _dimsd = getattr(self, "_dimsd", None)
+        if _dimsd is None:
+            shape = getattr(self, "_shape", None)
+            if shape is None:
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' object has no attributes 'dimsd' or 'shape'"
+                )
+            _dimsd = (shape[0],)
+        return _dimsd
+
+    @dimsd.setter
+    def dimsd(self, new_dimsd):
+        new_dimsd = tuple(new_dimsd)
+        shape = getattr(self, "_shape", None)
+        if shape is None:  # shape not set yet
+            self._dimsd = new_dimsd
+        else:
+            if np.prod(new_dimsd) == self.shape[0]:
+                self._dimsd = new_dimsd
+            else:
+                raise ValueError("dimsd incompatible with shape[0]")
+
+    @dimsd.deleter
+    def dimsd(self):
+        del self._dimsd
+
+    @property
+    def clinear(self):
+        return getattr(self, "_clinear", True)
+
+    @clinear.setter
+    def clinear(self, new_clinear):
+        self._clinear = bool(new_clinear)
+
+    @clinear.deleter
+    def clinear(self, new_clinear):
+        del self._clinear
+
+    @property
+    def explicit(self):
+        return getattr(self, "_explicit", False)
+
+    @explicit.setter
+    def explicit(self, new_explicit):
+        self._explicit = bool(new_explicit)
+
+    @explicit.deleter
+    def explicit(self, new_explicit):
+        del self._explicit
+
+    @property
+    def name(self):
+        return getattr(self, "_name", None)
+
+    @name.setter
+    def name(self, new_name):
+        self._name = new_name
+
+    @name.deleter
+    def name(self, new_name):
+        del self._name
+
+    def _copy_attributes(self, dest, exclude=["name"]):
+        """Copy attributes from one LinearOperator to another"""
+        attrs = ["dims", "dimsd", "clinear", "explicit", "name"]
+        if exclude is not None:
+            for item in exclude:
+                attrs.remove(item)
+        for attr in attrs:
+            if hasattr(self, attr):
+                setattr(dest, attr, getattr(self, attr))
 
     def _matvec(self, x):
         if callable(self.Op._matvec):
@@ -101,27 +281,56 @@ class LinearOperator(spLinearOperator):
 
     def __rmul__(self, x):
         if np.isscalar(x):
-            return aslinearoperator(_ScaledLinearOperator(self, x))
+            Op = aslinearoperator(_ScaledLinearOperator(self, x))
+            self._copy_attributes(Op)
+            return Op
         else:
             return NotImplemented
 
     def __pow__(self, p):
-        return aslinearoperator(super().__pow__(p))
+        if np.isscalar(p):
+            Op = aslinearoperator(_PowerLinearOperator(self, p))
+            self._copy_attributes(Op)
+            return Op
+        else:
+            return NotImplemented
 
     def __add__(self, x):
-        return aslinearoperator(super().__add__(x))
+        if isinstance(x, spLinearOperator):
+            Op = aslinearoperator(_SumLinearOperator(self, x))
+            Opx = aslinearoperator(x)
+            self._copy_attributes(Op)
+            Op.clinear = Op.clinear and Opx.clinear
+            # Replace if shape-like
+            if len(self.dims) == 1:
+                Op.dims = Opx.dims
+            if len(self.dimsd) == 1:
+                Op.dimsd = Opx.dimsd
+            return Op
+        else:
+            return NotImplemented
 
     def __neg__(self):
-        return aslinearoperator(_ScaledLinearOperator(self, -1))
+        Op = aslinearoperator(_ScaledLinearOperator(self, -1))
+        self._copy_attributes(Op)
+        return Op
 
     def __sub__(self, x):
-        return aslinearoperator(super().__sub__(x))
+        return self.__add__(-x)
 
     def _adjoint(self):
-        return aslinearoperator(super()._adjoint())
+        Op = aslinearoperator(super()._adjoint())
+        self._copy_attributes(Op, exclude=["dims", "dimsd", "name"])
+        Op.dims = self.dimsd
+        Op.dimsd = self.dims
+        return Op
 
     def _transpose(self):
-        return aslinearoperator(super()._transpose())
+        Op = aslinearoperator(super()._transpose())
+        self._copy_attributes(Op, exclude=["dims", "dimsd", "name"])
+        Op.dims = self.dimsd
+        Op.dimsd = self.dims
+        return Op
 
     def matvec(self, x):
         """Matrix-vector multiplication.
@@ -255,12 +464,15 @@ class LinearOperator(spLinearOperator):
 
         """
         if isinstance(x, LinearOperator):
-            Op = _ProductLinearOperator(self, x)
-            # Output is C-Linear only if both operators are
-            Op.clinear = getattr(self, "clinear", True) and getattr(x, "clinear", True)
+            Op = aslinearoperator(_ProductLinearOperator(self, x))
+            self._copy_attributes(Op, exclude=["dims", "name"])
+            Op.clinear = Op.clinear and x.clinear
+            Op.dims = x.dims
             return Op
         elif np.isscalar(x):
-            return _ScaledLinearOperator(self, x)
+            Op = aslinearoperator(_ScaledLinearOperator(self, x))
+            self._copy_attributes(Op)
+            return Op
         else:
             if x.ndim == 1:  # or x.ndim == 2 and x.shape[1] == 1:
                 return self.matvec(x)
@@ -832,7 +1044,7 @@ class _ConjLinearOperator(LinearOperator):
     def __init__(self, Op):
         if not isinstance(Op, spLinearOperator):
             raise TypeError("Op must be a LinearOperator")
-        super(_ConjLinearOperator, self).__init__(Op, Op.shape)
+        super(_ConjLinearOperator, self).__init__(Op, shape=Op.shape)
         self.Op = Op
 
     def _matvec(self, x):
@@ -855,10 +1067,10 @@ class _ColumnLinearOperator(LinearOperator):
     def __init__(self, Op, cols):
         if not isinstance(Op, spLinearOperator):
             raise TypeError("Op must be a LinearOperator")
-        super(_ColumnLinearOperator, self).__init__(Op, Op.explicit)
+        super(_ColumnLinearOperator, self).__init__(Op, explicit=Op.explicit)
         self.Op = Op
         self.cols = cols
-        self.shape = (Op.shape[0], len(cols))
+        self._shape = (Op.shape[0], len(cols))
         if self.explicit:
             self.Opcol = Op.A[:, cols]
 
@@ -881,6 +1093,67 @@ class _ColumnLinearOperator(LinearOperator):
         return y
 
 
+class _SumLinearOperator(spLinearOperator):
+    def __init__(self, A, B):
+        if not isinstance(A, spLinearOperator) or not isinstance(B, spLinearOperator):
+            raise ValueError("both operands have to be a LinearOperator")
+        if A.shape != B.shape:
+            raise ValueError("cannot add %r and %r: shape mismatch" % (A, B))
+        self.args = (A, B)
+        super(_SumLinearOperator, self).__init__(_get_dtype([A, B]), A.shape)
+
+    def _matvec(self, x):
+        return self.args[0].matvec(x) + self.args[1].matvec(x)
+
+    def _rmatvec(self, x):
+        return self.args[0].rmatvec(x) + self.args[1].rmatvec(x)
+
+    def _rmatmat(self, x):
+        return self.args[0].rmatmat(x) + self.args[1].rmatmat(x)
+
+    def _matmat(self, x):
+        return self.args[0].matmat(x) + self.args[1].matmat(x)
+
+    def _adjoint(self):
+        A, B = self.args
+        return A.H + B.H
+
+
+class _PowerLinearOperator(spLinearOperator):
+    def __init__(self, A, p):
+        if not isinstance(A, spLinearOperator):
+            raise ValueError("LinearOperator expected as A")
+        if A.shape[0] != A.shape[1]:
+            raise ValueError("square LinearOperator expected, got %r" % A)
+        if not isintlike(p) or p < 0:
+            raise ValueError("non-negative integer expected as p")
+
+        super(_PowerLinearOperator, self).__init__(_get_dtype([A]), A.shape)
+        self.args = (A, p)
+
+    def _power(self, fun, x):
+        res = np.array(x, copy=True)
+        for i in range(self.args[1]):
+            res = fun(res)
+        return res
+
+    def _matvec(self, x):
+        return self._power(self.args[0].matvec, x)
+
+    def _rmatvec(self, x):
+        return self._power(self.args[0].rmatvec, x)
+
+    def _rmatmat(self, x):
+        return self._power(self.args[0].rmatmat, x)
+
+    def _matmat(self, x):
+        return self._power(self.args[0].matmat, x)
+
+    def _adjoint(self):
+        A, p = self.args
+        return A.H ** p
+
+
 class _RealImagLinearOperator(LinearOperator):
     """Real-Imag linear operator
 
@@ -893,7 +1166,7 @@ class _RealImagLinearOperator(LinearOperator):
     def __init__(self, Op, forw=True, adj=True, real=True):
         if not isinstance(Op, spLinearOperator):
             raise TypeError("Op must be a LinearOperator")
-        super(_RealImagLinearOperator, self).__init__(Op, Op.shape)
+        super(_RealImagLinearOperator, self).__init__(Op, shape=Op.shape)
         self.Op = Op
         self.real = real
         self.forw = forw

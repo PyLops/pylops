@@ -3,7 +3,16 @@ import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from pylops import LinearOperator
-from pylops.basicoperators import Diagonal, HStack, MatrixMult, Real, VStack, Zero
+from pylops.basicoperators import (
+    Diagonal,
+    FirstDerivative,
+    HStack,
+    MatrixMult,
+    Real,
+    Symmetrize,
+    VStack,
+    Zero,
+)
 from pylops.utils import dottest
 
 par1 = {"ny": 11, "nx": 11, "imag": 0, "dtype": "float64"}  # square real
@@ -228,3 +237,43 @@ def test_rlinear(par):
     for complexflag in range(4):
         assert dottest(Op_left, par["ny"], par["nx"], complexflag=complexflag)
         assert dottest(Op_right, par["ny"], par["nx"], complexflag=complexflag)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_copy_dims_dimsd(par):
+    """Apply various overloaded operators (.H, -, +, *) and ensure that the
+    returned operator is still of pylops LinearOperator type
+    """
+    Dy = FirstDerivative((par["ny"], par["nx"]), axis=0)
+    Dx = FirstDerivative((par["ny"], par["nx"]), axis=-1)
+    dims = (par["ny"], par["nx"])
+    dimsd = (par["ny"], par["nx"])
+    dimsd_sym = (2 * par["ny"] - 1, par["nx"])
+    S = Symmetrize(dims, axis=0)
+
+    # .H
+    assert S.H.dims == dimsd_sym
+    assert S.H.dimsd == dims
+    # .T
+    assert S.T.dims == dimsd_sym
+    assert S.T.dimsd == dims
+    # negate
+    assert (-Dx).dims == dims
+    assert (-Dx).dimsd == dimsd
+    # multiply by scalar
+    assert (2 * Dx).dims == dims
+    assert (2 * Dx).dimsd == dimsd
+    assert (Dx * 2).dims == dims
+    assert (Dx * 2).dimsd == dimsd
+    # +
+    assert (Dx + Dy).dims == dims
+    assert (Dx + Dy).dimsd == dimsd
+    # -
+    assert (Dx - 2 * Dy).dims == dims
+    assert (Dx - 2 * Dy).dimsd == dimsd
+    # *
+    assert (S @ Dx).dims == dims
+    assert (S @ Dx).dimsd == dimsd_sym
+    # **
+    assert (Dx ** 3).dims == dims
+    assert (Dx ** 3).dimsd == dimsd
