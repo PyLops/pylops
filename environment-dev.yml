@@ -31,3 +31,4 @@ dependencies:
     - sphinx-gallery
     - nbsphinx
     - image
+    - flake8

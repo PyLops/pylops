@@ -91,17 +91,26 @@ that the both old and new tests pass successfully:
 
    >>  make tests
 
-7. Commit your changes and push your branch to GitLab:
+7. Run flake8 to check the quality of your code:
 
 .. code-block:: bash
 
-   >>  git add .
+   >> make lint
+
+Note that at this point we are not enforcing flake8, rather this is used as a guideline and will also be run as
+part of our CI. Make sure to limit to a minimum flake8 warnings before making a PR.
+
+8. Commit your changes and push your branch to GitHub:
+
+.. code-block:: bash
+
+   >> git add .
    >> git commit -m "Your detailed description of your changes."
    >> git push origin name-of-your-branch
 
 Remember to add ``-u`` when pushing the branch for the first time.
 
-8. Submit a pull request through the GitHub website.
+9. Submit a pull request through the GitHub website.
 
 
 Pull Request Guidelines

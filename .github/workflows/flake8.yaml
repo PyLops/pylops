@@ -1,0 +1,24 @@
+# This workflow runs Flake8 on the PR
+# For more information see: https://github.com/marketplace/actions/python-flake8-lint
+name: PyLops-flake8
+
+on: [push, pull_request]
+
+jobs:
+  flake8-lint:
+    runs-on: ubuntu-latest
+    name: Lint
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v2
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: flake8 Lint
+        uses: py-actions/flake8@v2
+        with:
+          ignore: "E203,E501,W503,E402"
+          max-line-length: "88"
+          path: "pylops"
+          args: "--per-file-ignores=__init__.py:F401,F403,F405"
