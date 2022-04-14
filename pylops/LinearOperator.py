@@ -474,18 +474,13 @@ class LinearOperator(spLinearOperator):
             self._copy_attributes(Op)
             return Op
         else:
-            dims = getattr(self, "dims", None)
-            dimsd = getattr(self, "dimsd", None)
-
-            reshape_out = False
-            if x.shape == dims and dimsd is not None:
-                reshape_out = True
+            is_dims_shaped = x.shape == self.dims
+            if is_dims_shaped:
                 x = x.ravel()
-
             if x.ndim == 1:
                 y = self.matvec(x)
-                if reshape_out:
-                    y = y.reshape(dimsd)
+                if is_dims_shaped:
+                    y = y.reshape(self.dimsd)
                 return y
             elif x.ndim == 2:
                 return self.matmat(x)
