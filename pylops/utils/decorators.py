@@ -1,8 +1,6 @@
 from functools import wraps
 from typing import Callable, Optional
 
-import numpy.typing as npt
-
 
 def reshaped(
     func: Optional[Callable] = None,
@@ -61,7 +59,7 @@ def reshaped(
         inp_dims = "dims" if forward else "dimsd"
 
         @wraps(f)
-        def wrapper(self, x: npt.NDArray):
+        def wrapper(self, x):
             x = x.reshape(getattr(self, inp_dims))
             if swapaxis:
                 x = x.swapaxes(self.axis, -1)
