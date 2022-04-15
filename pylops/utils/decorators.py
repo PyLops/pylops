@@ -24,14 +24,14 @@ def reshaped(
         If True, swaps the last axis of the input array of the decorated function with
         ``self.axis``. Only use if the decorated LinearOperator has ``axis`` attribute.
 
-    Example
-    -------
+    Notes
+    -----
     A ``_matvec`` (forward) function can be simplified from
 
     .. code-block:: python
 
         def _matvec(self, x):
-            x = np.reshape(x, self.dims)
+            x = x.reshape(self.dims)
             x = x.swapaxes(self.axis, -1)
             y = do_things_to_reshaped_swapped(y)
             y = y.swapaxes(self.axis, -1)
@@ -41,16 +41,16 @@ def reshaped(
     to
 
     .. code-block:: python
+
         @reshape(swapaxis=True)
         def _matvec(self, x):
             y = do_things_to_reshaped_swapped(y)
             return y
 
-    Notes
-    -----
     When the decorator has no arguments, it can be called without parenthesis, e.g.:
 
     .. code-block:: python
+
         @reshape
         def _matvec(self, x):
             y = do_things_to_reshaped(y)
