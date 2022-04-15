@@ -158,6 +158,15 @@ class CG(Solver):
         show : :obj:`bool`, optional
             Display setup log
 
+        Returns
+        -------
+        x : :obj:`np.ndarray`
+            Estimated model of size :math:`[N \times 1]`
+        iit : :obj:`int`
+            Number of executed iterations
+        cost : :obj:`numpy.ndarray`, optional
+            History of the L2 norm of the residual
+
         """
         self.setup(x0=x0, niter=niter, tol=tol, show=show)
         while self.iiter < niter and self.kold > self.tol:
@@ -169,6 +178,7 @@ class CG(Solver):
             self.step(show)
             self.callback(self.x)
         self.finalize(show)
+        return self.x, self.iiter, self.cost
 
 
 def cg(Op, y, x0, niter=10, tol=1e-4, show=False, callback=None):
@@ -194,7 +204,8 @@ def cg(Op, y, x0, niter=10, tol=1e-4, show=False, callback=None):
     show : :obj:`bool`, optional
         Display iterations log
     callback : :obj:`callable`, optional
-        Function with no inputs to call after each iteration
+        Function with signature (``callback(x)``) to call after each iteration
+        where ``x`` is the current model vector
 
     Returns
     -------
@@ -214,8 +225,9 @@ def cg(Op, y, x0, niter=10, tol=1e-4, show=False, callback=None):
     cgsolve = CG(Op, y)
     if callback is not None:
         cgsolve.callback = callback
-    cgsolve.solve(x0=x0, tol=tol, niter=niter, show=show)
-    return cgsolve.x, cgsolve.iiter, cgsolve.cost
+    x, iiter, cost = \
+        cgsolve.solve(x0=x0, tol=tol, niter=niter, show=show)
+    return x, iiter, cost
 
 
 def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):

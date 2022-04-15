@@ -1,8 +1,6 @@
 import time
 from abc import ABCMeta, abstractmethod
 
-import numpy as np
-
 
 class Solver(metaclass=ABCMeta):
     r"""Solver
