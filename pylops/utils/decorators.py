@@ -1,9 +1,7 @@
-from ast import Call
 from functools import wraps
+from typing import Callable, Optional
 
 import numpy.typing as npt
-
-from typing import Optional, Callable
 
 
 def reshaped(
