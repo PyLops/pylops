@@ -82,6 +82,7 @@ class LinearOperator(spLinearOperator):
         dimsd=None,
         clinear=None,
         explicit=None,
+        flattened=None,
         name=None,
     ):
         if Op is not None:
@@ -98,6 +99,9 @@ class LinearOperator(spLinearOperator):
             )
             if explicit and hasattr(Op, "A"):
                 self.A = Op.A
+            flattened = (
+                getattr(Op, "flattened", False) if flattened is None else flattened
+            )
             name = getattr(Op, "name", None) if name is None else name
 
         if dtype is not None:
@@ -112,6 +116,8 @@ class LinearOperator(spLinearOperator):
             self.clinear = clinear
         if explicit is not None:
             self.explicit = explicit
+        if flattened is not None:
+            self.flattened = flattened
         self.name = name
 
     @property
@@ -232,6 +238,18 @@ class LinearOperator(spLinearOperator):
         del self._explicit
 
     @property
+    def flattened(self):
+        return getattr(self, "_flattened", False)
+
+    @flattened.setter
+    def flattened(self, new_flattened):
+        self._flattened = bool(new_flattened)
+
+    @flattened.deleter
+    def flattened(self, new_flattened):
+        del self._flattened
+
+    @property
     def name(self):
         return getattr(self, "_name", None)
 
@@ -245,7 +263,7 @@ class LinearOperator(spLinearOperator):
 
     def _copy_attributes(self, dest, exclude=["name"]):
         """Copy attributes from one LinearOperator to another"""
-        attrs = ["dims", "dimsd", "clinear", "explicit", "name"]
+        attrs = ["dims", "dimsd", "clinear", "explicit", "flattened", "name"]
         if exclude is not None:
             for item in exclude:
                 attrs.remove(item)
@@ -301,6 +319,7 @@ class LinearOperator(spLinearOperator):
             Opx = aslinearoperator(x)
             self._copy_attributes(Op)
             Op.clinear = Op.clinear and Opx.clinear
+            Op.flattened = Op.flattened or Opx.flattened
             # Replace if shape-like
             if len(self.dims) == 1:
                 Op.dims = Opx.dims
@@ -467,6 +486,7 @@ class LinearOperator(spLinearOperator):
             Op = aslinearoperator(_ProductLinearOperator(self, x))
             self._copy_attributes(Op, exclude=["dims", "name"])
             Op.clinear = Op.clinear and x.clinear
+            Op.flattened = Op.flattened or x.flattened
             Op.dims = x.dims
             return Op
         elif np.isscalar(x):
@@ -484,12 +504,12 @@ class LinearOperator(spLinearOperator):
                 x = x.reshape((-1, x.shape[-1]))
             if x.ndim == 1:
                 y = self.matvec(x)
-                if is_dims_shaped:
+                if is_dims_shaped and not self.flattened:
                     y = y.reshape(self.dimsd)
                 return y
             elif x.ndim == 2:
                 y = self.matmat(x)
-                if is_dims_shaped_matrix:
+                if is_dims_shaped_matrix and not self.flattened:
                     y = y.reshape((*self.dimsd, -1))
                 return y
             else:
