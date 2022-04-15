@@ -46,32 +46,29 @@ class CG(Solver):
 
     def _print_setup(self):
         self.tstart = time.time()
-        if self.niter is None:
-            strpar = "tol = {self.tol:10e}\tniter = {self.niter}"
+        self._print_solver()
+
+        if self.niter is not None:
+            strpar = f"tol = {self.tol:10e}\tniter = {self.niter}"
         else:
-            strpar = "tol = {self.tol:10e}"
-        print(
-            "CG\n"
-            "-----------------------------------------------------------\n"
-            f"The Operator Op has {self.Op.shape[0]} rows and {self.Op.shape[1]} cols\n"
-        )
+            strpar = f"tol = {self.tol:10e}"
         print(strpar)
         print("-----------------------------------------------------------")
-        head1 = "    Itn           x[0]              r2norm"
+        if not np.iscomplexobj(self.x):
+            head1 = "    Itn           x[0]              r2norm"
+        else:
+            head1 = "    Itn              x[0]                  r2norm"
         print(head1)
 
     def _print_step(self):
-        if not np.iscomplex(self.x[0]):
-            msg = f"{self.iiter:6g}        {self.x[0]:11.4e}        {self.cost[self.iiter]:11.4e}"
-        else:
-            msg = f"{self.iiter:6g}    {np.real(self.x[0]):4.1e} + {np.imag(self.x[0]):4.1e}j    {self.cost[self.iiter]:11.4e}"
-        print(msg)
-
-    def _print_finalize(self):
-        print(
-            f"\nIterations = {self.iiter}        Total time (s) = {time.time() - self.tstart:.2f}"
+        strx = f"{self.x[0]:1.2e}        " if np.iscomplexobj(self.x) \
+            else f"{self.x[0]:11.4e}        "
+        msg = (
+            f"{self.iiter:6g}        " +
+            strx +
+            f"{self.cost[self.iiter]:11.4e}"
         )
-        print("-----------------------------------------------------------------\n")
+        print(msg)
 
     def setup(self, x0=None, niter=None, tol=1e-4, show=False):
         """Setup solver
@@ -90,8 +87,6 @@ class CG(Solver):
         """
         self.tol = tol
         self.niter = niter
-        if show:
-            self._print_setup()
 
         # initialize solver
         self.x0 = x0
@@ -108,6 +103,10 @@ class CG(Solver):
         self.cost = []
         self.cost.append(np.sqrt(self.kold))
         self.iiter = 0
+
+        # print setup
+        if show:
+            self._print_setup()
 
     def step(self, show=False):
         """Run one step of solver
@@ -145,31 +144,6 @@ class CG(Solver):
             self._print_finalize()
         self.cost = np.array(self.cost)
 
-    def callback(self):
-        """Callback routine
-
-        This routine must be passed by the user as follows (when using the `solve`
-        method it will be automatically invoked after each step of the solve)
-
-        Examples
-        --------
-        >>> import numpy as np
-        >>> from pylops.basicoperators import Identity
-        >>> from pylops.optimization.solver import CG
-        >>> def callback():
-        ...     print('Running callback')
-        ...
-        >>> I = Identity(10)
-        >>> I
-        <10x10 Identity with dtype=float64>
-        >>> cgsolve = CG(I, np.ones(10))
-        >>> cgsolve.callback = callback
-
-        >>> cgsolve.callback()
-        Running callback
-        """
-        pass
-
     def solve(self, x0=None, niter=10, tol=1e-4, show=False):
         """Run entire solver
 
@@ -193,7 +167,7 @@ class CG(Solver):
                 else False
             )
             self.step(show)
-            self.callback()
+            self.callback(self.x)
         self.finalize(show)
 
 

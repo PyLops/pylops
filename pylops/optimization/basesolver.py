@@ -1,11 +1,10 @@
 import time
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from pylops.utils.backend import get_array_module
 
-
-class Solver:
+class Solver(metaclass=ABCMeta):
     r"""Solver
 
     This is a template class which a user must subclass when implementing a new solver.
@@ -24,6 +23,7 @@ class Solver:
 
     and optional methods:
 
+    - ``_print_solver``: a method print on screen details of the solver (already implemented)
     - ``_print_setup``: a method print on screen details of the setup process
     - ``_print_step``: a method print on screen details of each step
     - ``_print_finalize``: a method print on screen details of the finalize process
@@ -36,6 +36,13 @@ class Solver:
         self.Op = Op
         self.y = y
 
+    def _print_solver(self):
+        print(
+            f"{type(self).__name__}\n"
+            "-----------------------------------------------------------\n"
+            f"The Operator Op has {self.Op.shape[0]} rows and {self.Op.shape[1]} cols"
+        )
+
     def _print_setup(self):
         pass
 
@@ -43,8 +50,12 @@ class Solver:
         pass
 
     def _print_finalize(self):
-        pass
+        print(
+            f"\nIterations = {self.iiter}        Total time (s) = {time.time() - self.tstart:.2f}"
+        )
+        print("-----------------------------------------------------------------\n")
 
+    @abstractmethod
     def setup(self, show=False):
         """Setup solver
 
@@ -59,6 +70,7 @@ class Solver:
         """
         pass
 
+    @abstractmethod
     def step(self, show=False):
         """Run one step of solver
 
@@ -74,6 +86,7 @@ class Solver:
         """
         pass
 
+    @abstractmethod
     def finalize(self, show=False):
         """Finalize solver
 
@@ -89,31 +102,7 @@ class Solver:
         """
         pass
 
-    def callback(self):
-        """Callback routine
-
-        This routine must be passed by the user as follows (when using the `solve`
-        method it will be automatically invoked after each step of the solve)
-
-        Examples
-        --------
-        >>> import numpy as np
-        >>> from pylops.basicoperators import Identity
-        >>> from pylops.optimization.solver import CG
-        >>> def callback():
-        ...     print('Running callback')
-        ...
-        >>> I = Identity(10)
-        >>> I
-        <10x10 Identity with dtype=float64>
-        >>> cgsolve = CG(I, np.ones(10))
-        >>> cgsolve.callback = callback
-
-        >>> cgsolve.callback()
-        Running callback
-        """
-        pass
-
+    @abstractmethod
     def solve(self, show=False):
         """Solve
 
@@ -126,3 +115,36 @@ class Solver:
             Display finalize log
 
         """
+        pass
+
+    def callback(self, x):
+        """Callback routine
+
+        This routine must be passed by the user. Its function signature must contain
+        a single input that contains the current solution (when using the `solve`
+        method it will be automatically invoked after each step of the solve)
+
+        Parameters
+        ----------
+        x : :obj:`np.ndarray`
+            Current solution
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from pylops.basicoperators import Identity
+        >>> from pylops.optimization.solver import CG
+        >>> def callback(x):
+        ...     print(f"Running callback, current solution {x}")
+        ...
+        >>> I = Identity(10)
+        >>> I
+        <10x10 Identity with dtype=float64>
+        >>> cgsolve = CG(I, np.arange(10))
+        >>> cgsolve.callback = callback
+
+        >>> x = np.ones(10)
+        >>> cgsolve.callback(x)
+        Running callback, current solution [1,1,1...]
+        """
+        pass
