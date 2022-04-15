@@ -5,6 +5,7 @@ import numpy as np
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.LinearOperator import aslinearoperator
 from pylops.signalprocessing.Sliding2D import _slidingsteps
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.tapers import taper
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -67,10 +68,12 @@ def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False, nam
         shape (``dims``).
 
     """
+    dim = _value_or_list_like_to_tuple(dim)
+    dimd = _value_or_list_like_to_tuple(dimd)
     # model windows
-    mwin_ins, mwin_ends = _slidingsteps(dim, Op.shape[1], 0)
+    mwin_ins, mwin_ends = _slidingsteps(dim[0], Op.shape[1], 0)
     # data windows
-    dwin_ins, dwin_ends = _slidingsteps(dimd, nwin, nover)
+    dwin_ins, dwin_ends = _slidingsteps(dimd[0], nwin, nover)
     nwins = len(dwin_ins)
 
     # create tapers
@@ -91,7 +94,7 @@ def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False, nam
         logging.warning("%d windows required...", nwins)
         logging.warning("model wins - start:%s, end:%s", mwin_ins, mwin_ends)
         logging.warning("data wins - start:%s, end:%s", dwin_ins, dwin_ends)
-    if nwins * Op.shape[1] != dim:
+    if nwins * Op.shape[1] != dim[0]:
         raise ValueError(
             f"Model shape (dim={dim}) is not consistent with chosen "
             f"number of windows. Choose dim={nwins * Op.shape[1]} for the "
@@ -113,6 +116,6 @@ def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", design=False, nam
         ]
     )
     Sop = aslinearoperator(combining * OOp)
-    Sop.dims, Sop.dimsd = (nwins, int(dim // nwins)), dimd
+    Sop.dims, Sop.dimsd = (nwins, int(dim[0] // nwins)), dimd
     Sop.name = name
     return Sop

@@ -39,3 +39,6 @@ doc:
 
 docupdate:
 	cd docs && make html && cd ..
+
+lint:
+	flake8 docs/ examples/ pylops/ pytests/ tutorials/

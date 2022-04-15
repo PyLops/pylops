@@ -56,7 +56,7 @@ class MatrixMult(LinearOperator):
         else:
             self.complex = np.iscomplexobj(A.data)
         if otherdims is None:
-            self.dims, self.dimsd = A.shape[1], A.shape[0]
+            self.dims, self.dimsd = (A.shape[1],), (A.shape[0],)
             self.reshape = False
             self.shape = A.shape
             explicit = True
