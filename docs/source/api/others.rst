@@ -17,6 +17,16 @@ Dot-test
 
     dottest
 
+Decorators
+--------
+
+.. currentmodule:: pylops.utils.decorators
+
+.. autosummary::
+   :toctree: generated/
+
+    reshaped
+
 Describe
 --------
 
