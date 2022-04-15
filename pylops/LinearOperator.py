@@ -475,15 +475,23 @@ class LinearOperator(spLinearOperator):
             return Op
         else:
             is_dims_shaped = x.shape == self.dims
+            is_dims_shaped_matrix = len(x.shape) > 1 and x.shape[:-1] == self.dims
             if is_dims_shaped:
+                # (dims1, ..., dimsK) => (dims1 * ... * dimsK,) == self.shape
                 x = x.ravel()
+            if is_dims_shaped_matrix:
+                # (dims1, ..., dimsK, P) => (dims1 * ... * dimsK, P)
+                x = x.reshape((-1, x.shape[-1]))
             if x.ndim == 1:
                 y = self.matvec(x)
                 if is_dims_shaped:
                     y = y.reshape(self.dimsd)
                 return y
             elif x.ndim == 2:
-                return self.matmat(x)
+                y = self.matmat(x)
+                if is_dims_shaped_matrix:
+                    y = y.reshape((*self.dimsd, -1))
+                return y
             else:
                 raise ValueError(
                     (
