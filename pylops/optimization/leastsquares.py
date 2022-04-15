@@ -108,6 +108,18 @@ def NormalEquationsInversion(
     """
     ncp = get_array_module(data)
 
+    # Ensure compatibility with SciPy functions
+    flattened_store_op = Op.flattened
+    Op.flattened = True
+    flattened_store_regs = []
+    if Regs is not None:
+        for Reg in Regs:
+            flattened_store_regs.append(Reg.flattened)
+            Reg.flattened = True
+    if Weight is not None:
+        flattened_store_w = Weight.flattened
+        Weight.flattened = True
+
     # store adjoint
     OpH = Op.H
 
@@ -160,6 +172,14 @@ def NormalEquationsInversion(
         istop = None
     if x0 is not None:
         xinv = x0 + xinv
+
+    # Restore original flattened
+    Op.flattened = flattened_store_op
+    if Regs is not None:
+        for flattened, Reg in zip(flattened_store_regs, Regs):
+            Reg.flattened = flattened
+    if Weight is not None:
+        Weight.flattened = flattened_store_w
 
     if returninfo:
         return xinv, istop
