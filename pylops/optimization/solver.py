@@ -141,7 +141,7 @@ class CG(Solver):
             self._print_finalize()
         self.cost = np.array(self.cost)
 
-    def solve(self, y, x0=None, niter=10, tol=1e-4, show=False):
+    def solve(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10]):
         """Run entire solver
 
         Parameters
@@ -155,7 +155,11 @@ class CG(Solver):
         tol : :obj:`float`, optional
             Tolerance on residual norm
         show : :obj:`bool`, optional
-            Display setup log
+            Display logs
+        itershow : :obj:`list`, optional
+            Display set log for the first N1 steps, last N2 steps,
+            and every N3 steps in between where N1, N2, N3 are the
+            three element of the list.
 
         Returns
         -------
@@ -171,7 +175,7 @@ class CG(Solver):
         while self.iiter < niter and self.kold > self.tol:
             show = (
                 True
-                if self.iiter < 10 or niter - self.iiter < 10 or self.iiter % 10 == 0
+                if self.iiter < itershow[0] or niter - self.iiter < itershow[1] or self.iiter % itershow[2] == 0
                 else False
             )
             x = self.step(x, show)
