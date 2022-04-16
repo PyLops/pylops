@@ -306,5 +306,7 @@ def test_non_flattened_arrays(par):
     assert_array_equal(Y_S, (S @ D @ X_1d).reshape((*S.dimsd, -1)))
 
     D.flattened = True
-    assert_array_equal(D @ x_1d, D @ x_nd)
-    assert_array_equal(S @ D @ x_1d, S @ D @ x_nd)
+    with pytest.raises(ValueError):
+        D @ x_nd
+    with pytest.raises(ValueError):
+        D @ X_nd

@@ -494,6 +494,12 @@ class LinearOperator(spLinearOperator):
             self._copy_attributes(Op)
             return Op
         else:
+            if self.flattened and (
+                x.ndim > 2 or (x.ndim == 2 and x.shape[0] != self.shape[1])
+            ):
+                raise ValueError(
+                    "A flattened operator can only be applied 1D vectors or 2D matrices"
+                )
             is_dims_shaped = x.shape == self.dims
             is_dims_shaped_matrix = len(x.shape) > 1 and x.shape[:-1] == self.dims
             if is_dims_shaped:
