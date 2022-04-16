@@ -16,17 +16,6 @@ class CG(Solver):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert of size :math:`[N \times N]`
-    y : :obj:`np.ndarray`
-        Data of size :math:`[N \times 1]`
-
-    Attributes
-    ----------
-    x : :obj:`np.ndarray`
-        Estimated model of size :math:`[N \times 1]`
-    iit : :obj:`int`
-        Number of executed iterations
-    cost : :obj:`numpy.ndarray`, optional
-        History of the L2 norm of the residual
 
     Notes
     -----
@@ -39,13 +28,7 @@ class CG(Solver):
 
     """
 
-    def __init__(self, Op, y):
-        self.Op = Op
-        self.y = y
-        self.ncp = get_array_module(y)
-
-    def _print_setup(self):
-        self.tstart = time.time()
+    def _print_setup(self, xcomplex=False):
         self._print_solver()
 
         if self.niter is not None:
@@ -54,48 +37,56 @@ class CG(Solver):
             strpar = f"tol = {self.tol:10e}"
         print(strpar)
         print("-----------------------------------------------------------")
-        if not np.iscomplexobj(self.x):
+        if not xcomplex:
             head1 = "    Itn           x[0]              r2norm"
         else:
             head1 = "    Itn              x[0]                  r2norm"
         print(head1)
 
-    def _print_step(self):
-        strx = f"{self.x[0]:1.2e}        " if np.iscomplexobj(self.x) \
-            else f"{self.x[0]:11.4e}        "
+    def _print_step(self, x):
+        strx = f"{x[0]:1.2e}        " if np.iscomplexobj(x) \
+            else f"{x[0]:11.4e}        "
         msg = (
-            f"{self.iiter:6g}        " +
-            strx +
-            f"{self.cost[self.iiter]:11.4e}"
+            f"{self.iiter:6g}        " + strx + f"{self.cost[self.iiter]:11.4e}"
         )
         print(msg)
 
-    def setup(self, x0=None, niter=None, tol=1e-4, show=False):
+    def setup(self, y=None, x0=None, niter=None, tol=1e-4, show=False):
         """Setup solver
 
         Parameters
         ----------
-        x0 : :obj:`np.ndarray`, optional
-            Initial guess
+        y : :obj:`np.ndarray`
+            Data of size :math:`[N \times 1]`
+        x0 : :obj:`np.ndarray`
+            Initial guess of size :math:`[N \times 1]`. If ``None``, initialize
+            internally as zero vector
         niter : :obj:`int`, optional
-            Number of iterations
+            Number of iterations (default to ``None`` in case a user wants to
+            manually step over the solver)
         tol : :obj:`float`, optional
             Tolerance on residual norm
         show : :obj:`bool`, optional
             Display setup log
 
+        Returns
+        -------
+        x : :obj:`np.ndarray`
+            Initial guess of size :math:`[N \times 1]`
+
         """
+        self.y = y
         self.tol = tol
         self.niter = niter
+        self.ncp = get_array_module(y)
 
         # initialize solver
-        self.x0 = x0
-        if self.x0 is None:
-            self.x = self.ncp.zeros(self.Op.shape[1], dtype=self.y.dtype)
+        if x0 is None:
+            x = self.ncp.zeros(self.Op.shape[1], dtype=self.y.dtype)
             self.r = self.y.copy()
         else:
-            self.x = self.x0.copy()
-            self.r = self.y - self.Op.matvec(self.x)
+            x = x0.copy()
+            self.r = self.y - self.Op.matvec(x)
         self.c = self.r.copy()
         self.kold = self.ncp.abs(self.r.dot(self.r.conj()))
 
@@ -106,13 +97,16 @@ class CG(Solver):
 
         # print setup
         if show:
-            self._print_setup()
+            self._print_setup(np.iscomplexobj(x))
+        return x
 
-    def step(self, show=False):
+    def step(self, x, show=False):
         """Run one step of solver
 
         Parameters
         ----------
+        x : :obj:`np.ndarray`
+            Current model vector to be updated by a step of CG
         show : :obj:`bool`, optional
             Display iteration log
 
@@ -120,7 +114,7 @@ class CG(Solver):
         Opc = self.Op.matvec(self.c)
         cOpc = self.ncp.abs(self.c.dot(Opc.conj()))
         a = self.kold / cOpc
-        self.x += a * self.c
+        x += a * self.c
         self.r -= a * Opc
         k = self.ncp.abs(self.r.dot(self.r.conj()))
         b = k / self.kold
@@ -129,7 +123,8 @@ class CG(Solver):
         self.iiter += 1
         self.cost.append(np.sqrt(self.kold))
         if show:
-            self._print_step()
+            self._print_step(x)
+        return x
 
     def finalize(self, show=False):
         """Finalize solver
@@ -140,15 +135,19 @@ class CG(Solver):
             Display finalize log
 
         """
+        self.tend = time.time()
+        self.telapsed = self.tend - self.tstart
         if show:
             self._print_finalize()
         self.cost = np.array(self.cost)
 
-    def solve(self, x0=None, niter=10, tol=1e-4, show=False):
+    def solve(self, y, x0=None, niter=10, tol=1e-4, show=False):
         """Run entire solver
 
         Parameters
         ----------
+        y : :obj:`np.ndarray`
+            Data of size :math:`[N \times 1]`
         x0 : :obj:`np.ndarray`, optional
             Initial guess
         niter : :obj:`int`, optional
@@ -168,17 +167,17 @@ class CG(Solver):
             History of the L2 norm of the residual
 
         """
-        self.setup(x0=x0, niter=niter, tol=tol, show=show)
+        x = self.setup(y=y, x0=x0, niter=niter, tol=tol, show=show)
         while self.iiter < niter and self.kold > self.tol:
             show = (
                 True
                 if self.iiter < 10 or niter - self.iiter < 10 or self.iiter % 10 == 0
                 else False
             )
-            self.step(show)
-            self.callback(self.x)
+            x = self.step(x, show)
+            self.callback(x)
         self.finalize(show)
-        return self.x, self.iiter, self.cost
+        return x, self.iiter, self.cost
 
 
 def cg(Op, y, x0, niter=10, tol=1e-4, show=False, callback=None):
@@ -222,11 +221,11 @@ def cg(Op, y, x0, niter=10, tol=1e-4, show=False, callback=None):
     using conjugate gradient iterations.
 
     """
-    cgsolve = CG(Op, y)
+    cgsolve = CG(Op)
     if callback is not None:
         cgsolve.callback = callback
     x, iiter, cost = \
-        cgsolve.solve(x0=x0, tol=tol, niter=niter, show=show)
+        cgsolve.solve(y=y, x0=x0, tol=tol, niter=niter, show=show)
     return x, iiter, cost
 
 

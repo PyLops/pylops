@@ -25,10 +25,13 @@ This varies from solver to solver, however you will always need to import the
 Moreover, we always reccomend to import  :py:func:` pylops.utils.backend.get_array_module` as solvers should be written
 in such a way that work both on numpy and cupy array. See later for details.
 
-
 .. code-block:: python
 
-   from pylops.optimization._basesolver import Solver
+    import time
+
+    import numpy as np time
+
+    from pylops.optimization.basesolver import Solver
     from pylops.utils.backend import get_array_module
 
 
@@ -36,7 +39,7 @@ After that we define our new object:
 
 .. code-block:: python
 
-   class CG(Solver):
+    class CG(Solver):
 
 followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html/>`_
 (starting with ``r"""`` and ending with ``"""``) containing the documentation of the solver. Such docstring should
@@ -45,27 +48,31 @@ input parameters and a ``Notes`` section providing a reference to the original s
 mathematical explanation of the solver. Take a look at some of the core solver of PyLops to get a feeling
 of the level of details of the mathematical explanation.
 
-We then need to create the ``__init__`` where two input parameters are passed and saved as members of our class, namely
-the operator :math:`\mathbf{Op}` and data :math:`\mathbf{y}` associated with the system of equations we wish to solve,
-:math:`\mathbf{y}=\mathbf{Opx}`. Moreover, an additional parameters must be initilized, which identifies whether numpy
-or cupy methods will be used within the solver. This is automatically chosen based on the type of the data vector.
+As for any Python class, our solver will need ``__init__`` method. In this case, however, we will just rely on that
+of the base class. A single input parameters is passed to the ``__init__`` method and saved as members of our class,
+namely the operator :math:`\mathbf{Op}` associated with the system of equations we wish to solve,
+:math:`\mathbf{y}=\mathbf{Opx}`. Moreover, an additional parameters is created that contains the current time (this
+is used later to report the execution time of the solver). Here is the ``__init__`` method of the base class:
 
 .. code-block:: python
 
-    def __init__(self, Op, y):
+    def __init__(self, Op):
         self.Op = Op
-        self.y = y
-        self.niter = None
-        self.ncp = get_array_module(y)
+        self.tstart = time.time()
 
 We can then move onto writing the *setup* of the solver in the method ``setup``. We will need to write
 a piece of code that prepares the solver prior to being able to apply a step. In general, this requires defining the
-initial guess of the solver `x0` (otherwise automatically chosen to be a zero vector) and various parameters involved
-in the stopping criterion. For example in this case we only have two parameters: `niter` refers to the maximum allowed
-number of iterations, and `tol` to tolerance on the residual norm (the solver will be stopped if this is smaller than
-the chosen tolerance). Moreover, we always have the possibility to decide whether we want to operate the solver
-(in this case its setup part) in verbose or silent mode. This is driven by the `show` parameter. We will soon discuss
-how to choose what to print on screen in case of verbose mode (`show=True`).
+data vector ``y``, the initial guess of the solver ``x0`` (if not provided, this will be automatically set to be a zero
+vector), and various hyperparameters of the solver - e.g., those involved in the stopping criterion. For example in
+this case we only have two parameters: ``niter`` refers to the maximum allowed number of iterations, and `tol` to
+tolerance on the residual norm (the solver will be stopped if this is smaller than the chosen tolerance). Moreover,
+we always have the possibility to decide whether we want to operate the solver (in this case its setup part) in verbose
+or silent mode. This is driven by the ``show`` parameter. We will soon discuss how to choose what to print on screen in
+case of verbose mode (``show=True``). The setup method can be loosely seen as composed of 3 parts. First, the data
+vector and hyperparamters are stored as members of the class. Moreover the type of the ``y`` vector is checked to
+evaluate whether to use numpy or cupy for algebraic operations (this is done by ``self.ncp = get_array_module(y)``).
+Second, the starting guess is initialized using either the provided vector ``x0`` or a zero vector. Finally, a number
+of variables are initialized to be used inside the ``step`` method to keep track of the optimization process.
 
 .. code-block:: python
 
@@ -91,18 +98,18 @@ how to choose what to print on screen in case of verbose mode (`show=True`).
         self.cost.append(np.sqrt(self.kold))
         self.iiter = 0
 
-At this point, we need to implement the core of the solver, its `step`. Here, we take the input at previous iterate and
-update it following the rule of the solver of choice. In general, the only input parameter required by this method is
-`show` to choose whether we want to print a report of the step on screen or not. However, if appropriate, a user can add
-additional input parameters. For CG, the step is:
+At this point, we need to implement the core of the solver, its `step`. Here, we take the input at previous iterate,
+update it following the rule of the solver of choice, and return it. The other input parameter required by this method
+is ``show`` to choose whether we want to print a report of the step on screen or not. However, if appropriate, a user
+can add additional input parameters. For CG, the step is:
 
 .. code-block:: python
 
-    def step(self, show=False):
+    def step(self, x, show=False):
         Opc = self.Op.matvec(self.c)
         cOpc = self.ncp.abs(self.c.dot(Opc.conj()))
         a = self.kold / cOpc
-        self.x += a * self.c
+        x += a * self.c
         self.r -= a * Opc
         k = self.ncp.abs(self.r.dot(self.r.conj()))
         b = k / self.kold
@@ -110,26 +117,48 @@ additional input parameters. For CG, the step is:
         self.kold = k
         self.iiter += 1
         self.cost.append(np.sqrt(self.kold))
-        if show: self._print_step()
+        if show:
+            self._print_step(x)
+        return x
 
-Finally, we want to also implement a finalize method; this method can do any required post-processing that should
+It is also usually convenient to implement a finalize method; this method can do any required post-processing that should
 not be applied at the end of each step, rather at the end of the entire optimization process. For CG, this is as simple
-as converting the `cost` variable from a list to a numpy array. And that's it, we have implemented our first solver operator!
+as converting the ``cost`` variable from a list to a numpy array.
+
+Last but not least, we can wrap it all up in the ``solve`` method. This method takes as input the data, initial
+model and the same hyperparameters of setup and runs the entire optimization process. For CG:
+
+.. code-block:: python
+
+    def step(self, y, x0=None, niter=10, tol=1e-4, show=False):
+        x = self.setup(y=y, x0=x0, niter=niter, tol=tol, show=show)
+        while self.iiter < niter and self.kold > self.tol:
+            show = (
+                True
+                if self.iiter < 10 or niter - self.iiter < 10 or self.iiter % 10 == 0
+                else False
+            )
+            x = self.step(x, show)
+            self.callback(x)
+        self.finalize(show)
+        return x, self.iiter, self.cost
+
+And that's it, we have implemented our first solver operator!
 
 Although the methods that we just described are enough to implement any solver of choice, we find important to provide
 users with feedback during the inversion process. Imagine that the modelling operator is very expensive and can take
 minutes (or even hours to run), we don't want to leave a user waiting for hours before they can tell if the solver has
 done something meaningful. To avoid such scenario, we can implement so called `_print_*` methods where
-`*=setup, step, finalize` that print on screen some useful information (e.g., first value of the current estimate,
-norm of residual, etc.). When these methods are implemented and a user passes `show=True` to the associated method, our
-solver will provide such information on screen throughout the inverse process. To better understand how to write such
-methods, we suggest to look into the source code of the CG method.
+``*=solver, setup, step, finalize`` that print on screen some useful information (e.g., first value of the current
+estimate, norm of residual, etc.). The ``solver`` and ``finalize`` print are alreadly implemented in the base class,
+the other two must be implemented when creating a new solver. When these methods are implemented and a user passes
+``show=True`` to the associated method, our solver will provide such information on screen throughout the inverse
+process. To better understand how to write such methods, we suggest to look into the source code of the CG method.
 
 Finally, to be backward compatible with versions of PyLops `<v2.0.0`, we should always create a function with the same
 name of the class-based solver (but in small letters) which simply instantiates the solver and runs it. This function
 generally takes all the mandatory and optional parameters of the solver as input and returns some of the most valuable
 properties of the class-based solver object. An example for `CG` is:
-
 
 .. code-block:: python
 

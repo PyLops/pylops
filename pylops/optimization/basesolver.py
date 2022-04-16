@@ -8,8 +8,7 @@ class Solver(metaclass=ABCMeta):
     This is a template class which a user must subclass when implementing a new solver.
     This class comprises of the following mantatory methods:
 
-    - ``__init__``: initialization method to which the operator `Op` and data `y` must
-      be passed
+    - ``__init__``: initialization method to which the operator `Op` must be passed
     - ``setup``: a method that is invoked to setup the solver, basically it will create
       anything required prior to applying a step of the solver
     - ``step``: a method applying a single step of the solver
@@ -30,9 +29,9 @@ class Solver(metaclass=ABCMeta):
 
     """
 
-    def __init__(self, Op, y):
+    def __init__(self, Op):
         self.Op = Op
-        self.y = y
+        self.tstart = time.time()
 
     def _print_solver(self):
         print(
@@ -49,12 +48,12 @@ class Solver(metaclass=ABCMeta):
 
     def _print_finalize(self):
         print(
-            f"\nIterations = {self.iiter}        Total time (s) = {time.time() - self.tstart:.2f}"
+            f"\nIterations = {self.iiter}        Total time (s) = {self.telapsed:.2f}"
         )
         print("-----------------------------------------------------------------\n")
 
     @abstractmethod
-    def setup(self, show=False):
+    def setup(self, y, show=False):
         """Setup solver
 
         This method is used to setup the solver. Users can change the function signature
@@ -62,6 +61,8 @@ class Solver(metaclass=ABCMeta):
 
         Parameters
         ----------
+        y : :obj:`np.ndarray`
+            Data of size :math:`[N \times 1]`
         show : :obj:`bool`, optional
             Display setup log
 
@@ -69,7 +70,7 @@ class Solver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def step(self, show=False):
+    def step(self, x, show=False):
         """Run one step of solver
 
         This method is used to run one step of the solver. Users can change the
@@ -78,6 +79,8 @@ class Solver(metaclass=ABCMeta):
 
         Parameters
         ----------
+        x : :obj:`np.ndarray`
+            Current model vector to be updated by a step of the solver
         show : :obj:`bool`, optional
             Display iteration log
 
@@ -101,7 +104,7 @@ class Solver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def solve(self, show=False):
+    def solve(self, y, show=False):
         """Solve
 
         This method is used to run the entire optimization process. Users can change the
@@ -109,6 +112,8 @@ class Solver(metaclass=ABCMeta):
 
         Parameters
         ----------
+        y : :obj:`np.ndarray`
+            Data
         show : :obj:`bool`, optional
             Display finalize log
 
