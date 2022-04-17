@@ -66,6 +66,17 @@ class LinearOperator(spLinearOperator):
         .. versionadded:: 1.17.0
 
         Operator is complex-linear. Defaults to ``True``.
+    flattened : :obj:`bool`, optional
+        .. versionadded:: 2.0.0
+
+        Defaults to ``False``. If ``False``, multiplications by N-dimensional arrays
+        are accepted if they have shape ``dims`` or ``(*dims, P)``. For an ``(M, N)``
+        operator, the respective outputs will have shaped ``dimsd`` and
+        ``(*dimsd, P)``.
+
+        When ``True``, the operator only multiplies flattened inputs, that is,
+        arrays with shapes ``(N,)`` or ``(N, P)``. The respective outputs will have
+        shapes ``(M,)`` and ``(M, P)``. This behavior is equivalent to PyLops v1.x.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
