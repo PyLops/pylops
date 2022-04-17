@@ -1,12 +1,7 @@
 from functools import wraps
-from typing import Callable, Optional
 
 
-def reshaped(
-    func: Optional[Callable] = None,
-    forward: Optional[bool] = None,
-    swapaxis: Optional[bool] = False,
-) -> Callable:
+def reshaped(func=None, forward=None, swapaxis=False):
     """Decorator for the common reshape/flatten pattern used in many operators.
 
     Parameters
@@ -54,7 +49,7 @@ def reshaped(
 
     """
 
-    def decorator(f: Callable):
+    def decorator(f):
         forward = "rmat" not in f.__name__
         inp_dims = "dims" if forward else "dimsd"
 
