@@ -157,6 +157,7 @@ Basic (class-based)
    :toctree: generated/
 
     solver.CG
+    solver.CGLS
 
 Basic (function-based)
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -166,8 +167,6 @@ Basic (function-based)
 .. autosummary::
    :toctree: generated/
 
-    solver.cg
-    solver.cgls
     solver.lsqr
 
 Least-squares

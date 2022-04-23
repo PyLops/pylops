@@ -44,11 +44,8 @@ class CG(Solver):
         print(head1)
 
     def _print_step(self, x):
-        strx = f"{x[0]:1.2e}        " if np.iscomplexobj(x) \
-            else f"{x[0]:11.4e}        "
-        msg = (
-            f"{self.iiter:6g}        " + strx + f"{self.cost[self.iiter]:11.4e}"
-        )
+        strx = f"{x[0]:1.2e}        " if np.iscomplexobj(x) else f"{x[0]:11.4e}        "
+        msg = f"{self.iiter:6g}        " + strx + f"{self.cost[self.iiter]:11.4e}"
         print(msg)
 
     def setup(self, y=None, x0=None, niter=None, tol=1e-4, show=False):
@@ -137,9 +134,9 @@ class CG(Solver):
         """
         self.tend = time.time()
         self.telapsed = self.tend - self.tstart
+        self.cost = np.array(self.cost)
         if show:
             self._print_finalize()
-        self.cost = np.array(self.cost)
 
     def solve(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10]):
         """Run entire solver
@@ -175,7 +172,9 @@ class CG(Solver):
         while self.iiter < niter and self.kold > self.tol:
             show = (
                 True
-                if self.iiter < itershow[0] or niter - self.iiter < itershow[1] or self.iiter % itershow[2] == 0
+                if self.iiter < itershow[0]
+                or niter - self.iiter < itershow[1]
+                or self.iiter % itershow[2] == 0
                 else False
             )
             x = self.step(x, show)
@@ -184,7 +183,7 @@ class CG(Solver):
         return x, self.iiter, self.cost
 
 
-def cg(Op, y, x0, niter=10, tol=1e-4, show=False, callback=None):
+def cg(Op, y, x0, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10], callback=None):
     r"""Conjugate gradient
 
     Solve a square system of equations given an operator ``Op`` and
@@ -206,6 +205,10 @@ def cg(Op, y, x0, niter=10, tol=1e-4, show=False, callback=None):
         Tolerance on residual norm
     show : :obj:`bool`, optional
         Display iterations log
+    itershow : :obj:`list`, optional
+            Display set log for the first N1 steps, last N2 steps,
+            and every N3 steps in between where N1, N2, N3 are the
+            three element of the list.
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
@@ -221,19 +224,263 @@ def cg(Op, y, x0, niter=10, tol=1e-4, show=False, callback=None):
 
     Notes
     -----
-    Solve the :math:`\mathbf{y} = \mathbf{Opx}` problem
-    using conjugate gradient iterations.
+    See :class:`pylops.optimization.solver.CG`
 
     """
     cgsolve = CG(Op)
     if callback is not None:
         cgsolve.callback = callback
-    x, iiter, cost = \
-        cgsolve.solve(y=y, x0=x0, tol=tol, niter=niter, show=show)
+    x, iiter, cost = cgsolve.solve(
+        y=y, x0=x0, tol=tol, niter=niter, show=show, itershow=itershow
+    )
     return x, iiter, cost
 
 
-def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
+class CGLS(Solver):
+    r"""Conjugate gradient least squares
+
+    Solve an overdetermined system of equations given an operator ``Op`` and
+    data ``y`` using conjugate gradient iterations.
+
+    Parameters
+    ----------
+    Op : :obj:`pylops.LinearOperator`
+        Operator to invert of size :math:`[N \times N]`
+
+    Notes
+    -----
+    Minimize the following functional using conjugate gradient iterations:
+
+    .. math::
+        J = || \mathbf{y} -  \mathbf{Opx} ||_2^2 +
+        \epsilon^2 || \mathbf{x} ||_2^2
+
+    where :math:`\epsilon` is the damping coefficient.
+
+    """
+
+    def _print_setup(self, xcomplex=False):
+        self._print_solver()
+
+        if self.niter is not None:
+            strpar = (
+                f"damp = {self.damp:10e}\ttol = {self.tol:10e}\tniter = {self.niter}"
+            )
+        else:
+            strpar = f"damp = {self.damp:10e}\ttol = {self.tol:10e}\t"
+        print(strpar)
+        print("-----------------------------------------------------------")
+        if not xcomplex:
+            head1 = "    Itn          x[0]              r1norm         r2norm"
+        else:
+            head1 = "    Itn             x[0]             r1norm         r2norm"
+        print(head1)
+
+    def _print_step(self, x):
+        strx = f"{x[0]:1.2e}   " if np.iscomplexobj(x) else f"{x[0]:11.4e}        "
+        msg = (
+            f"{self.iiter:6g}       "
+            + strx
+            + f"{self.cost[self.iiter]:11.4e}    {self.cost1[self.iiter]:11.4e}"
+        )
+        print(msg)
+
+    def setup(self, y=None, x0=None, niter=None, damp=0.0, tol=1e-4, show=False):
+        """Setup solver
+
+        Parameters
+        ----------
+        y : :obj:`np.ndarray`
+            Data of size :math:`[N \times 1]`
+        x0 : :obj:`np.ndarray`
+            Initial guess  of size :math:`[M \times 1]`. If ``None``, initialize
+            internally as zero vector
+        niter : :obj:`int`, optional
+            Number of iterations (default to ``None`` in case a user wants to
+            manually step over the solver)
+        damp : :obj:`float`, optional
+            Damping coefficient
+        tol : :obj:`float`, optional
+            Tolerance on residual norm
+        show : :obj:`bool`, optional
+            Display setup log
+
+        Returns
+        -------
+        x : :obj:`np.ndarray`
+            Initial guess of size :math:`[N \times 1]`
+
+        """
+        self.y = y
+        self.damp = damp**2
+        self.tol = tol
+        self.niter = niter
+        self.ncp = get_array_module(y)
+
+        # initialize solver
+        if x0 is None:
+            x = self.ncp.zeros(self.Op.shape[1], dtype=y.dtype)
+            self.s = self.y.copy()
+            r = self.Op.rmatvec(self.s)
+        else:
+            x = x0.copy()
+            self.s = self.y - self.Op.matvec(x)
+            r = self.Op.rmatvec(self.s) - damp * x
+        self.c = r.copy()
+        self.q = self.Op.matvec(self.c)
+        self.kold = self.ncp.abs(r.dot(r.conj()))
+
+        # create variables to track the residual norm and iterations
+        self.cost = []
+        self.cost1 = []
+        self.cost.append(self.ncp.linalg.norm(self.s))
+        self.cost1.append(
+            self.ncp.sqrt(self.cost[0] ** 2 + damp * self.ncp.abs(x.dot(x.conj())))
+        )
+        self.iiter = 0
+
+        # print setup
+        if show:
+            self._print_setup(np.iscomplexobj(x))
+        return x
+
+    def step(self, x, show=False):
+        """Run one step of solver
+
+        Parameters
+        ----------
+        x : :obj:`np.ndarray`
+            Current model vector to be updated by a step of CG
+        show : :obj:`bool`, optional
+            Display iteration log
+
+        """
+        a = self.kold / (
+            self.q.dot(self.q.conj()) + self.damp * self.c.dot(self.c.conj())
+        )
+        x = x + a * self.c
+        self.s = self.s - a * self.q
+        r = self.Op.rmatvec(self.s) - self.damp * x
+        k = self.ncp.abs(r.dot(r.conj()))
+        b = k / self.kold
+        self.c = r + b * self.c
+        self.q = self.Op.matvec(self.c)
+        self.kold = k
+        self.iiter += 1
+        self.cost.append(self.ncp.linalg.norm(self.s))
+        self.cost1.append(
+            self.ncp.sqrt(
+                self.cost[self.iiter] ** 2 + self.damp * self.ncp.abs(x.dot(x.conj()))
+            )
+        )
+        if show:
+            self._print_step(x)
+        return x
+
+    def finalize(self, show=False):
+        """Finalize solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display finalize log
+
+        """
+        self.tend = time.time()
+        self.telapsed = self.tend - self.tstart
+        # reason for termination
+        self.istop = 1 if self.kold < self.tol else 2
+        self.r1norm = self.kold
+        self.r2norm = self.cost1[self.iiter]
+        if show:
+            self._print_finalize()
+        self.cost = np.array(self.cost)
+
+    def solve(
+        self,
+        y,
+        x0=None,
+        niter=10,
+        damp=0.0,
+        tol=1e-4,
+        show=False,
+        itershow=[10, 10, 10],
+    ):
+        """Run entire solver
+
+        Parameters
+        ----------
+        y : :obj:`np.ndarray`
+            Data of size :math:`[N \times 1]`
+        x0 : :obj:`np.ndarray`
+            Initial guess  of size :math:`[M \times 1]`. If ``None``, initialize
+            internally as zero vector
+        niter : :obj:`int`, optional
+            Number of iterations (default to ``None`` in case a user wants to
+            manually step over the solver)
+        damp : :obj:`float`, optional
+            Damping coefficient
+        tol : :obj:`float`, optional
+            Tolerance on residual norm
+        show : :obj:`bool`, optional
+            Display setup log
+        itershow : :obj:`list`, optional
+            Display set log for the first N1 steps, last N2 steps,
+            and every N3 steps in between where N1, N2, N3 are the
+            three element of the list.
+
+        Returns
+        -------
+        x : :obj:`np.ndarray`
+        Estimated model of size :math:`[M \times 1]`
+        istop : :obj:`int`
+            Gives the reason for termination
+
+            ``1`` means :math:`\mathbf{x}` is an approximate solution to
+            :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
+
+            ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
+            problem
+        iit : :obj:`int`
+            Iteration number upon termination
+        r1norm : :obj:`float`
+            :math:`||\mathbf{r}||_2`, where
+            :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\,\mathbf{x}`
+        r2norm : :obj:`float`
+            :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
+            \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
+            Equal to ``r1norm`` if :math:`\epsilon=0`
+        cost : :obj:`numpy.ndarray`, optional
+            History of r1norm through iterations
+
+
+        """
+        x = self.setup(y=y, x0=x0, niter=niter, damp=damp, tol=tol, show=show)
+        while self.iiter < niter and self.kold > self.tol:
+            show = (
+                True
+                if self.iiter < itershow[0]
+                or niter - self.iiter < itershow[1]
+                or self.iiter % itershow[2] == 0
+                else False
+            )
+            x = self.step(x, show)
+            self.callback(x)
+        self.finalize(show)
+        return x, self.istop, self.iiter, self.r1norm, self.r2norm, self.cost
+
+
+def cgls(
+    Op,
+    y,
+    x0,
+    niter=10,
+    damp=0.0,
+    tol=1e-4,
+    show=False,
+    itershow=[10, 10, 10],
+    callback=None,
+):
     r"""Conjugate gradient least squares
 
     Solve an overdetermined system of equations given an operator ``Op`` and
@@ -255,6 +502,10 @@ def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
         Tolerance on residual norm
     show : :obj:`bool`, optional
         Display iterations log
+    itershow : :obj:`list`, optional
+            Display set log for the first N1 steps, last N2 steps,
+            and every N3 steps in between where N1, N2, N3 are the
+            three element of the list.
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
@@ -285,90 +536,17 @@ def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
 
     Notes
     -----
-    Minimize the following functional using conjugate gradient iterations:
+    See :class:`pylops.optimization.solver.CGLS`
 
-    .. math::
-        J = || \mathbf{y} -  \mathbf{Opx} ||_2^2 +
-        \epsilon^2 || \mathbf{x} ||_2^2
-
-    where :math:`\epsilon` is the damping coefficient.
 
     """
-    ncp = get_array_module(y)
-
-    if show:
-        tstart = time.time()
-        print(
-            "CGLS\n"
-            "-----------------------------------------------------------\n"
-            f"The Operator Op has {Op.shape[0]} rows and {Op.shape[1]} cols\n"
-            f"damp = {damp:10e}\ttol = {tol:10e}\tniter = {niter}"
-        )
-        print("-----------------------------------------------------------")
-        head1 = "    Itn           x[0]              r1norm          r2norm"
-        print(head1)
-
-    damp = damp ** 2
-    if x0 is None:
-        x = ncp.zeros(Op.shape[1], dtype=y.dtype)
-        s = y.copy()
-        r = Op.rmatvec(s)
-    else:
-        x = x0.copy()
-        s = y - Op.matvec(x)
-        r = Op.rmatvec(s) - damp * x
-    c = r.copy()
-    q = Op.matvec(c)
-    kold = ncp.abs(r.dot(r.conj()))
-
-    cost = np.zeros(niter + 1)
-    cost1 = np.zeros(niter + 1)
-    cost[0] = ncp.linalg.norm(s)
-    cost1[0] = ncp.sqrt(cost[0] ** 2 + damp * ncp.abs(x.dot(x.conj())))
-
-    iiter = 0
-    while iiter < niter and kold > tol:
-        a = kold / (q.dot(q.conj()) + damp * c.dot(c.conj()))
-        x = x + a * c
-        s = s - a * q
-        r = Op.rmatvec(s) - damp * x
-        k = ncp.abs(r.dot(r.conj()))
-        b = k / kold
-        c = r + b * c
-        q = Op.matvec(c)
-        kold = k
-        iiter += 1
-        cost[iiter] = ncp.linalg.norm(s)
-        cost1[iiter] = ncp.sqrt(cost[iiter] ** 2 + damp * ncp.abs(x.dot(x.conj())))
-
-        # run callback
-        if callback is not None:
-            callback(x)
-
-        if show:
-            if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
-                if not np.iscomplex(x[0]):
-                    msg = (
-                        f"{iiter:6g}        {x[0]:11.4e}        "
-                        f"{cost[iiter]:11.4e}     {cost1[iiter]:11.4e}"
-                    )
-                else:
-                    msg = (
-                        f"{iiter:6g}    {np.real(x[0]):4.1e} + {np.imag(x[0]):4.1e}j    "
-                        f"{cost[iiter]:11.4e}     {cost1[iiter]:11.4e}"
-                    )
-                print(msg)
-    if show:
-        print(
-            f"\nIterations = {iiter}        Total time (s) = {time.time() - tstart:.2f}"
-        )
-        print("-----------------------------------------------------------------\n")
-
-    # reason for termination
-    istop = 1 if kold < tol else 2
-    r1norm = kold
-    r2norm = cost1[iiter]
-    return x, istop, iiter, r1norm, r2norm, cost[:iiter]
+    cgsolve = CGLS(Op)
+    if callback is not None:
+        cgsolve.callback = callback
+    x, istop, iiter, r1norm, r2norm, cost = cgsolve.solve(
+        y=y, x0=x0, tol=tol, niter=niter, show=show, itershow=itershow
+    )
+    return x, istop, iiter, r1norm, r2norm, cost
 
 
 def lsqr(
@@ -530,7 +708,7 @@ def lsqr(
         ctol = 1.0 / conlim
     anorm = 0
     acond = 0
-    dampsq = damp ** 2
+    dampsq = damp**2
     ddnorm = 0
     res2 = 0
     xnorm = 0
@@ -639,18 +817,18 @@ def lsqr(
         gambar = -cs2 * rho
         rhs = phi - delta * z
         zbar = rhs / gambar
-        xnorm = ncp.sqrt(xxnorm + zbar ** 2)
+        xnorm = ncp.sqrt(xxnorm + zbar**2)
         gamma = np.linalg.norm([gambar, theta])
         cs2 = gambar / gamma
         sn2 = theta / gamma
         z = rhs / gamma
-        xxnorm = xxnorm + z ** 2.0
+        xxnorm = xxnorm + z**2.0
 
         # test for convergence. First, estimate the condition of the matrix
         # Opbar, and the norms of rbar and Opbar'rbar
         acond = anorm * ncp.sqrt(ddnorm)
-        res1 = phibar ** 2
-        res2 = res2 + psi ** 2
+        res1 = phibar**2
+        res2 = res2 + psi**2
         rnorm = ncp.sqrt(res1 + res2)
         arnorm = alfa * abs(tau)
 
@@ -658,7 +836,7 @@ def lsqr(
         # r2norm = sqrt(r1norm^2 + damp^2*||x||^2).
         # Estimate r1norm = sqrt(r2norm^2 - damp^2*||x||^2).
         # Although there is cancellation, it might be accurate enough.
-        r1sq = rnorm ** 2 - dampsq * xxnorm
+        r1sq = rnorm**2 - dampsq * xxnorm
         r1norm = ncp.sqrt(ncp.abs(r1sq))
         cost[itn] = r1norm
         if r1sq < 0:
