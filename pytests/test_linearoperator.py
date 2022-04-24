@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
+import pylops
 from pylops import LinearOperator
 from pylops.basicoperators import (
     Diagonal,
@@ -42,7 +43,7 @@ def test_overloads(par):
     # *
     assert isinstance(Dop * Dop, LinearOperator)
     # **
-    assert isinstance(Dop ** 2, LinearOperator)
+    assert isinstance(Dop**2, LinearOperator)
 
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
@@ -275,8 +276,8 @@ def test_copy_dims_dimsd(par):
     assert (S @ Dx).dims == dims
     assert (S @ Dx).dimsd == dimsd_sym
     # **
-    assert (Dx ** 3).dims == dims
-    assert (Dx ** 3).dimsd == dimsd
+    assert (Dx**3).dims == dims
+    assert (Dx**3).dimsd == dimsd
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
@@ -305,8 +306,8 @@ def test_non_flattened_arrays(par):
     assert_array_equal(Y_S, S @ D @ X_nd)
     assert_array_equal(Y_S, (S @ D @ X_1d).reshape((*S.dimsd, -1)))
 
-    D.flattened = True
-    with pytest.raises(ValueError):
-        D @ x_nd
-    with pytest.raises(ValueError):
-        D @ X_nd
+    with pylops.disabled_ndarray_multiplication():
+        with pytest.raises(ValueError):
+            D @ x_nd
+        with pytest.raises(ValueError):
+            D @ X_nd

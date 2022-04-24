@@ -23,6 +23,7 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
 else:
     from scipy.sparse.linalg._interface import _ProductLinearOperator
 
+from pylops import get_ndarray_multiplication
 from pylops.optimization.solver import cgls
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
@@ -66,17 +67,6 @@ class LinearOperator(spLinearOperator):
         .. versionadded:: 1.17.0
 
         Operator is complex-linear. Defaults to ``True``.
-    flattened : :obj:`bool`, optional
-        .. versionadded:: 2.0.0
-
-        Defaults to ``False``. If ``False``, multiplications by N-dimensional arrays
-        are accepted if they have shape ``dims`` or ``(*dims, P)``. For an ``(M, N)``
-        operator, the respective outputs will have shaped ``dimsd`` and
-        ``(*dimsd, P)``.
-
-        When ``True``, the operator only multiplies flattened inputs, that is,
-        arrays with shapes ``(N,)`` or ``(N, P)``. The respective outputs will have
-        shapes ``(M,)`` and ``(M, P)``. This behavior is equivalent to PyLops v1.x.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -93,7 +83,6 @@ class LinearOperator(spLinearOperator):
         dimsd=None,
         clinear=None,
         explicit=None,
-        flattened=None,
         name=None,
     ):
         if Op is not None:
@@ -110,9 +99,6 @@ class LinearOperator(spLinearOperator):
             )
             if explicit and hasattr(Op, "A"):
                 self.A = Op.A
-            flattened = (
-                getattr(Op, "flattened", False) if flattened is None else flattened
-            )
             name = getattr(Op, "name", None) if name is None else name
 
         if dtype is not None:
@@ -127,8 +113,6 @@ class LinearOperator(spLinearOperator):
             self.clinear = clinear
         if explicit is not None:
             self.explicit = explicit
-        if flattened is not None:
-            self.flattened = flattened
         self.name = name
 
     @property
@@ -249,18 +233,6 @@ class LinearOperator(spLinearOperator):
         del self._explicit
 
     @property
-    def flattened(self):
-        return getattr(self, "_flattened", False)
-
-    @flattened.setter
-    def flattened(self, new_flattened):
-        self._flattened = bool(new_flattened)
-
-    @flattened.deleter
-    def flattened(self, new_flattened):
-        del self._flattened
-
-    @property
     def name(self):
         return getattr(self, "_name", None)
 
@@ -274,7 +246,7 @@ class LinearOperator(spLinearOperator):
 
     def _copy_attributes(self, dest, exclude=["name"]):
         """Copy attributes from one LinearOperator to another"""
-        attrs = ["dims", "dimsd", "clinear", "explicit", "flattened", "name"]
+        attrs = ["dims", "dimsd", "clinear", "explicit", "name"]
         if exclude is not None:
             for item in exclude:
                 attrs.remove(item)
@@ -330,7 +302,6 @@ class LinearOperator(spLinearOperator):
             Opx = aslinearoperator(x)
             self._copy_attributes(Op)
             Op.clinear = Op.clinear and Opx.clinear
-            Op.flattened = Op.flattened or Opx.flattened
             # Replace if shape-like
             if len(self.dims) == 1:
                 Op.dims = Opx.dims
@@ -497,7 +468,6 @@ class LinearOperator(spLinearOperator):
             Op = aslinearoperator(_ProductLinearOperator(self, x))
             self._copy_attributes(Op, exclude=["dims", "name"])
             Op.clinear = Op.clinear and x.clinear
-            Op.flattened = Op.flattened or x.flattened
             Op.dims = x.dims
             return Op
         elif np.isscalar(x):
@@ -505,11 +475,12 @@ class LinearOperator(spLinearOperator):
             self._copy_attributes(Op)
             return Op
         else:
-            if self.flattened and (
+            if not get_ndarray_multiplication() and (
                 x.ndim > 2 or (x.ndim == 2 and x.shape[0] != self.shape[1])
             ):
                 raise ValueError(
-                    "A flattened operator can only be applied 1D vectors or 2D matrices"
+                    "Operator can only be applied 1D vectors or 2D matrices. "
+                    "Enable ndarray multiplication with pylops.set_ndarray_multiplication(True)."
                 )
             is_dims_shaped = x.shape == self.dims
             is_dims_shaped_matrix = len(x.shape) > 1 and x.shape[:-1] == self.dims
@@ -521,12 +492,12 @@ class LinearOperator(spLinearOperator):
                 x = x.reshape((-1, x.shape[-1]))
             if x.ndim == 1:
                 y = self.matvec(x)
-                if is_dims_shaped and not self.flattened:
+                if is_dims_shaped and get_ndarray_multiplication():
                     y = y.reshape(self.dimsd)
                 return y
             elif x.ndim == 2:
                 y = self.matmat(x)
-                if is_dims_shaped_matrix and not self.flattened:
+                if is_dims_shaped_matrix and get_ndarray_multiplication():
                     y = y.reshape((*self.dimsd, -1))
                 return y
             else:
@@ -1211,7 +1182,7 @@ class _PowerLinearOperator(spLinearOperator):
 
     def _adjoint(self):
         A, p = self.args
-        return A.H ** p
+        return A.H**p
 
 
 class _RealImagLinearOperator(LinearOperator):
