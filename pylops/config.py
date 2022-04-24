@@ -29,7 +29,7 @@ __all__ = [
 
 @dataclass
 class Config:
-    ndarray_multiplication: int = True
+    ndarray_multiplication: bool = True
 
 
 _config = Config()
