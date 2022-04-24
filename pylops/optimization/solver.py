@@ -286,7 +286,7 @@ class CGLS(Solver):
         print(msg)
 
     def setup(self, y=None, x0=None, niter=None, damp=0.0, tol=1e-4, show=False):
-        """Setup solver
+        r"""Setup solver
 
         Parameters
         ----------
@@ -345,7 +345,7 @@ class CGLS(Solver):
         return x
 
     def step(self, x, show=False):
-        """Run one step of solver
+        r"""Run one step of solver
 
         Parameters
         ----------
@@ -378,7 +378,7 @@ class CGLS(Solver):
         return x
 
     def finalize(self, show=False):
-        """Finalize solver
+        r"""Finalize solver
 
         Parameters
         ----------
@@ -406,7 +406,7 @@ class CGLS(Solver):
         show=False,
         itershow=[10, 10, 10],
     ):
-        """Run entire solver
+        r"""Run entire solver
 
         Parameters
         ----------
