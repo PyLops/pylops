@@ -2,10 +2,13 @@ import numpy as np
 from scipy.sparse.linalg import cg as sp_cg
 from scipy.sparse.linalg import lsqr
 
-from pylops import disabled_ndarray_multiplication
 from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.solver import cg, cgls
 from pylops.utils.backend import get_array_module
+from pylops.utils.decorators import add_ndarray_support_to_solver
+
+sp_cg_ndarray = add_ndarray_support_to_solver(sp_cg)
+lsqr_ndarray = add_ndarray_support_to_solver(lsqr)
 
 
 def NormalEquationsInversion(
@@ -107,66 +110,65 @@ def NormalEquationsInversion(
     implicitly assumed to be zero.
 
     """
-    with disabled_ndarray_multiplication():
-        ncp = get_array_module(data)
+    ncp = get_array_module(data)
 
-        # store adjoint
-        OpH = Op.H
+    # store adjoint
+    OpH = Op.H
 
-        # create dataregs and epsRs if not provided
-        if dataregs is None and Regs is not None:
-            dataregs = [ncp.zeros(int(Reg.shape[0]), dtype=Reg.dtype) for Reg in Regs]
-        if epsRs is None and Regs is not None:
-            epsRs = [1] * len(Regs)
+    # create dataregs and epsRs if not provided
+    if dataregs is None and Regs is not None:
+        dataregs = [ncp.zeros(int(Reg.shape[0]), dtype=Reg.dtype) for Reg in Regs]
+    if epsRs is None and Regs is not None:
+        epsRs = [1] * len(Regs)
 
-        # Normal equations
-        if Weight is not None:
-            y_normal = OpH * Weight * data
-        else:
-            y_normal = OpH * data
-        if Weight is not None:
-            Op_normal = OpH * Weight * Op
-        else:
-            Op_normal = OpH * Op
+    # Normal equations
+    if Weight is not None:
+        y_normal = OpH * Weight * data
+    else:
+        y_normal = OpH * data
+    if Weight is not None:
+        Op_normal = OpH * Weight * Op
+    else:
+        Op_normal = OpH * Op
 
-        # Add regularization terms
-        if epsI > 0:
-            Op_normal += epsI**2 * Diagonal(
-                ncp.ones(int(Op.shape[1]), dtype=Op.dtype), dtype=Op.dtype
-            )
+    # Add regularization terms
+    if epsI > 0:
+        Op_normal += epsI**2 * Diagonal(
+            ncp.ones(int(Op.shape[1]), dtype=Op.dtype), dtype=Op.dtype
+        )
 
-        if Regs is not None:
-            for epsR, Reg, datareg in zip(epsRs, Regs, dataregs):
-                RegH = Reg.H
-                y_normal += epsR**2 * RegH * datareg
-                Op_normal += epsR**2 * RegH * Reg
+    if Regs is not None:
+        for epsR, Reg, datareg in zip(epsRs, Regs, dataregs):
+            RegH = Reg.H
+            y_normal += epsR**2 * RegH * datareg
+            Op_normal += epsR**2 * RegH * Reg
 
-        if NRegs is not None:
-            for epsNR, NReg in zip(epsNRs, NRegs):
-                Op_normal += epsNR**2 * NReg
+    if NRegs is not None:
+        for epsNR, NReg in zip(epsNRs, NRegs):
+            Op_normal += epsNR**2 * NReg
 
-        # solver
-        if x0 is not None:
-            y_normal = y_normal - Op_normal * x0
-        if ncp == np:
-            if "atol" not in kwargs_solver:
-                kwargs_solver["atol"] = "legacy"
-            xinv, istop = sp_cg(Op_normal, y_normal, **kwargs_solver)
-        else:
-            xinv = cg(
-                Op_normal,
-                y_normal,
-                ncp.zeros(int(Op_normal.shape[1]), dtype=Op_normal.dtype),
-                **kwargs_solver
-            )[0]
-            istop = None
-        if x0 is not None:
-            xinv = x0 + xinv
+    # solver
+    if x0 is not None:
+        y_normal = y_normal - Op_normal * x0
+    if ncp == np:
+        if "atol" not in kwargs_solver:
+            kwargs_solver["atol"] = "legacy"
+        xinv, istop = sp_cg_ndarray(Op_normal, y_normal, **kwargs_solver)
+    else:
+        xinv = cg(
+            Op_normal,
+            y_normal,
+            ncp.zeros(int(Op_normal.shape[1]), dtype=Op_normal.dtype),
+            **kwargs_solver
+        )[0]
+        istop = None
+    if x0 is not None:
+        xinv = x0 + xinv
 
-        if returninfo:
-            return xinv, istop
-        else:
-            return xinv
+    if returninfo:
+        return xinv, istop
+    else:
+        return xinv
 
 
 def RegularizedOperator(Op, Regs, epsRs=(1,)):
@@ -351,7 +353,9 @@ def RegularizedInversion(
         datatot = datatot - RegOp * x0
 
     if ncp == np:
-        xinv, istop, itn, r1norm, r2norm = lsqr(RegOp, datatot, **kwargs_solver)[0:5]
+        xinv, istop, itn, r1norm, r2norm = lsqr_ndarray(
+            RegOp, datatot, **kwargs_solver
+        )[0:5]
     else:
         xinv, istop, itn, r1norm, r2norm = cgls(
             RegOp,
@@ -441,7 +445,7 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_sol
         data = data - Op * x0
 
     if ncp == np:
-        pinv, istop, itn, r1norm, r2norm = lsqr(POp, data, **kwargs_solver)[0:5]
+        pinv, istop, itn, r1norm, r2norm = lsqr_ndarray(POp, data, **kwargs_solver)[0:5]
     else:
         pinv, istop, itn, r1norm, r2norm = cgls(
             POp, data, ncp.zeros(int(POp.shape[1]), dtype=POp.dtype), **kwargs_solver

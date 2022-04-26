@@ -3,9 +3,11 @@ import time
 import numpy as np
 
 from pylops.utils.backend import get_array_module
+from pylops.utils.decorators import add_ndarray_support_to_solver
 
 
-def cg(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
+@add_ndarray_support_to_solver
+def cg(Op, y, x0=None, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
     r"""Conjugate gradient
 
     Solve a square system of equations given an operator ``Op`` and
@@ -104,7 +106,8 @@ def cg(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
     return x, iiter, cost[:iiter]
 
 
-def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
+@add_ndarray_support_to_solver
+def cgls(Op, y, x0=None, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
     r"""Conjugate gradient least squares
 
     Solve an overdetermined system of equations given an operator ``Op`` and
@@ -179,7 +182,7 @@ def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
         head1 = "    Itn           x[0]              r1norm          r2norm"
         print(head1)
 
-    damp = damp ** 2
+    damp = damp**2
     if x0 is None:
         x = ncp.zeros(Op.shape[1], dtype=y.dtype)
         s = y.copy()
@@ -242,10 +245,11 @@ def cgls(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
     return x, istop, iiter, r1norm, r2norm, cost[:iiter]
 
 
+@add_ndarray_support_to_solver
 def lsqr(
     Op,
     y,
-    x0,
+    x0=None,
     damp=0.0,
     atol=1e-08,
     btol=1e-08,
@@ -401,7 +405,7 @@ def lsqr(
         ctol = 1.0 / conlim
     anorm = 0
     acond = 0
-    dampsq = damp ** 2
+    dampsq = damp**2
     ddnorm = 0
     res2 = 0
     xnorm = 0
@@ -510,18 +514,18 @@ def lsqr(
         gambar = -cs2 * rho
         rhs = phi - delta * z
         zbar = rhs / gambar
-        xnorm = ncp.sqrt(xxnorm + zbar ** 2)
+        xnorm = ncp.sqrt(xxnorm + zbar**2)
         gamma = np.linalg.norm([gambar, theta])
         cs2 = gambar / gamma
         sn2 = theta / gamma
         z = rhs / gamma
-        xxnorm = xxnorm + z ** 2.0
+        xxnorm = xxnorm + z**2.0
 
         # test for convergence. First, estimate the condition of the matrix
         # Opbar, and the norms of rbar and Opbar'rbar
         acond = anorm * ncp.sqrt(ddnorm)
-        res1 = phibar ** 2
-        res2 = res2 + psi ** 2
+        res1 = phibar**2
+        res2 = res2 + psi**2
         rnorm = ncp.sqrt(res1 + res2)
         arnorm = alfa * abs(tau)
 
@@ -529,7 +533,7 @@ def lsqr(
         # r2norm = sqrt(r1norm^2 + damp^2*||x||^2).
         # Estimate r1norm = sqrt(r2norm^2 - damp^2*||x||^2).
         # Although there is cancellation, it might be accurate enough.
-        r1sq = rnorm ** 2 - dampsq * xxnorm
+        r1sq = rnorm**2 - dampsq * xxnorm
         r1norm = ncp.sqrt(ncp.abs(r1sq))
         cost[itn] = r1norm
         if r1sq < 0:
