@@ -117,7 +117,7 @@ def NormalEquationsInversion(
 
     # create dataregs and epsRs if not provided
     if dataregs is None and Regs is not None:
-        dataregs = [ncp.zeros(int(Reg.shape[0]), dtype=Reg.dtype) for Reg in Regs]
+        dataregs = [ncp.zeros(Reg.dimsd, dtype=Reg.dtype) for Reg in Regs]
     if epsRs is None and Regs is not None:
         epsRs = [1] * len(Regs)
 
@@ -134,7 +134,7 @@ def NormalEquationsInversion(
     # Add regularization terms
     if epsI > 0:
         Op_normal += epsI**2 * Diagonal(
-            ncp.ones(int(Op.shape[1]), dtype=Op.dtype), dtype=Op.dtype
+            ncp.ones(Op.dims, dtype=Op.dtype), dims=Op.dims, dtype=Op.dtype
         )
 
     if Regs is not None:
@@ -158,7 +158,7 @@ def NormalEquationsInversion(
         xinv = cg(
             Op_normal,
             y_normal,
-            ncp.zeros(int(Op_normal.shape[1]), dtype=Op_normal.dtype),
+            ncp.zeros(Op_normal.dims, dtype=Op_normal.dtype),
             **kwargs_solver
         )[0]
         istop = None
