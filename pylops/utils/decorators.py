@@ -13,16 +13,14 @@ def add_ndarray_support_to_solver(func):
         Solver type function. Its signature must be ``func(A, b, x0=None, **kwargs)``.
         Its output must be a result-type tuple: ``(xinv, ...)``.
     """
-    from pylops import LinearOperator  # handle circular import
 
     @wraps(func)
     def wrapper(A, b, x0=None, **kwargs):  # SciPy-type signature
-        A = A if isinstance(A, LinearOperator) else LinearOperator(A)
         if x0 is not None:
             x0 = x0.ravel()
         with disabled_ndarray_multiplication():
             res = list(func(A, b.ravel(), x0=x0, **kwargs))
-            res[0] = res[0].reshape(A.dims)
+            res[0] = res[0].reshape(getattr(A, "dims", (A.shape[1],)))
         return tuple(res)
 
     return wrapper
