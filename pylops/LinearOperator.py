@@ -23,6 +23,7 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
 else:
     from scipy.sparse.linalg._interface import _ProductLinearOperator
 
+from pylops import get_ndarray_multiplication
 from pylops.optimization.solver import cgls
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
@@ -474,12 +475,42 @@ class LinearOperator(spLinearOperator):
             self._copy_attributes(Op)
             return Op
         else:
-            if x.ndim == 1:  # or x.ndim == 2 and x.shape[1] == 1:
-                return self.matvec(x)
+            if not get_ndarray_multiplication() and (
+                x.ndim > 2 or (x.ndim == 2 and x.shape[0] != self.shape[1])
+            ):
+                raise ValueError(
+                    "Operator can only be applied 1D vectors or 2D matrices. "
+                    "Enable ndarray multiplication with pylops.set_ndarray_multiplication(True)."
+                )
+            is_dims_shaped = x.shape == self.dims
+            is_dims_shaped_matrix = len(x.shape) > 1 and x.shape[:-1] == self.dims
+            if is_dims_shaped:
+                # (dims1, ..., dimsK) => (dims1 * ... * dimsK,) == self.shape
+                x = x.ravel()
+            if is_dims_shaped_matrix:
+                # (dims1, ..., dimsK, P) => (dims1 * ... * dimsK, P)
+                x = x.reshape((-1, x.shape[-1]))
+            if x.ndim == 1:
+                y = self.matvec(x)
+                if is_dims_shaped and get_ndarray_multiplication():
+                    y = y.reshape(self.dimsd)
+                return y
             elif x.ndim == 2:
-                return self.matmat(x)
+                y = self.matmat(x)
+                if is_dims_shaped_matrix and get_ndarray_multiplication():
+                    y = y.reshape((*self.dimsd, -1))
+                return y
             else:
-                raise ValueError("expected 1-d or 2-d array or matrix, got %r" % x)
+                raise ValueError(
+                    (
+                        "Wrong shape.\nFor vector multiplication, expects either a 1d "
+                        "array or, an ndarray of size `dims` when `dims` and `dimsd` "
+                        "both are available.\n"
+                        "For matrix multiplication, expects a 2d array with its first "
+                        f"dimension is equal to {self.shape[1]}.\n"
+                        f"Instead, received an array of shape {x.shape}."
+                    )
+                )
 
     def div(self, y, niter=100, densesolver="scipy"):
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
@@ -1151,7 +1182,7 @@ class _PowerLinearOperator(spLinearOperator):
 
     def _adjoint(self):
         A, p = self.args
-        return A.H ** p
+        return A.H**p
 
 
 class _RealImagLinearOperator(LinearOperator):
