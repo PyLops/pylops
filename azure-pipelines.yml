@@ -6,6 +6,7 @@ trigger:
   branches:
     include:
     - master
+    - v1.18.x
     - refs/tags/*
 
 jobs:

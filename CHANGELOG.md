@@ -1,4 +1,9 @@
-# 1.18.0
+# 1.18.1
+* Refractored `pylops.utils.dottest`, and added two new optional input parameters
+  (``atol`` and ``rtol``)
+* Added optional parameter ``densesolver`` to ``pylops.LinearOperator.div``
+
+* # 1.18.0
 * Added `NMO` example to gallery
 * Extended `pylops.basicoperators.Laplacian` to N-dimensional arrays
 * Added `forward` kind to `pylops.basicoperators.SecondDerivative` and
