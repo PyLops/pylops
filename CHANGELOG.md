@@ -1,7 +1,10 @@
-# 1.18.1
+# 1.18.2
 * Refractored `pylops.utils.dottest`, and added two new optional input parameters
   (``atol`` and ``rtol``)
 * Added optional parameter ``densesolver`` to ``pylops.LinearOperator.div``
+
+# 1.18.1
+* !DELETED! due to a mistake in the release process
 
 * # 1.18.0
 * Added `NMO` example to gallery
