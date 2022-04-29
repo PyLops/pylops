@@ -83,7 +83,9 @@ xreg = pylops.RegularizedInversion(
 
 # Preconditioned derivative
 Sop = pylops.Smoothing1D(41, nt)
-xp = pylops.PreconditionedInversion(Cop, Sop, yn, **dict(iter_lim=10, atol=1e-3))
+xp = pylops.optimization.leastsquares.preconditioned_inversion(
+    Cop, Sop, yn, **dict(iter_lim=10, atol=1e-3)
+)
 
 # Visualize data and inversion
 fig, axs = plt.subplots(1, 2, figsize=(18, 5))
@@ -97,6 +99,7 @@ axs[1].plot(t, xreg, "g", lw=3, label="regularized")
 axs[1].plot(t, xp, "m", lw=3, label="preconditioned")
 axs[1].legend()
 axs[1].set_title("Inverse causal integration")
+plt.tight_layout()
 
 ###############################################################################
 # We can see here the great advantage of framing our numerical derivative
@@ -158,6 +161,7 @@ axs[1][1].axis("tight")
 axs[1][2].imshow(xp, cmap="seismic", vmin=-vmax, vmax=vmax)
 axs[1][2].set_title("Preconditioned")
 axs[1][2].axis("tight")
+plt.tight_layout()
 
 # Visualize data and inversion at a chosen xlocation
 fig, axs = plt.subplots(1, 2, figsize=(18, 5))
@@ -171,3 +175,4 @@ axs[1].plot(t, xreg[:, nx // 2], "g", lw=3, label="regularized")
 axs[1].plot(t, xp[:, nx // 2], "m", lw=3, label="preconditioned")
 axs[1].legend()
 axs[1].set_title("Inverse causal integration")
+plt.tight_layout()

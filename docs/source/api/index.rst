@@ -151,50 +151,66 @@ Solvers
 Basic (class-based)
 ~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: pylops.optimization
+.. currentmodule:: pylops.optimization.basicc
 
 .. autosummary::
    :toctree: generated/
 
-    solver.CG
-    solver.CGLS
+   CG
+   CGLS
+   LSQR
 
 Basic (function-based)
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: pylops.optimization
+.. currentmodule:: pylops.optimization.basic
 
 .. autosummary::
    :toctree: generated/
 
-    solver.lsqr
+    cg
+    cgls
+    lsqr
 
-Least-squares
-~~~~~~~~~~~~~
+Least-squares (class-based)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: pylops.optimization
+.. currentmodule:: pylops.optimization.leastsquaresc
 
 .. autosummary::
    :toctree: generated/
 
-    leastsquares.NormalEquationsInversion
-    leastsquares.RegularizedInversion
-    leastsquares.PreconditionedInversion
+    NormalEquationsInversion
+    RegularizedInversion
+    PreconditionedInversion
+
+Least-squares (function-based)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.optimization.leastsquares
+
+.. autosummary::
+   :toctree: generated/
+
+    normal_equations_inversion
+    regularized_inversion
+    preconditioned_inversion
 
 
 Sparsity
 ~~~~~~~~
 
+.. currentmodule:: pylops.optimization.sparsity
+
 .. autosummary::
    :toctree: generated/
 
-    sparsity.IRLS
-    sparsity.OMP
-    sparsity.ISTA
-    sparsity.FISTA
-    sparsity.SPGL1
-    sparsity.SplitBregman
-
+    IRLS
+    OMP
+    ISTA
+    FISTA
+    SPGL1
+    SplitBregman
 
 
 Applications

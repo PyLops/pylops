@@ -61,7 +61,7 @@ plt.title("Model and data")
 D2op = pylops.SecondDerivative(nx, edge=True)
 lamda = 1e2
 
-xinv = pylops.optimization.leastsquares.RegularizedInversion(
+xinv = pylops.optimization.leastsquares.regularized_inversion(
     Iop, [D2op], y, epsRs=[np.sqrt(lamda / 2)], **dict(iter_lim=30)
 )
 
@@ -71,6 +71,7 @@ plt.plot(y, ".k", label="y=x+n")
 plt.plot(xinv, "r", lw=5, label="xinv")
 plt.legend()
 plt.title("L2 inversion")
+plt.tight_layout()
 
 ###############################################################################
 # Now we impose blockiness in the solution using the Split Bregman solver
@@ -99,6 +100,7 @@ plt.plot(y, ".k", label="y=x+n")
 plt.plot(xinv, "r", lw=5, label="xinv")
 plt.legend()
 plt.title("TV inversion")
+plt.tight_layout()
 
 ###############################################################################
 # Finally, we repeat the same exercise on a 2-dimensional image. In this case
@@ -135,6 +137,7 @@ axs[1].axis("tight")
 axs[2].imshow(np.abs(ymask), vmin=0, vmax=1, cmap="rainbow")
 axs[2].set_title("Sampled data")
 axs[2].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # Let's attempt now to reconstruct the model using the Split Bregman
@@ -144,7 +147,6 @@ axs[2].axis("tight")
 # .. math::
 #         J = \mu/2 ||\mathbf{y} - \mathbf{R} \mathbf{F} \mathbf{x}||_2
 #         + || \nabla_x \mathbf{x}||_1 + || \nabla_y \mathbf{x}||_1
-
 
 Dop = [
     pylops.FirstDerivative(
@@ -183,6 +185,7 @@ axs[0].axis("tight")
 axs[1].imshow(xinv, vmin=0, vmax=1, cmap="gray")
 axs[1].set_title("TV Inversion")
 axs[1].axis("tight")
+plt.tight_layout()
 
 fig, axs = plt.subplots(2, 1, figsize=(10, 5))
 axs[0].plot(x[ny // 2], "k", lw=5, label="x")
@@ -193,6 +196,7 @@ axs[1].plot(x[:, nx // 2], "k", lw=5, label="x")
 axs[1].plot(xinv[:, nx // 2], "r", lw=3, label="xinv TV")
 axs[1].set_title("Vertical section")
 axs[1].legend()
+plt.tight_layout()
 
 ###############################################################################
 # Note that more optimized variations of the Split Bregman algorithm have been

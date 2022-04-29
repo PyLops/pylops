@@ -13,8 +13,8 @@ from pylops import (
     VStack,
 )
 from pylops.avo.avo import AVOLinearModelling, akirichards, fatti, ps
-from pylops.optimization.leastsquares import RegularizedInversion
-from pylops.optimization.solver import cgls
+from pylops.optimization.basic import cgls
+from pylops.optimization.leastsquares import regularized_inversion
 from pylops.optimization.sparsity import SplitBregman
 from pylops.signalprocessing import Convolve1D
 from pylops.utils import dottest as Dottest
@@ -629,15 +629,14 @@ def PrestackInversion(
             else:
                 Regop = (Regop, RegI)
                 epsR = (epsR, 1)
-            minv = RegularizedInversion(
+            minv = regularized_inversion(
                 PPop,
                 Regop,
                 data.ravel(),
                 x0=m0.ravel() if m0 is not None else None,
                 epsRs=epsR,
-                returninfo=False,
                 **kwargs_solver
-            )
+            )[0]
         else:
             # Blockiness-promoting inversion with spatial regularization
             if dims == 1:

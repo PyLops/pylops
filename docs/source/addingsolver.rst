@@ -17,12 +17,14 @@ Creating the solver
 The first thing we need to do is to locate a file containing solvers in the same family of the solver we plan to
 include, or create a new file with the name of the solver we would like to implement (or preferably its family).
 Note that as the solver will be a class, we need to follow the UpperCaseCamelCase convention both the class itself
-but not for the filename.
+but not for the filename. Moroever the filename must end with a ``c`` (e.g., ``basicc.py``); as we will see later,
+by doing this for each class-based solver we can create also its corresponding function based solver in another file
+whose name does not end with a ``c`` (e.g., ``basic.py``).
 
 At this point we can start by importing the modules that will be needed by the solver.
 This varies from solver to solver, however you will always need to import the
-:py:class:`pylops.optimization._basesolver.Solver` which will be used as *parent* class for any of our operators.
-Moreover, we always reccomend to import  :py:func:` pylops.utils.backend.get_array_module` as solvers should be written
+:py:class:`pylops.optimization.basesolver.Solver` which will be used as *parent* class for any of our operators.
+Moreover, we always recommend to import :py:func:` pylops.utils.backend.get_array_module` as solvers should be written
 in such a way that work both on numpy and cupy array. See later for details.
 
 .. code-block:: python
@@ -43,8 +45,8 @@ After that we define our new object:
 
 followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html/>`_
 (starting with ``r"""`` and ending with ``"""``) containing the documentation of the solver. Such docstring should
-contain at least a short description of the solver, a ``Parameters`` section with a detailed description of the
-input parameters and a ``Notes`` section providing a reference to the original solver and possibly a concise
+contain at least a short description of the solver, a ``Parameters`` section with a description of the
+input parameters of the associated ``_init__`` method and a ``Notes`` section providing a reference to the original solver and possibly a concise
 mathematical explanation of the solver. Take a look at some of the core solver of PyLops to get a feeling
 of the level of details of the mathematical explanation.
 
@@ -64,7 +66,7 @@ We can then move onto writing the *setup* of the solver in the method ``setup``.
 a piece of code that prepares the solver prior to being able to apply a step. In general, this requires defining the
 data vector ``y``, the initial guess of the solver ``x0`` (if not provided, this will be automatically set to be a zero
 vector), and various hyperparameters of the solver - e.g., those involved in the stopping criterion. For example in
-this case we only have two parameters: ``niter`` refers to the maximum allowed number of iterations, and `tol` to
+this case we only have two parameters: ``niter`` refers to the maximum allowed number of iterations, and ``tol`` to
 tolerance on the residual norm (the solver will be stopped if this is smaller than the chosen tolerance). Moreover,
 we always have the possibility to decide whether we want to operate the solver (in this case its setup part) in verbose
 or silent mode. This is driven by the ``show`` parameter. We will soon discuss how to choose what to print on screen in
@@ -72,24 +74,25 @@ case of verbose mode (``show=True``). The setup method can be loosely seen as co
 vector and hyperparamters are stored as members of the class. Moreover the type of the ``y`` vector is checked to
 evaluate whether to use numpy or cupy for algebraic operations (this is done by ``self.ncp = get_array_module(y)``).
 Second, the starting guess is initialized using either the provided vector ``x0`` or a zero vector. Finally, a number
-of variables are initialized to be used inside the ``step`` method to keep track of the optimization process.
+of variables are initialized to be used inside the ``step`` method to keep track of the optimization process. Moreover,
+note that the ``setup`` method returns the created starting guess ``x`` (does not store it as member of the class).
 
 .. code-block:: python
 
-    def setup(self, x0=None, niter=None, tol=1e-4, show=False):
+    def setup(self, y, x0=None, niter=None, tol=1e-4, show=False):
 
+        self.y = y
         self.tol = tol
         self.niter = niter
-        if show: self._print_setup()
+        self.ncp = get_array_module(y)
 
         # initialize solver
-        if x0 is not None: self.x0 = x0
-        if self.x0 is None:
-            self.x = self.ncp.zeros(self.Op.shape[1], dtype=self.y.dtype)
+        if x0 is None:
+            x = self.ncp.zeros(self.Op.shape[1], dtype=self.y.dtype)
             self.r = self.y.copy()
         else:
-            self.x = self.x0.copy()
-            self.r = self.y - self.Op.matvec(self.x)
+            x = x0.copy()
+            self.r = self.y - self.Op.matvec(x)
         self.c = self.r.copy()
         self.kold = self.ncp.abs(self.r.dot(self.r.conj()))
 
@@ -97,6 +100,11 @@ of variables are initialized to be used inside the ``step`` method to keep track
         self.cost = []
         self.cost.append(np.sqrt(self.kold))
         self.iiter = 0
+
+        # print setup
+        if show:
+            self._print_setup(np.iscomplexobj(x))
+        return x
 
 At this point, we need to implement the core of the solver, its `step`. Here, we take the input at previous iterate,
 update it following the rule of the solver of choice, and return it. The other input parameter required by this method
@@ -121,25 +129,20 @@ can add additional input parameters. For CG, the step is:
             self._print_step(x)
         return x
 
-It is also usually convenient to implement a finalize method; this method can do any required post-processing that should
+
+Similarly, we also implement a ``run`` method that is in charge of running a number of iterations by repeatedly
+calling the ``step`` method. It is also usually convenient to implement a finalize method; this method can do any required post-processing that should
 not be applied at the end of each step, rather at the end of the entire optimization process. For CG, this is as simple
-as converting the ``cost`` variable from a list to a numpy array.
+as converting the ``cost`` variable from a list to a numpy array. For more details, see our implementations for CG.
 
 Last but not least, we can wrap it all up in the ``solve`` method. This method takes as input the data, initial
 model and the same hyperparameters of setup and runs the entire optimization process. For CG:
 
 .. code-block:: python
 
-    def step(self, y, x0=None, niter=10, tol=1e-4, show=False):
+    def step(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10]):
         x = self.setup(y=y, x0=x0, niter=niter, tol=tol, show=show)
-        while self.iiter < niter and self.kold > self.tol:
-            show = (
-                True
-                if self.iiter < 10 or niter - self.iiter < 10 or self.iiter % 10 == 0
-                else False
-            )
-            x = self.step(x, show)
-            self.callback(x)
+        x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)
         return x, self.iiter, self.cost
 
@@ -155,19 +158,22 @@ the other two must be implemented when creating a new solver. When these methods
 ``show=True`` to the associated method, our solver will provide such information on screen throughout the inverse
 process. To better understand how to write such methods, we suggest to look into the source code of the CG method.
 
-Finally, to be backward compatible with versions of PyLops `<v2.0.0`, we should always create a function with the same
-name of the class-based solver (but in small letters) which simply instantiates the solver and runs it. This function
-generally takes all the mandatory and optional parameters of the solver as input and returns some of the most valuable
-properties of the class-based solver object. An example for `CG` is:
+Finally, to be backward compatible with versions of PyLops `<v2.0.0`, we also want to create a function with the same
+name of the class-based solver (but in small letters) which simply instantiates the solver and runs it. As mentioned
+before, this function belongs to a different file whose name is the same of that of the corresponding class-based solver
+without the ending ``c``. This function generally takes all the mandatory and optional parameters of the solver as
+input and returns some of the most valuable properties of the class-based solver object. An example for `CG` is:
 
 .. code-block:: python
 
-    def cg(Op, y, x0, niter=10, tol=1e-4, show=False, callback=None):
-        cgsolve = CG(Op, y)
+    def cg(Op, y, x0, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10], callback=None):
+        cgsolve = CG(Op)
         if callback is not None:
             cgsolve.callback = callback
-        cgsolve.solve(x0=x0, tol=tol, niter=niter, show=show)
-        return cgsolve.x, cgsolve.iiter, cgsolve.cost
+        x, iiter, cost = cgsolve.solve(
+            y=y, x0=x0, tol=tol, niter=niter, show=show, itershow=itershow
+        )
+        return x, iiter, cost
 
 
 Testing the solver
@@ -176,20 +182,21 @@ Being able to write a solver is not yet a guarantee of the fact that the solver 
 that the solver can converge to a correct solution (at least in the case of full rank operator).
 
 We encourage to create a new test within an existing ``test_*.py`` file in the ``pytests`` folder (or in a new file).
+We also encourage to test the function-bases solver, as this will implicitly test the underlying class-based solver.
 
 Generally a test file will start with a number of dictionaries containing different parameters we would like to
 use in the testing of one or more solvers. The test itself starts with a *decorator* that contains a list
 of all (or some) of dictionaries that will would like to use for our specific operator, followed by
-the definition of the test
+the definition of the test:
 
 .. code-block:: python
 
     @pytest.mark.parametrize("par", [(par1),(par2)])
     def test_CG(par):
 
-At this point we can first a full-rank operator, an input vector and compute the associated data. We can then run
+At this point we can first create a full-rank operator, an input vector and compute the associated data. We can then run
 the solver for a certain number of iterations, checking that the solution agrees with the true `x` within a certain
-tolerance. We reccomend using the function-based solver in this case:
+tolerance:
 
 .. code-block:: python
 
@@ -227,7 +234,7 @@ adheres to the guidelines of PyLops:
 - you have added the new solver to a new or existing file in the ``optimization`` directory within the ``pylops``
   package.
 
-- the new class contains at least ``__init__``, ``setup``, ``step``, ``finalize``, and ``solve`` methods.
+- the new class contains at least ``__init__``, ``setup``, ``step``, ``run``, ``finalize``, and ``solve`` methods.
 
 - each of the above methods have a `numpydoc docstring <https://numpydoc.readthedocs.io/>`_ documenting
   at least the input ``Parameters`` and the ``__init__`` method contains also a ``Notes`` section providing a

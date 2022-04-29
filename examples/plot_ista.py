@@ -79,7 +79,6 @@ ax.set_title("Model", size=15, fontweight="bold")
 ax.legend()
 plt.tight_layout()
 
-
 ###############################################################################
 # We now consider a more interesting problem problem, *wavelet deconvolution*
 # from a signal that we assume being composed by a train of spikes convolved
@@ -115,7 +114,11 @@ xomp, nitero, costo = pylops.optimization.sparsity.OMP(
 )
 
 xista, niteri, costi = pylops.optimization.sparsity.ISTA(
-    Cop, y, niter=400, eps=5e-1, tol=1e-8, returninfo=True
+    Cop,
+    y,
+    niter=400,
+    eps=5e-1,
+    tol=1e-8,
 )
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 3))
@@ -124,7 +127,6 @@ ax.plot(t, y, "r", lw=4, label=r"$y=Ax$")
 ax.plot(t, xls, "--g", lw=4, label=r"$x_{LS}$")
 ax.plot(t, xomp, "--b", lw=4, label=r"$x_{OMP} (niter=%d)$" % nitero)
 ax.plot(t, xista, "--m", lw=4, label=r"$x_{ISTA} (niter=%d)$" % niteri)
-
 ax.set_title("Noise-free deconvolution", fontsize=14, fontweight="bold")
 ax.legend()
 plt.tight_layout()

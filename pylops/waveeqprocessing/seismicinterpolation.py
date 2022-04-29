@@ -3,7 +3,7 @@ import logging
 import numpy as np
 
 from pylops import Laplacian, Restriction, SecondDerivative
-from pylops.optimization.leastsquares import RegularizedInversion
+from pylops.optimization.leastsquares import regularized_inversion
 from pylops.optimization.sparsity import FISTA
 from pylops.signalprocessing import (
     FFT2D,
@@ -130,7 +130,7 @@ def SeismicInterpolation(
         Apply dot-test
     **kwargs_solver
         Arbitrary keyword arguments for
-        :py:func:`pylops.optimization.leastsquares.RegularizedInversion` solver
+        :py:func:`pylops.optimization.leastsquares.regularized_inversion` solver
         if ``kind='spatial'`` or
         :py:func:`pylops.optimization.sparsity.FISTA` solver otherwise
 
@@ -400,7 +400,7 @@ def SeismicInterpolation(
 
     # inversion
     if kind == "spatial":
-        recdata = RegularizedInversion(SIop, [Regop], data.ravel(), **kwargs_solver)
+        recdata = regularized_inversion(SIop, [Regop], data.ravel(), **kwargs_solver)
         if isinstance(recdata, tuple):
             recdata = recdata[0]
         recdata = recdata.reshape(dims)

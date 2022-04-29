@@ -12,6 +12,7 @@ class Solver(metaclass=ABCMeta):
     - ``setup``: a method that is invoked to setup the solver, basically it will create
       anything required prior to applying a step of the solver
     - ``step``: a method applying a single step of the solver
+    - ``run``: a method applying multiple steps of the solver
     - ``finalize``: a method that is invoked at the end of the optimization process. It can
       be used to do some final clean-up of the properties of the operator that we want
       to expose to the user
@@ -82,12 +83,29 @@ class Solver(metaclass=ABCMeta):
         x : :obj:`np.ndarray`
             Current model vector to be updated by a step of the solver
         show : :obj:`bool`, optional
-            Display iteration log
+            Display step log
 
         """
         pass
 
     @abstractmethod
+    def run(self, x, show=False):
+        """Run multiple steps of solver
+
+        This method is used to run multiple step of the solver. Users can change the
+        function signature by including any other input parameter required when applying
+        multiple steps of the solver
+
+        Parameters
+        ----------
+        x : :obj:`np.ndarray`
+            Current model vector to be updated by multiple steps of the solver
+        show : :obj:`bool`, optional
+            Display step log
+
+        """
+        pass
+
     def finalize(self, show=False):
         """Finalize solver
 
@@ -101,7 +119,10 @@ class Solver(metaclass=ABCMeta):
             Display finalize log
 
         """
-        pass
+        self.tend = time.time()
+        self.telapsed = self.tend - self.tstart
+        if show:
+            self._print_finalize()
 
     @abstractmethod
     def solve(self, y, show=False):

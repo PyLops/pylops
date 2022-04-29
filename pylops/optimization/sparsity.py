@@ -6,12 +6,12 @@ from scipy.sparse.linalg import lsqr
 
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, Identity
+from pylops.optimization.basic import cgls
 from pylops.optimization.eigs import power_iteration
 from pylops.optimization.leastsquares import (
-    NormalEquationsInversion,
-    RegularizedInversion,
+    normal_equations_inversion,
+    regularized_inversion,
 )
-from pylops.optimization.solver import cgls
 from pylops.utils.backend import get_array_module, get_module_name, to_numpy
 
 try:
@@ -144,7 +144,7 @@ def _hardthreshold_percentile(x, perc):
 
     """
     thresh = np.percentile(np.abs(x), perc)
-    return _hardthreshold(x, 0.5 * thresh ** 2)
+    return _hardthreshold(x, 0.5 * thresh**2)
 
 
 def _softthreshold_percentile(x, perc):
@@ -224,9 +224,7 @@ def _IRLS_data(
         rw_hist = ncp.zeros((nouter + 1, int(Op.shape[0])))
 
     # first iteration (unweighted least-squares)
-    xinv = NormalEquationsInversion(
-        Op, None, data, epsI=epsI, returninfo=False, **kwargs_solver
-    )
+    xinv = normal_equations_inversion(Op, None, data, epsI=epsI, **kwargs_solver)[0]
     r = data - Op * xinv
     if returnhistory:
         xinv_hist[0] = xinv
@@ -239,9 +237,9 @@ def _IRLS_data(
             rw = 1.0 / (ncp.abs(r) + epsR)
         rw = rw / rw.max()
         R = Diagonal(rw)
-        xinv = NormalEquationsInversion(
-            Op, [], data, Weight=R, epsI=epsI, returninfo=False, **kwargs_solver
-        )
+        xinv = normal_equations_inversion(
+            Op, [], data, Weight=R, epsI=epsI, **kwargs_solver
+        )[0]
         r = data - Op * xinv
         # save history
         if returnhistory:
@@ -288,14 +286,17 @@ def _IRLS_model(
     Iop = Identity(data.size, dtype=data.dtype)
     # first iteration (unweighted least-squares)
     if ncp == np:
-        xinv = Op.H @ lsqr(Op @ Op.H + (epsI ** 2) * Iop, data, **kwargs_solver)[0]
+        xinv = Op.H @ lsqr(Op @ Op.H + (epsI**2) * Iop, data, **kwargs_solver)[0]
     else:
-        xinv = Op.H @ cgls(
-            Op @ Op.H + (epsI ** 2) * Iop,
-            data,
-            ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
-            **kwargs_solver,
-        )[0]
+        xinv = (
+            Op.H
+            @ cgls(
+                Op @ Op.H + (epsI**2) * Iop,
+                data,
+                ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
+                **kwargs_solver,
+            )[0]
+        )
     if returnhistory:
         xinv_hist[0] = xinv
     for iiter in range(nouter):
@@ -308,14 +309,14 @@ def _IRLS_model(
             xinv = (
                 R
                 @ Op.H
-                @ lsqr(Op @ R @ Op.H + epsI ** 2 * Iop, data, **kwargs_solver)[0]
+                @ lsqr(Op @ R @ Op.H + epsI**2 * Iop, data, **kwargs_solver)[0]
             )
         else:
             xinv = (
                 R
                 @ Op.H
                 @ cgls(
-                    Op @ R @ Op.H + epsI ** 2 * Iop,
+                    Op @ R @ Op.H + epsI**2 * Iop,
                     data,
                     ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
                     **kwargs_solver,
@@ -1258,7 +1259,7 @@ def FISTA(
 
         # update auxiliary coefficients
         told = t
-        t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
+        t = (1.0 + np.sqrt(1.0 + 4.0 * t**2)) / 2.0
         zinv = xinv + ((told - 1.0) / t) * (xinv - xinvold)
 
         # model update
@@ -1612,7 +1613,7 @@ def SplitBregman(
         for _ in range(niter_inner):
             # Regularized problem
             dataregs = dataregsL2 + [d[ireg] - b[ireg] for ireg in range(nregsL1)]
-            xinv = RegularizedInversion(
+            xinv = regularized_inversion(
                 Op,
                 Regs,
                 data,
@@ -1620,7 +1621,7 @@ def SplitBregman(
                 epsRs=epsRs,
                 x0=x0 if restart else xinv,
                 **kwargs_lsqr,
-            )
+            )[0]
             # Shrinkage
             d = [
                 _softthreshold(RegsL1[ireg] * xinv + b[ireg], epsRL1s[ireg])

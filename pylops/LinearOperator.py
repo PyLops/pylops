@@ -23,7 +23,7 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
 else:
     from scipy.sparse.linalg._interface import _ProductLinearOperator
 
-from pylops.optimization.solver import cgls
+from pylops.optimization.basic import cgls
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
 
@@ -1151,7 +1151,7 @@ class _PowerLinearOperator(spLinearOperator):
 
     def _adjoint(self):
         A, p = self.args
-        return A.H ** p
+        return A.H**p
 
 
 class _RealImagLinearOperator(LinearOperator):
