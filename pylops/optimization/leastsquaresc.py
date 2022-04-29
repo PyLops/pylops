@@ -1,5 +1,4 @@
 import logging
-import warnings
 
 import numpy as np
 from scipy.sparse.linalg import cg as sp_cg
@@ -9,6 +8,12 @@ from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.basesolver import Solver
 from pylops.optimization.basic import cg, cgls
 from pylops.utils.backend import get_array_module
+from pylops.utils.decorators import add_ndarray_support_to_solver
+
+sp_cg_ndarray = add_ndarray_support_to_solver(sp_cg)
+sp_lsqr_ndarray = add_ndarray_support_to_solver(lsqr)
+py_cg_ndarray = add_ndarray_support_to_solver(cg)
+py_cgls_ndarray = add_ndarray_support_to_solver(cgls)
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -150,7 +155,8 @@ class NormalEquationsInversion(Solver):
         # add regularization terms
         if epsI > 0:
             self.Op_normal += epsI**2 * Diagonal(
-                self.ncp.ones(int(self.Op.shape[1]), dtype=self.Op.dtype),
+                self.ncp.ones(self.Op.dims, dtype=self.Op.dtype),
+                dims=self.Op.dims,
                 dtype=self.Op.dtype,
             )
 
@@ -215,14 +221,12 @@ class NormalEquationsInversion(Solver):
         if engine == "scipy":
             if "atol" not in kwargs_solver:
                 kwargs_solver["atol"] = "legacy"
-            xinv, istop = sp_cg(self.Op_normal, self.y_normal, **kwargs_solver)
+            xinv, istop = sp_cg_ndarray(self.Op_normal, self.y_normal, **kwargs_solver)
         elif engine == "pylops":
-            xinv = cg(
+            xinv = py_cgls_ndarray(
                 self.Op_normal,
                 self.y_normal,
-                self.ncp.zeros(
-                    int(self.Op_normal.shape[1]), dtype=self.Op_normal.dtype
-                ),
+                self.ncp.zeros(self.Op_normal.dims, dtype=self.Op_normal.dtype),
                 **kwargs_solver,
             )[0]
             istop = None
@@ -543,14 +547,14 @@ class RegularizedInversion(Solver):
         if x is not None:
             self.datatot = self.datatot - self.RegOp * x
         if engine == "scipy":
-            xinv, istop, itn, r1norm, r2norm = lsqr(
+            xinv, istop, itn, r1norm, r2norm = sp_lsqr_ndarray(
                 self.RegOp, self.datatot, **kwargs_solver
             )[0:5]
         elif engine == "pylops":
-            xinv, istop, itn, r1norm, r2norm = cgls(
+            xinv, istop, itn, r1norm, r2norm = py_cgls_ndarray(
                 self.RegOp,
                 self.datatot,
-                self.ncp.zeros(int(self.RegOp.shape[1]), dtype=self.RegOp.dtype),
+                self.ncp.zeros(self.RegOp.dims, dtype=self.RegOp.dtype),
                 **kwargs_solver,
             )[0:5]
         else:
@@ -748,14 +752,16 @@ class PreconditionedInversion(Solver):
         if x is not None:
             self.y = self.y - self.Op * x
         if engine == "scipy":
-            pinv, istop, itn, r1norm, r2norm = lsqr(self.POp, self.y, **kwargs_solver)[
-                0:5
-            ]
-        elif engine == "pylops":
-            pinv, istop, itn, r1norm, r2norm = cgls(
+            pinv, istop, itn, r1norm, r2norm = sp_lsqr_ndarray(
                 self.POp,
                 self.y,
-                self.ncp.zeros(int(self.POp.shape[1]), dtype=self.POp.dtype),
+                **kwargs_solver,
+            )[0:5]
+        elif engine == "pylops":
+            pinv, istop, itn, r1norm, r2norm = py_cgls_ndarray(
+                self.POp,
+                self.y,
+                self.ncp.zeros(self.POp.dims, dtype=self.POp.dtype),
                 **kwargs_solver,
             )[0:5]
         else:

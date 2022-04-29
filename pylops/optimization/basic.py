@@ -1,7 +1,11 @@
 from pylops.optimization.basicc import CG, CGLS, LSQR
+from pylops.utils.decorators import add_ndarray_support_to_solver
 
 
-def cg(Op, y, x0, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10], callback=None):
+@add_ndarray_support_to_solver
+def cg(
+    Op, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10], callback=None
+):
     r"""Conjugate gradient
 
     Solve a square system of equations given an operator ``Op`` and
@@ -54,10 +58,11 @@ def cg(Op, y, x0, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10], callbac
     return x, iiter, cost
 
 
+@add_ndarray_support_to_solver
 def cgls(
     Op,
     y,
-    x0,
+    x0=None,
     niter=10,
     damp=0.0,
     tol=1e-4,
@@ -132,10 +137,11 @@ def cgls(
     return x, istop, iiter, r1norm, r2norm, cost
 
 
+@add_ndarray_support_to_solver
 def lsqr(
     Op,
     y,
-    x0,
+    x0=None,
     damp=0.0,
     atol=1e-08,
     btol=1e-08,

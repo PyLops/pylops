@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
+import pylops
 from pylops import LinearOperator
 from pylops.basicoperators import (
     Diagonal,
@@ -42,7 +43,7 @@ def test_overloads(par):
     # *
     assert isinstance(Dop * Dop, LinearOperator)
     # **
-    assert isinstance(Dop ** 2, LinearOperator)
+    assert isinstance(Dop**2, LinearOperator)
 
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
@@ -242,7 +243,7 @@ def test_rlinear(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_copy_dims_dimsd(par):
     """Apply various overloaded operators (.H, -, +, *) and ensure that the
-    returned operator is still of pylops LinearOperator type
+    dims and dimsd properties are propagated
     """
     Dy = FirstDerivative((par["ny"], par["nx"]), axis=0)
     Dx = FirstDerivative((par["ny"], par["nx"]), axis=-1)
@@ -275,5 +276,38 @@ def test_copy_dims_dimsd(par):
     assert (S @ Dx).dims == dims
     assert (S @ Dx).dimsd == dimsd_sym
     # **
-    assert (Dx ** 3).dims == dims
-    assert (Dx ** 3).dimsd == dimsd
+    assert (Dx**3).dims == dims
+    assert (Dx**3).dimsd == dimsd
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_non_flattened_arrays(par):
+    """Apply operators on arrays which are not 1D."""
+    dims = (par["ny"], par["nx"])
+    D = FirstDerivative(dims, axis=-1)
+    S = Symmetrize(dims, axis=0)
+
+    x_nd = np.random.randn(*dims)
+    x_1d = x_nd.ravel()
+    k = 4
+    X_nd = np.repeat(x_nd[..., np.newaxis], k, axis=-1)
+    X_1d = np.repeat(x_1d[..., np.newaxis], k, axis=-1)
+    Y_D = np.empty((*D.dimsd, k))
+    Y_S = np.empty((*S.dimsd, k))
+
+    for i in range(k):
+        Y_D[..., i] = D @ x_nd
+        Y_S[..., i] = S @ D @ x_nd
+
+    assert_array_equal((D @ x_1d).reshape(D.dimsd), D @ x_nd)
+    assert_array_equal((S @ D @ x_1d).reshape(S.dimsd), S @ D @ x_nd)
+    assert_array_equal(Y_D, D @ X_nd)
+    assert_array_equal(Y_D, (D @ X_1d).reshape((*D.dimsd, -1)))
+    assert_array_equal(Y_S, S @ D @ X_nd)
+    assert_array_equal(Y_S, (S @ D @ X_1d).reshape((*S.dimsd, -1)))
+
+    with pylops.disabled_ndarray_multiplication():
+        with pytest.raises(ValueError):
+            D @ x_nd
+        with pytest.raises(ValueError):
+            D @ X_nd

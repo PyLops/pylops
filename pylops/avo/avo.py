@@ -632,7 +632,7 @@ class AVOLinearModelling(LinearOperator):
                 + self.spatdims
             )
         y = self.ncp.sum(self.G * x[:, :, self.ncp.newaxis], axis=1)
-        return y
+        return y.ravel()
 
     def _rmatvec(self, x):
         if self.spatdims is None:
@@ -646,4 +646,4 @@ class AVOLinearModelling(LinearOperator):
                 + self.spatdims
             )
         y = self.ncp.sum(self.G * x[:, self.ncp.newaxis], axis=2)
-        return y
+        return y.ravel()

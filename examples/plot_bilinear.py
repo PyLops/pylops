@@ -28,7 +28,7 @@ iava = np.vstack(
 )
 
 Bop = pylops.signalprocessing.Bilinear(iava, (nz, nx))
-y = Bop * x.ravel()
+y = Bop * x
 
 ###############################################################################
 # At this point we try to reconstruct the input signal imposing a smooth

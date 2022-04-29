@@ -2,16 +2,18 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from pylops.basicoperators import Diagonal, HStack, Identity, MatrixMult, Smoothing1D
+from pylops.basicoperators import (
+    Diagonal,
+    HStack,
+    Identity,
+    MatrixMult,
+    Smoothing1D,
+    Symmetrize,
+)
 from pylops.optimization.leastsquares import (
     normal_equations_inversion,
     preconditioned_inversion,
     regularized_inversion,
-)
-from pylops.optimization.leastsquaresc import (
-    NormalEquationsInversion,
-    PreconditionedInversion,
-    RegularizedInversion,
 )
 
 par1 = {
@@ -245,26 +247,38 @@ def test_skinnyregularization(par):
     x = np.arange(par["nx"] - 1)
     y = Dop * x
 
-    xinv = normal_equations_inversion(
-        Dop,
-        [
-            Regop,
-        ],
-        y,
-        epsRs=[
-            1e-4,
-        ],
-    )[0]
+    xinv = normal_equations_inversion(Dop, [Regop], y, epsRs=[1e-4])[0]
     assert_array_almost_equal(x, xinv, decimal=2)
 
-    xinv = regularized_inversion(
-        Dop,
-        [
-            Regop,
-        ],
-        y,
-        epsRs=[
-            1e-4,
-        ],
-    )[0]
+    xinv = regularized_inversion(Dop, [Regop], y, epsRs=[1e-4])[0]
     assert_array_almost_equal(x, xinv, decimal=2)
+
+
+@pytest.mark.parametrize(
+    "par", [(par1), (par2), (par3), (par4), (par1j), (par2j), (par3j), (par4j)]
+)
+def test_NormalEquationsInversion_ndarray(par):
+    """Solve inversion with a skinny regularization (rows are smaller than
+    the number of elements in the model vector)
+    """
+    np.random.seed(10)
+    x = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"]) + par[
+        "imag"
+    ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
+    Dop = Symmetrize(x.shape, axis=-1, dtype=par["dtype"])
+    assert x.shape == Dop.dims
+
+    y = Dop * x
+    assert y.shape == Dop.dimsd
+
+    xinv = normal_equations_inversion(
+        Dop, None, y, epsI=0, **dict(maxiter=200, tol=1e-10)
+    )[0]
+    assert xinv.shape == Dop.dims
+    assert_array_almost_equal(x, xinv, decimal=3)
+
+    xinv = normal_equations_inversion(
+        Dop, None, y, epsI=0, x0=np.zeros_like(x), **dict(maxiter=200, tol=1e-10)
+    )[0]
+    assert xinv.shape == Dop.dims
+    assert_array_almost_equal(x, xinv, decimal=3)
