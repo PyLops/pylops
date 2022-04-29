@@ -3,6 +3,16 @@
 Changelog
 =========
 
+Version 1.18.1
+--------------
+
+*Released on: 29/04/2022*
+
+* Refractored :py:func:`pylops.utils.dottest`, and added two new optional input parameters
+  (`atol` and `rtol`)
+* Added optional parameter `densesolver` to :py:func:`pylops.LinearOperator.div`
+
+
 Version 1.18.0
 --------------
 
