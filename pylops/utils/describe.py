@@ -11,20 +11,18 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
     from scipy.sparse.linalg.interface import (
         _AdjointLinearOperator,
         _ProductLinearOperator,
-        _SumLinearOperator,
         _TransposedLinearOperator,
     )
 else:
     from scipy.sparse.linalg._interface import (
         _AdjointLinearOperator,
         _ProductLinearOperator,
-        _SumLinearOperator,
         _TransposedLinearOperator,
     )
 
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, VStack
-from pylops.LinearOperator import _ScaledLinearOperator
+from pylops.LinearOperator import _ScaledLinearOperator, _SumLinearOperator
 
 try:
     from sympy import BlockDiagMatrix, BlockMatrix, MatrixSymbol
