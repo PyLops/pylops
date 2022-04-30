@@ -81,7 +81,7 @@ def test_ChirpRadon2D(par):
     xinvana = Rop.inverse(y)
     assert_array_almost_equal(x.ravel(), xinvana, decimal=3)
 
-    xinv, _, _ = FISTA(Rop, y, 30, eps=1e0, returninfo=True)
+    xinv, _, _ = FISTA(Rop, y, niter=30, eps=1e0, returninfo=True)
     assert_array_almost_equal(x.ravel(), xinv, decimal=3)
 
 
@@ -140,5 +140,5 @@ def test_ChirpRadon3D(par):
     xinvana = Rop.inverse(y)
     assert_array_almost_equal(x.ravel(), xinvana, decimal=3)
 
-    xinv, _, _ = FISTA(Rop, y, 30, eps=1e0, returninfo=True)
+    xinv, _, _ = FISTA(Rop, y, niter=30, eps=1e0, returninfo=True)
     assert_array_almost_equal(x.ravel(), xinv, decimal=3)

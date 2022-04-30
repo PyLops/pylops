@@ -50,7 +50,7 @@ np.random.seed(10)
 ifreqs = [41, 25, 66]
 amps = [1.0, 1.0, 1.0]
 N = 200
-nfft = 2 ** 11
+nfft = 2**11
 dt = 0.004
 t = np.arange(N) * dt
 f = np.fft.rfftfreq(nfft, dt)
@@ -68,6 +68,7 @@ axs[0].set_title("Data(frequency domain)")
 axs[1].plot(t, x, "k", lw=2)
 axs[1].set_title("Data(time domain)")
 axs[1].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # We now define the locations at which the signal will be sampled.
@@ -91,6 +92,7 @@ plt.plot(t, x, ".k", ms=20, label="all samples")
 plt.plot(t, ymask, ".g", ms=15, label="available samples")
 plt.legend()
 plt.title("Data restriction")
+plt.tight_layout()
 
 ###############################################################################
 # To start let's consider the simplest *'solver'*, i.e., *least-square inversion
@@ -154,6 +156,7 @@ plt.plot(t, xinv_fromx0, "--r", ms=10, label="inversion from x0")
 plt.plot(t, xne, "--g", ms=10, label="normal equations")
 plt.legend()
 plt.title("Data reconstruction without regularization")
+plt.tight_layout()
 
 ###############################################################################
 # Regularization
@@ -276,7 +279,7 @@ subax.plot(t, xne1, "--c", lw=3)
 subax.plot(t, xreg, "-.r", lw=3)
 subax.plot(t, xprec, "--g", lw=3)
 subax.set_xlim(0.05, 0.3)
-
+plt.tight_layout()
 
 ###############################################################################
 # Much better estimates! We have seen here how regularization and/or
@@ -356,7 +359,7 @@ plt.tight_layout()
 # and can be accessed via :py:class:`pylops.optimization.sparsity.SPGL1`.
 
 xspgl1, pspgl1, info = pylops.optimization.sparsity.SPGL1(
-    Rop, y, FFTop, tau=3, iter_lim=200
+    Rop, y, SOp=FFTop, tau=3, iter_lim=200
 )
 
 fig, axs = plt.subplots(2, 1, figsize=(12, 8))

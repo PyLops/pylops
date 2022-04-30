@@ -117,7 +117,7 @@ def NormalEquationsInversion(
 
     # create dataregs and epsRs if not provided
     if dataregs is None and Regs is not None:
-        dataregs = [ncp.zeros(Reg.dimsd, dtype=Reg.dtype) for Reg in Regs]
+        dataregs = [ncp.zeros(int(Reg.shape[0]), dtype=Reg.dtype) for Reg in Regs]
     if epsRs is None and Regs is not None:
         epsRs = [1] * len(Regs)
 

@@ -38,9 +38,10 @@ y = Bop * x
 D2op = pylops.Laplacian((nz, nx), weights=(1, 1), dtype="float64")
 
 xadj = Bop.H * y
-xinv = pylops.optimization.leastsquares.NormalEquationsInversion(
-    Bop, [D2op], y, epsRs=[np.sqrt(0.1)], returninfo=False, **dict(maxiter=100)
-)
+with pylops.disabled_ndarray_multiplication():
+    xinv = pylops.optimization.leastsquares.NormalEquationsInversion(
+        Bop, [D2op], y, epsRs=[np.sqrt(0.1)], returninfo=False, **dict(maxiter=100)
+    )
 xadj = xadj.reshape(nz, nx)
 xinv = xinv.reshape(nz, nx)
 

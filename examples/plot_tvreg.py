@@ -53,6 +53,7 @@ plt.plot(x, "k", lw=3, label="x")
 plt.plot(y, ".k", label="y=x+n")
 plt.legend()
 plt.title("Model and data")
+plt.tight_layout()
 
 ###############################################################################
 # To start we will try to use a simple L2 regularization that enforces
@@ -71,6 +72,7 @@ plt.plot(y, ".k", label="y=x+n")
 plt.plot(xinv, "r", lw=5, label="xinv")
 plt.legend()
 plt.title("L2 inversion")
+plt.tight_layout()
 
 ###############################################################################
 # Now we impose blockiness in the solution using the Split Bregman solver
@@ -84,8 +86,8 @@ xinv, niter = pylops.optimization.sparsity.SplitBregman(
     Iop,
     [Dop],
     y,
-    niter_out,
-    niter_in,
+    niter_outer=niter_out,
+    niter_inner=niter_in,
     mu=mu,
     epsRL1s=[lamda],
     tol=1e-4,
@@ -99,6 +101,7 @@ plt.plot(y, ".k", label="y=x+n")
 plt.plot(xinv, "r", lw=5, label="xinv")
 plt.legend()
 plt.title("TV inversion")
+plt.tight_layout()
 
 ###############################################################################
 # Finally, we repeat the same exercise on a 2-dimensional image. In this case
@@ -135,6 +138,7 @@ axs[1].axis("tight")
 axs[2].imshow(np.abs(ymask), vmin=0, vmax=1, cmap="rainbow")
 axs[2].set_title("Sampled data")
 axs[2].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # Let's attempt now to reconstruct the model using the Split Bregman
@@ -158,15 +162,15 @@ Dop = [
 # TV
 mu = 1.5
 lamda = [0.1, 0.1]
-niter = 20
-niterinner = 10
+niter_out = 20
+niter_in = 10
 
 xinv, niter = pylops.optimization.sparsity.SplitBregman(
     Rop * Fop,
     Dop,
     y.ravel(),
-    niter,
-    niterinner,
+    niter_outer=niter_out,
+    niter_inner=niter_in,
     mu=mu,
     epsRL1s=lamda,
     tol=1e-4,
@@ -193,6 +197,7 @@ axs[1].plot(x[:, nx // 2], "k", lw=5, label="x")
 axs[1].plot(xinv[:, nx // 2], "r", lw=3, label="xinv TV")
 axs[1].set_title("Vertical section")
 axs[1].legend()
+plt.tight_layout()
 
 ###############################################################################
 # Note that more optimized variations of the Split Bregman algorithm have been

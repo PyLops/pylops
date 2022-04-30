@@ -168,7 +168,7 @@ def test_Radon2D(par):
     xadj1 = R1op.H * y
     assert_array_almost_equal(xadj, xadj1, decimal=4)
 
-    xinv, _, _ = FISTA(Rop, y, 30, eps=1e0, returninfo=True)
+    xinv, _, _ = FISTA(Rop, y, niter=30, eps=1e0, returninfo=True)
     assert_array_almost_equal(x.ravel(), xinv, decimal=1)
 
 
@@ -234,5 +234,5 @@ def test_Radon3D(par):
         assert_array_almost_equal(xadj, xadj1, decimal=4)
 
         if Rop.engine == "numba":  # as numpy is too slow here...
-            xinv, _, _ = FISTA(Rop, y, 200, eps=3e0, returninfo=True)
+            xinv, _, _ = FISTA(Rop, y, niter=200, eps=3e0, returninfo=True)
             assert_array_almost_equal(x.ravel(), xinv, decimal=1)

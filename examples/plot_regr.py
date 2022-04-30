@@ -92,6 +92,7 @@ plt.plot(
 plt.scatter(t, y, c="r", s=70)
 plt.scatter(t, yn, c="g", s=70)
 plt.legend(fontsize="x-small")
+plt.tight_layout()
 
 ###############################################################################
 # We consider now the case where some of the observations have large errors.
@@ -115,7 +116,7 @@ xnest = PRop / yn
 xirls, nouter, xirls_hist, rw_hist = pylops.optimization.sparsity.IRLS(
     PRop,
     yn,
-    nouter,
+    nouter=nouter,
     threshR=False,
     epsR=epsR,
     epsI=epsI,
@@ -152,3 +153,4 @@ plt.plot(
 plt.scatter(t, y, c="r", s=70)
 plt.scatter(t, yn, c="g", s=70)
 plt.legend(fontsize="x-small")
+plt.tight_layout()

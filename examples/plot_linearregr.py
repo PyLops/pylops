@@ -128,7 +128,7 @@ xnest = LRop / yn
 xirls, nouter, xirls_hist, rw_hist = pylops.optimization.sparsity.IRLS(
     LRop,
     yn,
-    nouter,
+    nouter=nouter,
     threshR=False,
     epsR=epsR,
     epsI=epsI,
