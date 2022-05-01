@@ -5,12 +5,13 @@ from scipy.sparse.linalg import lsqr
 from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.solver import cg, cgls
 from pylops.utils.backend import get_array_module
-from pylops.utils.decorators import add_ndarray_support_to_solver
+from pylops.utils.decorators import (
+    add_ndarray_support_to_solver,
+    disable_ndarray_multiplication,
+)
 
-sp_cg_ndarray = add_ndarray_support_to_solver(sp_cg)
-lsqr_ndarray = add_ndarray_support_to_solver(lsqr)
 
-
+@disable_ndarray_multiplication
 def NormalEquationsInversion(
     Op,
     Regs,
@@ -153,7 +154,7 @@ def NormalEquationsInversion(
     if ncp == np:
         if "atol" not in kwargs_solver:
             kwargs_solver["atol"] = "legacy"
-        xinv, istop = sp_cg_ndarray(Op_normal, y_normal, **kwargs_solver)
+        xinv, istop = sp_cg(Op_normal, y_normal, **kwargs_solver)
     else:
         xinv = cg(
             Op_normal,
@@ -216,6 +217,7 @@ def RegularizedOperator(Op, Regs, epsRs=(1,)):
     return OpReg
 
 
+@disable_ndarray_multiplication
 def RegularizedInversion(
     Op,
     Regs,
@@ -353,9 +355,7 @@ def RegularizedInversion(
         datatot = datatot - RegOp * x0
 
     if ncp == np:
-        xinv, istop, itn, r1norm, r2norm = lsqr_ndarray(
-            RegOp, datatot, **kwargs_solver
-        )[0:5]
+        xinv, istop, itn, r1norm, r2norm = lsqr(RegOp, datatot, **kwargs_solver)[0:5]
     else:
         xinv, istop, itn, r1norm, r2norm = cgls(
             RegOp,
@@ -371,6 +371,7 @@ def RegularizedInversion(
         return xinv
 
 
+@disable_ndarray_multiplication
 def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_solver):
     r"""Preconditioned inversion.
 
@@ -445,7 +446,7 @@ def PreconditionedInversion(Op, P, data, x0=None, returninfo=False, **kwargs_sol
         data = data - Op * x0
 
     if ncp == np:
-        pinv, istop, itn, r1norm, r2norm = lsqr_ndarray(POp, data, **kwargs_solver)[0:5]
+        pinv, istop, itn, r1norm, r2norm = lsqr(POp, data, **kwargs_solver)[0:5]
     else:
         pinv, istop, itn, r1norm, r2norm = cgls(
             POp, data, ncp.zeros(int(POp.shape[1]), dtype=POp.dtype), **kwargs_solver

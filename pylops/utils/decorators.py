@@ -3,6 +3,24 @@ from functools import wraps
 from pylops.config import disabled_ndarray_multiplication
 
 
+def disable_ndarray_multiplication(func):
+    """Decorator which disables ndarray multiplication(.
+
+    Parameters
+    ----------
+    func : :obj:`callable`
+        Generic function
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):  # SciPy-type signature
+        with disabled_ndarray_multiplication():
+            out = func(*args, **kwargs)
+        return out
+
+    return wrapper
+
+
 def add_ndarray_support_to_solver(func):
     """Decorator which converts a solver-type function that only supports
     a 1d-array into one that supports one (dimsd-shaped) ndarray.
