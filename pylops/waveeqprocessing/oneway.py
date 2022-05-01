@@ -165,7 +165,7 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64"):
     else:
         dims = (nt, kx.size, ky.size)
         dimsfft = (freq.size, kx.size, ky.size)
-    Fop = FFT(dims, dir=0, nfft=nt, real=True, ifftshift_before=True, dtype=dtype)
+    Fop = FFT(dims, dir=0, nfft=nt, real=True, dtype=dtype)
     Kxop = FFT(
         dimsfft, dir=1, nfft=kx.size, real=False, ifftshift_before=True, dtype=dtypefft
     )
