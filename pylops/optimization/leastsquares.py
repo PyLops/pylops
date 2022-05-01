@@ -5,10 +5,7 @@ from scipy.sparse.linalg import lsqr
 from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.solver import cg, cgls
 from pylops.utils.backend import get_array_module
-from pylops.utils.decorators import (
-    add_ndarray_support_to_solver,
-    disable_ndarray_multiplication,
-)
+from pylops.utils.decorators import disable_ndarray_multiplication
 
 
 @disable_ndarray_multiplication
