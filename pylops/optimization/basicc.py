@@ -73,8 +73,8 @@ class CG(Solver):
 
         """
         self.y = y
-        self.tol = tol
         self.niter = niter
+        self.tol = tol
         self.ncp = get_array_module(y)
 
         # initialize solver
@@ -107,6 +107,11 @@ class CG(Solver):
         show : :obj:`bool`, optional
             Display iteration log
 
+        Returns
+        -------
+        x : :obj:`np.ndarray`
+            Updated model vector
+
         """
         Opc = self.Op.matvec(self.c)
         cOpc = self.ncp.abs(self.c.dot(Opc.conj()))
@@ -133,8 +138,6 @@ class CG(Solver):
         niter : :obj:`int`, optional
             Number of iterations. Can be set to ``None`` if already
             provided in the setup call
-        tol : :obj:`float`, optional
-            Tolerance on residual norm
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`list`, optional

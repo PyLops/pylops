@@ -34,9 +34,9 @@ class Solver(metaclass=ABCMeta):
         self.Op = Op
         self.tstart = time.time()
 
-    def _print_solver(self):
+    def _print_solver(self, text=""):
+        print(f"{type(self).__name__}" + text)
         print(
-            f"{type(self).__name__}\n"
             "-----------------------------------------------------------\n"
             f"The Operator Op has {self.Op.shape[0]} rows and {self.Op.shape[1]} cols"
         )

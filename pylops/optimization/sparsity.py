@@ -12,6 +12,15 @@ from pylops.optimization.leastsquares import (
     normal_equations_inversion,
     regularized_inversion,
 )
+from pylops.optimization.sparsityc import (
+    ISTA,
+    _halfthreshold,
+    _halfthreshold_percentile,
+    _hardthreshold,
+    _hardthreshold_percentile,
+    _softthreshold,
+    _softthreshold_percentile,
+)
 from pylops.utils.backend import get_array_module, get_module_name, to_numpy
 
 try:
@@ -22,184 +31,6 @@ except ModuleNotFoundError:
 except Exception as e:
     spgl1 = None
     spgl1_message = f"Failed to import spgl1 (error:{e})."
-
-
-def _hardthreshold(x, thresh):
-    r"""Hard thresholding.
-
-    Applies hard thresholding to vector ``x`` (equal to the proximity
-    operator for :math:`\|\mathbf{x}\|_0`) as shown in [1]_.
-
-    .. [1] Chen, F., Shen, L., Suter, B.W., “Computing the proximity
-       operator of the ℓp norm with 0 < p < 1”,
-       IET Signal Processing, vol. 10. 2016.
-
-    Parameters
-    ----------
-    x : :obj:`numpy.ndarray`
-        Vector
-    thresh : :obj:`float`
-        Threshold
-
-    Returns
-    -------
-    x1 : :obj:`numpy.ndarray`
-        Tresholded vector
-
-    """
-    x1 = x.copy()
-    x1[np.abs(x) <= np.sqrt(2 * thresh)] = 0
-    return x1
-
-
-def _softthreshold(x, thresh):
-    r"""Soft thresholding.
-
-    Applies soft thresholding to vector ``x`` (equal to the proximity
-    operator for :math:`\|\mathbf{x}\|_1`) as shown in [1]_.
-
-    .. [1] Chen, F., Shen, L., Suter, B.W., “Computing the proximity
-       operator of the ℓp norm with 0 < p < 1”,
-       IET Signal Processing, vol. 10. 2016.
-
-    Parameters
-    ----------
-    x : :obj:`numpy.ndarray`
-        Vector
-    thresh : :obj:`float`
-        Threshold
-
-    Returns
-    -------
-    x1 : :obj:`numpy.ndarray`
-        Tresholded vector
-
-    """
-    if np.iscomplexobj(x):
-        # https://stats.stackexchange.com/questions/357339/soft-thresholding-
-        # for-the-lasso-with-complex-valued-data
-        x1 = np.maximum(np.abs(x) - thresh, 0.0) * np.exp(1j * np.angle(x))
-    else:
-        x1 = np.maximum(np.abs(x) - thresh, 0.0) * np.sign(x)
-    return x1
-
-
-def _halfthreshold(x, thresh):
-    r"""Half thresholding.
-
-    Applies half thresholding to vector ``x`` (equal to the proximity
-    operator for :math:`\|\mathbf{x}\|_{1/2}^{1/2}`) as shown in [1]_.
-
-    .. [1] Chen, F., Shen, L., Suter, B.W., “Computing the proximity
-       operator of the ℓp norm with 0 < p < 1”,
-       IET Signal Processing, vol. 10. 2016.
-
-    Parameters
-    ----------
-    x : :obj:`numpy.ndarray`
-        Vector
-    thresh : :obj:`float`
-        Threshold
-
-    Returns
-    -------
-    x1 : :obj:`numpy.ndarray`
-        Tresholded vector
-
-        .. warning::
-            Since version 1.17.0 does not produce ``np.nan`` on bad input.
-
-    """
-    arg = np.ones_like(x)
-    arg[x != 0] = (thresh / 8.0) * (np.abs(x[x != 0]) / 3.0) ** (-1.5)
-    arg = np.clip(arg, -1, 1)
-    phi = 2.0 / 3.0 * np.arccos(arg)
-    x1 = 2.0 / 3.0 * x * (1 + np.cos(2.0 * np.pi / 3.0 - phi))
-    # x1[np.abs(x) <= 1.5 * thresh ** (2. / 3.)] = 0
-    x1[np.abs(x) <= (54 ** (1.0 / 3.0) / 4.0) * thresh ** (2.0 / 3.0)] = 0
-    return x1
-
-
-def _hardthreshold_percentile(x, perc):
-    r"""Percentile Hard thresholding.
-
-    Applies hard thresholding to vector ``x`` using a percentile to define
-    the amount of values in the input vector to be preserved as shown in [1]_.
-
-    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
-       data reconstruction using a percentile-half-thresholding algorithm”,
-       Journal of Geophysics and Engineering, vol. 11. 2014.
-
-    Parameters
-    ----------
-    x : :obj:`numpy.ndarray`
-        Vector
-    thresh : :obj:`float`
-        Threshold
-
-    Returns
-    -------
-    x1 : :obj:`numpy.ndarray`
-        Tresholded vector
-
-    """
-    thresh = np.percentile(np.abs(x), perc)
-    return _hardthreshold(x, 0.5 * thresh**2)
-
-
-def _softthreshold_percentile(x, perc):
-    r"""Percentile Soft thresholding.
-
-    Applies soft thresholding to vector ``x`` using a percentile to define
-    the amount of values in the input vector to be preserved as shown in [1]_.
-
-    .. [1] Chen, Y., Chen, K., Shi, P., Wang, Y., “Irregular seismic
-       data reconstruction using a percentile-half-thresholding algorithm”,
-       Journal of Geophysics and Engineering, vol. 11. 2014.
-
-    Parameters
-    ----------
-    x : :obj:`numpy.ndarray`
-        Vector
-    perc : :obj:`float`
-        Percentile
-
-    Returns
-    -------
-    x : :obj:`numpy.ndarray`
-        Tresholded vector
-
-    """
-    thresh = np.percentile(np.abs(x), perc)
-    return _softthreshold(x, thresh)
-
-
-def _halfthreshold_percentile(x, perc):
-    r"""Percentile Half thresholding.
-
-    Applies half thresholding to vector ``x`` using a percentile to define
-    the amount of values in the input vector to be preserved as shown in [1]_.
-
-    .. [1] Xu, Z., Xiangyu, C., Xu, F. and Zhang, H., “L1/2 Regularization: A
-       Thresholding Representation Theory and a Fast Solver”, IEEE Transactions
-       on Neural Networks and Learning Systems, vol. 23. 2012.
-
-    Parameters
-    ----------
-    x : :obj:`numpy.ndarray`
-        Vector
-    perc : :obj:`float`
-        Percentile
-
-    Returns
-    -------
-    x : :obj:`numpy.ndarray`
-        Tresholded vector
-
-    """
-    thresh = np.percentile(np.abs(x), perc)
-    # return _halfthreshold(x, (2. / 3. * thresh) ** (1.5))
-    return _halfthreshold(x, (4.0 / 54 ** (1.0 / 3.0) * thresh) ** 1.5)
 
 
 def _IRLS_data(
@@ -683,24 +514,24 @@ def OMP(
     return xinv, iiter, cost
 
 
-def ISTA(
+def ista(
     Op,
-    data,
-    niter,
+    y,
+    x0=None,
+    niter=10,
+    SOp=None,
     eps=0.1,
     alpha=None,
     eigsiter=None,
     eigstol=0,
     tol=1e-10,
-    monitorres=False,
-    returninfo=False,
-    show=False,
     threshkind="soft",
     perc=None,
-    callback=None,
     decay=None,
-    SOp=None,
-    x0=None,
+    monitorres=False,
+    show=False,
+    itershow=[10, 10, 10],
+    callback=None,
 ):
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
@@ -713,10 +544,14 @@ def ISTA(
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
-    data : :obj:`numpy.ndarray`
-        Data
+    y : :obj:`numpy.ndarray`
+        Data of size :math:`[N \times 1]`
+    x0: :obj:`numpy.ndarray`, optional
+        Initial guess
     niter : :obj:`int`
         Number of iterations
+    SOp : :obj:`pylops.LinearOperator`, optional
+        Regularization operator (use when solving the analysis problem)
     eps : :obj:`float`, optional
         Sparsity damping
     alpha : :obj:`float`, optional
@@ -733,27 +568,25 @@ def ISTA(
     tol : :obj:`float`, optional
         Tolerance. Stop iterations if difference between inverted model
         at subsequent iterations is smaller than ``tol``
-    monitorres : :obj:`bool`, optional
-        Monitor that residual is decreasing
-    returninfo : :obj:`bool`, optional
-        Return info of CG solver
-    show : :obj:`bool`, optional
-        Display iterations log
     threshkind : :obj:`str`, optional
         Kind of thresholding ('hard', 'soft', 'half', 'hard-percentile',
         'soft-percentile', or 'half-percentile' - 'soft' used as default)
     perc : :obj:`float`, optional
         Percentile, as percentage of values to be kept by thresholding (to be
         provided when thresholding is soft-percentile or half-percentile)
+    decay : :obj:`numpy.ndarray`, optional
+        Decay factor to be applied to thresholding during iterations
+    monitorres : :obj:`bool`, optional
+        Monitor that residual is decreasing
+    show : :obj:`bool`, optional
+        Display logs
+    itershow : :obj:`list`, optional
+        Display set log for the first N1 steps, last N2 steps,
+        and every N3 steps in between where N1, N2, N3 are the
+        three element of the list.
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
-    decay : :obj:`numpy.ndarray`, optional
-        Decay factor to be applied to thresholding during iterations
-    SOp : :obj:`pylops.LinearOperator`, optional
-        Regularization operator (use when solving the analysis problem)
-    x0: :obj:`numpy.ndarray`, optional
-        Initial guess
 
     Returns
     -------
@@ -784,228 +617,30 @@ def ISTA(
 
     Notes
     -----
-    Solves the following synthesis problem for the operator
-    :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
-
-    .. math::
-        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_2^2 +
-            \epsilon \|\mathbf{x}\|_p
-
-    or the analysis problem:
-
-    .. math::
-        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_2^2 +
-            \epsilon \|\mathbf{SOp}^H\,\mathbf{x}\|_p
-
-    if ``SOp`` is provided. Note that in the first case, ``SOp`` should be
-    assimilated in the modelling operator (i.e., ``Op=GOp * SOp``).
-
-    The Iterative Shrinkage-Thresholding Algorithms (ISTA) [1]_ is used, where
-    :math:`p=0, 0.5, 1`. This is a very simple iterative algorithm which
-    applies the following step:
-
-    .. math::
-        \mathbf{x}^{(i+1)} = T_{(\epsilon \alpha /2, p)} \left(\mathbf{x}^{(i)} +
-        \alpha\,\mathbf{Op}^H \left(\mathbf{d} - \mathbf{Op}\,\mathbf{x}^{(i)}\right)\right)
-
-    or
-
-    .. math::
-        \mathbf{x}^{(i+1)} = \mathbf{SOp}\,\left\{T_{(\epsilon \alpha /2, p)}
-        \mathbf{SOp}^H\,\left(\mathbf{x}^{(i)} + \alpha\,\mathbf{Op}^H \left(\mathbf{d} -
-        \mathbf{Op} \,\mathbf{x}^{(i)}\right)\right)\right\}
-
-    where :math:`\epsilon \alpha /2` is the threshold and :math:`T_{(\tau, p)}`
-    is the thresholding rule. The most common variant of ISTA uses the
-    so-called soft-thresholding rule :math:`T(\tau, p=1)`. Alternatively an
-    hard-thresholding rule is used in the case of :math:`p=0` or a half-thresholding
-    rule is used in the case of :math:`p=1/2`. Finally, percentile bases thresholds
-    are also implemented: the damping factor is not used anymore an the
-    threshold changes at every iteration based on the computed percentile.
-
-    .. [1] Daubechies, I., Defrise, M., and De Mol, C., “An iterative
-       thresholding algorithm for linear inverse problems with a sparsity
-       constraint”, Communications on pure and applied mathematics, vol. 57,
-       pp. 1413-1457. 2004.
+    See :class:`pylops.optimization.sparsityc.ISTA`
 
     """
-    if threshkind not in [
-        "hard",
-        "soft",
-        "half",
-        "hard-percentile",
-        "soft-percentile",
-        "half-percentile",
-    ]:
-        raise NotImplementedError(
-            "threshkind should be hard, soft, half,"
-            "hard-percentile, soft-percentile, "
-            "or half-percentile"
-        )
-    if (
-        threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]
-        and perc is None
-    ):
-        raise ValueError(
-            "Provide a percentile when choosing hard-percentile,"
-            "soft-percentile, or half-percentile thresholding"
-        )
-
-    # choose thresholding function
-    if threshkind == "soft":
-        threshf = _softthreshold
-    elif threshkind == "hard":
-        threshf = _hardthreshold
-    elif threshkind == "half":
-        threshf = _halfthreshold
-    elif threshkind == "hard-percentile":
-        threshf = _hardthreshold_percentile
-    elif threshkind == "soft-percentile":
-        threshf = _softthreshold_percentile
-    else:
-        threshf = _halfthreshold_percentile
-
-    # identify backend to use
-    ncp = get_array_module(data)
-
-    # prepare decay (if not passed)
-    if perc is None and decay is None:
-        decay = ncp.ones(niter)
-
-    if show:
-        tstart = time.time()
-        print(
-            f"ISTA optimization ({threshkind} thresholding)\n"
-            "-----------------------------------------------------------\n"
-            f"The Operator Op has {Op.shape[0]} rows and {Op.shape[1]} cols\n"
-            f"eps = {eps:10e}\ttol = {tol:10e}\tniter = {niter}"
-        )
-    # step size
-    if alpha is None:
-        if not isinstance(Op, LinearOperator):
-            Op = LinearOperator(Op, explicit=False)
-        # compute largest eigenvalues of Op^H * Op
-        Op1 = LinearOperator(Op.H * Op, explicit=False)
-        if get_module_name(ncp) == "numpy":
-            maxeig = np.abs(
-                Op1.eigs(
-                    neigs=1,
-                    symmetric=True,
-                    niter=eigsiter,
-                    **dict(tol=eigstol, which="LM"),
-                )[0]
-            )
-        else:
-            maxeig = np.abs(
-                power_iteration(
-                    Op1, niter=eigsiter, tol=eigstol, dtype=Op1.dtype, backend="cupy"
-                )[0]
-            )
-        alpha = 1.0 / maxeig
-
-    # define threshold
-    thresh = eps * alpha * 0.5
-
-    if show:
-        if perc is None:
-            print(f"alpha = {alpha:10e}\tthresh = {thresh:10e}")
-        else:
-            print(f"alpha = {alpha:10e}\tperc = {perc:.1f}")
-        print("-----------------------------------------------------------\n")
-        head1 = "   Itn       x[0]        r2norm     r12norm     xupdate"
-        print(head1)
-
-    # initialize model and cost function
-    if x0 is None:
-        if data.ndim == 1:
-            xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
-        else:
-            xinv = ncp.zeros((int(Op.shape[1]), data.shape[1]), dtype=Op.dtype)
-    else:
-        if data.ndim != x0.ndim:
-            # error for wrong dimensions
-            raise ValueError("Number of columns of x0 and data are not the same")
-        elif x0.shape[0] != Op.shape[1]:
-            # error for wrong dimensions
-            raise ValueError("Operator and input vector have different dimensions")
-        else:
-            xinv = x0.copy()
-
-    if monitorres:
-        normresold = np.inf
-    if returninfo:
-        cost = np.zeros(niter + 1)
-
-    # iterate
-    for iiter in range(niter):
-        xinvold = xinv.copy()
-
-        # compute residual
-        res = data - Op @ xinv
-        if monitorres:
-            normres = np.linalg.norm(res)
-            if normres > normresold:
-                raise ValueError(
-                    f"ISTA stopped at iteration {iiter} due to "
-                    "residual increasing, consider modifying "
-                    "eps and/or alpha..."
-                )
-            else:
-                normresold = normres
-
-        # compute gradient
-        grad = alpha * Op.H @ res
-
-        # update inverted model
-        xinv_unthesh = xinv + grad
-        if SOp is not None:
-            xinv_unthesh = SOp.H @ xinv_unthesh
-        if perc is None:
-            xinv = threshf(xinv_unthesh, decay[iiter] * thresh)
-        else:
-            xinv = threshf(xinv_unthesh, 100 - perc)
-        if SOp is not None:
-            xinv = SOp @ xinv
-
-        # model update
-        xupdate = np.linalg.norm(xinv - xinvold)
-
-        if returninfo or show:
-            costdata = 0.5 * np.linalg.norm(res) ** 2
-            costreg = eps * np.linalg.norm(xinv, ord=1)
-        if returninfo:
-            cost[iiter] = costdata + costreg
-
-        # run callback
-        if callback is not None:
-            callback(xinv)
-
-        if show:
-            if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
-                msg = (
-                    f"{iiter + 1:6g}  {to_numpy(xinv[:2])[0]:12.5e}  "
-                    f"{costdata:10.3e}   {costdata + costreg:9.3e}  {xupdate:10.3e}"
-                )
-                print(msg)
-
-        # check tolerance
-        if xupdate < tol:
-            logging.warning("update smaller that tolerance for " "iteration %d", iiter)
-            niter = iiter
-            break
-
-    # get values pre-threshold at locations where xinv is different from zero
-    # xinv = np.where(xinv != 0, xinv_unthesh, xinv)
-
-    if show:
-        print(
-            f"\nIterations = {niter}        Total time (s) = {time.time() - tstart:.2f}"
-        )
-        print("---------------------------------------------------------\n")
-    if returninfo:
-        return xinv, niter, cost[:niter]
-    else:
-        return xinv, niter
+    istasolve = ISTA(Op)
+    if callback is not None:
+        istasolve.callback = callback
+    x, iiter, cost = istasolve.solve(
+        y=y,
+        x0=x0,
+        niter=niter,
+        SOp=SOp,
+        eps=eps,
+        alpha=alpha,
+        eigsiter=eigsiter,
+        eigstol=eigstol,
+        tol=tol,
+        threshkind=threshkind,
+        perc=perc,
+        decay=decay,
+        monitorres=monitorres,
+        show=show,
+        itershow=itershow,
+    )
+    return x, iiter, cost
 
 
 def FISTA(
