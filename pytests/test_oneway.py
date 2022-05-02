@@ -10,9 +10,9 @@ from pylops.waveeqprocessing.oneway import Deghosting, PhaseShift
 np.random.seed(10)
 
 parmod = {
-    "ox": -100,
+    "ox": -400,
     "dx": 10,
-    "nx": 21,
+    "nx": 81,
     "oy": -50,
     "dy": 10,
     "ny": 11,
