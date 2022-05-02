@@ -10,9 +10,9 @@ from pylops.waveeqprocessing.oneway import Deghosting, PhaseShift
 np.random.seed(10)
 
 parmod = {
-    "ox": -100,
+    "ox": -400,
     "dx": 10,
-    "nx": 21,
+    "nx": 81,
     "oy": -50,
     "dy": 10,
     "ny": 11,
@@ -101,11 +101,9 @@ def test_Deghosting_2dsignal(par, create_data2D):
         vel_sep,
         zrec,
         win=np.ones_like(p2d),
-        npad=0,
-        ntaper=0,
+        npad=3,
+        ntaper=5,
         dtype=par["dtype"],
         **dict(damp=1e-10, iter_lim=60)
     )
-
-    print(np.linalg.norm(p2d_minus_inv - p2d_minus) / np.linalg.norm(p2d_minus))
     assert np.linalg.norm(p2d_minus_inv - p2d_minus) / np.linalg.norm(p2d_minus) < 3e-1

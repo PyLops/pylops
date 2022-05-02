@@ -41,7 +41,7 @@ def _phase_shift(phiin, freq, kx, vel, dz, ky=0, adj=False):
 
     """
     # vertical slowness
-    kz = (freq / vel) ** 2 - kx ** 2 - ky ** 2
+    kz = (freq / vel) ** 2 - kx**2 - ky**2
     kz = np.sqrt(kz.astype(phiin.dtype))
     # ensure evanescent region is complex positive
     kz = np.real(kz) - 1j * np.sign(dz) * np.abs(np.imag(kz))
@@ -72,7 +72,7 @@ class _PhaseShift(LinearOperator):
         else:
             [freq, kx, ky] = np.meshgrid(freq, kx, ky, indexing="ij")
         # define vertical wavenumber axis
-        kz = (freq / vel) ** 2 - kx ** 2 - ky ** 2
+        kz = (freq / vel) ** 2 - kx**2 - ky**2
         kz = np.sqrt(kz.astype(dtype))
         # ensure evanescent region is complex positive
         kz = np.real(kz) - 1j * np.sign(dz) * np.abs(np.imag(kz))
@@ -167,7 +167,7 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64"):
         dimsfft = (freq.size, kx.size, ky.size)
     Fop = FFT(dims, dir=0, nfft=nt, real=True, dtype=dtype)
     Kxop = FFT(
-        dimsfft, dir=1, nfft=kx.size, real=False, fftshift_after=True, dtype=dtypefft
+        dimsfft, dir=1, nfft=kx.size, real=False, ifftshift_before=True, dtype=dtypefft
     )
     if ky is not None:
         Kyop = FFT(
@@ -175,7 +175,7 @@ def PhaseShift(vel, dz, nt, freq, kx, ky=None, dtype="float64"):
             dir=2,
             nfft=ky.size,
             real=False,
-            fftshift_after=True,
+            ifftshift_before=True,
             dtype=dtypefft,
         )
     Pop = _PhaseShift(vel, dz, freq, kx, ky, dtypefft)
@@ -247,7 +247,6 @@ def Deghosting(
     npad : :obj:`float` or :obj:`tuple`, optional
         Number of samples of padding applied to propagator to avoid edge
         effects
-        angle
     restriction : :obj:`pylops.LinearOperator`, optional
         Restriction operator
     sptransf : :obj:`pylops.LinearOperator`, optional
@@ -296,7 +295,6 @@ def Deghosting(
 
     .. [1] Amundsen, L., 1993, Wavenumber-based filtering of marine point-source
        data: GEOPHYSICS, 58, 1335–1348.
-
 
     """
     ndims = p.ndim
