@@ -101,11 +101,11 @@ def test_IRLS_data(par):
     xinv, _ = IRLS(
         Gop,
         y,
-        10,
+        x0=x0,
+        nouter=10,
         threshR=False,
         epsR=1e-2,
         epsI=0,
-        x0=x0,
         tolIRLS=1e-3,
         returnhistory=False,
         kind="data",
@@ -129,7 +129,7 @@ def test_IRLS_model(par):
     (
         xinv,
         _,
-    ) = IRLS(Aop, y, maxit, tolIRLS=1e-3, returnhistory=False, kind="model")
+    ) = IRLS(Aop, y, nouter=maxit, tolIRLS=1e-3, returnhistory=False, kind="model")
     assert_array_almost_equal(x, xinv, decimal=1)
 
 
@@ -187,7 +187,14 @@ def test_ISTA_FISTA(par):
     # ISTA with too high alpha (check that exception is raised)
     with pytest.raises(ValueError):
         xinv, _, _ = ISTA(
-            Aop, y, maxit, eps=eps, alpha=1e5, monitorres=True, tol=0, returninfo=True
+            Aop,
+            y,
+            niter=maxit,
+            eps=eps,
+            alpha=1e5,
+            monitorres=True,
+            tol=0,
+            returninfo=True,
         )
 
     # Regularization based ISTA and FISTA
@@ -196,7 +203,7 @@ def test_ISTA_FISTA(par):
         xinv, _, _ = ISTA(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             eps=eps,
             threshkind=threshkind,
             tol=0,
@@ -209,7 +216,7 @@ def test_ISTA_FISTA(par):
         xinv, _, _ = FISTA(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             eps=eps,
             threshkind=threshkind,
             tol=0,
@@ -224,7 +231,7 @@ def test_ISTA_FISTA(par):
         xinv, _, _ = ISTA(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             perc=perc,
             threshkind=threshkind,
             tol=0,
@@ -237,7 +244,7 @@ def test_ISTA_FISTA(par):
         xinv, _, _ = FISTA(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             perc=perc,
             threshkind=threshkind,
             tol=0,
@@ -270,7 +277,7 @@ def test_ISTA_FISTA_multiplerhs(par):
         xinv, _, _ = ISTA(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             eps=eps,
             threshkind=threshkind,
             tol=0,
@@ -283,7 +290,7 @@ def test_ISTA_FISTA_multiplerhs(par):
         xinv, _, _ = FISTA(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             eps=eps,
             threshkind=threshkind,
             tol=0,
@@ -298,7 +305,7 @@ def test_ISTA_FISTA_multiplerhs(par):
         xinv, _, _ = ISTA(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             perc=perc,
             threshkind=threshkind,
             tol=0,
@@ -311,7 +318,7 @@ def test_ISTA_FISTA_multiplerhs(par):
         xinv, _, _ = FISTA(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             perc=perc,
             threshkind=threshkind,
             tol=0,
@@ -360,18 +367,18 @@ def test_SplitBregman(par):
     x[nx // 2 : 3 * nx // 4] = -5
     n = np.random.normal(0, 1, nx)
     y = x + n
-
-    mu = 0.01
-    lamda = 0.2
-    niter_end = 100
+    mu = 0.05
+    lamda = 0.3
+    niter_end = 50
     niter_in = 3
+
     x0 = np.ones(nx)
     xinv, niter = SplitBregman(
         Iop,
         [Dop],
         y,
-        niter_end,
-        niter_in,
+        niter_outer=niter_end,
+        niter_inner=niter_in,
         mu=mu,
         epsRL1s=[lamda],
         tol=1e-4,

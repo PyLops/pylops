@@ -13,6 +13,7 @@ from pylops.optimization.leastsquares import (
 )
 from pylops.optimization.solver import cgls
 from pylops.utils.backend import get_array_module, get_module_name, to_numpy
+from pylops.utils.decorators import add_ndarray_support_to_solver
 
 try:
     from spgl1 import spgl1
@@ -144,7 +145,7 @@ def _hardthreshold_percentile(x, perc):
 
     """
     thresh = np.percentile(np.abs(x), perc)
-    return _hardthreshold(x, 0.5 * thresh ** 2)
+    return _hardthreshold(x, 0.5 * thresh**2)
 
 
 def _softthreshold_percentile(x, perc):
@@ -288,14 +289,17 @@ def _IRLS_model(
     Iop = Identity(data.size, dtype=data.dtype)
     # first iteration (unweighted least-squares)
     if ncp == np:
-        xinv = Op.H @ lsqr(Op @ Op.H + (epsI ** 2) * Iop, data, **kwargs_solver)[0]
+        xinv = Op.H @ lsqr(Op @ Op.H + (epsI**2) * Iop, data, **kwargs_solver)[0]
     else:
-        xinv = Op.H @ cgls(
-            Op @ Op.H + (epsI ** 2) * Iop,
-            data,
-            ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
-            **kwargs_solver,
-        )[0]
+        xinv = (
+            Op.H
+            @ cgls(
+                Op @ Op.H + (epsI**2) * Iop,
+                data,
+                ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
+                **kwargs_solver,
+            )[0]
+        )
     if returnhistory:
         xinv_hist[0] = xinv
     for iiter in range(nouter):
@@ -308,14 +312,14 @@ def _IRLS_model(
             xinv = (
                 R
                 @ Op.H
-                @ lsqr(Op @ R @ Op.H + epsI ** 2 * Iop, data, **kwargs_solver)[0]
+                @ lsqr(Op @ R @ Op.H + epsI**2 * Iop, data, **kwargs_solver)[0]
             )
         else:
             xinv = (
                 R
                 @ Op.H
                 @ cgls(
-                    Op @ R @ Op.H + epsI ** 2 * Iop,
+                    Op @ R @ Op.H + epsI**2 * Iop,
                     data,
                     ncp.zeros(int(Op.shape[0]), dtype=Op.dtype),
                     **kwargs_solver,
@@ -345,11 +349,11 @@ def _IRLS_model(
 def IRLS(
     Op,
     data,
-    nouter,
+    x0=None,
+    nouter=10,
     threshR=False,
     epsR=1e-10,
     epsI=1e-10,
-    x0=None,
     tolIRLS=1e-10,
     returnhistory=False,
     kind="data",
@@ -377,7 +381,9 @@ def IRLS(
         Operator to invert
     data : :obj:`numpy.ndarray`
         Data
-    nouter : :obj:`int`
+    x0 : :obj:`numpy.ndarray`, optional
+        Initial guess
+    nouter : :obj:`int`, optional
         Number of outer iterations
     threshR : :obj:`bool`, optional
         Apply thresholding in creation of weight (``True``)
@@ -386,8 +392,6 @@ def IRLS(
         Damping to be applied to residuals for weighting term
     espI : :obj:`float`, optional
         Tikhonov damping
-    x0 : :obj:`numpy.ndarray`, optional
-        Initial guess
     tolIRLS : :obj:`float`, optional
         Tolerance. Stop outer iterations if difference between inverted model
         at subsequent iterations is smaller than ``tolIRLS``
@@ -685,7 +689,8 @@ def OMP(
 def ISTA(
     Op,
     data,
-    niter,
+    x0=None,
+    niter=10,
     eps=0.1,
     alpha=None,
     eigsiter=None,
@@ -699,7 +704,6 @@ def ISTA(
     callback=None,
     decay=None,
     SOp=None,
-    x0=None,
 ):
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
@@ -714,7 +718,9 @@ def ISTA(
         Operator to invert
     data : :obj:`numpy.ndarray`
         Data
-    niter : :obj:`int`
+    x0: :obj:`numpy.ndarray`, optional
+        Initial guess
+    niter : :obj:`int`, optional
         Number of iterations
     eps : :obj:`float`, optional
         Sparsity damping
@@ -751,8 +757,6 @@ def ISTA(
         Decay factor to be applied to thresholding during iterations
     SOp : :obj:`pylops.LinearOperator`, optional
         Regularization operator (use when solving the analysis problem)
-    x0: :obj:`numpy.ndarray`, optional
-        Initial guess
 
     Returns
     -------
@@ -1010,7 +1014,8 @@ def ISTA(
 def FISTA(
     Op,
     data,
-    niter,
+    x0=None,
+    niter=10,
     eps=0.1,
     alpha=None,
     eigsiter=None,
@@ -1023,7 +1028,6 @@ def FISTA(
     callback=None,
     decay=None,
     SOp=None,
-    x0=None,
 ):
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
@@ -1038,7 +1042,7 @@ def FISTA(
         Operator to invert
     data : :obj:`numpy.ndarray`
         Data
-    niter : :obj:`int`
+    niter : :obj:`int`, optional
         Number of iterations
     eps : :obj:`float`, optional
         Sparsity damping
@@ -1258,7 +1262,7 @@ def FISTA(
 
         # update auxiliary coefficients
         told = t
-        t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
+        t = (1.0 + np.sqrt(1.0 + 4.0 * t**2)) / 2.0
         zinv = xinv + ((told - 1.0) / t) * (xinv - xinvold)
 
         # model update
@@ -1301,7 +1305,8 @@ def FISTA(
         return xinv, niter
 
 
-def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
+@add_ndarray_support_to_solver
+def SPGL1(Op, data, x0=None, SOp=None, tau=0, sigma=0, **kwargs_spgl1):
     r"""Spectral Projected-Gradient for L1 norm.
 
     Solve a constrained system of equations given the operator ``Op``
@@ -1320,16 +1325,16 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
         Operator to invert
     data : :obj:`numpy.ndarray`
         Data
-    SOp : :obj:`pylops.LinearOperator`
-        Sparsyfing transform
-    tau : :obj:`float`
+    x0 : :obj:`numpy.ndarray`, optional
+        Initial guess
+    SOp : :obj:`pylops.LinearOperator`, optional
+        Sparsifying transform
+    tau : :obj:`float`, optional
         Non-negative LASSO scalar. If different from ``0``,
         SPGL1 will solve LASSO problem
-    sigma : :obj:`list`
+    sigma : :obj:`list`, optional
         BPDN scalar. If different from ``0``,
         SPGL1 will solve BPDN problem
-    x0 : :obj:`numpy.ndarray`
-        Initial guess
     **kwargs_spgl1
         Arbitrary keyword arguments for
         :py:func:`spgl1.spgl1` solver
@@ -1432,6 +1437,7 @@ def SplitBregman(
     Op,
     RegsL1,
     data,
+    x0=None,
     niter_outer=3,
     niter_inner=5,
     RegsL2=None,
@@ -1441,7 +1447,6 @@ def SplitBregman(
     epsRL2s=None,
     tol=1e-10,
     tau=1.0,
-    x0=None,
     restart=False,
     show=False,
     **kwargs_lsqr,
@@ -1461,6 +1466,8 @@ def SplitBregman(
         :math:`L^1` regularization operators
     data : :obj:`numpy.ndarray`
         Data
+    x0 : :obj:`numpy.ndarray`, optional
+        Initial guess
     niter_outer : :obj:`int`
         Number of iterations of outer loop
     niter_inner : :obj:`int`
@@ -1488,8 +1495,6 @@ def SplitBregman(
         at subsequent iterations is smaller than ``tol``
     tau : :obj:`float`, optional
         Scaling factor in the Bregman update (must be close to 1)
-    x0 : :obj:`numpy.ndarray`, optional
-        Initial guess
     restart : :obj:`bool`, optional
         The unconstrained inverse problem in inner loop is initialized with
         the initial guess (``True``) or with the last estimate (``False``)

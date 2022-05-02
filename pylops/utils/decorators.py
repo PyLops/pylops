@@ -3,23 +3,41 @@ from functools import wraps
 from pylops.config import disabled_ndarray_multiplication
 
 
+def disable_ndarray_multiplication(func):
+    """Decorator which disables ndarray multiplication(.
+
+    Parameters
+    ----------
+    func : :obj:`callable`
+        Generic function
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):  # SciPy-type signature
+        with disabled_ndarray_multiplication():
+            out = func(*args, **kwargs)
+        return out
+
+    return wrapper
+
+
 def add_ndarray_support_to_solver(func):
-    """Decorator which converts a solver-type function which only supports
+    """Decorator which converts a solver-type function that only supports
     a 1d-array into one that supports one (dimsd-shaped) ndarray.
 
     Parameters
     ----------
     func : :obj:`callable`
-        Solver type function. Its signature must be ``func(A, b, x0=None, **kwargs)``.
+        Solver type function. Its signature must be ``func(A, b, *args, **kwargs)``.
         Its output must be a result-type tuple: ``(xinv, ...)``.
     """
 
     @wraps(func)
-    def wrapper(A, b, x0=None, **kwargs):  # SciPy-type signature
-        if x0 is not None:
-            x0 = x0.ravel()
+    def wrapper(A, b, *args, **kwargs):  # SciPy-type signature
+        if "x0" in kwargs and kwargs["x0"] is not None:
+            kwargs["x0"] = kwargs["x0"].ravel()
         with disabled_ndarray_multiplication():
-            res = list(func(A, b.ravel(), x0=x0, **kwargs))
+            res = list(func(A, b.ravel(), *args, **kwargs))
             res[0] = res[0].reshape(getattr(A, "dims", (A.shape[1],)))
         return tuple(res)
 
