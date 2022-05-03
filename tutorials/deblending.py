@@ -149,16 +149,17 @@ alpha = 1.0 / maxeig
 niter = 60
 decay = (np.exp(-0.05 * np.arange(niter)) + 0.2) / 1.2
 
-p_inv = pylops.FISTA(
-    Op,
-    data_blended.ravel(),
-    niter,
-    eps=5e0,
-    alpha=alpha,
-    decay=decay,
-    show=True,
-    returninfo=True,
-)[0]
+with pylops.disabled_ndarray_multiplication():
+    p_inv = pylops.FISTA(
+        Op,
+        data_blended.ravel(),
+        niter=niter,
+        eps=5e0,
+        alpha=alpha,
+        decay=decay,
+        show=True,
+        returninfo=True,
+    )[0]
 data_inv = Sop * p_inv
 data_inv = data_inv.reshape(ns, nt)
 

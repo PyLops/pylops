@@ -153,14 +153,17 @@ class CG(Solver):
         """
         niter = self.niter if niter is None else niter
         while self.iiter < niter and self.kold > self.tol:
-            show = (
+            showstep = (
                 True
-                if self.iiter < itershow[0]
-                or niter - self.iiter < itershow[1]
-                or self.iiter % itershow[2] == 0
+                if show
+                and (
+                    self.iiter < itershow[0]
+                    or niter - self.iiter < itershow[1]
+                    or self.iiter % itershow[2] == 0
+                )
                 else False
             )
-            x = self.step(x, show)
+            x = self.step(x, showstep)
             self.callback(x)
         return x
 
@@ -382,14 +385,17 @@ class CGLS(Solver):
         """
         niter = self.niter if niter is None else niter
         while self.iiter < niter and self.kold > self.tol:
-            show = (
+            showstep = (
                 True
-                if self.iiter < itershow[0]
-                or niter - self.iiter < itershow[1]
-                or self.iiter % itershow[2] == 0
+                if show
+                and (
+                    self.iiter < itershow[0]
+                    or niter - self.iiter < itershow[1]
+                    or self.iiter % itershow[2] == 0
+                )
                 else False
             )
-            x = self.step(x, show)
+            x = self.step(x, showstep)
             self.callback(x)
         return x
 
@@ -842,19 +848,22 @@ class LSQR(Solver):
         """
         niter = self.niter if niter is None else niter
         while self.iiter < niter and self.istop == 0:
-            show = (
+            showstep = (
                 True
-                if self.niter <= 40
-                or self.iiter < itershow[0]
-                or niter - self.iiter < itershow[1]
-                or self.iiter % itershow[2] == 0
-                or self.test3 <= 2 * self.ctol
-                or self.test2 <= 10 * self.atol
-                or self.test1 <= 10 * self.rtol
-                or self.istop != 0
+                if show
+                and (
+                    self.niter <= 40
+                    or self.iiter < itershow[0]
+                    or niter - self.iiter < itershow[1]
+                    or self.iiter % itershow[2] == 0
+                    or self.test3 <= 2 * self.ctol
+                    or self.test2 <= 10 * self.atol
+                    or self.test1 <= 10 * self.rtol
+                    or self.istop != 0
+                )
                 else False
             )
-            x = self.step(x, show)
+            x = self.step(x, showstep)
             self.callback(x)
         return x
 

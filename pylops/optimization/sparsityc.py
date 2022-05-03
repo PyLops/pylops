@@ -14,6 +14,7 @@ from pylops.optimization.leastsquares import (
     regularized_inversion,
 )
 from pylops.utils.backend import get_array_module, get_module_name, to_numpy
+from pylops.utils.decorators import disable_ndarray_multiplication
 
 try:
     from spgl1 import spgl1
@@ -292,25 +293,23 @@ class ISTA(Solver):
             strpar1 = f"alpha = {self.alpha:10e}\tthresh = {self.thresh:10e}"
         else:
             strpar1 = f"alpha = {self.alpha:10e}\tperc = {self.perc:.1f}"
-        head1 = "   Itn       x[0]        r2norm     r12norm     xupdate"
+        head1 = "   Itn          x[0]              r2norm     r12norm     xupdate"
         print(strpar)
         print(strpar1)
         print("-----------------------------------------------------------")
         print(head1)
 
     def _print_step(self, x, costdata, costreg, xupdate):
+        strx = (
+            f"  {x[0]:1.2e}   " if np.iscomplexobj(x) else f"     {x[0]:11.4e}        "
+        )
         msg = (
-            f"{self.iiter + 1:6g}  {to_numpy(x[:2])[0]:12.5e}  "
-            f"{costdata:10.3e}   {costdata + costreg:9.3e}  {xupdate:10.3e}"
+            f"{self.iiter + 1:6g} "
+            + strx
+            + f"{costdata:10.3e}   {costdata + costreg:9.3e}  {xupdate:10.3e}"
         )
         print(msg)
         pass
-
-    def _print_finalize(self):
-        print(
-            f"\nIterations = {self.iiter}        Total time (s) = {self.telapsed:.2f}"
-        )
-        print("-----------------------------------------------------------------\n")
 
     def setup(
         self,
@@ -474,8 +473,12 @@ class ISTA(Solver):
             else:
                 x = x0.copy()
 
+        # create variable to track residual
         if monitorres:
             self.normresold = np.inf
+
+        # for fista
+        self.t = 1.0
 
         # create variables to track the residual norm and iterations
         self.cost = []
@@ -570,14 +573,17 @@ class ISTA(Solver):
         xupdate = np.inf
         niter = self.niter if niter is None else niter
         while self.iiter < niter and xupdate > self.tol:
-            show = (
+            showstep = (
                 True
-                if self.iiter < itershow[0]
-                or niter - self.iiter < itershow[1]
-                or self.iiter % itershow[2] == 0
+                if show
+                and (
+                    self.iiter < itershow[0]
+                    or niter - self.iiter < itershow[1]
+                    or self.iiter % itershow[2] == 0
+                )
                 else False
             )
-            x, xupdate = self.step(x, show)
+            x, xupdate = self.step(x, showstep)
             self.callback(x)
         if xupdate <= self.tol:
             logging.warning(
@@ -692,3 +698,432 @@ class ISTA(Solver):
         x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)
         return x, self.iiter, self.cost
+
+
+class FISTA(ISTA):
+    r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
+
+    Solve an optimization problem with :math:`L^p, \; p=0, 0.5, 1`
+    regularization, given the operator ``Op`` and data ``y``.
+    The operator can be real or complex, and should ideally be either square
+    :math:`N=M` or underdetermined :math:`N<M`.
+
+    Parameters
+    ----------
+    Op : :obj:`pylops.LinearOperator`
+        Operator to invert
+
+    Raises
+    ------
+    NotImplementedError
+        If ``threshkind`` is different from hard, soft, half, soft-percentile,
+        or half-percentile
+    ValueError
+        If ``perc=None`` when ``threshkind`` is soft-percentile or
+        half-percentile
+
+    See Also
+    --------
+    OMP: Orthogonal Matching Pursuit (OMP).
+    ISTA: Iterative Shrinkage-Thresholding Algorithm (ISTA).
+    SPGL1: Spectral Projected-Gradient for L1 norm (SPGL1).
+    SplitBregman: Split Bregman for mixed L2-L1 norms.
+
+    Notes
+    -----
+    Solves the following synthesis problem for the operator
+    :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
+
+    .. math::
+        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_2^2 +
+            \epsilon \|\mathbf{x}\|_p
+
+    or the analysis problem:
+
+    .. math::
+        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_2^2 +
+            \epsilon \|\mathbf{SOp}^H\,\mathbf{x}\|_p
+
+    if ``SOp`` is provided.
+
+    The Fast Iterative Shrinkage-Thresholding Algorithm (FISTA) [1]_ is used,
+    where :math:`p=0, 0.5, 1`. This is a modified version of ISTA solver with
+    improved convergence properties and limited additional computational cost.
+    Similarly to the ISTA solver, the choice of the thresholding algorithm to
+    apply at every iteration is based on the choice of :math:`p`.
+
+    .. [1] Beck, A., and Teboulle, M., “A Fast Iterative Shrinkage-Thresholding
+       Algorithm for Linear Inverse Problems”, SIAM Journal on
+       Imaging Sciences, vol. 2, pp. 183-202. 2009.
+
+    """
+
+    def step(self, x, z, show=False):
+        r"""Run one step of solver
+
+        Parameters
+        ----------
+        x : :obj:`np.ndarray`
+            Current model vector to be updated by a step of ISTA
+        x : :obj:`np.ndarray`
+            Current auxiliary model vector to be updated by a step of ISTA
+        show : :obj:`bool`, optional
+            Display iteration log
+
+        Returns
+        -------
+        x : :obj:`np.ndarray`
+            Updated model vector
+        z : :obj:`np.ndarray`
+            Updated auxiliary model vector
+        xupdate : :obj:`float`
+            Norm of the update
+
+        """
+        xold = x.copy()
+
+        # compute residual
+        resz = self.y - self.Op @ z
+        if self.monitorres:
+            self.normres = np.linalg.norm(resz)
+            if self.normres > self.normresold:
+                raise ValueError(
+                    f"ISTA stopped at iteration {self.iiter} due to "
+                    "residual increasing, consider modifying "
+                    "eps and/or alpha..."
+                )
+            else:
+                self.normresold = self.normres
+
+        # compute gradient
+        grad = self.alpha * self.Op.H @ resz
+
+        # update inverted model
+        x_unthesh = z + grad
+        if self.SOp is not None:
+            x_unthesh = self.SOp.H @ x_unthesh
+        if self.perc is None:
+            x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
+        else:
+            x = self.threshf(x_unthesh, 100 - self.perc)
+        if self.SOp is not None:
+            x = self.SOp @ x
+
+        # update auxiliary coefficients
+        told = self.t
+        self.t = (1.0 + np.sqrt(1.0 + 4.0 * self.t**2)) / 2.0
+        z = x + ((told - 1.0) / self.t) * (x - xold)
+
+        # model update
+        xupdate = np.linalg.norm(x - xold)
+
+        costdata = 0.5 * np.linalg.norm(self.y - self.Op @ x) ** 2
+        costreg = self.eps * np.linalg.norm(x, ord=1)
+        self.cost.append(costdata + costreg)
+        self.iiter += 1
+        if show:
+            self._print_step(x, costdata, costreg, xupdate)
+        return x, z, xupdate
+
+    def run(self, x, niter=None, show=False, itershow=[10, 10, 10]):
+        r"""Run solver
+
+        Parameters
+        ----------
+        x : :obj:`np.ndarray`
+            Current model vector to be updated by multiple steps of CG
+        niter : :obj:`int`, optional
+            Number of iterations. Can be set to ``None`` if already
+            provided in the setup call
+        show : :obj:`bool`, optional
+            Display logs
+        itershow : :obj:`list`, optional
+            Display set log for the first N1 steps, last N2 steps,
+            and every N3 steps in between where N1, N2, N3 are the
+            three element of the list.
+
+        Returns
+        -------
+        x : :obj:`np.ndarray`
+            Estimated model of size :math:`[M \times 1]`
+
+        """
+        z = x.copy()
+        xupdate = np.inf
+        niter = self.niter if niter is None else niter
+        while self.iiter < niter and xupdate > self.tol:
+            showstep = (
+                True
+                if show
+                and (
+                    self.iiter < itershow[0]
+                    or niter - self.iiter < itershow[1]
+                    or self.iiter % itershow[2] == 0
+                )
+                else False
+            )
+            x, z, xupdate = self.step(x, z, showstep)
+            self.callback(x)
+        if xupdate <= self.tol:
+            logging.warning(
+                "update smaller that tolerance for " "iteration %d", self.iiter
+            )
+        return x
+
+
+class SPGL1(Solver):
+    r"""Spectral Projected-Gradient for L1 norm.
+
+    Solve a constrained system of equations given the operator ``Op``
+    and a sparsyfing transform ``SOp`` aiming to retrive a model that
+    is sparse in the sparsyfing domain.
+
+    This is a simple wrapper to :py:func:`spgl1.spgl1`
+    which is a porting of the well-known
+    `SPGL1 <https://www.cs.ubc.ca/~mpf/spgl1/>`_ MATLAB solver into Python.
+    In order to be able to use this solver you need to have installed the
+    ``spgl1`` library.
+
+    Parameters
+    ----------
+    Op : :obj:`pylops.LinearOperator`
+        Operator to invert of size :math:`[N \times M]`.
+
+    Raises
+    ------
+    ModuleNotFoundError
+        If the ``spgl1`` library is not installed
+
+    Notes
+    -----
+    Solve different variations of sparsity-promoting inverse problem by
+    imposing sparsity in the retrieved model [1]_.
+
+    The first problem is called *basis pursuit denoise (BPDN)* and
+    its cost function is
+
+        .. math::
+            \|\mathbf{x}\|_1 \quad  \text{subject to} \quad
+            \left\|\mathbf{Op}\,\mathbf{S}^H\mathbf{x}-\mathbf{b}\right\|_2^2
+            \leq \sigma,
+
+    while the second problem is the *ℓ₁-regularized least-squares or LASSO*
+    problem and its cost function is
+
+        .. math::
+            \left\|\mathbf{Op}\,\mathbf{S}^H\mathbf{x}-\mathbf{b}\right\|_2^2
+            \quad \text{subject to} \quad  \|\mathbf{x}\|_1  \leq \tau
+
+    .. [1] van den Berg E., Friedlander M.P., "Probing the Pareto frontier
+       for basis pursuit solutions", SIAM J. on Scientific Computing,
+       vol. 31(2), pp. 890-912. 2008.
+
+    """
+
+    def _print_setup(self, xcomplex=False):
+        self._print_solver()
+        strprec = f"SOp={self.SOp}"
+        strreg = f"tau={self.tau}     sigma={self.sigma}"
+        print(strprec)
+        print(strreg)
+        print("-----------------------------------------------------------")
+
+    def _print_finalize(self):
+        print(f"\nTotal time (s) = {self.telapsed:.2f}")
+        print("-----------------------------------------------------------------\n")
+
+    @disable_ndarray_multiplication
+    def setup(self, y, SOp=None, tau=0, sigma=0, show=False):
+        r"""Setup solver
+
+        Parameters
+        ----------
+        y : :obj:`np.ndarray`
+            Data of size :math:`[N \times 1]`
+        SOp : :obj:`pylops.LinearOperator`, optional
+            Sparsifying transform
+        tau : :obj:`float`, optional
+            Non-negative LASSO scalar. If different from ``0``,
+            SPGL1 will solve LASSO problem
+        sigma : :obj:`list`, optional
+            BPDN scalar. If different from ``0``,
+            SPGL1 will solve BPDN problem
+
+        show : :obj:`bool`, optional
+            Display setup log
+
+        """
+        if spgl1 is None:
+            raise ModuleNotFoundError(spgl1_message)
+
+        self.y = y
+        self.SOp = SOp
+        self.tau = tau
+        self.sigma = sigma
+        self.ncp = get_array_module(y)
+
+        # print setup
+        if show:
+            self._print_setup()
+
+    def step(self):
+        raise NotImplementedError(
+            "SPGL1 uses as default the"
+            "spgl1.spgl1 solver, therefore the "
+            "step method is not implemented. Use directly run or solve."
+        )
+
+    @disable_ndarray_multiplication
+    def run(self, x, show=False, **kwargs_spgl1):
+        r"""Run solver
+
+        Parameters
+        ----------
+        x : :obj:`np.ndarray`
+            Current model vector to be updated by multiple steps of the solver.
+            If ``None``, x is assumed to be a zero vector
+        show : :obj:`bool`, optional
+            Display iterations log
+        **kwargs_spgl1
+            Arbitrary keyword arguments for
+            :py:func:`spgl1.spgl1` solver
+
+        Returns
+        -------
+        xinv : :obj:`numpy.ndarray`
+            Inverted model in original domain.
+        pinv : :obj:`numpy.ndarray`
+            Inverted model in sparse domain.
+        info : :obj:`dict`
+            Dictionary with the following information:
+
+            - ``tau``, final value of tau (see sigma above)
+
+            - ``rnorm``, two-norm of the optimal residual
+
+            - ``rgap``, relative duality gap (an optimality measure)
+
+            - ``gnorm``, Lagrange multiplier of (LASSO)
+
+            - ``stat``, final status of solver
+               * ``1``: found a BPDN solution,
+               * ``2``: found a BP solution; exit based on small gradient,
+               * ``3``: found a BP solution; exit based on small residual,
+               * ``4``: found a LASSO solution,
+               * ``5``: error, too many iterations,
+               * ``6``: error, linesearch failed,
+               * ``7``: error, found suboptimal BP solution,
+               * ``8``: error, too many matrix-vector products.
+
+            - ``niters``, number of iterations
+
+            - ``nProdA``, number of multiplications with A
+
+            - ``nProdAt``, number of multiplications with A'
+
+            - ``n_newton``, number of Newton steps
+
+            - ``time_project``, projection time (seconds)
+
+            - ``time_matprod``, matrix-vector multiplications time (seconds)
+
+            - ``time_total``, total solution time (seconds)
+
+            - ``niters_lsqr``, number of lsqr iterations (if ``subspace_min=True``)
+
+            - ``xnorm1``, L1-norm model solution history through iterations
+
+            - ``rnorm2``, L2-norm residual history through iterations
+
+            - ``lambdaa``, Lagrange multiplier history through iterations
+
+        """
+        pinv, _, _, info = spgl1(
+            self.Op if self.SOp is None else self.Op * self.SOp.H,
+            self.y,
+            tau=self.tau,
+            sigma=self.sigma,
+            x0=x,
+            **kwargs_spgl1,
+        )
+
+        xinv = pinv.copy() if self.SOp is None else self.SOp.H * pinv
+        return xinv, pinv, info
+
+    def solve(self, y, x0=None, SOp=None, tau=0, sigma=0, show=False, **kwargs_spgl1):
+        r"""Run entire solver
+
+        Parameters
+        ----------
+        y : :obj:`np.ndarray`
+            Data of size :math:`[N \times 1]`
+        x0 : :obj:`numpy.ndarray`, optional
+            Initial guess
+        SOp : :obj:`pylops.LinearOperator`, optional
+            Sparsifying transform
+        tau : :obj:`float`, optional
+            Non-negative LASSO scalar. If different from ``0``,
+            SPGL1 will solve LASSO problem
+        sigma : :obj:`list`, optional
+            BPDN scalar. If different from ``0``,
+            SPGL1 will solve BPDN problem
+        show : :obj:`bool`, optional
+            Display log
+        **kwargs_spgl1
+            Arbitrary keyword arguments for
+            :py:func:`spgl1.spgl1` solver
+
+        Returns
+        -------
+        xinv : :obj:`numpy.ndarray`
+            Inverted model in original domain.
+        pinv : :obj:`numpy.ndarray`
+            Inverted model in sparse domain.
+        info : :obj:`dict`
+            Dictionary with the following information:
+
+            - ``tau``, final value of tau (see sigma above)
+
+            - ``rnorm``, two-norm of the optimal residual
+
+            - ``rgap``, relative duality gap (an optimality measure)
+
+            - ``gnorm``, Lagrange multiplier of (LASSO)
+
+            - ``stat``, final status of solver
+               * ``1``: found a BPDN solution,
+               * ``2``: found a BP solution; exit based on small gradient,
+               * ``3``: found a BP solution; exit based on small residual,
+               * ``4``: found a LASSO solution,
+               * ``5``: error, too many iterations,
+               * ``6``: error, linesearch failed,
+               * ``7``: error, found suboptimal BP solution,
+               * ``8``: error, too many matrix-vector products.
+
+            - ``niters``, number of iterations
+
+            - ``nProdA``, number of multiplications with A
+
+            - ``nProdAt``, number of multiplications with A'
+
+            - ``n_newton``, number of Newton steps
+
+            - ``time_project``, projection time (seconds)
+
+            - ``time_matprod``, matrix-vector multiplications time (seconds)
+
+            - ``time_total``, total solution time (seconds)
+
+            - ``niters_lsqr``, number of lsqr iterations (if ``subspace_min=True``)
+
+            - ``xnorm1``, L1-norm model solution history through iterations
+
+            - ``rnorm2``, L2-norm residual history through iterations
+
+            - ``lambdaa``, Lagrange multiplier history through iterations
+
+        """
+        self.setup(y=y, SOp=SOp, tau=tau, sigma=sigma, show=show)
+        xinv, pinv, info = self.run(x0, show=show, **kwargs_spgl1)
+        self.finalize(show)
+        return xinv, pinv, info

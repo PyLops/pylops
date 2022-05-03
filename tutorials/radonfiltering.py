@@ -80,7 +80,7 @@ xadj = xadj.reshape(npx, par["nt"])
 
 # sparse Radon transform
 xinv, niter, cost = pylops.optimization.sparsity.FISTA(
-    Rop, y.ravel(), 15, eps=1e1, returninfo=True
+    Rop, y.ravel(), niter=15, eps=1e1, returninfo=True
 )
 xinv = xinv.reshape(npx, par["nt"])
 
@@ -150,6 +150,7 @@ axs[4].imshow(
 )
 axs[4].set_title("Sparse filtered data")
 axs[4].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # As expected, the Radon domain is a suitable domain for this type of filtering

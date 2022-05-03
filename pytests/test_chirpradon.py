@@ -1,7 +1,7 @@
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from pylops.optimization.sparsity import FISTA
+from pylops.optimization.sparsity import fista
 from pylops.signalprocessing import ChirpRadon2D, ChirpRadon3D
 from pylops.utils import dottest
 from pylops.utils.seismicevents import linear2d, linear3d, makeaxis
@@ -81,7 +81,7 @@ def test_ChirpRadon2D(par):
     xinvana = Rop.inverse(y)
     assert_array_almost_equal(x.ravel(), xinvana, decimal=3)
 
-    xinv, _, _ = FISTA(Rop, y, 30, eps=1e0, returninfo=True)
+    xinv, _, _ = fista(Rop, y, niter=30, eps=1e0)
     assert_array_almost_equal(x.ravel(), xinv, decimal=3)
 
 
@@ -140,5 +140,5 @@ def test_ChirpRadon3D(par):
     xinvana = Rop.inverse(y)
     assert_array_almost_equal(x.ravel(), xinvana, decimal=3)
 
-    xinv, _, _ = FISTA(Rop, y, 30, eps=1e0, returninfo=True)
+    xinv, _, _ = fista(Rop, y, niter=30, eps=1e0)
     assert_array_almost_equal(x.ravel(), xinv, decimal=3)

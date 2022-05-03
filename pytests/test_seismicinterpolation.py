@@ -63,7 +63,7 @@ par1_2d = {
 par2_2d = {
     "kind": "fk",
     "kwargs": dict(
-        nffts=(2 ** 9, 2 ** 9),
+        nffts=(2**9, 2**9),
         sampling=(par["dy"], par["dt"]),
         niter=20,
         eps=1e-2,
@@ -102,8 +102,7 @@ par1_3d = par1_2d
 par2_3d = {
     "kind": "fk",
     "kwargs": dict(
-        nffts=(2 ** 7, 2 ** 7, 2 ** 8),
-        returninfo=False,
+        nffts=(2**7, 2**7, 2**8),
         sampling=(par["dy"], par["dx"], par["dt"]),
         niter=20,
         eps=5e-2,

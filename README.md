@@ -1,5 +1,6 @@
 ![PyLops](https://github.com/PyLops/pylops/blob/master/docs/source/_static/pylops_b.png)
 
+![NUMFOCUS](https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)
 [![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pylops/badges/version.svg)](https://anaconda.org/conda-forge/pylops)
 [![AzureDevOps Status](https://dev.azure.com/matteoravasi/PyLops/_apis/build/status/PyLops.pylops?branchName=dev)](https://dev.azure.com/matteoravasi/PyLops/_build/latest?definitionId=9&branchName=dev)
@@ -9,8 +10,9 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/17fd60b4266347d8890dd6b64f2c0807)](https://www.codacy.com/gh/PyLops/pylops/dashboard?utm_source=github.com&utm_medium=referral&utm_content=PyLops/pylops&utm_campaign=Badge_Coverage)
 ![OS-support](https://img.shields.io/badge/OS-linux,win,osx-850A8B.svg)
 [![Slack Status](https://img.shields.io/badge/chat-slack-green.svg)](https://pylops.slack.com)
+![PyPI downloads](https://img.shields.io/pypi/dm/pylops.svg?label=Pypi%20downloads)
+![Conda downloads](https://img.shields.io/conda/dn/conda-forge/pylops.svg?label=Conda%20downloads)
 
-A [NUMFOCUS](https://numfocus.org/sponsored-projects/affiliated-projects) Affiliated Project.
 
 ## Objective
 This Python library is inspired by the MATLAB [Spot – A Linear-Operator Toolbox](http://www.cs.ubc.ca/labs/scl/spot/) project.

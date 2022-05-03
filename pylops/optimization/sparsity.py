@@ -13,7 +13,9 @@ from pylops.optimization.leastsquares import (
     regularized_inversion,
 )
 from pylops.optimization.sparsityc import (
+    FISTA,
     ISTA,
+    SPGL1,
     _halfthreshold,
     _halfthreshold_percentile,
     _hardthreshold,
@@ -22,6 +24,7 @@ from pylops.optimization.sparsityc import (
     _softthreshold_percentile,
 )
 from pylops.utils.backend import get_array_module, get_module_name, to_numpy
+from pylops.utils.decorators import add_ndarray_support_to_solver
 
 try:
     from spgl1 import spgl1
@@ -177,11 +180,11 @@ def _IRLS_model(
 def IRLS(
     Op,
     data,
-    nouter,
+    x0=None,
+    nouter=10,
     threshR=False,
     epsR=1e-10,
     epsI=1e-10,
-    x0=None,
     tolIRLS=1e-10,
     returnhistory=False,
     kind="data",
@@ -209,7 +212,9 @@ def IRLS(
         Operator to invert
     data : :obj:`numpy.ndarray`
         Data
-    nouter : :obj:`int`
+    x0 : :obj:`numpy.ndarray`, optional
+        Initial guess
+    nouter : :obj:`int`, optional
         Number of outer iterations
     threshR : :obj:`bool`, optional
         Apply thresholding in creation of weight (``True``)
@@ -218,8 +223,6 @@ def IRLS(
         Damping to be applied to residuals for weighting term
     espI : :obj:`float`, optional
         Tikhonov damping
-    x0 : :obj:`numpy.ndarray`, optional
-        Initial guess
     tolIRLS : :obj:`float`, optional
         Tolerance. Stop outer iterations if difference between inverted model
         at subsequent iterations is smaller than ``tolIRLS``
@@ -643,23 +646,24 @@ def ista(
     return x, iiter, cost
 
 
-def FISTA(
+def fista(
     Op,
-    data,
-    niter,
+    y,
+    x0=None,
+    niter=10,
+    SOp=None,
     eps=0.1,
     alpha=None,
     eigsiter=None,
     eigstol=0,
     tol=1e-10,
-    returninfo=False,
-    show=False,
     threshkind="soft",
     perc=None,
-    callback=None,
     decay=None,
-    SOp=None,
-    x0=None,
+    monitorres=False,
+    show=False,
+    itershow=[10, 10, 10],
+    callback=None,
 ):
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
@@ -672,12 +676,17 @@ def FISTA(
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
-    data : :obj:`numpy.ndarray`
+    y : :obj:`numpy.ndarray`
         Data
-    niter : :obj:`int`
+    x0: :obj:`numpy.ndarray`, optional
+        Initial guess
+    niter : :obj:`int`, optional
         Number of iterations
+    SOp : :obj:`pylops.LinearOperator`, optional
+        Regularization operator (use when solving the analysis problem)
     eps : :obj:`float`, optional
         Sparsity damping
+    alpha : :obj:`float`, optional
         Step size. To guarantee convergence, ensure
         :math:`\alpha \le 1/\lambda_\text{max}`, where :math:`\lambda_\text{max}`
         is the largest eigenvalue of :math:`\mathbf{Op}^H\mathbf{Op}`.
@@ -693,23 +702,25 @@ def FISTA(
         at subsequent iterations is smaller than ``tol``
     returninfo : :obj:`bool`, optional
         Return info of FISTA solver
-    show : :obj:`bool`, optional
-        Display iterations log
     threshkind : :obj:`str`, optional
         Kind of thresholding ('hard', 'soft', 'half', 'soft-percentile', or
         'half-percentile' - 'soft' used as default)
     perc : :obj:`float`, optional
         Percentile, as percentage of values to be kept by thresholding (to be
         provided when thresholding is soft-percentile or half-percentile)
+    decay : :obj:`numpy.ndarray`, optional
+        Decay factor to be applied to thresholding during iterations
+    monitorres : :obj:`bool`, optional
+            Monitor that residual is decreasing
+    show : :obj:`bool`, optional
+        Display iterations log
+    itershow : :obj:`list`, optional
+            Display set log for the first N1 steps, last N2 steps,
+            and every N3 steps in between where N1, N2, N3 are the
+            three element of the list.
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
-    decay : :obj:`numpy.ndarray`, optional
-        Decay factor to be applied to thresholding during iterations
-    SOp : :obj:`pylops.LinearOperator`, optional
-        Regularization operator (use when solving the analysis problem)
-    x0: :obj:`numpy.ndarray`, optional
-        Initial guess
 
     Returns
     -------
@@ -738,206 +749,34 @@ def FISTA(
 
     Notes
     -----
-    Solves the following synthesis problem for the operator
-    :math:`\mathbf{Op}` and the data :math:`\mathbf{d}`:
-
-    .. math::
-        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_2^2 +
-            \epsilon \|\mathbf{x}\|_p
-
-    or the analysis problem:
-
-    .. math::
-        J = \|\mathbf{d} - \mathbf{Op}\,\mathbf{x}\|_2^2 +
-            \epsilon \|\mathbf{SOp}^H\,\mathbf{x}\|_p
-
-    if ``SOp`` is provided.
-
-    The Fast Iterative Shrinkage-Thresholding Algorithm (FISTA) [1]_ is used,
-    where :math:`p=0, 0.5, 1`. This is a modified version of ISTA solver with
-    improved convergence properties and limited additional computational cost.
-    Similarly to the ISTA solver, the choice of the thresholding algorithm to
-    apply at every iteration is based on the choice of :math:`p`.
-
-    .. [1] Beck, A., and Teboulle, M., “A Fast Iterative Shrinkage-Thresholding
-       Algorithm for Linear Inverse Problems”, SIAM Journal on
-       Imaging Sciences, vol. 2, pp. 183-202. 2009.
+    See :class:`pylops.optimization.sparsityc.FISTA`
 
     """
-    if threshkind not in [
-        "hard",
-        "soft",
-        "half",
-        "hard-percentile",
-        "soft-percentile",
-        "half-percentile",
-    ]:
-        raise NotImplementedError(
-            "threshkind should be hard, soft, half,"
-            "hard-percentile, soft-percentile, "
-            "or half-percentile"
-        )
-    if (
-        threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]
-        and perc is None
-    ):
-        raise ValueError(
-            "Provide a percentile when choosing hard-percentile,"
-            "soft-percentile, or half-percentile thresholding"
-        )
-
-    # choose thresholding function
-    if threshkind == "soft":
-        threshf = _softthreshold
-    elif threshkind == "hard":
-        threshf = _hardthreshold
-    elif threshkind == "half":
-        threshf = _halfthreshold
-    elif threshkind == "hard-percentile":
-        threshf = _hardthreshold_percentile
-    elif threshkind == "soft-percentile":
-        threshf = _softthreshold_percentile
-    else:
-        threshf = _halfthreshold_percentile
-
-    # identify backend to use
-    ncp = get_array_module(data)
-
-    # prepare decay (if not passed)
-    if perc is None and decay is None:
-        decay = ncp.ones(niter)
-
-    if show:
-        tstart = time.time()
-        print(
-            f"FISTA optimization ({threshkind} thresholding)\n"
-            "-----------------------------------------------------------\n"
-            f"The Operator Op has {Op.shape[0]} rows and {Op.shape[1]} cols\n"
-            f"eps = {eps:10e}\ttol = {tol:10e}\tniter = {niter}"
-        )
-    # step size
-    if alpha is None:
-        if not isinstance(Op, LinearOperator):
-            Op = LinearOperator(Op, explicit=False)
-        # compute largest eigenvalues of Op^H * Op
-        Op1 = LinearOperator(Op.H * Op, explicit=False)
-        if get_module_name(ncp) == "numpy":
-            maxeig = np.abs(
-                Op1.eigs(
-                    neigs=1,
-                    symmetric=True,
-                    niter=eigsiter,
-                    **dict(tol=eigstol, which="LM"),
-                )
-            )[0]
-        else:
-            maxeig = np.abs(
-                power_iteration(
-                    Op1, niter=eigsiter, tol=eigstol, dtype=Op1.dtype, backend="cupy"
-                )[0]
-            )
-        alpha = 1.0 / maxeig
-
-    # define threshold
-    thresh = eps * alpha * 0.5
-
-    if show:
-        if perc is None:
-            print(f"alpha = {alpha:10e}\tthresh = {thresh:10e}")
-        else:
-            print(f"alpha = {alpha:10e}\tperc = {perc:.1f}")
-        print("-----------------------------------------------------------\n")
-        head1 = "   Itn       x[0]        r2norm     r12norm     xupdate"
-        print(head1)
-
-    # initialize model and cost function
-    if x0 is None:
-        if data.ndim == 1:
-            xinv = ncp.zeros(int(Op.shape[1]), dtype=Op.dtype)
-        else:
-            xinv = ncp.zeros((int(Op.shape[1]), data.shape[1]), dtype=Op.dtype)
-    else:
-        if data.ndim != x0.ndim:
-            # error for wrong dimensions
-            raise ValueError("Number of columns of x0 and data are not the same")
-        elif x0.shape[0] != Op.shape[1]:
-            # error for wrong dimensions
-            raise ValueError("Operator and input vector have different dimensions")
-        else:
-            xinv = x0.copy()
-
-    zinv = xinv.copy()
-    t = 1
-    if returninfo:
-        cost = np.zeros(niter + 1)
-
-    # iterate
-    for iiter in range(niter):
-        xinvold = xinv.copy()
-
-        # compute residual
-        resz = data - Op @ zinv
-
-        # compute gradient
-        grad = alpha * Op.H @ resz
-
-        # update inverted model
-        xinv_unthesh = zinv + grad
-        if SOp is not None:
-            xinv_unthesh = SOp.H @ xinv_unthesh
-        if perc is None:
-            xinv = threshf(xinv_unthesh, decay[iiter] * thresh)
-        else:
-            xinv = threshf(xinv_unthesh, 100 - perc)
-        if SOp is not None:
-            xinv = SOp @ xinv
-
-        # update auxiliary coefficients
-        told = t
-        t = (1.0 + np.sqrt(1.0 + 4.0 * t**2)) / 2.0
-        zinv = xinv + ((told - 1.0) / t) * (xinv - xinvold)
-
-        # model update
-        xupdate = np.linalg.norm(xinv - xinvold)
-
-        if returninfo or show:
-            costdata = 0.5 * np.linalg.norm(data - Op @ xinv) ** 2
-            costreg = eps * np.linalg.norm(xinv, ord=1)
-        if returninfo:
-            cost[iiter] = costdata + costreg
-
-        # run callback
-        if callback is not None:
-            callback(xinv)
-
-        if show:
-            if iiter < 10 or niter - iiter < 10 or iiter % 10 == 0:
-                msg = (
-                    f"{iiter + 1:6g}  {to_numpy(xinv[:2])[0]:12.5e}  "
-                    f"{costdata:10.3e}   {costdata + costreg:9.3e}  {xupdate:10.3e}"
-                )
-                print(msg)
-
-        # check tolerance
-        if xupdate < tol:
-            niter = iiter
-            break
-
-    # get values pre-threshold  at locations where xinv is different from zero
-    # xinv = np.where(xinv != 0, xinv_unthesh, xinv)
-
-    if show:
-        print(
-            f"\nIterations = {niter}        Total time (s) = {time.time() - tstart:.2f}"
-        )
-        print("---------------------------------------------------------\n")
-    if returninfo:
-        return xinv, niter, cost[:niter]
-    else:
-        return xinv, niter
+    fistasolve = FISTA(Op)
+    if callback is not None:
+        fistasolve.callback = callback
+    x, iiter, cost = fistasolve.solve(
+        y=y,
+        x0=x0,
+        niter=niter,
+        SOp=SOp,
+        eps=eps,
+        alpha=alpha,
+        eigsiter=eigsiter,
+        eigstol=eigstol,
+        tol=tol,
+        threshkind=threshkind,
+        perc=perc,
+        decay=decay,
+        monitorres=monitorres,
+        show=show,
+        itershow=itershow,
+    )
+    return x, iiter, cost
 
 
-def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
+@add_ndarray_support_to_solver
+def spgl1(Op, y, x0=None, SOp=None, tau=0, sigma=0, show=False, **kwargs_spgl1):
     r"""Spectral Projected-Gradient for L1 norm.
 
     Solve a constrained system of equations given the operator ``Op``
@@ -954,18 +793,18 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
-    data : :obj:`numpy.ndarray`
+    y : :obj:`numpy.ndarray`
         Data
-    SOp : :obj:`pylops.LinearOperator`
-        Sparsyfing transform
-    tau : :obj:`float`
+    x0 : :obj:`numpy.ndarray`, optional
+        Initial guess
+    SOp : :obj:`pylops.LinearOperator`, optional
+        Sparsifying transform
+    tau : :obj:`float`, optional
         Non-negative LASSO scalar. If different from ``0``,
         SPGL1 will solve LASSO problem
-    sigma : :obj:`list`
+    sigma : :obj:`list`, optional
         BPDN scalar. If different from ``0``,
         SPGL1 will solve BPDN problem
-    x0 : :obj:`numpy.ndarray`
-        Initial guess
     **kwargs_spgl1
         Arbitrary keyword arguments for
         :py:func:`spgl1.spgl1` solver
@@ -1026,41 +865,19 @@ def SPGL1(Op, data, SOp=None, tau=0, sigma=0, x0=None, **kwargs_spgl1):
 
     Notes
     -----
-    Solve different variations of sparsity-promoting inverse problem by
-    imposing sparsity in the retrieved model [1]_.
-
-    The first problem is called *basis pursuit denoise (BPDN)* and
-    its cost function is
-
-        .. math::
-            \|\mathbf{x}\|_1 \quad  \text{subject to} \quad
-            \left\|\mathbf{Op}\,\mathbf{S}^H\mathbf{x}-\mathbf{b}\right\|_2^2
-            \leq \sigma,
-
-    while the second problem is the *ℓ₁-regularized least-squares or LASSO*
-    problem and its cost function is
-
-        .. math::
-            \left\|\mathbf{Op}\,\mathbf{S}^H\mathbf{x}-\mathbf{b}\right\|_2^2
-            \quad \text{subject to} \quad  \|\mathbf{x}\|_1  \leq \tau
-
-    .. [1] van den Berg E., Friedlander M.P., "Probing the Pareto frontier
-       for basis pursuit solutions", SIAM J. on Scientific Computing,
-       vol. 31(2), pp. 890-912. 2008.
+    See :class:`pylops.optimization.sparsityc.SPGL1`
 
     """
-    if spgl1 is None:
-        raise ModuleNotFoundError(spgl1_message)
-    pinv, _, _, info = spgl1(
-        Op if SOp is None else Op * SOp.H,
-        data,
+    spgl1solve = SPGL1(Op)
+    xinv, pinv, info = spgl1solve.solve(
+        y,
+        x0=x0,
+        SOp=SOp,
         tau=tau,
         sigma=sigma,
-        x0=x0,
+        show=show,
         **kwargs_spgl1,
     )
-
-    xinv = pinv.copy() if SOp is None else SOp.H * pinv
     return xinv, pinv, info
 
 
@@ -1068,6 +885,7 @@ def SplitBregman(
     Op,
     RegsL1,
     data,
+    x0=None,
     niter_outer=3,
     niter_inner=5,
     RegsL2=None,
@@ -1077,7 +895,6 @@ def SplitBregman(
     epsRL2s=None,
     tol=1e-10,
     tau=1.0,
-    x0=None,
     restart=False,
     show=False,
     **kwargs_lsqr,
@@ -1097,6 +914,8 @@ def SplitBregman(
         :math:`L^1` regularization operators
     data : :obj:`numpy.ndarray`
         Data
+    x0 : :obj:`numpy.ndarray`, optional
+        Initial guess
     niter_outer : :obj:`int`
         Number of iterations of outer loop
     niter_inner : :obj:`int`
@@ -1124,8 +943,6 @@ def SplitBregman(
         at subsequent iterations is smaller than ``tol``
     tau : :obj:`float`, optional
         Scaling factor in the Bregman update (must be close to 1)
-    x0 : :obj:`numpy.ndarray`, optional
-        Initial guess
     restart : :obj:`bool`, optional
         The unconstrained inverse problem in inner loop is initialized with
         the initial guess (``True``) or with the last estimate (``False``)

@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import FirstDerivative, Identity, MatrixMult
-from pylops.optimization.sparsity import FISTA, IRLS, OMP, SPGL1, SplitBregman, ista
+from pylops.optimization.sparsity import IRLS, OMP, SplitBregman, fista, ista, spgl1
 
 par1 = {
     "ny": 11,
@@ -101,11 +101,11 @@ def test_IRLS_data(par):
     xinv, _ = IRLS(
         Gop,
         y,
-        10,
+        x0=x0,
+        nouter=10,
         threshR=False,
         epsR=1e-2,
         epsI=0,
-        x0=x0,
         tolIRLS=1e-3,
         returnhistory=False,
         kind="data",
@@ -129,7 +129,7 @@ def test_IRLS_model(par):
     (
         xinv,
         _,
-    ) = IRLS(Aop, y, maxit, tolIRLS=1e-3, returnhistory=False, kind="model")
+    ) = IRLS(Aop, y, nouter=maxit, tolIRLS=1e-3, returnhistory=False, kind="model")
     assert_array_almost_equal(x, xinv, decimal=1)
 
 
@@ -157,7 +157,7 @@ def test_ISTA_FISTA_unknown_threshkind():
     with pytest.raises(NotImplementedError):
         _ = ista(Identity(5), np.ones(5), 10, threshkind="foo")
     with pytest.raises(NotImplementedError):
-        _ = FISTA(Identity(5), np.ones(5), 10, threshkind="foo")
+        _ = fista(Identity(5), np.ones(5), 10, threshkind="foo")
 
 
 def test_ISTA_FISTA_missing_perc():
@@ -165,7 +165,7 @@ def test_ISTA_FISTA_missing_perc():
     with pytest.raises(ValueError):
         _ = ista(Identity(5), np.ones(5), 10, perc=None, threshkind="soft-percentile")
     with pytest.raises(ValueError):
-        _ = FISTA(Identity(5), np.ones(5), 10, perc=None, threshkind="soft-percentile")
+        _ = fista(Identity(5), np.ones(5), 10, perc=None, threshkind="soft-percentile")
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
@@ -211,14 +211,13 @@ def test_ISTA_FISTA(par):
         assert_array_almost_equal(x, xinv, decimal=1)
 
         # FISTA
-        xinv, _, _ = FISTA(
+        xinv, _, _ = fista(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             eps=eps,
             threshkind=threshkind,
             tol=0,
-            returninfo=True,
             show=False,
         )
         assert_array_almost_equal(x, xinv, decimal=1)
@@ -238,14 +237,13 @@ def test_ISTA_FISTA(par):
         assert_array_almost_equal(x, xinv, decimal=1)
 
         # FISTA
-        xinv, _, _ = FISTA(
+        xinv, _, _ = fista(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             perc=perc,
             threshkind=threshkind,
             tol=0,
-            returninfo=True,
             show=False,
         )
         assert_array_almost_equal(x, xinv, decimal=1)
@@ -283,14 +281,13 @@ def test_ISTA_FISTA_multiplerhs(par):
         assert_array_almost_equal(x, xinv, decimal=1)
 
         # FISTA
-        xinv, _, _ = FISTA(
+        xinv, _, _ = fista(
             Aop,
             y,
             niter=maxit,
             eps=eps,
             threshkind=threshkind,
             tol=0,
-            returninfo=True,
             show=False,
         )
         assert_array_almost_equal(x, xinv, decimal=1)
@@ -310,14 +307,13 @@ def test_ISTA_FISTA_multiplerhs(par):
         assert_array_almost_equal(x, xinv, decimal=1)
 
         # FISTA
-        xinv, _, _ = FISTA(
+        xinv, _, _ = fista(
             Aop,
             y,
-            maxit,
+            niter=maxit,
             perc=perc,
             threshkind=threshkind,
             tol=0,
-            returninfo=True,
             show=False,
         )
         assert_array_almost_equal(x, xinv, decimal=1)
@@ -343,7 +339,7 @@ def test_SPGL1(par):
         else None
     )
     y = Aop * x
-    xinv = SPGL1(Aop, y, x0=x0, iter_lim=5000)[0]
+    xinv = spgl1(Aop, y, x0=x0, iter_lim=5000)[0]
 
     assert_array_almost_equal(x, xinv, decimal=1)
 
@@ -362,18 +358,18 @@ def test_SplitBregman(par):
     x[nx // 2 : 3 * nx // 4] = -5
     n = np.random.normal(0, 1, nx)
     y = x + n
-
-    mu = 0.01
-    lamda = 0.2
-    niter_end = 100
+    mu = 0.05
+    lamda = 0.3
+    niter_end = 50
     niter_in = 3
+
     x0 = np.ones(nx)
     xinv, niter = SplitBregman(
         Iop,
         [Dop],
         y,
-        niter_end,
-        niter_in,
+        niter_outer=niter_end,
+        niter_inner=niter_in,
         mu=mu,
         epsRL1s=[lamda],
         tol=1e-4,

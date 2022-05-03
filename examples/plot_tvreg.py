@@ -53,6 +53,7 @@ plt.plot(x, "k", lw=3, label="x")
 plt.plot(y, ".k", label="y=x+n")
 plt.legend()
 plt.title("Model and data")
+plt.tight_layout()
 
 ###############################################################################
 # To start we will try to use a simple L2 regularization that enforces
@@ -85,8 +86,8 @@ xinv, niter = pylops.optimization.sparsity.SplitBregman(
     Iop,
     [Dop],
     y,
-    niter_out,
-    niter_in,
+    niter_outer=niter_out,
+    niter_inner=niter_in,
     mu=mu,
     epsRL1s=[lamda],
     tol=1e-4,
@@ -160,15 +161,15 @@ Dop = [
 # TV
 mu = 1.5
 lamda = [0.1, 0.1]
-niter = 20
-niterinner = 10
+niter_out = 20
+niter_in = 10
 
 xinv, niter = pylops.optimization.sparsity.SplitBregman(
     Rop * Fop,
     Dop,
     y.ravel(),
-    niter,
-    niterinner,
+    niter_outer=niter_out,
+    niter_inner=niter_in,
     mu=mu,
     epsRL1s=lamda,
     tol=1e-4,

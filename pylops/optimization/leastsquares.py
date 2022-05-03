@@ -3,6 +3,7 @@ from pylops.optimization.leastsquaresc import (
     PreconditionedInversion,
     RegularizedInversion,
 )
+from pylops.utils.decorators import disable_ndarray_multiplication
 
 
 def normal_equations_inversion(

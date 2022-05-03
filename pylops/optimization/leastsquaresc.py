@@ -8,7 +8,10 @@ from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.basesolver import Solver
 from pylops.optimization.basic import cg, cgls
 from pylops.utils.backend import get_array_module
-from pylops.utils.decorators import add_ndarray_support_to_solver
+from pylops.utils.decorators import (
+    add_ndarray_support_to_solver,
+    disable_ndarray_multiplication,
+)
 
 sp_cg_ndarray = add_ndarray_support_to_solver(sp_cg)
 sp_lsqr_ndarray = add_ndarray_support_to_solver(lsqr)
@@ -77,6 +80,7 @@ class NormalEquationsInversion(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-----------------------------------------------------------------\n")
 
+    @disable_ndarray_multiplication
     def setup(
         self,
         y,
@@ -181,6 +185,7 @@ class NormalEquationsInversion(Solver):
             "step method is not implemented. Use directly run or solve."
         )
 
+    @disable_ndarray_multiplication
     def run(self, x, engine="scipy", show=False, **kwargs_solver):
         r"""Run solver
 
@@ -221,9 +226,11 @@ class NormalEquationsInversion(Solver):
         if engine == "scipy":
             if "atol" not in kwargs_solver:
                 kwargs_solver["atol"] = "legacy"
+            if show:
+                kwargs_solver["show"] = 1
             xinv, istop = sp_cg_ndarray(self.Op_normal, self.y_normal, **kwargs_solver)
         elif engine == "pylops":
-            xinv = py_cgls_ndarray(
+            xinv = py_cg_ndarray(
                 self.Op_normal,
                 self.y_normal,
                 self.ncp.zeros(self.Op_normal.dims, dtype=self.Op_normal.dtype),
@@ -419,6 +426,7 @@ class RegularizedInversion(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-----------------------------------------------------------------\n")
 
+    @disable_ndarray_multiplication
     def setup(
         self,
         y,
@@ -503,6 +511,7 @@ class RegularizedInversion(Solver):
             "step method is not implemented. Use directly run or solve."
         )
 
+    @disable_ndarray_multiplication
     def run(self, x, engine="scipy", show=False, **kwargs_solver):
         r"""Run solver
 
@@ -546,7 +555,10 @@ class RegularizedInversion(Solver):
         """
         if x is not None:
             self.datatot = self.datatot - self.RegOp * x
+        print("engine", engine)
         if engine == "scipy":
+            if show:
+                kwargs_solver["show"] = 1
             xinv, istop, itn, r1norm, r2norm = sp_lsqr_ndarray(
                 self.RegOp, self.datatot, **kwargs_solver
             )[0:5]
@@ -677,6 +689,7 @@ class PreconditionedInversion(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-----------------------------------------------------------------\n")
 
+    @disable_ndarray_multiplication
     def setup(self, y, P, show=False):
         r"""Setup solver
 
@@ -708,6 +721,7 @@ class PreconditionedInversion(Solver):
             "step method is not implemented. Use directly run or solve."
         )
 
+    @disable_ndarray_multiplication
     def run(self, x, engine="scipy", show=False, **kwargs_solver):
         r"""Run solver
 

@@ -4,7 +4,7 @@ import numpy as np
 
 from pylops import Laplacian, Restriction, SecondDerivative
 from pylops.optimization.leastsquares import regularized_inversion
-from pylops.optimization.sparsity import FISTA
+from pylops.optimization.sparsity import fista
 from pylops.signalprocessing import (
     FFT2D,
     FFTND,
@@ -407,7 +407,7 @@ def SeismicInterpolation(
         recprec = None
         cost = None
     else:
-        recprec = FISTA(SIop, data.ravel(), **kwargs_solver)
+        recprec = fista(SIop, data.ravel(), **kwargs_solver)
         if len(recprec) == 3:
             cost = recprec[2]
         else:
