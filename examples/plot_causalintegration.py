@@ -77,15 +77,15 @@ xder = Dop * yn
 
 # Regularized derivative
 Rop = pylops.SecondDerivative(nt)
-xreg = pylops.RegularizedInversion(
-    Cop, [Rop], yn, epsRs=[1e0], **dict(iter_lim=100, atol=1e-5)
-)
+xreg = pylops.optimization.leastsquares.regularized_inversion(
+    Cop, yn, [Rop], epsRs=[1e0], **dict(iter_lim=100, atol=1e-5)
+)[0]
 
 # Preconditioned derivative
 Sop = pylops.Smoothing1D(41, nt)
 xp = pylops.optimization.leastsquares.preconditioned_inversion(
-    Cop, Sop, yn, **dict(iter_lim=10, atol=1e-3)
-)
+    Cop, yn, Sop, **dict(iter_lim=10, atol=1e-3)
+)[0]
 
 # Visualize data and inversion
 fig, axs = plt.subplots(1, 2, figsize=(18, 5))
@@ -128,16 +128,16 @@ xder = xder.reshape(nt, nx)
 
 # Regularized derivative
 Rop = pylops.Laplacian(dims=(nt, nx))
-xreg = pylops.RegularizedInversion(
-    Cop, [Rop], yn.ravel(), epsRs=[1e0], **dict(iter_lim=100, atol=1e-5)
-)
+xreg = pylops.optimization.leastsquares.regularized_inversion(
+    Cop, yn.ravel(), [Rop], epsRs=[1e0], **dict(iter_lim=100, atol=1e-5)
+)[0]
 xreg = xreg.reshape(nt, nx)
 
 # Preconditioned derivative
 Sop = pylops.Smoothing2D((11, 21), dims=(nt, nx))
-xp = pylops.PreconditionedInversion(
-    Cop, Sop, yn.ravel(), **dict(iter_lim=10, atol=1e-2)
-)
+xp = pylops.optimization.leastsquares.preconditioned_inversion(
+    Cop, yn.ravel(), Sop, **dict(iter_lim=10, atol=1e-2)
+)[0]
 xp = xp.reshape(nt, nx)
 
 # Visualize data and inversion

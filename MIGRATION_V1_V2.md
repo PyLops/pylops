@@ -1,9 +1,9 @@
 # Migrating PyLops code from v1.x to v2.0
 
-This file is intended to guide users willing to convert their codes from PyLops v1 to PyLops v2.
+This file is intended to guide users willing to convert their codes from PyLops v1.x to PyLops v2.
 
 In the following we provide a detailed description of all the breaking changes introduced in v2, which
-should be used as a checklist when converting a piece of code using PyLops from v1 to v2.
+should be used as a checklist when converting a piece of code using PyLops from v1.x to v2.
 
 - Several operators have deprecated `N` as a keyword. To migrate, pass only `dims` if both `N` and `dims` are currently
   being passed. If only `N` is being passed, ensure it is being passed as a value and not a keyword argument (e.g.,
@@ -21,6 +21,31 @@ should be used as a checklist when converting a piece of code using PyLops from 
    from pylops.utils.decorators import add_ndarray_support_to_solver
    cg = add_ndarray_support_to_solver(cg)
    ```
+
+- New class-based solvers have been created in the `optimization` module. Original function-based
+  solvers are still available as thin wrappers over the new class-based ones. The following changes
+  are required for your v1.x code to migrate to function-based solvers in v2 (if interested in the new
+  class-based solvers, consult our API documentation of the tutorial ``Class-Solvers``):
+  * Change the solver name from its v1.x name to small letters (e.g. from ``CGLS`` to ``cgls``).
+  * The name of the data vector became ``y`` for all solvers (this used to be ``data`` for some of the solvers).
+    Change this if you pass the data as a named argument from ``data=.`` to ``y=.``.
+  * The order of mandatory arguments for all the solvers is ``Op, y, ...``,
+    For example ``pylops.optimization.sparsity.splitbregman`` mandatory arguments  ``Op, y, RegsL1``.
+    Note that this is different from `pylops.optimization.sparsity.SplitBregman` in v1.x where the order was
+    ``Op, RegsL1, data``.
+  * The order of keyword (named) arguments is changed such that the initial guess ``x0`` always comes first.
+    Change this if you used to pass named arguments without the name, otherwise this change will be transparent to you.
+  * The module ``solver`` has been renamed to ``basic``. Make sure to update all your imports of ``cg``,
+    ``cgls``,``lsqr`` solvers.
+  * The optional parameter ``returninfo`` has been deprecated. When using function-based solvers,
+    remove it from the input parameters and modify the output parameters to match the behaviour of
+    v1.x solvers when using ``returninfo=True``.
+  * The outer iteration count for the `pylops.optimization.sparsity.irls` solver has been modified to include the first
+    iteration. The new solver with `nouter` iterations behaves exactly like v1.x solver with `nouter-1` iterations.
+  * The optional parameter ``returnhistory`` has been deprecated from the `pylops.optimization.sparsity.irls` solver.
+    The same objective (storing the history of solutions) can be achieved more flexibly using callbacks - see our
+    new guide to callbacks.
+
 
 ## Table of supported multiplication shapes
 Suppose that LOp.dims = (5, 10) and LOp.dimsd = (9, 21).

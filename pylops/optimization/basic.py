@@ -21,8 +21,6 @@ def cg(
         Initial guess
     niter : :obj:`int`, optional
         Number of iterations
-    damp : :obj:`float`, optional
-        *Deprecated*, will be removed in v2.0.0
     tol : :obj:`float`, optional
         Tolerance on residual norm
     show : :obj:`bool`, optional
@@ -107,7 +105,7 @@ def cgls(
         Gives the reason for termination
 
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
-        :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
+        :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
 
         ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
         problem
@@ -115,7 +113,7 @@ def cgls(
         Iteration number upon termination
     r1norm : :obj:`float`
         :math:`||\mathbf{r}||_2`, where
-        :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\,\mathbf{x}`
+        :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
     r2norm : :obj:`float`
         :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
         \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
@@ -132,7 +130,7 @@ def cgls(
     if callback is not None:
         cgsolve.callback = callback
     x, istop, iiter, r1norm, r2norm, cost = cgsolve.solve(
-        y=y, x0=x0, tol=tol, niter=niter, show=show, itershow=itershow
+        y=y, x0=x0, tol=tol, niter=niter, damp=damp, show=show, itershow=itershow
     )
     return x, istop, iiter, r1norm, r2norm, cost
 
@@ -167,7 +165,7 @@ def lsqr(
     y : :obj:`np.ndarray`
         Data of size :math:`[N \times 1]`
     x0 : :obj:`np.ndarray`, optional
-        Initial guess
+        Initial guess of size :math:`[M \times 1]`
     damp : :obj:`float`, optional
         Damping coefficient
     atol, btol : :obj:`float`, optional

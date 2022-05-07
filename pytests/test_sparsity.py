@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import FirstDerivative, Identity, MatrixMult
-from pylops.optimization.sparsity import IRLS, OMP, SplitBregman, fista, ista, spgl1
+from pylops.optimization.sparsity import fista, irls, ista, omp, spgl1, splitbregman
 
 par1 = {
     "ny": 11,
@@ -98,7 +98,7 @@ def test_IRLS_data(par):
     y[par["ny"] - 2] *= 5
 
     # normal equations with regularization
-    xinv, _ = IRLS(
+    xinv = irls(
         Gop,
         y,
         x0=x0,
@@ -107,9 +107,8 @@ def test_IRLS_data(par):
         epsR=1e-2,
         epsI=0,
         tolIRLS=1e-3,
-        returnhistory=False,
         kind="data",
-    )
+    )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
 
 
@@ -126,10 +125,7 @@ def test_IRLS_model(par):
     y = Aop * x
 
     maxit = 100
-    (
-        xinv,
-        _,
-    ) = IRLS(Aop, y, nouter=maxit, tolIRLS=1e-3, returnhistory=False, kind="model")
+    xinv = irls(Aop, y, nouter=maxit, tolIRLS=1e-3, kind="model")[0]
     assert_array_almost_equal(x, xinv, decimal=1)
 
 
@@ -148,7 +144,7 @@ def test_OMP(par):
     sigma = 1e-4
     maxit = 100
 
-    xinv, _, _ = OMP(Aop, y, maxit, sigma=sigma, show=False)
+    xinv, _, _ = omp(Aop, y, maxit, sigma=sigma, show=False)
     assert_array_almost_equal(x, xinv, decimal=1)
 
 
@@ -364,10 +360,10 @@ def test_SplitBregman(par):
     niter_in = 3
 
     x0 = np.ones(nx)
-    xinv, niter = SplitBregman(
+    xinv, _, _ = splitbregman(
         Iop,
-        [Dop],
         y,
+        [Dop],
         niter_outer=niter_end,
         niter_inner=niter_in,
         mu=mu,

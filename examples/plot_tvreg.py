@@ -63,8 +63,8 @@ D2op = pylops.SecondDerivative(nx, edge=True)
 lamda = 1e2
 
 xinv = pylops.optimization.leastsquares.regularized_inversion(
-    Iop, [D2op], y, epsRs=[np.sqrt(lamda / 2)], **dict(iter_lim=30)
-)
+    Iop, y, [D2op], epsRs=[np.sqrt(lamda / 2)], **dict(iter_lim=30)
+)[0]
 
 plt.figure(figsize=(10, 5))
 plt.plot(x, "k", lw=3, label="x")
@@ -82,10 +82,10 @@ lamda = 0.3
 niter_out = 50
 niter_in = 3
 
-xinv, niter = pylops.optimization.sparsity.SplitBregman(
+xinv = pylops.optimization.sparsity.splitbregman(
     Iop,
-    [Dop],
     y,
+    [Dop],
     niter_outer=niter_out,
     niter_inner=niter_in,
     mu=mu,
@@ -93,7 +93,7 @@ xinv, niter = pylops.optimization.sparsity.SplitBregman(
     tol=1e-4,
     tau=1.0,
     **dict(iter_lim=30, damp=1e-10)
-)
+)[0]
 
 plt.figure(figsize=(10, 5))
 plt.plot(x, "k", lw=3, label="x")
@@ -164,10 +164,10 @@ lamda = [0.1, 0.1]
 niter_out = 20
 niter_in = 10
 
-xinv, niter = pylops.optimization.sparsity.SplitBregman(
+xinv = pylops.optimization.sparsity.splitbregman(
     Rop * Fop,
-    Dop,
     y.ravel(),
+    Dop,
     niter_outer=niter_out,
     niter_inner=niter_in,
     mu=mu,
@@ -176,7 +176,7 @@ xinv, niter = pylops.optimization.sparsity.SplitBregman(
     tau=1.0,
     show=False,
     **dict(iter_lim=5, damp=1e-4)
-)
+)[0]
 xinv = np.real(xinv.reshape(ny, nx))
 
 fig, axs = plt.subplots(1, 2, figsize=(9, 5))

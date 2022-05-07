@@ -1,12 +1,14 @@
 import time
 from abc import ABCMeta, abstractmethod
 
+from pylops.optimization.callback import Callbacks as Callbacksdef
+
 
 class Solver(metaclass=ABCMeta):
     r"""Solver
 
     This is a template class which a user must subclass when implementing a new solver.
-    This class comprises of the following mantatory methods:
+    This class comprises of the following mandatory methods:
 
     - ``__init__``: initialization method to which the operator `Op` must be passed
     - ``setup``: a method that is invoked to setup the solver, basically it will create
@@ -28,16 +30,24 @@ class Solver(metaclass=ABCMeta):
     - ``callback``: a method implementing a callback function, which is called after
       every step of the solver
 
+    Parameters
+    ----------
+    Op : :obj:`pylops.LinearOperator`
+        Operator to invert of
+    Callbacks : :obj:`pylops.optimization.callback.Callbacks`
+        Callbacks object used to implement custom callbacks
+
     """
 
-    def __init__(self, Op):
+    def __init__(self, Op, Callbacks=None):
         self.Op = Op
+        self.Callbacks = Callbacksdef() if Callbacks is None else Callbacks
         self.tstart = time.time()
 
-    def _print_solver(self, text=""):
+    def _print_solver(self, text="", nbar=80):
         print(f"{type(self).__name__}" + text)
         print(
-            "-----------------------------------------------------------\n"
+            "-" * nbar + "\n"
             f"The Operator Op has {self.Op.shape[0]} rows and {self.Op.shape[1]} cols"
         )
 
@@ -47,11 +57,11 @@ class Solver(metaclass=ABCMeta):
     def _print_step(self):
         pass
 
-    def _print_finalize(self):
+    def _print_finalize(self, nbar=80):
         print(
             f"\nIterations = {self.iiter}        Total time (s) = {self.telapsed:.2f}"
         )
-        print("-----------------------------------------------------------------\n")
+        print("-" * nbar + "\n")
 
     @abstractmethod
     def setup(self, y, show=False):

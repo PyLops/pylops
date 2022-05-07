@@ -512,9 +512,7 @@ def MDD(
             P = filtfilt(np.ones(smooth_precond) / smooth_precond, 1, P, axis=0)
         P = to_cupy_conditional(d, P)
         Pop = Diagonal(P)
-        minv = preconditioned_inversion(
-            MDCop, Pop, d.ravel(), returninfo=False, **kwargs_solver
-        )
+        minv = preconditioned_inversion(MDCop, d.ravel(), Pop, **kwargs_solver)[0]
     else:
         if ncp == np and "callback" not in kwargs_solver:
             minv = lsqr(MDCop, d.ravel(), **kwargs_solver)[0]

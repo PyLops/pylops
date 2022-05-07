@@ -708,7 +708,7 @@ class LinearOperator(spLinearOperator):
             Operator eigenvalues.
 
         Raises
-        -------
+        ------
         ValueError
             If ``uselobpcg=True`` for a non-symmetric square matrix with
             complex type
@@ -993,7 +993,7 @@ class LinearOperator(spLinearOperator):
             Operator trace.
 
         Raises
-        -------
+        ------
         ValueError
              If the operator has rectangular shape (``shape[0] != shape[1]``)
 

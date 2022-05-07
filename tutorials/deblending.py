@@ -37,7 +37,7 @@ In other words, we aim to solve the following problem:
 .. math::
     J = \|\mathbf{d}^b - \boldsymbol\Phi \mathbf{S}^H \mathbf{x}\|_2 + \epsilon \|\mathbf{x}\|_1
 
-for which we will use the :py:class:`pylops.optimization.sparsity.FISTA` solver.
+for which we will use the :py:class:`pylops.optimization.sparsity.fista` solver.
 
 """
 import matplotlib.pyplot as plt
@@ -150,7 +150,7 @@ niter = 60
 decay = (np.exp(-0.05 * np.arange(niter)) + 0.2) / 1.2
 
 with pylops.disabled_ndarray_multiplication():
-    p_inv = pylops.FISTA(
+    p_inv = pylops.optimization.sparsity.fista(
         Op,
         data_blended.ravel(),
         niter=niter,
@@ -158,7 +158,6 @@ with pylops.disabled_ndarray_multiplication():
         alpha=alpha,
         decay=decay,
         show=True,
-        returninfo=True,
     )[0]
 data_inv = Sop * p_inv
 data_inv = data_inv.reshape(ns, nt)

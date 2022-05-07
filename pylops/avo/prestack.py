@@ -15,7 +15,7 @@ from pylops import (
 from pylops.avo.avo import AVOLinearModelling, akirichards, fatti, ps
 from pylops.optimization.basic import cgls
 from pylops.optimization.leastsquares import regularized_inversion
-from pylops.optimization.sparsity import SplitBregman
+from pylops.optimization.sparsity import splitbregman
 from pylops.signalprocessing import Convolve1D
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import (
@@ -618,7 +618,7 @@ def PrestackInversion(
         if epsRL1 is None:
             # L2 inversion with spatial regularization
             if dims == 1:
-                Regop = SecondDerivative((nt0, nm), dtype=PPop.dtype)
+                Regop = SecondDerivative((nt0, nm), axis=0, dtype=PPop.dtype)
             elif dims == 2:
                 Regop = Laplacian((nt0, nm, nx), axes=(0, 2), dtype=PPop.dtype)
             else:
@@ -631,8 +631,8 @@ def PrestackInversion(
                 epsR = (epsR, 1)
             minv = regularized_inversion(
                 PPop,
-                Regop,
                 data.ravel(),
+                Regop,
                 x0=m0.ravel() if m0 is not None else None,
                 epsRs=epsR,
                 **kwargs_solver
@@ -675,10 +675,10 @@ def PrestackInversion(
                 kwargs_solver.pop("niter_inner")
             else:
                 niter_inner = 5
-            minv = SplitBregman(
+            minv = splitbregman(
                 PPop,
-                (RegL1op,),
                 data.ravel(),
+                (RegL1op,),
                 RegsL2=RegL2op,
                 epsRL1s=epsRL1,
                 epsRL2s=epsR,

@@ -1,7 +1,7 @@
 .. _addingsolver:
 
 Implementing new solvers
-==========================
+========================
 Users are welcome to create new solvers and add them to the PyLops library.
 
 In this tutorial, we will go through the key steps in the definition of a solver, using the

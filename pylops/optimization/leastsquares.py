@@ -8,13 +8,13 @@ from pylops.utils.decorators import disable_ndarray_multiplication
 
 def normal_equations_inversion(
     Op,
+    y,
     Regs,
-    data,
+    x0=None,
     Weight=None,
     dataregs=None,
     epsI=0,
     epsRs=None,
-    x0=None,
     NRegs=None,
     epsNRs=None,
     engine="scipy",
@@ -30,11 +30,13 @@ def normal_equations_inversion(
     Parameters
     ----------
     Op : :obj:`pylops.LinearOperator`
-        Operator to invert
+        Operator to invert of size :math:`[N \times M]`
+    y : :obj:`numpy.ndarray`
+        Data of size :math:`[N \times 1]`
     Regs : :obj:`list`
         Regularization operators (``None`` to avoid adding regularization)
-    data : :obj:`numpy.ndarray`
-        Data
+    x0 : :obj:`numpy.ndarray`, optional
+        Initial guess of size :math:`[M \times 1]`
     Weight : :obj:`pylops.LinearOperator`, optional
         Weight operator
     dataregs : :obj:`list`, optional
@@ -45,8 +47,6 @@ def normal_equations_inversion(
     epsRs : :obj:`list`, optional
          Regularization dampings (must have the same number of elements
          as ``Regs``)
-    x0 : :obj:`numpy.ndarray`, optional
-        Initial guess
     NRegs : :obj:`list`
         Normal regularization operators (``None`` to avoid adding
         regularization). Such operators must apply the chain of the
@@ -94,7 +94,7 @@ def normal_equations_inversion(
     """
     nesolve = NormalEquationsInversion(Op)
     xinv, istop = nesolve.solve(
-        data,
+        y,
         Regs,
         x0=x0,
         Weight=Weight,
@@ -112,12 +112,12 @@ def normal_equations_inversion(
 
 def regularized_inversion(
     Op,
+    y,
     Regs,
-    data,
+    x0=None,
     Weight=None,
     dataregs=None,
     epsRs=None,
-    x0=None,
     engine="scipy",
     show=False,
     **kwargs_solver
@@ -131,11 +131,13 @@ def regularized_inversion(
     Parameters
     ----------
     Op : :obj:`pylops.LinearOperator`
-        Operator to invert
+        Operator to invert of size :math:`[N \times M]`
+    y : :obj:`numpy.ndarray`
+        Data of size :math:`[N \times 1]`
     Regs : :obj:`list`
         Regularization operators (``None`` to avoid adding regularization)
-    data : :obj:`numpy.ndarray`
-        Data
+    x0 : :obj:`numpy.ndarray`, optional
+        Initial guess of size :math:`[M \times 1]`
     Weight : :obj:`pylops.LinearOperator`, optional
         Weight operator
     dataregs : :obj:`list`, optional
@@ -143,8 +145,6 @@ def regularized_inversion(
         regularization operator in ``Regs``)
     epsRs : :obj:`list`, optional
          Regularization dampings
-    x0 : :obj:`numpy.ndarray`, optional
-        Initial guess
     engine : :obj:`str`, optional
             Solver to use (``scipy`` or ``pylops``)
     show : :obj:`bool`, optional
@@ -163,7 +163,7 @@ def regularized_inversion(
         Gives the reason for termination
 
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
-        :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
+        :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
 
         ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
         problem
@@ -171,7 +171,7 @@ def regularized_inversion(
         Iteration number upon termination
     r1norm : :obj:`float`
         :math:`||\mathbf{r}||_2^2`, where
-        :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\,\mathbf{x}`
+        :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
     r2norm : :obj:`float`
         :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
         \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
@@ -190,7 +190,7 @@ def regularized_inversion(
     """
     rsolve = RegularizedInversion(Op)
     xinv, istop, itn, r1norm, r2norm = rsolve.solve(
-        data,
+        y,
         Regs,
         x0=x0,
         Weight=Weight,
@@ -204,7 +204,7 @@ def regularized_inversion(
 
 
 def preconditioned_inversion(
-    Op, P, data, x0=None, engine="scipy", show=False, **kwargs_solver
+    Op, y, P, x0=None, engine="scipy", show=False, **kwargs_solver
 ):
     r"""Preconditioned inversion.
 
@@ -214,13 +214,13 @@ def preconditioned_inversion(
     Parameters
     ----------
     Op : :obj:`pylops.LinearOperator`
-        Operator to invert
+        Operator to invert of size :math:`[N \times M]`
+    y : :obj:`numpy.ndarray`
+        Data of size :math:`[N \times 1]`
     P : :obj:`pylops.LinearOperator`
         Preconditioner
-    data : :obj:`numpy.ndarray`
-        Data
     x0 : :obj:`numpy.ndarray`
-        Initial guess
+        Initial guess of size :math:`[M \times 1]`
     engine : :obj:`str`, optional
             Solver to use (``scipy`` or ``pylops``)
     show : :obj:`bool`, optional
@@ -239,14 +239,14 @@ def preconditioned_inversion(
         Gives the reason for termination
 
         ``1`` means :math:`\mathbf{x}` is an approximate solution to
-        :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
+        :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
 
         ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
         problem
     itn : :obj:`int`
         Iteration number upon termination
     r1norm : :obj:`float`
-        :math:`||\mathbf{r}||_2^2`, where :math:`\mathbf{r} = \mathbf{d} -
+        :math:`||\mathbf{r}||_2^2`, where :math:`\mathbf{r} = \mathbf{y} -
         \mathbf{Op}\,\mathbf{x}`
     r2norm : :obj:`float`
         :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +  \epsilon^2
@@ -264,6 +264,6 @@ def preconditioned_inversion(
     """
     psolve = PreconditionedInversion(Op)
     xinv, istop, itn, r1norm, r2norm = psolve.solve(
-        data, P, x0=x0, engine=engine, show=show, **kwargs_solver
+        y, P, x0=x0, engine=engine, show=show, **kwargs_solver
     )
     return xinv, istop, itn, r1norm, r2norm

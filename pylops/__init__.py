@@ -60,6 +60,7 @@ from .avo.poststack import *
 from .avo.prestack import *
 from .optimization.basicc import *
 from .optimization.leastsquaresc import *
+from .optimization.sparsityc import *
 from .optimization.basic import *
 from .optimization.leastsquares import *
 from .optimization.sparsity import *

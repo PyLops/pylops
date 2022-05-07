@@ -114,6 +114,21 @@ plt.tight_layout()
 # :py:func:`pylops.optimization.sparsity.IRLS` can drammatically improve the
 # quality of the estimation of intercept and gradient.
 
+# Define callbacks object
+class CallbackIRLS(pylops.optimization.callback.Callbacks):
+    def __init__(self, n):
+        self.n = n
+        self.xirls_hist = []
+        self.rw_hist = []
+
+    def on_step_end(self, solver, x):
+        self.xirls_hist.append(x)
+        if solver.iiter > 0:
+            self.rw_hist.append(solver.rw)
+        else:
+            self.rw_hist.append(np.ones(self.n))
+
+
 # Add outliers
 yn[1] += 40
 yn[N - 2] -= 20
@@ -125,16 +140,13 @@ epsI = 0
 tolIRLS = 1e-2
 
 xnest = LRop / yn
-xirls, nouter, xirls_hist, rw_hist = pylops.optimization.sparsity.IRLS(
-    LRop,
-    yn,
-    nouter=nouter,
-    threshR=False,
-    epsR=epsR,
-    epsI=epsI,
-    tolIRLS=tolIRLS,
-    returnhistory=True,
+
+cb = CallbackIRLS(N)
+irls = pylops.optimization.sparsityc.IRLS(LRop, cb)
+xirls, nouter = irls.solve(
+    yn, nouter=nouter, threshR=False, epsR=epsR, epsI=epsI, tolIRLS=tolIRLS
 )
+xirls_hist, rw_hist = np.array(cb.xirls_hist), cb.rw_hist
 print(f"IRLS converged at {nouter} iterations...")
 
 plt.figure(figsize=(5, 7))

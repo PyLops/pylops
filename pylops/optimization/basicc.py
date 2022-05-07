@@ -29,14 +29,14 @@ class CG(Solver):
     """
 
     def _print_setup(self, xcomplex=False):
-        self._print_solver()
+        self._print_solver(nbar=55)
 
         if self.niter is not None:
             strpar = f"tol = {self.tol:10e}\tniter = {self.niter}"
         else:
             strpar = f"tol = {self.tol:10e}"
         print(strpar)
-        print("-----------------------------------------------------------")
+        print("-" * 55 + "\n")
         if not xcomplex:
             head1 = "    Itn           x[0]              r2norm"
         else:
@@ -180,7 +180,7 @@ class CG(Solver):
         self.telapsed = self.tend - self.tstart
         self.cost = np.array(self.cost)
         if show:
-            self._print_finalize()
+            self._print_finalize(nbar=55)
 
     def solve(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10]):
         r"""Run entire solver
@@ -243,7 +243,7 @@ class CGLS(Solver):
     """
 
     def _print_setup(self, xcomplex=False):
-        self._print_solver()
+        self._print_solver(nbar=65)
 
         if self.niter is not None:
             strpar = (
@@ -252,7 +252,7 @@ class CGLS(Solver):
         else:
             strpar = f"damp = {self.damp:10e}\ttol = {self.tol:10e}\t"
         print(strpar)
-        print("-----------------------------------------------------------")
+        print("-" * 65 + "\n")
         if not xcomplex:
             head1 = "    Itn          x[0]              r1norm         r2norm"
         else:
@@ -415,7 +415,7 @@ class CGLS(Solver):
         self.r1norm = self.kold
         self.r2norm = self.cost1[self.iiter]
         if show:
-            self._print_finalize()
+            self._print_finalize(nbar=65)
         self.cost = np.array(self.cost)
 
     def solve(
@@ -459,7 +459,7 @@ class CGLS(Solver):
             Gives the reason for termination
 
             ``1`` means :math:`\mathbf{x}` is an approximate solution to
-            :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
 
             ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
             problem
@@ -467,7 +467,7 @@ class CGLS(Solver):
             Iteration number upon termination
         r1norm : :obj:`float`
             :math:`||\mathbf{r}||_2`, where
-            :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
         r2norm : :obj:`float`
             :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
             \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
@@ -526,7 +526,7 @@ class LSQR(Solver):
         )
 
     def _print_setup(self, x, xcomplex=False):
-        self._print_solver()
+        self._print_solver(nbar=90)
         print(f"damp = {self.damp:20.14e}     calc_var = {self.calc_var:6g}")
         print(f"atol = {self.atol:8.2e}                 conlim = {self.conlim:8.2e}")
         if self.niter is not None:
@@ -534,12 +534,12 @@ class LSQR(Solver):
         else:
             strpar = f"btol = {self.btol:8.2e}"
         print(strpar)
-        print("-----------------------------------------------------------")
+        print("-" * 90)
         head2 = " Compatible   LS     Norm A   Cond A"
         if not xcomplex:
             head1 = "   Itn     x[0]      r1norm     r2norm  "
         else:
-            head1 = "   Itn           x[0]           r1norm    r2norm  "
+            head1 = "   Itn        x[0]              r1norm    r2norm  "
         print(head1 + head2)
         test1 = 1
         test2 = self.alfa / self.beta
@@ -569,9 +569,7 @@ class LSQR(Solver):
         print(str1 + "   " + str2)
         print(str3 + "   " + str4)
         print(str5)
-        print(
-            "-----------------------------------------------------------------------\n"
-        )
+        print("-" * 90 + "\n")
 
     def setup(
         self,
@@ -595,7 +593,7 @@ class LSQR(Solver):
             Initial guess of size :math:`[M \times 1]`. If ``None``, initialize
             internally as zero vector
         damp : :obj:`float`, optional
-        Damping coefficient
+            Damping coefficient
         atol, btol : :obj:`float`, optional
             Stopping tolerances. If both are 1.0e-9, the final residual norm
             should be accurate to about 9 digits. (The solution will usually

@@ -6,7 +6,7 @@ from scipy.sparse.linalg import lsqr
 from pylops import FirstDerivative, Laplacian, MatrixMult, SecondDerivative
 from pylops.optimization.basic import cgls
 from pylops.optimization.leastsquares import regularized_inversion
-from pylops.optimization.sparsity import SplitBregman
+from pylops.optimization.sparsity import splitbregman
 from pylops.signalprocessing import Convolve1D
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import (
@@ -395,8 +395,8 @@ def PoststackInversion(
 
             minv = regularized_inversion(
                 PPop,
-                [Regop],
                 data.ravel(),
+                [Regop],
                 x0=None if m0 is None else m0.ravel(),
                 epsRs=[epsR],
                 **kwargs_solver
@@ -436,10 +436,10 @@ def PoststackInversion(
                 epsRL1 = list([epsRL1])
             if not isinstance(epsR, (list, tuple)):
                 epsR = list([epsR])
-            minv = SplitBregman(
+            minv = splitbregman(
                 PPop,
-                [RegL1op],
                 data.ravel(),
+                [RegL1op],
                 RegsL2=[RegL2op],
                 epsRL1s=epsRL1,
                 epsRL2s=epsR,

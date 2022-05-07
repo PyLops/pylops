@@ -18,7 +18,7 @@ Dot-test
     dottest
 
 Decorators
---------
+----------
 
 .. currentmodule:: pylops.utils.decorators
 

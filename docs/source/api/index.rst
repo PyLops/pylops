@@ -197,10 +197,10 @@ Least-squares (function-based)
     preconditioned_inversion
 
 
-Sparsity
-~~~~~~~~
+Sparsity (class-based)
+~~~~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: pylops.optimization.sparsity
+.. currentmodule:: pylops.optimization.sparsityc
 
 .. autosummary::
    :toctree: generated/
@@ -211,6 +211,31 @@ Sparsity
     FISTA
     SPGL1
     SplitBregman
+
+Sparsity (function-based)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.optimization.sparsity
+
+.. autosummary::
+   :toctree: generated/
+
+    irls
+    omp
+    ista
+    fista
+    spgl1
+    splitbregman
+
+Callbacks
+~~~~~~~~~
+
+.. currentmodule:: pylops.optimization.callback
+
+.. autosummary::
+   :toctree: generated/
+
+    Callbacks
 
 
 Applications

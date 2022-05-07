@@ -13,10 +13,10 @@ from pylops.utils.decorators import (
     disable_ndarray_multiplication,
 )
 
-sp_cg_ndarray = add_ndarray_support_to_solver(sp_cg)
-sp_lsqr_ndarray = add_ndarray_support_to_solver(lsqr)
-py_cg_ndarray = add_ndarray_support_to_solver(cg)
-py_cgls_ndarray = add_ndarray_support_to_solver(cgls)
+# sp_cg_ndarray = add_ndarray_support_to_solver(sp_cg)
+# sp_lsqr_ndarray = add_ndarray_support_to_solver(lsqr)
+# py_cg_ndarray = add_ndarray_support_to_solver(cg)
+# py_cgls_ndarray = add_ndarray_support_to_solver(cgls)
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -52,8 +52,8 @@ class NormalEquationsInversion(Solver):
     Solve the following normal equations for a system of regularized equations
     given the operator :math:`\mathbf{Op}`, a data weighting operator
     :math:`\mathbf{W}`, a list of regularization terms (:math:`\mathbf{R}_i`
-    and/or :math:`\mathbf{N}_i`), the data :math:`\mathbf{d}` and
-    regularization data :math:`\mathbf{d}_{\mathbf{R}_i}`, and the damping factors
+    and/or :math:`\mathbf{N}_i`), the data :math:`\mathbf{y}` and
+    regularization data :math:`\mathbf{y}_{\mathbf{R}_i}`, and the damping factors
     :math:`\epsilon_I`, :math:`\epsilon_{\mathbf{R}_i}` and :math:`\epsilon_{\mathbf{N}_i}`:
 
     .. math::
@@ -61,8 +61,8 @@ class NormalEquationsInversion(Solver):
         \sum_i \epsilon_{\mathbf{R}_i}^2 \mathbf{R}_i^T \mathbf{R}_i +
         \sum_i \epsilon_{\mathbf{N}_i}^2 \mathbf{N}_i +
         \epsilon_I^2 \mathbf{I} )  \mathbf{x}
-        = \mathbf{Op}^T \mathbf{W} \mathbf{d} +  \sum_i \epsilon_{\mathbf{R}_i}^2
-        \mathbf{R}_i^T \mathbf{d}_{\mathbf{R}_i}
+        = \mathbf{Op}^T \mathbf{W} \mathbf{y} +  \sum_i \epsilon_{\mathbf{R}_i}^2
+        \mathbf{R}_i^T \mathbf{y}_{\mathbf{R}_i}
 
     Note that the data term of the regularizations :math:`\mathbf{N}_i` is
     implicitly assumed to be zero.
@@ -70,15 +70,15 @@ class NormalEquationsInversion(Solver):
     """
 
     def _print_setup(self):
-        self._print_solver()
+        self._print_solver(nbar=55)
         strreg = f"Regs={self.Regs}"
         streps = f"\nepsRs={self.epsRs}     epsI={self.epsI}"
         print(strreg + streps)
-        print("-----------------------------------------------------------")
+        print("-" * 55)
 
     def _print_finalize(self):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
-        print("-----------------------------------------------------------------\n")
+        print("-" * 55 + "\n")
 
     @disable_ndarray_multiplication
     def setup(
@@ -226,11 +226,11 @@ class NormalEquationsInversion(Solver):
         if engine == "scipy":
             if "atol" not in kwargs_solver:
                 kwargs_solver["atol"] = "legacy"
-            if show:
-                kwargs_solver["show"] = 1
-            xinv, istop = sp_cg_ndarray(self.Op_normal, self.y_normal, **kwargs_solver)
+            xinv, istop = sp_cg(self.Op_normal, self.y_normal, **kwargs_solver)
         elif engine == "pylops":
-            xinv = py_cg_ndarray(
+            if show:
+                kwargs_solver["show"] = True
+            xinv = cg(
                 self.Op_normal,
                 self.y_normal,
                 self.ncp.zeros(self.Op_normal.dims, dtype=self.Op_normal.dtype),
@@ -389,7 +389,8 @@ class RegularizedInversion(Solver):
     Solve the following system of regularized equations given the operator
     :math:`\mathbf{Op}`, a data weighting operator :math:`\mathbf{W}^{1/2}`,
     a list of regularization terms :math:`\mathbf{R}_i`,
-    the data :math:`\mathbf{d}` and regularization damping factors
+    the data :math:`\mathbf{y}` and
+    regularization data :math:`\mathbf{y}_{\mathbf{R}_i}`, and the damping factors
     :math:`\epsilon_\mathbf{I}`: and :math:`\epsilon_{\mathbf{R}_i}`:
 
     .. math::
@@ -400,10 +401,10 @@ class RegularizedInversion(Solver):
             \epsilon_{\mathbf{R}_N} \mathbf{R}_N
         \end{bmatrix} \mathbf{x} =
         \begin{bmatrix}
-            \mathbf{W}^{1/2} \mathbf{d}    \\
-            \epsilon_{\mathbf{R}_1} \mathbf{d}_{\mathbf{R}_1} \\
+            \mathbf{W}^{1/2} \mathbf{y}    \\
+            \epsilon_{\mathbf{R}_1} \mathbf{y}_{\mathbf{R}_1} \\
             \vdots   \\
-            \epsilon_{\mathbf{R}_N} \mathbf{d}_{\mathbf{R}_N} \\
+            \epsilon_{\mathbf{R}_N} \mathbf{y}_{\mathbf{R}_N} \\
         \end{bmatrix}
 
     where the ``Weight`` provided here is equivalent to the
@@ -416,15 +417,15 @@ class RegularizedInversion(Solver):
     """
 
     def _print_setup(self):
-        self._print_solver()
+        self._print_solver(nbar=65)
         strreg = f"Regs={self.Regs}"
         streps = f"\nepsRs={self.epsRs}"
         print(strreg + streps)
-        print("-----------------------------------------------------------")
+        print("-" * 65)
 
     def _print_finalize(self):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
-        print("-----------------------------------------------------------------\n")
+        print("-" * 65 + "\n")
 
     @disable_ndarray_multiplication
     def setup(
@@ -538,7 +539,7 @@ class RegularizedInversion(Solver):
             Gives the reason for termination
 
             ``1`` means :math:`\mathbf{x}` is an approximate solution to
-            :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
 
             ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
             problem
@@ -546,7 +547,7 @@ class RegularizedInversion(Solver):
             Iteration number upon termination
         r1norm : :obj:`float`
             :math:`||\mathbf{r}||_2^2`, where
-            :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
         r2norm : :obj:`float`
             :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
             \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
@@ -555,15 +556,16 @@ class RegularizedInversion(Solver):
         """
         if x is not None:
             self.datatot = self.datatot - self.RegOp * x
-        print("engine", engine)
         if engine == "scipy":
             if show:
                 kwargs_solver["show"] = 1
-            xinv, istop, itn, r1norm, r2norm = sp_lsqr_ndarray(
+            xinv, istop, itn, r1norm, r2norm = lsqr(
                 self.RegOp, self.datatot, **kwargs_solver
             )[0:5]
         elif engine == "pylops":
-            xinv, istop, itn, r1norm, r2norm = py_cgls_ndarray(
+            if show:
+                kwargs_solver["show"] = True
+            xinv, istop, itn, r1norm, r2norm = cgls(
                 self.RegOp,
                 self.datatot,
                 self.ncp.zeros(self.RegOp.dims, dtype=self.RegOp.dtype),
@@ -623,7 +625,7 @@ class RegularizedInversion(Solver):
             Gives the reason for termination
 
             ``1`` means :math:`\mathbf{x}` is an approximate solution to
-            :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
 
             ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
             problem
@@ -631,7 +633,7 @@ class RegularizedInversion(Solver):
             Iteration number upon termination
         r1norm : :obj:`float`
             :math:`||\mathbf{r}||_2^2`, where
-            :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
         r2norm : :obj:`float`
             :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
             \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
@@ -668,26 +670,26 @@ class PreconditionedInversion(Solver):
     -----
     Solve the following system of preconditioned equations given the operator
     :math:`\mathbf{Op}`, a preconditioner :math:`\mathbf{P}`,
-    the data :math:`\mathbf{d}`
+    the data :math:`\mathbf{y}`
 
     .. math::
-        \mathbf{d} = \mathbf{Op}\,\mathbf{P} \mathbf{m}
+        \mathbf{y} = \mathbf{Op}\,\mathbf{P} \mathbf{p}
 
-    where :math:`\mathbf{m}` is the solution in the preconditioned space
-    and :math:`\mathbf{x} = \mathbf{P}\mathbf{m}` is the solution in the
+    where :math:`\mathbf{p}` is the solution in the preconditioned space
+    and :math:`\mathbf{x} = \mathbf{P}\mathbf{p}` is the solution in the
     original space.
 
     """
 
     def _print_setup(self):
-        self._print_solver()
+        self._print_solver(nbar=65)
         strprec = f"Prec={self.P}"
         print(strprec)
-        print("-----------------------------------------------------------")
+        print("-" * 65)
 
     def _print_finalize(self):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
-        print("-----------------------------------------------------------------\n")
+        print("-" * 65 + "\n")
 
     @disable_ndarray_multiplication
     def setup(self, y, P, show=False):
@@ -748,7 +750,7 @@ class PreconditionedInversion(Solver):
             Gives the reason for termination
 
             ``1`` means :math:`\mathbf{x}` is an approximate solution to
-            :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
 
             ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
             problem
@@ -756,7 +758,7 @@ class PreconditionedInversion(Solver):
             Iteration number upon termination
         r1norm : :obj:`float`
             :math:`||\mathbf{r}||_2^2`, where
-            :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
         r2norm : :obj:`float`
             :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
             \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
@@ -766,13 +768,17 @@ class PreconditionedInversion(Solver):
         if x is not None:
             self.y = self.y - self.Op * x
         if engine == "scipy":
-            pinv, istop, itn, r1norm, r2norm = sp_lsqr_ndarray(
+            if show:
+                kwargs_solver["show"] = 1
+            pinv, istop, itn, r1norm, r2norm = lsqr(
                 self.POp,
                 self.y,
                 **kwargs_solver,
             )[0:5]
         elif engine == "pylops":
-            pinv, istop, itn, r1norm, r2norm = py_cgls_ndarray(
+            if show:
+                kwargs_solver["show"] = True
+            pinv, istop, itn, r1norm, r2norm = cgls(
                 self.POp,
                 self.y,
                 self.ncp.zeros(self.POp.dims, dtype=self.POp.dtype),
@@ -809,13 +815,13 @@ class PreconditionedInversion(Solver):
 
         Returns
         -------
-        xinv : :obj:`numpy.ndarray`
+        x : :obj:`numpy.ndarray`
             Inverted model.
         istop : :obj:`int`
             Gives the reason for termination
 
             ``1`` means :math:`\mathbf{x}` is an approximate solution to
-            :math:`\mathbf{d} = \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
 
             ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
             problem
@@ -823,7 +829,7 @@ class PreconditionedInversion(Solver):
             Iteration number upon termination
         r1norm : :obj:`float`
             :math:`||\mathbf{r}||_2^2`, where
-            :math:`\mathbf{r} = \mathbf{d} - \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
         r2norm : :obj:`float`
             :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
             \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
