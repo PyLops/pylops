@@ -211,9 +211,10 @@ When using ``pylops`` in scientific publications, please cite the following pape
 ## Tutorials
 A list of video tutorials to learn more about PyLops:
 
-- PyDataGlobal 2020: Youtube video [links](https://github.com/PyLops/pylops_pydata2020).
-- Swung Rendezvous 2021: Youtube video [links](https://www.youtube.com/watch?v=rot1K1xr5H4).
+- Transform 2022: Youtube video [links](https://www.youtube.com/watch?v=RIeVkuY_ivQ).
 - Transform 2021: Youtube video [links](https://www.youtube.com/watch?v=4GaVtE1ciLw).
+- Swung Rendezvous 2021: Youtube video [links](https://www.youtube.com/watch?v=rot1K1xr5H4).
+- PyDataGlobal 2020: Youtube video [links](https://github.com/PyLops/pylops_pydata2020).
 
 ## Contributors
 * Matteo Ravasi, mrava87
