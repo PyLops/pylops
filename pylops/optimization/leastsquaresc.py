@@ -8,10 +8,7 @@ from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.basesolver import Solver
 from pylops.optimization.basic import cg, cgls
 from pylops.utils.backend import get_array_module
-from pylops.utils.decorators import (
-    add_ndarray_support_to_solver,
-    disable_ndarray_multiplication,
-)
+from pylops.utils.decorators import disable_ndarray_multiplication
 
 # sp_cg_ndarray = add_ndarray_support_to_solver(sp_cg)
 # sp_lsqr_ndarray = add_ndarray_support_to_solver(lsqr)

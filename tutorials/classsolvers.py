@@ -78,7 +78,7 @@ ymask = Rop.mask(x)
 # and repeat the same after each step (using the previous estimate to compute the
 # percentage change). And, we do the same for the solution norm.
 
-# Define callbacks object
+
 class CallbackISTA(pylops.optimization.callback.Callbacks):
     def __init__(self):
         self.res_perc = []

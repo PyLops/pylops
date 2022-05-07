@@ -106,6 +106,7 @@ plt.scatter(t1, y1, c="r", s=40)
 plt.legend()
 plt.tight_layout()
 
+
 ###############################################################################
 # We consider now the case where some of the observations have large errors.
 # Such elements are generally referred to as *outliers* and can affect the
@@ -114,7 +115,7 @@ plt.tight_layout()
 # :py:func:`pylops.optimization.sparsity.IRLS` can drammatically improve the
 # quality of the estimation of intercept and gradient.
 
-# Define callbacks object
+
 class CallbackIRLS(pylops.optimization.callback.Callbacks):
     def __init__(self, n):
         self.n = n
@@ -142,8 +143,8 @@ tolIRLS = 1e-2
 xnest = LRop / yn
 
 cb = CallbackIRLS(N)
-irls = pylops.optimization.sparsityc.IRLS(LRop, cb)
-xirls, nouter = irls.solve(
+irlssolve = pylops.optimization.sparsityc.IRLS(LRop, cb)
+xirls, nouter = irlssolve.solve(
     yn, nouter=nouter, threshR=False, epsR=epsR, epsI=epsI, tolIRLS=tolIRLS
 )
 xirls_hist, rw_hist = np.array(cb.xirls_hist), cb.rw_hist

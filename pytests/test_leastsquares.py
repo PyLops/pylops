@@ -2,14 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from pylops.basicoperators import (
-    Diagonal,
-    HStack,
-    Identity,
-    MatrixMult,
-    Smoothing1D,
-    Symmetrize,
-)
+from pylops.basicoperators import Diagonal, HStack, Identity, MatrixMult, Smoothing1D
 from pylops.optimization.leastsquares import (
     normal_equations_inversion,
     preconditioned_inversion,

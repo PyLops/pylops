@@ -13,7 +13,7 @@ from pylops.optimization.leastsquares import (
     normal_equations_inversion,
     regularized_inversion,
 )
-from pylops.utils.backend import get_array_module, get_module_name, to_numpy
+from pylops.utils.backend import get_array_module, get_module_name
 from pylops.utils.decorators import disable_ndarray_multiplication
 
 try:
@@ -750,7 +750,7 @@ class OMP(Solver):
         # find normalization factor for each column
         if self.normalizecols:
             ncols = self.Op.shape[1]
-            norms = self.ncp.zeros(ncols)
+            self.norms = self.ncp.zeros(ncols)
             for icol in range(ncols):
                 unit = self.ncp.zeros(ncols, dtype=self.Op.dtype)
                 unit[icol] = 1
