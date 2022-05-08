@@ -18,7 +18,7 @@ which generally performs the following steps:
 The nice thing about class-based solvers is that i) a user can manually orchestrate these steps and do anything
 in between them; ii) a user can create a class-based :py:class:`pylops.optimization.callback.Callbacks` object and
 define a set of callbacks that will be run pre and post setup, step and run. One example of how such callbacks can
-be handy to track evolving variables in the solver can be found in :ref:`sphx_glr_examples_plot_linearregr.py`.
+be handy to track evolving variables in the solver can be found in :ref:`sphx_glr_gallery_plot_linearregr.py`.
 
 In the following we will leverage the very same mechanism to keep track of the percentage change of the solution and
 residual. This is just an example, we expect users will find different use cases based on the problem at hand.

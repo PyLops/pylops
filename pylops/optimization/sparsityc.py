@@ -1064,7 +1064,7 @@ class ISTA(Solver):
             f"  {x[0]:1.2e}   " if np.iscomplexobj(x) else f"     {x[0]:11.4e}        "
         )
         msg = (
-            f"{self.iiter + 1:6g} "
+            f"{self.iiter:6g} "
             + strx
             + f"{costdata:10.3e}   {costdata + costreg:9.3e}  {xupdate:10.3e}"
         )
