@@ -1,3 +1,4 @@
+import functools
 import time
 from abc import ABCMeta, abstractmethod
 
@@ -39,9 +40,10 @@ class Solver(metaclass=ABCMeta):
 
     """
 
-    def __init__(self, Op, Callbacks=None):
+    def __init__(self, Op, callbacks=None):
         self.Op = Op
-        self.Callbacks = Callbacksdef() if Callbacks is None else Callbacks
+        self.callbacks = callbacks
+        self._registercallbacks()
         self.tstart = time.time()
 
     def _print_solver(self, text="", nbar=80):
@@ -62,6 +64,50 @@ class Solver(metaclass=ABCMeta):
             f"\nIterations = {self.iiter}        Total time (s) = {self.telapsed:.2f}"
         )
         print("-" * nbar + "\n")
+
+    def _registercallbacks(self):
+        # We want to make sure that the appropriate callbacks are called
+        # for each method. Instead of just calling self.step, we want
+        # to call self.callbacks[:].on_step_begin, self.step and finally
+        # self.callbacks[::-1].on_step_end, for all callbacks in the list
+        # We can do this in an automated way by decorating all methods
+        def cbdecorator(func, setup=False):  # func will be self.setup, self.step, etc.
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                if self.callbacks:
+                    for cb in self.callbacks:
+                        # Call all on_*_begin callbacks
+                        if setup:
+                            getattr(cb, f"on_{func.__name__}_begin")(
+                                self, kwargs.get("x0", None)
+                            )  # self is solver, args[0] is x
+                        else:
+                            getattr(cb, f"on_{func.__name__}_begin")(
+                                self, args[0]
+                            )  # self is solver, args[0] is x
+                ret = func(*args, **kwargs)
+                if self.callbacks:
+                    for cb in self.callbacks[::-1]:
+                        # Call all on_*_end callbacks in reverse order
+                        if setup:
+                            getattr(cb, f"on_{func.__name__}_end")(
+                                self, kwargs.get("x0", None)
+                            )
+                        else:
+                            getattr(cb, f"on_{func.__name__}_end")(self, args[0])
+                return ret
+
+            return wrapper
+
+        for method in ["setup", "step", "run"]:
+            # Replace each method by its decorator
+            setattr(
+                self,
+                method,
+                cbdecorator(
+                    getattr(self, method), True if method == "setup" else False
+                ),
+            )
 
     @abstractmethod
     def setup(self, y, show=False):

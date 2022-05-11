@@ -123,8 +123,9 @@ class CallbackIRLS(pylops.optimization.callback.Callbacks):
         self.rw_hist = []
 
     def on_step_end(self, solver, x):
-        self.xirls_hist.append(x)
-        if solver.iiter > 0:
+        print(solver.iiter)
+        if solver.iiter > 1:
+            self.xirls_hist.append(x)
             self.rw_hist.append(solver.rw)
         else:
             self.rw_hist.append(np.ones(self.n))
@@ -143,7 +144,12 @@ tolIRLS = 1e-2
 xnest = LRop / yn
 
 cb = CallbackIRLS(N)
-irlssolve = pylops.optimization.sparsityc.IRLS(LRop, cb)
+irlssolve = pylops.optimization.sparsityc.IRLS(
+    LRop,
+    [
+        cb,
+    ],
+)
 xirls, nouter = irlssolve.solve(
     yn, nouter=nouter, threshR=False, epsR=epsR, epsI=epsI, tolIRLS=tolIRLS
 )

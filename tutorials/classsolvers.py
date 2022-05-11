@@ -86,19 +86,25 @@ class CallbackISTA(pylops.optimization.callback.Callbacks):
 
     def on_setup_end(self, solver, x):
         self.x = x
-        self.rec = solver.Op @ x - solver.y
+        if x is not None:
+            self.rec = solver.Op @ x - solver.y
+        else:
+            self.rec = None
 
     def on_step_end(self, solver, x):
         self.xold = self.x
         self.x = x
-        self.x_perc.append(
-            100 * np.linalg.norm(self.x - self.xold) / np.linalg.norm(self.xold)
-        )
         self.recold = self.rec
         self.rec = solver.Op @ x - solver.y
-        self.res_perc.append(
-            100 * np.linalg.norm(self.rec - self.recold) / np.linalg.norm(self.recold)
-        )
+        if self.xold is not None:
+            self.x_perc.append(
+                100 * np.linalg.norm(self.x - self.xold) / np.linalg.norm(self.xold)
+            )
+            self.res_perc.append(
+                100
+                * np.linalg.norm(self.rec - self.recold)
+                / np.linalg.norm(self.recold)
+            )
 
     def on_run_end(self, solver, x):
         # remove first percentage
@@ -107,12 +113,22 @@ class CallbackISTA(pylops.optimization.callback.Callbacks):
 
 
 cb = CallbackISTA()
-istasolve = pylops.optimization.sparsityc.ISTA(Rop * FFTop.H, Callbacks=cb)
+istasolve = pylops.optimization.sparsityc.ISTA(
+    Rop * FFTop.H,
+    callbacks=[
+        cb,
+    ],
+)
 pista, niteri, costi = istasolve.solve(y, niter=1000, eps=0.1, tol=1e-7)
 xista = FFTop.H * pista
 
 cbf = CallbackISTA()
-fistasolve = pylops.optimization.sparsityc.FISTA(Rop * FFTop.H, Callbacks=cbf)
+fistasolve = pylops.optimization.sparsityc.FISTA(
+    Rop * FFTop.H,
+    callbacks=[
+        cbf,
+    ],
+)
 pfista, niterf, costf = fistasolve.solve(y, niter=1000, eps=0.1, tol=1e-7)
 xfista = FFTop.H * pfista
 

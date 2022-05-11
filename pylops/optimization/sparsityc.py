@@ -355,8 +355,6 @@ class IRLS(Solver):
             Display setup log
 
         """
-        self.Callbacks.on_setup_begin(self, None)
-
         self.y = y
         self.nouter = nouter
         self.threshR = threshR
@@ -376,7 +374,6 @@ class IRLS(Solver):
         else:
             raise NotImplementedError("kind must be model or data")
 
-        self.Callbacks.on_setup_end(self, None)
         # print setup
         if show:
             self._print_setup()
@@ -474,8 +471,6 @@ class IRLS(Solver):
             Updated model vector
 
         """
-        self.Callbacks.on_step_begin(self, x)
-
         # update model
         x = self._step(x, **kwargs_solver)
 
@@ -483,7 +478,6 @@ class IRLS(Solver):
         self.r = self.y - self.Op * x
         self.rnorm = self.ncp.linalg.norm(self.r)
 
-        self.Callbacks.on_step_end(self, x)
         self.iiter += 1
         if show:
             self._print_step(x)
@@ -517,7 +511,6 @@ class IRLS(Solver):
             Estimated model of size :math:`[M \times 1]`
 
         """
-        self.Callbacks.on_run_begin(self, x)
         nouter = nouter if self.nouter is None else self.nouter
         if x is not None:
             self.x0 = x.copy()
@@ -542,7 +535,6 @@ class IRLS(Solver):
         # adding initial guess
         if hasattr(self, "x0"):
             x = self.x0 + x
-        self.Callbacks.on_run_end(self, x)
         return x
 
     def finalize(self, show=False):
@@ -1130,8 +1122,6 @@ class ISTA(Solver):
             Display setup log
 
         """
-        self.Callbacks.on_setup_begin(self, x0)
-
         self.y = y
         self.SOp = SOp
         self.niter = niter
@@ -1247,7 +1237,6 @@ class ISTA(Solver):
         self.cost = []
         self.iiter = 0
 
-        self.Callbacks.on_setup_end(self, x)
         # print setup
         if show:
             self._print_setup()
@@ -1271,8 +1260,6 @@ class ISTA(Solver):
             Norm of the update
 
         """
-        self.Callbacks.on_step_begin(self, x)
-
         # store old vector
         xold = x.copy()
         # compute residual
@@ -1308,8 +1295,6 @@ class ISTA(Solver):
         costdata = 0.5 * np.linalg.norm(res) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
         self.cost.append(costdata + costreg)
-
-        self.Callbacks.on_step_end(self, x)
         self.iiter += 1
         if show:
             self._print_step(x, costdata, costreg, xupdate)
@@ -1338,7 +1323,6 @@ class ISTA(Solver):
             Estimated model of size :math:`[M \times 1]`
 
         """
-        self.Callbacks.on_run_begin(self, x)
         xupdate = np.inf
         niter = self.niter if niter is None else niter
         while self.iiter < niter and xupdate > self.tol:
@@ -1358,7 +1342,6 @@ class ISTA(Solver):
             logging.warning(
                 "update smaller that tolerance for " "iteration %d", self.iiter
             )
-        self.Callbacks.on_run_end(self, x)
         return x
 
     def finalize(self, show=False):
@@ -1550,8 +1533,6 @@ class FISTA(ISTA):
             Norm of the update
 
         """
-        self.Callbacks.on_step_begin(self, x)
-
         # store old vector
         xold = x.copy()
         # compute residual
@@ -1592,8 +1573,6 @@ class FISTA(ISTA):
         costdata = 0.5 * np.linalg.norm(self.y - self.Op @ x) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
         self.cost.append(costdata + costreg)
-
-        self.Callbacks.on_step_end(self, x)
         self.iiter += 1
         if show:
             self._print_step(x, costdata, costreg, xupdate)
@@ -1622,7 +1601,6 @@ class FISTA(ISTA):
             Estimated model of size :math:`[M \times 1]`
 
         """
-        self.Callbacks.on_run_begin(self, x)
         z = x.copy()
         xupdate = np.inf
         niter = self.niter if niter is None else niter
@@ -1643,7 +1621,6 @@ class FISTA(ISTA):
             logging.warning(
                 "update smaller that tolerance for " "iteration %d", self.iiter
             )
-        self.Callbacks.on_run_end(self, x)
         return x
 
 
