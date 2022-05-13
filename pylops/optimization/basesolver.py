@@ -2,9 +2,6 @@ import functools
 import time
 from abc import ABCMeta, abstractmethod
 
-from pylops.optimization.callback import Callbacks as Callbacksdef
-
-
 class Solver(metaclass=ABCMeta):
     r"""Solver
 
