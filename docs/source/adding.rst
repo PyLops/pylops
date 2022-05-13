@@ -157,7 +157,7 @@ Once the operator has been created, we can add it to the documentation of PyLops
 the operator within the ``index.rst`` file in ``docs/source/api`` directory.
 
 Moreover, in order to facilitate the user of your operator by other users, a simple example should be provided as part of the
-Sphinx-gallery of the documentation of the PyLops library. The directory ``examples`` containes several scripts that
+Sphinx-gallery of the documentation of the PyLops library. The directory ``examples`` contains several scripts that
 can be used as template.
 
 

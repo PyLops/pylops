@@ -4,9 +4,9 @@ import numpy as np
 from scipy.sparse.linalg import lsqr
 
 from pylops import FirstDerivative, Laplacian, MatrixMult, SecondDerivative
-from pylops.optimization.leastsquares import RegularizedInversion
-from pylops.optimization.solver import cgls
-from pylops.optimization.sparsity import SplitBregman
+from pylops.optimization.basic import cgls
+from pylops.optimization.leastsquares import regularized_inversion
+from pylops.optimization.sparsity import splitbregman
 from pylops.signalprocessing import Convolve1D
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import (
@@ -275,7 +275,7 @@ def PoststackInversion(
     * ``explicit=False`` and ``epsR=None``: the iterative solver
       :py:func:`scipy.sparse.linalg.lsqr` is used
     * ``explicit=False`` with ``epsR`` and ``epsRL1=None``: the iterative
-      solver :py:func:`pylops.optimization.leastsquares.RegularizedInversion`
+      solver :py:func:`pylops.optimization.leastsquares.regularized_inversion`
       is used to solve the spatially regularized problem.
     * ``explicit=False`` with ``epsR`` and ``epsRL1``: the iterative
       solver :py:func:`pylops.optimization.sparsity.SplitBregman`
@@ -393,15 +393,14 @@ def PoststackInversion(
             else:
                 Regop = Laplacian((nt0, nx, ny), axes=(1, 2), dtype=PPop.dtype)
 
-            minv = RegularizedInversion(
+            minv = regularized_inversion(
                 PPop,
-                [Regop],
                 data.ravel(),
+                [Regop],
                 x0=None if m0 is None else m0.ravel(),
                 epsRs=[epsR],
-                returninfo=False,
                 **kwargs_solver
-            )
+            )[0]
         else:
             # Blockiness-promoting inversion with spatial regularization
             if dims == 1:
@@ -437,10 +436,10 @@ def PoststackInversion(
                 epsRL1 = list([epsRL1])
             if not isinstance(epsR, (list, tuple)):
                 epsR = list([epsR])
-            minv = SplitBregman(
+            minv = splitbregman(
                 PPop,
-                [RegL1op],
                 data.ravel(),
+                [RegL1op],
                 RegsL2=[RegL2op],
                 epsRL1s=epsRL1,
                 epsRL2s=epsR,

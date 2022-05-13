@@ -51,9 +51,9 @@ Cop = pylops.signalprocessing.Convolve2D(
 # preconditioner or TV regularization allows to recover sharper contrasts.
 imblur = Cop * im.ravel()
 
-imdeblur = pylops.optimization.leastsquares.NormalEquationsInversion(
-    Cop, None, imblur, maxiter=50
-)
+imdeblur = pylops.optimization.leastsquares.normal_equations_inversion(
+    Cop, imblur, None, maxiter=50
+)[0]
 
 Wop = pylops.signalprocessing.DWT2D((Nz, Nx), wavelet="haar", level=3)
 Dop = [
@@ -64,15 +64,15 @@ DWop = Dop + [
     Wop,
 ]
 
-imdeblurfista = pylops.optimization.sparsity.FISTA(
+imdeblurfista = pylops.optimization.sparsity.fista(
     Cop * Wop.H, imblur, eps=1e-1, niter=100
 )[0]
 imdeblurfista = Wop.H * imdeblurfista
 
-imdeblurtv = pylops.optimization.sparsity.SplitBregman(
+imdeblurtv = pylops.optimization.sparsity.splitbregman(
     Cop,
-    Dop,
     imblur.ravel(),
+    Dop,
     niter_outer=10,
     niter_inner=5,
     mu=1.5,
@@ -83,10 +83,10 @@ imdeblurtv = pylops.optimization.sparsity.SplitBregman(
     **dict(iter_lim=5, damp=1e-4)
 )[0]
 
-imdeblurtv1 = pylops.optimization.sparsity.SplitBregman(
+imdeblurtv1 = pylops.optimization.sparsity.splitbregman(
     Cop,
-    DWop,
     imblur.ravel(),
+    DWop,
     niter_outer=10,
     niter_inner=5,
     mu=1.5,

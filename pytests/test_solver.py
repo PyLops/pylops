@@ -4,7 +4,7 @@ from numpy.testing import assert_array_almost_equal
 from scipy.sparse.linalg import lsqr as sp_lsqr
 
 from pylops.basicoperators import MatrixMult
-from pylops.optimization.solver import cg, cgls, lsqr
+from pylops.optimization.basic import cg, cgls, lsqr
 
 par1 = {
     "ny": 11,

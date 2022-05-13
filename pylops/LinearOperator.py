@@ -24,7 +24,7 @@ else:
     from scipy.sparse.linalg._interface import _ProductLinearOperator
 
 from pylops import get_ndarray_multiplication
-from pylops.optimization.solver import cgls
+from pylops.optimization.basic import cgls
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
 
@@ -708,7 +708,7 @@ class LinearOperator(spLinearOperator):
             Operator eigenvalues.
 
         Raises
-        -------
+        ------
         ValueError
             If ``uselobpcg=True`` for a non-symmetric square matrix with
             complex type
@@ -993,7 +993,7 @@ class LinearOperator(spLinearOperator):
             Operator trace.
 
         Raises
-        -------
+        ------
         ValueError
              If the operator has rectangular shape (``shape[0] != shape[1]``)
 

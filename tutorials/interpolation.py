@@ -60,25 +60,18 @@ y1 = Rop.mask(x)
 # We will now use two different routines from our optimization toolbox
 # to estimate our original image in the regular grid.
 
-xcg_reg_lop = pylops.optimization.leastsquares.NormalEquationsInversion(
-    Rop, [D2op], y, epsRs=[np.sqrt(0.1)], returninfo=False, **dict(maxiter=200)
-)
+xcg_reg_lop = pylops.optimization.leastsquares.normal_equations_inversion(
+    Rop, y, [D2op], epsRs=[np.sqrt(0.1)], **dict(maxiter=200)
+)[0]
 
 # Invert for interpolated signal, lsqrt
-(
-    xlsqr_reg_lop,
-    istop,
-    itn,
-    r1norm,
-    r2norm,
-) = pylops.optimization.leastsquares.RegularizedInversion(
+xlsqr_reg_lop = pylops.optimization.leastsquares.regularized_inversion(
     Rop,
-    [D2op],
     y,
+    [D2op],
     epsRs=[np.sqrt(0.1)],
-    returninfo=True,
-    **dict(damp=0, iter_lim=200, show=0)
-)
+    **dict(damp=0, iter_lim=200, show=0),
+)[0]
 
 # Reshape estimated images
 im_sampled = y1.reshape((Nz, Nx))

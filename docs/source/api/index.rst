@@ -141,44 +141,101 @@ Geophysical subsurface characterization
 Solvers
 -------
 
-Basic
-~~~~~
-
 .. currentmodule:: pylops.optimization
 
 .. autosummary::
    :toctree: generated/
 
-    solver.cg
-    solver.cgls
-    solver.lsqr
+    basesolver.Solver
 
-Least-squares
-~~~~~~~~~~~~~
+Basic (class-based)
+~~~~~~~~~~~~~~~~~~~
 
-.. currentmodule:: pylops.optimization
+.. currentmodule:: pylops.optimization.basicc
 
 .. autosummary::
    :toctree: generated/
 
-    leastsquares.NormalEquationsInversion
-    leastsquares.RegularizedInversion
-    leastsquares.PreconditionedInversion
+   CG
+   CGLS
+   LSQR
 
+Basic (function-based)
+~~~~~~~~~~~~~~~~~~~~~~
 
-Sparsity
-~~~~~~~~
+.. currentmodule:: pylops.optimization.basic
 
 .. autosummary::
    :toctree: generated/
 
-    sparsity.IRLS
-    sparsity.OMP
-    sparsity.ISTA
-    sparsity.FISTA
-    sparsity.SPGL1
-    sparsity.SplitBregman
+    cg
+    cgls
+    lsqr
 
+Least-squares (class-based)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.optimization.leastsquaresc
+
+.. autosummary::
+   :toctree: generated/
+
+    NormalEquationsInversion
+    RegularizedInversion
+    PreconditionedInversion
+
+Least-squares (function-based)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.optimization.leastsquares
+
+.. autosummary::
+   :toctree: generated/
+
+    normal_equations_inversion
+    regularized_inversion
+    preconditioned_inversion
+
+
+Sparsity (class-based)
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.optimization.sparsityc
+
+.. autosummary::
+   :toctree: generated/
+
+    IRLS
+    OMP
+    ISTA
+    FISTA
+    SPGL1
+    SplitBregman
+
+Sparsity (function-based)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.optimization.sparsity
+
+.. autosummary::
+   :toctree: generated/
+
+    irls
+    omp
+    ista
+    fista
+    spgl1
+    splitbregman
+
+Callbacks
+~~~~~~~~~
+
+.. currentmodule:: pylops.optimization.callback
+
+.. autosummary::
+   :toctree: generated/
+
+    Callbacks
 
 
 Applications

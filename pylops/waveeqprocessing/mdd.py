@@ -6,8 +6,8 @@ from scipy.signal import filtfilt
 from scipy.sparse.linalg import lsqr
 
 from pylops import Diagonal, Identity, Transpose
-from pylops.optimization.leastsquares import PreconditionedInversion
-from pylops.optimization.solver import cgls
+from pylops.optimization.basic import cgls
+from pylops.optimization.leastsquares import preconditioned_inversion
 from pylops.signalprocessing import FFT, Fredholm1
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import (
@@ -512,9 +512,7 @@ def MDD(
             P = filtfilt(np.ones(smooth_precond) / smooth_precond, 1, P, axis=0)
         P = to_cupy_conditional(d, P)
         Pop = Diagonal(P)
-        minv = PreconditionedInversion(
-            MDCop, Pop, d.ravel(), returninfo=False, **kwargs_solver
-        )
+        minv = preconditioned_inversion(MDCop, d.ravel(), Pop, **kwargs_solver)[0]
     else:
         if ncp == np and "callback" not in kwargs_solver:
             minv = lsqr(MDCop, d.ravel(), **kwargs_solver)[0]

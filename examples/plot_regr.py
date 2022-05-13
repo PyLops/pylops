@@ -113,7 +113,7 @@ epsI = 0
 tolIRLS = 1e-2
 
 xnest = PRop / yn
-xirls, nouter, xirls_hist, rw_hist = pylops.optimization.sparsity.IRLS(
+xirls, nouter = pylops.optimization.sparsity.irls(
     PRop,
     yn,
     nouter=nouter,
@@ -121,7 +121,6 @@ xirls, nouter, xirls_hist, rw_hist = pylops.optimization.sparsity.IRLS(
     epsR=epsR,
     epsI=epsI,
     tolIRLS=tolIRLS,
-    returnhistory=True,
 )
 print(f"IRLS converged at {nouter} iterations...")
 

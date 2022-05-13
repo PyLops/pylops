@@ -79,8 +79,8 @@ xadj = Rop.H * y.ravel()
 xadj = xadj.reshape(npx, par["nt"])
 
 # sparse Radon transform
-xinv, niter, cost = pylops.optimization.sparsity.FISTA(
-    Rop, y.ravel(), niter=15, eps=1e1, returninfo=True
+xinv, niter, cost = pylops.optimization.sparsity.fista(
+    Rop, y.ravel(), niter=15, eps=1e1
 )
 xinv = xinv.reshape(npx, par["nt"])
 

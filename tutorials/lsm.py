@@ -112,7 +112,7 @@ minv = lsm.solve(d.ravel(), solver=lsqr, **dict(iter_lim=100))
 minv = minv.reshape(nx, nz)
 
 minv_sparse = lsm.solve(
-    d.ravel(), solver=pylops.optimization.sparsity.FISTA, **dict(eps=1e2, niter=100)
+    d.ravel(), solver=pylops.optimization.sparsity.fista, **dict(eps=1e2, niter=100)
 )
 minv_sparse = minv_sparse.reshape(nx, nz)
 
@@ -168,6 +168,7 @@ axs[2].axis("tight")
 axs[3].imshow(dinv_sparse[ns // 2, :, :300].T, cmap="gray", vmin=-d.max(), vmax=d.max())
 axs[3].set_title(r"$d_{fista}$")
 axs[3].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # This was just a short teaser, for a more advanced set of examples of 2D and

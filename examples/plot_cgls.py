@@ -39,7 +39,7 @@ x = np.ones(M)
 # We can now use the cgls solver to invert this matrix
 
 y = Aop * x
-xest, istop, nit, r1norm, r2norm, cost_cgls = pylops.optimization.solver.cgls(
+xest, istop, nit, r1norm, r2norm, cost_cgls = pylops.optimization.basic.cgls(
     Aop, y, x0=np.zeros_like(x), niter=10, tol=1e-10, show=True
 )
 
@@ -62,7 +62,7 @@ y = Aop * x
     xnorm,
     var,
     cost_lsqr,
-) = pylops.optimization.solver.lsqr(Aop, y, x0=np.zeros_like(x), niter=10, show=True)
+) = pylops.optimization.basic.lsqr(Aop, y, x0=np.zeros_like(x), niter=10, show=True)
 
 print(f"x= {x}")
 print(f"lsqr solution xest= {xest}")

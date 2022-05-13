@@ -146,6 +146,7 @@ PyLops is a `NUMFOCUS <https://numfocus.org/sponsored-projects/affiliated-projec
    :caption: Getting involved:
 
    Implementing new operators  <adding.rst>
+   Implementing new solvers  <addingsolver.rst>
    Contributing <contributing.rst>
    Changelog <changelog.rst>
    Roadmap <roadmap.rst>

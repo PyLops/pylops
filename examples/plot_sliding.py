@@ -62,7 +62,7 @@ fig, axs = plt.subplots(1, 2, figsize=(15, 3))
 axs[0].plot(data, "k", label="Data")
 axs[0].plot(reconstructed_data, "--r", label="Rec Data")
 axs[1].set_title("Original domain")
-axs[1].plot(np.abs(x), "k")
+axs[1].plot(np.abs(x).ravel(), "k")
 axs[1].set_title("Transformed domain")
 plt.tight_layout()
 
