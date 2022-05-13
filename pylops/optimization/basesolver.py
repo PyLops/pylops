@@ -2,6 +2,7 @@ import functools
 import time
 from abc import ABCMeta, abstractmethod
 
+
 class Solver(metaclass=ABCMeta):
     r"""Solver
 
