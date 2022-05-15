@@ -61,9 +61,6 @@ from .avo.prestack import *
 from .optimization.basic import *
 from .optimization.leastsquares import *
 from .optimization.sparsity import *
-from .optimization.basic import *
-from .optimization.leastsquares import *
-from .optimization.sparsity import *
 from .utils.seismicevents import *
 from .utils.tapers import *
 from .utils.utils import Report
