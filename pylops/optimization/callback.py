@@ -11,6 +11,28 @@ class Callbacks:
     - ``on_run_begin``: a method that is invoked at the start of the run method of the solver
     - ``on_run_end``: a method that is invoked at the end of the run method of the solver
 
+    All methods take two input parameters: the solver itself, and the vector ``x``.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from pylops.basicoperators import MatrixMult
+    >>> from pylops.optimization.solver import CG
+    >>> from pylops.optimization.callback import Callbacks
+    >>> class StoreIterCallback(Callbacks):
+    ...     def __init__(self):
+    ...         self.stored = []
+    ...     def on_step_end(self, solver, x):
+    ...         self.stored.append(solver.iiter)
+    >>> cb_sto = StoreIterCallback()
+    >>> Aop = MatrixMult(np.random.normal(0., 1., 36).reshape(6, 6))
+    >>> Aop = Aop.H @ Aop
+    >>> y = Aop @ np.ones(6)
+    >>> cgsolve = CG(Aop, callbacks=[cb_sto, ])
+    >>> xest = cgsolve.solve(y=y, x0=np.zeros(6), tol=0, niter=6, show=False)[0]
+    >>> xest
+    array([1., 1., 1., 1., 1., 1.])
+
     """
 
     def __init__(self):

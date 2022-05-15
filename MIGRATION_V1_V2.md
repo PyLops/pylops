@@ -8,29 +8,30 @@ should be used as a checklist when converting a piece of code using PyLops from 
 - Several operators have deprecated `N` as a keyword. To migrate, pass only `dims` if both `N` and `dims` are currently
   being passed. If only `N` is being passed, ensure it is being passed as a value and not a keyword argument (e.g.,
   change `Flip(N=100)` to `Flip(100)`).
-- `dir`, `dirs` and `nodir` have been deprecated in favor of `axis` and `axes`. When previously `nodir` was used, you must now provide the directions along which the operator is applied through `axes`. The default value for `axis` and `axes` are chosen to be -1 and (-2, -1), respectively, whereas the default `dir` and `dirs` was 0 and (0, 1), respectively. Be careful to check all operators where `dir`, `dirs` and `nodir` was not provided explicitly.
+- `dir`, `dirs` and `nodir` have been deprecated in favor of `axis` and `axes`. When previously `nodir` was used, you
+  must now provide the directions along which the operator is applied through `axes`. The default value for `axis` and
+  `axes` are chosen to be -1 and (-2, -1), respectively, whereas the default `dir` and `dirs` was 0 and (0, 1), respectively.
+  Be careful to check all operators where `dir`, `dirs` and `nodir` was not provided explicitly.
 - `utils.dottest`: Change `tol` into `rtol`. Absolute tolerance is now also supported via the keyword `atol`.
   When calling it with purely positional arguments, note that after `rtol` comes now first `atol` before `complexflag`.
   When using `raiseerror=True` it now emits an `AttributeError` instead of a `ValueError`.
 - `dims_fft` in the FFT operators is deprecated in favor of `dimsd`.
 - `dims_d` in `Sum` is deprecated in favor or `dimsd`
-- Multiplication of N-D arrays is now supported. It relies on the ``dims``/``dimsd`` properties which are now available for every operator by default. While the change is mostly backwards compatible, there are some operators (e.g. the ``Bilinear`` transpose/conjugate) which can output reshaped arrays instead of 1d-arrays. To ensure no breakage, you can entirely disable this feature either globally by setting ``pylops.set_ndarray_multiplication(False)``, or locally with the context manager ``pylops.disabled_ndarray_multiplication()``. Both will revert to v1.x behavior. At this time, PyLops sparse solvers do *not* support N-D array multiplication.
-- If you intend to use the new operators with `scipy.sparse.linalg` solvers such as `cg`, make sure you convert them to an N-D-array-enabled function, for example, with
-
-   ```python
-   from pylops.utils.decorators import add_ndarray_support_to_solver
-   cg = add_ndarray_support_to_solver(cg)
-   ```
-
+- Multiplication of N-D arrays is now supported. It relies on the ``dims``/``dimsd`` properties which are now available
+  for every operator by default. While the change is mostly backwards compatible, there are some operators (e.g. the ``Bilinear``
+  transpose/conjugate) which can output reshaped arrays instead of 1d-arrays. To ensure no breakage, you can entirely disable this
+  feature either globally by setting ``pylops.set_ndarray_multiplication(False)``, or locally with the context manager
+  ``pylops.disabled_ndarray_multiplication()``. Both will revert to v1.x behavior. At this time, PyLops sparse solvers do
+  *not* support N-D array multiplication.
 - New class-based solvers have been created in the `optimization` module. Original function-based
   solvers are still available as thin wrappers over the new class-based ones. The following changes
   are required for your v1.x code to migrate to function-based solvers in v2 (if interested in the new
   class-based solvers, consult our API documentation of the tutorial ``Class-Solvers``):
   * Change the solver name from its v1.x name to small letters (e.g. from ``CGLS`` to ``cgls``).
-  * The name of the data vector became ``y`` for all solvers (this used to be ``data`` for some of the solvers).
+  * The name of the data vector is now ``y`` for all solvers (this used to be ``data`` for some of the solvers).
     Change this if you pass the data as a named argument from ``data=.`` to ``y=.``.
-  * The order of mandatory arguments for all the solvers is ``Op, y, ...``,
-    For example ``pylops.optimization.sparsity.splitbregman`` mandatory arguments  ``Op, y, RegsL1``.
+  * The order of mandatory arguments for all the solvers is now ``Op, y, ...``,
+    For example ``pylops.optimization.sparsity.splitbregman`` mandatory arguments are ``Op, y, RegsL1``.
     Note that this is different from `pylops.optimization.sparsity.SplitBregman` in v1.x where the order was
     ``Op, RegsL1, data``.
   * The order of keyword (named) arguments is changed such that the initial guess ``x0`` always comes first.

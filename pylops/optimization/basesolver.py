@@ -224,5 +224,6 @@ class Solver(metaclass=ABCMeta):
         >>> x = np.ones(10)
         >>> cgsolve.callback(x)
         Running callback, current solution [1,1,1...]
+
         """
         pass

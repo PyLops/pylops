@@ -140,42 +140,34 @@ Geophysical subsurface characterization
 
 Solvers
 -------
-
-.. currentmodule:: pylops.optimization
-
-.. autosummary::
-   :toctree: generated/
-
-    basesolver.Solver
-
-Basic (class-based)
-~~~~~~~~~~~~~~~~~~~
-
-.. currentmodule:: pylops.optimization.basicc
+Template
+~~~~~~~~
+.. currentmodule:: pylops.optimization.basesolver
 
 .. autosummary::
    :toctree: generated/
 
-   CG
-   CGLS
-   LSQR
+    Solver
 
-Basic (function-based)
-~~~~~~~~~~~~~~~~~~~~~~
+Basic
+~~~~~
 
 .. currentmodule:: pylops.optimization.basic
 
 .. autosummary::
    :toctree: generated/
 
+    CG
+    CGLS
+    LSQR
     cg
     cgls
     lsqr
 
-Least-squares (class-based)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Least-squares
+~~~~~~~~~~~~~
 
-.. currentmodule:: pylops.optimization.leastsquaresc
+.. currentmodule:: pylops.optimization.leastsquares
 
 .. autosummary::
    :toctree: generated/
@@ -183,24 +175,15 @@ Least-squares (class-based)
     NormalEquationsInversion
     RegularizedInversion
     PreconditionedInversion
-
-Least-squares (function-based)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. currentmodule:: pylops.optimization.leastsquares
-
-.. autosummary::
-   :toctree: generated/
-
     normal_equations_inversion
     regularized_inversion
     preconditioned_inversion
 
 
-Sparsity (class-based)
-~~~~~~~~~~~~~~~~~~~~~~
+Sparsity
+~~~~~~~~
 
-.. currentmodule:: pylops.optimization.sparsityc
+.. currentmodule:: pylops.optimization.sparsity
 
 .. autosummary::
    :toctree: generated/
@@ -211,15 +194,6 @@ Sparsity (class-based)
     FISTA
     SPGL1
     SplitBregman
-
-Sparsity (function-based)
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. currentmodule:: pylops.optimization.sparsity
-
-.. autosummary::
-   :toctree: generated/
-
     irls
     omp
     ista
