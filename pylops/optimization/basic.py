@@ -20,7 +20,7 @@ class CG(Solver):
 
     Notes
     -----
-    Solve the :math:`\mathbf{y} = \mathbf{Opx}` problem using conjugate gradient
+    Solve the :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}` problem using conjugate gradient
     iterations [1]_.
 
     .. [1] Hestenes, M R., Stiefel, E., “Methods of Conjugate Gradients for Solving
@@ -236,7 +236,7 @@ class CGLS(Solver):
     Minimize the following functional using conjugate gradient iterations:
 
     .. math::
-        J = || \mathbf{y} -  \mathbf{Opx} ||_2^2 +
+        J = || \mathbf{y} -  \mathbf{Op}\,\mathbf{x} ||_2^2 +
         \epsilon^2 || \mathbf{x} ||_2^2
 
     where :math:`\epsilon` is the damping coefficient.
@@ -517,10 +517,10 @@ class LSQR(Solver):
         super().__init__(Op)
         self.msg = (
             "The exact solution is x = 0                               ",
-            "Opx - b is small enough, given atol, btol                  ",
+            "Op x - b is small enough, given atol, btol                 ",
             "The least-squares solution is good enough, given atol     ",
             "The estimate of cond(Opbar) has exceeded conlim            ",
-            "Opx - b is small enough for this machine                   ",
+            "Op x - b is small enough for this machine                  ",
             "The least-squares solution is good enough for this machine",
             "Cond(Opbar) seems to be too large for this machine         ",
             "The iteration limit has been reached                      ",
