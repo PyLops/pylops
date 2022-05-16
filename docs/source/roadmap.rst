@@ -28,7 +28,7 @@ Library structure
 Code cleaning
 -------------
 
-* Change all ``np.flatten()`` into ``np.ravel()`` -
+* :strike:`Change all ``np.flatten()``` :strike:`into ``np.ravel()``` -
   `Issue #24 <https://github.com/Statoil/pylops/issues/24>`_.
 * Fix all ``if: return ... else: ...`` statements to enforce a single return
   with the same number of outputs
@@ -87,8 +87,8 @@ signalprocessing
 * :strike:`Fredholm1 operator applying Fredholm integrals
   of first kind`  - `Issue #31 <https://github.com/Statoil/pylops/issues/31>`_.
 
-* ``Fredholm2`` operators applying Fredholm integrals
-  of second kind  - `Issue #31 <https://github.com/Statoil/pylops/issues/31>`_.
+* :strike:`Fredholm2 operators applying Fredholm integrals
+  of second kind`  - `Issue #31 <https://github.com/Statoil/pylops/issues/31>`_.
 
 utils
 ~~~~~
