@@ -23,7 +23,7 @@ At this point we can start by importing the modules that will be needed by the s
 This varies from solver to solver, however you will always need to import the
 :py:class:`pylops.optimization.basesolver.Solver` which will be used as *parent* class for any of our solvers.
 Moreover, we always recommend to import :py:func:`pylops.utils.backend.get_array_module` as solvers should be written
-in such a way that it can work both with numpy and cupy arrays. See later for details.
+in such a way that it can work both with ``numpy`` and ``cupy`` arrays. See later for details.
 
 .. code-block:: python
 
@@ -51,7 +51,7 @@ to get a feeling of the level of details of the mathematical explanation.
 As for any Python class, our solver will need an ``__init__`` method. In this case, however, we will just rely on that
 of the base class. Two input parameters are passed to the ``__init__`` method and saved as members of our class,
 namely the operator :math:`\mathbf{Op}` associated with the system of equations we wish to solve,
-:math:`\mathbf{y}=\mathbf{Opx}`, and optionally a :class:`pylops.optimization.callback.Callbacks` object. Moreover,
+:math:`\mathbf{y}=\mathbf{Op}\,\mathbf{x}`, and optionally a :class:`pylops.optimization.callback.Callbacks` object. Moreover,
 an additional parameters is created that contains the current time (this is used later to report the execution time
 of the solver). Here is the ``__init__`` method of the base class:
 
@@ -66,14 +66,16 @@ of the solver). Here is the ``__init__`` method of the base class:
 We can now move onto writing the *setup* of the solver in the method ``setup``. We will need to write
 a piece of code that prepares the solver prior to being able to apply a step. In general, this requires defining the
 data vector ``y`` and the initial guess of the solver ``x0`` (if not provided, this will be automatically set to be a zero
-vector), alongside various hyperparameters of the solver - e.g., those involved in the stopping criterion. For example in
+vector), alongside various hyperparameters of the solver --- e.g., those involved in the stopping criterion. For example in
 this case we only have two parameters: ``niter`` refers to the maximum allowed number of iterations, and ``tol`` to
 tolerance on the residual norm (the solver will be stopped if this is smaller than the chosen tolerance). Moreover,
 we always have the possibility to decide whether we want to operate the solver (in this case its setup part) in verbose
 or silent mode. This is driven by the ``show`` parameter. We will soon discuss how to choose what to print on screen in
-case of verbose mode (``show=True``). The setup method can be loosely seen as composed of 3 parts. First, the data
-vector and hyperparamters are stored as members of the class. Moreover the type of the ``y`` vector is checked to
-evaluate whether to use numpy or cupy for algebraic operations (this is done by ``self.ncp = get_array_module(y)``).
+case of verbose mode (``show=True``).
+
+The setup method can be loosely seen as composed of three parts. First, the data
+vector and hyperparameters are stored as members of the class. Moreover the type of the ``y`` vector is checked to
+evaluate whether to use ``numpy`` or ``cupy`` for algebraic operations (this is done by ``self.ncp = get_array_module(y)``).
 Second, the starting guess is initialized using either the provided vector ``x0`` or a zero vector. Finally, a number
 of variables are initialized to be used inside the ``step`` method to keep track of the optimization process. Moreover,
 note that the ``setup`` method returns the created starting guess ``x`` (does not store it as member of the class).
@@ -107,7 +109,7 @@ note that the ``setup`` method returns the created starting guess ``x`` (does no
             self._print_setup(np.iscomplexobj(x))
         return x
 
-At this point, we need to implement the core of the solver, its `step`. Here, we take the input at the previous iterate,
+At this point, we need to implement the core of the solver, the ``step`` method. Here, we take the input at the previous iterate,
 update it following the rule of the solver of choice, and return it. The other input parameter required by this method
 is ``show`` to choose whether we want to print a report of the step on screen or not. However, if appropriate, a user
 can add additional input parameters. For CG, the step is:
@@ -134,7 +136,7 @@ can add additional input parameters. For CG, the step is:
 Similarly, we also implement a ``run`` method that is in charge of running a number of iterations by repeatedly
 calling the ``step`` method. It is also usually convenient to implement a finalize method; this method can do any required post-processing that should
 not be applied at the end of each step, rather at the end of the entire optimization process. For CG, this is as simple
-as converting the ``cost`` variable from a list to a numpy array. For more details, see our implementations for CG.
+as converting the ``cost`` variable from a list to a ``numpy`` array. For more details, see our implementations for CG.
 
 Last but not least, we can wrap it all up in the ``solve`` method. This method takes as input the data, the initial
 model and the same hyperparameters of the setup method and runs the entire optimization process. For CG:
