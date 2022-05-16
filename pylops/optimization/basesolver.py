@@ -33,7 +33,7 @@ class Solver(metaclass=ABCMeta):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert of
-    Callbacks : :obj:`pylops.optimization.callback.Callbacks`
+    callbacks : :obj:`pylops.optimization.callback.Callbacks`
         Callbacks object used to implement custom callbacks
 
     """
@@ -108,7 +108,7 @@ class Solver(metaclass=ABCMeta):
             )
 
     @abstractmethod
-    def setup(self, y, show=False):
+    def setup(self, y, *args, show=False, **kwargs):
         """Setup solver
 
         This method is used to setup the solver. Users can change the function signature
@@ -125,7 +125,7 @@ class Solver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def step(self, x, show=False):
+    def step(self, x, *args, show=False, **kwargs):
         """Run one step of solver
 
         This method is used to run one step of the solver. Users can change the
@@ -143,7 +143,7 @@ class Solver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def run(self, x, show=False):
+    def run(self, x, *args, show=False, **kwargs):
         """Run multiple steps of solver
 
         This method is used to run multiple step of the solver. Users can change the
@@ -160,7 +160,7 @@ class Solver(metaclass=ABCMeta):
         """
         pass
 
-    def finalize(self, show=False):
+    def finalize(self, *args, show=False, **kwargs):
         """Finalize solver
 
         This method is used to finalize the solver. Users can change the
@@ -179,7 +179,7 @@ class Solver(metaclass=ABCMeta):
             self._print_finalize()
 
     @abstractmethod
-    def solve(self, y, show=False):
+    def solve(self, y, *args, show=False, **kwargs):
         """Solve
 
         This method is used to run the entire optimization process. Users can change the
@@ -195,7 +195,7 @@ class Solver(metaclass=ABCMeta):
         """
         pass
 
-    def callback(self, x):
+    def callback(self, x, *args, **kwargs):
         """Callback routine
 
         This routine must be passed by the user. Its function signature must contain
@@ -224,5 +224,6 @@ class Solver(metaclass=ABCMeta):
         >>> x = np.ones(10)
         >>> cgsolve.callback(x)
         Running callback, current solution [1,1,1...]
+
         """
         pass

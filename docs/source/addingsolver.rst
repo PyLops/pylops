@@ -5,7 +5,7 @@ Implementing new solvers
 Users are welcome to create new solvers and add them to the PyLops library.
 
 In this tutorial, we will go through the key steps in the definition of a solver, using the
-:py:class:`pylops.CG` as an example.
+:py:class:`pylops.optimization.basic.CG` as an example.
 
 .. note::
     In case the solver that you are planning to create falls within the category of proximal solvers,
@@ -16,22 +16,20 @@ Creating the solver
 -------------------
 The first thing we need to do is to locate a file containing solvers in the same family of the solver we plan to
 include, or create a new file with the name of the solver we would like to implement (or preferably its family).
-Note that as the solver will be a class, we need to follow the UpperCaseCamelCase convention both the class itself
-but not for the filename. Moroever the filename must end with a ``c`` (e.g., ``basicc.py``); as we will see later,
-by doing this for each class-based solver we can create also its corresponding function based solver in another file
-whose name does not end with a ``c`` (e.g., ``basic.py``).
+Note that as the solver will be a class, we need to follow the UpperCaseCamelCase convention for the class itself
+but not for the filename.
 
 At this point we can start by importing the modules that will be needed by the solver.
 This varies from solver to solver, however you will always need to import the
-:py:class:`pylops.optimization.basesolver.Solver` which will be used as *parent* class for any of our operators.
-Moreover, we always recommend to import :py:func:` pylops.utils.backend.get_array_module` as solvers should be written
-in such a way that work both on numpy and cupy array. See later for details.
+:py:class:`pylops.optimization.basesolver.Solver` which will be used as *parent* class for any of our solvers.
+Moreover, we always recommend to import :py:func:`pylops.utils.backend.get_array_module` as solvers should be written
+in such a way that it can work both with numpy and cupy arrays. See later for details.
 
 .. code-block:: python
 
     import time
 
-    import numpy as np time
+    import numpy as np
 
     from pylops.optimization.basesolver import Solver
     from pylops.utils.backend import get_array_module
@@ -46,26 +44,29 @@ After that we define our new object:
 followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html/>`_
 (starting with ``r"""`` and ending with ``"""``) containing the documentation of the solver. Such docstring should
 contain at least a short description of the solver, a ``Parameters`` section with a description of the
-input parameters of the associated ``_init__`` method and a ``Notes`` section providing a reference to the original solver and possibly a concise
-mathematical explanation of the solver. Take a look at some of the core solver of PyLops to get a feeling
-of the level of details of the mathematical explanation.
+input parameters of the associated ``_init__`` method and a ``Notes`` section providing a reference to the original
+solver and possibly a concise mathematical explanation of the solver. Take a look at some of the core solver of PyLops
+to get a feeling of the level of details of the mathematical explanation.
 
-As for any Python class, our solver will need ``__init__`` method. In this case, however, we will just rely on that
-of the base class. A single input parameters is passed to the ``__init__`` method and saved as members of our class,
+As for any Python class, our solver will need an ``__init__`` method. In this case, however, we will just rely on that
+of the base class. Two input parameters are passed to the ``__init__`` method and saved as members of our class,
 namely the operator :math:`\mathbf{Op}` associated with the system of equations we wish to solve,
-:math:`\mathbf{y}=\mathbf{Opx}`. Moreover, an additional parameters is created that contains the current time (this
-is used later to report the execution time of the solver). Here is the ``__init__`` method of the base class:
+:math:`\mathbf{y}=\mathbf{Opx}`, and optionally a :class:`pylops.optimization.callback.Callbacks` object. Moreover,
+an additional parameters is created that contains the current time (this is used later to report the execution time
+of the solver). Here is the ``__init__`` method of the base class:
 
 .. code-block:: python
 
-    def __init__(self, Op):
+    def __init__(self, Op, callbacks=None):
         self.Op = Op
+        self.callbacks = callbacks
+        self._registercallbacks()
         self.tstart = time.time()
 
-We can then move onto writing the *setup* of the solver in the method ``setup``. We will need to write
+We can now move onto writing the *setup* of the solver in the method ``setup``. We will need to write
 a piece of code that prepares the solver prior to being able to apply a step. In general, this requires defining the
-data vector ``y``, the initial guess of the solver ``x0`` (if not provided, this will be automatically set to be a zero
-vector), and various hyperparameters of the solver - e.g., those involved in the stopping criterion. For example in
+data vector ``y`` and the initial guess of the solver ``x0`` (if not provided, this will be automatically set to be a zero
+vector), alongside various hyperparameters of the solver - e.g., those involved in the stopping criterion. For example in
 this case we only have two parameters: ``niter`` refers to the maximum allowed number of iterations, and ``tol`` to
 tolerance on the residual norm (the solver will be stopped if this is smaller than the chosen tolerance). Moreover,
 we always have the possibility to decide whether we want to operate the solver (in this case its setup part) in verbose
@@ -106,7 +107,7 @@ note that the ``setup`` method returns the created starting guess ``x`` (does no
             self._print_setup(np.iscomplexobj(x))
         return x
 
-At this point, we need to implement the core of the solver, its `step`. Here, we take the input at previous iterate,
+At this point, we need to implement the core of the solver, its `step`. Here, we take the input at the previous iterate,
 update it following the rule of the solver of choice, and return it. The other input parameter required by this method
 is ``show`` to choose whether we want to print a report of the step on screen or not. However, if appropriate, a user
 can add additional input parameters. For CG, the step is:
@@ -135,12 +136,12 @@ calling the ``step`` method. It is also usually convenient to implement a finali
 not be applied at the end of each step, rather at the end of the entire optimization process. For CG, this is as simple
 as converting the ``cost`` variable from a list to a numpy array. For more details, see our implementations for CG.
 
-Last but not least, we can wrap it all up in the ``solve`` method. This method takes as input the data, initial
-model and the same hyperparameters of setup and runs the entire optimization process. For CG:
+Last but not least, we can wrap it all up in the ``solve`` method. This method takes as input the data, the initial
+model and the same hyperparameters of the setup method and runs the entire optimization process. For CG:
 
 .. code-block:: python
 
-    def step(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10]):
+    def solve(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10]):
         x = self.setup(y=y, x0=x0, niter=niter, tol=tol, show=show)
         x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)
@@ -153,15 +154,15 @@ users with feedback during the inversion process. Imagine that the modelling ope
 minutes (or even hours to run), we don't want to leave a user waiting for hours before they can tell if the solver has
 done something meaningful. To avoid such scenario, we can implement so called `_print_*` methods where
 ``*=solver, setup, step, finalize`` that print on screen some useful information (e.g., first value of the current
-estimate, norm of residual, etc.). The ``solver`` and ``finalize`` print are alreadly implemented in the base class,
+estimate, norm of residual, etc.). The ``solver`` and ``finalize`` print are already implemented in the base class,
 the other two must be implemented when creating a new solver. When these methods are implemented and a user passes
 ``show=True`` to the associated method, our solver will provide such information on screen throughout the inverse
 process. To better understand how to write such methods, we suggest to look into the source code of the CG method.
 
 Finally, to be backward compatible with versions of PyLops `<v2.0.0`, we also want to create a function with the same
-name of the class-based solver (but in small letters) which simply instantiates the solver and runs it. As mentioned
-before, this function belongs to a different file whose name is the same of that of the corresponding class-based solver
-without the ending ``c``. This function generally takes all the mandatory and optional parameters of the solver as
+name of the class-based solver (but in small letters) which simply instantiates the solver and runs it. This function
+is usually placed in the same file of the class-based solver and snake_case should be used for its name.
+This function generally takes all the mandatory and optional parameters of the solver as
 input and returns some of the most valuable properties of the class-based solver object. An example for `CG` is:
 
 .. code-block:: python

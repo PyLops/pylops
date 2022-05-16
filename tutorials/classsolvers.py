@@ -71,8 +71,8 @@ ymask = Rop.mask(x)
 
 ###############################################################################
 # Let's now solve the interpolation problem using the
-# :py:class:`pylops.optimization.sparsityc.ISTA` and
-# :py:class:`pylops.optimization.sparsityc.FISTA` class-based solvers.
+# :py:class:`pylops.optimization.sparsity.ISTA` and
+# :py:class:`pylops.optimization.sparsity.FISTA` class-based solvers.
 # First of all, we define our customized callbacks. What we are really interested
 # in here is to store the first residual norm once the setup of the solver is over,
 # and repeat the same after each step (using the previous estimate to compute the
@@ -113,7 +113,7 @@ class CallbackISTA(pylops.optimization.callback.Callbacks):
 
 
 cb = CallbackISTA()
-istasolve = pylops.optimization.sparsityc.ISTA(
+istasolve = pylops.optimization.sparsity.ISTA(
     Rop * FFTop.H,
     callbacks=[
         cb,
@@ -123,7 +123,7 @@ pista, niteri, costi = istasolve.solve(y, niter=1000, eps=0.1, tol=1e-7)
 xista = FFTop.H * pista
 
 cbf = CallbackISTA()
-fistasolve = pylops.optimization.sparsityc.FISTA(
+fistasolve = pylops.optimization.sparsity.FISTA(
     Rop * FFTop.H,
     callbacks=[
         cbf,

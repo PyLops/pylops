@@ -144,7 +144,7 @@ tolIRLS = 1e-2
 xnest = LRop / yn
 
 cb = CallbackIRLS(N)
-irlssolve = pylops.optimization.sparsityc.IRLS(
+irlssolve = pylops.optimization.sparsity.IRLS(
     LRop,
     [
         cb,
