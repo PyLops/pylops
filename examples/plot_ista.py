@@ -2,10 +2,10 @@ r"""
 MP, OMP, ISTA and FISTA
 =======================
 
-This example shows how to use the :py:class:`pylops.optimization.sparsity.OMP`,
-:py:class:`pylops.optimization.sparsity.IRLS`,
-:py:class:`pylops.optimization.sparsity.ISTA`, and
-:py:class:`pylops.optimization.sparsity.FISTA` solvers.
+This example shows how to use the :py:class:`pylops.optimization.sparsity.omp`,
+:py:class:`pylops.optimization.sparsity.irls`,
+:py:class:`pylops.optimization.sparsity.ista`, and
+:py:class:`pylops.optimization.sparsity.fista` solvers.
 
 These solvers can be used when the model to retrieve is supposed to have
 a sparse representation in a certain domain. MP and OMP use a L0 norm and
@@ -90,12 +90,12 @@ plt.tight_layout()
 # from a signal that we assume being composed by a train of spikes convolved
 # with a certain wavelet. We will see how solving such a problem with a
 # least-squares solver such as
-# :py:class:`pylops.optimization.leastsquares.RegularizedInversion` does not
+# :py:class:`pylops.optimization.leastsquares.regularized_inversion` does not
 # produce the expected results (especially in the presence of noisy data),
-# conversely using the :py:class:`pylops.optimization.sparsity.ISTA` and
-# :py:class:`pylops.optimization.sparsity.FISTA` solvers allows us
+# conversely using the :py:class:`pylops.optimization.sparsity.ista` and
+# :py:class:`pylops.optimization.sparsity.fista` solvers allows us
 # to succesfully retrieve the input signal even in the presence of noise.
-# :py:class:`pylops.optimization.sparsity.FISTA` shows faster convergence which
+# :py:class:`pylops.optimization.sparsity.fista` shows faster convergence which
 # is particularly useful for this problem.
 
 nt = 61
