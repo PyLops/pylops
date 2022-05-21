@@ -8,6 +8,7 @@ from pylops.utils.backend import (
     get_oaconvolve,
     to_cupy_conditional,
 )
+from pylops.utils.decorators import reshaped
 
 
 def _choose_convfunc(x, method, dims):
@@ -121,9 +122,10 @@ class Convolve1D(LinearOperator):
     def __init__(
         self, dims, h, offset=0, axis=-1, dtype="float64", method=None, name="C"
     ):
-        self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
-        self.axis = axis
+        dims = _value_or_list_like_to_tuple(dims)
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
+        self.axis = axis
         if offset > len(h) - 1:
             raise ValueError("offset must be smaller than len(h) - 1")
         self.h = h
@@ -151,28 +153,21 @@ class Convolve1D(LinearOperator):
 
         # choose method and function handle
         self.convfunc, self.method = _choose_convfunc(h, method, self.dims)
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
 
+    @reshaped
     def _matvec(self, x):
         if type(self.h) != type(x):
             self.h = to_cupy_conditional(x, self.h)
             self.convfunc, self.method = _choose_convfunc(
                 self.h, self.method, self.dims
             )
-        x = np.reshape(x, self.dims)
-        y = self.convfunc(x, self.h, mode="same")
-        y = y.ravel()
-        return y
+        return self.convfunc(x, self.h, mode="same")
 
+    @reshaped
     def _rmatvec(self, x):
         if type(self.hstar) != type(x):
             self.hstar = to_cupy_conditional(x, self.hstar)
             self.convfunc, self.method = _choose_convfunc(
                 self.hstar, self.method, self.dims
             )
-        x = np.reshape(x, self.dims)
-        y = self.convfunc(x, self.hstar, mode="same")
-        y = y.ravel()
-        return y
+        return self.convfunc(x, self.hstar, mode="same")

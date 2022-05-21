@@ -4,6 +4,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_add_at, get_array_module, to_numpy
+from pylops.utils.decorators import reshaped
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -81,15 +82,14 @@ class Bilinear(LinearOperator):
     """
 
     def __init__(self, iava, dims, dtype="float64", name="B"):
-        ncp = get_array_module(iava)
-
-        # check non-unique pairs (works only with numpy arrays)
-        _checkunique(to_numpy(iava))
-
         # define dimension of data
         ndims = len(dims)
-        self.dims = tuple(dims)
-        self.dimsd = tuple([len(iava[1])] + list(dims[2:]))
+        dimsd = [len(iava[1])] + list(dims[2:])
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+
+        ncp = get_array_module(iava)
+        # check non-unique pairs (works only with numpy arrays)
+        _checkunique(to_numpy(iava))
 
         # find indices and weights
         self.iava_t = ncp.floor(iava[0]).astype(int)
@@ -105,25 +105,19 @@ class Bilinear(LinearOperator):
                 self.weights_tb = ncp.expand_dims(self.weights_tb, axis=-1)
                 self.weights_lr = ncp.expand_dims(self.weights_lr, axis=-1)
 
-        self.shape = (np.prod(np.array(self.dimsd)), np.prod(np.array(self.dims)))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
-
+    @reshaped
     def _matvec(self, x):
-        ncp = get_array_module(x)
-        x = ncp.reshape(x, self.dims)
-        y = (
+        return (
             x[self.iava_t, self.iava_l] * (1 - self.weights_tb) * (1 - self.weights_lr)
             + x[self.iava_t, self.iava_r] * (1 - self.weights_tb) * self.weights_lr
             + x[self.iava_b, self.iava_l] * self.weights_tb * (1 - self.weights_lr)
             + x[self.iava_b, self.iava_r] * self.weights_tb * self.weights_lr
         )
-        return y.ravel()
 
+    @reshaped
     def _rmatvec(self, x):
         ncp = get_array_module(x)
         ncp_add_at = get_add_at(x)
-        x = ncp.reshape(x, self.dimsd)
         y = ncp.zeros(self.dims, dtype=self.dtype)
         ncp_add_at(
             y,
@@ -143,4 +137,4 @@ class Bilinear(LinearOperator):
         ncp_add_at(
             y, tuple([self.iava_b, self.iava_r]), x * self.weights_tb * self.weights_lr
         )
-        return y.ravel()
+        return y

@@ -37,17 +37,17 @@ class _BaseFFT(LinearOperator):
         fftshift_after=False,
         dtype="complex128",
     ):
-        self.dims = _value_or_list_like_to_tuple(dims)
-        _raise_on_wrong_dtype(np.array(self.dims), np.integer, "dims")
+        dims = _value_or_list_like_to_array(dims)
+        _raise_on_wrong_dtype(dims, np.integer, "dims")
 
-        self.ndim = len(self.dims)
+        self.ndim = len(dims)
 
         axes = _value_or_list_like_to_array(axis)
         _raise_on_wrong_dtype(axes, np.integer, "axis")
         self.axis = normalize_axis_index(axes[0], self.ndim)
 
         if nfft is None:
-            nfft = self.dims[self.axis]
+            nfft = dims[self.axis]
         else:
             nffts = _value_or_list_like_to_array(nfft)
             _raise_on_wrong_dtype(nffts, np.integer, "nfft")
@@ -60,14 +60,16 @@ class _BaseFFT(LinearOperator):
         # before applying fft, which is lost forever) and set a flag such that
         # a padding is applied after ifft
         self.doifftpad = False
-        if self.nfft < self.dims[self.axis]:
+        if self.nfft < dims[self.axis]:
             self.doifftpad = True
             self.ifftpad = [(0, 0)] * self.ndim
-            self.ifftpad[self.axis] = (0, self.dims[self.axis] - self.nfft)
+            self.ifftpad[self.axis] = (0, dims[self.axis] - self.nfft)
             warnings.warn(
-                f"nfft={self.nfft} has been selected to be smaller than the size of the original signal (self.dims[axis]={self.dims[axis]}). "
-                f"This is rarely intended behavior as the original signal will be truncated prior to applying fft, "
-                f"if this is the required behaviour ignore this message."
+                f"nfft={self.nfft} has been selected to be smaller than the size of "
+                f"the original signal (dims[axis]={dims[axis]}).\n"
+                f"This is rarely intended behavior as the original signal will be "
+                f"truncated prior to applying FFT. "
+                f"If this is the required behaviour ignore this message."
             )
 
         if norm == "ortho":
@@ -103,11 +105,9 @@ class _BaseFFT(LinearOperator):
                 )
             self.f = np.fft.fftshift(self.f)
 
-        dimsd = list(self.dims)
+        dimsd = list(dims)
         dimsd[self.axis] = self.nfft // 2 + 1 if self.real else self.nfft
-        self.dimsd = tuple(dimsd)
 
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
         # Find types to enforce to forward and adjoint outputs. This is
         # required as np.fft.fft always returns complex128 even if input is
         # float32 or less. Moreover, when choosing real=True, the type of the
@@ -115,9 +115,8 @@ class _BaseFFT(LinearOperator):
         # is complex.
         self.rdtype = get_real_dtype(dtype) if self.real else np.dtype(dtype)
         self.cdtype = get_complex_dtype(dtype)
-        self.dtype = self.cdtype
-        self.clinear = False if self.real or np.issubdtype(dtype, np.floating) else True
-        self.explicit = False
+        clinear = False if self.real or np.issubdtype(dtype, np.floating) else True
+        super().__init__(dtype=self.cdtype, dims=dims, dimsd=dimsd, clinear=clinear)
 
     def _matvec(self, x):
         raise NotImplementedError(
@@ -145,10 +144,10 @@ class _BaseFFTND(LinearOperator):
         fftshift_after=False,
         dtype="complex128",
     ):
-        self.dims = _value_or_list_like_to_tuple(dims)
-        _raise_on_wrong_dtype(np.array(self.dims), np.integer, "dims")
+        dims = _value_or_list_like_to_array(dims)
+        _raise_on_wrong_dtype(dims, np.integer, "dims")
 
-        self.ndim = len(self.dims)
+        self.ndim = len(dims)
 
         axes = _value_or_list_like_to_array(axes)
         _raise_on_wrong_dtype(axes, np.integer, "axes")
@@ -162,9 +161,9 @@ class _BaseFFTND(LinearOperator):
         nffts = _value_or_list_like_to_array(nffts, repeat=self.naxes)
         if len(nffts[np.equal(nffts, None)]) > 0:  # Found None(s) in nffts
             nffts[np.equal(nffts, None)] = np.array(
-                [self.dims[d] for d, n in zip(axes, nffts) if n is None]
+                [dims[d] for d, n in zip(axes, nffts) if n is None]
             )
-            nffts = nffts.astype(np.array(self.dims).dtype)
+            nffts = nffts.astype(np.array(dims).dtype)
         self.nffts = nffts
         _raise_on_wrong_dtype(self.nffts, np.integer, "nffts")
 
@@ -203,8 +202,7 @@ class _BaseFFTND(LinearOperator):
         # Check if the user provided nfft smaller than n. See _BaseFFT for
         # details
         nfftshort = [
-            nfft < self.dims[direction]
-            for direction, nfft in zip(self.axes, self.nffts)
+            nfft < dims[direction] for direction, nfft in zip(self.axes, self.nffts)
         ]
         self.doifftpad = any(nfftshort)
         if self.doifftpad:
@@ -213,7 +211,7 @@ class _BaseFFTND(LinearOperator):
                 if nfshort:
                     self.ifftpad[direction] = (
                         0,
-                        self.dims[direction] - self.nffts[idir],
+                        dims[direction] - self.nffts[idir],
                     )
             warnings.warn(
                 f"nffts in directions {np.where(nfftshort)[0]} have been selected to be smaller than the size of the original signal. "
@@ -261,18 +259,20 @@ class _BaseFFTND(LinearOperator):
                 )
                 fs[-1] = np.fft.fftshift(fs[-1])
         self.fs = tuple(fs)
-        dimsd = np.array(self.dims)
+        dimsd = np.array(dims)
         dimsd[self.axes] = self.nffts
         if self.real:
             dimsd[self.axes[-1]] = self.nffts[-1] // 2 + 1
-        self.dimsd = tuple(dimsd)
 
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
+        # Find types to enforce to forward and adjoint outputs. This is
+        # required as np.fft.fft always returns complex128 even if input is
+        # float32 or less. Moreover, when choosing real=True, the type of the
+        # adjoint output is forced to be real even if the provided dtype
+        # is complex.
         self.rdtype = get_real_dtype(dtype) if self.real else np.dtype(dtype)
         self.cdtype = get_complex_dtype(dtype)
-        self.dtype = self.cdtype
-        self.clinear = False if self.real or np.issubdtype(dtype, np.floating) else True
-        self.explicit = False
+        clinear = False if self.real or np.issubdtype(dtype, np.floating) else True
+        super().__init__(dtype=self.cdtype, dims=dims, dimsd=dimsd, clinear=clinear)
 
     def _matvec(self, x):
         raise NotImplementedError(

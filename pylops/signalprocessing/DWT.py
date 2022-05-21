@@ -107,16 +107,16 @@ class DWT(LinearOperator):
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
 
-        self.dims = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_list_like_to_tuple(dims)
         # define padding for length to be power of 2
-        ndimpow2 = max(2 ** ceil(log(self.dims[axis], 2)), 2 ** level)
-        pad = [(0, 0)] * len(self.dims)
-        pad[axis] = (0, ndimpow2 - self.dims[axis])
-        self.pad = Pad(self.dims, pad)
+        ndimpow2 = max(2 ** ceil(log(dims[axis], 2)), 2**level)
+        pad = [(0, 0)] * len(dims)
+        pad[axis] = (0, ndimpow2 - dims[axis])
+        self.pad = Pad(dims, pad)
         self.axis = axis
-        dimsd = list(self.dims)
+        dimsd = list(dims)
         dimsd[self.axis] = ndimpow2
-        self.dimsd = tuple(dimsd)
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
         # apply transform to find out slices
         _, self.sl = pywt.coeffs_to_array(
@@ -129,20 +129,13 @@ class DWT(LinearOperator):
             ),
             axes=(self.axis,),
         )
-
         self.wavelet = wavelet
         self.waveletadj = _adjointwavelet(wavelet)
         self.level = level
-        self.reshape = True if len(self.dims) > 1 else False
-
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         x = self.pad.matvec(x)
-        if self.reshape:
-            x = np.reshape(x, self.dimsd)
+        x = np.reshape(x, self.dimsd)
         y = pywt.coeffs_to_array(
             pywt.wavedecn(
                 x,
@@ -156,8 +149,7 @@ class DWT(LinearOperator):
         return y.ravel()
 
     def _rmatvec(self, x):
-        if self.reshape:
-            x = np.reshape(x, self.dimsd)
+        x = np.reshape(x, self.dimsd)
         x = pywt.array_to_coeffs(x, self.sl, output_format="wavedecn")
         y = pywt.waverecn(
             x, wavelet=self.waveletadj, mode="periodization", axes=(self.axis,)

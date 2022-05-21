@@ -88,7 +88,7 @@ def _predict_haar(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
         iback = 0
         idir = 1
     slopejump = 2 ** (repeat + 1)
-    repeat = 2 ** repeat
+    repeat = 2**repeat
 
     nx, nt = traces.shape
     t = np.arange(nt) * dt
@@ -130,7 +130,7 @@ def _predict_lin(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
         iback = 0
         idir = 1
     slopejump = 2 ** (repeat + 1)
-    repeat = 2 ** repeat
+    repeat = 2**repeat
 
     nx, nt = traces.shape
     t = np.arange(nt) * dt
@@ -391,34 +391,30 @@ class Seislet(LinearOperator):
             raise NotImplementedError("kind should be haar or linear")
 
         # define padding for length to be power of 2
-        self.dims = slopes.shape
-        dimsd = list(self.dims)
-        ndimpow2 = 2 ** ceil(log(dimsd[0], 2))
-        pad = [(0, 0)] * len(dimsd)
-        pad[0] = (0, ndimpow2 - dimsd[0])
-        self.pad = Pad(dimsd, pad)
-        dimsd[0] = ndimpow2
-        self.dimsd = dimsd
+        dims = slopes.shape
+        ndimpow2 = 2 ** ceil(log(dims[0], 2))
+        dimsd = [ndimpow2] + list(dims[1:])
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+
+        pad = [(0, ndimpow2 - self.dims[0])] + [(0, 0)] * (len(self.dims) - 1)
+        self.pad = Pad(self.dims, pad)
         self.nx, self.nt = self.dimsd
 
         # define levels
         nlevels_max = int(np.log2(self.dimsd[0]))
-        self.levels_size = np.flip(np.array([2 ** i for i in range(nlevels_max)]))
-        if level is not None:
-            self.levels_size = self.levels_size[:level]
-        else:
-            self.levels_size = self.levels_size[:-1]
+        levels_size = np.flip(np.array([2**i for i in range(nlevels_max)]))
+        if level is None:
+            levels_size = levels_size[:-1]
             level = nlevels_max - 1
+        else:
+            levels_size = levels_size[:level]
         self.level = level
-        self.levels_cum = np.cumsum(self.levels_size)
-        self.levels_cum = np.insert(self.levels_cum, 0, 0)
+        self.levels_size = levels_size
+        self.levels_cum = np.insert(np.cumsum(self.levels_size), 0, 0)
 
         self.dx, self.dt = sampling
         self.slopes = (self.pad * slopes.ravel()).reshape(self.dimsd)
         self.inv = inv
-        self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         x = self.pad.matvec(x)
