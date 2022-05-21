@@ -2,7 +2,6 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
-from pylops.utils.backend import get_array_module
 
 
 class Real(LinearOperator):
