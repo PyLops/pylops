@@ -19,7 +19,7 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=Tr
     r"""Analytical direct wave in acoustic media
 
     Compute the analytical acoustic 2d or 3d Green's function in frequency
-    domain givena wavelet ``wav``, traveltime curve ``trav`` and distance
+    domain given a wavelet ``wav``, traveltime curve ``trav`` and distance
     ``dist`` (for 3d case only).
 
     Parameters
@@ -301,7 +301,6 @@ class Marchenko:
         rtm=False,
         greens=False,
         dottest=False,
-        fast=None,
         usematmul=False,
         **kwargs_solver
     ):
@@ -379,11 +378,9 @@ class Marchenko:
             twosided=True,
             conj=False,
             fftengine=self.fftengine,
-            transpose=False,
             saveGt=self.saveRt,
             prescaled=self.prescaled,
             usematmul=usematmul,
-            dtype=self.dtype,
         )
         R1op = MDC(
             self.Rtwosided_fft,
@@ -394,11 +391,9 @@ class Marchenko:
             twosided=True,
             conj=True,
             fftengine=self.fftengine,
-            transpose=False,
             saveGt=self.saveRt,
             prescaled=self.prescaled,
             usematmul=usematmul,
-            dtype=self.dtype,
         )
         Rollop = Roll(
             (self.nt2, self.ns),
@@ -590,10 +585,8 @@ class Marchenko:
             twosided=True,
             conj=False,
             fftengine=self.fftengine,
-            transpose=False,
             prescaled=self.prescaled,
             usematmul=usematmul,
-            dtype=self.dtype,
         )
         R1op = MDC(
             self.Rtwosided_fft,
@@ -604,10 +597,8 @@ class Marchenko:
             twosided=True,
             conj=True,
             fftengine=self.fftengine,
-            transpose=False,
             prescaled=self.prescaled,
             usematmul=usematmul,
-            dtype=self.dtype,
         )
         Rollop = Roll(
             (self.nt2, self.ns, nvs),

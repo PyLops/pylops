@@ -83,8 +83,6 @@ MDCop = pylops.waveeqprocessing.MDC(
     nv=1,
     dt=0.004,
     dr=1.0,
-    transpose=False,
-    dtype="float32",
 )
 
 # Create data
