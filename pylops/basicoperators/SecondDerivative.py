@@ -4,6 +4,7 @@ from numpy.core.multiarray import normalize_axis_index
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module
+from pylops.utils.decorators import reshaped
 
 
 class SecondDerivative(LinearOperator):
@@ -76,72 +77,63 @@ class SecondDerivative(LinearOperator):
         kind="centered",
         name="S",
     ):
-        self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_list_like_to_tuple(dims)
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
+
         self.axis = normalize_axis_index(axis, len(self.dims))
         self.sampling = sampling
         self.edge = edge
         self.kind = kind
+        self._register_multiplications(self.kind)
 
+    def _register_multiplications(self, kind):
         # choose _matvec and _rmatvec kind
-        if self.kind == "forward":
+        if kind == "forward":
             self._matvec = self._matvec_forward
             self._rmatvec = self._rmatvec_forward
-        elif self.kind == "centered":
+        elif kind == "centered":
             self._matvec = self._matvec_centered
             self._rmatvec = self._rmatvec_centered
-        elif self.kind == "backward":
-            raise NotImplementedError(
-                "backward is not yet available, use forward or centered"
-            )
+        elif kind == "backward":
+            self._matvec = self._matvec_backward
+            self._rmatvec = self._rmatvec_backward
         else:
-            raise NotImplementedError("kind must be forward, centered, or backward")
+            raise NotImplementedError(
+                "'kind' must be 'forward', 'centered', or 'backward'"
+            )
 
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
-
+    @reshaped(swapaxis=True)
     def _matvec_forward(self, x):
         ncp = get_array_module(x)
-        x = ncp.reshape(x, self.dims)
-        x = ncp.swapaxes(x, self.axis, -1)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., :-2] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
-        y /= self.sampling ** 2
-        y = ncp.swapaxes(y, -1, self.axis)
-        y = y.ravel()
+        y /= self.sampling**2
         return y
 
+    @reshaped(swapaxis=True)
     def _rmatvec_forward(self, x):
         ncp = get_array_module(x)
-        x = ncp.reshape(x, self.dims)
-        x = ncp.swapaxes(x, self.axis, -1)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., :-2] += x[..., :-2]
         y[..., 1:-1] -= 2 * x[..., :-2]
         y[..., 2:] += x[..., :-2]
-        y /= self.sampling ** 2
-        y = ncp.swapaxes(y, -1, self.axis)
-        y = y.ravel()
+        y /= self.sampling**2
         return y
 
+    @reshaped(swapaxis=True)
     def _matvec_centered(self, x):
         ncp = get_array_module(x)
-        x = ncp.reshape(x, self.dims)
-        x = ncp.swapaxes(x, self.axis, -1)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., 1:-1] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
         if self.edge:
             y[..., 0] = x[..., 0] - 2 * x[..., 1] + x[..., 2]
             y[..., -1] = x[..., -3] - 2 * x[..., -2] + x[..., -1]
-        y /= self.sampling ** 2
-        y = ncp.swapaxes(y, -1, self.axis)
-        y = y.ravel()
+        y /= self.sampling**2
         return y
 
+    @reshaped(swapaxis=True)
     def _rmatvec_centered(self, x):
         ncp = get_array_module(x)
-        x = ncp.reshape(x, self.dims)
-        x = ncp.swapaxes(x, self.axis, -1)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., :-2] += x[..., 1:-1]
         y[..., 1:-1] -= 2 * x[..., 1:-1]
@@ -153,7 +145,5 @@ class SecondDerivative(LinearOperator):
             y[..., -3] += x[..., -1]
             y[..., -2] -= 2 * x[..., -1]
             y[..., -1] += x[..., -1]
-        y /= self.sampling ** 2
-        y = ncp.swapaxes(y, -1, self.axis)
-        y = y.ravel()
+        y /= self.sampling**2
         return y

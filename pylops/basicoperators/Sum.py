@@ -3,6 +3,7 @@ import numpy as np
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module
+from pylops.utils.decorators import reshaped
 
 
 class Sum(LinearOperator):
@@ -56,29 +57,24 @@ class Sum(LinearOperator):
     def __init__(self, dims, axis=-1, dtype="float64", name="S"):
         dims = _value_or_list_like_to_tuple(dims)
         # to avoid reducing matvec to a scalar
-        self.dims = (dims[0], 1) if len(dims) == 1 else dims
+        dims = (dims[0], 1) if len(dims) == 1 else dims
         self.axis = axis
         # data dimensions
         dimsd = list(dims).copy()
         dimsd.pop(self.axis)
-        self.dimsd = dimsd
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+
         # array of ones with dims of model in self.axis for np.tile in adjoint mode
-        self.tile = np.ones(len(dims), dtype=int)
+        self.tile = np.ones(len(self.dims), dtype=int)
         self.tile[self.axis] = self.dims[self.axis]
 
-        self.dtype = np.dtype(dtype)
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        super().__init__(explicit=False, clinear=True, name=name)
-
+    @reshaped
     def _matvec(self, x):
-        ncp = get_array_module(x)
-        y = x.reshape(self.dims)
-        y = ncp.sum(y, axis=self.axis)
-        return y.ravel()
+        return x.sum(axis=self.axis)
 
+    @reshaped
     def _rmatvec(self, x):
         ncp = get_array_module(x)
-        y = x.reshape(self.dimsd)
-        y = ncp.expand_dims(y, self.axis)
+        y = ncp.expand_dims(x, self.axis)
         y = ncp.tile(y, self.tile)
-        return y.ravel()
+        return y

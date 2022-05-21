@@ -3,6 +3,7 @@ import logging
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils.decorators import reshaped
 
 try:
     from numba import jit
@@ -174,6 +175,8 @@ class Spread(LinearOperator):
         dtype="float64",
         name="S",
     ):
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+
         if engine not in ["numpy", "numba"]:
             raise KeyError("engine must be numpy or numba")
         if engine == "numba" and jit is not None:
@@ -184,7 +187,6 @@ class Spread(LinearOperator):
             self.engine = "numpy"
 
         # axes
-        self.dims, self.dimsd = tuple(dims), tuple(dimsd)
         self.nx0, self.nt0 = self.dims[0], self.dims[1]
         self.nx, self.nt = self.dimsd[0], self.dimsd[1]
         self.table = table
@@ -220,12 +222,8 @@ class Spread(LinearOperator):
                     self.interp = True
         if interp is not None and self.interp != interp:
             logging.warning("interp has been overridden to %r.", self.interp)
-        self.shape = (int(np.prod(self.dimsd)), int(np.prod(self.dims)))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec_numpy(self, x):
-        x = x.reshape(self.dims)
         y = np.zeros(self.dimsd, dtype=self.dtype)
         for it in range(self.dims[1]):
             for ix0 in range(self.dims[0]):
@@ -246,10 +244,9 @@ class Spread(LinearOperator):
                     else:
                         y[mask, indices] += (1 - dindices[mask]) * x[ix0, it]
                         y[mask, indices + 1] += dindices[mask] * x[ix0, it]
-        return y.ravel()
+        return y
 
     def _rmatvec_numpy(self, x):
-        x = x.reshape(self.dimsd)
         y = np.zeros(self.dims, dtype=self.dtype)
         for it in range(self.dims[1]):
             for ix0 in range(self.dims[0]):
@@ -271,8 +268,9 @@ class Spread(LinearOperator):
                         y[ix0, it] = np.sum(
                             x[mask, indices] * (1 - dindices[mask])
                         ) + np.sum(x[mask, indices + 1] * dindices[mask])
-        return y.ravel()
+        return y
 
+    @reshaped
     def _matvec(self, x):
         if self.engine == "numba":
             y = np.zeros(self.dimsd, dtype=self.dtype)
@@ -291,6 +289,7 @@ class Spread(LinearOperator):
             y = self._matvec_numpy(x)
         return y
 
+    @reshaped
     def _rmatvec(self, x):
         if self.engine == "numba":
             y = np.zeros(self.dims, dtype=self.dtype)

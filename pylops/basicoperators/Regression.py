@@ -82,26 +82,25 @@ class Regression(LinearOperator):
     def __init__(self, taxis, order, dtype="float64", name="R"):
         ncp = get_array_module(taxis)
         if not isinstance(taxis, ncp.ndarray):
-            logging.error("t must be numpy.ndarray...")
-            raise TypeError("t must be numpy.ndarray...")
+            logging.error("t must be ndarray...")
+            raise TypeError("t must be ndarray...")
         else:
             self.taxis = taxis
         self.order = order
-        self.shape = (len(self.taxis), self.order + 1)
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
+        shape = (len(self.taxis), self.order + 1)
+        super().__init__(dtype=np.dtype(dtype), shape=shape, name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)
         y = ncp.zeros_like(self.taxis)
         for i in range(self.order + 1):
-            y += x[i] * self.taxis ** i
+            y += x[i] * self.taxis**i
         return y
 
     def _rmatvec(self, x):
         ncp = get_array_module(x)
 
-        return ncp.vstack([ncp.dot(self.taxis ** i, x) for i in range(self.order + 1)])
+        return ncp.vstack([ncp.dot(self.taxis**i, x) for i in range(self.order + 1)])
 
     def apply(self, t, x):
         """Return values along y-axis given certain ``t`` location(s) along

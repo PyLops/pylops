@@ -88,26 +88,24 @@ class Restriction(LinearOperator):
 
     def __init__(self, dims, iava, axis=-1, dtype="float64", inplace=True, name="R"):
         ncp = get_array_module(iava)
-        self.dims = _value_or_list_like_to_tuple(dims)
-        self.axis = normalize_axis_index(axis, len(self.dims))
-        self.iava = iava
-        dimsd = list(self.dims)  # data dimensions
-        dimsd[self.axis] = len(iava)
-        self.dimsd = tuple(dimsd)
-        self.iavareshape = np.ones(len(self.dims), dtype=int)
-        self.iavareshape[self.axis] = len(self.iava)
+        dims = _value_or_list_like_to_tuple(dims)
+        axis = normalize_axis_index(axis, len(dims))
+        dimsd = list(dims)  # data dimensions
+        dimsd[axis] = len(iava)
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+
+        iavareshape = np.ones(len(self.dims), dtype=int)
+        iavareshape[axis] = len(iava)
 
         # currently cupy does not support put_along_axis, so we need to
         # explicitly create a list of indices in the n-dimensional
         # model space which will be used in _rmatvec to place the input
         if ncp != np:
-            self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
+            self.iavamask = _compute_iavamask(self.dims, axis, iava, ncp)
         self.inplace = inplace
-
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        self.explicit = False
-        super().__init__(explicit=False, clinear=True, name=name)
+        self.axis = axis
+        self.iavareshape = iavareshape
+        self.iava = iava
 
     def _matvec(self, x):
         ncp = get_array_module(x)

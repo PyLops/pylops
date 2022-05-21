@@ -114,13 +114,10 @@ class BlockDiag(LinearOperator):
         self.pool = None
         if self.nproc > 1:
             self.pool = mp.Pool(processes=nproc)
-        self.shape = (self.nops, self.mops)
-        if dtype is None:
-            self.dtype = _get_dtype(ops)
-        else:
-            self.dtype = np.dtype(dtype)
-        self.explicit = False
-        self.clinear = all([getattr(oper, "clinear", True) for oper in self.ops])
+
+        dtype = _get_dtype(ops) if dtype is None else np.dtype(dtype)
+        clinear = all([getattr(oper, "clinear", True) for oper in self.ops])
+        super().__init__(dtype=dtype, shape=(self.nops, self.mops), clinear=clinear)
 
     @property
     def nproc(self):

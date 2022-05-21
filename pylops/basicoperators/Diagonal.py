@@ -3,6 +3,7 @@ import numpy as np
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module, to_cupy_conditional
+from pylops.utils.decorators import reshaped
 
 
 class Diagonal(LinearOperator):
@@ -63,32 +64,24 @@ class Diagonal(LinearOperator):
     """
 
     def __init__(self, diag, dims=None, axis=-1, dtype="float64", name="D"):
-        ncp = get_array_module(diag)
         self.diag = diag.ravel()
-        self.complex = True if ncp.iscomplexobj(self.diag) else False
+        dims = (len(self.diag),) if dims is None else _value_or_list_like_to_tuple(dims)
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
         ncp = get_array_module(diag)
-        self.diag = diag.ravel()
         self.complex = True if ncp.iscomplexobj(self.diag) else False
-        self.dims = self.dimsd = (
-            (len(self.diag),) if dims is None else _value_or_list_like_to_tuple(dims)
-        )
-
         diagdims = np.ones_like(self.dims)
         diagdims[axis] = self.dims[axis]
         self.diag = self.diag.reshape(diagdims)
 
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
-
+    @reshaped
     def _matvec(self, x):
         if type(self.diag) != type(x):
             self.diag = to_cupy_conditional(x, self.diag)
-        x = x.reshape(self.dims)
         y = self.diag * x
-        return y.ravel()
+        return y
 
+    @reshaped
     def _rmatvec(self, x):
         if type(self.diag) != type(x):
             self.diag = to_cupy_conditional(x, self.diag)
@@ -96,9 +89,8 @@ class Diagonal(LinearOperator):
             diagadj = self.diag.conj()
         else:
             diagadj = self.diag
-        x = x.reshape(self.dims)
         y = diagadj * x
-        return y.ravel()
+        return y
 
     def matrix(self):
         """Return diagonal matrix as dense :obj:`numpy.ndarray`
