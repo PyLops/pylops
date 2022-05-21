@@ -53,7 +53,9 @@ def reshaped(func=None, forward=None, swapaxis=False):
         Function to be decorated when no arguments are provided
     forward : :obj:`bool`, optional
         Reshape to ``dims`` if True, otherwise to ``dimsd``. If not provided, the decorated
-        function's name will be inspected to infer the mode.
+        function's name will be inspected to infer the mode. Any operator having a name
+        with 'rmat' as substring or whose name is 'div' or '__truediv__' will reshape
+        to ``dimsd``.
     swapaxis : :obj:`bool`, optional
         If True, swaps the last axis of the input array of the decorated function with
         ``self.axis``. Only use if the decorated LinearOperator has ``axis`` attribute.
@@ -93,7 +95,11 @@ def reshaped(func=None, forward=None, swapaxis=False):
     """
 
     def decorator(f):
-        forward = "rmat" not in f.__name__
+        forward = (
+            "rmat" not in f.__name__
+            and f.__name__ != "div"
+            and f.__name__ != "__truediv__"
+        )
         inp_dims = "dims" if forward else "dimsd"
 
         @wraps(f)
