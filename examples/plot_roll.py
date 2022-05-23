@@ -39,11 +39,8 @@ x = np.arange(ny * nx).reshape(ny, nx)
 
 Rop = pylops.Roll(dims=(ny, nx), axis=1, shift=-2)
 
-y = Rop * x.ravel()
+y = Rop * x
 xadj = Rop.H * y
-
-y = y.reshape(ny, nx)
-xadj = xadj.reshape(ny, nx)
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 2))
 fig.suptitle("Roll for 2d data", fontsize=14, fontweight="bold", y=1.15)

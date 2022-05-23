@@ -96,10 +96,10 @@ nxsub = int(np.round(nx * perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(nx))[:nxsub])
 
 Rop = pylops.Restriction((nx, nt), iava, axis=0, dtype="float64")
-y = (Rop * x.ravel()).reshape(nxsub, nt)
+y = Rop * x
 ymask = Rop.mask(x)
 
-fig, axs = plt.subplots(1, 3, figsize=(10, 5))
+fig, axs = plt.subplots(1, 3, figsize=(10, 5), sharey=True)
 axs[0].imshow(x.T, cmap="gray")
 axs[0].set_title("Model")
 axs[0].axis("tight")

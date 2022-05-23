@@ -65,7 +65,7 @@ A = np.zeros((11, 21))
 A[5, 10] = 1
 
 Sop = pylops.Smoothing1D(nsmooth=5, dims=(11, 21), axis=0, dtype="float64")
-B = np.reshape(Sop * np.ndarray.flatten(A), (11, 21))
+B = Sop * A
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle(

@@ -97,11 +97,8 @@ Cop = pylops.signalprocessing.Convolve2D(
     offset=(int(nh[0]) / 2, int(nh[1]) / 2),
     dtype="float32",
 )
-y = Cop * x.ravel()
-xinv = Cop / y
-
-y = y.reshape(nt, nx)
-xinv = xinv.reshape(nt, nx)
+y = Cop * x
+xinv = (Cop / y.ravel()).reshape(Cop.dims)
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 3))
 fig.suptitle("Convolve 2d data", fontsize=14, fontweight="bold", y=0.95)
@@ -145,11 +142,9 @@ offset = [1, 2, 1]
 Cop = pylops.signalprocessing.ConvolveND(
     dims=(ny, nx, nz), h=h, offset=offset, axes=(0, 1, 2), dtype="float32"
 )
-y = Cop * x.ravel()
-xinv = lsqr(Cop, y, damp=0, iter_lim=300, show=0)[0]
-
-y = y.reshape(ny, nx, nz)
-xlsqr = xinv.reshape(ny, nx, nz)
+y = Cop * x
+xlsqr = lsqr(Cop, y.ravel(), damp=0, iter_lim=300, show=0)[0]
+xlsqr = xlsqr.reshape(Cop.dims)
 
 fig, axs = plt.subplots(3, 3, figsize=(10, 12))
 fig.suptitle("Convolve 3d data", y=0.95, fontsize=14, fontweight="bold")

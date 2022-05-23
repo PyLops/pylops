@@ -26,10 +26,8 @@ x = np.arange(800).reshape(dims)
 # in this case to the inverse operator.
 Top = pylops.Transpose(dims=dims, axes=(1, 0))
 
-y = Top * x.ravel()
+y = Top * x
 xadj = Top.H * y
-y = y.reshape(Top.dimsd)
-xadj = xadj.reshape(Top.dims)
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 2))
 fig.suptitle("Transpose for 2d data", fontsize=14, fontweight="bold", y=1.15)

@@ -72,8 +72,7 @@ RLop = pylops.signalprocessing.Radon2D(
 )
 
 # Compute adjoint = Radon transform
-mlinwavR = RLop.H * mlinwav.ravel()
-mlinwavR = mlinwavR.reshape(npx, par["nt"])
+mlinwavR = RLop.H * mlinwav
 
 ############################################
 # Now, let's try to reimplement this operator from scratch using :py:class:`pylops.basicoperators.Spread`.
@@ -115,8 +114,7 @@ def create_radon_fh(xaxis, taxis, pxaxis):
 fRad = create_radon_fh(x, t, px)
 ROTFOp = pylops.Spread((npx, par["nt"]), (par["nx"], par["nt"]), fh=fRad)
 
-mlinwavROTF = ROTFOp.H * mlinwav.ravel()
-mlinwavROTF = mlinwavROTF.reshape(npx, par["nt"])
+mlinwavROTF = ROTFOp.H * mlinwav
 
 ############################################
 # Compare the results between the native Radon transform and the one using our
@@ -182,8 +180,7 @@ def create_table(npx, nt, nx):
 table = create_table(npx, par["nt"], par["nx"])
 RPCOp = pylops.Spread((npx, par["nt"]), (par["nx"], par["nt"]), table=table)
 
-mlinwavRPC = RPCOp.H * mlinwav.ravel()
-mlinwavRPC = mlinwavRPC.reshape(npx, par["nt"])
+mlinwavRPC = RPCOp.H * mlinwav
 
 
 ############################################

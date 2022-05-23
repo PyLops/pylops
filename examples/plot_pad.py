@@ -35,11 +35,8 @@ pad = ((1, 0), (3, 4))
 Pop = pylops.Pad(dims, pad)
 
 x = (np.arange(np.prod(np.array(dims))) + 1.0).reshape(dims)
-y = Pop * x.ravel()
+y = Pop * x
 xadj = Pop.H * y
-
-y = y.reshape(Pop.dimsd)
-xadj = xadj.reshape(dims)
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 2))
 fig.suptitle("Pad for 2d data", fontsize=14, fontweight="bold", y=1.15)
