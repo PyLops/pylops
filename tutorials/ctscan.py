@@ -38,8 +38,8 @@ np.random.seed(10)
 @jit(nopython=True)
 def radoncurve(x, r, theta):
     return (
-        (r - ny // 2) / (np.sin(np.deg2rad(theta)) + 1e-15)
-        + np.tan(np.deg2rad(90 - theta)) * x
+        (r - ny // 2) / (np.sin(theta) + 1e-15)
+        + np.tan(np.pi / 2.0 - theta) * x
         + ny // 2
     )
 
@@ -48,8 +48,8 @@ x = np.load("../testdata/optimization/shepp_logan_phantom.npy").T
 x = x / x.max()
 nx, ny = x.shape
 
-ntheta = 150
-theta = np.linspace(0.0, 180.0, ntheta, endpoint=False)
+ntheta = 151
+theta = np.linspace(0.0, np.pi, ntheta, endpoint=False)
 
 RLop = pylops.signalprocessing.Radon2D(
     np.arange(ny),
@@ -62,8 +62,7 @@ RLop = pylops.signalprocessing.Radon2D(
     dtype="float64",
 )
 
-y = RLop.H * x.ravel()
-y = y.reshape(ntheta, ny)
+y = RLop.H * x
 
 ###############################################################################
 # We can now first perform the adjoint, which in the medical imaging literature
@@ -72,8 +71,7 @@ y = y.reshape(ntheta, ny)
 # This is the first step of a common reconstruction technique, named filtered
 # back-projection, which simply applies a correction filter in the
 # frequency domain to the adjoint model.
-xrec = RLop * y.ravel()
-xrec = xrec.reshape(nx, ny)
+xrec = RLop * y
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 4))
 axs[0].imshow(x.T, vmin=0, vmax=1, cmap="gray")
