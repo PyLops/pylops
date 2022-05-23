@@ -25,6 +25,8 @@ Decorators
 .. autosummary::
    :toctree: generated/
 
+    add_ndarray_support_to_solver
+    disable_ndarray_multiplication
     reshaped
 
 Describe
