@@ -94,13 +94,8 @@ class SecondDerivative(LinearOperator):
         elif kind == "centered":
             self._matvec = self._matvec_centered
             self._rmatvec = self._rmatvec_centered
-        elif kind == "backward":
-            self._matvec = self._matvec_backward
-            self._rmatvec = self._rmatvec_backward
         else:
-            raise NotImplementedError(
-                "'kind' must be 'forward', 'centered', or 'backward'"
-            )
+            raise NotImplementedError("'kind' must be 'forward' or 'centered'")
 
     @reshaped(swapaxis=True)
     def _matvec_forward(self, x):
