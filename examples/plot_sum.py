@@ -21,9 +21,8 @@ x = (np.arange(ny * nx)).reshape(ny, nx)
 # We can now create the operator and peform forward and adjoint
 Sop = pylops.Sum(dims=(ny, nx), axis=0)
 
-y = Sop * x.ravel()
+y = Sop * x
 xadj = Sop.H * y
-xadj = xadj.reshape(ny, nx)
 
 gs = pltgs.GridSpec(1, 7)
 fig = plt.figure(figsize=(7, 3))

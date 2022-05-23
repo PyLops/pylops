@@ -45,62 +45,73 @@ RHop = pylops.signalprocessing.Radon2D(
 )
 
 # forward
-yL = RLop * x.ravel()
-yP = RPop * x.ravel()
-yH = RHop * x.ravel()
-yL = yL.reshape(nh, nt)
-yP = yP.reshape(nh, nt)
-yH = yH.reshape(nh, nt)
+yL = RLop * x
+yP = RPop * x
+yH = RHop * x
 
 # adjoint
-xadjL = RLop.H * yL.ravel()
-xadjP = RPop.H * yP.ravel()
-xadjH = RHop.H * yH.ravel()
-xadjL = xadjL.reshape(npx, nt)
-xadjP = xadjP.reshape(npx, nt)
-xadjH = xadjH.reshape(npx, nt)
+xadjL = RLop.H * yL
+xadjP = RPop.H * yP
+xadjH = RHop.H * yH
 
 ###############################################################################
 # Let's now visualize the input model in the Radon domain, the data, and
 # the adjoint model the different parametric curves.
 
-fig, axs = plt.subplots(2, 4, figsize=(10, 6))
-axs[0][0].imshow(
-    x.T, vmin=-1, vmax=1, cmap="seismic_r", extent=(px[0], px[-1], t[-1], t[0])
+fig, axs = plt.subplots(2, 4, figsize=(10, 6), sharey=True)
+axs[0, 0].axis("off")
+axs[1, 0].imshow(
+    x.T,
+    vmin=-1,
+    vmax=1,
+    cmap="seismic_r",
+    extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[0][0].set_title("Input model")
-axs[0][0].axis("tight")
-axs[0][1].imshow(
+axs[1, 0].set(xlabel=r"$p$ [s/km]", ylabel=r"$t$ [s]", title="Input model")
+axs[1, 0].axis("tight")
+axs[0, 1].imshow(
     yL.T, vmin=-1, vmax=1, cmap="seismic_r", extent=(h[0], h[-1], t[-1], t[0])
 )
-axs[0][1].set_title("Linear data")
-axs[0][1].axis("tight")
-axs[0][2].imshow(
+axs[0, 1].tick_params(labelleft=True)
+axs[0, 1].set(xlabel=r"$x$ [m]", ylabel=r"$t$ [s]", title="Linear data")
+axs[0, 1].axis("tight")
+axs[0, 2].imshow(
     yP.T, vmin=-1, vmax=1, cmap="seismic_r", extent=(h[0], h[-1], t[-1], t[0])
 )
-axs[0][2].set_title("Parabolic data")
-axs[0][2].axis("tight")
-axs[0][3].imshow(
+axs[0, 2].set(xlabel=r"$x$ [m]", title="Parabolic data")
+axs[0, 2].axis("tight")
+axs[0, 3].imshow(
     yH.T, vmin=-1, vmax=1, cmap="seismic_r", extent=(h[0], h[-1], t[-1], t[0])
 )
-axs[0][3].set_title("Hyperbolic data")
-axs[0][3].axis("tight")
-axs[1][1].imshow(
-    xadjL.T, vmin=-20, vmax=20, cmap="seismic_r", extent=(px[0], px[-1], t[-1], t[0])
+axs[0, 3].set(xlabel=r"$x$ [m]", title="Hyperbolic data")
+axs[0, 3].axis("tight")
+axs[1, 1].imshow(
+    xadjL.T,
+    vmin=-20,
+    vmax=20,
+    cmap="seismic_r",
+    extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1][0].axis("off")
-axs[1][1].set_title("Linear adjoint")
-axs[1][1].axis("tight")
-axs[1][2].imshow(
-    xadjP.T, vmin=-20, vmax=20, cmap="seismic_r", extent=(px[0], px[-1], t[-1], t[0])
+axs[1, 1].set(xlabel=r"$p$ [s/km]", title="Linear adjoint")
+axs[1, 1].axis("tight")
+axs[1, 2].imshow(
+    xadjP.T,
+    vmin=-20,
+    vmax=20,
+    cmap="seismic_r",
+    extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1][2].set_title("Parabolic adjoint")
-axs[1][2].axis("tight")
-axs[1][3].imshow(
-    xadjH.T, vmin=-20, vmax=20, cmap="seismic_r", extent=(px[0], px[-1], t[-1], t[0])
+axs[1, 2].set(xlabel=r"$p$ [s/km]", title="Parabolic adjoint")
+axs[1, 2].axis("tight")
+axs[1, 3].imshow(
+    xadjH.T,
+    vmin=-20,
+    vmax=20,
+    cmap="seismic_r",
+    extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1][3].set_title("Hyperbolic adjoint")
-axs[1][3].axis("tight")
+axs[1, 3].set(xlabel=r"$p$ [s/km]", title="Hyperbolic adjoint")
+axs[1, 3].axis("tight")
 fig.tight_layout()
 
 ###############################################################################
@@ -142,152 +153,156 @@ RHop = pylops.signalprocessing.Radon3D(
 )
 
 # forward
-yL = RLop * x.ravel()
-yP = RPop * x.ravel()
-yH = RHop * x.ravel()
+yL = RLop * x.reshape(npy * npx, nt)
+yP = RPop * x.reshape(npy * npx, nt)
+yH = RHop * x.reshape(npy * npx, nt)
+
+# adjoint
+xadjL = RLop.H * yL
+xadjP = RPop.H * yP
+xadjH = RHop.H * yH
+
+# reshape
 yL = yL.reshape(ny, nx, nt)
 yP = yP.reshape(ny, nx, nt)
 yH = yH.reshape(ny, nx, nt)
-
-# adjoint
-xadjL = RLop.H * yL.ravel()
-xadjP = RPop.H * yP.ravel()
-xadjH = RHop.H * yH.ravel()
 xadjL = xadjL.reshape(npy, npx, nt)
 xadjP = xadjP.reshape(npy, npx, nt)
 xadjH = xadjH.reshape(npy, npx, nt)
 
 # plotting
-fig, axs = plt.subplots(2, 4, figsize=(10, 6))
-axs[0][0].imshow(
+fig, axs = plt.subplots(2, 4, figsize=(10, 6), sharey=True)
+axs[1, 0].imshow(
     x[npy // 2].T,
     vmin=-1,
     vmax=1,
     cmap="seismic_r",
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[0][0].set_title("Input model")
-axs[0][0].axis("tight")
-axs[0][1].imshow(
+axs[1, 0].set(xlabel=r"$p_x$ [s/km]", ylabel=r"$t$ [s]", title="Input model")
+axs[1, 0].axis("tight")
+axs[0, 1].imshow(
     yL[ny // 2].T,
     vmin=-1,
     vmax=1,
     cmap="seismic_r",
     extent=(hx[0], hx[-1], t[-1], t[0]),
 )
-axs[0][1].set_title("Linear data")
-axs[0][1].axis("tight")
-axs[0][2].imshow(
+axs[0, 1].tick_params(labelleft=True)
+axs[0, 1].set(xlabel=r"$x$ [m]", ylabel=r"$t$ [s]", title="Linear data")
+axs[0, 1].axis("tight")
+axs[0, 2].imshow(
     yP[ny // 2].T,
     vmin=-1,
     vmax=1,
     cmap="seismic_r",
     extent=(hx[0], hx[-1], t[-1], t[0]),
 )
-axs[0][2].set_title("Parabolic data")
-axs[0][2].axis("tight")
-axs[0][3].imshow(
+axs[0, 2].set(xlabel=r"$x$ [m]", title="Parabolic data")
+axs[0, 2].axis("tight")
+axs[0, 3].imshow(
     yH[ny // 2].T,
     vmin=-1,
     vmax=1,
     cmap="seismic_r",
     extent=(hx[0], hx[-1], t[-1], t[0]),
 )
-axs[0][3].set_title("Hyperbolic data")
-axs[0][3].axis("tight")
-axs[1][1].imshow(
+axs[0, 3].set(xlabel=r"$x$ [m]", title="Hyperbolic data")
+axs[0, 3].axis("tight")
+axs[1, 1].imshow(
     xadjL[npy // 2].T,
     vmin=-100,
     vmax=100,
     cmap="seismic_r",
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1][0].axis("off")
-axs[1][1].set_title("Linear adjoint")
-axs[1][1].axis("tight")
-axs[1][2].imshow(
+axs[0, 0].axis("off")
+axs[1, 1].set(xlabel=r"$p_x$ [s/km]", title="Linear adjoint")
+axs[1, 1].axis("tight")
+axs[1, 2].imshow(
     xadjP[npy // 2].T,
     vmin=-100,
     vmax=100,
     cmap="seismic_r",
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1][2].set_title("Parabolic adjoint")
-axs[1][2].axis("tight")
-axs[1][3].imshow(
+axs[1, 2].set(xlabel=r"$p_x$ [s/km]", title="Parabolic adjoint")
+axs[1, 2].axis("tight")
+axs[1, 3].imshow(
     xadjH[npy // 2].T,
     vmin=-100,
     vmax=100,
     cmap="seismic_r",
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1][3].set_title("Hyperbolic adjoint")
-axs[1][3].axis("tight")
+axs[1, 3].set(xlabel=r"$p_x$ [s/km]", title="Hyperbolic adjoint")
+axs[1, 3].axis("tight")
 fig.tight_layout()
 
-fig, axs = plt.subplots(2, 4, figsize=(10, 6))
-axs[0][0].imshow(
+fig, axs = plt.subplots(2, 4, figsize=(10, 6), sharey=True)
+axs[1, 0].imshow(
     x[:, npx // 2 - 2].T,
     vmin=-1,
     vmax=1,
     cmap="seismic_r",
-    extent=(py[0], py[-1], t[-1], t[0]),
+    extent=(1e3 * py[0], 1e3 * py[-1], t[-1], t[0]),
 )
-axs[0][0].set_title("Input model")
-axs[0][0].axis("tight")
-axs[0][1].imshow(
+axs[1, 0].set(xlabel=r"$p_y$ [s/km]", ylabel=r"$t$ [s]", title="Input model")
+axs[1, 0].axis("tight")
+axs[0, 1].imshow(
     yL[:, nx // 2].T,
     vmin=-1,
     vmax=1,
     cmap="seismic_r",
     extent=(hy[0], hy[-1], t[-1], t[0]),
 )
-axs[0][1].set_title("Linear data")
-axs[0][1].axis("tight")
-axs[0][2].imshow(
+axs[0, 1].tick_params(labelleft=True)
+axs[0, 1].set(xlabel=r"$y$ [m]", ylabel=r"$t$ [s]", title="Linear data")
+axs[0, 1].axis("tight")
+axs[0, 2].imshow(
     yP[:, nx // 2].T,
     vmin=-1,
     vmax=1,
     cmap="seismic_r",
     extent=(hy[0], hy[-1], t[-1], t[0]),
 )
-axs[0][2].set_title("Parabolic data")
-axs[0][2].axis("tight")
-axs[0][3].imshow(
+axs[0, 2].set(xlabel=r"$y$ [m]", title="Parabolic data")
+axs[0, 2].axis("tight")
+axs[0, 3].imshow(
     yH[:, nx // 2].T,
     vmin=-1,
     vmax=1,
     cmap="seismic_r",
     extent=(hy[0], hy[-1], t[-1], t[0]),
 )
-axs[0][3].set_title("Hyperbolic data")
-axs[0][3].axis("tight")
-axs[1][1].imshow(
+axs[0, 3].set(xlabel=r"$y$ [m]", title="Hyperbolic data")
+axs[0, 3].axis("tight")
+axs[1, 1].imshow(
     xadjL[:, npx // 2 - 5].T,
     vmin=-100,
     vmax=100,
     cmap="seismic_r",
-    extent=(py[0], py[-1], t[-1], t[0]),
+    extent=(1e3 * py[0], 1e3 * py[-1], t[-1], t[0]),
 )
-axs[1][0].axis("off")
-axs[1][1].set_title("Linear adjoint")
-axs[1][1].axis("tight")
-axs[1][2].imshow(
+axs[0, 0].axis("off")
+axs[1, 1].set(xlabel=r"$p_y$ [s/km]", title="Linear adjoint")
+axs[1, 1].axis("tight")
+axs[1, 2].imshow(
     xadjP[:, npx // 2 - 2].T,
     vmin=-100,
     vmax=100,
     cmap="seismic_r",
-    extent=(py[0], py[-1], t[-1], t[0]),
+    extent=(1e3 * py[0], 1e3 * py[-1], t[-1], t[0]),
 )
-axs[1][2].set_title("Parabolic adjoint")
-axs[1][2].axis("tight")
-axs[1][3].imshow(
+axs[1, 2].set(xlabel=r"$p_y$ [s/km]", title="Parabolic adjoint")
+axs[1, 2].axis("tight")
+axs[1, 3].imshow(
     xadjH[:, npx // 2 - 2].T,
     vmin=-100,
     vmax=100,
     cmap="seismic_r",
-    extent=(py[0], py[-1], t[-1], t[0]),
+    extent=(1e3 * py[0], 1e3 * py[-1], t[-1], t[0]),
 )
-axs[1][3].set_title("Hyperbolic adjoint")
-axs[1][3].axis("tight")
+axs[1, 3].set(xlabel=r"$p_y$ [s/km]", title="Hyperbolic adjoint")
+axs[1, 3].axis("tight")
 fig.tight_layout()
