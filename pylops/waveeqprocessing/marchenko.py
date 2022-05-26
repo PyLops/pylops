@@ -1,5 +1,4 @@
 import logging
-import warnings
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -108,9 +107,6 @@ class Marchenko:
         domain of size :math:`[n_s \times n_r \times n_t (n_{f_\text{max}})]`. If
         provided in time, ``R`` should not be of complex type. Note that the
         reflection response should have already been multiplied by 2.
-    R1 : :obj:`bool`, optional
-        *Deprecated*, will be removed in v2.0.0. Simply kept for
-        back-compatibility with previous implementation
     dt : :obj:`float`, optional
         Sampling of time integration axis
     nt : :obj:`float`, optional
@@ -224,7 +220,6 @@ class Marchenko:
     def __init__(
         self,
         R,
-        R1=None,
         dt=0.004,
         nt=None,
         dr=1.0,
@@ -237,17 +232,6 @@ class Marchenko:
         prescaled=False,
         fftengine="numpy",
     ):
-        warnings.warn(
-            "A new implementation of Marchenko is provided in v1.5.0. "
-            "This currently affects only the inner working of the "
-            "operator, end-users can continue using the operator in "
-            "the same way. Nevertheless, R1 is not required anymore"
-            "even when R is provided in frequency domain. It is "
-            "recommended to start using the operator without the R1 "
-            "input as this behaviour will become default in "
-            "version v2.0.0 and R1 will be removed from the inputs.",
-            FutureWarning,
-        )
         # Save inputs into class
         self.dt = dt
         self.dr = dr
