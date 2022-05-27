@@ -74,15 +74,19 @@ Gwav2 = np.concatenate((np.zeros((par["ny"], par["nx"], par["nt"] - 1)), Gwav), 
 
 # Define MDC linear operator
 Gwav_fft = np.fft.rfft(Gwav2, 2 * par["nt"] - 1, axis=-1)
-Gwav_fft = Gwav_fft[..., : par["nfmax"]]
+Gwav_fft = (Gwav_fft[..., : par["nfmax"]]).transpose(2, 0, 1)
 
 MDCop = pylops.waveeqprocessing.MDC(
-    Gwav_fft, nt=2 * par["nt"] - 1, nv=1, dt=0.004, dr=1.0, dtype="float32"
+    Gwav_fft,
+    nt=2 * par["nt"] - 1,
+    nv=1,
+    dt=0.004,
+    dr=1.0,
 )
 
 # Create data
-d = MDCop * m.ravel()
-d = d.reshape(par["ny"], 2 * par["nt"] - 1)
+d = MDCop * m.T.ravel()
+d = d.reshape(2 * par["nt"] - 1, par["ny"]).T
 
 ###############################################################################
 # Let's display what we have so far: operator, input model, and data
@@ -154,7 +158,6 @@ minv, madj, psfinv, psfadj = pylops.waveeqprocessing.MDD(
     add_negative=True,
     adjoint=True,
     psf=True,
-    dtype="complex64",
     dottest=False,
     **dict(damp=1e-4, iter_lim=20, show=0)
 )
@@ -242,7 +245,6 @@ minvprec = pylops.waveeqprocessing.MDD(
     adjoint=False,
     psf=False,
     causality_precond=True,
-    dtype="complex64",
     dottest=False,
     **dict(damp=1e-4, iter_lim=50, show=0)
 )

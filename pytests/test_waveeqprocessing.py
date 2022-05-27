@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import assert_array_almost_equal
 
 from pylops.utils import dottest
 from pylops.utils.seismicevents import linear2d, linear3d, makeaxis
@@ -107,74 +107,7 @@ def test_MDC_1virtualsource(par):
     # Define MDC linear operator
     Gwav_fft = np.fft.fft(Gwav, par["nt2"], axis=-1)
     Gwav_fft = Gwav_fft[..., : par["nfmax"]]
-    MDCop = MDC(
-        Gwav_fft,
-        nt=par["nt2"],
-        nv=1,
-        dt=par["dt"],
-        dr=par["dx"],
-        fftengine="fftw",
-        twosided=par["twosided"],
-        dtype="float32",
-    )
-    dottest(MDCop, par["nt2"] * par["ny"], par["nt2"] * par["nx"])
-    # Create data
-    d = MDCop * mwav.ravel()
-    d = d.reshape(par["ny"], par["nt2"])
 
-    # Check that events are at correct time and correct amplitude
-    for it, amp in zip(it0_G, amp_G):
-        ittot = it0_m + it
-        if par["twosided"]:
-            ittot += par["nt"] - 1
-        assert (
-            np.abs(
-                d[par["ny"] // 2, ittot]
-                - np.abs(wav ** 2).sum()
-                * amp_m
-                * amp
-                * par["nx"]
-                * par["dx"]
-                * par["dt"]
-                * np.sqrt(par["nt2"])
-            )
-            < 1e-2
-        )
-
-    # Check that MDC with prescaled=True gives same result
-    MDCpreop = MDC(
-        np.sqrt(par["nt2"]) * par["dt"] * par["dx"] * Gwav_fft,
-        nt=par["nt2"],
-        nv=1,
-        dt=par["dt"],
-        dr=par["dx"],
-        fftengine="fftw",
-        twosided=par["twosided"],
-        prescaled=True,
-        dtype="float32",
-    )
-    dottest(MDCpreop, par["nt2"] * par["ny"], par["nt2"] * par["nx"])
-    dpre = MDCpreop * mwav.ravel()
-    dpre = dpre.reshape(par["ny"], par["nt2"])
-    assert_array_equal(d, dpre)
-
-    # Apply mdd function
-    minv = MDD(
-        Gwav[:, :, par["nt"] - 1 :] if par["twosided"] else Gwav,
-        d[:, par["nt"] - 1 :] if par["twosided"] else d,
-        dt=par["dt"],
-        dr=par["dx"],
-        nfmax=par["nfmax"],
-        twosided=par["twosided"],
-        adjoint=False,
-        psf=False,
-        dtype="complex64",
-        dottest=False,
-        **dict(damp=1e-10, iter_lim=50, show=0)
-    )
-    assert_array_almost_equal(mwav, minv, decimal=2)
-
-    # Same tests for future behaviour (remove tests above in v2.0.0)
     MDCop = MDC(
         Gwav_fft.transpose(2, 0, 1),
         nt=par["nt2"],
@@ -182,8 +115,6 @@ def test_MDC_1virtualsource(par):
         dt=par["dt"],
         dr=par["dx"],
         twosided=par["twosided"],
-        transpose=False,
-        dtype="float32",
     )
     dottest(MDCop, par["nt2"] * par["ny"], par["nt2"] * par["nx"])
     mwav = mwav.T
@@ -197,7 +128,7 @@ def test_MDC_1virtualsource(par):
         assert (
             np.abs(
                 d[ittot, par["ny"] // 2]
-                - np.abs(wav ** 2).sum()
+                - np.abs(wav**2).sum()
                 * amp_m
                 * amp
                 * par["nx"]
@@ -218,7 +149,6 @@ def test_MDC_1virtualsource(par):
         add_negative=True,
         adjoint=False,
         psf=False,
-        dtype="complex64",
         dottest=False,
         **dict(damp=1e-10, iter_lim=50, show=0)
     )
@@ -273,62 +203,12 @@ def test_MDC_Nvirtualsources(par):
     Gwav_fft = Gwav_fft[..., : par["nfmax"]]
 
     MDCop = MDC(
-        Gwav_fft,
-        nt=par["nt2"],
-        nv=par["nx"],
-        dt=par["dt"],
-        dr=par["dx"],
-        twosided=par["twosided"],
-        dtype="float32",
-    )
-    dottest(
-        MDCop, par["nt2"] * par["ny"] * par["nx"], par["nt2"] * par["nx"] * par["nx"]
-    )
-
-    # Create data
-    d = MDCop * mwav.ravel()
-    d = d.reshape(par["ny"], par["nx"], par["nt2"])
-
-    # Check that events are at correct time
-    for it, amp in zip(it0_G, amp_G):
-        ittot = it0_m + it
-        if par["twosided"]:
-            ittot += par["nt"] - 1
-        assert (
-            d[par["ny"] // 2, par["nx"] // 2, ittot]
-            > d[par["ny"] // 2, par["nx"] // 2, ittot - 1]
-        )
-        assert (
-            d[par["ny"] // 2, par["nx"] // 2, ittot]
-            > d[par["ny"] // 2, par["nx"] // 2, ittot + 1]
-        )
-
-    # Apply mdd function
-    minv = MDD(
-        Gwav[:, :, par["nt"] - 1 :] if par["twosided"] else Gwav,
-        d[:, :, par["nt"] - 1 :] if par["twosided"] else d,
-        dt=par["dt"],
-        dr=par["dx"],
-        nfmax=par["nfmax"],
-        twosided=par["twosided"],
-        adjoint=False,
-        psf=False,
-        dtype="complex64",
-        dottest=False,
-        **dict(damp=1e-10, iter_lim=50, show=0)
-    )
-    assert_array_almost_equal(mwav, minv, decimal=2)
-
-    # Same tests for future behaviour (remove tests above in v2.0.0)
-    MDCop = MDC(
         Gwav_fft.transpose(2, 0, 1),
         nt=par["nt2"],
         nv=par["nx"],
         dt=par["dt"],
         dr=par["dx"],
         twosided=par["twosided"],
-        transpose=False,
-        dtype="float32",
     )
     dottest(
         MDCop, par["nt2"] * par["ny"] * par["nx"], par["nt2"] * par["nx"] * par["nx"]
@@ -363,7 +243,6 @@ def test_MDC_Nvirtualsources(par):
         add_negative=True,
         adjoint=False,
         psf=False,
-        dtype="complex64",
         dottest=False,
         **dict(damp=1e-10, iter_lim=50, show=0)
     )

@@ -89,7 +89,6 @@ def test_Marchenko_freq(par):
         R1twosided_fft_sc = R1twosided_fft
     MarchenkoWM = Marchenko(
         Rtwosided_fft_sc,
-        R1=R1twosided_fft_sc,
         nt=nt,
         dt=dt,
         dr=dr,
@@ -147,7 +146,7 @@ def test_Marchenko_time_ana(par):
 
     _, _, g_inv_minus, g_inv_plus = MarchenkoWM.apply_onepoint(
         trav,
-        nfft=2 ** 11,
+        nfft=2**11,
         rtm=False,
         greens=True,
         dottest=True,
@@ -170,7 +169,7 @@ def test_Marchenko_timemulti_ana(par):
 
     _, _, g_inv_minus, g_inv_plus = MarchenkoWM.apply_multiplepoints(
         trav_multi,
-        nfft=2 ** 11,
+        nfft=2**11,
         rtm=False,
         greens=True,
         dottest=True,

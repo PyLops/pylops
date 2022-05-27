@@ -30,7 +30,7 @@ class Fredholm1(LinearOperator):
         Use :func:`numpy.matmul` (``True``) or for-loop with :func:`numpy.dot`
         (``False``). As it is not possible to define which approach is more
         performant (this is highly dependent on the size of ``G`` and input
-        arrays as well as the hardware used in the compution), we advise users
+        arrays as well as the hardware used in the computation), we advise users
         to time both methods for their specific problem prior to making a
         choice.
     dtype : :obj:`str`, optional

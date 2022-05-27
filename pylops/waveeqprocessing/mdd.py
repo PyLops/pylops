@@ -1,5 +1,4 @@
 import logging
-import warnings
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -25,9 +24,6 @@ def _MDC(
     dt=1.0,
     dr=1.0,
     twosided=True,
-    fast=None,
-    dtype=None,
-    transpose=True,
     saveGt=True,
     conj=False,
     prescaled=False,
@@ -36,39 +32,23 @@ def _MDC(
     _FFT=FFT,
     _Fredholm1=Fredholm1,
     args_Identity={},
-    args_Transpose={},
     args_FFT={},
     args_Identity1={},
-    args_Transpose1={},
     args_FFT1={},
     args_Fredholm1={},
 ):
     r"""Multi-dimensional convolution.
 
-    Used to be able to provide operators from different libraries to
+    Used to be able to provide operators from different libraries (e.g., pylops-distributed) to
     MDC. It operates in the same way as public method
-    (PoststackLinearModelling) but has additional input parameters allowing
+    (MDC) but has additional input parameters allowing
     passing a different operator and additional arguments to be passed to such
     operator.
 
     """
-    warnings.warn(
-        "A new implementation of MDC is provided in v1.5.0. This "
-        "currently affects only the inner working of the operator, "
-        "end-users can continue using the operator in the same way. "
-        "Nevertheless, it is now recommended to start using the "
-        "operator with transpose=True, as this behaviour will "
-        "become default in version v2.0.0 and the behaviour with "
-        "transpose=False will be deprecated.",
-        FutureWarning,
-    )
 
     if twosided and nt % 2 == 0:
         raise ValueError("nt must be odd number")
-
-    # transpose G
-    if transpose:
-        G = np.transpose(G, axes=(2, 0, 1))
 
     # find out dtype of G
     dtype = G[0, 0, 0].dtype
@@ -119,20 +99,8 @@ def _MDC(
     F1opH = F1op.H
     I1opH = I1op.H
 
-    # create transpose operator
-    if transpose:
-        dims = [nr, nt] if nv == 1 else [nr, nv, nt]
-        axes = (1, 0) if nv == 1 else (2, 0, 1)
-        Top = _Transpose(dims, axes, dtype=dtype, **args_Transpose)
-
-        dims = [nt, ns] if nv == 1 else [nt, ns, nv]
-        axes = (1, 0) if nv == 1 else (1, 2, 0)
-        TopH = _Transpose(dims, axes, dtype=dtype, **args_Transpose1)
-
     # create MDC operator
     MDCop = F1opH * I1opH * Frop * Iop * Fop
-    if transpose:
-        MDCop = TopH * MDCop * Top
 
     # force dtype to be real (as FFT operators assume real inputs and outputs)
     MDCop.dtype = rdtype
@@ -147,10 +115,7 @@ def MDC(
     dt=1.0,
     dr=1.0,
     twosided=True,
-    fast=None,
-    dtype=None,
     fftengine="numpy",
-    transpose=True,
     saveGt=True,
     conj=False,
     usematmul=False,
@@ -159,29 +124,17 @@ def MDC(
 ):
     r"""Multi-dimensional convolution.
 
-    Apply multi-dimensional convolution between two datasets. If
-    ``transpose=True``, model and data should be provided after flattening
-    2- or 3-dimensional arrays of size :math:`[n_r \;(\times n_{vs}) \times n_t]`
-    and :math:`[n_s \;(\times n_{vs}) \times n_t]` (or :math:`2n_t-1` for
-    ``twosided=True``), respectively. If ``transpose=False``, model and data
-    should be provided after flattening 2- or 3-dimensional arrays of size
-    :math:`[n_t \times n_r \;(\times n_{vs})]` and
+    Apply multi-dimensional convolution between two datasets.
+    Model and data should be provided after flattening 2- or 3-dimensional arrays
+    of size :math:`[n_t \times n_r \;(\times n_{vs})]` and
     :math:`[n_t \times n_s \;(\times n_{vs})]` (or :math:`2n_t-1` for
     ``twosided=True``), respectively.
-
-    .. warning:: A new implementation of MDC is provided in v1.5.0. This
-      currently affects only the inner working of the operator and end-users
-      can use the operator in the same way as they used to do with the previous
-      one. Nevertheless, it is now reccomended to use the operator with
-      ``transpose=False``, as this behaviour will become default in version
-      v2.0.0 and the behaviour with ``transpose=True`` will be deprecated.
 
     Parameters
     ----------
     G : :obj:`numpy.ndarray`
         Multi-dimensional convolution kernel in frequency domain of size
-        :math:`[n_s \times n_r \times n_{f_\text{max}}]` if ``transpose=True``
-        or size :math:`[n_{f_\text{max}} \times n_s \times n_r]` if ``transpose=False``
+        :math:`[n_{f_\text{max}} \times n_s \times n_r]`
     nt : :obj:`int`
         Number of samples along time axis for model and data (note that this
         must be equal to :math:`2n_t-1` when working with ``twosided=True``.
@@ -194,17 +147,8 @@ def MDC(
     twosided : :obj:`bool`, optional
         MDC operator has both negative and positive time (``True``) or
         only positive (``False``)
-    fast : :obj:`bool`, optional
-        *Deprecated*, will be removed in v2.0.0
-    dtype : :obj:`str`, optional
-        *Deprecated*, will be removed in v2.0.0
     fftengine : :obj:`str`, optional
         Engine used for fft computation (``numpy``, ``scipy`` or ``fftw``)
-    transpose : :obj:`bool`, optional
-        Transpose ``G`` and inputs such that time/frequency is placed in first
-        dimension. This allows back-compatibility with v1.4.0 and older but
-        will be removed in v2.0.0 where time/frequency axis will be required
-        to be in first dimension for efficiency reasons.
     saveGt : :obj:`bool`, optional
         Save ``G`` and ``G.H`` to speed up the computation of adjoint of
         :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
@@ -277,9 +221,6 @@ def MDC(
         dt=dt,
         dr=dr,
         twosided=twosided,
-        fast=fast,
-        dtype=dtype,
-        transpose=transpose,
         saveGt=saveGt,
         conj=conj,
         prescaled=prescaled,
@@ -301,7 +242,6 @@ def MDD(
     causality_precond=False,
     adjoint=False,
     psf=False,
-    dtype="float64",
     dottest=False,
     saveGt=True,
     add_negative=True,
@@ -354,8 +294,6 @@ def MDD(
         Compute and return adjoint(s)
     psf : :obj:`bool`, optional
         Compute and return Point Spread Function (PSF) and its inverse
-    dtype : :obj:`bool`, optional
-        Type of elements in input array.
     dottest : :obj:`bool`, optional
         Apply dot-test
     saveGt : :obj:`bool`, optional
@@ -465,7 +403,6 @@ def MDD(
         dt=dt,
         dr=dr,
         twosided=twosided,
-        transpose=False,
         saveGt=saveGt,
         fftengine=fftengine,
     )
@@ -477,7 +414,6 @@ def MDD(
             dt=dt,
             dr=dr,
             twosided=twosided,
-            transpose=False,
             saveGt=saveGt,
             fftengine=fftengine,
         )
