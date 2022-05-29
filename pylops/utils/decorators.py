@@ -95,12 +95,15 @@ def reshaped(func=None, forward=None, swapaxis=False):
     """
 
     def decorator(f):
-        forward = (
-            "rmat" not in f.__name__
-            and f.__name__ != "div"
-            and f.__name__ != "__truediv__"
-        )
-        inp_dims = "dims" if forward else "dimsd"
+        if forward is None:
+            fwd = (
+                "rmat" not in f.__name__
+                and f.__name__ != "div"
+                and f.__name__ != "__truediv__"
+            )
+        else:
+            fwd = forward
+        inp_dims = "dims" if fwd else "dimsd"
 
         @wraps(f)
         def wrapper(self, x):
