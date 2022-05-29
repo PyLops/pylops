@@ -3,6 +3,7 @@ import logging
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils.decorators import reshaped
 
 from ._ChirpRadon2D import _chirp_radon_2d
 
@@ -56,26 +57,23 @@ class ChirpRadon2D(LinearOperator):
     """
 
     def __init__(self, taxis, haxis, pmax, dtype="float64", name="C"):
+        dims = len(haxis), len(taxis)
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
+
+        self.nh, self.nt = self.dims
         self.dt = taxis[1] - taxis[0]
         self.dh = haxis[1] - haxis[0]
-        self.nt, self.nh = taxis.size, haxis.size
         self.pmax = pmax
 
-        self.shape = (self.nt * self.nh, self.nt * self.nh)
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
-
+    @reshaped
     def _matvec(self, x):
-        x = x.reshape(self.nh, self.nt)
-        y = _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="f")
-        return y.ravel()
+        return _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="f")
 
+    @reshaped
     def _rmatvec(self, x):
-        x = x.reshape(self.nh, self.nt)
-        y = _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="a")
-        return y.ravel()
+        return _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="a")
 
     def inverse(self, x):
-        x = x.reshape(self.nh, self.nt)
+        x = x.reshape(self.dimsd)
         y = _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="i")
         return y.ravel()

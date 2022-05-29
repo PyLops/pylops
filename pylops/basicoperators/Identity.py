@@ -81,10 +81,8 @@ class Identity(LinearOperator):
 
     def __init__(self, N, M=None, dtype="float64", inplace=True, name="I"):
         M = N if M is None else M
+        super().__init__(dtype=np.dtype(dtype), shape=(N, M), name=name)
         self.inplace = inplace
-        self.shape = (N, M)
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)

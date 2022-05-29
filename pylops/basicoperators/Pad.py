@@ -2,6 +2,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils.decorators import reshaped
 
 
 class Pad(LinearOperator):
@@ -65,35 +66,18 @@ class Pad(LinearOperator):
     def __init__(self, dims, pad, dtype="float64", name="P"):
         if np.any(np.array(pad) < 0):
             raise ValueError("Padding must be positive or zero")
-        self.reshape = False if isinstance(dims, int) else True
-        self.dims = _value_or_list_like_to_tuple(dims)
-        self.pad = pad
-        if self.reshape:
-            dimsd = [
-                dim + before + after
-                for dim, (before, after) in zip(self.dims, self.pad)
-            ]
-        else:
-            dimsd = [self.dims[0] + pad[0] + pad[1]]
-        self.dimsd = tuple(dimsd)
+        dims = _value_or_list_like_to_tuple(dims)
+        # Accept (padbeg, padend) and [(padbeg, padend)]
+        self.pad = [pad] if len(dims) == 1 and len(pad) == 2 else pad
+        dimsd = [dim + before + after for dim, (before, after) in zip(dims, self.pad)]
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
-
+    @reshaped
     def _matvec(self, x):
-        if self.reshape:
-            y = x.reshape(self.dims)
-            y = np.pad(y, self.pad, mode="constant")
-        else:
-            y = np.pad(x, self.pad, mode="constant")
-        return y.ravel()
+        return np.pad(x, self.pad, mode="constant")
 
+    @reshaped
     def _rmatvec(self, x):
-        if self.reshape:
-            y = x.reshape(self.dimsd)
-            for ax, (before, _) in enumerate(self.pad):
-                y = np.take(y, np.arange(before, before + self.dims[ax]), axis=ax)
-        else:
-            y = x[self.pad[0] : self.pad[0] + self.dims[0]]
-        return y.ravel()
+        for ax, (before, _) in enumerate(self.pad):
+            x = np.take(x, np.arange(before, before + self.dims[ax]), axis=ax)
+        return x

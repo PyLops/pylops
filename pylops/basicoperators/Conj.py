@@ -2,7 +2,6 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
-from pylops.utils.backend import get_array_module
 
 
 class Conj(LinearOperator):
@@ -46,16 +45,13 @@ class Conj(LinearOperator):
     """
 
     def __init__(self, dims, dtype="complex128", name="C"):
-        self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
-
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=False, name=name)
+        dims = _value_or_list_like_to_tuple(dims)
+        super().__init__(
+            dtype=np.dtype(dtype), dims=dims, dimsd=dims, clinear=False, name=name
+        )
 
     def _matvec(self, x):
-        ncp = get_array_module(x)
-        return ncp.conj(x)
+        return x.conj()
 
     def _rmatvec(self, x):
-        ncp = get_array_module(x)
-        return ncp.conj(x)
+        return x.conj()

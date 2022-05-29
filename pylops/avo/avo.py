@@ -4,7 +4,9 @@ import numpy as np
 from numpy import cos, sin, tan
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module
+from pylops.utils.decorators import reshaped
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -271,18 +273,18 @@ def approx_zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     a = rho0 * (1 - 2 * np.sin(phi0) ** 2.0) - rho1 * (1 - 2 * np.sin(phi1) ** 2.0)
     b = rho0 * (1 - 2 * np.sin(phi0) ** 2.0) + 2 * rho1 * np.sin(phi1) ** 2.0
     c = rho1 * (1 - 2 * np.sin(phi1) ** 2.0) + 2 * rho0 * np.sin(phi0) ** 2.0
-    d = 2 * (rho0 * vs0 ** 2 - rho1 * vs1 ** 2)
+    d = 2 * (rho0 * vs0**2 - rho1 * vs1**2)
 
     E = (b * np.cos(theta1) / vp1) + (c * np.cos(theta0) / vp0)
     F = (b * np.cos(phi1) / vs1) + (c * np.cos(phi0) / vs0)
     G = a - d * np.cos(theta1) / vp1 * np.cos(phi0) / vs0
     H = a - d * np.cos(theta0) / vp0 * np.cos(phi1) / vs1
 
-    D = E * F + G * H * p ** 2
+    D = E * F + G * H * p**2
 
     rpp = (1 / D) * (
         F * (b * (ncp.cos(theta1) / vp1) - c * (ncp.cos(theta0) / vp0))
-        - H * p ** 2 * (a + d * (ncp.cos(theta1) / vp1) * (ncp.cos(phi0) / vs0))
+        - H * p**2 * (a + d * (ncp.cos(theta1) / vp1) * (ncp.cos(phi0) / vs0))
     )
 
     return rpp
@@ -352,8 +354,8 @@ def akirichards(theta, vsvp, n=1):
     vsvp = vsvp[:, np.newaxis].T if vsvp.size > 1 else vsvp
 
     G1 = 1.0 / (2.0 * cos(theta) ** 2) + 0 * vsvp
-    G2 = -4.0 * vsvp ** 2 * np.sin(theta) ** 2
-    G3 = 0.5 - 2.0 * vsvp ** 2 * sin(theta) ** 2
+    G2 = -4.0 * vsvp**2 * np.sin(theta) ** 2
+    G3 = 0.5 - 2.0 * vsvp**2 * sin(theta) ** 2
 
     return G1, G2, G3
 
@@ -424,8 +426,8 @@ def fatti(theta, vsvp, n=1):
     vsvp = vsvp[:, np.newaxis].T if vsvp.size > 1 else vsvp
 
     G1 = 0.5 * (1 + np.tan(theta) ** 2) + 0 * vsvp
-    G2 = -4 * vsvp ** 2 * np.sin(theta) ** 2
-    G3 = 0.5 * (4 * vsvp ** 2 * np.sin(theta) ** 2 - tan(theta) ** 2)
+    G2 = -4 * vsvp**2 * np.sin(theta) ** 2
+    G3 = 0.5 * (4 * vsvp**2 * np.sin(theta) ** 2 - tan(theta) ** 2)
 
     return G1, G2, G3
 
@@ -588,12 +590,9 @@ class AVOLinearModelling(LinearOperator):
 
         self.nt0 = nt0 if not isinstance(vsvp, self.ncp.ndarray) else len(vsvp)
         self.ntheta = len(theta)
-        if spatdims is None:
-            self.spatdims = ()
-            nspatdims = 1
-        else:
-            self.spatdims = spatdims if isinstance(spatdims, tuple) else (spatdims,)
-            nspatdims = np.prod(spatdims)
+        self.spatdims = (
+            () if spatdims is None else _value_or_list_like_to_tuple(spatdims)
+        )
 
         # Compute AVO coefficients
         if linearization == "akirich":
@@ -607,43 +606,23 @@ class AVOLinearModelling(LinearOperator):
             raise NotImplementedError(
                 "%s not an available linearization..." % linearization
             )
+        self.npars = len(Gs)
+        dims = (self.nt0, self.npars)
+        dimsd = (self.nt0, self.ntheta)
+        if spatdims is not None:
+            dims += self.spatdims
+            dimsd += self.spatdims
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
         self.G = self.ncp.concatenate([gs.T[:, self.ncp.newaxis] for gs in Gs], axis=1)
         # add dimensions to G to account for horizonal axes
         for _ in range(len(self.spatdims)):
             self.G = self.G[..., np.newaxis]
-        self.npars = len(Gs)
-        self.shape = (
-            self.nt0 * self.ntheta * nspatdims,
-            self.nt0 * self.npars * nspatdims,
-        )
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
 
+    @reshaped
     def _matvec(self, x):
-        if self.spatdims is None:
-            x = x.reshape(self.nt0, self.npars)
-        else:
-            x = x.reshape(
-                (
-                    self.nt0,
-                    self.npars,
-                )
-                + self.spatdims
-            )
-        y = self.ncp.sum(self.G * x[:, :, self.ncp.newaxis], axis=1)
-        return y.ravel()
+        return self.ncp.sum(self.G * x[:, :, self.ncp.newaxis], axis=1)
 
+    @reshaped
     def _rmatvec(self, x):
-        if self.spatdims is None:
-            x = x.reshape(self.nt0, self.ntheta)
-        else:
-            x = x.reshape(
-                (
-                    self.nt0,
-                    self.ntheta,
-                )
-                + self.spatdims
-            )
-        y = self.ncp.sum(self.G * x[:, self.ncp.newaxis], axis=2)
-        return y.ravel()
+        return self.ncp.sum(self.G * x[:, self.ncp.newaxis], axis=2)

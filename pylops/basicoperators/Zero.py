@@ -50,9 +50,7 @@ class Zero(LinearOperator):
 
     def __init__(self, N, M=None, dtype="float64", name="Z"):
         M = N if M is None else M
-        self.shape = (N, M)
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
+        super().__init__(dtype=np.dtype(dtype), shape=(N, M), name=name)
 
     def _matvec(self, x):
         ncp = get_array_module(x)

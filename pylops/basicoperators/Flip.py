@@ -2,6 +2,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils.decorators import reshaped
 
 
 class Flip(LinearOperator):
@@ -48,17 +49,13 @@ class Flip(LinearOperator):
     """
 
     def __init__(self, dims, axis=-1, dtype="float64", name="F"):
-        self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_list_like_to_tuple(dims)
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
         self.axis = axis
 
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
-
+    @reshaped(swapaxis=True)
     def _matvec(self, x):
-        x = np.reshape(x, self.dims)
-        y = np.flip(x, axis=self.axis)
-        y = y.ravel()
+        y = np.flip(x, axis=-1)
         return y
 
     def _rmatvec(self, x):

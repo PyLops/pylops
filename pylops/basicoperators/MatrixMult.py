@@ -56,30 +56,28 @@ class MatrixMult(LinearOperator):
         else:
             self.complex = np.iscomplexobj(A.data)
         if otherdims is None:
-            self.dims, self.dimsd = (A.shape[1],), (A.shape[0],)
+            dims, dimsd = (A.shape[1],), (A.shape[0],)
             self.reshape = False
-            self.shape = A.shape
             explicit = True
         else:
             otherdims = _value_or_list_like_to_array(otherdims)
             self.otherdims = np.array(otherdims, dtype=int)
-            self.dims, self.dimsd = np.insert(
-                self.otherdims, 0, self.A.shape[1]
-            ), np.insert(self.otherdims, 0, self.A.shape[0])
+            dims, dimsd = np.insert(self.otherdims, 0, self.A.shape[1]), np.insert(
+                self.otherdims, 0, self.A.shape[0]
+            )
             self.dimsflatten, self.dimsdflatten = np.insert(
                 [np.prod(self.otherdims)], 0, self.A.shape[1]
             ), np.insert([np.prod(self.otherdims)], 0, self.A.shape[0])
             self.reshape = True
-            self.shape = (np.prod(self.dimsd), np.prod(self.dims))
             explicit = False
-        self.dtype = np.dtype(dtype)
+
         # Check dtype for correctness (upcast to complex when A is complex)
-        if np.iscomplexobj(A) and not np.iscomplexobj(np.ones(1, dtype=self.dtype)):
-            self.dtype = A.dtype
-            logging.warning(
-                "Matrix A is a complex object, dtype cast to %s" % self.dtype
-            )
-        super().__init__(explicit=explicit, clinear=True, name=name)
+        if np.iscomplexobj(A) and not np.iscomplexobj(np.ones(1, dtype=dtype)):
+            dtype = A.dtype
+            logging.warning("Matrix A is a complex object, dtype cast to %s" % dtype)
+        super().__init__(
+            dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, explicit=explicit, name=name
+        )
 
     def _matvec(self, x):
         ncp = get_array_module(x)

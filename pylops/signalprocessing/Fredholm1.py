@@ -2,6 +2,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
+from pylops.utils.decorators import reshaped
 
 
 class Fredholm1(LinearOperator):
@@ -86,17 +87,19 @@ class Fredholm1(LinearOperator):
     def __init__(self, G, nz=1, saveGt=True, usematmul=True, dtype="float64", name="F"):
         self.nz = nz
         self.nsl, self.nx, self.ny = G.shape
+        dims = (self.nsl, self.ny, self.nz)
+        dimsd = (self.nsl, self.nx, self.nz)
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+
         self.G = G
         if saveGt:
             self.GT = G.transpose((0, 2, 1)).conj()
         self.usematmul = usematmul
-        self.shape = (self.nsl * self.nx * self.nz, self.nsl * self.ny * self.nz)
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
 
+    @reshaped
     def _matvec(self, x):
         ncp = get_array_module(x)
-        x = ncp.squeeze(x.reshape(self.nsl, self.ny, self.nz))
+        x = x.squeeze()
         if self.usematmul:
             if self.nz == 1:
                 x = x[..., ncp.newaxis]
@@ -105,11 +108,12 @@ class Fredholm1(LinearOperator):
             y = ncp.squeeze(ncp.zeros((self.nsl, self.nx, self.nz), dtype=self.dtype))
             for isl in range(self.nsl):
                 y[isl] = ncp.dot(self.G[isl], x[isl])
-        return y.ravel()
+        return y
 
+    @reshaped
     def _rmatvec(self, x):
         ncp = get_array_module(x)
-        x = ncp.squeeze(x.reshape(self.nsl, self.nx, self.nz))
+        x = x.squeeze()
         if self.usematmul:
             if self.nz == 1:
                 x = x[..., ncp.newaxis]

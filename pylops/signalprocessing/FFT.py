@@ -5,6 +5,7 @@ import numpy as np
 import scipy.fft
 
 from pylops.signalprocessing._BaseFFTs import _BaseFFT, _FFTNorms
+from pylops.utils.decorators import reshaped
 
 try:
     import pyfftw
@@ -61,8 +62,8 @@ class _FFT_numpy(_BaseFFT):
         elif self.norm is _FFTNorms.ONE_OVER_N:
             self._scale = 1.0 / self.nfft
 
+    @reshaped
     def _matvec(self, x):
-        x = np.reshape(x, self.dims)
         if self.ifftshift_before:
             x = np.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
@@ -79,12 +80,11 @@ class _FFT_numpy(_BaseFFT):
             y *= self._scale
         if self.fftshift_after:
             y = np.fft.fftshift(y, axes=self.axis)
-        y = y.ravel()
         y = y.astype(self.cdtype)
         return y
 
+    @reshaped
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dimsd)
         if self.fftshift_after:
             x = np.fft.ifftshift(x, axes=self.axis)
         if self.real:
@@ -108,7 +108,6 @@ class _FFT_numpy(_BaseFFT):
             y = np.real(y)
         if self.ifftshift_before:
             y = np.fft.fftshift(y, axes=self.axis)
-        y = y.ravel()
         y = y.astype(self.rdtype)
         return y
 
@@ -153,8 +152,8 @@ class _FFT_scipy(_BaseFFT):
         elif self.norm is _FFTNorms.ONE_OVER_N:
             self._scale = 1.0 / self.nfft
 
+    @reshaped
     def _matvec(self, x):
-        x = np.reshape(x, self.dims)
         if self.ifftshift_before:
             x = scipy.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
@@ -171,11 +170,10 @@ class _FFT_scipy(_BaseFFT):
             y *= self._scale
         if self.fftshift_after:
             y = scipy.fft.fftshift(y, axes=self.axis)
-        y = y.ravel()
         return y
 
+    @reshaped
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dimsd)
         if self.fftshift_after:
             x = scipy.fft.ifftshift(x, axes=self.axis)
         if self.real:
@@ -199,7 +197,6 @@ class _FFT_scipy(_BaseFFT):
             y = np.real(y)
         if self.ifftshift_before:
             y = scipy.fft.fftshift(y, axes=self.axis)
-        y = y.ravel()
         return y
 
     def __truediv__(self, y):
@@ -299,8 +296,8 @@ class _FFT_fftw(_BaseFFT):
             self.y, self.x, axes=(self.axis,), direction="FFTW_BACKWARD", **kwargs_fftw
         )
 
+    @reshaped
     def _matvec(self, x):
-        x = np.reshape(x, self.dims)
         if self.ifftshift_before:
             x = np.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
@@ -325,10 +322,10 @@ class _FFT_fftw(_BaseFFT):
             y = np.swapaxes(y, self.axis, -1)
         if self.fftshift_after:
             y = np.fft.fftshift(y, axes=self.axis)
-        return y.ravel()
+        return y
 
+    @reshaped
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dimsd)
         if self.fftshift_after:
             x = np.fft.ifftshift(x, axes=self.axis)
 
@@ -361,7 +358,7 @@ class _FFT_fftw(_BaseFFT):
             y = np.fft.fftshift(y, axes=self.axis)
         if not self.clinear:
             y = np.real(y)
-        return y.ravel()
+        return y
 
     def __truediv__(self, y):
         if self.norm is _FFTNorms.ORTHO:

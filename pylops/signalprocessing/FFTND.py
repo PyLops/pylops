@@ -5,6 +5,7 @@ import numpy as np
 import scipy.fft
 
 from pylops.signalprocessing._BaseFFTs import _BaseFFTND, _FFTNorms
+from pylops.utils.decorators import reshaped
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -48,8 +49,8 @@ class _FFTND_numpy(_BaseFFTND):
         elif self.norm is _FFTNorms.ONE_OVER_N:
             self._scale = 1.0 / np.prod(self.nffts)
 
+    @reshaped
     def _matvec(self, x):
-        x = np.reshape(x, self.dims)
         if self.ifftshift_before.any():
             x = np.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
@@ -67,10 +68,10 @@ class _FFTND_numpy(_BaseFFTND):
         y = y.astype(self.cdtype)
         if self.fftshift_after.any():
             y = np.fft.fftshift(y, axes=self.axes[self.fftshift_after])
-        return y.ravel()
+        return y
 
+    @reshaped
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dimsd)
         if self.fftshift_after.any():
             x = np.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
@@ -94,7 +95,7 @@ class _FFTND_numpy(_BaseFFTND):
         y = y.astype(self.rdtype)
         if self.ifftshift_before.any():
             y = np.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
-        return y.ravel()
+        return y
 
     def __truediv__(self, y):
         if self.norm is not _FFTNorms.ORTHO:
@@ -137,8 +138,8 @@ class _FFTND_scipy(_BaseFFTND):
         elif self.norm is _FFTNorms.ONE_OVER_N:
             self._scale = 1.0 / np.prod(self.nffts)
 
+    @reshaped
     def _matvec(self, x):
-        x = np.reshape(x, self.dims)
         if self.ifftshift_before.any():
             x = scipy.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
@@ -155,10 +156,10 @@ class _FFTND_scipy(_BaseFFTND):
             y *= self._scale
         if self.fftshift_after.any():
             y = scipy.fft.fftshift(y, axes=self.axes[self.fftshift_after])
-        return y.ravel()
+        return y
 
+    @reshaped
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dimsd)
         if self.fftshift_after.any():
             x = scipy.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
@@ -181,7 +182,7 @@ class _FFTND_scipy(_BaseFFTND):
             y = np.real(y)
         if self.ifftshift_before.any():
             y = scipy.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
-        return y.ravel()
+        return y
 
     def __truediv__(self, y):
         if self.norm is not _FFTNorms.ORTHO:

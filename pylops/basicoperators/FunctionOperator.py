@@ -65,32 +65,31 @@ class FunctionOperator(LinearOperator):
     """
 
     def __init__(self, f, *args, **kwargs):
-        try:
-            self.dtype = kwargs["dtype"]
-        except KeyError:
-            self.dtype = "float64"
-        super().__init__(explicit=False, clinear=True, name=kwargs.get("name", "F"))
-        super().__init__()
-
-        self.f = f
-
         # call is FunctionOperator(f, n)
         if len(args) == 1:
-            self.shape = (args[0], args[0])
-            self.fc = None
+            shape = (args[0], args[0])
+            fc = None
         elif len(args) == 2:
             # call is FunctionOperator(f, n, m)
             if isinstance(args[0], Integral):
-                self.shape = (args[0], args[1])
-                self.fc = None
+                shape = (args[0], args[1])
+                fc = None
             # call is FunctionOperator(f, fc, n)
             else:
-                self.fc = args[0]
-                self.shape = (args[1], args[1])
+                fc = args[0]
+                shape = (args[1], args[1])
         # call is FunctionOperator(f, fc, n, m)
         elif len(args) == 3:
-            self.fc = args[0]
-            self.shape = args[1:3]
+            fc = args[0]
+            shape = args[1:3]
+
+        super().__init__(
+            dtype=kwargs.get("dtype", "float64"),
+            shape=shape,
+            name=kwargs.get("name", "F"),
+        )
+        self.f = f
+        self.fc = fc
 
     def _matvec(self, x):
         return self.f(x)
@@ -98,5 +97,4 @@ class FunctionOperator(LinearOperator):
     def _rmatvec(self, x):
         if self.fc is None:
             raise NotImplementedError("Adjoint not implemented")
-        else:
-            return self.fc(x)
+        return self.fc(x)

@@ -2,6 +2,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils.decorators import reshaped
 
 
 class Roll(LinearOperator):
@@ -44,20 +45,15 @@ class Roll(LinearOperator):
     """
 
     def __init__(self, dims, axis=-1, shift=1, dtype="float64", name="R"):
-        self.dims = self.dimsd = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_list_like_to_tuple(dims)
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
         self.axis = axis
         self.shift = shift
 
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
-
+    @reshaped(swapaxis=True)
     def _matvec(self, x):
-        x = np.reshape(x, self.dims)
-        y = np.roll(x, shift=self.shift, axis=self.axis)
-        return y.ravel()
+        return np.roll(x, shift=self.shift, axis=-1)
 
+    @reshaped(swapaxis=True)
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dims)
-        y = np.roll(x, shift=-self.shift, axis=self.axis)
-        return y.ravel()
+        return np.roll(x, shift=-self.shift, axis=-1)

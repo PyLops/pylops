@@ -2,6 +2,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils.decorators import reshaped
 
 
 class CausalIntegration(LinearOperator):
@@ -100,25 +101,19 @@ class CausalIntegration(LinearOperator):
         removefirst=False,
         name="C",
     ):
-        self.dims = _value_or_list_like_to_tuple(dims)
         self.axis = axis
         self.sampling = sampling
-        self.kind = kind
-        if kind == "full" and halfcurrent:  # ensure backcompatibility
-            self.kind = "half"
+        # backwards compatible
+        self.kind = "half" if kind == "full" and halfcurrent else kind
         self.removefirst = removefirst
-        dimsd = list(self.dims)
+        dims = _value_or_list_like_to_tuple(dims)
+        dimsd = list(dims)
         if self.removefirst:
             dimsd[self.axis] -= 1
-        self.dimsd = tuple(dimsd)
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
-        self.shape = (np.prod(self.dimsd), np.prod(self.dims))
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
-
+    @reshaped(swapaxis=True)
     def _matvec(self, x):
-        x = np.reshape(x, self.dims)
-        x = np.swapaxes(x, self.axis, -1)
         y = self.sampling * np.cumsum(x, axis=-1)
         if self.kind in ("half", "trapezoidal"):
             y -= self.sampling * x / 2.0
@@ -126,14 +121,12 @@ class CausalIntegration(LinearOperator):
             y[..., 1:] -= self.sampling * x[..., 0:1] / 2.0
         if self.removefirst:
             y = y[..., 1:]
-        y = np.swapaxes(y, -1, self.axis)
-        return y.ravel()
+        return y
 
+    @reshaped(swapaxis=True)
     def _rmatvec(self, x):
-        x = np.reshape(x, self.dimsd)
         if self.removefirst:
-            x = np.insert(x, 0, 0, axis=self.axis)
-        x = np.swapaxes(x, self.axis, -1)
+            x = np.insert(x, 0, 0, axis=-1)
         xflip = np.flip(x, axis=-1)
         if self.kind == "half":
             y = self.sampling * (np.cumsum(xflip, axis=-1) - xflip / 2.0)
@@ -143,5 +136,4 @@ class CausalIntegration(LinearOperator):
         else:
             y = self.sampling * np.cumsum(xflip, axis=-1)
         y = np.flip(y, axis=-1)
-        y = np.swapaxes(y, -1, self.axis)
-        return y.ravel()
+        return y

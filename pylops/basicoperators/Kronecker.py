@@ -64,12 +64,11 @@ class Kronecker(LinearOperator):
         self.Op2 = Op2
         self.Op1H = self.Op1.H
         self.Op2H = self.Op2.H
-        self.shape = (
+        shape = (
             self.Op1.shape[0] * self.Op2.shape[0],
             self.Op1.shape[1] * self.Op2.shape[1],
         )
-        self.dtype = np.dtype(dtype)
-        super().__init__(explicit=False, clinear=True, name=name)
+        super().__init__(dtype=np.dtype(dtype), shape=shape, name=name)
 
     def _matvec(self, x):
         x = x.reshape(self.Op1.shape[1], self.Op2.shape[1])
