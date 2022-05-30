@@ -21,8 +21,11 @@ A list of operators present in pylops.signalprocessing:
     Seislet                         Two dimensional Seislet operator.
     Radon2D	                        Two dimensional Radon transform.
     Radon3D	                        Three dimensional Radon transform.
+    Sliding1D                       1D Sliding transform operator.
     Sliding2D                       2D Sliding transform operator.
     Sliding3D                       3D Sliding transform operator.
+    Patch2D                         2D Patching transform operator.
+    Patch3D                         3D Patching transform operator.
     Fredholm1                       Fredholm integral of first kind.
 
 """
@@ -44,6 +47,7 @@ from .Sliding1D import *
 from .Sliding2D import *
 from .Sliding3D import *
 from .Patch2D import *
+from .Patch3D import *
 from .Fredholm1 import *
 from .DWT import *
 from .DWT2D import *
@@ -67,6 +71,7 @@ __all__ = [
     "Sliding2D",
     "Sliding3D",
     "Patch2D",
+    "Patch3D",
     "Fredholm1",
     "DWT",
     "DWT2D",
