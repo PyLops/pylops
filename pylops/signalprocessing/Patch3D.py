@@ -152,8 +152,8 @@ def Patch3D(
         taprighttop = tap.copy()
         taprighttop[:, -nover[1] :] = tap[:, nwin[1] // 2][:, np.newaxis, :]
         taprighttop[: nover[0]] = taprighttop[nwin[0] // 2]
-        for itap in range(nwins2 * (nwins1 - 1), nwins2 * nwins1):
-            taps[itap] = taprighttop
+        for itap in range(nwins2):
+            taps[nwins2 * (nwins1 - 1) + itap] = taprighttop
         # topfrontmost tapers
         tapfronttop = tap.copy()
         tapfronttop[:, :, : nover[2]] = tap[:, :, nwin[2] // 2][:, :, np.newaxis]
@@ -166,15 +166,132 @@ def Patch3D(
         tapbacktop[: nover[0]] = tapbacktop[nwin[0] // 2]
         for itap in range(nwins2 - 1, nwins1 * nwins2, nwins2):
             taps[itap] = tapbacktop
-        """
+        # bottomleftmost tapers
+        tapleftbottom = tap.copy()
+        tapleftbottom[:, : nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis, :]
+        tapleftbottom[-nover[0] :] = tapleftbottom[nwin[0] // 2]
+        for itap in range(nwins2):
+            taps[(nwins0 - 1) * nwins1 * nwins2 + itap] = tapleftbottom
+        # bottomrightmost tapers
+        taprightbottom = tap.copy()
+        taprightbottom[:, -nover[1] :] = tap[:, nwin[1] // 2][:, np.newaxis, :]
+        taprightbottom[-nover[0] :] = taprightbottom[nwin[0] // 2]
+        for itap in range(nwins2):
+            taps[
+                (nwins0 - 1) * nwins1 * nwins2 + (nwins1 - 1) * nwins2 + itap
+            ] = taprightbottom
+        # bottomfrontmost tapers
+        tapfrontbottom = tap.copy()
+        tapfrontbottom[:, :, : nover[2]] = tap[:, :, nwin[2] // 2][:, :, np.newaxis]
+        tapfrontbottom[-nover[0] :] = tapfrontbottom[nwin[0] // 2]
+        for itap in range(0, nwins1 * nwins2, nwins2):
+            taps[(nwins0 - 1) * nwins1 * nwins2 + itap] = tapfrontbottom
+        # bottombackmost tapers
+        tapbackbottom = tap.copy()
+        tapbackbottom[:, :, -nover[2] :] = tap[:, :, nwin[2] // 2][:, :, np.newaxis]
+        tapbackbottom[-nover[0] :] = tapbackbottom[nwin[0] // 2]
+        for itap in range(0, nwins1 * nwins2, nwins2):
+            taps[(nwins0 - 1) * nwins1 * nwins2 + nwins2 + itap - 1] = tapbackbottom
+        # leftfrontmost tapers
+        tapleftfront = tap.copy()
+        tapleftfront[:, : nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis, :]
+        tapleftfront[:, :, : nover[2]] = tapleftfront[:, :, nwin[2] // 2][
+            :, :, np.newaxis
+        ]
+        for itap in range(0, nwins, nwins1 * nwins2):
+            taps[itap] = tapleftfront
+        # rightfrontmost tapers
+        taprightfront = tap.copy()
+        taprightfront[:, -nover[1] :] = tap[:, nwin[1] // 2][:, np.newaxis, :]
+        taprightfront[:, :, : nover[2]] = taprightfront[:, :, nwin[2] // 2][
+            :, :, np.newaxis
+        ]
+        for itap in range(0, nwins, nwins1 * nwins2):
+            taps[(nwins1 - 1) * nwins2 + itap] = taprightfront
+        # leftbackmost tapers
+        tapleftback = tap.copy()
+        tapleftback[:, : nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis, :]
+        tapleftback[:, :, -nover[2] :] = tapleftback[:, :, nwin[2] // 2][
+            :, :, np.newaxis
+        ]
+        for itap in range(0, nwins, nwins1 * nwins2):
+            taps[nwins2 + itap - 1] = tapleftback
+        # rightbackmost tapers
+        taprightback = tap.copy()
+        taprightback[:, -nover[1] :] = tap[:, nwin[1] // 2][:, np.newaxis, :]
+        taprightback[:, :, -nover[2] :] = taprightback[:, :, nwin[2] // 2][
+            :, :, np.newaxis
+        ]
+        for itap in range(0, nwins, nwins1 * nwins2):
+            taps[(nwins1 - 1) * nwins2 + nwins2 + itap - 1] = taprightback
         ## corners
-        # lefttopcorner taper
+        # lefttopfrontcorner taper
         taplefttop = tap.copy()
         taplefttop[: nover[0]] = tap[nwin[0] // 2]
         taplefttop[:, : nover[1]] = taplefttop[:, nwin[1] // 2][:, np.newaxis, :]
         taplefttop[:, :, : nover[2]] = taplefttop[:, :, nwin[2] // 2][:, :, np.newaxis]
         taps[0] = taplefttop
-        """
+        # lefttopbackcorner taper
+        taplefttop = tap.copy()
+        taplefttop[: nover[0]] = tap[nwin[0] // 2]
+        taplefttop[:, : nover[1]] = taplefttop[:, nwin[1] // 2][:, np.newaxis, :]
+        taplefttop[:, :, -nover[2] :] = taplefttop[:, :, nwin[2] // 2][:, :, np.newaxis]
+        taps[nwins2 - 1] = taplefttop
+        # righttopfrontcorner taper
+        taprighttop = tap.copy()
+        taprighttop[: nover[0]] = tap[nwin[0] // 2]
+        taprighttop[:, -nover[1] :] = taprighttop[:, nwin[1] // 2][:, np.newaxis, :]
+        taprighttop[:, :, : nover[2]] = taprighttop[:, :, nwin[2] // 2][
+            :, :, np.newaxis
+        ]
+        taps[(nwins1 - 1) * nwins2] = taprighttop
+        # righttopbackcorner taper
+        taprighttop = tap.copy()
+        taprighttop[: nover[0]] = tap[nwin[0] // 2]
+        taprighttop[:, -nover[1] :] = taprighttop[:, nwin[1] // 2][:, np.newaxis, :]
+        taprighttop[:, :, -nover[2] :] = taprighttop[:, :, nwin[2] // 2][
+            :, :, np.newaxis
+        ]
+        taps[(nwins1 - 1) * nwins2 + nwins2 - 1] = taprighttop
+        # leftbottomfrontcorner taper
+        tapleftbottom = tap.copy()
+        tapleftbottom[-nover[0] :] = tap[nwin[0] // 2]
+        tapleftbottom[:, : nover[1]] = tapleftbottom[:, nwin[1] // 2][:, np.newaxis, :]
+        tapleftbottom[:, :, : nover[2]] = tapleftbottom[:, :, nwin[2] // 2][
+            :, :, np.newaxis
+        ]
+        taps[(nwins0 - 1) * nwins1 * nwins2] = tapleftbottom
+        # leftbottombackcorner taper
+        tapleftbottom = tap.copy()
+        tapleftbottom[-nover[0] :] = tap[nwin[0] // 2]
+        tapleftbottom[:, : nover[1]] = tapleftbottom[:, nwin[1] // 2][:, np.newaxis, :]
+        tapleftbottom[:, :, -nover[2] :] = tapleftbottom[:, :, nwin[2] // 2][
+            :, :, np.newaxis
+        ]
+        taps[(nwins0 - 1) * nwins1 * nwins2 + nwins2 - 1] = tapleftbottom
+        # rightbottomfrontcorner taper
+        taprightbottom = tap.copy()
+        taprightbottom[-nover[0] :] = tap[nwin[0] // 2]
+        taprightbottom[:, -nover[1] :] = taprightbottom[:, nwin[1] // 2][
+            :, np.newaxis, :
+        ]
+        taprightbottom[:, :, : nover[2]] = taprightbottom[:, :, nwin[2] // 2][
+            :, :, np.newaxis
+        ]
+        taps[(nwins0 - 1) * nwins1 * nwins2 + (nwins1 - 1) * nwins2] = taprightbottom
+        # rightbottombackcorner taper
+        taprightbottom = tap.copy()
+        taprightbottom[-nover[0] :] = tap[nwin[0] // 2]
+        taprightbottom[:, -nover[1] :] = taprightbottom[:, nwin[1] // 2][
+            :, np.newaxis, :
+        ]
+        taprightbottom[:, :, -nover[2] :] = taprightbottom[:, :, nwin[2] // 2][
+            :, :, np.newaxis
+        ]
+        taps[
+            (nwins0 - 1) * nwins1 * nwins2 + (nwins1 - 1) * nwins2 + nwins2 - 1
+        ] = taprightbottom
+
     # check that identified number of windows agrees with mode size
     if design:
         logging.warning("%d-%d-%d windows required...", nwins0, nwins1, nwins2)
