@@ -108,7 +108,7 @@ def Patch3D(
     if tapertype is not None:
         tap = tapernd(nwin, nover, tapertype=tapertype).astype(Op.dtype)
         taps = {itap: tap for itap in range(nwins)}
-        ## sides
+        # 1, sides
         # topmost tapers
         taptop = tap.copy()
         taptop[: nover[0]] = tap[nwin[0] // 2]
@@ -141,7 +141,7 @@ def Patch3D(
         for itap in range(nwins2 * (nwins1 - 1), nwins, nwins2 * nwins1):
             for i in range(nwins2):
                 taps[itap + i] = tapright
-        ## pillars
+        # 2. pillars
         # topleftmost tapers
         taplefttop = tap.copy()
         taplefttop[:, : nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis, :]
@@ -224,7 +224,7 @@ def Patch3D(
         ]
         for itap in range(0, nwins, nwins1 * nwins2):
             taps[(nwins1 - 1) * nwins2 + nwins2 + itap - 1] = taprightback
-        ## corners
+        # 3. corners
         # lefttopfrontcorner taper
         taplefttop = tap.copy()
         taplefttop[: nover[0]] = tap[nwin[0] // 2]
