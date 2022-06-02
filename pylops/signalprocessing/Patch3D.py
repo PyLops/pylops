@@ -108,8 +108,73 @@ def Patch3D(
     if tapertype is not None:
         tap = tapernd(nwin, nover, tapertype=tapertype).astype(Op.dtype)
         taps = {itap: tap for itap in range(nwins)}
-        # TODO: Add special tapers at edges
-
+        ## sides
+        # topmost tapers
+        taptop = tap.copy()
+        taptop[: nover[0]] = tap[nwin[0] // 2]
+        for itap in range(0, nwins1 * nwins2):
+            taps[itap] = taptop
+        # bottommost tapers
+        tapbottom = tap.copy()
+        tapbottom[-nover[0] :] = tap[nwin[0] // 2]
+        for itap in range(nwins - nwins1 * nwins2, nwins):
+            taps[itap] = tapbottom
+        # frontmost tapers
+        tapfront = tap.copy()
+        tapfront[:, :, : nover[2]] = tap[:, :, nwin[2] // 2][:, :, np.newaxis]
+        for itap in range(0, nwins, nwins2):
+            taps[itap] = tapfront
+        # backmost tapers
+        tapback = tap.copy()
+        tapback[:, :, -nover[2] :] = tap[:, :, nwin[2] // 2][:, :, np.newaxis]
+        for itap in range(nwins2 - 1, nwins, nwins2):
+            taps[itap] = tapback
+        # leftmost tapers
+        tapleft = tap.copy()
+        tapleft[:, : nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis, :]
+        for itap in range(0, nwins, nwins1 * nwins2):
+            for i in range(nwins2):
+                taps[itap + i] = tapleft
+        # rightmost tapers
+        tapright = tap.copy()
+        tapright[:, -nover[1] :] = tap[:, nwin[1] // 2][:, np.newaxis, :]
+        for itap in range(nwins2 * (nwins1 - 1), nwins, nwins2 * nwins1):
+            for i in range(nwins2):
+                taps[itap + i] = tapright
+        ## pillars
+        # topleftmost tapers
+        taplefttop = tap.copy()
+        taplefttop[:, : nover[1]] = tap[:, nwin[1] // 2][:, np.newaxis, :]
+        taplefttop[: nover[0]] = taplefttop[nwin[0] // 2]
+        for itap in range(nwins2):
+            taps[itap] = taplefttop
+        # toprightmost tapers
+        taprighttop = tap.copy()
+        taprighttop[:, -nover[1] :] = tap[:, nwin[1] // 2][:, np.newaxis, :]
+        taprighttop[: nover[0]] = taprighttop[nwin[0] // 2]
+        for itap in range(nwins2 * (nwins1 - 1), nwins2 * nwins1):
+            taps[itap] = taprighttop
+        # topfrontmost tapers
+        tapfronttop = tap.copy()
+        tapfronttop[:, :, : nover[2]] = tap[:, :, nwin[2] // 2][:, :, np.newaxis]
+        tapfronttop[: nover[0]] = tapfronttop[nwin[0] // 2]
+        for itap in range(0, nwins1 * nwins2, nwins2):
+            taps[itap] = tapfronttop
+        # topbackmost tapers
+        tapbacktop = tap.copy()
+        tapbacktop[:, :, -nover[2] :] = tap[:, :, nwin[2] // 2][:, :, np.newaxis]
+        tapbacktop[: nover[0]] = tapbacktop[nwin[0] // 2]
+        for itap in range(nwins2 - 1, nwins1 * nwins2, nwins2):
+            taps[itap] = tapbacktop
+        """
+        ## corners
+        # lefttopcorner taper
+        taplefttop = tap.copy()
+        taplefttop[: nover[0]] = tap[nwin[0] // 2]
+        taplefttop[:, : nover[1]] = taplefttop[:, nwin[1] // 2][:, np.newaxis, :]
+        taplefttop[:, :, : nover[2]] = taplefttop[:, :, nwin[2] // 2][:, :, np.newaxis]
+        taps[0] = taplefttop
+        """
     # check that identified number of windows agrees with mode size
     if design:
         logging.warning("%d-%d-%d windows required...", nwins0, nwins1, nwins2)
