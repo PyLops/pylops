@@ -60,7 +60,7 @@ reconstructed_data = Slid * x
 
 fig, axs = plt.subplots(1, 2, figsize=(15, 3))
 axs[0].plot(t, data, "k", label="Data")
-axs[0].plot(t, reconstructed_data, "--r", label="Rec Data")
+axs[0].plot(t, reconstructed_data.real, "--r", label="Rec Data")
 axs[0].legend()
 axs[1].set(xlabel=r"$t$ [s]", title="Original domain")
 for i in range(nwins):

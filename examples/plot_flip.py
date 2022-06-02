@@ -34,6 +34,7 @@ plt.plot(y, "r", lw=3, label=r"$y=Fx$")
 plt.plot(xadj, "--g", lw=3, label=r"$x_{adj} = F^H y$")
 plt.title("Flip in 1st direction", fontsize=14, fontweight="bold")
 plt.legend()
+plt.tight_layout()
 
 ###############################################################################
 # Let's now repeat the same exercise on a two dimensional signal. We will

@@ -81,6 +81,7 @@ subax.plot(iavali, yli, ".m", ms=20)
 subax.plot(iavasi, ysi, ".y", ms=15)
 subax.set_xlim([120, 127])
 subax.set_ylim([-0.5, 0.5])
+plt.tight_layout()
 
 ###############################################################################
 # Finally we show how the :py:class:`pylops.Restriction` is not limited to
@@ -109,3 +110,4 @@ axs[1].axis("tight")
 axs[2].imshow(ymask.T, cmap="gray")
 axs[2].set_title("Masked model")
 axs[2].axis("tight")
+plt.tight_layout()

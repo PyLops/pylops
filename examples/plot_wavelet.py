@@ -32,11 +32,13 @@ plt.figure(figsize=(8, 2))
 plt.plot(y, "k", label="Full")
 plt.plot(yf, "r", label="Extracted")
 plt.title("Discrete Wavelet Transform")
+plt.tight_layout()
 
 plt.figure(figsize=(8, 2))
 plt.plot(x, "k", label="Original")
 plt.plot(xinv, "r", label="Reconstructed")
 plt.title("Reconstructed signal")
+plt.tight_layout()
 
 ###############################################################################
 # We repeat the same procedure with an image. In this case the 2-dimensional
@@ -51,7 +53,7 @@ yf = y.copy()
 yf.flat[y.size // 4 :] = 0
 iminv = Wop.H * yf
 
-fig, axs = plt.subplots(2, 2, figsize=(12, 12))
+fig, axs = plt.subplots(2, 2, figsize=(6, 6))
 axs[0, 0].imshow(im, cmap="gray")
 axs[0, 0].set_title("Image")
 axs[0, 0].axis("tight")
@@ -64,3 +66,4 @@ axs[1, 0].axis("tight")
 axs[1, 1].imshow(yf, cmap="gray_r", vmin=-1e2, vmax=1e2)
 axs[1, 1].set_title("DWT2 coefficients (zeroed)")
 axs[1, 1].axis("tight")
+plt.tight_layout()

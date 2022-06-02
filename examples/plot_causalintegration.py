@@ -63,6 +63,7 @@ axs[1].plot(t[1:-1], xder[1:-1], "r", lw=5, label="numerical")
 axs[1].plot(t, xinv, "--g", lw=3, label="inverted")
 axs[1].legend()
 axs[1].set_title("Inverse causal integration = Derivative")
+plt.tight_layout()
 
 ###############################################################################
 # As expected we obtain the same result. Let's see what happens if we now

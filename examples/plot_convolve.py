@@ -55,6 +55,7 @@ ax.plot(t, xinv, "--g", lw=2, label=r"$x_{ext}$")
 ax.set_title("Convolve 1d data", fontsize=14, fontweight="bold")
 ax.legend()
 ax.set_xlim(1.9, 2.1)
+plt.tight_layout()
 
 ###############################################################################
 # We show now that also a filter with mixed phase (i.e., not centered
@@ -76,6 +77,7 @@ ax.set_title(
 )
 ax.set_xlim(1.9, 2.1)
 ax.legend()
+plt.tight_layout()
 
 ###############################################################################
 # We repeat a similar exercise but using two dimensional signals and
@@ -169,3 +171,4 @@ axs[2][2].imshow(xlsqr[..., nz // 4], cmap="gray", vmin=-1, vmax=1)
 axs[2][0].axis("tight")
 axs[2][1].axis("tight")
 axs[2][2].axis("tight")
+plt.tight_layout()

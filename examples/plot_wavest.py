@@ -66,6 +66,7 @@ axs[2].plot(rho, t0, "k", lw=3)
 axs[2].set(xlabel="[kg/m³]", title="Rho")
 axs[2].invert_yaxis()
 axs[2].grid()
+plt.tight_layout()
 
 ###############################################################################
 # We create now the operators to model a synthetic pre-stack seismic gather
@@ -111,6 +112,7 @@ axs[2].imshow(
 axs[2].axis("tight")
 axs[2].set_title("Noisy Data with zero-phase wavelet", fontsize=10)
 axs[2].set_xlabel(r"$\theta$ [°]")
+plt.tight_layout()
 
 ###############################################################################
 # We can invert the data. First we will consider noise-free data, subsequently
@@ -158,6 +160,7 @@ axs[1].set_title("Wavelet with phase")
 axs[1].grid()
 axs[1].legend(loc="upper right")
 axs[1].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # Finally we repeat the same exercise, but this time we use a *preconditioner*.
@@ -189,3 +192,4 @@ ax.plot(wavn_smooth_est, "--m", lw=4, label="Estimated (noisy smoothed)")
 ax.set_title("Zero-phase wavelet")
 ax.grid()
 ax.legend(loc="upper right")
+plt.tight_layout()

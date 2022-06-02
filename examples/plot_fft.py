@@ -33,12 +33,13 @@ dinv = FFTop / D
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 4))
 axs[0].plot(t, d, "k", lw=2, label="True")
-axs[0].plot(t, dinv, "--r", lw=2, label="Inverted")
+axs[0].plot(t, dinv.real, "--r", lw=2, label="Inverted")
 axs[0].legend()
 axs[0].set_title("Signal")
 axs[1].plot(FFTop.f[: int(FFTop.nfft / 2)], np.abs(D[: int(FFTop.nfft / 2)]), "k", lw=2)
 axs[1].set_title("Fourier Transform")
 axs[1].set_xlim([0, 3 * f0])
+plt.tight_layout()
 
 ###############################################################################
 # In this example we used numpy as our engine for the ``fft`` and ``ifft``.
@@ -57,12 +58,13 @@ dinv = FFTop / D
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 4))
 axs[0].plot(t, d, "k", lw=2, label="True")
-axs[0].plot(t, dinv, "--r", lw=2, label="Inverted")
+axs[0].plot(t, dinv.real, "--r", lw=2, label="Inverted")
 axs[0].legend()
 axs[0].set_title("Signal")
 axs[1].plot(FFTop.f[: int(FFTop.nfft / 2)], np.abs(D[: int(FFTop.nfft / 2)]), "k", lw=2)
 axs[1].set_title("Fourier Transform with fftw")
 axs[1].set_xlim([0, 3 * f0])
+plt.tight_layout()
 
 ###############################################################################
 # We can also apply the one dimensional FFT to to a two-dimensional

@@ -31,6 +31,7 @@ plt.plot(y, "b", lw=2, label="y")
 plt.plot(xadj, "--r", lw=2, label="xadj")
 plt.title("1D Roll")
 plt.legend()
+plt.tight_layout()
 
 ###############################################################################
 # We can now do the same with a 2d array.
@@ -42,7 +43,7 @@ Rop = pylops.Roll(dims=(ny, nx), axis=1, shift=-2)
 y = Rop * x
 xadj = Rop.H * y
 
-fig, axs = plt.subplots(1, 3, figsize=(10, 2))
+fig, axs = plt.subplots(1, 3, figsize=(10, 4))
 fig.suptitle("Roll for 2d data", fontsize=14, fontweight="bold", y=1.15)
 axs[0].imshow(x, cmap="rainbow", vmin=0, vmax=50)
 axs[0].set_title(r"$x$")
@@ -53,3 +54,4 @@ axs[1].axis("tight")
 axs[2].imshow(xadj, cmap="rainbow", vmin=0, vmax=50)
 axs[2].set_title(r"$x_{adj} = R^H y$")
 axs[2].axis("tight")
+plt.tight_layout()
