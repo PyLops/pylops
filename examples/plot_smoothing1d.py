@@ -39,6 +39,7 @@ ax.plot(x, "k", lw=2, label=r"$x$")
 ax.plot(y, "r", lw=2, label=r"$y=Ax$")
 ax.set_title("Smoothing in 1st direction", fontsize=14, fontweight="bold")
 ax.legend()
+plt.tight_layout()
 
 ###############################################################################
 # Let's repeat the same exercise with a random signal as input. After applying smoothing,
@@ -57,6 +58,7 @@ ax.plot(y, "r", lw=2, label=r"$y=Ax$")
 ax.plot(xest, "--g", lw=2, label=r"$x_{ext}$")
 ax.set_title("Smoothing in 1st direction", fontsize=14, fontweight="bold")
 ax.legend()
+plt.tight_layout()
 
 ###############################################################################
 # Finally we show that the same operator can be applied to multi-dimensional
@@ -65,7 +67,7 @@ A = np.zeros((11, 21))
 A[5, 10] = 1
 
 Sop = pylops.Smoothing1D(nsmooth=5, dims=(11, 21), axis=0, dtype="float64")
-B = np.reshape(Sop * np.ndarray.flatten(A), (11, 21))
+B = Sop * A
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle(

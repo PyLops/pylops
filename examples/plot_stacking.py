@@ -42,7 +42,7 @@ X = np.zeros((Nv, Nh))
 X[int(Nv / 2), int(Nh / 2)] = 1
 
 D2op = D2vop * D2hop
-Y = np.reshape(D2op * X.ravel(), (Nv, Nh))
+Y = D2op * X
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle("Chain", fontsize=14, fontweight="bold", y=0.95)

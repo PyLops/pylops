@@ -29,7 +29,7 @@ wav = np.pad(wav, [0, nt - len(wav)])
 WAV = np.fft.rfft(wav, n=nt)
 
 ###############################################################################
-# We can shift this wavelet by :math:`5.5*dt`:
+# We can shift this wavelet by :math:`5.5\mathrm{dt}`:
 shift = 5.5 * dt
 Op = pylops.signalprocessing.Shift(nt, shift, sampling=dt, real=True, dtype=np.float64)
 wavshift = Op * wav
@@ -57,8 +57,8 @@ wav2d = np.outer(wav, np.ones(10))
 Op = pylops.signalprocessing.Shift(
     (nt, 10), shift, axis=0, sampling=dt, real=True, dtype=np.float64
 )
-wav2dshift = (Op * wav2d.ravel()).reshape(nt, 10)
-wav2dshiftback = (Op.H * wav2dshift.ravel()).reshape(nt, 10)
+wav2dshift = Op * wav2d
+wav2dshiftback = Op.H * wav2dshift
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 3))
 axs[0].imshow(wav2d, cmap="gray")
@@ -77,8 +77,8 @@ wav2d = np.outer(wav, np.ones(10)).T
 Op = pylops.signalprocessing.Shift(
     (10, nt), shift, axis=1, sampling=dt, real=True, dtype=np.float64
 )
-wav2dshift = (Op * wav2d.ravel()).reshape(10, nt)
-wav2dshiftback = (Op.H * wav2dshift.ravel()).reshape(10, nt)
+wav2dshift = Op * wav2d
+wav2dshiftback = Op.H * wav2dshift
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 3))
 axs[0].imshow(wav2d, cmap="gray")

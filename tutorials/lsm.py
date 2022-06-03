@@ -68,11 +68,13 @@ sz = 10 * np.ones(ns)
 sources = np.vstack((sx, sz))
 ds = sources[0, 1] - sources[0, 0]
 
+###############################################################################
 plt.figure(figsize=(10, 5))
-im = plt.imshow(vel.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]))
+im = plt.imshow(vel.T, cmap="summer", extent=(x[0], x[-1], z[-1], z[0]))
 plt.scatter(recs[0], recs[1], marker="v", s=150, c="b", edgecolors="k")
 plt.scatter(sources[0], sources[1], marker="*", s=150, c="r", edgecolors="k")
-plt.colorbar(im)
+cb = plt.colorbar(im)
+cb.set_label("[m/s]")
 plt.axis("tight")
 plt.xlabel("x [m]"), plt.ylabel("y [m]")
 plt.title("Velocity")
@@ -102,11 +104,9 @@ lsm = pylops.waveeqprocessing.LSM(
     z, x, t, sources, recs, v0, wav, wavc, mode="analytic"
 )
 
-d = lsm.Demop * refl.ravel()
-d = d.reshape(ns, nr, nt)
+d = lsm.Demop * refl
 
-madj = lsm.Demop.H * d.ravel()
-madj = madj.reshape(nx, nz)
+madj = lsm.Demop.H * d
 
 minv = lsm.solve(d.ravel(), solver=lsqr, **dict(iter_lim=100))
 minv = minv.reshape(nx, nz)
@@ -117,13 +117,15 @@ minv_sparse = lsm.solve(
 minv_sparse = minv_sparse.reshape(nx, nz)
 
 # demigration
-dadj = lsm.Demop * madj.ravel()
+d = d.reshape(ns, nr, nt)
+
+dadj = lsm.Demop * madj  # (ns * nr, nt)
 dadj = dadj.reshape(ns, nr, nt)
 
-dinv = lsm.Demop * minv.ravel()
+dinv = lsm.Demop * minv
 dinv = dinv.reshape(ns, nr, nt)
 
-dinv_sparse = lsm.Demop * minv_sparse.ravel()
+dinv_sparse = lsm.Demop * minv_sparse
 dinv_sparse = dinv_sparse.reshape(ns, nr, nt)
 
 # sphinx_gallery_thumbnail_number = 2

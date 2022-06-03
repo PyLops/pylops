@@ -32,11 +32,15 @@ thetamin, thetamax = 0, 40
 theta = np.linspace(thetamin, thetamax, ntheta)
 
 # Elastic property profiles
-vp = 1200 + np.arange(nt0) + filtfilt(np.ones(5) / 5.0, 1, np.random.normal(0, 80, nt0))
-vs = 600 + vp / 2 + filtfilt(np.ones(5) / 5.0, 1, np.random.normal(0, 20, nt0))
-rho = 1000 + vp + filtfilt(np.ones(5) / 5.0, 1, np.random.normal(0, 30, nt0))
-vp[201:] += 500
-vs[201:] += 200
+vp = (
+    2000
+    + 5 * np.arange(nt0)
+    + 2 * filtfilt(np.ones(5) / 5.0, 1, np.random.normal(0, 160, nt0))
+)
+vs = 600 + vp / 2 + 3 * filtfilt(np.ones(5) / 5.0, 1, np.random.normal(0, 100, nt0))
+rho = 1000 + vp + filtfilt(np.ones(5) / 5.0, 1, np.random.normal(0, 120, nt0))
+vp[201:] += 1500
+vs[201:] += 500
 rho[201:] += 100
 
 # Wavelet
@@ -46,26 +50,23 @@ wav, twav, wavc = ricker(t0[: ntwav // 2 + 1], 20)
 wav_phase = np.hstack((wav[wavoff:], np.zeros(wavoff)))
 
 # vs/vp profile
-vsvp = 0.5
-vsvp_z = np.linspace(0.4, 0.6, nt0)
+vsvp = vs / vp
 
 # Model
 m = np.stack((np.log(vp), np.log(vs), np.log(rho)), axis=1)
 
-fig, axs = plt.subplots(1, 3, figsize=(13, 7), sharey=True)
-axs[0].plot(vp, t0, "k")
-axs[0].set_title("Vp")
-axs[0].set_ylabel(r"$t(s)$")
-axs[0].invert_yaxis()
+fig, axs = plt.subplots(1, 3, figsize=(9, 7), sharey=True)
+axs[0].plot(vp, t0, "k", lw=3)
+axs[0].set(xlabel="[m/s]", ylabel=r"$t$ [s]", ylim=[t0[0], t0[-1]], title="Vp")
 axs[0].grid()
-axs[1].plot(vs, t0, "k")
-axs[1].set_title("Vs")
-axs[1].invert_yaxis()
+axs[1].plot(vp / vs, t0, "k", lw=3)
+axs[1].set(title="Vp/Vs")
 axs[1].grid()
-axs[2].plot(rho, t0, "k")
-axs[2].set_title("Rho")
+axs[2].plot(rho, t0, "k", lw=3)
+axs[2].set(xlabel="[kg/m³]", title="Rho")
 axs[2].invert_yaxis()
 axs[2].grid()
+plt.tight_layout()
 
 ###############################################################################
 # We create now the operators to model a synthetic pre-stack seismic gather
@@ -93,8 +94,7 @@ axs[0].imshow(
     d, cmap="gray", extent=(theta[0], theta[-1], t0[-1], t0[0]), vmin=-0.1, vmax=0.1
 )
 axs[0].axis("tight")
-axs[0].set_xlabel(r"$\Theta$")
-axs[0].set_ylabel(r"$t(s)$")
+axs[0].set(xlabel=r"$\theta$ [°]", ylabel=r"$t$ [s]")
 axs[0].set_title("Data with zero-phase wavelet", fontsize=10)
 axs[1].imshow(
     d_phase,
@@ -105,13 +105,14 @@ axs[1].imshow(
 )
 axs[1].axis("tight")
 axs[1].set_title("Data with non-zero-phase wavelet", fontsize=10)
-axs[1].set_xlabel(r"$\Theta$")
+axs[1].set_xlabel(r"$\theta$ [°]")
 axs[2].imshow(
     dn, cmap="gray", extent=(theta[0], theta[-1], t0[-1], t0[0]), vmin=-0.1, vmax=0.1
 )
 axs[2].axis("tight")
 axs[2].set_title("Noisy Data with zero-phase wavelet", fontsize=10)
-axs[2].set_xlabel(r"$\Theta$")
+axs[2].set_xlabel(r"$\theta$ [°]")
+plt.tight_layout()
 
 ###############################################################################
 # We can invert the data. First we will consider noise-free data, subsequently
@@ -159,6 +160,7 @@ axs[1].set_title("Wavelet with phase")
 axs[1].grid()
 axs[1].legend(loc="upper right")
 axs[1].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # Finally we repeat the same exercise, but this time we use a *preconditioner*.
@@ -190,3 +192,4 @@ ax.plot(wavn_smooth_est, "--m", lw=4, label="Estimated (noisy smoothed)")
 ax.set_title("Zero-phase wavelet")
 ax.grid()
 ax.legend(loc="upper right")
+plt.tight_layout()

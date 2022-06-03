@@ -71,11 +71,10 @@ cb.set_label("[s/km]")
 # Next the Seislet transform is computed.
 Sop = pylops.signalprocessing.Seislet(slope.T, sampling=(dx, dt))
 
-seis = Sop * d.ravel()
-seis = seis.reshape(nx, nt)
+seis = Sop * d
 
 nlevels_max = int(np.log2(nx))
-levels_size = np.flip(np.array([2 ** i for i in range(nlevels_max)]))
+levels_size = np.flip(np.array([2**i for i in range(nlevels_max)]))
 levels_cum = np.cumsum(levels_size)
 
 ############################################
@@ -123,8 +122,7 @@ fig.tight_layout()
 # This way we turn the Seislet tranform into a basic 1D Wavelet transform
 # performed over the spatial axis.
 Wop = pylops.signalprocessing.Seislet(np.zeros_like(slope.T), sampling=(dx, dt))
-dwt = Wop * d.ravel()
-dwt = dwt.reshape(nx, nt)
+dwt = Wop * d
 
 ############################################
 fig, ax = plt.subplots(figsize=(14, 6))
@@ -193,14 +191,12 @@ fig.tight_layout()
 seis1 = np.zeros_like(seis.ravel())
 seis_strong_idx = seis_strong_idx[: int(np.rint(len(seis_strong) * perc))]
 seis1[seis_strong_idx] = seis.ravel()[seis_strong_idx]
-d_seis = Sop.inverse(seis1)
-d_seis = d_seis.reshape(nx, nt)
+d_seis = Sop.inverse(seis1).reshape(Sop.dims)
 
 dwt1 = np.zeros_like(dwt.ravel())
 dwt_strong_idx = dwt_strong_idx[: int(np.rint(len(dwt_strong) * perc))]
 dwt1[dwt_strong_idx] = dwt.ravel()[dwt_strong_idx]
-d_dwt = Wop.inverse(dwt1)
-d_dwt = d_dwt.reshape(nx, nt)
+d_dwt = Wop.inverse(dwt1).reshape(Wop.dims)
 
 ############################################
 opts.update(dict(cmap="gray", vmin=-clip, vmax=clip))
@@ -229,4 +225,4 @@ plt.tight_layout()
 # operators, the Seislet transform requires the adjoint be defined and that it
 # also passes the dot-test pair that is. As shown below, this is the case
 # when using the implementation in the PyLops package.
-pylops.utils.dottest(Sop, nt * nx, nt * nx, verb=True)
+pylops.utils.dottest(Sop, verb=True)

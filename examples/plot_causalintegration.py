@@ -63,6 +63,7 @@ axs[1].plot(t[1:-1], xder[1:-1], "r", lw=5, label="numerical")
 axs[1].plot(t, xinv, "--g", lw=3, label="inverted")
 axs[1].legend()
 axs[1].set_title("Inverse causal integration = Derivative")
+plt.tight_layout()
 
 ###############################################################################
 # As expected we obtain the same result. Let's see what happens if we now
@@ -117,14 +118,12 @@ x = np.outer(np.sin(t), np.ones(nx))
 
 Cop = pylops.CausalIntegration(dims=(nt, nx), sampling=dt, axis=0, halfcurrent=True)
 
-y = Cop * x.ravel()
-y = y.reshape(nt, nx)
+y = Cop * x
 yn = y + np.random.normal(0, 4e-1, y.shape)
 
 # Numerical derivative
 Dop = pylops.FirstDerivative(dims=(nt, nx), axis=0, sampling=dt)
-xder = Dop * yn.ravel()
-xder = xder.reshape(nt, nx)
+xder = Dop * yn
 
 # Regularized derivative
 Rop = pylops.Laplacian(dims=(nt, nx))

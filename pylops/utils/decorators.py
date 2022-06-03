@@ -4,7 +4,7 @@ from pylops.config import disabled_ndarray_multiplication
 
 
 def disable_ndarray_multiplication(func):
-    """Decorator which disables ndarray multiplication(.
+    """Decorator which disables ndarray multiplication.
 
     Parameters
     ----------
