@@ -78,7 +78,7 @@ def reshaped(func=None, forward=None, swapaxis=False):
 
     .. code-block:: python
 
-        @reshape(swapaxis=True)
+        @reshaped(swapaxis=True)
         def _matvec(self, x):
             y = do_things_to_reshaped_swapped(y)
             return y
@@ -87,7 +87,7 @@ def reshaped(func=None, forward=None, swapaxis=False):
 
     .. code-block:: python
 
-        @reshape
+        @reshaped
         def _matvec(self, x):
             y = do_things_to_reshaped(y)
             return y
@@ -120,4 +120,43 @@ def reshaped(func=None, forward=None, swapaxis=False):
 
     if func is not None:
         return decorator(func)
+    return decorator
+
+
+def count(f=None, forward=True, mat=False):
+    """Decorator used to count the number of forward and adjoint performed by an operator.
+
+    Parameters
+    ----------
+    f : :obj:`callable`, optional
+        Function to be decorated when no arguments are provided
+    forward : :obj:`bool`, optional
+        Whether to count the forward (``True``) or adjoint (``False``)
+    mat : :obj:`bool`, optional
+        Whether to count the matvec (``False``) or matmat (``True``)
+
+    """
+
+    def decorator(f):
+        @wraps(f)
+        def wrapper(self, x):
+            if forward:
+                if mat:
+                    self.matmat_count += 1
+                    self.matvec_count -= x.shape[-1]
+                else:
+                    self.matvec_count += 1
+            else:
+                if mat:
+                    self.rmatmat_count += 1
+                    self.rmatvec_count -= x.shape[-1]
+                else:
+                    self.rmatvec_count += 1
+            y = f(self, x)
+            return y
+
+        return wrapper
+
+    if f is not None:
+        return decorator(f)
     return decorator

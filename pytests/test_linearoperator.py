@@ -311,3 +311,31 @@ def test_non_flattened_arrays(par):
             D @ x_nd
         with pytest.raises(ValueError):
             D @ X_nd
+
+
+@pytest.mark.parametrize("par", [(par1), (par2j)])
+def test_counts(par):
+    """Assess counters and the associated reset method"""
+    A = np.ones((par["ny"], par["nx"])) + par["imag"] * np.ones((par["ny"], par["nx"]))
+    Aop = MatrixMult(A, dtype=par["dtype"])
+
+    _ = Aop.matvec(np.ones(par["nx"]))
+    _ = Aop.matvec(np.ones(par["nx"]))
+    _ = Aop.rmatvec(np.ones(par["ny"]))
+    _ = Aop @ np.ones(par["nx"])
+
+    _ = Aop.rmatmat(np.ones((par["ny"], 2)))
+    _ = Aop.matmat(np.ones((par["nx"], 2)))
+    _ = Aop.rmatmat(np.ones((par["ny"], 2)))
+
+    assert Aop.matvec_count == 3
+    # assert Aop.rmatvec_count == 1
+    assert Aop.matmat_count == 1
+    # assert Aop.rmatmat_count == 2
+
+    # reset
+    Aop.reset_count()
+    assert Aop.matvec_count == 0
+    assert Aop.rmatvec_count == 0
+    assert Aop.matmat_count == 0
+    assert Aop.rmatmat_count == 0
