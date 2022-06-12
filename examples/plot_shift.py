@@ -91,3 +91,27 @@ axs[2].imshow(wav2dshiftback, cmap="gray")
 axs[2].set_title("Adjoint")
 axs[2].axis("tight")
 fig.tight_layout()
+
+###############################################################################
+# Finally we consider a more generic case where we apply a trace varying shift
+
+shift = dt * np.arange(10)
+
+wav2d = np.outer(wav, np.ones(10))
+Op = pylops.signalprocessing.Shift(
+    (nt, 10), shift, axis=0, sampling=dt, real=True, dtype=np.float64
+)
+wav2dshift = Op * wav2d
+wav2dshiftback = Op.H * wav2dshift
+
+fig, axs = plt.subplots(1, 3, figsize=(10, 3))
+axs[0].imshow(wav2d, cmap="gray")
+axs[0].axis("tight")
+axs[0].set_title("Original")
+axs[1].imshow(wav2dshift, cmap="gray")
+axs[1].set_title("Shifted")
+axs[1].axis("tight")
+axs[2].imshow(wav2dshiftback, cmap="gray")
+axs[2].set_title("Adjoint")
+axs[2].axis("tight")
+fig.tight_layout()
