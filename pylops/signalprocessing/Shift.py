@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops.basicoperators import Diagonal
 from pylops.signalprocessing import FFT
@@ -106,8 +107,7 @@ def Shift(
         Sop = Diagonal(shift, dims=dimsdiag, axis=axis, dtype=Fop.cdtype)
     else:
         # add dimensions to shift to match dimensions of model and data
-        if axis < 0:
-            axis = len(dims) + axis
+        axis = normalize_axis_index(axis, len(dims))
         fdims = np.ones(shift.ndim + 1, dtype=int)
         fdims[axis] = Fop.f.size
         f = Fop.f.reshape(fdims)
