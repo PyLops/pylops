@@ -106,6 +106,7 @@ Tapers
 
     tapers.taper2d
     tapers.taper3d
+    tapers.tapernd
 
 
 Wavelets

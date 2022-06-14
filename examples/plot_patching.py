@@ -45,10 +45,13 @@ _, data = pylops.utils.seismicevents.parabolic2d(x, t, t0, px, pxx, amp, wav)
 # done by simply using the adjoint of the
 # :py:class:`pylops.signalprocessing.Patch2D` operator. Note that for non-
 # orthogonal operators, this must be replaced by an inverse.
-nwins = (13, 6)
-nwin = (20, 34)
-nop = (128, 128 // 2 + 1)  # second axis is real
-nover = (10, 4)
+nwins = (13, 6)  # number of windows
+nwin = (20, 34)  # window size in data domain
+nop = (
+    128,
+    128 // 2 + 1,
+)  # window size in model domain; we use real FFT, second axis is half
+nover = (10, 4)  # overlap between windows
 
 dimsd = data.shape
 dims = (nwins[0] * nop[0], nwins[1] * nop[1])
@@ -131,7 +134,7 @@ wav = pylops.utils.wavelets.ricker(t[:41], f0=par["f0"])[0]
 _, data = pylops.utils.seismicevents.hyperbolic3d(x, y, t, t0, vrms, vrms, amp, wav)
 
 
-fig, axs = plt.subplots(1, 2, figsize=(7, 5), sharey=True)
+fig, axs = plt.subplots(1, 3, figsize=(12, 5))
 fig.suptitle("Original data", fontsize=12, fontweight="bold", y=0.95)
 axs[0].imshow(
     data[par["ny"] // 2].T,
@@ -154,16 +157,32 @@ axs[1].imshow(
     extent=(y.min(), y.max(), t.max(), t.min()),
 )
 axs[1].set_xlabel(r"$y(m)$")
+axs[1].set_ylabel(r"$t(s)$")
+axs[2].imshow(
+    data[:, :, par["nt"] // 2],
+    aspect="auto",
+    interpolation="nearest",
+    vmin=-2,
+    vmax=2,
+    cmap="gray",
+    extent=(x.min(), x.max(), y.max(), x.min()),
+)
+axs[2].set_xlabel(r"$x(m)$")
+axs[2].set_ylabel(r"$y(m)$")
 plt.tight_layout()
 
 ###############################################################################
 # Let's create now the :py:class:`pylops.signalprocessing.Patch3D` operator
 # applying the adjoint of the :py:class:`pylops.signalprocessing.FFT3D`
 # operator to each patch.
-nwins = (5, 4, 3)
-nwin = (20, 20, 34)
-nop = (128, 128, 128 // 2 + 1)  # second axis is real
-nover = (10, 10, 4)
+nwins = (5, 4, 3)  # number of windows
+nwin = (20, 20, 34)  # window size in data domain
+nop = (
+    128,
+    128,
+    128 // 2 + 1,
+)  # window size in model domain; we use real FFT, third axis is half
+nover = (10, 10, 4)  # overlap between windows
 
 dimsd = data.shape
 dims = (nwins[0] * nop[0], nwins[1] * nop[1], nwins[2] * nop[2])
@@ -180,7 +199,7 @@ Slid = pylops.signalprocessing.Patch3D(
 )
 reconstructed_data = np.real(Slid * fftdata)
 
-fig, axs = plt.subplots(1, 2, figsize=(7, 5), sharey=True)
+fig, axs = plt.subplots(1, 3, figsize=(12, 5))
 fig.suptitle("Reconstructed data", fontsize=12, fontweight="bold", y=0.95)
 axs[0].imshow(
     reconstructed_data[par["ny"] // 2].T,
@@ -203,4 +222,16 @@ axs[1].imshow(
     extent=(y.min(), y.max(), t.max(), t.min()),
 )
 axs[1].set_xlabel(r"$y(m)$")
+axs[1].set_ylabel(r"$t(s)$")
+axs[2].imshow(
+    reconstructed_data[:, :, par["nt"] // 2],
+    aspect="auto",
+    interpolation="nearest",
+    vmin=-2,
+    vmax=2,
+    cmap="gray",
+    extent=(x.min(), x.max(), y.max(), x.min()),
+)
+axs[2].set_xlabel(r"$x(m)$")
+axs[2].set_ylabel(r"$y(m)$")
 plt.tight_layout()
