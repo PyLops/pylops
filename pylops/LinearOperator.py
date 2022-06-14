@@ -420,7 +420,7 @@ class LinearOperator(spLinearOperator):
             raise ValueError("invalid shape returned by user-defined rmatvec()")
         return y
 
-    @count(forward=True, mat=True)
+    @count(forward=True, matmat=True)
     def matmat(self, X):
         """Matrix-matrix multiplication.
 
@@ -446,7 +446,7 @@ class LinearOperator(spLinearOperator):
         Y = self._matmat(X)
         return Y
 
-    @count(forward=False, mat=True)
+    @count(forward=False, matmat=True)
     def rmatmat(self, X):
         """Matrix-matrix multiplication.
 
