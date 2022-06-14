@@ -123,24 +123,40 @@ def reshaped(func=None, forward=None, swapaxis=False):
     return decorator
 
 
-def count(f=None, forward=True, mat=False):
+def count(func=None, forward=None, matmat=None):
     """Decorator used to count the number of forward and adjoint performed by an operator.
 
     Parameters
     ----------
-    f : :obj:`callable`, optional
+    func : :obj:`callable`, optional
         Function to be decorated when no arguments are provided
     forward : :obj:`bool`, optional
-        Whether to count the forward (``True``) or adjoint (``False``)
-    mat : :obj:`bool`, optional
-        Whether to count the matvec (``False``) or matmat (``True``)
+        Whether to count the forward (``True``) or adjoint (``False``). If not provided, the decorated
+        function's name will be inspected to infer the mode. Any operator having a name
+        with 'rmat' as substring will be defaulted to False
+    matmat : :obj:`bool`, optional
+        Whether to count the matmat (``True``) or matvec (``False``). If not provided, the decorated
+        function's name will be inspected to infer the mode. Any operator having a name
+        with 'matvec' as substring will be defaulted to False
 
     """
 
     def decorator(f):
+        if forward is None:
+            fwd = "rmat" not in f.__name__
+        else:
+            fwd = forward
+        if matmat is None:
+            mat = "matvec" not in f.__name__
+        else:
+            mat = matmat
+
         @wraps(f)
         def wrapper(self, x):
-            if forward:
+            # perform operation
+            y = f(self, x)
+            # increase count of the associated operation
+            if fwd:
                 if mat:
                     self.matmat_count += 1
                     self.matvec_count -= x.shape[-1]
@@ -152,11 +168,10 @@ def count(f=None, forward=True, mat=False):
                     self.rmatvec_count -= x.shape[-1]
                 else:
                     self.rmatvec_count += 1
-            y = f(self, x)
             return y
 
         return wrapper
 
-    if f is not None:
-        return decorator(f)
+    if func is not None:
+        return decorator(func)
     return decorator
