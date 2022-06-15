@@ -199,8 +199,8 @@ def Patch2D(
             for win_in, win_end in zip(dwin1_ins, dwin1_ends)
         ]
     )
-
     combining1 = BlockDiag([hstack] * nwins0)
+
     combining0 = HStack(
         [
             Restriction(dimsd, range(win_in, win_end), axis=0, dtype=Op.dtype).H

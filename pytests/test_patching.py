@@ -4,7 +4,7 @@ from numpy.testing import assert_array_almost_equal
 
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
-from pylops.signalprocessing import Patch2D
+from pylops.signalprocessing import Patch2D, Patch3D
 from pylops.utils import dottest
 
 par1 = {
@@ -15,6 +15,10 @@ par1 = {
     "nwiny": 5,
     "novery": 0,
     "winsy": 3,
+    "npx": 13,
+    "nwinx": 5,
+    "noverx": 0,
+    "winsx": 2,
     "npt": 10,
     "nwint": 5,
     "novert": 0,
@@ -29,6 +33,10 @@ par2 = {
     "nwiny": 5,
     "novery": 0,
     "winsy": 3,
+    "npx": 13,
+    "nwinx": 5,
+    "noverx": 0,
+    "winsx": 2,
     "npt": 10,
     "nwint": 5,
     "novert": 0,
@@ -43,6 +51,10 @@ par3 = {
     "nwiny": 7,
     "novery": 3,
     "winsy": 3,
+    "npx": 13,
+    "nwinx": 5,
+    "noverx": 2,
+    "winsx": 3,
     "npt": 10,
     "nwint": 4,
     "novert": 2,
@@ -57,6 +69,10 @@ par4 = {
     "nwiny": 7,
     "novery": 3,
     "winsy": 3,
+    "npx": 13,
+    "nwinx": 5,
+    "noverx": 2,
+    "winsx": 3,
     "npt": 10,
     "nwint": 4,
     "novert": 2,
@@ -80,7 +96,9 @@ def test_Patch2D(par):
         tapertype=par["tapertype"],
     )
     assert dottest(
-        Pop, par["npy"] * par["nt"], par["ny"] * par["nt"] * par["winsy"] * par["winst"]
+        Pop,
+        par["npy"] * par["npt"],
+        par["ny"] * par["nt"] * par["winsy"] * par["winst"],
     )
     x = np.ones((par["ny"] * par["winsy"], par["nt"] * par["winst"]))
     y = Pop * x.ravel()
@@ -106,9 +124,51 @@ def test_Patch2D_scalings(par):
         scalings=scalings,
     )
     assert dottest(
-        Pop, par["npy"] * par["nt"], par["ny"] * par["nt"] * par["winsy"] * par["winst"]
+        Pop,
+        par["npy"] * par["npt"],
+        par["ny"] * par["nt"] * par["winsy"] * par["winst"],
     )
     x = np.ones((par["ny"] * par["winsy"], par["nt"] * par["winst"]))
+    y = Pop * x.ravel()
+
+    xinv = LinearOperator(Pop) / y
+    assert_array_almost_equal(x.ravel(), xinv)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+def test_Patch3D(par):
+    """Dot-test and inverse for Patch3D operator"""
+    Op = MatrixMult(
+        np.ones(
+            (
+                par["nwiny"] * par["nwinx"] * par["nwint"],
+                par["ny"] * par["nx"] * par["nt"],
+            )
+        )
+    )
+
+    Pop = Patch3D(
+        Op,
+        dims=(
+            par["ny"] * par["winsy"],
+            par["nx"] * par["winsx"],
+            par["nt"] * par["winst"],
+        ),
+        dimsd=(par["npy"], par["npx"], par["npt"]),
+        nwin=(par["nwiny"], par["nwinx"], par["nwint"]),
+        nover=(par["novery"], par["noverx"], par["novert"]),
+        nop=(par["ny"], par["nx"], par["nt"]),
+        tapertype=par["tapertype"],
+        design=True,
+    )
+    assert dottest(
+        Pop,
+        par["npy"] * par["npx"] * par["npt"],
+        par["ny"] * par["nx"] * par["nt"] * par["winsy"] * par["winsx"] * par["winst"],
+    )
+    x = np.ones(
+        (par["ny"] * par["winsy"], par["nx"] * par["winsx"], par["nt"] * par["winst"])
+    )
     y = Pop * x.ravel()
 
     xinv = LinearOperator(Pop) / y

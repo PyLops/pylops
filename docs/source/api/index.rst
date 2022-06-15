@@ -105,6 +105,7 @@ Signal processing
     Sliding2D
     Sliding3D
     Patch2D
+    Patch3D
     Fredholm1
 
 
