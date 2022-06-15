@@ -80,10 +80,13 @@ class _PhaseShift(LinearOperator):
         # create propagator
         self.gazx = np.exp(-1j * 2 * np.pi * dz * kz)
 
-        self.dims = freq.shape
-        self.shape = (np.prod(freq.shape), np.prod(freq.shape))
-        self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(
+            dtype=np.dtype(dtype),
+            dims=freq.shape,
+            dimsd=freq.shape,
+            explicit=False,
+            name="P",
+        )
 
     def _matvec(self, x):
         if not isinstance(self.gazx, type(x)):

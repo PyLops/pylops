@@ -78,7 +78,7 @@ def reshaped(func=None, forward=None, swapaxis=False):
 
     .. code-block:: python
 
-        @reshape(swapaxis=True)
+        @reshaped(swapaxis=True)
         def _matvec(self, x):
             y = do_things_to_reshaped_swapped(y)
             return y
@@ -87,7 +87,7 @@ def reshaped(func=None, forward=None, swapaxis=False):
 
     .. code-block:: python
 
-        @reshape
+        @reshaped
         def _matvec(self, x):
             y = do_things_to_reshaped(y)
             return y
@@ -114,6 +114,60 @@ def reshaped(func=None, forward=None, swapaxis=False):
             if swapaxis:
                 y = y.swapaxes(self.axis, -1)
             y = y.ravel()
+            return y
+
+        return wrapper
+
+    if func is not None:
+        return decorator(func)
+    return decorator
+
+
+def count(func=None, forward=None, matmat=None):
+    """Decorator used to count the number of forward and adjoint performed by an operator.
+
+    Parameters
+    ----------
+    func : :obj:`callable`, optional
+        Function to be decorated when no arguments are provided
+    forward : :obj:`bool`, optional
+        Whether to count the forward (``True``) or adjoint (``False``). If not provided, the decorated
+        function's name will be inspected to infer the mode. Any operator having a name
+        with 'rmat' as substring will be defaulted to False
+    matmat : :obj:`bool`, optional
+        Whether to count the matmat (``True``) or matvec (``False``). If not provided, the decorated
+        function's name will be inspected to infer the mode. Any operator having a name
+        with 'matvec' as substring will be defaulted to False
+
+    """
+
+    def decorator(f):
+        if forward is None:
+            fwd = "rmat" not in f.__name__
+        else:
+            fwd = forward
+        if matmat is None:
+            mat = "matvec" not in f.__name__
+        else:
+            mat = matmat
+
+        @wraps(f)
+        def wrapper(self, x):
+            # perform operation
+            y = f(self, x)
+            # increase count of the associated operation
+            if fwd:
+                if mat:
+                    self.matmat_count += 1
+                    self.matvec_count -= x.shape[-1]
+                else:
+                    self.matvec_count += 1
+            else:
+                if mat:
+                    self.rmatmat_count += 1
+                    self.rmatvec_count -= x.shape[-1]
+                else:
+                    self.rmatvec_count += 1
             return y
 
         return wrapper

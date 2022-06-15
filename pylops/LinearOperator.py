@@ -26,6 +26,7 @@ else:
 from pylops import get_ndarray_multiplication
 from pylops.optimization.basic import cgls
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
+from pylops.utils.decorators import count
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -114,6 +115,12 @@ class LinearOperator(spLinearOperator):
         if explicit is not None:
             self.explicit = explicit
         self.name = name
+
+        # counters
+        self.matvec_count = 0
+        self.rmatvec_count = 0
+        self.matmat_count = 0
+        self.rmatmat_count = 0
 
     @property
     def shape(self):
@@ -274,6 +281,18 @@ class LinearOperator(spLinearOperator):
             y = np.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
         return y
 
+    def _rmatmat(self, X):
+        """Matrix-matrix adjoint multiplication handler.
+
+        Modified version of scipy _rmatmat to avoid having trailing dimension
+        in col when provided to rmatvec
+        """
+        if sp.sparse.issparse(X):
+            y = np.vstack([self.rmatvec(col.toarray().reshape(-1)) for col in X.T]).T
+        else:
+            y = np.vstack([self.rmatvec(col.reshape(-1)) for col in X.T]).T
+        return y
+
     def __mul__(self, x):
         y = super().__mul__(x)
         if isinstance(y, spLinearOperator):
@@ -333,6 +352,7 @@ class LinearOperator(spLinearOperator):
         Op.dimsd = self.dims
         return Op
 
+    @count(forward=True)
     def matvec(self, x):
         """Matrix-vector multiplication.
 
@@ -366,6 +386,7 @@ class LinearOperator(spLinearOperator):
             raise ValueError("invalid shape returned by user-defined matvec()")
         return y
 
+    @count(forward=False)
     def rmatvec(self, x):
         """Adjoint matrix-vector multiplication.
 
@@ -399,6 +420,7 @@ class LinearOperator(spLinearOperator):
             raise ValueError("invalid shape returned by user-defined rmatvec()")
         return y
 
+    @count(forward=True, matmat=True)
     def matmat(self, X):
         """Matrix-matrix multiplication.
 
@@ -424,6 +446,7 @@ class LinearOperator(spLinearOperator):
         Y = self._matmat(X)
         return Y
 
+    @count(forward=False, matmat=True)
     def rmatmat(self, X):
         """Matrix-matrix multiplication.
 
@@ -1020,6 +1043,17 @@ class LinearOperator(spLinearOperator):
             return trace_nahutchpp(self, neval=neval, backend=backend, **kwargs_trace)
         else:
             raise NotImplementedError(f"method {method} not available.")
+
+    def reset_count(self):
+        """Reset counters
+
+        When invoked all counters are set back to 0.
+
+        """
+        self.matvec_count = 0
+        self.rmatvec_count = 0
+        self.matmat_count = 0
+        self.rmatmat_count = 0
 
 
 def _get_dtype(operators, dtypes=None):
