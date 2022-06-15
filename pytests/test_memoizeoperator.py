@@ -14,6 +14,7 @@ def test_memoize_evals(par):
     """Check nevals counter when same model/data vectors are inputted
     to the operator
     """
+    np.random.seed(0)
     A = np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32") + par[
         "imag"
     ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32")
@@ -49,6 +50,7 @@ def test_memoize_evals_2(par):
     equivalent approaches: 1. complex operator enforcing the output of adjoint
     to be real, 2. joint system of equations for real and complex parts
     """
+    np.random.seed(0)
     rdtype = np.real(np.ones(1, dtype=par["dtype"])).dtype
     A = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(rdtype) + par[
         "imag"

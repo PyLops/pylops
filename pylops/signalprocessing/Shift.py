@@ -1,7 +1,9 @@
 import numpy as np
+from numpy.core.multiarray import normalize_axis_index
 
 from pylops.basicoperators import Diagonal
 from pylops.signalprocessing import FFT
+from pylops.utils._internal import _value_or_list_like_to_array
 
 
 def Shift(
@@ -25,8 +27,10 @@ def Shift(
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension
-    shift : :obj:`float`
-        Fractional shift to apply in the same unit as ``sampling``.
+    shift : :obj:`float` or :obj:`numpy.ndarray`
+        Fractional shift to apply in the same unit as ``sampling``. For multi-dimensional inputs,
+        this can be a scalar to apply to every trace along the chosen axis or an array of shifts
+        to be applied to each trace.
     axis : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
@@ -95,8 +99,23 @@ def Shift(
     else:
         dimsdiag = list(dims)
         dimsdiag[axis] = len(Fop.f)
-    shift = np.exp(-1j * 2 * np.pi * Fop.f * shift)
-    Sop = Diagonal(shift, dims=dimsdiag, axis=axis, dtype=Fop.cdtype)
+
+    shift = _value_or_list_like_to_array(shift)
+
+    if shift.size == 1:
+        shift = np.exp(-1j * 2 * np.pi * Fop.f * shift)
+        Sop = Diagonal(shift, dims=dimsdiag, axis=axis, dtype=Fop.cdtype)
+    else:
+        # add dimensions to shift to match dimensions of model and data
+        axis = normalize_axis_index(axis, len(dims))
+        fdims = np.ones(shift.ndim + 1, dtype=int)
+        fdims[axis] = Fop.f.size
+        f = Fop.f.reshape(fdims)
+        sdims = np.ones(shift.ndim + 1, dtype=int)
+        sdims[:axis] = shift.shape[:axis]
+        sdims[axis + 1 :] = shift.shape[axis:]
+        shift = np.exp(-1j * 2 * np.pi * f * shift.reshape(sdims))
+        Sop = Diagonal(shift, dtype=Fop.cdtype)
     Op = Fop.H * Sop * Fop
     Op.dims = Op.dimsd = Fop.dims
     # force dtype to that of input (FFT always upcasts it to complex)
