@@ -80,7 +80,7 @@ def irls(
 
     Notes
     -----
-    See :class:`pylops.optimization.sparsity.IRLS`
+    See :class:`pylops.optimization.cls_sparsity.IRLS`
 
     """
     irlssolve = IRLS(Op)
@@ -167,7 +167,7 @@ def omp(
 
     Notes
     -----
-    See :class:`pylops.optimization.sparsity.OMP`
+    See :class:`pylops.optimization.cls_sparsity.OMP`
 
     """
     ompsolve = OMP(Op)
@@ -288,7 +288,7 @@ def ista(
 
     Notes
     -----
-    See :class:`pylops.optimization.sparsity.ISTA`
+    See :class:`pylops.optimization.cls_sparsity.ISTA`
 
     """
     istasolve = ISTA(Op)
@@ -415,7 +415,7 @@ def fista(
 
     Notes
     -----
-    See :class:`pylops.optimization.sparsity.FISTA`
+    See :class:`pylops.optimization.cls_sparsity.FISTA`
 
     """
     fistasolve = FISTA(Op)
@@ -531,7 +531,7 @@ def spgl1(Op, y, x0=None, SOp=None, tau=0, sigma=0, show=False, **kwargs_spgl1):
 
     Notes
     -----
-    See :class:`pylops.optimization.sparsity.SPGL1`
+    See :class:`pylops.optimization.cls_sparsity.SPGL1`
 
     """
     spgl1solve = SPGL1(Op)
@@ -642,7 +642,7 @@ def splitbregman(
 
     Notes
     -----
-    See :class:`pylops.optimization.sparsity.SplitBregman`
+    See :class:`pylops.optimization.cls_sparsity.SplitBregman`
 
     """
     sbsolve = SplitBregman(Op)

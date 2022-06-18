@@ -88,7 +88,7 @@ def normal_equations_inversion(
 
     Notes
     -----
-    See :class:`pylops.optimization.leastsquares.NormalEquationsInversion`
+    See :class:`pylops.optimization.cls_leastsquares.NormalEquationsInversion`
 
     """
     nesolve = NormalEquationsInversion(Op)
@@ -184,7 +184,7 @@ def regularized_inversion(
 
     Notes
     -----
-    See :class:`pylops.optimization.leastsquares.RegularizedInversion`
+    See :class:`pylops.optimization.cls_leastsquares.RegularizedInversion`
 
     """
     rsolve = RegularizedInversion(Op)
@@ -258,7 +258,7 @@ def preconditioned_inversion(
 
     Notes
     -----
-    See :class:`pylops.optimization.leastsquares.PreconditionedInversion`
+    See :class:`pylops.optimization.cls_leastsquares.PreconditionedInversion`
 
     """
     psolve = PreconditionedInversion(Op)
