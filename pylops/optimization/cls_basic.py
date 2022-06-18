@@ -4,7 +4,6 @@ import numpy as np
 
 from pylops.optimization.basesolver import Solver
 from pylops.utils.backend import get_array_module
-from pylops.utils.decorators import add_ndarray_support_to_solver
 
 
 class CG(Solver):
