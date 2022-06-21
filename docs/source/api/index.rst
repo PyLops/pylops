@@ -153,7 +153,7 @@ Template
 Basic
 ~~~~~
 
-.. currentmodule:: pylops.optimization.basic
+.. currentmodule:: pylops.optimization.cls_basic
 
 .. autosummary::
    :toctree: generated/
@@ -161,6 +161,12 @@ Basic
     CG
     CGLS
     LSQR
+
+.. currentmodule:: pylops.optimization.basic
+
+.. autosummary::
+   :toctree: generated/
+
     cg
     cgls
     lsqr
@@ -168,7 +174,7 @@ Basic
 Least-squares
 ~~~~~~~~~~~~~
 
-.. currentmodule:: pylops.optimization.leastsquares
+.. currentmodule:: pylops.optimization.cls_leastsquares
 
 .. autosummary::
    :toctree: generated/
@@ -176,6 +182,13 @@ Least-squares
     NormalEquationsInversion
     RegularizedInversion
     PreconditionedInversion
+
+
+.. currentmodule:: pylops.optimization.leastsquares
+
+.. autosummary::
+   :toctree: generated/
+
     normal_equations_inversion
     regularized_inversion
     preconditioned_inversion
@@ -184,7 +197,7 @@ Least-squares
 Sparsity
 ~~~~~~~~
 
-.. currentmodule:: pylops.optimization.sparsity
+.. currentmodule:: pylops.optimization.cls_sparsity
 
 .. autosummary::
    :toctree: generated/
@@ -195,6 +208,12 @@ Sparsity
     FISTA
     SPGL1
     SplitBregman
+
+.. currentmodule:: pylops.optimization.sparsity
+
+.. autosummary::
+   :toctree: generated/
+
     irls
     omp
     ista
