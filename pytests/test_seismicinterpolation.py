@@ -67,7 +67,7 @@ par2_2d = {
         sampling=(par["dy"], par["dt"]),
         niter=20,
         eps=1e-2,
-        eigsiter=4,
+        eigsdict={"niter": 4},
     ),
 }
 par3_2d = {
@@ -77,7 +77,7 @@ par3_2d = {
         centeredh=True,
         niter=20,
         eps=1e-1,
-        eigsiter=4,
+        eigsdict={"niter": 4},
     ),
 }
 par4_2d = {
@@ -90,7 +90,7 @@ par4_2d = {
         design=False,
         niter=20,
         eps=1e-1,
-        eigsiter=4,
+        eigsdict={"niter": 4},
     ),
 }
 par1_2d.update(par)

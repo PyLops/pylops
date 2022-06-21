@@ -193,8 +193,7 @@ def ista(
     SOp=None,
     eps=0.1,
     alpha=None,
-    eigsiter=None,
-    eigstol=0,
+    eigsdict=None,
     tol=1e-10,
     threshkind="soft",
     perc=None,
@@ -232,10 +231,9 @@ def ista(
         If ``None``, the maximum eigenvalue is estimated and the optimal step size
         is chosen as :math:`1/\lambda_\text{max}`. If provided, the
         convergence criterion will not be checked internally.
-    eigsiter : :obj:`float`, optional
-        Number of iterations for eigenvalue estimation if ``alpha=None``
-    eigstol : :obj:`float`, optional
-        Tolerance for eigenvalue estimation if ``alpha=None``
+    eigsdict : :obj:`dict`, optional
+        Dictionary of parameters to be passed to :func:`pylops.LinearOperator.eigs` method
+        when computing the maximum eigenvalue
     tol : :obj:`float`, optional
         Tolerance. Stop iterations if difference between inverted model
         at subsequent iterations is smaller than ``tol``
@@ -301,8 +299,7 @@ def ista(
         SOp=SOp,
         eps=eps,
         alpha=alpha,
-        eigsiter=eigsiter,
-        eigstol=eigstol,
+        eigsdict=eigsdict,
         tol=tol,
         threshkind=threshkind,
         perc=perc,
@@ -322,8 +319,7 @@ def fista(
     SOp=None,
     eps=0.1,
     alpha=None,
-    eigsiter=None,
-    eigstol=0,
+    eigsdict=None,
     tol=1e-10,
     threshkind="soft",
     perc=None,
@@ -361,10 +357,9 @@ def fista(
         If ``None``, the maximum eigenvalue is estimated and the optimal step size
         is chosen as :math:`1/\lambda_\text{max}`. If provided, the
         convergence criterion will not be checked internally.
-    eigsiter : :obj:`int`, optional
-        Number of iterations for eigenvalue estimation if ``alpha=None``
-    eigstol : :obj:`float`, optional
-        Tolerance for eigenvalue estimation if ``alpha=None``
+    eigsdict : :obj:`dict`, optional
+        Dictionary of parameters to be passed to :func:`pylops.LinearOperator.eigs` method
+        when computing the maximum eigenvalue
     tol : :obj:`float`, optional
         Tolerance. Stop iterations if difference between inverted model
         at subsequent iterations is smaller than ``tol``
@@ -428,8 +423,7 @@ def fista(
         SOp=SOp,
         eps=eps,
         alpha=alpha,
-        eigsiter=eigsiter,
-        eigstol=eigstol,
+        eigsdict=eigsdict,
         tol=tol,
         threshkind=threshkind,
         perc=perc,

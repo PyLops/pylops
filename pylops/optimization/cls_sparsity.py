@@ -1071,8 +1071,7 @@ class ISTA(Solver):
         SOp=None,
         eps=0.1,
         alpha=None,
-        eigsiter=None,
-        eigstol=0,
+        eigsdict=None,
         tol=1e-10,
         threshkind="soft",
         perc=None,
@@ -1101,10 +1100,9 @@ class ISTA(Solver):
             If ``None``, the maximum eigenvalue is estimated and the optimal step size
             is chosen as :math:`1/\lambda_\text{max}`. If provided, the
             convergence criterion will not be checked internally.
-        eigsiter : :obj:`float`, optional
-            Number of iterations for eigenvalue estimation if ``alpha=None``
-        eigstol : :obj:`float`, optional
-            Tolerance for eigenvalue estimation if ``alpha=None``
+        eigsdict : :obj:`dict`, optional
+            Dictionary of parameters to be passed to :func:`pylops.LinearOperator.eigs` method
+            when computing the maximum eigenvalue
         tol : :obj:`float`, optional
             Tolerance. Stop iterations if difference between inverted model
             at subsequent iterations is smaller than ``tol``
@@ -1126,8 +1124,7 @@ class ISTA(Solver):
         self.SOp = SOp
         self.niter = niter
         self.eps = eps
-        self.eigsiter = eigsiter
-        self.eigstol = eigstol
+        self.eigsdict = {} if eigsdict is None else eigsdict
         self.tol = tol
         self.threshkind = threshkind
         self.perc = perc
@@ -1189,18 +1186,16 @@ class ISTA(Solver):
                     Op1.eigs(
                         neigs=1,
                         symmetric=True,
-                        niter=eigsiter,
-                        **dict(tol=eigstol, which="LM"),
+                        **self.eigsdict,
                     )[0]
                 )
             else:
                 maxeig = np.abs(
                     power_iteration(
                         Op1,
-                        niter=eigsiter,
-                        tol=eigstol,
                         dtype=Op1.dtype,
                         backend="cupy",
+                        **self.eigsdict,
                     )[0]
                 )
             self.alpha = 1.0 / maxeig
@@ -1367,8 +1362,7 @@ class ISTA(Solver):
         SOp=None,
         eps=0.1,
         alpha=None,
-        eigsiter=None,
-        eigstol=0,
+        eigsdict=None,
         tol=1e-10,
         threshkind="soft",
         perc=None,
@@ -1398,10 +1392,9 @@ class ISTA(Solver):
             If ``None``, the maximum eigenvalue is estimated and the optimal step size
             is chosen as :math:`1/\lambda_\text{max}`. If provided, the
             convergence criterion will not be checked internally.
-        eigsiter : :obj:`float`, optional
-            Number of iterations for eigenvalue estimation if ``alpha=None``
-        eigstol : :obj:`float`, optional
-            Tolerance for eigenvalue estimation if ``alpha=None``
+        eigsdict : :obj:`dict`, optional
+            Dictionary of parameters to be passed to :func:`pylops.LinearOperator.eigs` method
+            when computing the maximum eigenvalue
         tol : :obj:`float`, optional
             Tolerance. Stop iterations if difference between inverted model
             at subsequent iterations is smaller than ``tol``
@@ -1439,8 +1432,7 @@ class ISTA(Solver):
             SOp=SOp,
             eps=eps,
             alpha=alpha,
-            eigsiter=eigsiter,
-            eigstol=eigstol,
+            eigsdict=eigsdict,
             tol=tol,
             threshkind=threshkind,
             perc=perc,
