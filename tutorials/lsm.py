@@ -79,6 +79,7 @@ plt.axis("tight")
 plt.xlabel("x [m]"), plt.ylabel("y [m]")
 plt.title("Velocity")
 plt.xlim(x[0], x[-1])
+plt.tight_layout()
 
 plt.figure(figsize=(10, 5))
 im = plt.imshow(refl.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]))
@@ -89,6 +90,7 @@ plt.axis("tight")
 plt.xlabel("x [m]"), plt.ylabel("y [m]")
 plt.title("Reflectivity")
 plt.xlim(x[0], x[-1])
+plt.tight_layout()
 
 ###############################################################################
 # We can now create our LSM object and invert for the reflectivity using two
@@ -142,6 +144,7 @@ axs[1][0].set_title(r"$m_{inv}$")
 axs[1][1].imshow(minv_sparse.T, cmap="gray", vmin=-1, vmax=1)
 axs[1][1].axis("tight")
 axs[1][1].set_title(r"$m_{FISTA}$")
+plt.tight_layout()
 
 fig, axs = plt.subplots(1, 4, figsize=(10, 4))
 axs[0].imshow(d[0, :, :300].T, cmap="gray", vmin=-d.max(), vmax=d.max())
@@ -156,6 +159,7 @@ axs[2].axis("tight")
 axs[3].imshow(dinv_sparse[0, :, :300].T, cmap="gray", vmin=-d.max(), vmax=d.max())
 axs[3].set_title(r"$d_{fista}$")
 axs[3].axis("tight")
+plt.tight_layout()
 
 fig, axs = plt.subplots(1, 4, figsize=(10, 4))
 axs[0].imshow(d[ns // 2, :, :300].T, cmap="gray", vmin=-d.max(), vmax=d.max())

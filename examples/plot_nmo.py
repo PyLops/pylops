@@ -295,7 +295,7 @@ class NMO(LinearOperator):
 # and adjoint transforms truly are adjoints of each other.
 
 NMOOp = NMO(t, x, vel_t)
-dottest(NMOOp, rtol=1e-4)
+dottest(NMOOp, rtol=1e-4, verb=True)
 
 ###############################################################################
 # NMO using :py:class:`pylops.Spread`
