@@ -61,6 +61,10 @@ should be used as a checklist when converting a piece of code using PyLops from 
   * The optional parameter ``returnhistory`` has been deprecated from the `pylops.optimization.sparsity.irls` solver.
     The same objective (storing the history of solutions) can be achieved more flexibly using callbacks - see our
     new guide to callbacks.
+  * The parameters ``eigsiter`` and ``eigstol`` in `pylops.optimization.sparsity.ista` and
+    `pylops.optimization.sparsity.fista` have been deprecated in favour of ``eigsdict`` (a dictionary containing any
+    parameter to be passed to the ``pylops.LinearOperator.eigs`` method when computing the largest eigenvalue of
+    the operator).
 
 
 ## Table of supported multiplication shapes
