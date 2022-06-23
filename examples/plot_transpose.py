@@ -29,7 +29,7 @@ Top = pylops.Transpose(dims=dims, axes=(1, 0))
 y = Top * x
 xadj = Top.H * y
 
-fig, axs = plt.subplots(1, 3, figsize=(10, 2))
+fig, axs = plt.subplots(1, 3, figsize=(10, 4))
 fig.suptitle("Transpose for 2d data", fontsize=14, fontweight="bold", y=1.15)
 axs[0].imshow(x, cmap="rainbow", vmin=0, vmax=800)
 axs[0].set_title(r"$x$")
@@ -40,6 +40,7 @@ axs[1].axis("tight")
 axs[2].imshow(xadj, cmap="rainbow", vmin=0, vmax=800)
 axs[2].set_title(r"$x_{adj} = F^H y$")
 axs[2].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # A similar approach can of course be taken two swap multiple axes of

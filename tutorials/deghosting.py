@@ -66,7 +66,7 @@ ax1.set_ylim(z[-1], z[0])
 ax2.plot(rho[:, len(x) // 2], z, "k", lw=2)
 ax2.set_ylim(z[-1], z[0])
 ax2.set_yticks([])
-
+plt.tight_layout()
 
 ###############################################################################
 # To be able to deghost the input dataset, we need to remove its direct
@@ -82,7 +82,6 @@ win = np.zeros((nt, nr))
 iwin = np.round(direct_off / dt).astype(int)
 for i in range(nr):
     win[iwin[i] :, i] = 1
-
 
 fig, axs = plt.subplots(1, 2, sharey=True, figsize=(8, 7))
 axs[0].imshow(
@@ -105,6 +104,7 @@ axs[1].imshow(
 axs[1].set_title(r"Windowed $P$")
 axs[1].axis("tight")
 axs[1].set_ylim(1, 0)
+plt.tight_layout()
 
 ###############################################################################
 # We can now perform deghosting
@@ -162,12 +162,15 @@ plt.plot(t, pup[:, nr // 2], "r", lw=2, label=r"$p^-$")
 plt.xlim(0, t[200])
 plt.ylim(-0.2, 0.2)
 plt.legend()
+plt.tight_layout()
+
 plt.figure(figsize=(14, 3))
 plt.plot(t, pdown[:, nr // 2], "b", lw=2, label=r"$p^+$")
 plt.plot(t, pup[:, nr // 2], "r", lw=2, label=r"$p^-$")
 plt.xlim(0, t[200])
 plt.ylim(-0.2, 0.2)
 plt.legend()
+plt.tight_layout()
 
 ###############################################################################
 # To see more examples head over to the following notebook:

@@ -162,3 +162,4 @@ axs[1].imshow(
     extent=(y.min(), y.max(), t.max(), t.min()),
 )
 axs[1].set_xlabel(r"$y(m)$")
+plt.tight_layout()

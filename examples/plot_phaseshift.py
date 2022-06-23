@@ -109,7 +109,7 @@ axs[2].imshow(
 )
 axs[2].set_xlabel(r"$x(m)$")
 axs[2].set_title("Backward propagation")
-
+plt.tight_layout()
 
 ############################################
 # Finally we perform the same for a 3-dimensional signal
@@ -208,3 +208,4 @@ axs[1][2].imshow(
 )
 axs[1][2].set_xlabel(r"$x(m)$")
 axs[1][2].set_title("Backward propagation")
+plt.tight_layout()

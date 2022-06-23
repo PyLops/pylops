@@ -25,7 +25,7 @@ y = Zop * x
 xadj = Zop.H * y
 
 gs = pltgs.GridSpec(1, 6)
-fig = plt.figure(figsize=(7, 3))
+fig = plt.figure(figsize=(7, 4))
 ax = plt.subplot(gs[0, 0:3])
 ax.imshow(np.zeros((N, N)), cmap="rainbow", vmin=-M, vmax=M)
 ax.set_title("A", size=20, fontweight="bold")
@@ -62,6 +62,7 @@ ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 fig.colorbar(im, ax=ax, ticks=[0], pad=0.3, shrink=0.7)
+plt.tight_layout()
 
 ###############################################################################
 # Similarly we can consider the case with data bigger than model
