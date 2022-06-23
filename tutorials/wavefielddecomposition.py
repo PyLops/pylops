@@ -56,7 +56,7 @@ _, p_plus = hyperbolic2d(x, t, t0_plus, vrms, amp, wav)
 # We can now combine them to create pressure and particle velocity data
 critical = 1.1
 ntaper = 51
-nfft = 2 ** 10
+nfft = 2**10
 
 # 2d fft operator
 FFTop = pylops.signalprocessing.FFT2D(
@@ -66,7 +66,7 @@ FFTop = pylops.signalprocessing.FFT2D(
 # obliquity factor
 [Kx, F] = np.meshgrid(FFTop.f1, FFTop.f2, indexing="ij")
 k = F / vel_sep
-Kz = np.sqrt((k ** 2 - Kx ** 2).astype(np.complex128))
+Kz = np.sqrt((k**2 - Kx**2).astype(np.complex128))
 Kz[np.isnan(Kz)] = 0
 OBL = rho_sep * (np.abs(F) / Kz)
 OBL[Kz == 0] = 0
@@ -308,6 +308,7 @@ axs[2].imshow(
 )
 axs[2].set_title(r"$error$")
 axs[2].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # To see more examples, including applying wavefield separation and

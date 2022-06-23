@@ -115,6 +115,7 @@ axs[1].plot(mn, t0, "--g", lw=2, label="Inv Noisy")
 axs[1].set_title("Model")
 axs[1].axis("tight")
 axs[1].legend(loc=1)
+plt.tight_layout()
 
 ###############################################################################
 # We see how inverting a dense matrix is in this case faster than solving
@@ -161,6 +162,7 @@ axs[1].plot(minv, t0, "--r", lw=2, label="Inv")
 axs[1].set_title("Model")
 axs[1].axis("tight")
 axs[1].legend(loc=1)
+plt.tight_layout()
 
 ###############################################################################
 # We move now to a 2d example. First of all the model is loaded and

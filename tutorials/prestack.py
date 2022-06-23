@@ -558,6 +558,7 @@ for ip, param in enumerate(["VP", "VS", "Rho"]):
     axs[ip].set_title(param)
     axs[ip].invert_yaxis()
 axs[2].legend(loc=8, fontsize="small")
+plt.tight_layout()
 
 ###############################################################################
 # While the background model ``m0`` has been provided in all the examples so

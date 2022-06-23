@@ -84,7 +84,7 @@ sigmad = 1e-2
 
 # Prior models
 nt = 200
-nfft = 2 ** 11
+nfft = 2**11
 dt = 0.004
 t = np.arange(nt) * dt
 xs = np.array(
@@ -129,6 +129,7 @@ ax1.axis("tight")
 ax2.plot(np.arange(-N, N + 1) * dt, diags.T, "--r", lw=1)
 ax2.plot(np.arange(-N, N + 1) * dt, diag_ave, "k", lw=4)
 ax2.set_title("Averaged covariance 'filter'")
+plt.tight_layout()
 
 ###############################################################################
 # Let's define now the sampling operator as well as create our covariance
@@ -145,7 +146,7 @@ Rop = pylops.Restriction(nt, iava, dtype="float64")
 
 # Covariance operators
 Cm_op = pylops.signalprocessing.Convolve1D(nt, diag_ave, offset=N)
-Cd_op = sigmad ** 2 * pylops.Identity(ntsub)
+Cd_op = sigmad**2 * pylops.Identity(ntsub)
 
 ###############################################################################
 # We model now our data and add noise that respects our prior definition
@@ -170,6 +171,7 @@ ax.plot(t, xbayes, "r", lw=3, label="bayesian inverse")
 ax.legend()
 ax.set_title("Signal")
 ax.set_xlim(0, 0.8)
+plt.tight_layout()
 
 ###############################################################################
 # So far we have been able to estimate our posterion mean. What about its
@@ -210,6 +212,7 @@ im = ax.imshow(
 )
 ax.set_title(r"$\mathbf{C}_m^{posterior}$")
 ax.axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # Note that here we have been able to compute a sample posterior covariance

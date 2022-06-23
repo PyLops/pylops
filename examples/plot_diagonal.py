@@ -29,7 +29,7 @@ y = Dop * x
 y1 = Dop.H * x
 
 gs = pltgs.GridSpec(1, 6)
-fig = plt.figure(figsize=(7, 3))
+fig = plt.figure(figsize=(7, 4))
 ax = plt.subplot(gs[0, 0:3])
 im = ax.imshow(Dop.matrix(), cmap="rainbow", vmin=0, vmax=N)
 ax.set_title("A", size=20, fontweight="bold")
@@ -67,7 +67,7 @@ ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 fig.colorbar(im, ax=ax, ticks=[0, N], pad=0.3, shrink=0.7)
-
+plt.tight_layout()
 
 ###############################################################################
 # Similarly we can consider the input model as composed of two or more
