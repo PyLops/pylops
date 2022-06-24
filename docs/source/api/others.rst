@@ -119,8 +119,10 @@ Wavelets
 .. autosummary::
    :toctree: generated/
 
-    wavelets.ricker
     wavelets.gaussian
+    wavelets.klauder
+    wavelets.ormsby
+    wavelets.ricker
 
 
 Geophysical Reservoir characterization
