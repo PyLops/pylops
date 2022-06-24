@@ -76,7 +76,7 @@ def klauder(t, f=(5, 20), taper=None):
     t = _tcrop(t)
     t = np.concatenate((np.flipud(-t[1:]), t), axis=0)
 
-    t0, t1 = t[0], t[-1]
+    t1 = t[-1]
     f1, f2 = f
     c = chirp(t, f1 + (f2 - f1) / 2.0, t1, f2)
     w = np.correlate(c, c, mode="same")
