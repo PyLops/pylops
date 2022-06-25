@@ -373,7 +373,6 @@ def FFT(
     sampling=1.0,
     norm="ortho",
     real=False,
-    fftshift=None,
     ifftshift_before=None,
     fftshift_after=False,
     engine="numpy",
@@ -435,10 +434,6 @@ def FFT(
         Model to which fft is applied has real numbers (``True``) or not
         (``False``). Used to enforce that the output of adjoint of a real
         model is real.
-    fftshift : :obj:`bool`, optional
-        .. deprecated:: 1.17.0
-
-            Use ``ifftshift_before``.
     ifftshift_before : :obj:`bool`, optional
         .. versionadded:: 1.17.0
 
@@ -543,24 +538,6 @@ def FFT(
     signals.
 
     """
-    # Use fftshift if supplied, otherwise use ifftshift_before
-    # If neither are supplied, set to False
-    if fftshift is not None:
-        warnings.warn(
-            "fftshift is deprecated. Please use ifftshift_before.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        if ifftshift_before is not None:
-            warnings.warn(
-                "Passed fftshift and ifftshift_before, ignoring ifftshift_before. ",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-        ifftshift_before = fftshift
-    if fftshift is None and ifftshift_before is None:
-        ifftshift_before = False
-
     if engine == "fftw" and pyfftw is not None:
         f = _FFT_fftw(
             dims,

@@ -121,8 +121,6 @@ class Marchenko:
         Time-offset to apply to traveltime
     nsmooth : :obj:`int`, optional
         Number of samples of smoothing operator to apply to window
-    dtype : :obj:`bool`, optional
-        Type of elements in input array.
     saveRt : :obj:`bool`, optional
         Save ``R`` and ``R.H`` to speed up the computation of adjoint of
         :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
@@ -138,6 +136,8 @@ class Marchenko:
         .. versionadded:: 1.17.0
 
         Engine used for fft computation (``numpy``, ``scipy`` or ``fftw``)
+    dtype : :obj:`bool`, optional
+        Type of elements in input array.
 
     Attributes
     ----------
@@ -227,10 +227,10 @@ class Marchenko:
         wav=None,
         toff=0.0,
         nsmooth=10,
-        dtype="float64",
         saveRt=True,
         prescaled=False,
         fftengine="numpy",
+        dtype="float64",
     ):
         # Save inputs into class
         self.dt = dt
@@ -310,8 +310,6 @@ class Marchenko:
             Compute and return Green's functions
         dottest : :obj:`bool`, optional
             Apply dot-test
-        fast : :obj:`bool`
-            *Deprecated*, will be removed in v2.0.0
         usematmul : :obj:`bool`, optional
             Use :func:`numpy.matmul` (``True``) or for-loop with :func:`numpy.dot`
             (``False``) in :py:class:`pylops.signalprocessing.Fredholm1` operator.

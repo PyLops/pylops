@@ -16,6 +16,8 @@ should be used as a checklist when converting a piece of code using PyLops from 
   See the table at the end of this document for support ndarray operations.
 
 ## Operators
+- The declaration signature of all operators is now `Op(..., dtype, name)`. This has no effect for users relying on
+  keyword arguments. If using positional arguments in place of keyword arguments, ensure that they are ordered correctly.
 - Several operators have deprecated `N` as a keyword. To migrate, pass only `dims` if both `N` and `dims` are currently
   being passed. If only `N` is being passed, ensure it is being passed as a value and not a keyword argument (e.g.,
   change `Flip(N=100)` to `Flip(100)`).
@@ -25,8 +27,12 @@ should be used as a checklist when converting a piece of code using PyLops from 
   Be careful to check all operators where `dir`, `dirs` and `nodir` was not provided explicitly.
 ### Basic
 - `dims_d` in `Sum` is deprecated in favor or `dimsd`
+- `halfcurrent` in `CausalIntegration` is deprecated in favor or `kind=half`
+
 ### Signal processing
 - `dims_fft` in the FFT operators is deprecated in favor of `dimsd`.
+- `fftshift` in the FFT operators is deprecated in favor of `ifftshift_before`.
+
 ### Wave-equation processing
 - The optional arguments ``fast``, ``transpose``, and ``dtype`` have been deprecated in ``pylops.waveeqprocessing.mdd.MDC``.
   As previously stated in a warning message, the recommended option ``transpose=False`` is now selected as default.

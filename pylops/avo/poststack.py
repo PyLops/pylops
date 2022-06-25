@@ -145,6 +145,8 @@ def PoststackLinearModelling(
     sparse : :obj:`bool`, optional
         Create a sparse matrix (``True``) or dense  (``False``) when
         ``explicit=True``
+    kind : :obj:`str`, optional
+        Derivative kind (``forward`` or ``centered``).
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
