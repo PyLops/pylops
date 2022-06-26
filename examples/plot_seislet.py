@@ -37,7 +37,7 @@ x, t = np.arange(nx) * dx, np.arange(nt) * dt
 
 # slope estimation
 slope, _ = pylops.utils.signalprocessing.slope_estimate(d.T, dt, dx, smooth=2.5)
-slope *= -1  # t-axis points down
+slope = -slope.T  # t-axis points down, reshape
 # clip slopes above 80°
 pmax = np.arctan(80 * np.pi / 180)
 slope[slope > pmax] = pmax
@@ -52,7 +52,7 @@ fig, axs = plt.subplots(1, 2, figsize=(14, 7), sharey=True, sharex=True)
 axs[0].imshow(d.T, cmap="gray", vmin=-clip, vmax=clip, **opts)
 axs[0].set(xlabel="Position [km]", ylabel="Time [s]", title="Data")
 
-im = axs[1].imshow(slope, cmap="RdBu_r", vmin=-clip_s, vmax=clip_s, **opts)
+im = axs[1].imshow(slope.T, cmap="RdBu_r", vmin=-clip_s, vmax=clip_s, **opts)
 axs[1].set(xlabel="Position [km]", title="Slopes")
 fig.tight_layout()
 
@@ -69,7 +69,7 @@ cb.set_label("[s/km]")
 
 ############################################
 # Next the Seislet transform is computed.
-Sop = pylops.signalprocessing.Seislet(slope.T, sampling=(dx, dt))
+Sop = pylops.signalprocessing.Seislet(slope, sampling=(dx, dt))
 
 seis = Sop * d
 
@@ -121,7 +121,7 @@ fig.tight_layout()
 # As a comparison we also compute the Seislet transform fixing slopes to zero.
 # This way we turn the Seislet tranform into a basic 1D Wavelet transform
 # performed over the spatial axis.
-Wop = pylops.signalprocessing.Seislet(np.zeros_like(slope.T), sampling=(dx, dt))
+Wop = pylops.signalprocessing.Seislet(np.zeros_like(slope), sampling=(dx, dt))
 dwt = Wop * d
 
 ############################################

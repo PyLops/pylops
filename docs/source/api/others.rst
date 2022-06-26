@@ -95,6 +95,7 @@ Signal-processing
 
     signalprocessing.convmtx
     signalprocessing.nonstationary_convmtx
+    signalprocessing.dip_estimate
     signalprocessing.slope_estimate
 
 

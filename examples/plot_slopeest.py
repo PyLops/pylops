@@ -2,8 +2,9 @@ r"""
 Slope estimation via Structure Tensor algorithm
 ===============================================
 
-This example shows how to estimate local slopes of a two-dimensional array
-using :py:func:`pylops.utils.signalprocessing.slope_estimate`.
+This example shows how to estimate local slopes or local dips of a two-dimensional
+array using :py:func:`pylops.utils.signalprocessing.slope_estimate` and
+:py:func:`pylops.utils.signalprocessing.dip_estimate`.
 
 Knowing the local slopes of an image (or a seismic data) can be useful for
 a variety of tasks in image (or geophysical) processing such as denoising,
@@ -23,11 +24,12 @@ with the original implementation in [1].
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.image import imread
+from matplotlib.ticker import FuncFormatter, MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import pylops
 from pylops.signalprocessing.Seislet import _predict_trace
-from pylops.utils.signalprocessing import slope_estimate
+from pylops.utils.signalprocessing import dip_estimate, slope_estimate
 
 plt.close("all")
 np.random.seed(10)
@@ -35,12 +37,12 @@ np.random.seed(10)
 ###############################################################################
 # Python logo
 # -----------
-# To start we import a 2d image and estimate the local slopes of the image.
+# To start we import a 2d image and estimate the local dips of the image.
 im = np.load("../testdata/python.npy")[..., 0]
 im = im / 255.0 - 0.5
 
-slopes, anisotropy = slope_estimate(im, smooth=7)
-angles = -np.rad2deg(np.arctan(slopes))
+angles, anisotropy = dip_estimate(im, smooth=7)
+angles = -np.rad2deg(angles)
 
 ###############################################################################
 fig, axs = plt.subplots(1, 3, figsize=(12, 4), sharex=True, sharey=True)
@@ -49,10 +51,16 @@ axs[0].set_title("Data")
 cax = make_axes_locatable(axs[0]).append_axes("right", size="5%", pad=0.05)
 cax.axis("off")
 
-iax = axs[1].imshow(angles, cmap="RdBu_r", origin="lower", vmin=-90, vmax=90)
-axs[1].set_title("Angle of incline [°]")
+iax = axs[1].imshow(angles, cmap="twilight_shifted", origin="lower", vmin=-90, vmax=90)
+axs[1].set_title("Angle of incline")
 cax = make_axes_locatable(axs[1]).append_axes("right", size="5%", pad=0.05)
-cb = fig.colorbar(iax, cax=cax, orientation="vertical")
+cb = fig.colorbar(
+    iax,
+    ticks=MultipleLocator(30),
+    format=FuncFormatter(lambda x, pos: "{:.0f}°".format(x)),
+    cax=cax,
+    orientation="vertical",
+)
 
 iax = axs[2].imshow(anisotropy, cmap="Reds", origin="lower", vmin=0, vmax=1)
 axs[2].set_title("Anisotropy")
@@ -69,7 +77,7 @@ fig.tight_layout()
 # the underlying slope field from the data alone.
 
 # Reflectivity model
-nx, nt = 2 ** 7, 121
+nx, nt = 2**7, 121
 dx, dt = 0.01, 0.004
 x, t = np.arange(nx) * dx, np.arange(nt) * dt
 
@@ -111,7 +119,7 @@ axs[0, 0].set(title="Data", ylabel="Time [s]")
 cax = make_axes_locatable(axs[0, 0]).append_axes("right", size="5%", pad=0.05)
 fig.colorbar(iax, cax=cax, orientation="vertical")
 
-opts.update(dict(cmap="RdBu_r", vmin=np.min(slope), vmax=np.max(slope)))
+opts.update(dict(cmap="cividis", vmin=np.min(slope), vmax=np.max(slope)))
 iax = axs[0, 1].imshow(slope, **opts)
 axs[0, 1].set(title="True Slope")
 cax = make_axes_locatable(axs[0, 1]).append_axes("right", size="5%", pad=0.05)
@@ -149,11 +157,11 @@ def rgb2gray(rgb):
 circles_input = rgb2gray(imread("../testdata/slope_estimate/concentric.png"))
 circles_angles = rgb2gray(imread("../testdata/slope_estimate/concentric_angles.png"))
 
-slope, anisos_sm0 = slope_estimate(circles_input, smooth=0)
-angles_sm0 = np.rad2deg(np.arctan(slope))
+angles, anisos_sm0 = dip_estimate(circles_input, smooth=0)
+angles_sm0 = np.rad2deg(angles)
 
-slope, anisos_sm4 = slope_estimate(circles_input, smooth=4)
-angles_sm4 = np.rad2deg(np.arctan(slope))
+angles, anisos_sm4 = dip_estimate(circles_input, smooth=4)
+angles_sm4 = np.rad2deg(angles)
 
 ###############################################################################
 fig, axs = plt.subplots(2, 3, figsize=(6, 4), sharex=True, sharey=True)
@@ -162,19 +170,31 @@ axs[0, 0].set(title="Original Image")
 cax = make_axes_locatable(axs[0, 0]).append_axes("right", size="5%", pad=0.05)
 cax.axis("off")
 
-axs[1, 0].imshow(-circles_angles, cmap="RdBu_r")
+axs[1, 0].imshow(-circles_angles, cmap="twilight_shifted")
 axs[1, 0].set(title="Original Angles")
 cax = make_axes_locatable(axs[1, 0]).append_axes("right", size="5%", pad=0.05)
 cax.axis("off")
 
-im = axs[0, 1].imshow(angles_sm0, cmap="RdBu_r", vmin=-90, vmax=90)
+im = axs[0, 1].imshow(angles_sm0, cmap="twilight_shifted", vmin=-90, vmax=90)
 cax = make_axes_locatable(axs[0, 1]).append_axes("right", size="5%", pad=0.05)
-cb = fig.colorbar(im, cax=cax, orientation="vertical")
+cb = fig.colorbar(
+    im,
+    ticks=MultipleLocator(30),
+    format=FuncFormatter(lambda x, pos: "{:.0f}°".format(x)),
+    cax=cax,
+    orientation="vertical",
+)
 axs[0, 1].set(title="Angles (smooth=0)")
 
-im = axs[1, 1].imshow(angles_sm4, cmap="RdBu_r", vmin=-90, vmax=90)
+im = axs[1, 1].imshow(angles_sm4, cmap="twilight_shifted", vmin=-90, vmax=90)
 cax = make_axes_locatable(axs[1, 1]).append_axes("right", size="5%", pad=0.05)
-cb = fig.colorbar(im, cax=cax, orientation="vertical")
+cb = fig.colorbar(
+    im,
+    ticks=MultipleLocator(30),
+    format=FuncFormatter(lambda x, pos: "{:.0f}°".format(x)),
+    cax=cax,
+    orientation="vertical",
+)
 axs[1, 1].set(title="Angles (smooth=4)")
 
 im = axs[0, 2].imshow(anisos_sm0, cmap="Reds", vmin=0, vmax=1)
@@ -205,11 +225,11 @@ core_angles = rgb2gray(imread("../testdata/slope_estimate/core_sample_orientatio
 core_aniso = rgb2gray(imread("../testdata/slope_estimate/core_sample_anisotropy.png"))
 
 
-slope, anisos_sm4 = slope_estimate(core_input, smooth=4)
-angles_sm4 = np.rad2deg(np.arctan(slope))
+angles, anisos_sm4 = dip_estimate(core_input, smooth=4)
+angles_sm4 = np.rad2deg(angles)
 
-slope, anisos_sm8 = slope_estimate(core_input, smooth=8)
-angles_sm8 = np.rad2deg(np.arctan(slope))
+angles, anisos_sm8 = dip_estimate(core_input, smooth=8)
+angles_sm8 = np.rad2deg(angles)
 
 ###############################################################################
 fig, axs = plt.subplots(1, 6, figsize=(10, 6))
@@ -226,12 +246,24 @@ cax.axis("off")
 
 im = axs[2].imshow(angles_sm8, cmap="YlGnBu_r", vmin=-49, vmax=-11)
 cax = make_axes_locatable(axs[2]).append_axes("right", size="20%", pad=0.05)
-cb = fig.colorbar(im, cax=cax, orientation="vertical")
+cb = fig.colorbar(
+    im,
+    ticks=MultipleLocator(30),
+    format=FuncFormatter(lambda x, pos: "{:.0f}°".format(x)),
+    cax=cax,
+    orientation="vertical",
+)
 axs[2].set(title="Angles\n(smooth=8)")
 
 im = axs[3].imshow(angles_sm4, cmap="YlGnBu_r", vmin=-49, vmax=-11)
 cax = make_axes_locatable(axs[3]).append_axes("right", size="20%", pad=0.05)
-cb = fig.colorbar(im, cax=cax, orientation="vertical")
+cb = fig.colorbar(
+    im,
+    ticks=MultipleLocator(30),
+    format=FuncFormatter(lambda x, pos: "{:.0f}°".format(x)),
+    cax=cax,
+    orientation="vertical",
+)
 axs[3].set(title="Angles\n(smooth=4)")
 
 im = axs[4].imshow(anisos_sm8, cmap="Reds", vmin=0, vmax=1)
