@@ -10,8 +10,8 @@ def Laplacian(
     weights=(1, 1),
     sampling=(1, 1),
     edge=False,
-    dtype="float64",
     kind="centered",
+    dtype="float64",
 ):
     r"""Laplacian.
 
@@ -36,10 +36,10 @@ def Laplacian(
     edge : :obj:`bool`, optional
         Use reduced order derivative at edges (``True``) or
         ignore them (``False``) for centered derivative
-    dtype : :obj:`str`, optional
-        Type of elements in input array.
     kind : :obj:`str`, optional
         Derivative kind (``forward``, ``centered``, or ``backward``)
+    dtype : :obj:`str`, optional
+        Type of elements in input array.
 
     Returns
     -------

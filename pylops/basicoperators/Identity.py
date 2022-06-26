@@ -19,12 +19,12 @@ class Identity(LinearOperator):
         Number of samples in data (and model, if ``M`` is not provided).
     M : :obj:`int`, optional
         Number of samples in model.
-    dtype : :obj:`str`, optional
-        Type of elements in input array.
     inplace : :obj:`bool`, optional
         Work inplace (``True``) or make a new copy (``False``). By default,
         data is a reference to the model (in forward) and model is a reference
         to the data (in adjoint).
+    dtype : :obj:`str`, optional
+        Type of elements in input array.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -79,7 +79,7 @@ class Identity(LinearOperator):
 
     """
 
-    def __init__(self, N, M=None, dtype="float64", inplace=True, name="I"):
+    def __init__(self, N, M=None, inplace=True, dtype="float64", name="I"):
         M = N if M is None else M
         super().__init__(dtype=np.dtype(dtype), shape=(N, M), name=name)
         self.inplace = inplace

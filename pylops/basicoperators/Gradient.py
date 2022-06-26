@@ -2,7 +2,7 @@ from pylops.basicoperators import FirstDerivative, VStack
 from pylops.utils._internal import _value_or_list_like_to_tuple
 
 
-def Gradient(dims, sampling=1, edge=False, dtype="float64", kind="centered"):
+def Gradient(dims, sampling=1, edge=False, kind="centered", dtype="float64"):
     r"""Gradient.
 
     Apply gradient operator to a multi-dimensional array.
@@ -19,10 +19,10 @@ def Gradient(dims, sampling=1, edge=False, dtype="float64", kind="centered"):
     edge : :obj:`bool`, optional
         Use reduced order derivative at edges (``True``) or
         ignore them (``False``).
-    dtype : :obj:`str`, optional
-        Type of elements in input array.
     kind : :obj:`str`, optional
         Derivative kind (``forward``, ``centered``, or ``backward``).
+    dtype : :obj:`str`, optional
+        Type of elements in input array.
 
     Returns
     -------

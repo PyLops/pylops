@@ -37,12 +37,12 @@ class Restriction(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which restriction is applied to model.
-    dtype : :obj:`str`, optional
-        Type of elements in input array.
     inplace : :obj:`bool`, optional
         Work inplace (``True``) or make a new copy (``False``). By default,
         data is a reference to the model (in forward) and model is a reference
         to the data (in adjoint).
+    dtype : :obj:`str`, optional
+        Type of elements in input array.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -86,7 +86,7 @@ class Restriction(LinearOperator):
 
     """
 
-    def __init__(self, dims, iava, axis=-1, dtype="float64", inplace=True, name="R"):
+    def __init__(self, dims, iava, axis=-1, inplace=True, dtype="float64", name="R"):
         ncp = get_array_module(iava)
         dims = _value_or_list_like_to_tuple(dims)
         axis = normalize_axis_index(axis, len(dims))

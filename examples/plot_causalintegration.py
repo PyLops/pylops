@@ -41,7 +41,7 @@ x = np.sin(t)
 # sample from the analytical integral to obtain the same result as the
 # numerical one.
 
-Cop = pylops.CausalIntegration(nt, sampling=dt, halfcurrent=True)
+Cop = pylops.CausalIntegration(nt, sampling=dt, kind="half")
 
 yana = -np.cos(t) + np.cos(t[0])
 y = Cop * x
@@ -116,7 +116,7 @@ ot = 0
 t = np.arange(nt) * dt + ot
 x = np.outer(np.sin(t), np.ones(nx))
 
-Cop = pylops.CausalIntegration(dims=(nt, nx), sampling=dt, axis=0, halfcurrent=True)
+Cop = pylops.CausalIntegration(dims=(nt, nx), sampling=dt, axis=0, kind="half")
 
 y = Cop * x
 yn = y + np.random.normal(0, 4e-1, y.shape)

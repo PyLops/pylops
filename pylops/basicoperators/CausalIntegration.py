@@ -20,16 +20,12 @@ class CausalIntegration(LinearOperator):
         Axis along which the model is integrated.
     sampling : :obj:`float`, optional
         Sampling step ``dx``.
-    halfcurrent : :obj:`bool`, optional
-        Add half of current value (``True``) or the entire value (``False``).
-        This will be *deprecated* in v2.0.0, use instead `kind=half` to obtain
-        the same behaviour.
-    dtype : :obj:`str`, optional
-        Type of elements in input array.
     kind : :obj:`str`, optional
         Integration kind (``full``, ``half``, or ``trapezoidal``).
     removefirst : :obj:`bool`, optional
         Remove first sample (``True``) or not (``False``).
+    dtype : :obj:`str`, optional
+        Type of elements in input array.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -95,16 +91,15 @@ class CausalIntegration(LinearOperator):
         dims,
         axis=-1,
         sampling=1,
-        halfcurrent=True,
-        dtype="float64",
         kind="full",
         removefirst=False,
+        dtype="float64",
         name="C",
     ):
         self.axis = axis
         self.sampling = sampling
         # backwards compatible
-        self.kind = "half" if kind == "full" and halfcurrent else kind
+        self.kind = kind
         self.removefirst = removefirst
         dims = _value_or_list_like_to_tuple(dims)
         dimsd = list(dims)

@@ -3,7 +3,12 @@ from pylops.basicoperators import Diagonal, Gradient, Sum
 
 
 def FirstDirectionalDerivative(
-    dims, v, sampling=1, edge=False, dtype="float64", kind="centered"
+    dims,
+    v,
+    sampling=1,
+    edge=False,
+    kind="centered",
+    dtype="float64",
 ):
     r"""First Directional derivative.
 
@@ -26,10 +31,10 @@ def FirstDirectionalDerivative(
     edge : :obj:`bool`, optional
         Use reduced order derivative at edges (``True``) or
         ignore them (``False``).
-    dtype : :obj:`str`, optional
-        Type of elements in input array.
     kind : :obj:`str`, optional
         Derivative kind (``forward``, ``centered``, or ``backward``).
+    dtype : :obj:`str`, optional
+        Type of elements in input array.
 
     Returns
     -------
