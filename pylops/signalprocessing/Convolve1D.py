@@ -120,7 +120,7 @@ class Convolve1D(LinearOperator):
     """
 
     def __init__(
-        self, dims, h, offset=0, axis=-1, dtype="float64", method=None, name="C"
+        self, dims, h, offset=0, axis=-1, method=None, dtype="float64", name="C"
     ):
         dims = _value_or_list_like_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)

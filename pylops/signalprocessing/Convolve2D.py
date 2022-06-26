@@ -2,7 +2,7 @@ from pylops.signalprocessing import ConvolveND
 
 
 def Convolve2D(
-    dims, h, offset=(0, 0), axes=(-2, -1), dtype="float64", method="fft", name="C"
+    dims, h, offset=(0, 0), axes=(-2, -1), method="fft", dtype="float64", name="C"
 ):
     r"""2D convolution operator.
 
@@ -22,10 +22,10 @@ def Convolve2D(
         .. versionadded:: 2.0.0
 
         Axes along which convolution is applied
-    dtype : :obj:`str`, optional
-        Type of elements in input array.
     method : :obj:`str`, optional
         Method used to calculate the convolution (``direct`` or ``fft``).
+    dtype : :obj:`str`, optional
+        Type of elements in input array.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
