@@ -906,7 +906,7 @@ def ISTA(
                     Op1, niter=eigsiter, tol=eigstol, dtype=Op1.dtype, backend="cupy"
                 )[0]
             )
-        alpha = 1.0 / maxeig
+        alpha = 1.0 / float(maxeig)
 
     # define threshold
     thresh = eps * alpha * 0.5
@@ -959,8 +959,8 @@ def ISTA(
                 normresold = normres
 
         # compute gradient
-        grad = alpha * Op.H @ res
-
+        grad = alpha * (Op.H @ res)
+        
         # update inverted model
         xinv_unthesh = xinv + grad
         if SOp is not None:
@@ -1211,7 +1211,7 @@ def FISTA(
                     Op1, niter=eigsiter, tol=eigstol, dtype=Op1.dtype, backend="cupy"
                 )[0]
             )
-        alpha = 1.0 / maxeig
+        alpha = 1.0 / float(maxeig)
 
     # define threshold
     thresh = eps * alpha * 0.5
@@ -1254,7 +1254,7 @@ def FISTA(
         resz = data - Op @ zinv
 
         # compute gradient
-        grad = alpha * Op.H @ resz
+        grad = alpha * (Op.H @ resz)
 
         # update inverted model
         xinv_unthesh = zinv + grad
