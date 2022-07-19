@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, to_numpy
 
 
 def cg(Op, y, x0, niter=10, damp=0.0, tol=1e-4, show=False, callback=None):
@@ -481,7 +481,7 @@ def lsqr(
         beta = ncp.linalg.norm(u)
         if beta > 0:
             u = u / beta
-            anorm = np.linalg.norm([anorm, alfa, beta, damp])
+            anorm = np.linalg.norm([anorm, to_numpy(alfa), to_numpy(beta), damp])
             v = Op.rmatvec(u) - beta * v
             alfa = ncp.linalg.norm(v)
             if alfa > 0:
@@ -489,7 +489,7 @@ def lsqr(
 
         # use a plane rotation to eliminate the damping parameter.
         # This alters the diagonal (rhobar) of the lower-bidiagonal matrix.
-        rhobar1 = np.linalg.norm([rhobar, damp])
+        rhobar1 = np.linalg.norm([to_numpy(rhobar), damp])
         cs1 = rhobar / rhobar1
         sn1 = damp / rhobar1
         psi = sn1 * phibar
@@ -497,7 +497,7 @@ def lsqr(
 
         # use a plane rotation to eliminate the subdiagonal element (beta)
         # of the lower-bidiagonal matrix, giving an upper-bidiagonal matrix.
-        rho = np.linalg.norm([rhobar1, beta])
+        rho = np.linalg.norm([rhobar1, to_numpy(beta)])
         cs = rhobar1 / rho
         sn = beta / rho
         theta = sn * alfa
@@ -524,7 +524,7 @@ def lsqr(
         rhs = phi - delta * z
         zbar = rhs / gambar
         xnorm = ncp.sqrt(xxnorm + zbar ** 2)
-        gamma = np.linalg.norm([gambar, theta])
+        gamma = np.linalg.norm([gambar, to_numpy(theta)])
         cs2 = gambar / gamma
         sn2 = theta / gamma
         z = rhs / gamma
