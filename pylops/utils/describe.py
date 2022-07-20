@@ -20,6 +20,8 @@ else:
         _TransposedLinearOperator,
     )
 
+from typing import Callable, Dict, List, Set, Tuple, Type
+
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, VStack
 from pylops.LinearOperator import _ScaledLinearOperator, _SumLinearOperator
@@ -48,7 +50,7 @@ compositeops = (
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def _in_notebook():
+def _in_notebook() -> bool:
     """Check if code is running inside notebook"""
     try:
         from IPython import get_ipython
@@ -62,7 +64,9 @@ def _in_notebook():
     return True
 
 
-def _assign_name(Op, Ops, names):
+def _assign_name(
+    Op: Type[LinearOperator], Ops: Dict[str, Type[LinearOperator]], names: List
+) -> str:
     """Assign name to an operator as provided by the user
     (or randomly select one when not provided by the user)
 
@@ -113,7 +117,9 @@ def _assign_name(Op, Ops, names):
     return name
 
 
-def _describeop(Op, Ops, names):
+def _describeop(
+    Op: Type[LinearOperator], Ops: Dict[str, Type[LinearOperator]], names: List
+) -> Tuple[Callable, Dict[str, Type[LinearOperator]]]:
     """Core steps to describe a single operator
 
     Parameters
@@ -158,7 +164,11 @@ def _describeop(Op, Ops, names):
     return Op0, Ops_
 
 
-def _describe(Op, Ops, names):
+def _describe(
+    Op: Type[LinearOperator],
+    Ops: Dict[str, Type[LinearOperator]],
+    names: Union[List, Set],
+) -> Tuple[Callable, Dict[str, Type[LinearOperator]]]:
     """Core steps to describe a composite operator. This is done recursively.
 
     Parameters
@@ -270,7 +280,7 @@ def _describe(Op, Ops, names):
     return Opsym, Ops, names
 
 
-def describe(Op):
+def describe(Op: Type[LinearOperator]) -> None:
     r"""Describe a PyLops operator
 
     .. versionadded:: 1.17.0
