@@ -1,4 +1,4 @@
-from pylops.utils.metrics import *
+from pylops.utils.metrics import mae, mse, psnr, snr
 
 
 class Callbacks:
@@ -127,10 +127,20 @@ class MetricsCallback(Callbacks):
     This callback can be used to store different metrics from the
     ``pylops.utils.metrics`` module during iterations.
 
+    Parameters
+    ----------
+    xtrue : :obj:`np.ndarray`
+        True model vector
+    Op : :obj:`pylops.LinearOperator`, optional
+        Operator to apply to the solution prior to comparing it with `xtrue`
+    which : :obj:`tuple`, optional
+        List of metrics to compute (currently available: "mae", "mse", "snr",
+        and "psnr")
     """
 
-    def __init__(self, xtrue, which=["mae", "mse", "snr", "psnr"]):
+    def __init__(self, xtrue, Op=None, which=("mae", "mse", "snr", "psnr")):
         self.xtrue = xtrue
+        self.Op = Op
         self.which = which
         self.metrics = {}
         if "mae" in self.which:
@@ -143,6 +153,9 @@ class MetricsCallback(Callbacks):
             self.metrics["psnr"] = []
 
     def on_step_end(self, solver, x):
+        if self.Op is not None:
+            x = self.Op * x
+
         if "mae" in self.which:
             self.metrics["mae"].append(mae(self.xtrue, x))
         if "mse" in self.which:
