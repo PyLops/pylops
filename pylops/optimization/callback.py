@@ -1,3 +1,6 @@
+from pylops.utils.metrics import *
+
+
 class Callbacks:
     r"""Callbacks
 
@@ -116,3 +119,35 @@ class Callbacks:
 
         """
         pass
+
+
+class MetricsCallback(Callbacks):
+    r"""Metrics callback
+
+    This callback can be used to store different metrics from the
+    ``pylops.utils.metrics`` module during iterations.
+
+    """
+
+    def __init__(self, xtrue, which=["mae", "mse", "snr", "psnr"]):
+        self.xtrue = xtrue
+        self.which = which
+        self.metrics = {}
+        if "mae" in self.which:
+            self.metrics["mae"] = []
+        if "mse" in self.which:
+            self.metrics["mse"] = []
+        if "snr" in self.which:
+            self.metrics["snr"] = []
+        if "psnr" in self.which:
+            self.metrics["psnr"] = []
+
+    def on_step_end(self, solver, x):
+        if "mae" in self.which:
+            self.metrics["mae"].append(mae(self.xtrue, x))
+        if "mse" in self.which:
+            self.metrics["mse"].append(mse(self.xtrue, x))
+        if "snr" in self.which:
+            self.metrics["snr"].append(snr(self.xtrue, x))
+        if "psnr" in self.which:
+            self.metrics["psnr"].append(psnr(self.xtrue, x))
