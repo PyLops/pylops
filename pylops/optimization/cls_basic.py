@@ -5,6 +5,7 @@ import numpy as np
 from pylops.optimization.basesolver import Solver
 from pylops.utils.backend import get_array_module, to_numpy
 
+
 class CG(Solver):
     r"""Conjugate gradient
 
