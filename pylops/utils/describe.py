@@ -20,7 +20,7 @@ else:
         _TransposedLinearOperator,
     )
 
-from typing import Callable, Dict, List, Set, Tuple, Type
+from typing import Callable, Dict, List, Set, Tuple, Type, Union
 
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, VStack
