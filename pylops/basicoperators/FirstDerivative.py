@@ -10,7 +10,7 @@ from pylops.utils.decorators import reshaped
 class FirstDerivative(LinearOperator):
     r"""First derivative.
 
-    Apply a first derivative using a three-point stencil finite-difference
+    Apply a first derivative using a multiple-point stencil finite-difference
     approximation along ``axis``.
 
     Parameters
@@ -52,7 +52,7 @@ class FirstDerivative(LinearOperator):
     Notes
     -----
     The FirstDerivative operator applies a first derivative to any chosen
-    direction of a multi-dimensional array using either a second-order
+    direction of a multi-dimensional array using either a second- or third-order
     centered stencil or first-order forward/backward stencils.
 
     For simplicity, given a one dimensional array, the second-order centered
@@ -70,6 +70,9 @@ class FirstDerivative(LinearOperator):
 
     .. math::
         y[i] = (x[i] - x[i-1]) / \Delta x
+
+    Formulas for the third-order centered stencil can be found at
+    this `link <https://en.wikipedia.org/wiki/Finite_difference_coefficient>`_.
 
     """
 
