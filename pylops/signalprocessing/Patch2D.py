@@ -10,6 +10,70 @@ from pylops.utils.tapers import taper2d
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
+def Patch2Ddesign(dimsd, nwin, nover, nop):
+    """Design Patch2D operator
+
+    This routine can be used prior to creating the :class:`pylops.signalprocessing.Patch2D`
+    operator to identify the correct number of windows to be used based on the dimension of the data (``dimsd``),
+    dimension of the window (``nwin``), overlap (``nover``),a and dimension of the operator acting in the model
+    space.
+
+    Parameters
+    ----------
+    dimsd : :obj:`tuple`
+        Shape of 2-dimensional data.
+    nwin : :obj:`tuple`
+        Number of samples of window.
+    nover : :obj:`tuple`
+        Number of samples of overlapping part of window.
+    nop : :obj:`tuple`
+        Size of model in the transformed domain.
+
+    Returns
+    -------
+    nwins : :obj:`tuple`
+        Number of windows.
+    dims : :obj:`tuple`
+        Shape of 2-dimensional model.
+    mwins_inends : :obj:`tuple`
+        Start and end indices for model patches (stored as tuple of tuples).
+    dwins_inends : :obj:`tuple`
+        Start and end indices for data patches (stored as tuple of tuples).
+
+    """
+    # data windows
+    dwin0_ins, dwin0_ends = _slidingsteps(dimsd[0], nwin[0], nover[0])
+    dwin1_ins, dwin1_ends = _slidingsteps(dimsd[1], nwin[1], nover[1])
+    dwins_inends = ((dwin0_ins, dwin0_ends), (dwin1_ins, dwin1_ends))
+    nwins0 = len(dwin0_ins)
+    nwins1 = len(dwin1_ins)
+    nwins = (nwins0, nwins1)
+
+    # model windows
+    dims = (nwins0 * nop[0], nwins1 * nop[1])
+    mwin0_ins, mwin0_ends = _slidingsteps(dims[0], nop[0], 0)
+    mwin1_ins, mwin1_ends = _slidingsteps(dims[1], nop[1], 0)
+    mwins_inends = ((mwin0_ins, mwin0_ends), (mwin1_ins, mwin1_ends))
+
+    # print information about patching
+    logging.warning("%d-%d windows required...", nwins0, nwins1)
+    logging.warning(
+        "data wins - start:%s, end:%s / start:%s, end:%s",
+        dwin0_ins,
+        dwin0_ends,
+        dwin1_ins,
+        dwin1_ends,
+    )
+    logging.warning(
+        "model wins - start:%s, end:%s / start:%s, end:%s",
+        mwin0_ins,
+        mwin0_ends,
+        mwin1_ins,
+        mwin1_ends,
+    )
+    return nwins, dims, mwins_inends, dwins_inends
+
+
 def Patch2D(
     Op,
     dims,
@@ -19,7 +83,6 @@ def Patch2D(
     nop,
     tapertype="hanning",
     scalings=None,
-    design=False,
     name="P",
 ):
     """2D Patch transform operator.
@@ -69,8 +132,6 @@ def Patch2D(
     scalings : :obj:`tuple` or :obj:`list`, optional
          Set of scalings to apply to each patch. If ``None``, no scale will be
          applied
-    design : :obj:`bool`, optional
-        Print number of sliding window (``True``) or not (``False``)
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -89,19 +150,27 @@ def Patch2D(
 
     See Also
     --------
-    Sliding2d: 2D Sliding transform operator.
+    Sliding1D: 1D Sliding transform operator.
+    Sliding2D: 2D Sliding transform operator.
+    Sliding3D: 3D Sliding transform operator.
+    Patch3D: 3D Patching transform operator.
 
     """
-    # model windows
-    mwin0_ins, mwin0_ends = _slidingsteps(dims[0], nop[0], 0)
-    mwin1_ins, mwin1_ends = _slidingsteps(dims[1], nop[1], 0)
-
     # data windows
     dwin0_ins, dwin0_ends = _slidingsteps(dimsd[0], nwin[0], nover[0])
     dwin1_ins, dwin1_ends = _slidingsteps(dimsd[1], nwin[1], nover[1])
     nwins0 = len(dwin0_ins)
     nwins1 = len(dwin1_ins)
     nwins = nwins0 * nwins1
+
+    # check patching
+    if nwins0 * nop[0] != dims[0] or nwins1 * nop[1] != dims[1]:
+        raise ValueError(
+            f"Model shape (dims={dims}) is not consistent with chosen "
+            f"number of windows. Run Patch2Ddesign to identify the "
+            f"correct number of windows for the current "
+            "model size..."
+        )
 
     # create tapers
     if tapertype is not None:
@@ -147,34 +216,6 @@ def Patch2D(
         taprightbottom[:, -nover[1] :] = tap[:, nwin[1] // 2][:, np.newaxis]
         taprightbottom[-nover[0] :] = taprightbottom[nwin[0] // 2]
         taps[nwins - 1] = taprightbottom
-
-    # check that identified number of windows agrees with mode size
-    if design:
-        logging.warning("%d-%d windows required...", nwins0, nwins1)
-        logging.warning(
-            "model wins - start:%s, end:%s / start:%s, end:%s",
-            mwin0_ins,
-            mwin0_ends,
-            mwin1_ins,
-            mwin1_ends,
-        )
-        logging.warning(
-            "data wins - start:%s, end:%s / start:%s, end:%s",
-            dwin0_ins,
-            dwin0_ends,
-            dwin1_ins,
-            dwin1_ends,
-        )
-    if nwins0 * nop[0] != dims[0] or nwins1 * nop[1] != dims[1]:
-        raise ValueError(
-            f"Model shape (dims={dims}) is not consistent with chosen "
-            f"number of windows. Choose dims[0]={nwins0 * nop[0]} and "
-            f"dims[1]={nwins1 * nop[1]} for the operator to work with "
-            "estimated number of windows, or create "
-            "the operator with design=True to find out the"
-            "optimal number of windows for the current "
-            "model size..."
-        )
 
     # define scalings
     if scalings is None:

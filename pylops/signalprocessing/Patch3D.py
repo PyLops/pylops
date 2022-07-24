@@ -10,6 +10,85 @@ from pylops.utils.tapers import tapernd
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
+def Patch3Ddesign(dimsd, nwin, nover, nop):
+    """Design Patch3D operator
+
+    This routine can be used prior to creating the :class:`pylops.signalprocessing.Patch3D`
+    operator to identify the correct number of windows to be used based on the dimension of the data (``dimsd``),
+    dimension of the window (``nwin``), overlap (``nover``),a and dimension of the operator acting in the model
+    space.
+
+    Parameters
+    ----------
+    dimsd : :obj:`tuple`
+        Shape of 3-dimensional data.
+    nwin : :obj:`tuple`
+        Number of samples of window.
+    nover : :obj:`tuple`
+        Number of samples of overlapping part of window.
+    nop : :obj:`tuple`
+        Size of model in the transformed domain.
+
+    Returns
+    -------
+    nwins : :obj:`tuple`
+        Number of windows.
+    dims : :obj:`tuple`
+        Shape of 3-dimensional model.
+    mwins_inends : :obj:`tuple`
+        Start and end indices for model patches (stored as tuple of tuples).
+    dwins_inends : :obj:`tuple`
+        Start and end indices for data patches (stored as tuple of tuples).
+
+    """
+    # data windows
+    dwin0_ins, dwin0_ends = _slidingsteps(dimsd[0], nwin[0], nover[0])
+    dwin1_ins, dwin1_ends = _slidingsteps(dimsd[1], nwin[1], nover[1])
+    dwin2_ins, dwin2_ends = _slidingsteps(dimsd[2], nwin[2], nover[2])
+    dwins_inends = (
+        (dwin0_ins, dwin0_ends),
+        (dwin1_ins, dwin1_ends),
+        (dwin2_ins, dwin2_ends),
+    )
+    nwins0 = len(dwin0_ins)
+    nwins1 = len(dwin1_ins)
+    nwins2 = len(dwin2_ins)
+    nwins = (nwins0, nwins1, nwins2)
+
+    # model windows
+    dims = (nwins0 * nop[0], nwins1 * nop[1], nwins2 * nop[2])
+    mwin0_ins, mwin0_ends = _slidingsteps(dims[0], nop[0], 0)
+    mwin1_ins, mwin1_ends = _slidingsteps(dims[1], nop[1], 0)
+    mwin2_ins, mwin2_ends = _slidingsteps(dims[2], nop[2], 0)
+    mwins_inends = (
+        (mwin0_ins, mwin0_ends),
+        (mwin1_ins, mwin1_ends),
+        (mwin2_ins, mwin2_ends),
+    )
+
+    # print information about patching
+    logging.warning("%d-%d-%d windows required...", nwins0, nwins1, nwins2)
+    logging.warning(
+        "data wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
+        dwin0_ins,
+        dwin0_ends,
+        dwin1_ins,
+        dwin1_ends,
+        dwin2_ins,
+        dwin2_ends,
+    )
+    logging.warning(
+        "model wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
+        mwin0_ins,
+        mwin0_ends,
+        mwin1_ins,
+        mwin1_ends,
+        mwin2_ins,
+        mwin2_ends,
+    )
+    return nwins, dims, mwins_inends, dwins_inends
+
+
 def Patch3D(
     Op,
     dims,
@@ -19,7 +98,6 @@ def Patch3D(
     nop,
     tapertype="hanning",
     scalings=None,
-    design=False,
     name="P",
 ):
     """3D Patch transform operator.
@@ -69,8 +147,6 @@ def Patch3D(
     scalings : :obj:`tuple` or :obj:`list`, optional
          Set of scalings to apply to each patch. If ``None``, no scale will be
          applied
-    design : :obj:`bool`, optional
-        Print number of sliding window (``True``) or not (``False``)
     name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
@@ -87,14 +163,12 @@ def Patch3D(
 
     See Also
     --------
+    Sliding1D: 1D Sliding transform operator.
+    Sliding2D: 2D Sliding transform operator.
+    Sliding3D: 3D Sliding transform operator.
     Patch2D: 2D Patching transform operator.
 
     """
-    # model windows
-    mwin0_ins, mwin0_ends = _slidingsteps(dims[0], nop[0], 0)
-    mwin1_ins, mwin1_ends = _slidingsteps(dims[1], nop[1], 0)
-    mwin2_ins, mwin2_ends = _slidingsteps(dims[2], nop[2], 0)
-
     # data windows
     dwin0_ins, dwin0_ends = _slidingsteps(dimsd[0], nwin[0], nover[0])
     dwin1_ins, dwin1_ends = _slidingsteps(dimsd[1], nwin[1], nover[1])
@@ -103,6 +177,19 @@ def Patch3D(
     nwins1 = len(dwin1_ins)
     nwins2 = len(dwin2_ins)
     nwins = nwins0 * nwins1 * nwins2
+
+    # check patching
+    if (
+        nwins0 * nop[0] != dims[0]
+        or nwins1 * nop[1] != dims[1]
+        or nwins2 * nop[2] != dims[2]
+    ):
+        raise ValueError(
+            f"Model shape (dims={dims}) is not consistent with chosen "
+            f"number of windows. Run Patch3Ddesign to identify the "
+            f"correct number of windows for the current "
+            "model size..."
+        )
 
     # create tapers
     if tapertype is not None:
@@ -291,43 +378,6 @@ def Patch3D(
         taps[
             (nwins0 - 1) * nwins1 * nwins2 + (nwins1 - 1) * nwins2 + nwins2 - 1
         ] = taprightbottom
-
-    # check that identified number of windows agrees with mode size
-    if design:
-        logging.warning("%d-%d-%d windows required...", nwins0, nwins1, nwins2)
-        logging.warning(
-            "model wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
-            mwin0_ins,
-            mwin0_ends,
-            mwin1_ins,
-            mwin1_ends,
-            mwin2_ins,
-            mwin2_ends,
-        )
-        logging.warning(
-            "data wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
-            dwin0_ins,
-            dwin0_ends,
-            dwin1_ins,
-            dwin1_ends,
-            dwin2_ins,
-            dwin2_ends,
-        )
-    if (
-        nwins0 * nop[0] != dims[0]
-        or nwins1 * nop[1] != dims[1]
-        or nwins2 * nop[2] != dims[2]
-    ):
-        raise ValueError(
-            f"Model shape (dims={dims}) is not consistent with chosen "
-            f"number of windows. Choose dims[0]={nwins0 * nop[0]}, "
-            f"dims[1]={nwins1 * nop[1]}, and dims[2]={nwins2* nop[2]} "
-            f"for the operator to work with "
-            "estimated number of windows, or create "
-            "the operator with design=True to find out the"
-            "optimal number of windows for the current "
-            "model size..."
-        )
 
     # define scalings
     if scalings is None:
