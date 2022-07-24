@@ -7,7 +7,7 @@ transforms over small patches of a 2-dimensional or 3-dimensional
 array. The transforms that we apply in this example are the
 :py:class:`pylops.signalprocessing.FFT2D` and
 :py:class:`pylops.signalprocessing.FFT3D` but this operator has been
-design to allow a variety of transforms as long as they operate with signals
+designed to allow a variety of transforms as long as they operate with signals
 that are 2- or 3-dimensional in nature, respectively.
 
 """
@@ -45,33 +45,34 @@ _, data = pylops.utils.seismicevents.parabolic2d(x, t, t0, px, pxx, amp, wav)
 # done by simply using the adjoint of the
 # :py:class:`pylops.signalprocessing.Patch2D` operator. Note that for non-
 # orthogonal operators, this must be replaced by an inverse.
-nwins = (13, 6)  # number of windows
 nwin = (20, 34)  # window size in data domain
 nop = (
     128,
     128 // 2 + 1,
 )  # window size in model domain; we use real FFT, second axis is half
 nover = (10, 4)  # overlap between windows
-
 dimsd = data.shape
-dims = (nwins[0] * nop[0], nwins[1] * nop[1])
 
 # Sliding window transform without taper
 Op = pylops.signalprocessing.FFT2D(nwin, nffts=(128, 128), real=True)
-Slid = pylops.signalprocessing.Patch2D(
-    Op.H, dims, dimsd, nwin, nover, nop, tapertype=None, design=False
+
+nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.Patch2Ddesign(
+    dimsd, nwin, nover, (128, 65)
 )
-fftdata = Slid.H * data
+Patch = pylops.signalprocessing.Patch2D(
+    Op.H, dims, dimsd, nwin, nover, nop, tapertype=None
+)
+fftdata = Patch.H * data
 
 ###############################################################################
 # We now create a similar operator but we also add a taper to the overlapping
 # parts of the patches. We then apply the forward to restore the original
 # signal.
-Slid = pylops.signalprocessing.Patch2D(
-    Op.H, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
+Patch = pylops.signalprocessing.Patch2D(
+    Op.H, dims, dimsd, nwin, nover, nop, tapertype="hanning"
 )
 
-reconstructed_data = Slid * fftdata
+reconstructed_data = Patch * fftdata
 
 ###############################################################################
 # Finally we re-arrange the transformed patches so that we can also display
@@ -175,7 +176,6 @@ plt.tight_layout()
 # Let's create now the :py:class:`pylops.signalprocessing.Patch3D` operator
 # applying the adjoint of the :py:class:`pylops.signalprocessing.FFT3D`
 # operator to each patch.
-nwins = (5, 4, 3)  # number of windows
 nwin = (20, 20, 34)  # window size in data domain
 nop = (
     128,
@@ -183,21 +183,23 @@ nop = (
     128 // 2 + 1,
 )  # window size in model domain; we use real FFT, third axis is half
 nover = (10, 10, 4)  # overlap between windows
-
 dimsd = data.shape
-dims = (nwins[0] * nop[0], nwins[1] * nop[1], nwins[2] * nop[2])
 
 # Sliding window transform without taper
 Op = pylops.signalprocessing.FFTND(nwin, nffts=(128, 128, 128), real=True)
-Slid = pylops.signalprocessing.Patch3D(
+
+nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.Patch3Ddesign(
+    dimsd, nwin, nover, (128, 128, 65)
+)
+Patch = pylops.signalprocessing.Patch3D(
     Op.H, dims, dimsd, nwin, nover, nop, tapertype=None
 )
-fftdata = Slid.H * data
+fftdata = Patch.H * data
 
-Slid = pylops.signalprocessing.Patch3D(
-    Op.H, dims, dimsd, nwin, nover, nop, tapertype="hanning", design=False
+Patch = pylops.signalprocessing.Patch3D(
+    Op.H, dims, dimsd, nwin, nover, nop, tapertype="hanning"
 )
-reconstructed_data = np.real(Slid * fftdata)
+reconstructed_data = np.real(Patch * fftdata)
 
 fig, axs = plt.subplots(1, 3, figsize=(12, 5))
 fig.suptitle("Reconstructed data", fontsize=12, fontweight="bold", y=0.95)

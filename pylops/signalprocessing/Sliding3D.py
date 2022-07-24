@@ -101,15 +101,13 @@ def Sliding3D(
     .. note:: The shape of the model has to be consistent with
        the number of windows for this operator not to return an error. As the
        number of windows depends directly on the choice of ``nwin`` and
-       ``nover``, it is recommended to use ``design=True`` if unsure about the
-       choice ``dims`` and use the number of windows printed on screen to
-       define such input parameter.
+       ``nover``, it is recommended to first run ``Sliding3Ddesign`` to obtain
+       the corresponding ``dims`` and number of windows.
 
     .. warning:: Depending on the choice of `nwin` and `nover` as well as the
-       size of the data, sliding windows may not cover the entire first and/or
-       second dimensions. The start and end indeces of each window can be
-       displayed using ``design=True`` while defining the best sliding window
-       approach.
+       size of the data, sliding windows may not cover the entire data.
+       The start and end indices of each window will be displayed and returned
+       with running ``Sliding3Ddesign``.
 
     Parameters
     ----------

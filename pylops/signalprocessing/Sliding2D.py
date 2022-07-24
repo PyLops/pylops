@@ -73,11 +73,9 @@ def Sliding2Ddesign(dimsd, nwin, nover, nop):
     dwin_ins, dwin_ends = _slidingsteps(dimsd[0], nwin, nover)
     dwins_inends = (dwin_ins, dwin_ends)
     nwins = len(dwin_ins)
-    print(nwins)
 
     # model windows
     dims = (nwins * nop[0], nop[1])
-    print(dims)
     mwin_ins, mwin_ends = _slidingsteps(dims[0], nop[0], 0)
     mwins_inends = (mwin_ins, mwin_ends)
 
@@ -114,14 +112,13 @@ def Sliding2D(Op, dims, dimsd, nwin, nover, tapertype="hanning", name="S"):
     .. note:: The shape of the model has to be consistent with
        the number of windows for this operator not to return an error. As the
        number of windows depends directly on the choice of ``nwin`` and
-       ``nover``, it is recommended to use ``design=True`` if unsure about the
-       choice ``dims`` and use the number of windows printed on screen to
-       define such input parameter.
+       ``nover``, it is recommended to first run ``Sliding2Ddesign`` to obtain
+       the corresponding ``dims`` and number of windows.
 
     .. warning:: Depending on the choice of `nwin` and `nover` as well as the
-       size of the data, sliding windows may not cover the entire first dimension.
-       The start and end indices of each window can be displayed using
-       ``design=True`` while defining the best sliding window approach.
+       size of the data, sliding windows may not cover the entire data.
+       The start and end indices of each window will be displayed and returned
+       with running ``Sliding2Ddesign``.
 
     Parameters
     ----------

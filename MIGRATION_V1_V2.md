@@ -40,6 +40,7 @@ should be used as a checklist when converting a piece of code using PyLops from 
 - The optional arguments ``fast``, ``transpose``, and ``dtype`` have been deprecated in ``pylops.waveeqprocessing.mdd.MDC``.
   As previously stated in a warning message, the recommended option ``transpose=False`` is now selected as default.
   Ensure that the input array ``G`` is organized as follows ``[n_fmax X n_s X n_r]``.
+- The optional arguments ``design`` has been deprecated in ``pylops.waveeqprocessing.seismicinterpolation.SeismicInterpolation``.
 
 ## Utils
 - `utils.dottest`: Change `tol` into `rtol`. Absolute tolerance is now also supported via the keyword `atol`.

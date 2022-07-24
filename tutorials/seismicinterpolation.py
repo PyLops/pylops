@@ -348,7 +348,7 @@ Op = pylops.signalprocessing.Radon2D(
     engine="numba",
 )
 Slidop = pylops.signalprocessing.Sliding2D(
-    Op, dims, dimsd, nwin, nover, tapertype="cosine", design=True
+    Op, dims, dimsd, nwin, nover, tapertype="cosine"
 )
 
 # adjoint
