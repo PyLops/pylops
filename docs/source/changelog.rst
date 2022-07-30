@@ -3,6 +3,23 @@
 Changelog
 =========
 
+Version 1.18.3
+--------------
+
+*Released on: 30/07/2022*
+
+* Refractored :py:func:`pylops.utils.dottest`, and added two new optional input parameters
+  (`atol` and `rtol`)
+* Added optional parameter `densesolver` to :py:func:`pylops.LinearOperator.div`
+
+* Fixed :py:class:`pylops.optimization.basic.lsqr`, :py:class:`pylops.optimization.sparsity.ISTA`, and
+  :py:class:`pylops.optimization.sparsity.FISTA` to work with cupy arrays. This change was required
+  by how recent cupy versions handle scalars, which are not converted directly into float types,
+  rather kept as cupy arrays.
+* Fix bug in :py:class:`pylops.waveeqprocessing.Deghosting` introduced in
+  commit `7e596d4 <https://github.com/PyLops/pylops/commit/7e596d4dad3793d6430204b7a9b214a9dc39616c>`_.
+
+
 Version 1.18.2
 --------------
 
