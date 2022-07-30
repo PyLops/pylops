@@ -1,3 +1,11 @@
+# 1.18.3
+* Fixed ``pylops.optimization.basic.lsqr``, ``pylops.optimization.sparsity.ISTA``, and
+  ``pylops.optimization.sparsity.FISTA`` to work with cupy arrays. This change was required
+  by how recent cupy versions handle scalars, which are not converted directly into float types,
+  rather kept as cupy arrays.
+* Fixed bug in ``pylops.waveeqprocessing.Deghosting`` introduced in
+  commit [7e596d4](https://github.com/PyLops/pylops/commit/7e596d4dad3793d6430204b7a9b214a9dc39616c)
+
 # 1.18.2
 * Refractored `pylops.utils.dottest`, and added two new optional input parameters
   (``atol`` and ``rtol``)
