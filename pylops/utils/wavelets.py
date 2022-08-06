@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, Union
+from typing import Callable, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -53,7 +53,7 @@ def gaussian(
 
 def klauder(
     t: npt.ArrayLike,
-    f: tuple = (5, 20),
+    f: Tuple = (5, 20),
     taper: Callable = None,
 ) -> Union[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Klauder wavelet
@@ -101,7 +101,7 @@ def klauder(
 
 def ormsby(
     t: npt.ArrayLike,
-    f: tuple = (5, 10, 45, 50),
+    f: Tuple = (5, 10, 45, 50),
     taper: Callable = None,
 ) -> Union[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Ormsby wavelet

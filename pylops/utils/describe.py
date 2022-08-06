@@ -20,7 +20,7 @@ else:
         _TransposedLinearOperator,
     )
 
-from typing import Callable, Union
+from typing import List, Set, Union
 
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, VStack
@@ -64,9 +64,7 @@ def _in_notebook() -> bool:
     return True
 
 
-def _assign_name(
-    Op: type[LinearOperator], Ops: dict[str, type[LinearOperator]], names: list
-) -> str:
+def _assign_name(Op, Ops, names: List) -> str:
     """Assign name to an operator as provided by the user
     (or randomly select one when not provided by the user)
 
@@ -117,9 +115,7 @@ def _assign_name(
     return name
 
 
-def _describeop(
-    Op: type[LinearOperator], Ops: dict[str, type[LinearOperator]], names: list
-) -> tuple[Callable, dict[str, type[LinearOperator]]]:
+def _describeop(Op, Ops, names: List):
     """Core steps to describe a single operator
 
     Parameters
@@ -165,10 +161,10 @@ def _describeop(
 
 
 def _describe(
-    Op: type[LinearOperator],
-    Ops: dict[str, type[LinearOperator]],
-    names: Union[list, set],
-) -> tuple[Callable, dict[str, type[LinearOperator]]]:
+    Op,
+    Ops,
+    names: Union[List, Set],
+):
     """Core steps to describe a composite operator. This is done recursively.
 
     Parameters
@@ -280,7 +276,7 @@ def _describe(
     return Opsym, Ops, names
 
 
-def describe(Op: type[LinearOperator]) -> None:
+def describe(Op) -> None:
     r"""Describe a PyLops operator
 
     .. versionadded:: 1.17.0

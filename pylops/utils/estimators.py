@@ -4,7 +4,6 @@ from typing import Union
 import numpy
 import numpy.typing as npt
 
-from pylops import LinearOperator
 from pylops.utils.backend import get_module
 
 
@@ -35,7 +34,7 @@ _SAMPLERS = {
 
 
 def trace_hutchinson(
-    Op: type[LinearOperator],
+    Op,
     neval: int = None,
     batch_size: int = None,
     sampler: str = "rademacher",
@@ -151,7 +150,7 @@ def trace_hutchinson(
 
 
 def trace_hutchpp(
-    Op: type[LinearOperator],
+    Op,
     neval: int = None,
     sampler: str = "rademacher",
     backend: str = "numpy",
@@ -244,7 +243,7 @@ def trace_hutchpp(
 
 
 def trace_nahutchpp(
-    Op: type[LinearOperator],
+    Op,
     neval: int = None,
     sampler: str = "rademacher",
     c1: float = 1.0 / 6.0,

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -47,7 +47,7 @@ def nonstationary_convmtx(
     H: npt.ArrayLike,
     n: int,
     hc: int = 0,
-    pad: tuple = (0, 0),
+    pad: Tuple = (0, 0),
 ) -> npt.ArrayLike:
     r"""Convolution matrix from a bank of filters
 

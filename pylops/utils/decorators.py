@@ -58,7 +58,9 @@ def add_ndarray_support_to_solver(func: Callable) -> Callable:
 
 
 def reshaped(
-    func: Callable = None, forward: bool = None, swapaxis: bool = False
+    func: Callable = None,
+    forward: bool = None,
+    swapaxis: bool = False,
 ) -> Callable:
     """Decorator for the common reshape/flatten pattern used in many operators.
 
@@ -139,7 +141,9 @@ def reshaped(
 
 
 def count(
-    func: Callable = None, forward: bool = None, matmat: bool = False
+    func: Callable = None,
+    forward: bool = None,
+    matmat: bool = False,
 ) -> Callable:
     """Decorator used to count the number of forward and adjoint performed by an operator.
 

@@ -1,11 +1,10 @@
 import numpy as np
 
-from pylops import LinearOperator
 from pylops.utils.backend import get_module, to_numpy
 
 
 def dottest(
-    Op: type[LinearOperator],
+    Op,
     nr: int = None,
     nc: int = None,
     rtol: float = 1e-6,

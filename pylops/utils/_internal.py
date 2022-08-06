@@ -1,11 +1,12 @@
-from typing import Union
+from typing import List, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
 
 
 def _value_or_list_like_to_array(
-    value_or_list_like: Union[float, list, tuple, npt.ArrayLike], repeat: int = 1
+    value_or_list_like: Union[float, List, Tuple, npt.ArrayLike],
+    repeat: int = 1,
 ) -> npt.ArrayLike:
     """Convert an object which is either single value or a list-like to an array.
 
@@ -33,8 +34,9 @@ def _value_or_list_like_to_array(
 
 
 def _value_or_list_like_to_tuple(
-    value_or_list_like: Union[float, list, tuple, npt.ArrayLike], repeat: int = 1
-) -> tuple:
+    value_or_list_like: Union[float, List, Tuple, npt.ArrayLike],
+    repeat: int = 1,
+) -> Tuple:
     """Convert an object which is either single value or a list-like to a tuple.
 
     Parameters
@@ -55,7 +57,11 @@ def _value_or_list_like_to_tuple(
     return tuple(_value_or_list_like_to_array(value_or_list_like, repeat=repeat))
 
 
-def _raise_on_wrong_dtype(arr: npt.ArrayLike, dtype: npt.DTypeLike, name: str) -> None:
+def _raise_on_wrong_dtype(
+    arr: npt.ArrayLike,
+    dtype: npt.DTypeLike,
+    name: str,
+) -> None:
     """Raises an error if dtype of `arr` is not a subdtype of `dtype`.
 
     Parameters
