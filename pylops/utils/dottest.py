@@ -1,19 +1,20 @@
 import numpy as np
 
+from pylops import LinearOperator
 from pylops.utils.backend import get_module, to_numpy
 
 
 def dottest(
-    Op,
-    nr=None,
-    nc=None,
-    rtol=1e-6,
-    atol=1e-21,
-    complexflag=0,
-    raiseerror=True,
-    verb=False,
-    backend="numpy",
-):
+    Op: type[LinearOperator],
+    nr: int = None,
+    nc: int = None,
+    rtol: float = 1e-6,
+    atol: float = 1e-21,
+    complexflag: int = 0,
+    raiseerror: bool = True,
+    verb: bool = False,
+    backend: str = "numpy",
+) -> bool:
     r"""Dot test.
 
     Generate random vectors :math:`\mathbf{u}` and :math:`\mathbf{v}`
@@ -51,6 +52,11 @@ def dottest(
     backend : :obj:`str`, optional
         Backend used for dot test computations (``numpy`` or ``cupy``). This
         parameter will be used to choose how to create the random vectors.
+
+    Returns
+    -------
+    passed : :obj:`bool`
+        Passed flag.
 
     Raises
     ------

@@ -1,7 +1,16 @@
 import time
 
+import numpy.typing as npt
 
-def scalability_test(Op, x, workers=[1, 2, 4], forward=True):
+from pylops import LinearOperator
+
+
+def scalability_test(
+    Op: type[LinearOperator],
+    x: npt.ArrayLike,
+    workers: list = [1, 2, 4],
+    forward: bool = True,
+) -> tuple[list, list]:
     r"""Scalability test.
 
     Small auxiliary routine to test the performance of operators using

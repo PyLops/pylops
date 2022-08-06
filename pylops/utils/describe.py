@@ -20,7 +20,7 @@ else:
         _TransposedLinearOperator,
     )
 
-from typing import Callable, Dict, List, Set, Tuple, Type, Union
+from typing import Callable, Union
 
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, VStack
@@ -65,7 +65,7 @@ def _in_notebook() -> bool:
 
 
 def _assign_name(
-    Op: Type[LinearOperator], Ops: Dict[str, Type[LinearOperator]], names: List
+    Op: type[LinearOperator], Ops: dict[str, type[LinearOperator]], names: list
 ) -> str:
     """Assign name to an operator as provided by the user
     (or randomly select one when not provided by the user)
@@ -75,10 +75,10 @@ def _assign_name(
     Op : :obj:`pylops.LinearOperator`
         Linear Operator to assign name to
     Ops : :obj:`dict`
-        Dictionary of Operators found by the _describe method whilst crawling
+        dictionary of Operators found by the _describe method whilst crawling
         through the composite operator to describe
     names : :obj:`list`
-        List of currently assigned names
+        list of currently assigned names
 
     Returns
     -------
@@ -118,8 +118,8 @@ def _assign_name(
 
 
 def _describeop(
-    Op: Type[LinearOperator], Ops: Dict[str, Type[LinearOperator]], names: List
-) -> Tuple[Callable, Dict[str, Type[LinearOperator]]]:
+    Op: type[LinearOperator], Ops: dict[str, type[LinearOperator]], names: list
+) -> tuple[Callable, dict[str, type[LinearOperator]]]:
     """Core steps to describe a single operator
 
     Parameters
@@ -127,10 +127,10 @@ def _describeop(
     Op : :obj:`pylops.LinearOperator`
         Linear Operator to assign name to
     Ops : :obj:`dict`
-        Dictionary of Operators found by the _describe method whilst crawling
+        dictionary of Operators found by the _describe method whilst crawling
         through the composite operator to describe
     names : :obj:`list`
-        List of currently assigned names
+        list of currently assigned names
 
     Returns
     -------
@@ -165,10 +165,10 @@ def _describeop(
 
 
 def _describe(
-    Op: Type[LinearOperator],
-    Ops: Dict[str, Type[LinearOperator]],
-    names: Union[List, Set],
-) -> Tuple[Callable, Dict[str, Type[LinearOperator]]]:
+    Op: type[LinearOperator],
+    Ops: dict[str, type[LinearOperator]],
+    names: Union[list, set],
+) -> tuple[Callable, dict[str, type[LinearOperator]]]:
     """Core steps to describe a composite operator. This is done recursively.
 
     Parameters
@@ -176,17 +176,17 @@ def _describe(
     Op : :obj:`pylops.LinearOperator`
         Linear Operator to assign name to
     Ops : :obj:`dict`
-        Dictionary of Operators found by the _describe method whilst crawling
+        dictionary of Operators found by the _describe method whilst crawling
         through the composite operator to describe
     names : :obj:`list`
-        List of currently assigned names
+        list of currently assigned names
 
     Returns
     -------
     Opsym : :obj:`sympy.MatrixSymbol`
         Sympy equivalent od Linear Operator ``Op``
     Ops : :obj:`dict`
-        Dictionary of Operators
+        dictionary of Operators
 
     """
     # Check if a name has been given to the operator and store it as
@@ -280,7 +280,7 @@ def _describe(
     return Opsym, Ops, names
 
 
-def describe(Op: Type[LinearOperator]) -> None:
+def describe(Op: type[LinearOperator]) -> None:
     r"""Describe a PyLops operator
 
     .. versionadded:: 1.17.0

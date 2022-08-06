@@ -1,11 +1,13 @@
 import warnings
+from typing import Callable, Union
 
 import numpy as np
+import numpy.typing as npt
 from scipy.signal import chirp
 from scipy.signal.windows import gaussian as spgauss
 
 
-def _tcrop(t):
+def _tcrop(t: npt.ArrayLike) -> npt.ArrayLike:
     """Crop time axis with even number of samples"""
     if len(t) % 2 == 0:
         t = t[:-1]
@@ -13,7 +15,10 @@ def _tcrop(t):
     return t
 
 
-def gaussian(t, std=1):
+def gaussian(
+    t: npt.ArrayLike,
+    std: float = 1,
+) -> Union[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Gaussian wavelet
 
     Create a Gaussian wavelet given time axis ``t``
@@ -46,7 +51,11 @@ def gaussian(t, std=1):
     return w, t, wcenter
 
 
-def klauder(t, f=(5, 20), taper=None):
+def klauder(
+    t: npt.ArrayLike,
+    f: tuple = (5, 20),
+    taper: Callable = None,
+) -> Union[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Klauder wavelet
 
     Create a Klauder wavelet given time axis ``t``
@@ -90,7 +99,11 @@ def klauder(t, f=(5, 20), taper=None):
     return w, t, wcenter
 
 
-def ormsby(t, f=(5, 10, 45, 50), taper=None):
+def ormsby(
+    t: npt.ArrayLike,
+    f: tuple = (5, 10, 45, 50),
+    taper: Callable = None,
+) -> Union[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Ormsby wavelet
 
     Create a Ormsby wavelet given time axis ``t`` and frequency range
@@ -144,7 +157,11 @@ def ormsby(t, f=(5, 10, 45, 50), taper=None):
     return w, t, wcenter
 
 
-def ricker(t, f0=10, taper=None):
+def ricker(
+    t: npt.ArrayLike,
+    f0: float = 10,
+    taper: Callable = None,
+) -> Union[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Ricker wavelet
 
     Create a Ricker wavelet given time axis ``t`` and central frequency ``f_0``

@@ -1,11 +1,11 @@
-from typing import List, Tuple, Union
+from typing import Union
 
 import numpy as np
 import numpy.typing as npt
 
 
 def _value_or_list_like_to_array(
-    value_or_list_like: Union[float, List, Tuple, npt.ArrayLike], repeat: int = 1
+    value_or_list_like: Union[float, list, tuple, npt.ArrayLike], repeat: int = 1
 ) -> npt.ArrayLike:
     """Convert an object which is either single value or a list-like to an array.
 
@@ -33,8 +33,8 @@ def _value_or_list_like_to_array(
 
 
 def _value_or_list_like_to_tuple(
-    value_or_list_like: Union[float, List, Tuple, npt.ArrayLike], repeat: int = 1
-) -> Tuple:
+    value_or_list_like: Union[float, list, tuple, npt.ArrayLike], repeat: int = 1
+) -> tuple:
     """Convert an object which is either single value or a list-like to a tuple.
 
     Parameters
