@@ -1,3 +1,6 @@
+from pylops.utils.metrics import mae, mse, psnr, snr
+
+
 class Callbacks:
     r"""Callbacks
 
@@ -116,3 +119,48 @@ class Callbacks:
 
         """
         pass
+
+
+class MetricsCallback(Callbacks):
+    r"""Metrics callback
+
+    This callback can be used to store different metrics from the
+    ``pylops.utils.metrics`` module during iterations.
+
+    Parameters
+    ----------
+    xtrue : :obj:`np.ndarray`
+        True model vector
+    Op : :obj:`pylops.LinearOperator`, optional
+        Operator to apply to the solution prior to comparing it with `xtrue`
+    which : :obj:`tuple`, optional
+        List of metrics to compute (currently available: "mae", "mse", "snr",
+        and "psnr")
+    """
+
+    def __init__(self, xtrue, Op=None, which=("mae", "mse", "snr", "psnr")):
+        self.xtrue = xtrue
+        self.Op = Op
+        self.which = which
+        self.metrics = {}
+        if "mae" in self.which:
+            self.metrics["mae"] = []
+        if "mse" in self.which:
+            self.metrics["mse"] = []
+        if "snr" in self.which:
+            self.metrics["snr"] = []
+        if "psnr" in self.which:
+            self.metrics["psnr"] = []
+
+    def on_step_end(self, solver, x):
+        if self.Op is not None:
+            x = self.Op * x
+
+        if "mae" in self.which:
+            self.metrics["mae"].append(mae(self.xtrue, x))
+        if "mse" in self.which:
+            self.metrics["mse"].append(mse(self.xtrue, x))
+        if "snr" in self.which:
+            self.metrics["snr"].append(snr(self.xtrue, x))
+        if "psnr" in self.which:
+            self.metrics["psnr"].append(psnr(self.xtrue, x))
