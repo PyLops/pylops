@@ -11,7 +11,7 @@ def _compute_iavamask(dims, axis, iava, ncp):
     """Compute restriction mask when using cupy arrays"""
     otherdims = np.array(dims)
     otherdims = np.delete(otherdims, axis)
-    iavamask = ncp.zeros(dims[axis], dtype=int)
+    iavamask = ncp.zeros(int(dims[axis]), dtype=int)
     iavamask[iava] = 1
     iavamask = ncp.moveaxis(
         ncp.broadcast_to(iavamask, list(otherdims) + [dims[axis]]), -1, axis
@@ -130,7 +130,7 @@ class Restriction(LinearOperator):
             if not hasattr(self, "iavamask"):
                 self.iava = to_cupy_conditional(x, self.iava)
                 self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
-            y = ncp.zeros(self.shape[-1], dtype=self.dtype)
+            y = ncp.zeros(int(self.shape[-1]), dtype=self.dtype)
             y[self.iavamask] = x.ravel()
         y = y.ravel()
         return y
