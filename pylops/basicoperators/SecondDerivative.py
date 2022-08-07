@@ -24,11 +24,12 @@ class SecondDerivative(LinearOperator):
         Axis along which derivative is applied.
     sampling : :obj:`float`, optional
         Sampling step :math:`\Delta x`.
-    edge : :obj:`bool`, optional
-        Use reduced order derivative at edges (``True``) or
-        ignore them (``False``) for centered derivative
     kind : :obj:`str`, optional
         Derivative kind (``forward``, ``centered``, or ``backward``).
+    edge : :obj:`bool`, optional
+        Use shifted derivatives at edges (``True``) or
+        ignore them (``False``). This is currently only available
+         for centered derivative
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -72,8 +73,8 @@ class SecondDerivative(LinearOperator):
         dims,
         axis=-1,
         sampling=1,
-        edge=False,
         kind="centered",
+        edge=False,
         dtype="float64",
         name="S",
     ):
@@ -82,8 +83,8 @@ class SecondDerivative(LinearOperator):
 
         self.axis = normalize_axis_index(axis, len(self.dims))
         self.sampling = sampling
-        self.edge = edge
         self.kind = kind
+        self.edge = edge
         self._register_multiplications(self.kind)
 
     def _register_multiplications(self, kind):
@@ -94,8 +95,13 @@ class SecondDerivative(LinearOperator):
         elif kind == "centered":
             self._matvec = self._matvec_centered
             self._rmatvec = self._rmatvec_centered
+        elif kind == "backward":
+            self._matvec = self._matvec_backward
+            self._rmatvec = self._rmatvec_backward
         else:
-            raise NotImplementedError("'kind' must be 'forward' or 'centered'")
+            raise NotImplementedError(
+                "'kind' must be 'forward', 'centered' or 'backward'"
+            )
 
     @reshaped(swapaxis=True)
     def _matvec_forward(self, x):
@@ -140,5 +146,23 @@ class SecondDerivative(LinearOperator):
             y[..., -3] += x[..., -1]
             y[..., -2] -= 2 * x[..., -1]
             y[..., -1] += x[..., -1]
+        y /= self.sampling**2
+        return y
+
+    @reshaped(swapaxis=True)
+    def _matvec_backward(self, x):
+        ncp = get_array_module(x)
+        y = ncp.zeros(x.shape, self.dtype)
+        y[..., 2:] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
+        y /= self.sampling**2
+        return y
+
+    @reshaped(swapaxis=True)
+    def _rmatvec_backward(self, x):
+        ncp = get_array_module(x)
+        y = ncp.zeros(x.shape, self.dtype)
+        y[..., :-2] += x[..., 2:]
+        y[..., 1:-1] -= 2 * x[..., 2:]
+        y[..., 2:] += x[..., 2:]
         y /= self.sampling**2
         return y
