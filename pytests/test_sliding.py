@@ -5,9 +5,9 @@ from numpy.testing import assert_array_almost_equal
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
 from pylops.signalprocessing import Sliding1D, Sliding2D, Sliding3D
-from pylops.signalprocessing.Sliding1D import Sliding1Ddesign
-from pylops.signalprocessing.Sliding2D import Sliding2Ddesign
-from pylops.signalprocessing.Sliding3D import Sliding3Ddesign
+from pylops.signalprocessing.Sliding1D import sliding1d_design
+from pylops.signalprocessing.Sliding2D import sliding2d_design
+from pylops.signalprocessing.Sliding3D import sliding3d_design
 from pylops.utils import dottest
 
 par1 = {
@@ -73,7 +73,7 @@ def test_Sliding1D(par):
     """Dot-test and inverse for Sliding1D operator"""
     Op = MatrixMult(np.ones((par["nwiny"], par["ny"])))
 
-    nwins, dim, mwin_inends, dwin_inends = Sliding1Ddesign(
+    nwins, dim, mwin_inends, dwin_inends = sliding1d_design(
         par["npy"], par["nwiny"], par["novery"], par["ny"]
     )
 
@@ -98,7 +98,7 @@ def test_Sliding2D(par):
     """Dot-test and inverse for Sliding2D operator"""
     Op = MatrixMult(np.ones((par["nwiny"] * par["nt"], par["ny"] * par["nt"])))
 
-    nwins, dims, mwin_inends, dwin_inends = Sliding2Ddesign(
+    nwins, dims, mwin_inends, dwin_inends = sliding2d_design(
         (par["npy"], par["nt"]), par["nwiny"], par["novery"], (par["ny"], par["nt"])
     )
     Slid = Sliding2D(
@@ -126,7 +126,7 @@ def test_Sliding3D(par):
         )
     )
 
-    nwins, dims, mwin_inends, dwin_inends = Sliding3Ddesign(
+    nwins, dims, mwin_inends, dwin_inends = sliding3d_design(
         (par["npy"], par["npx"], par["nt"]),
         (par["nwiny"], par["nwinx"]),
         (par["novery"], par["noverx"]),

@@ -10,7 +10,7 @@ from pylops.utils.tapers import taper2d
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def Patch2Ddesign(dimsd, nwin, nover, nop):
+def patch2d_design(dimsd, nwin, nover, nop):
     """Design Patch2D operator
 
     This routine can be used prior to creating the :class:`pylops.signalprocessing.Patch2D`
@@ -102,13 +102,13 @@ def Patch2D(
     .. note:: The shape of the model has to be consistent with
        the number of windows for this operator not to return an error. As the
        number of windows depends directly on the choice of ``nwin`` and
-       ``nover``, it is recommended to first run ``Patch2Ddesign`` to obtain
+       ``nover``, it is recommended to first run ``patch2d_design`` to obtain
        the corresponding ``dims`` and number of windows.
 
     .. warning:: Depending on the choice of `nwin` and `nover` as well as the
        size of the data, sliding windows may not cover the entire data.
        The start and end indices of each window will be displayed and returned
-       with running ``Patch2Ddesign``.
+       with running ``patch2d_design``.
 
     Parameters
     ----------
@@ -166,7 +166,7 @@ def Patch2D(
     if nwins0 * nop[0] != dims[0] or nwins1 * nop[1] != dims[1]:
         raise ValueError(
             f"Model shape (dims={dims}) is not consistent with chosen "
-            f"number of windows. Run Patch2Ddesign to identify the "
+            f"number of windows. Run patch2d_design to identify the "
             f"correct number of windows for the current "
             "model size..."
         )

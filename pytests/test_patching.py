@@ -5,8 +5,8 @@ from numpy.testing import assert_array_almost_equal
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
 from pylops.signalprocessing import Patch2D, Patch3D
-from pylops.signalprocessing.Patch2D import Patch2Ddesign
-from pylops.signalprocessing.Patch3D import Patch3Ddesign
+from pylops.signalprocessing.Patch2D import patch2d_design
+from pylops.signalprocessing.Patch3D import patch3d_design
 from pylops.utils import dottest
 
 par1 = {
@@ -88,7 +88,7 @@ def test_Patch2D(par):
     """Dot-test and inverse for Patch2D operator"""
     Op = MatrixMult(np.ones((par["nwiny"] * par["nwint"], par["ny"] * par["nt"])))
 
-    nwins, dims, mwin_inends, dwin_inends = Patch2Ddesign(
+    nwins, dims, mwin_inends, dwin_inends = patch2d_design(
         (par["npy"], par["npt"]),
         (par["nwiny"], par["nwint"]),
         (par["novery"], par["novert"]),
@@ -121,7 +121,7 @@ def test_Patch2D_scalings(par):
     Op = MatrixMult(np.ones((par["nwiny"] * par["nwint"], par["ny"] * par["nt"])))
     scalings = np.arange(par["nwiny"] * par["nwint"]) + 1.0
 
-    nwins, dims, mwin_inends, dwin_inends = Patch2Ddesign(
+    nwins, dims, mwin_inends, dwin_inends = patch2d_design(
         (par["npy"], par["npt"]),
         (par["nwiny"], par["nwint"]),
         (par["novery"], par["novert"]),
@@ -161,7 +161,7 @@ def test_Patch3D(par):
         )
     )
 
-    nwins, dims, mwin_inends, dwin_inends = Patch3Ddesign(
+    nwins, dims, mwin_inends, dwin_inends = patch3d_design(
         (par["npy"], par["npx"], par["npt"]),
         (par["nwiny"], par["nwinx"], par["nwint"]),
         (par["novery"], par["noverx"], par["novert"]),

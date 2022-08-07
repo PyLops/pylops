@@ -56,7 +56,7 @@ dimsd = data.shape
 # Sliding window transform without taper
 Op = pylops.signalprocessing.FFT2D(nwin, nffts=(128, 128), real=True)
 
-nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.Patch2Ddesign(
+nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.patch2d_design(
     dimsd, nwin, nover, (128, 65)
 )
 Patch = pylops.signalprocessing.Patch2D(
@@ -188,7 +188,7 @@ dimsd = data.shape
 # Sliding window transform without taper
 Op = pylops.signalprocessing.FFTND(nwin, nffts=(128, 128, 128), real=True)
 
-nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.Patch3Ddesign(
+nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.patch3d_design(
     dimsd, nwin, nover, (128, 128, 65)
 )
 Patch = pylops.signalprocessing.Patch3D(

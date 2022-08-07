@@ -40,7 +40,7 @@ data = np.sin(2 * np.pi * 20 * t)
 
 Op = pylops.signalprocessing.FFT(nwin, nfft=nop, real=True)
 
-nwins, dim, mwin_inends, dwin_inends = pylops.signalprocessing.Sliding1Ddesign(
+nwins, dim, mwin_inends, dwin_inends = pylops.signalprocessing.sliding1d_design(
     dimd, nwin, nover, (nop + 2) // 2
 )
 Slid = pylops.signalprocessing.Sliding1D(
@@ -119,7 +119,7 @@ Op = pylops.signalprocessing.Radon2D(
     engine="numba",
 )
 
-nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.Sliding2Ddesign(
+nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.sliding2d_design(
     dimsd, winsize, overlap, (npx, par["nt"])
 )
 Slid = pylops.signalprocessing.Sliding2D(
@@ -273,7 +273,7 @@ Op = pylops.signalprocessing.Radon3D(
     engine="numba",
 )
 
-nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.Sliding3Ddesign(
+nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.sliding3d_design(
     dimsd, winsize, overlap, (npx, npx, par["nt"])
 )
 Slid = pylops.signalprocessing.Sliding3D(
