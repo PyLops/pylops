@@ -134,7 +134,7 @@ dims = (nwins[0] * nop1[0], nwins[1] * nop1[1])
 
 Fop = pylops.signalprocessing.FFT2D(nwin, nffts=nop, real=True)
 Sop = pylops.signalprocessing.Patch2D(
-    Fop.H, dims, dimsd, nwin, nover, nop1, tapertype="hanning", design=False
+    Fop.H, dims, dimsd, nwin, nover, nop1, tapertype="hanning"
 )
 # Overall operator
 Op = Bop * Sop
@@ -215,7 +215,7 @@ plt.tight_layout()
 # display a number of patches and their associated FK spectrum
 
 Sop1 = pylops.signalprocessing.Patch2D(
-    Fop.H, dims, dimsd, nwin, nover, nop1, tapertype=None, design=False
+    Fop.H, dims, dimsd, nwin, nover, nop1, tapertype=None
 )
 
 # Original

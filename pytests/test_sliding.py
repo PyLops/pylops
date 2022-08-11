@@ -5,6 +5,9 @@ from numpy.testing import assert_array_almost_equal
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
 from pylops.signalprocessing import Sliding1D, Sliding2D, Sliding3D
+from pylops.signalprocessing.Sliding1D import sliding1d_design
+from pylops.signalprocessing.Sliding2D import sliding2d_design
+from pylops.signalprocessing.Sliding3D import sliding3d_design
 from pylops.utils import dottest
 
 par1 = {
@@ -14,11 +17,11 @@ par1 = {
     "npy": 15,
     "nwiny": 5,
     "novery": 0,
-    "winsy": 3,
+    # "winsy": 3,
     "npx": 10,
     "nwinx": 5,
     "noverx": 0,
-    "winsx": 2,
+    # "winsx": 2,
     "tapertype": None,
 }  # no overlap, no taper
 par2 = {
@@ -28,11 +31,11 @@ par2 = {
     "npy": 15,
     "nwiny": 5,
     "novery": 0,
-    "winsy": 3,
+    # "winsy": 3,
     "npx": 10,
     "nwinx": 5,
     "noverx": 0,
-    "winsx": 2,
+    # "winsx": 2,
     "tapertype": "hanning",
 }  # no overlap, with taper
 par3 = {
@@ -42,11 +45,11 @@ par3 = {
     "npy": 15,
     "nwiny": 7,
     "novery": 3,
-    "winsy": 3,
+    # "winsy": 3,
     "npx": 10,
     "nwinx": 4,
     "noverx": 2,
-    "winsx": 4,
+    # "winsx": 4,
     "tapertype": None,
 }  # overlap, no taper
 par4 = {
@@ -56,11 +59,11 @@ par4 = {
     "npy": 15,
     "nwiny": 7,
     "novery": 3,
-    "winsy": 3,
+    # "winsy": 3,
     "npx": 10,
     "nwinx": 4,
     "noverx": 2,
-    "winsx": 4,
+    # "winsx": 4,
     "tapertype": "hanning",
 }  # overlap, with taper
 
@@ -70,16 +73,20 @@ def test_Sliding1D(par):
     """Dot-test and inverse for Sliding1D operator"""
     Op = MatrixMult(np.ones((par["nwiny"], par["ny"])))
 
+    nwins, dim, mwin_inends, dwin_inends = sliding1d_design(
+        par["npy"], par["nwiny"], par["novery"], par["ny"]
+    )
+
     Slid = Sliding1D(
         Op,
-        dim=par["ny"] * par["winsy"],
+        dim=dim,
         dimd=par["npy"],
         nwin=par["nwiny"],
         nover=par["novery"],
         tapertype=par["tapertype"],
     )
-    assert dottest(Slid, par["npy"], par["ny"] * par["winsy"])
-    x = np.ones(par["ny"] * par["winsy"])
+    assert dottest(Slid, par["npy"], par["ny"] * nwins)
+    x = np.ones(par["ny"] * nwins)
     y = Slid * x.ravel()
 
     xinv = LinearOperator(Slid) / y
@@ -91,16 +98,19 @@ def test_Sliding2D(par):
     """Dot-test and inverse for Sliding2D operator"""
     Op = MatrixMult(np.ones((par["nwiny"] * par["nt"], par["ny"] * par["nt"])))
 
+    nwins, dims, mwin_inends, dwin_inends = sliding2d_design(
+        (par["npy"], par["nt"]), par["nwiny"], par["novery"], (par["ny"], par["nt"])
+    )
     Slid = Sliding2D(
         Op,
-        dims=(par["ny"] * par["winsy"], par["nt"]),
+        dims=dims,
         dimsd=(par["npy"], par["nt"]),
         nwin=par["nwiny"],
         nover=par["novery"],
         tapertype=par["tapertype"],
     )
-    assert dottest(Slid, par["npy"] * par["nt"], par["ny"] * par["nt"] * par["winsy"])
-    x = np.ones((par["ny"] * par["winsy"], par["nt"]))
+    assert dottest(Slid, par["npy"] * par["nt"], par["ny"] * par["nt"] * nwins)
+    x = np.ones((par["ny"] * nwins, par["nt"]))
     y = Slid * x.ravel()
 
     xinv = LinearOperator(Slid) / y
@@ -116,9 +126,16 @@ def test_Sliding3D(par):
         )
     )
 
+    nwins, dims, mwin_inends, dwin_inends = sliding3d_design(
+        (par["npy"], par["npx"], par["nt"]),
+        (par["nwiny"], par["nwinx"]),
+        (par["novery"], par["noverx"]),
+        (par["ny"], par["nx"], par["nt"]),
+    )
+
     Slid = Sliding3D(
         Op,
-        dims=(par["ny"] * par["winsy"], par["nx"] * par["winsx"], par["nt"]),
+        dims=dims,  # (par["ny"] * par["winsy"], par["nx"] * par["winsx"], par["nt"]),
         dimsd=(par["npy"], par["npx"], par["nt"]),
         nwin=(par["nwiny"], par["nwinx"]),
         nover=(par["novery"], par["noverx"]),
@@ -128,9 +145,9 @@ def test_Sliding3D(par):
     assert dottest(
         Slid,
         par["npy"] * par["npx"] * par["nt"],
-        par["ny"] * par["nx"] * par["nt"] * par["winsy"] * par["winsx"],
+        par["ny"] * par["nx"] * par["nt"] * nwins[0] * nwins[1],
     )
-    x = np.ones((par["ny"] * par["nx"] * par["winsy"] * par["winsx"], par["nt"]))
+    x = np.ones((par["ny"] * par["nx"] * nwins[0] * nwins[1], par["nt"]))
     y = Slid * x.ravel()
 
     xinv = LinearOperator(Slid) / y
