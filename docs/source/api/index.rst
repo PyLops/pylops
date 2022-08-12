@@ -122,7 +122,8 @@ Wave-Equation processing
     UpDownComposition3D
     MDC
     PhaseShift
-    Demigration
+    Kirchhoff
+    AcousticWave2D
 
 
 Geophysical subsurface characterization
