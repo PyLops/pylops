@@ -11,7 +11,6 @@ class AcousticWave2D(LinearOperator):
 
     Parameters
     ----------
-
     shape : :obj:`numpy.ndarray`
         Model shape ``(nx, nz)``
     origin : :obj:`numpy.ndarray`
@@ -20,15 +19,42 @@ class AcousticWave2D(LinearOperator):
         Model spacing ``(dx, dz)``
     vp : :obj:`numpy.ndarray`
         Velocity model in m/s
+    src_x : :obj:`numpy.ndarray`
+        Source x-coordinates in m
+    src_z : :obj:`numpy.ndarray` or :obj:`float`
+        Source z-coordinates in m
+    rec_x : :obj:`numpy.ndarray`
+        Receiver x-coordinates in m
+    rec_z : :obj:`numpy.ndarray` or :obj:`float`
+        Receiver z-coordinates in m
+    t0 : :obj:`float`
+        Initial time
+    tn : :obj:`int`
+        Number of time samples
+    src_type : :obj:`str`
+        Source type
     space_order : :obj:`int`, optional
         Spatial ordering of FD stencil
-
-    /// FINISH ///
-
+    nbl : :obj:`int`, optional
+        Number ordering of samples in absorbing boundaries
+    f0 : :obj:`float`, optional
+        Source peak frequency (Hz)
     checkpointing : :obj:`bool`, optional
         Use checkpointing (``True``) or not (``False``). Note that
         using checkpointing is needed when dealing with large models
         but it will slow down computations
+    dtype : :obj:`str`, optional
+        Type of elements in input array.
+    name : :obj:`str`, optional
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+
+    Attributes
+    ----------
+    shape : :obj:`tuple`
+        Operator shape
+    explicit : :obj:`bool`
+        Operator contains a matrix that can be solved explicitly (``True``) or
+        not (``False``)
 
     """
 
@@ -44,7 +70,7 @@ class AcousticWave2D(LinearOperator):
         rec_z,
         t0,
         tn,
-        src_type,
+        src_type="Ricker",
         space_order=6,
         nbl=20,
         f0=20,
@@ -148,7 +174,21 @@ class AcousticWave2D(LinearOperator):
         )
 
     def _srcillumination_oneshot(self, isrc):
-        """Source wavefield and illumination for one shot"""
+        """Source wavefield and illumination for one shot
+
+        Parameters
+        ----------
+        isrc : :obj:`int`
+            Index of source to model
+
+        Returns
+        -------
+        u0 : :obj:`np.ndarray`
+            Source wavefield
+        src_ill : :obj:`np.ndarray`
+            Source illumination
+
+        """
         # create geometry for single source
         geometry = AcquisitionGeometry(
             self.model,
@@ -168,7 +208,14 @@ class AcousticWave2D(LinearOperator):
         return u0, src_ill
 
     def srcillumination_allshots(self, savewav=False):
-        """Source wavefield and illumination for all shots"""
+        """Source wavefield and illumination for all shots
+
+        Parameters
+        ----------
+        savewav : :obj:`bool`, optional
+            Save source wavefield (``True``) or not (``False``)
+
+        """
         nsrc = self.geometry.src_positions.shape[0]
         if savewav:
             self.src_wavefield = []
@@ -185,7 +232,7 @@ class AcousticWave2D(LinearOperator):
 
         Parameters
         ----------
-        isrc : :obj:`float`
+        isrc : :obj:`int`
             Index of source to model
         dm : :obj:`np.ndarray`
             Model perturbation

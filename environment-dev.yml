@@ -23,6 +23,7 @@ dependencies:
   - isort
   - black
   - pip:
+    - devito
     - scikit-fmm
     - spgl1
     - pytest-runner

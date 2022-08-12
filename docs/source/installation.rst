@@ -315,61 +315,22 @@ of GPUs should install it prior to installing PyLops as described in :ref:`Optio
    PyLops via ``make dev-install_conda`` (``conda``) or ``make dev-install`` (``pip``).
 
 
-Numba
------
-Although we always strive to write code for forward and adjoint operators that takes advantage of
-the perks of NumPy and SciPy (e.g., broadcasting, ufunc), in some case we may end up using for loops
-that may lead to poor performance. In those cases we may decide to implement alternative (optional)
-back-ends in `Numba <http://numba.pydata.org>`_, a Just-In-Time compiler that translates a subset of
-Python and NumPy code into fast machine code.
+In alphabetic order:
 
-A user can simply switch from the native,
-always available implementation to the Numba implementation by simply providing the following
-additional input parameter to the operator ``engine="numba"``. This is for example the case in the
-:py:class:`pylops.signalprocessing.Radon2D`.
 
-If interested to use Numba backend from ``conda``, you will need to manually install it:
+Devito
+------
+`Devito <https://github.com/devitocodes/devito>`_ is library used to solve PDEs via
+the finite-difference method. It is used in PyLops to compute wavefields
+:py:class:`pylops.waveeqprocessing.AcousticWave2D`
+
+
+Install it via ``pip`` with
 
 .. code-block:: bash
 
-   >> conda install numba
+   >> pip install devito
 
-It is also advised to install the additional package
-`icc_rt <https://numba.pydata.org/numba-doc/latest/user/performance-tips.html#intel-svml>`_ to use optimised transcendental functions as compiler intrinsics.
-
-.. code-block:: bash
-
-   >> conda install --channel numba icc_rt
-
-Through ``pip`` the equivalent would be:
-
-.. code-block:: bash
-   
-   >> pip install numba
-   >> pip install icc_rt
-
-However, it is important to note that ``icc_rt`` will only be identified by Numba if
-``LD_LIBRARY_PATH`` properly is set.
-If you are using a virtual environment, you can ensure this with:
-
-.. code-block:: bash
-
-   >> export LD_LIBRARY_PATH=/path/to/venv/lib/:$LD_LIBRARY_PATH
-
-To ensure that ``icc_rt`` is being recognized, run
-
-.. code-block:: bash
-
-   >> numba -s | grep SVML
-   __SVML Information__
-   SVML State, config.USING_SVML                 : True
-   SVML Library Loaded                           : True
-   llvmlite Using SVML Patched LLVM              : True
-   SVML Operational                              : True
-
-Numba also offers threading parallelism through a variety of `Threading Layers <https://numba.pydata.org/numba-doc/latest/user/threading-layer.html>`_.
-You may need to set the environment variable ``NUMBA_NUM_THREADS`` define how many threads to use out of the available ones (``numba -s | grep "CPU Count"``).
-It can also be checked dynamically with ``numba.config.NUMBA_DEFAULT_NUM_THREADS``.
 
 FFTW
 ----
@@ -399,35 +360,64 @@ or via pip:
 .. warning::
    Intel MKL FFT is not supported.
 
-scikit-fmm
-----------
-`scikit-fmm <https://github.com/scikit-fmm/scikit-fmm>`_ is library which implements the
-fast marching method. It is used in PyLops to compute traveltime tables in the
-initialization of :py:class:`pylops.waveeqprocessing.Demigration`
-when choosing ``mode="eikonal"``. As this may not be of interest for many users, this library has not been added
-to the mandatory requirements of PyLops. With ``conda``, install it via
 
-.. code-block:: bash
-
-   >> conda install --channel conda-forge scikit-fmm
-
-or with ``pip`` via
-
-.. code-block:: bash
-
-   >> pip install scikit-fmm
-
-SPGL1
+Numba
 -----
-`SPGL1 <https://spgl1.readthedocs.io/en/latest/>`_ is library used to solve sparsity-promoting
-basis pursuit, basis pursuit denoise, and Lasso problems
-in :py:func:`pylops.optimization.sparsity.SPGL1` solver.
+Although we always strive to write code for forward and adjoint operators that takes advantage of
+the perks of NumPy and SciPy (e.g., broadcasting, ufunc), in some case we may end up using for loops
+that may lead to poor performance. In those cases we may decide to implement alternative (optional)
+back-ends in `Numba <http://numba.pydata.org>`_, a Just-In-Time compiler that translates a subset of
+Python and NumPy code into fast machine code.
 
-Install it via ``pip`` with:
+A user can simply switch from the native,
+always available implementation to the Numba implementation by simply providing the following
+additional input parameter to the operator ``engine="numba"``. This is for example the case in the
+:py:class:`pylops.signalprocessing.Radon2D`.
+
+If interested to use Numba backend from ``conda``, you will need to manually install it:
 
 .. code-block:: bash
 
-   >> pip install spgl1
+   >> conda install numba
+
+It is also advised to install the additional package
+`icc_rt <https://numba.pydata.org/numba-doc/latest/user/performance-tips.html#intel-svml>`_ to use
+optimised transcendental functions as compiler intrinsics.
+
+.. code-block:: bash
+
+   >> conda install --channel numba icc_rt
+
+Through ``pip`` the equivalent would be:
+
+.. code-block:: bash
+
+   >> pip install numba
+   >> pip install icc_rt
+
+However, it is important to note that ``icc_rt`` will only be identified by Numba if
+``LD_LIBRARY_PATH`` is properly set.
+If you are using a virtual environment, you can ensure this with:
+
+.. code-block:: bash
+
+   >> export LD_LIBRARY_PATH=/path/to/venv/lib/:$LD_LIBRARY_PATH
+
+To ensure that ``icc_rt`` is being recognized, run
+
+.. code-block:: bash
+
+   >> numba -s | grep SVML
+   __SVML Information__
+   SVML State, config.USING_SVML                 : True
+   SVML Library Loaded                           : True
+   llvmlite Using SVML Patched LLVM              : True
+   SVML Operational                              : True
+
+Numba also offers threading parallelism through a variety of `Threading Layers <https://numba.pydata.org/numba-doc/latest/user/threading-layer.html>`_.
+You may need to set the environment variable ``NUMBA_NUM_THREADS`` define how many threads to use out of the available ones (``numba -s | grep "CPU Count"``).
+It can also be checked dynamically with ``numba.config.NUMBA_DEFAULT_NUM_THREADS``.
+
 
 PyWavelets
 ----------
@@ -443,6 +433,39 @@ or via ``pip`` with
 .. code-block:: bash
 
    >> pip install PyWavelets
+
+
+scikit-fmm
+----------
+`scikit-fmm <https://github.com/scikit-fmm/scikit-fmm>`_ is library which implements the
+fast marching method. It is used in PyLops to compute traveltime tables in the
+initialization of :py:class:`pylops.waveeqprocessing.Kirchhoff`
+when choosing ``mode="eikonal"``. As this may not be of interest for many users, this library has not been added
+to the mandatory requirements of PyLops. With ``conda``, install it via
+
+.. code-block:: bash
+
+   >> conda install --channel conda-forge scikit-fmm
+
+or with ``pip`` via
+
+.. code-block:: bash
+
+   >> pip install scikit-fmm
+
+
+SPGL1
+-----
+`SPGL1 <https://spgl1.readthedocs.io/en/latest/>`_ is library used to solve sparsity-promoting
+basis pursuit, basis pursuit denoise, and Lasso problems
+in :py:func:`pylops.optimization.sparsity.SPGL1` solver.
+
+Install it via ``pip`` with:
+
+.. code-block:: bash
+
+   >> pip install spgl1
+
 
 Sympy
 -----
