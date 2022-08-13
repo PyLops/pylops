@@ -8,6 +8,70 @@ from pylops.utils.tapers import taper3d
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
+def sliding3d_design(dimsd, nwin, nover, nop):
+    """Design Sliding3D operator
+
+    This routine can be used prior to creating the :class:`pylops.signalprocessing.Sliding3D`
+    operator to identify the correct number of windows to be used based on the dimension of the data (``dimsd``),
+    dimension of the window (``nwin``), overlap (``nover``),a and dimension of the operator acting in the model
+    space.
+
+    Parameters
+    ----------
+    dimsd : :obj:`tuple`
+        Shape of 2-dimensional data.
+    nwin : :obj:`tuple`
+        Number of samples of window.
+    nover : :obj:`tuple`
+        Number of samples of overlapping part of window.
+    nop : :obj:`tuple`
+        Size of model in the transformed domain.
+
+    Returns
+    -------
+    nwins : :obj:`tuple`
+        Number of windows.
+    dims : :obj:`tuple`
+        Shape of 2-dimensional model.
+    mwins_inends : :obj:`tuple`
+        Start and end indices for model patches (stored as tuple of tuples).
+    dwins_inends : :obj:`tuple`
+        Start and end indices for data patches (stored as tuple of tuples).
+
+    """
+    # data windows
+    dwin0_ins, dwin0_ends = _slidingsteps(dimsd[0], nwin[0], nover[0])
+    dwin1_ins, dwin1_ends = _slidingsteps(dimsd[1], nwin[1], nover[1])
+    dwins_inends = ((dwin0_ins, dwin0_ends), (dwin1_ins, dwin1_ends))
+    nwins0 = len(dwin0_ins)
+    nwins1 = len(dwin1_ins)
+    nwins = (nwins0, nwins1)
+
+    # model windows
+    dims = (nwins0 * nop[0], nwins1 * nop[1], nop[2])
+    mwin0_ins, mwin0_ends = _slidingsteps(dims[0], nop[0], 0)
+    mwin1_ins, mwin1_ends = _slidingsteps(dims[1], nop[1], 0)
+    mwins_inends = ((mwin0_ins, mwin0_ends), (mwin1_ins, mwin1_ends))
+
+    # print information about patching
+    logging.warning("%d-%d windows required...", nwins0, nwins1)
+    logging.warning(
+        "data wins - start:%s, end:%s / start:%s, end:%s",
+        dwin0_ins,
+        dwin0_ends,
+        dwin1_ins,
+        dwin1_ends,
+    )
+    logging.warning(
+        "model wins - start:%s, end:%s / start:%s, end:%s",
+        mwin0_ins,
+        mwin0_ends,
+        mwin1_ins,
+        mwin1_ends,
+    )
+    return nwins, dims, mwins_inends, dwins_inends
+
+
 def Sliding3D(
     Op,
     dims,
@@ -16,7 +80,6 @@ def Sliding3D(
     nover,
     nop,
     tapertype="hanning",
-    design=False,
     nproc=1,
     name="S",
 ):
@@ -38,15 +101,13 @@ def Sliding3D(
     .. note:: The shape of the model has to be consistent with
        the number of windows for this operator not to return an error. As the
        number of windows depends directly on the choice of ``nwin`` and
-       ``nover``, it is recommended to use ``design=True`` if unsure about the
-       choice ``dims`` and use the number of windows printed on screen to
-       define such input parameter.
+       ``nover``, it is recommended to first run ``sliding3d_design`` to obtain
+       the corresponding ``dims`` and number of windows.
 
     .. warning:: Depending on the choice of `nwin` and `nover` as well as the
-       size of the data, sliding windows may not cover the entire first and/or
-       second dimensions. The start and end indeces of each window can be
-       displayed using ``design=True`` while defining the best sliding window
-       approach.
+       size of the data, sliding windows may not cover the entire data.
+       The start and end indices of each window will be displayed and returned
+       with running ``sliding3d_design``.
 
     Parameters
     ----------
@@ -67,8 +128,9 @@ def Sliding3D(
         to spatial axes in the data
     tapertype : :obj:`str`, optional
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
-    design : :obj:`bool`, optional
-        Print number sliding window (``True``) or not (``False``)
+    nproc : :obj:`int`, optional
+        Number of processes used to evaluate the N operators in parallel
+        using ``multiprocessing``. If ``nproc=1``, work in serial mode.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -86,10 +148,6 @@ def Sliding3D(
         shape (``dims``).
 
     """
-    # model windows
-    mwin0_ins, mwin0_ends = _slidingsteps(dims[0], Op.shape[1] // (nop[1] * dims[2]), 0)
-    mwin1_ins, mwin1_ends = _slidingsteps(dims[1], Op.shape[1] // (nop[0] * dims[2]), 0)
-
     # data windows
     dwin0_ins, dwin0_ends = _slidingsteps(dimsd[0], nwin[0], nover[0])
     dwin1_ins, dwin1_ends = _slidingsteps(dimsd[1], nwin[1], nover[1])
@@ -97,38 +155,19 @@ def Sliding3D(
     nwins1 = len(dwin1_ins)
     nwins = nwins0 * nwins1
 
+    # check windows
+    if nwins * Op.shape[1] // dims[2] != dims[0] * dims[1]:
+        raise ValueError(
+            f"Model shape (dims={dims}) is not consistent with chosen "
+            f"number of windows. Run sliding3d_design to identify the "
+            f"correct number of windows for the current "
+            "model size..."
+        )
+
     # create tapers
     if tapertype is not None:
         tap = taper3d(dimsd[2], nwin, nover, tapertype=tapertype)
 
-    # check that identified number of windows agrees with mode size
-    if design:
-        logging.warning("(%d,%d) windows required...", nwins0, nwins1)
-        logging.warning(
-            "model wins - start0:%s, end0:%s, start1:%s, end1:%s",
-            mwin0_ins,
-            mwin0_ends,
-            mwin1_ins,
-            mwin1_ends,
-        )
-        logging.warning(
-            "data wins - start0:%s, end0:%s, start1:%s, end1:%s",
-            dwin0_ins,
-            dwin0_ends,
-            dwin1_ins,
-            dwin1_ends,
-        )
-
-    if nwins * Op.shape[1] // dims[2] != dims[0] * dims[1]:
-        raise ValueError(
-            f"Model shape (dims={dims}) is not consistent with chosen "
-            f"number of windows. Choose dims[0]={nwins0 * Op.shape[1] // (nop[1] * dims[2])} and "
-            f"dims[1]={nwins1 * Op.shape[1] // (nop[0] * dims[2])} for the operator to work with "
-            "estimated number of windows, or create "
-            "the operator with design=True to find out the"
-            "optimal number of windows for the current "
-            "model size..."
-        )
     # transform to apply
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)], nproc=nproc)

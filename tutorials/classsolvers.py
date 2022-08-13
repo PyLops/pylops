@@ -20,8 +20,10 @@ in between them; ii) a user can create a class-based :py:class:`pylops.optimizat
 define a set of callbacks that will be run pre and post setup, step and run. One example of how such callbacks can
 be handy to track evolving variables in the solver can be found in :ref:`sphx_glr_gallery_plot_linearregr.py`.
 
-In the following we will leverage the very same mechanism to keep track of the percentage change of the solution and
-residual. This is just an example, we expect users will find different use cases based on the problem at hand.
+In the following we will leverage the very same mechanism to keep track of a number of metrics using the predefined
+:class:`pylops.optimization.callback.MetricsCallback` callback. Finally we show how to create a customized callback
+that can track the percentage change of the solution and residual. This is of course just an example, we expect
+users will find different use cases based on the problem at hand.
 
 """
 
@@ -71,12 +73,31 @@ ymask = Rop.mask(x)
 
 ###############################################################################
 # Let's now solve the interpolation problem using the
-# :py:class:`pylops.optimization.sparsity.ISTA` and
-# :py:class:`pylops.optimization.sparsity.FISTA` class-based solvers.
-# First of all, we define our customized callbacks. What we are really interested
-# in here is to store the first residual norm once the setup of the solver is over,
-# and repeat the same after each step (using the previous estimate to compute the
-# percentage change). And, we do the same for the solution norm.
+# :py:class:`pylops.optimization.sparsity.ISTA` class-based solver.
+
+cb = pylops.optimization.callback.MetricsCallback(x, FFTop.H)
+
+istasolve = pylops.optimization.sparsity.ISTA(
+    Rop * FFTop.H,
+    callbacks=[
+        cb,
+    ],
+)
+pista, niteri, costi = istasolve.solve(y, niter=1000, eps=0.1, tol=1e-7)
+xista = FFTop.H * pista
+
+fig, axs = plt.subplots(1, 4, figsize=(16, 3))
+for i, metric in enumerate(["mae", "mse", "snr", "psnr"]):
+    axs[i].plot(cb.metrics[metric], "k", lw=2)
+    axs[i].set_title(metric)
+plt.tight_layout()
+
+###############################################################################
+# Finally, we show how we can also define customized callbacks. What we are
+# really interested in here is to store the first residual norm once the setup
+# of the solver is over, and repeat the same after each step (using the previous
+# estimate to compute the percentage change). And, we do the same for the
+# solution norm.
 
 
 class CallbackISTA(pylops.optimization.callback.Callbacks):

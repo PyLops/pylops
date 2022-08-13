@@ -230,6 +230,7 @@ Callbacks
    :toctree: generated/
 
     Callbacks
+    MetricsCallback
 
 
 Applications

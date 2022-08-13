@@ -32,11 +32,15 @@ should be used as a checklist when converting a piece of code using PyLops from 
 ### Signal processing
 - `dims_fft` in the FFT operators is deprecated in favor of `dimsd`.
 - `fftshift` in the FFT operators is deprecated in favor of `ifftshift_before`.
+- `design` in the Patch and Sliding operators is deprecated. Users are now provided with a set of routines named
+  ``*design`` to be used prior to creating the operator to design it (identify the number of windows given the data
+   size and window parameters.
 
 ### Wave-equation processing
 - The optional arguments ``fast``, ``transpose``, and ``dtype`` have been deprecated in ``pylops.waveeqprocessing.mdd.MDC``.
   As previously stated in a warning message, the recommended option ``transpose=False`` is now selected as default.
   Ensure that the input array ``G`` is organized as follows ``[n_fmax X n_s X n_r]``.
+- The optional arguments ``design`` has been deprecated in ``pylops.waveeqprocessing.seismicinterpolation.SeismicInterpolation``.
 
 ## Utils
 - `utils.dottest`: Change `tol` into `rtol`. Absolute tolerance is now also supported via the keyword `atol`.
