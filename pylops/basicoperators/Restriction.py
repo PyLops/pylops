@@ -93,10 +93,10 @@ class Restriction(LinearOperator):
         self,
         dims: Union[int, List],
         iava: Union[List, npt.ArrayLike],
-        axis=-1,
-        inplace=True,
-        dtype="float64",
-        name="R",
+        axis: int = -1,
+        inplace: bool = True,
+        dtype: str = "float64",
+        name: str = "R",
     ) -> None:
         ncp = get_array_module(iava)
         dims = _value_or_list_like_to_tuple(dims)
