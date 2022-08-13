@@ -1,6 +1,8 @@
 import logging
+from typing import Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 from scipy.sparse.linalg import lsqr
 
 from pylops import (
@@ -32,15 +34,15 @@ _linearizations = {"akirich": 3, "fatti": 3, "ps": 3}
 
 
 def PrestackLinearModelling(
-    wav,
-    theta,
-    vsvp=0.5,
-    nt0=1,
-    spatdims=None,
-    linearization="akirich",
-    explicit=False,
-    kind="centered",
-    name=None,
+    wav: npt.ArrayLike,
+    theta: npt.ArrayLike,
+    vsvp: Union[float, npt.ArrayLike] = 0.5,
+    nt0: int = 1,
+    spatdims: Union[int, Tuple] = None,
+    linearization: str = "akirich",
+    explicit: bool = False,
+    kind: str = "centered",
+    name: str = None,
 ):
     r"""Pre-stack linearized seismic modelling operator.
 
@@ -215,13 +217,13 @@ def PrestackLinearModelling(
 
 
 def PrestackWaveletModelling(
-    m,
-    theta,
-    nwav,
-    wavc=None,
-    vsvp=0.5,
-    linearization="akirich",
-    name=None,
+    m: npt.ArrayLike,
+    theta: npt.ArrayLike,
+    nwav: int,
+    wavc: int = None,
+    vsvp: Union[float, npt.ArrayLike] = 0.5,
+    linearization: str = "akirich",
+    name: str = None,
 ):
     r"""Pre-stack linearized seismic modelling operator for wavelet.
 
@@ -345,20 +347,20 @@ def PrestackWaveletModelling(
 
 
 def PrestackInversion(
-    data,
-    theta,
-    wav,
-    m0=None,
-    linearization="akirich",
-    explicit=False,
-    simultaneous=False,
-    epsI=None,
-    epsR=None,
-    dottest=False,
-    returnres=False,
-    epsRL1=None,
-    kind="centered",
-    vsvp=0.5,
+    data: npt.ArrayLike,
+    theta: npt.ArrayLike,
+    wav: npt.ArrayLike,
+    m0: npt.ArrayLike = None,
+    linearization: str = "akirich",
+    explicit: bool = False,
+    simultaneous: bool = False,
+    epsI: float = None,
+    epsR: float = None,
+    dottest: bool = False,
+    returnres: bool = False,
+    epsRL1: float = None,
+    kind: str = "centered",
+    vsvp: Union[float, npt.ArrayLike] = 0.5,
     **kwargs_solver
 ):
     r"""Pre-stack linearized seismic inversion.

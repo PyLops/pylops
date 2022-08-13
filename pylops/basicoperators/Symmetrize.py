@@ -1,4 +1,7 @@
+from typing import List, Union
+
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
@@ -63,7 +66,13 @@ class Symmetrize(LinearOperator):
     apart from the central sample where :math:`x[0] = y[N-1]`.
     """
 
-    def __init__(self, dims, axis=-1, dtype="float64", name="S"):
+    def __init__(
+        self,
+        dims: Union[int, List],
+        axis: int = -1,
+        dtype: str = "float64",
+        name: str = "S",
+    ) -> None:
         dims = _value_or_list_like_to_tuple(dims)
         self.axis = axis
         self.nsym = dims[self.axis]
@@ -73,7 +82,7 @@ class Symmetrize(LinearOperator):
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
     @reshaped(swapaxis=True)
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.zeros(self.dimsd, dtype=self.dtype)
         y = y.swapaxes(self.axis, -1)
@@ -82,7 +91,7 @@ class Symmetrize(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         y = x[..., self.nsym - 1 :].copy()
         y[..., 1:] += x[..., self.nsym - 2 :: -1]
         return y

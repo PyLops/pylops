@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 
@@ -29,14 +30,18 @@ class MemoizeOperator(LinearOperator):
 
     """
 
-    def __init__(self, Op, max_neval=10):
+    def __init__(
+        self,
+        Op,
+        max_neval: int = 10,
+    ) -> None:
         super().__init__(Op=Op)
 
         self.max_neval = max_neval
         self.store = []  # Store a list of Tuples (x, y)
         self.neval = 0  # Number of evaluations of the operator
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         for xstored, ystored in self.store:
             if np.allclose(xstored, x):
                 return ystored
@@ -47,7 +52,7 @@ class MemoizeOperator(LinearOperator):
         self.store.append((x.copy(), y.copy()))
         return y
 
-    def _rmatvec(self, y):
+    def _rmatvec(self, y: npt.ArrayLike) -> npt.ArrayLike:
         for xstored, ystored in self.store:
             if np.allclose(ystored, y):
                 return xstored

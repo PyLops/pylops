@@ -1,5 +1,8 @@
+from typing import List, Union
+
 import numpy as np
 import numpy.ma as np_ma
+import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
@@ -86,7 +89,15 @@ class Restriction(LinearOperator):
 
     """
 
-    def __init__(self, dims, iava, axis=-1, inplace=True, dtype="float64", name="R"):
+    def __init__(
+        self,
+        dims: Union[int, List],
+        iava: Union[List, npt.ArrayLike],
+        axis=-1,
+        inplace=True,
+        dtype="float64",
+        name="R",
+    ) -> None:
         ncp = get_array_module(iava)
         dims = _value_or_list_like_to_tuple(dims)
         axis = normalize_axis_index(axis, len(dims))
@@ -107,7 +118,7 @@ class Restriction(LinearOperator):
         self.iavareshape = iavareshape
         self.iava = iava
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         if not self.inplace:
             x = x.copy()
@@ -116,7 +127,7 @@ class Restriction(LinearOperator):
         y = y.ravel()
         return y
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         if not self.inplace:
             x = x.copy()
@@ -135,7 +146,7 @@ class Restriction(LinearOperator):
         y = y.ravel()
         return y
 
-    def mask(self, x):
+    def mask(self, x: npt.ArrayLike) -> npt.ArrayLike:
         """Apply mask to input signal returning a signal of same size with
         values at ``iava`` locations and ``0`` at other locations
 

@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 
@@ -59,7 +60,7 @@ class Kronecker(LinearOperator):
 
     """
 
-    def __init__(self, Op1, Op2, dtype="float64", name="K"):
+    def __init__(self, Op1, Op2, dtype: str = "float64", name: str = "K") -> None:
         self.Op1 = Op1
         self.Op2 = Op2
         self.Op1H = self.Op1.H
@@ -70,13 +71,13 @@ class Kronecker(LinearOperator):
         )
         super().__init__(dtype=np.dtype(dtype), shape=shape, name=name)
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         x = x.reshape(self.Op1.shape[1], self.Op2.shape[1])
         y = self.Op2.matmat(x.T).T
         y = self.Op1.matmat(y).ravel()
         return y
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         x = x.reshape(self.Op1.shape[0], self.Op2.shape[0])
         y = self.Op2H.matmat(x.T).T
         y = self.Op1H.matmat(y).ravel()

@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
@@ -79,12 +80,19 @@ class Identity(LinearOperator):
 
     """
 
-    def __init__(self, N, M=None, inplace=True, dtype="float64", name="I"):
+    def __init__(
+        self,
+        N: int,
+        M: int = None,
+        inplace: bool = True,
+        dtype: str = "float64",
+        name: str = "I",
+    ) -> None:
         M = N if M is None else M
         super().__init__(dtype=np.dtype(dtype), shape=(N, M), name=name)
         self.inplace = inplace
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         if not self.inplace:
             x = x.copy()
@@ -97,7 +105,7 @@ class Identity(LinearOperator):
             y[: self.shape[1]] = x
         return y
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         if not self.inplace:
             x = x.copy()

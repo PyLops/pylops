@@ -1,3 +1,5 @@
+from typing import Tuple, Union
+
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops.basicoperators import SecondDerivative
@@ -5,13 +7,13 @@ from pylops.LinearOperator import aslinearoperator
 
 
 def Laplacian(
-    dims,
-    axes=(-2, -1),
-    weights=(1, 1),
-    sampling=(1, 1),
-    edge=False,
-    kind="centered",
-    dtype="float64",
+    dims: Union[int, Tuple],
+    axes: Tuple = (-2, -1),
+    weights: Tuple = (1, 1),
+    sampling: Tuple = (1, 1),
+    edge: bool = False,
+    kind: str = "centered",
+    dtype: str = "float64",
 ):
     r"""Laplacian.
 

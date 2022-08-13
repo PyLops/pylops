@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
@@ -48,14 +49,20 @@ class Zero(LinearOperator):
 
     """
 
-    def __init__(self, N, M=None, dtype="float64", name="Z"):
+    def __init__(
+        self,
+        N: int,
+        M: int = None,
+        dtype: str = "float64",
+        name: str = "Z",
+    ) -> None:
         M = N if M is None else M
         super().__init__(dtype=np.dtype(dtype), shape=(N, M), name=name)
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         return ncp.zeros(self.shape[0], dtype=self.dtype)
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         return ncp.zeros(self.shape[1], dtype=self.dtype)

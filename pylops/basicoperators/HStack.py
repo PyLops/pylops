@@ -1,6 +1,7 @@
 import multiprocessing as mp
 
 import numpy as np
+import numpy.typing as npt
 import scipy as sp
 from scipy.sparse.linalg.interface import LinearOperator as spLinearOperator
 
@@ -12,12 +13,14 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
 else:
     from scipy.sparse.linalg._interface import _get_dtype
 
+from typing import List
+
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
 from pylops.utils.backend import get_array_module
 
 
-def _matvec_rmatvec_map(op, x):
+def _matvec_rmatvec_map(op, x: npt.ArrayLike) -> npt.ArrayLike:
     """matvec/rmatvec for multiprocessing"""
     return op(x).squeeze()
 
@@ -95,7 +98,12 @@ class HStack(LinearOperator):
 
     """
 
-    def __init__(self, ops, nproc=1, dtype=None):
+    def __init__(
+        self,
+        ops: List,
+        nproc: int = 1,
+        dtype: str = None,
+    ) -> None:
         self.ops = ops
         mops = np.zeros(len(ops), dtype=int)
         for iop, oper in enumerate(ops):
@@ -119,32 +127,32 @@ class HStack(LinearOperator):
         super().__init__(dtype=dtype, shape=(self.nops, self.mops), clinear=clinear)
 
     @property
-    def nproc(self):
+    def nproc(self) -> int:
         return self._nproc
 
     @nproc.setter
-    def nproc(self, nprocnew):
+    def nproc(self, nprocnew: int) -> int:
         if self._nproc > 1:
             self.pool.close()
         if nprocnew > 1:
             self.pool = mp.Pool(processes=nprocnew)
         self._nproc = nprocnew
 
-    def _matvec_serial(self, x):
+    def _matvec_serial(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
             y += oper.matvec(x[self.mmops[iop] : self.mmops[iop + 1]]).squeeze()
         return y
 
-    def _rmatvec_serial(self, x):
+    def _rmatvec_serial(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
             y[self.mmops[iop] : self.mmops[iop + 1]] = oper.rmatvec(x).squeeze()
         return y
 
-    def _matvec_multiproc(self, x):
+    def _matvec_multiproc(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ys = self.pool.starmap(
             _matvec_rmatvec_map,
             [
@@ -155,7 +163,7 @@ class HStack(LinearOperator):
         y = np.sum(ys, axis=0)
         return y
 
-    def _rmatvec_multiproc(self, x):
+    def _rmatvec_multiproc(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ys = self.pool.starmap(
             _matvec_rmatvec_map,
             [(oper._rmatvec, x) for iop, oper in enumerate(self.ops)],
@@ -163,14 +171,14 @@ class HStack(LinearOperator):
         y = np.hstack(ys)
         return y
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.nproc == 1:
             y = self._matvec_serial(x)
         else:
             y = self._matvec_multiproc(x)
         return y
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.nproc == 1:
             y = self._rmatvec_serial(x)
         else:

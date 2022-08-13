@@ -1,6 +1,8 @@
 import logging
+from typing import List, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 from numpy import cos, sin, tan
 
 from pylops import LinearOperator
@@ -11,7 +13,15 @@ from pylops.utils.decorators import reshaped
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
+def zoeppritz_scattering(
+    vp1: float,
+    vs1: float,
+    rho1: float,
+    vp0: float,
+    vs0: float,
+    rho0: float,
+    theta1: Union[float, npt.ArrayLike],
+) -> npt.ArrayLike:
     r"""Zoeppritz solution.
 
     Calculates the angle dependent p-wave reflectivity of an
@@ -119,7 +129,16 @@ def zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     return zoep
 
 
-def zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta1, element="PdPu"):
+def zoeppritz_element(
+    vp1: float,
+    vs1: float,
+    rho1: float,
+    vp0: float,
+    vs0: float,
+    rho0: float,
+    theta1: Union[float, npt.ArrayLike],
+    element: str = "PdPu",
+) -> npt.ArrayLike:
     """Single element of Zoeppritz solution.
 
     Simple wrapper to :py:class:`pylops.avo.avo.scattering_matrix`,
@@ -174,7 +193,15 @@ def zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta1, element="PdPu"):
     return np.squeeze(refl[element])
 
 
-def zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
+def zoeppritz_pp(
+    vp1: float,
+    vs1: float,
+    rho1: float,
+    vp0: float,
+    vs0: float,
+    rho0: float,
+    theta1: Union[float, npt.ArrayLike],
+) -> npt.ArrayLike:
     """PP reflection coefficient from the Zoeppritz scattering matrix.
 
     Simple wrapper to :py:class:`pylops.avo.avo.scattering_matrix`,
@@ -213,7 +240,15 @@ def zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     return PPrefl
 
 
-def approx_zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
+def approx_zoeppritz_pp(
+    vp1: Union[List, Tuple, npt.ArrayLike],
+    vs1: Union[List, Tuple, npt.ArrayLike],
+    rho1: Union[List, Tuple, npt.ArrayLike],
+    vp0: Union[List, Tuple, npt.ArrayLike],
+    vs0: Union[List, Tuple, npt.ArrayLike],
+    rho0: Union[List, Tuple, npt.ArrayLike],
+    theta1: Union[float, npt.ArrayLike],
+) -> npt.ArrayLike:
     """PP reflection coefficient from the approximate Zoeppritz equation.
 
     Approximate calculation of PP reflection from the Zoeppritz
@@ -290,7 +325,11 @@ def approx_zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     return rpp
 
 
-def akirichards(theta, vsvp, n=1):
+def akirichards(
+    theta: npt.ArrayLike,
+    vsvp: Union[float, npt.ArrayLike],
+    n: int = 1,
+) -> Union[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
     r"""Three terms Aki-Richards approximation.
 
     Computes the coefficients of the of three terms Aki-Richards approximation
@@ -360,7 +399,11 @@ def akirichards(theta, vsvp, n=1):
     return G1, G2, G3
 
 
-def fatti(theta, vsvp, n=1):
+def fatti(
+    theta: npt.ArrayLike,
+    vsvp: Union[float, npt.ArrayLike],
+    n: int = 1,
+) -> Union[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
     r"""Three terms Fatti approximation.
 
     Computes the coefficients of the three terms Fatti approximation
@@ -432,7 +475,11 @@ def fatti(theta, vsvp, n=1):
     return G1, G2, G3
 
 
-def ps(theta, vsvp, n=1):
+def ps(
+    theta: npt.ArrayLike,
+    vsvp: Union[float, npt.ArrayLike],
+    n: int = 1,
+) -> Union[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
     r"""PS reflection coefficient
 
     Computes the coefficients for the PS approximation
@@ -578,14 +625,14 @@ class AVOLinearModelling(LinearOperator):
 
     def __init__(
         self,
-        theta,
-        vsvp=0.5,
-        nt0=1,
-        spatdims=None,
-        linearization="akirich",
-        dtype="float64",
-        name="A",
-    ):
+        theta: npt.ArrayLike,
+        vsvp: Union[float, npt.ArrayLike] = 0.5,
+        nt0: int = 1,
+        spatdims: Union[int, Tuple] = None,
+        linearization: str = "akirich",
+        dtype: str = "float64",
+        name: str = "A",
+    ) -> None:
         self.ncp = get_array_module(theta)
 
         self.nt0 = nt0 if not isinstance(vsvp, self.ncp.ndarray) else len(vsvp)
@@ -620,9 +667,9 @@ class AVOLinearModelling(LinearOperator):
             self.G = self.G[..., np.newaxis]
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return self.ncp.sum(self.G * x[:, :, self.ncp.newaxis], axis=1)
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return self.ncp.sum(self.G * x[:, self.ncp.newaxis], axis=2)

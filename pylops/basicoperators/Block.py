@@ -1,3 +1,5 @@
+from typing import List
+
 from pylops.basicoperators import HStack, VStack
 
 
@@ -13,7 +15,7 @@ def _Block(
     return _VStack(hblocks, dtype=dtype, **args_VStack)
 
 
-def Block(ops, nproc=1, dtype=None):
+def Block(ops: List, nproc: int = 1, dtype: str = None):
     r"""Block operator.
 
     Create a block operator from N lists of M linear operators each.
