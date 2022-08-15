@@ -38,9 +38,63 @@ def _slidingsteps(ntr, nwin, nover):
     return starts, ends
 
 
-def Sliding2D(
-    Op, dims, dimsd, nwin, nover, tapertype="hanning", design=False, name="S"
-):
+def sliding2d_design(dimsd, nwin, nover, nop):
+    """Design Sliding2D operator
+
+    This routine can be used prior to creating the :class:`pylops.signalprocessing.Sliding2D`
+    operator to identify the correct number of windows to be used based on the dimension of the data (``dimsd``),
+    dimension of the window (``nwin``), overlap (``nover``),a and dimension of the operator acting in the model
+    space.
+
+    Parameters
+    ----------
+    dimsd : :obj:`tuple`
+        Shape of 2-dimensional data.
+    nwin : :obj:`int`
+        Number of samples of window.
+    nover : :obj:`int`
+        Number of samples of overlapping part of window.
+    nop : :obj:`tuple`
+        Size of model in the transformed domain.
+
+    Returns
+    -------
+    nwins : :obj:`int`
+        Number of windows.
+    dims : :obj:`tuple`
+        Size of 2-dimensional model.
+    mwins_inends : :obj:`tuple`
+        Start and end indices for model patches (stored as tuple of tuples).
+    dwins_inends : :obj:`tuple`
+        Start and end indices for data patches (stored as tuple of tuples).
+
+    """
+    # data windows
+    dwin_ins, dwin_ends = _slidingsteps(dimsd[0], nwin, nover)
+    dwins_inends = (dwin_ins, dwin_ends)
+    nwins = len(dwin_ins)
+
+    # model windows
+    dims = (nwins * nop[0], nop[1])
+    mwin_ins, mwin_ends = _slidingsteps(dims[0], nop[0], 0)
+    mwins_inends = (mwin_ins, mwin_ends)
+
+    # print information about patching
+    logging.warning("%d windows required...", nwins)
+    logging.warning(
+        "data wins - start:%s, end:%s",
+        dwin_ins,
+        dwin_ends,
+    )
+    logging.warning(
+        "model wins - start:%s, end:%s",
+        mwin_ins,
+        mwin_ends,
+    )
+    return nwins, dims, mwins_inends, dwins_inends
+
+
+def Sliding2D(Op, dims, dimsd, nwin, nover, tapertype="hanning", name="S"):
     """2D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to slices of the model
@@ -58,14 +112,13 @@ def Sliding2D(
     .. note:: The shape of the model has to be consistent with
        the number of windows for this operator not to return an error. As the
        number of windows depends directly on the choice of ``nwin`` and
-       ``nover``, it is recommended to use ``design=True`` if unsure about the
-       choice ``dims`` and use the number of windows printed on screen to
-       define such input parameter.
+       ``nover``, it is recommended to first run ``sliding2d_design`` to obtain
+       the corresponding ``dims`` and number of windows.
 
     .. warning:: Depending on the choice of `nwin` and `nover` as well as the
-       size of the data, sliding windows may not cover the entire first dimension.
-       The start and end indices of each window can be displayed using
-       ``design=True`` while defining the best sliding window approach.
+       size of the data, sliding windows may not cover the entire data.
+       The start and end indices of each window will be displayed and returned
+       with running ``sliding2d_design``.
 
     Parameters
     ----------
@@ -82,8 +135,6 @@ def Sliding2D(
         Number of samples of overlapping part of window
     tapertype : :obj:`str`, optional
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
-    design : :obj:`bool`, optional
-        Print number of sliding window (``True``) or not (``False``)
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -101,11 +152,18 @@ def Sliding2D(
         shape (``dims``).
 
     """
-    # model windows
-    mwin_ins, mwin_ends = _slidingsteps(dims[0], Op.shape[1] // dims[1], 0)
     # data windows
     dwin_ins, dwin_ends = _slidingsteps(dimsd[0], nwin, nover)
     nwins = len(dwin_ins)
+
+    # check patching
+    if nwins * Op.shape[1] // dims[1] != dims[0]:
+        raise ValueError(
+            f"Model shape (dims={dims}) is not consistent with chosen "
+            f"number of windows. Run sliding2d_design to identify the "
+            f"correct number of windows for the current "
+            "model size..."
+        )
 
     # create tapers
     if tapertype is not None:
@@ -120,20 +178,6 @@ def Sliding2D(
             taps[i] = tap
         taps[nwins - 1] = tapend
 
-    # check that identified number of windows agrees with mode size
-    if design:
-        logging.warning("%d windows required...", nwins)
-        logging.warning("model wins - start:%s, end:%s", mwin_ins, mwin_ends)
-        logging.warning("data wins - start:%s, end:%s", dwin_ins, dwin_ends)
-    if nwins * Op.shape[1] // dims[1] != dims[0]:
-        raise ValueError(
-            f"Model shape (dims={dims}) is not consistent with chosen "
-            f"number of windows. Choose dims[0]={nwins * Op.shape[1] // dims[1]} for the "
-            "operator to work with estimated number of windows, "
-            "or create the operator with design=True to find "
-            "out the optimal number of windows for the current "
-            "model size..."
-        )
     # transform to apply
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)])

@@ -135,7 +135,7 @@ class LinearOperator(spLinearOperator):
                         "nor both fallback attributes ('dims', 'dimsd')"
                     )
                 )
-            _shape = (np.prod(dimsd), np.prod(dims))
+            _shape = (int(np.prod(dimsd)), int(np.prod(dims)))
             self._shape = _shape  # Update to not redo everything above on next call
         return _shape
 

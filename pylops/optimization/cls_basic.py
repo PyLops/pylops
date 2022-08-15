@@ -3,7 +3,7 @@ import time
 import numpy as np
 
 from pylops.optimization.basesolver import Solver
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, to_numpy
 
 
 class CG(Solver):
@@ -684,7 +684,7 @@ class LSQR(Solver):
 
         # create variables to track the residual norm and iterations
         self.cost = []
-        self.cost.append(self.rnorm)
+        self.cost.append(float(self.rnorm))
 
         # print setup
         if show:
@@ -719,7 +719,7 @@ class LSQR(Solver):
         self.beta = self.ncp.linalg.norm(self.u)
         if self.beta > 0:
             self.u = self.u / self.beta
-            self.anorm = np.linalg.norm([self.anorm, self.alfa, self.beta, self.damp])
+            self.anorm = np.linalg.norm([self.anorm, to_numpy(self.alfa), to_numpy(self.beta), self.damp])
             self.v = self.Op.rmatvec(self.u) - self.beta * self.v
             self.alfa = self.ncp.linalg.norm(self.v)
             if self.alfa > 0:
@@ -727,7 +727,7 @@ class LSQR(Solver):
 
         # use a plane rotation to eliminate the damping parameter.
         # This alters the diagonal (rhobar) of the lower-bidiagonal matrix.
-        self.rhobar1 = np.linalg.norm([self.rhobar, self.damp])
+        self.rhobar1 = np.linalg.norm([to_numpy(self.rhobar), self.damp])
         self.cs1 = self.rhobar / self.rhobar1
         self.sn1 = self.damp / self.rhobar1
         self.psi = self.sn1 * self.phibar
@@ -735,7 +735,7 @@ class LSQR(Solver):
 
         # use a plane rotation to eliminate the subdiagonal element (beta)
         # of the lower-bidiagonal matrix, giving an upper-bidiagonal matrix.
-        self.rho = np.linalg.norm([self.rhobar1, self.beta])
+        self.rho = np.linalg.norm([self.rhobar1, to_numpy(self.beta)])
         self.cs = self.rhobar1 / self.rho
         self.sn = self.beta / self.rho
         self.theta = self.sn * self.alfa
@@ -762,7 +762,7 @@ class LSQR(Solver):
         self.rhs = self.phi - self.delta * self.z
         self.zbar = self.rhs / self.gambar
         self.xnorm = self.ncp.sqrt(self.xxnorm + self.zbar**2)
-        self.gamma = np.linalg.norm([self.gambar, self.theta])
+        self.gamma = np.linalg.norm([self.gambar, to_numpy(self.theta)])
         self.cs2 = self.gambar / self.gamma
         self.sn2 = self.theta / self.gamma
         self.z = self.rhs / self.gamma
@@ -782,7 +782,7 @@ class LSQR(Solver):
         # Although there is cancellation, it might be accurate enough.
         self.r1sq = self.rnorm**2 - self.dampsq * self.xxnorm
         self.r1norm = self.ncp.sqrt(self.ncp.abs(self.r1sq))
-        self.cost.append(self.r1norm)
+        self.cost.append(float(self.r1norm))
         if self.r1sq < 0:
             self.r1norm = -self.r1norm
         self.r2norm = self.rnorm.copy()

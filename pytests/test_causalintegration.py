@@ -80,7 +80,6 @@ def test_CausalIntegration1d(par):
             par["nt"],
             sampling=par["dt"],
             kind=kind,
-            halfcurrent=False,
             removefirst=rf,
             dtype=par["dtype"],
         )
@@ -96,9 +95,9 @@ def test_CausalIntegration1d(par):
             y = Cop * x
             # analytical integration
             yana = (
-                t ** 2 / 2.0
+                t**2 / 2.0
                 - t[0] ** 2 / 2.0
-                + par["imag"] * (t ** 2 / 2.0 - t[0] ** 2 / 2.0)
+                + par["imag"] * (t**2 / 2.0 - t[0] ** 2 / 2.0)
             )
 
             assert_array_almost_equal(y, yana[rf1:], decimal=4)
@@ -133,7 +132,6 @@ def test_CausalIntegration2d(par):
             sampling=dt,
             axis=0,
             kind=kind,
-            halfcurrent=False,
             removefirst=rf,
             dtype=par["dtype"],
         )

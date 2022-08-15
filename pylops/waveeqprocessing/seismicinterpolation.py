@@ -38,7 +38,6 @@ def SeismicInterpolation(
     nwins=None,
     nwin=None,
     nover=None,
-    design=False,
     engine="numba",
     dottest=False,
     **kwargs_solver,
@@ -119,9 +118,6 @@ def SeismicInterpolation(
     nover : :obj:`int` or :obj:`tuple`, optional
         Number of samples of overlapping part of window. Required for
         ``kind='sliding'`` and ``kind='chirp-sliding'``
-    design : :obj:`bool`, optional
-        Print number of sliding window (``True``) or not (``False``) when
-        using ``kind='sliding'`` and ``kind='chirp-sliding'``
     engine : :obj:`str`, optional
         Engine used for Radon computations (``numpy/numba``
         for ``Radon2D`` and ``Radon3D`` or ``numpy/fftw``
@@ -377,9 +373,7 @@ def SeismicInterpolation(
                 npaxis = nwin
                 Op = ChirpRadon2D(taxis, spataxis_local, np.max(paxis) * dspat / dt).H
             dimsp = (nwins * npaxis, dimsslid[1])
-            Pop = Sliding2D(
-                Op, dimsp, dimsslid, nwin, nover, tapertype="cosine", design=design
-            )
+            Pop = Sliding2D(Op, dimsp, dimsslid, nwin, nover, tapertype="cosine")
         SIop = Rop * Pop
     else:
         raise KeyError(

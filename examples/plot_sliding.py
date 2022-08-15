@@ -33,15 +33,23 @@ nwins = 4
 nwin = 26
 nover = 3
 nop = 64
-dim = (nop + 2) // 2 * nwins
 dimd = nwin * nwins - 3 * nover
 
 t = np.arange(dimd) * 0.004
 data = np.sin(2 * np.pi * 20 * t)
 
 Op = pylops.signalprocessing.FFT(nwin, nfft=nop, real=True)
+
+nwins, dim, mwin_inends, dwin_inends = pylops.signalprocessing.sliding1d_design(
+    dimd, nwin, nover, (nop + 2) // 2
+)
 Slid = pylops.signalprocessing.Sliding1D(
-    Op.H, dim, dimd, nwin, nover, tapertype=None, design=False
+    Op.H,
+    dim,
+    dimd,
+    nwin,
+    nover,
+    tapertype=None,
 )
 
 x = Slid.H * data
@@ -53,7 +61,7 @@ x = Slid.H * data
 # :py:class:`pylops.signalprocessing.Sliding1D` operator. Note that for non-
 # orthogonal operators, this must be replaced by an inverse.
 Slid = pylops.signalprocessing.Sliding1D(
-    Op.H, dim, dimd, nwin, nover, tapertype="cosine", design=False
+    Op.H, dim, dimd, nwin, nover, tapertype="cosine"
 )
 
 reconstructed_data = Slid * x
@@ -95,14 +103,11 @@ _, data = pylops.utils.seismicevents.parabolic2d(x, t, t0, px, pxx, amp, wav)
 # :py:class:`pylops.signalprocessing.Radon2D` operator to each patch. This is
 # done by simply using the adjoint of the
 # :py:class:`pylops.signalprocessing.Sliding2D` operator
-nwins = 5
 winsize = 36
 overlap = 10
 npx = 61
 px = np.linspace(-5e-3, 5e-3, npx)
-
 dimsd = data.shape
-dims = (nwins * npx, par["nt"])
 
 # Sliding window transform without taper
 Op = pylops.signalprocessing.Radon2D(
@@ -112,6 +117,10 @@ Op = pylops.signalprocessing.Radon2D(
     centeredh=True,
     kind="linear",
     engine="numba",
+)
+
+nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.sliding2d_design(
+    dimsd, winsize, overlap, (npx, par["nt"])
 )
 Slid = pylops.signalprocessing.Sliding2D(
     Op, dims, dimsd, winsize, overlap, tapertype=None
@@ -246,14 +255,11 @@ wav = pylops.utils.wavelets.ricker(t[:41], f0=par["f0"])[0]
 _, data = pylops.utils.seismicevents.hyperbolic3d(x, y, t, t0, vrms, vrms, amp, wav)
 
 # Sliding window plan
-nwins = (4, 5)
 winsize = (5, 6)
 overlap = (2, 3)
 npx = 21
 px = np.linspace(-5e-3, 5e-3, npx)
-
 dimsd = data.shape
-dims = (nwins[0] * npx, nwins[1] * npx, par["nt"])
 
 # Sliding window transform without taper
 Op = pylops.signalprocessing.Radon3D(
@@ -266,6 +272,10 @@ Op = pylops.signalprocessing.Radon3D(
     kind="linear",
     engine="numba",
 )
+
+nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.sliding3d_design(
+    dimsd, winsize, overlap, (npx, npx, par["nt"])
+)
 Slid = pylops.signalprocessing.Sliding3D(
     Op, dims, dimsd, winsize, overlap, (npx, npx), tapertype=None
 )
@@ -273,7 +283,7 @@ Slid = pylops.signalprocessing.Sliding3D(
 radon = Slid.H * data
 
 Slid = pylops.signalprocessing.Sliding3D(
-    Op, dims, dimsd, winsize, overlap, (npx, npx), tapertype="cosine", design=False
+    Op, dims, dimsd, winsize, overlap, (npx, npx), tapertype="cosine"
 )
 
 reconstructed_data = Slid * radon

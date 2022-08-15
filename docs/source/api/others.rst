@@ -42,7 +42,7 @@ Describe
 Estimators
 ----------
 
-.. currentmodule:: pylops.utils
+.. currentmodule:: pylops.utils.estimators
 
 .. autosummary::
    :toctree: generated/
@@ -50,6 +50,34 @@ Estimators
     trace_hutchinson
     trace_hutchpp
     trace_nahutchpp
+
+Metrics
+-------
+.. currentmodule:: pylops.utils.metrics
+
+.. autosummary::
+   :toctree: generated/
+
+    mae
+    mse
+    snr
+    psnr
+
+Geophysical Reservoir characterization
+--------------------------------------
+
+.. currentmodule:: pylops.avo
+
+.. autosummary::
+   :toctree: generated/
+
+    avo.zoeppritz_scattering
+    avo.zoeppritz_element
+    avo.zoeppritz_pp
+    avo.approx_zoeppritz_pp
+    avo.akirichards
+    avo.fatti
+    avo.ps
 
 Scalability test
 ----------------
@@ -83,8 +111,6 @@ Synthetics
 
    marchenko.directwave
 
-
-
 Signal-processing
 -----------------
 
@@ -95,8 +121,8 @@ Signal-processing
 
     signalprocessing.convmtx
     signalprocessing.nonstationary_convmtx
+    signalprocessing.dip_estimate
     signalprocessing.slope_estimate
-
 
 Tapers
 ------
@@ -110,7 +136,6 @@ Tapers
     tapers.taper3d
     tapers.tapernd
 
-
 Wavelets
 --------
 
@@ -119,22 +144,8 @@ Wavelets
 .. autosummary::
    :toctree: generated/
 
-    wavelets.ricker
     wavelets.gaussian
+    wavelets.klauder
+    wavelets.ormsby
+    wavelets.ricker
 
-
-Geophysical Reservoir characterization
---------------------------------------
-
-.. currentmodule:: pylops.avo
-
-.. autosummary::
-   :toctree: generated/
-
-    avo.zoeppritz_scattering
-    avo.zoeppritz_element
-    avo.zoeppritz_pp
-    avo.approx_zoeppritz_pp
-    avo.akirichards
-    avo.fatti
-    avo.ps
