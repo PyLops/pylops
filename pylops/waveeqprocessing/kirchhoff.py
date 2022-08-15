@@ -68,6 +68,8 @@ class Kirchhoff(LinearOperator):
         :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` (to be provided if
         ``mode='byot'``)
     dist : :obj:`numpy.ndarray`, optional
+        .. versionadded:: 2.0.0
+
         Distance table of size
         :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` (to be provided if
         ``mode='byot'``)
@@ -118,8 +120,8 @@ class Kirchhoff(LinearOperator):
         G(\mathbf{x_r}, \mathbf{x}, \omega) = \frac{1}{d(\mathbf{x_r}, \mathbf{x})}
             e^{j \omega t(\mathbf{x_r}, \mathbf{x})}
 
-    where $d(\mathbf{x_r}, \mathbf{x})$ is the distance and
-    $t(\mathbf{x_r}, \mathbf{x})$ is the traveltime.
+    where :math:`d(\mathbf{x_r}, \mathbf{x})` is the distance and
+    :math:`t(\mathbf{x_r}, \mathbf{x})` is the traveltime.
 
     Depending on the choice of ``mode`` the Green's function will be
     computed and applied differently:
