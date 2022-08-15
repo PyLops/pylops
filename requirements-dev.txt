@@ -6,7 +6,7 @@ PyWavelets
 spgl1
 scikit-fmm
 sympy
-devito
+git+https://github.com/devitocodes/devito.git
 matplotlib
 ipython
 pytest

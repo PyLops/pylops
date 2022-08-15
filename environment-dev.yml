@@ -23,7 +23,7 @@ dependencies:
   - isort
   - black
   - pip:
-    - devito
+    - git+https://github.com/devitocodes/devito.git
     - scikit-fmm
     - spgl1
     - pytest-runner
