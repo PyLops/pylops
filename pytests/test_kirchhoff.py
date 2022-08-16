@@ -123,7 +123,6 @@ def test_traveltime_ana():
     _, trav_srcs_ana, trav_recs_ana, dist_ana = Kirchhoff._traveltime_table(
         np.arange(0, 200, 1), np.arange(0, 200, 1), src, src, v0, mode="analytic"
     )
-    print(dist_ana, dist_ana.shape, dist_ana[0, 0])
     assert dist_ana[0, 0] == 200
     assert trav_srcs_ana[0, 0] == 100 / v0
     assert trav_recs_ana[0, 0] == 100 / v0
@@ -174,9 +173,10 @@ def test_kirchhoff2d(par):
         trav, _, _, dist = Kirchhoff._traveltime_table(
             z, x, s2d, r2d, v0, mode="analytic"
         )
+        amp = 1 / (dist + 1e-2 * dist.max())
     else:
         trav = None
-        dist = None
+        amp = None
 
     if skfmm_enabled or par["mode"] != "eikonal":
         Dop = Kirchhoff(
@@ -190,7 +190,7 @@ def test_kirchhoff2d(par):
             wavc,
             y=None,
             trav=trav,
-            dist=dist,
+            amp=amp,
             mode=par["mode"],
         )
         assert dottest(Dop, PAR["nsx"] * PAR["nrx"] * PAR["nt"], PAR["nz"] * PAR["nx"])
