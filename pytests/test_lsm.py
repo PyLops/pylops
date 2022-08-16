@@ -82,17 +82,19 @@ def test_lsm2d(par):
             mode=par["mode"],
             dottest=True,
         )
-        # Fix distances to 1 to avoid dividing by them
-        lsm.Demop.dist = np.ones_like(lsm.Demop.trav)
 
-        d = lsm.Demop * refl.ravel()
-        d = d.reshape(PAR["nsx"], PAR["nrx"], PAR["nt"])
+        # Try both v1 and v2 versions of amp
+        for amp in [lsm.Demop.amp, np.ones_like(lsm.Demop.trav)]:
+            lsm.Demop.amp = amp
 
-        minv = lsm.solve(d.ravel(), **dict(iter_lim=100, show=True))
-        minv = minv.reshape(PAR["nx"], PAR["nz"])
+            d = lsm.Demop * refl.ravel()
+            d = d.reshape(PAR["nsx"], PAR["nrx"], PAR["nt"])
 
-        dinv = lsm.Demop * minv.ravel()
-        dinv = dinv.reshape(PAR["nsx"], PAR["nrx"], PAR["nt"])
+            minv = lsm.solve(d.ravel(), **dict(iter_lim=100, show=True))
+            minv = minv.reshape(PAR["nx"], PAR["nz"])
 
-        assert_array_almost_equal(d, dinv, decimal=1)
-        assert_array_almost_equal(refl, minv, decimal=1)
+            dinv = lsm.Demop * minv.ravel()
+            dinv = dinv.reshape(PAR["nsx"], PAR["nrx"], PAR["nt"])
+
+            assert_array_almost_equal(d, dinv, decimal=1)
+            assert_array_almost_equal(refl, minv, decimal=1)

@@ -28,7 +28,7 @@ class LSM:
 
     Solve seismic migration as inverse problem given smooth velocity model
     ``vel`` and an acquisition setup identified by sources (``src``) and
-    receivers (``recs``)
+    receivers (``recs``).
 
     Parameters
     ----------
@@ -81,11 +81,32 @@ class LSM:
     ``solver='pylops.optimization.sparsity.FISTA'`` a sparse representation of
     reflectivity is produced as result of the inversion.
 
-    Finally, it is worth noting that in the first iteration of an iterative
-    scheme aimed at inverting the demigration operator, a projection of the
-    recorded data in the model domain is performed and an approximate
-    (band-limited)  image of the subsurface is created. This process is
-    referred to in the literature as *migration*.
+    This routines provides users with a easy-to-use, out-of-the-box least-squares
+    migration application that currently implements:
+
+    - Kirchhoff LSM: this problem is parametrized in terms of reflectivity
+      (i.e., vertical derivative of the acoustic impedance - or velocity in case of
+      constant density). Currently, a ray-based modelling engine is used for this case
+      (see :class:`pylops.waveeqprocessing.Kirchhoff`).
+
+    - Born LSM: this problem is parametrized in terms of squared slowness perturbation
+      (in the constant density case) and it is solved using an acoustic two-way eave equation
+      modelling engine (see :class:`pylops.waveeqprocessing.AcousticWave2D`).
+
+    The following table shows the current status of the LSM application:
+
+    +------------------+----------------------+-----------+------------+
+    |                  |  Kirchhoff integral  |   WKBJ    |   Wave eq  |
+    +==================+======================+===========+============+
+    | Reflectivity     |          V           |    X      |     X      |
+    +------------------+----------------------+-----------+------------+
+    | Slowness-squared |          X           |    X      |     V      |
+    +------------------+----------------------+-----------+------------+
+
+    Finally, it is worth noting that for both cases the first iteration of an iterative
+    scheme aimed at inverting the demigration operator is a simple a projection of the
+    recorded data into the model domain. An approximate (band-limited)  image of the subsurface
+    is therefore created. This process is referred to in the literature as *migration*.
 
     """
 

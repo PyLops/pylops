@@ -67,10 +67,10 @@ class Kirchhoff(LinearOperator):
         Traveltime table of size
         :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` (to be provided if
         ``mode='byot'``)
-    dist : :obj:`numpy.ndarray`, optional
+    amp : :obj:`numpy.ndarray`, optional
         .. versionadded:: 2.0.0
 
-        Distance table of size
+        Amplitude table of size
         :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` (to be provided if
         ``mode='byot'``)
     mode : :obj:`str`, optional
@@ -100,7 +100,7 @@ class Kirchhoff(LinearOperator):
 
     Notes
     -----
-    The Kirchhoff demigration operator synthetises seismic data given a
+    The Kirchhoff demigration operator synthesizes seismic data given a
     propagation velocity model :math:`v` and a reflectivity model :math:`m`.
     In forward mode:
 
@@ -109,7 +109,7 @@ class Kirchhoff(LinearOperator):
         w(t) * \int_V G(\mathbf{x_r}, \mathbf{x}, t)
         m(\mathbf{x}) G(\mathbf{x}, \mathbf{x_s}, t)\,\mathrm{d}\mathbf{x}
 
-    where :math:`m(\mathbf{x})` is the model and it represents the reflectivity
+    where :math:`m(\mathbf{x})` is the model that represents the reflectivity
     at every location in the subsurface, :math:`G(\mathbf{x}, \mathbf{x_s}, t)`
     and :math:`G(\mathbf{x_r}, \mathbf{x}, t)` are the Green's functions
     from source-to-subsurface-to-receiver and finally  :math:`w(t)` is the
@@ -117,14 +117,20 @@ class Kirchhoff(LinearOperator):
     approximation of the Green's functions is adopted:
 
     .. math::
-        G(\mathbf{x_r}, \mathbf{x}, \omega) = \frac{1}{d(\mathbf{x_r}, \mathbf{x})}
+        G(\mathbf{x_r}, \mathbf{x}, \omega) = a(\mathbf{x_r}, \mathbf{x})
             e^{j \omega t(\mathbf{x_r}, \mathbf{x})}
 
-    where :math:`d(\mathbf{x_r}, \mathbf{x})` is the distance and
-    :math:`t(\mathbf{x_r}, \mathbf{x})` is the traveltime.
+    where :math:`a(\mathbf{x_r}, \mathbf{x})` is the amplitude and
+    :math:`t(\mathbf{x_r}, \mathbf{x})` is the traveltime. In our current
+    implementations with ``mode=analytic`` and ``mode=eikonal``, this amplitude
+    scaling is computed as `a=1/d` where d is the distance between the two points
+    and represents the geometrical spreading of the wavefront.
+    In general, this multiplicative factor could contain other corrections (e.g.
+    obliquity factors, reflection coefficient of the incident wave at the reflector,
+    aperture tapers, etc.) [1]_.
 
-    Depending on the choice of ``mode`` the Green's function will be
-    computed and applied differently:
+    Depending on the choice of ``mode`` the traveltime of the
+    Green's function will be also computed differently:
 
     * ``mode=analytic`` or ``mode=eikonal``: traveltime curves between
       source to receiver pairs are computed for every subsurface point and
@@ -132,12 +138,15 @@ class Kirchhoff(LinearOperator):
       the reflectivity values at corresponding source-to-receiver time in the
       data.
     * ``byot``: bring your own table. Traveltime table provided
-      directly by user using ``trav`` input parameter. Green's functions are
-      then implemented in the same way as previous options.
+      directly by user using ``trav`` input parameter. Similarly, in this case one
+      can provide their own amplitude scaling ``amp``.
 
     The adjoint of the demigration operator is a *migration* operator which
     projects data in the model domain creating an image of the subsurface
     reflectivity.
+
+    .. [1] Lucio T. Santos, L.T., Schleicher, J., Tygel, M., and Hubral, P.
+       "Seismic modeling by demigration", Geophysics, 65(4), pp. 1281-1289, 2000.
 
     """
 
@@ -153,7 +162,7 @@ class Kirchhoff(LinearOperator):
         wavcenter,
         y=None,
         trav=None,
-        dist=None,
+        amp=None,
         mode="eikonal",
         engine="numpy",
         dtype="float64",
@@ -168,16 +177,21 @@ class Kirchhoff(LinearOperator):
         if mode in ["analytic", "eikonal", "byot"]:
             if mode in ["analytic", "eikonal"]:
                 # compute traveltime table
-                self.trav, _, _, self.dist = Kirchhoff._traveltime_table(
+                self.trav, _, _, dist = Kirchhoff._traveltime_table(
                     z, x, srcs, recs, vel, y=y, mode=mode
                 )
+                # need to add a scalar in the denominator to avoid division by 0
+                # currently set to 1/100 of max distance to avoid having to large
+                # scaling around the source. This number may change in future or
+                # left to the user to define
+                epsdist = 1e-2
+                self.amp = 1 / (dist + epsdist * np.max(dist))
             else:
                 self.trav = trav
-                self.dist = dist
+                self.amp = amp
         else:
             raise NotImplementedError("method must be analytic or eikonal")
 
-        self.dist += 1e-10 * np.max(self.dist)  # need to add to avoid division by 0
         self.itrav = (self.trav / dt).astype("int32")
         self.travd = self.trav / dt - self.itrav
         self.cop = Convolve1D(
@@ -350,32 +364,32 @@ class Kirchhoff(LinearOperator):
         return trav, trav_srcs, trav_recs, dist
 
     @staticmethod
-    def _kirch_matvec(x, y, nsnr, nt, ni, itrav, travd, dist):
+    def _kirch_matvec(x, y, nsnr, nt, ni, itrav, travd, amp):
         for isrcrec in prange(nsnr):
             itravisrcrec = itrav[:, isrcrec]
             travdisrcrec = travd[:, isrcrec]
-            distisrcrec = dist[:, isrcrec]
+            ampisrcrec = amp[:, isrcrec]
             for ii in range(ni):
                 index = itravisrcrec[ii]
                 dindex = travdisrcrec[ii]
-                ddist = distisrcrec[ii]
+                damp = ampisrcrec[ii]
                 if 0 <= index < nt - 1:
-                    y[isrcrec, index] += x[ii] * (1 - dindex) / ddist
-                    y[isrcrec, index + 1] += x[ii] * dindex / ddist
+                    y[isrcrec, index] += x[ii] * (1 - dindex) * damp
+                    y[isrcrec, index + 1] += x[ii] * dindex * damp
         return y
 
     @staticmethod
-    def _kirch_rmatvec(x, y, nsnr, nt, ni, itrav, travd, dist):
+    def _kirch_rmatvec(x, y, nsnr, nt, ni, itrav, travd, amp):
         for ii in prange(ni):
             itravii = itrav[ii]
             travdii = travd[ii]
-            distii = dist[ii]
+            ampii = amp[ii]
             for isrcrec in range(nsnr):
                 if 0 <= itravii[isrcrec] < nt - 1:
                     y[ii] += (
                         x[isrcrec, itravii[isrcrec]] * (1 - travdii[isrcrec])
                         + x[isrcrec, itravii[isrcrec] + 1] * travdii[isrcrec]
-                    ) / distii[isrcrec]
+                    ) * ampii[isrcrec]
         return y
 
     def _register_multiplications(self, engine):
@@ -396,7 +410,7 @@ class Kirchhoff(LinearOperator):
     def _matvec(self, x):
         y = np.zeros((self.nsnr, self.nt), dtype=self.dtype)
         y = self._kirch_matvec(
-            x.ravel(), y, self.nsnr, self.nt, self.ni, self.itrav, self.travd, self.dist
+            x.ravel(), y, self.nsnr, self.nt, self.ni, self.itrav, self.travd, self.amp
         )
         y = self.cop._matvec(y.ravel())
         return y
@@ -407,6 +421,6 @@ class Kirchhoff(LinearOperator):
         x = x.reshape(self.nsnr, self.nt)
         y = np.zeros(self.ni, dtype=self.dtype)
         y = self._kirch_rmatvec(
-            x, y, self.nsnr, self.nt, self.ni, self.itrav, self.travd, self.dist
+            x, y, self.nsnr, self.nt, self.ni, self.itrav, self.travd, self.amp
         )
         return y

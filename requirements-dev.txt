@@ -4,9 +4,9 @@ numba
 pyfftw
 PyWavelets
 spgl1
-#scikit-fmm
+scikit-fmm
 sympy
-git+https://github.com/devitocodes/devito.git
+devito
 matplotlib
 ipython
 pytest
