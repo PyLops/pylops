@@ -58,7 +58,7 @@ class Kirchhoff(LinearOperator):
         Velocity model of size :math:`\lbrack (n_y\,\times)\; n_x
         \times n_z \rbrack` (or constant)
     wav : :obj:`numpy.ndarray`
-        Wavelet
+        Wavelet.
     wavcenter : :obj:`int`
         Index of wavelet center
     y : :obj:`numpy.ndarray`
@@ -106,15 +106,16 @@ class Kirchhoff(LinearOperator):
 
     .. math::
         d(\mathbf{x_r}, \mathbf{x_s}, t) =
-        w(t) * \int_V G(\mathbf{x_r}, \mathbf{x}, t)
+        \tilde{w(t)} * \int_V G(\mathbf{x_r}, \mathbf{x}, t)
         m(\mathbf{x}) G(\mathbf{x}, \mathbf{x_s}, t)\,\mathrm{d}\mathbf{x}
 
     where :math:`m(\mathbf{x})` is the model that represents the reflectivity
     at every location in the subsurface, :math:`G(\mathbf{x}, \mathbf{x_s}, t)`
     and :math:`G(\mathbf{x_r}, \mathbf{x}, t)` are the Green's functions
-    from source-to-subsurface-to-receiver and finally  :math:`w(t)` is the
-    wavelet. In our current implementation, the following high-frequency
-    approximation of the Green's functions is adopted:
+    from source-to-subsurface-to-receiver and finally :math:`\tilde{w(t)} is
+    a filtered version of the the wavelet :math:`w(t) [1]_.  In our current
+    implementation, the following high-frequency approximation of the Green's
+    functions is adopted:
 
     .. math::
         G(\mathbf{x_r}, \mathbf{x}, \omega) = a(\mathbf{x_r}, \mathbf{x})
@@ -127,7 +128,7 @@ class Kirchhoff(LinearOperator):
     and represents the geometrical spreading of the wavefront.
     In general, this multiplicative factor could contain other corrections (e.g.
     obliquity factors, reflection coefficient of the incident wave at the reflector,
-    aperture tapers, etc.) [1]_.
+    aperture tapers, etc.) [2]_.
 
     Depending on the choice of ``mode`` the traveltime of the
     Green's function will be also computed differently:
@@ -145,7 +146,11 @@ class Kirchhoff(LinearOperator):
     projects data in the model domain creating an image of the subsurface
     reflectivity.
 
-    .. [1] Lucio T. Santos, L.T., Schleicher, J., Tygel, M., and Hubral, P.
+    .. [1] Bleistein, N., Cohen, J.K., and Stockwell, J.W..
+       "Mathematics of Multidimensional Seismic Imaging, Migration and
+       Inversion", 2000.
+
+    .. [2] Santos, L.T., Schleicher, J., Tygel, M., and Hubral, P.
        "Seismic modeling by demigration", Geophysics, 65(4), pp. 1281-1289, 2000.
 
     """
@@ -168,9 +173,21 @@ class Kirchhoff(LinearOperator):
         dtype="float64",
         name="D",
     ):
-        ndim, _, dims, ny, nx, nz, ns, nr, _, _, _, _, _ = Kirchhoff._identify_geometry(
-            z, x, srcs, recs, y=y
-        )
+        (
+            self.ndims,
+            _,
+            dims,
+            ny,
+            nx,
+            nz,
+            ns,
+            nr,
+            _,
+            _,
+            _,
+            _,
+            _,
+        ) = Kirchhoff._identify_geometry(z, x, srcs, recs, y=y)
         dt = t[1] - t[0]
         self.nt = len(t)
 
@@ -194,13 +211,14 @@ class Kirchhoff(LinearOperator):
 
         self.itrav = (self.trav / dt).astype("int32")
         self.travd = self.trav / dt - self.itrav
+        self.wav = self._wavelet_reshaping(wav, dt)
         self.cop = Convolve1D(
             (ns * nr, self.nt), h=wav, offset=wavcenter, axis=1, dtype=dtype
         )
         self.nsnr = ns * nr
         self.ni = np.prod(dims)
 
-        dims = tuple(dims) if ndim == 2 else (dims[0] * dims[1], dims[2])
+        dims = tuple(dims) if self.ndims == 2 else (dims[0] * dims[1], dims[2])
         dimsd = (ns, nr, self.nt)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
         self._register_multiplications(engine)
@@ -362,6 +380,17 @@ class Kirchhoff(LinearOperator):
             raise NotImplementedError("method must be analytic or eikonal")
 
         return trav, trav_srcs, trav_recs, dist
+
+    def _wavelet_reshaping(self, wav, dt):
+        """Apply wavelet reshaping as from theory in [1]_"""
+        f = np.fft.rfftfreq(len(wav), dt)
+        W = np.fft.rfft(wav, n=len(wav))
+        if self.ndims == 2:
+            Wfilt = W * np.abs(2 * np.pi * f)
+        else:
+            Wfilt = W * (-1j * 2 * np.pi * f)
+        wavfilt = np.fft.irfft(Wfilt, n=len(wav))
+        return wavfilt
 
     @staticmethod
     def _kirch_matvec(x, y, nsnr, nt, ni, itrav, travd, amp):
