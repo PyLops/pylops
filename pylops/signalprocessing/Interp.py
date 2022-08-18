@@ -1,6 +1,8 @@
 import logging
+from typing import List, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from pylops.basicoperators import Diagonal, MatrixMult, Restriction, Transpose
 from pylops.LinearOperator import aslinearoperator
@@ -10,20 +12,24 @@ from pylops.utils.backend import get_array_module
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def _checkunique(iava):
+def _checkunique(iava: npt.ArrayLike) -> None:
     _, count = np.unique(iava, return_counts=True)
     if np.any(count > 1):
         raise ValueError("Repeated values in iava array")
 
 
-def _nearestinterp(dims, iava, axis=-1, dtype="float64"):
+def _nearestinterp(
+    dims: Union[int, List], iava: npt.ArrayLike, axis: int = -1, dtype: str = "float64"
+):
     """Nearest neighbour interpolation."""
     iava = np.round(iava).astype(int)
     _checkunique(iava)
     return Restriction(dims, iava, axis=axis, dtype=dtype), iava
 
 
-def _linearinterp(dims, iava, axis=-1, dtype="float64"):
+def _linearinterp(
+    dims: Union[int, List], iava: npt.ArrayLike, axis: int = -1, dtype: str = "float64"
+):
     """Linear interpolation."""
     ncp = get_array_module(iava)
 
@@ -60,7 +66,9 @@ def _linearinterp(dims, iava, axis=-1, dtype="float64"):
     return Op, iava, dims, dimsd
 
 
-def _sincinterp(dims, iava, axis=0, dtype="float64"):
+def _sincinterp(
+    dims: Union[int, List], iava: npt.ArrayLike, axis: int = 0, dtype: str = "float64"
+):
     """Sinc interpolation."""
     ncp = get_array_module(iava)
     _checkunique(iava)
@@ -89,7 +97,14 @@ def _sincinterp(dims, iava, axis=0, dtype="float64"):
     return Op, dims, dimsd
 
 
-def Interp(dims, iava, axis=-1, kind="linear", dtype="float64", name="I"):
+def Interp(
+    dims: Union[int, List],
+    iava: npt.ArrayLike,
+    axis: int = -1,
+    kind: str = "linear",
+    dtype: str = "float64",
+    name: str = "I",
+) -> None:
     r"""Interpolation operator.
 
     Apply interpolation along ``axis``

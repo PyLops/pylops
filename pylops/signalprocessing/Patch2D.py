@@ -1,4 +1,5 @@
 import logging
+from typing import List, Tuple, Union
 
 import numpy as np
 
@@ -10,7 +11,12 @@ from pylops.utils.tapers import taper2d
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def patch2d_design(dimsd, nwin, nover, nop):
+def patch2d_design(
+    dimsd: Tuple,
+    nwin: Tuple,
+    nover: Tuple,
+    nop: Tuple,
+) -> [Tuple, Tuple, Tuple, Tuple]:
     """Design Patch2D operator
 
     This routine can be used prior to creating the :class:`pylops.signalprocessing.Patch2D`
@@ -76,15 +82,15 @@ def patch2d_design(dimsd, nwin, nover, nop):
 
 def Patch2D(
     Op,
-    dims,
-    dimsd,
-    nwin,
-    nover,
-    nop,
-    tapertype="hanning",
-    scalings=None,
-    name="P",
-):
+    dims: Tuple,
+    dimsd: Tuple,
+    nwin: Tuple,
+    nover: Tuple,
+    nop: Tuple,
+    tapertype: str = "hanning",
+    scalings: Union[List, Tuple] = None,
+    name: str = "P",
+) -> None:
     """2D Patch transform operator.
 
     Apply a transform operator ``Op`` repeatedly to patches of the model

@@ -1,4 +1,7 @@
+from typing import Callable, List, Tuple, Union
+
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
@@ -11,7 +14,7 @@ from pylops.utils.backend import (
 from pylops.utils.decorators import reshaped
 
 
-def _choose_convfunc(x, method, dims):
+def _choose_convfunc(x: npt.ArrayLike, method: str, dims) -> Tuple[Callable, str]:
     """Choose convolution function
 
     Choose and return the function handle to be used for convolution
@@ -120,8 +123,15 @@ class Convolve1D(LinearOperator):
     """
 
     def __init__(
-        self, dims, h, offset=0, axis=-1, method=None, dtype="float64", name="C"
-    ):
+        self,
+        dims: Union[int, List],
+        h: npt.ArrayLike,
+        offset: int = 0,
+        axis: int = -1,
+        method: str = None,
+        dtype: str = "float64",
+        name: str = "C",
+    ) -> None:
         dims = _value_or_list_like_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
@@ -155,7 +165,7 @@ class Convolve1D(LinearOperator):
         self.convfunc, self.method = _choose_convfunc(h, method, self.dims)
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if type(self.h) != type(x):
             self.h = to_cupy_conditional(x, self.h)
             self.convfunc, self.method = _choose_convfunc(
@@ -164,7 +174,7 @@ class Convolve1D(LinearOperator):
         return self.convfunc(x, self.h, mode="same")
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if type(self.hstar) != type(x):
             self.hstar = to_cupy_conditional(x, self.hstar)
             self.convfunc, self.method = _choose_convfunc(
