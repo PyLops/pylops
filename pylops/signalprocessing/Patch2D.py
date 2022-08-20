@@ -16,7 +16,7 @@ def patch2d_design(
     nwin: Tuple,
     nover: Tuple,
     nop: Tuple,
-) -> [Tuple, Tuple, Tuple, Tuple]:
+) -> Union[Tuple, Tuple, Tuple, Tuple]:
     """Design Patch2D operator
 
     This routine can be used prior to creating the :class:`pylops.signalprocessing.Patch2D`

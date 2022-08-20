@@ -1,12 +1,21 @@
 from math import ceil, log
+from typing import Tuple
 
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.basicoperators import Pad
 
 
-def _predict_trace(trace, t, dt, dx, slope, adj=False):
+def _predict_trace(
+    trace: npt.ArrayLike,
+    t: npt.ArrayLike,
+    dt: float,
+    dx: float,
+    slope: npt.ArrayLike,
+    adj: bool = False,
+) -> npt.ArrayLike:
     r"""Slope-based trace prediction.
 
     Resample a trace to a new time axis defined by the local slopes along the
@@ -14,7 +23,7 @@ def _predict_trace(trace, t, dt, dx, slope, adj=False):
     :math:`\Delta t (t) = dx*s(t)`.
 
     The input trace is interpolated using sinc-interpolation to a new time
-    axis given by the following formula: :math:`t_{new} = t + dx*s(t)`.
+    axis given by the following formula: :math:`t_{new} = t - dx*s(t)`.
 
     Parameters
     ----------
@@ -46,7 +55,15 @@ def _predict_trace(trace, t, dt, dx, slope, adj=False):
     return tracenew
 
 
-def _predict_haar(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
+def _predict_haar(
+    traces: npt.ArrayLike,
+    dt: float,
+    dx: float,
+    slopes: npt.ArrayLike,
+    repeat: int = 0,
+    backward: bool = False,
+    adj: bool = False,
+) -> npt.ArrayLike:
     """Predict set of traces given time-varying slopes (Haar basis function)
 
     A set of input traces are resampled based on local slopes. If the number
@@ -118,7 +135,15 @@ def _predict_haar(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
     return pred
 
 
-def _predict_lin(traces, dt, dx, slopes, repeat=0, backward=False, adj=False):
+def _predict_lin(
+    traces: npt.ArrayLike,
+    dt: float,
+    dx: float,
+    slopes: npt.ArrayLike,
+    repeat: int = 0,
+    backward: bool = False,
+    adj: bool = False,
+) -> npt.ArrayLike:
     """Predict set of traces given time-varying slopes (Linear basis function)
 
     See _predict_haar for details.
@@ -371,14 +396,14 @@ class Seislet(LinearOperator):
 
     def __init__(
         self,
-        slopes,
-        sampling=(1.0, 1.0),
-        level=None,
-        kind="haar",
-        inv=False,
-        dtype="float64",
-        name="S",
-    ):
+        slopes: npt.ArrayLike,
+        sampling: Tuple = (1.0, 1.0),
+        level: int = None,
+        kind: float = "haar",
+        inv: bool = False,
+        dtype: str = "float64",
+        name: str = "S",
+    ) -> None:
         if len(sampling) != 2:
             raise ValueError("provide two sampling steps")
 
@@ -416,7 +441,7 @@ class Seislet(LinearOperator):
         self.slopes = (self.pad * slopes.ravel()).reshape(self.dimsd)
         self.inv = inv
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         x = self.pad.matvec(x)
         x = np.reshape(x, self.dimsd)
         y = np.zeros((np.sum(self.levels_size) + self.levels_size[-1], self.nt))
@@ -437,7 +462,7 @@ class Seislet(LinearOperator):
         y[self.levels_cum[-1] :] = x
         return y.ravel()
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if not self.inv:
             x = np.reshape(x, self.dimsd)
             y = x[self.levels_cum[-1] :]
@@ -473,7 +498,7 @@ class Seislet(LinearOperator):
             y = self.inverse(x)
         return y
 
-    def inverse(self, x):
+    def inverse(self, x: npt.ArrayLike) -> npt.ArrayLike:
         x = np.reshape(x, self.dimsd)
         y = x[self.levels_cum[-1] :]
         for ilevel in range(self.level, 0, -1):
