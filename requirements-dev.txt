@@ -6,6 +6,7 @@ PyWavelets
 spgl1
 scikit-fmm
 sympy
+devito
 matplotlib
 ipython
 pytest

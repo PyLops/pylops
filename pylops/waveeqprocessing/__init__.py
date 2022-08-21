@@ -13,7 +13,8 @@ A list of operators present in pylops.waveeqprocessing:
     UpDownComposition3D             3D Up-down wavefield composition.
     MDC                             Multi-dimensional convolution.
     PhaseShift                      Phase shift operator.
-    Demigration                     Kirchoff Demigration operator.
+    Kirchhoff                       Kirchoff demigration operator.
+    AcousticWave2D                  Two-way wave equation demigration operator.
 
 and a list of applications:
 
@@ -31,6 +32,7 @@ from .marchenko import *
 from .mdd import *
 from .oneway import *
 from .seismicinterpolation import *
+from .twoway import *
 from .wavedecomposition import *
 
 __all__ = [
@@ -44,6 +46,7 @@ __all__ = [
     "WavefieldDecomposition",
     "PhaseShift",
     "Deghosting",
-    "Demigration",
+    "Kirchhoff",
+    "AcousticWave2D",
     "LSM",
 ]
