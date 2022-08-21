@@ -6,7 +6,11 @@ import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
-from pylops.utils._internal import _raise_on_wrong_dtype, _value_or_list_like_to_array
+from pylops.utils._internal import (
+    _raise_on_wrong_dtype,
+    _value_or_list_like_to_array,
+    _value_or_list_like_to_tuple,
+)
 from pylops.utils.backend import get_complex_dtype, get_real_dtype
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -160,8 +164,10 @@ class _BaseFFTND(LinearOperator):
                 [dims[d] for d, n in zip(axes, nffts) if n is None]
             )
             nffts = nffts.astype(np.array(dims).dtype)
-        self.nffts = nffts
-        _raise_on_wrong_dtype(self.nffts, np.integer, "nffts")
+        _raise_on_wrong_dtype(nffts, np.integer, "nffts")
+        self.nffts = _value_or_list_like_to_tuple(
+            nffts
+        )  # tuple is strictly needed for cupy
 
         sampling = _value_or_list_like_to_array(sampling, repeat=self.naxes)
         if np.issubdtype(sampling.dtype, np.integer):  # Promote to float64 if integer
