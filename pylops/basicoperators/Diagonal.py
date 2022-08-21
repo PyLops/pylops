@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -69,7 +69,7 @@ class Diagonal(LinearOperator):
     def __init__(
         self,
         diag: npt.ArrayLike,
-        dims: List = None,
+        dims: Optional[List[int]] = None,
         axis: int = -1,
         dtype: str = "float64",
         name: str = "D",

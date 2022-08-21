@@ -13,7 +13,7 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
 else:
     from scipy.sparse.linalg._interface import _get_dtype
 
-from typing import List
+from typing import List, Optional
 
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
@@ -99,7 +99,7 @@ class BlockDiag(LinearOperator):
 
     """
 
-    def __init__(self, ops: List, nproc: int = 1, dtype: str = None) -> None:
+    def __init__(self, ops: List, nproc: int = 1, dtype: Optional[str] = None) -> None:
         self.ops = ops
         mops = np.zeros(len(ops), dtype=int)
         nops = np.zeros(len(ops), dtype=int)

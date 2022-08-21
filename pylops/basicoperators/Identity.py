@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import numpy.typing as npt
 
@@ -83,7 +85,7 @@ class Identity(LinearOperator):
     def __init__(
         self,
         N: int,
-        M: int = None,
+        M: Optional[int] = None,
         inplace: bool = True,
         dtype: str = "float64",
         name: str = "I",

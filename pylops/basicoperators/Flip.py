@@ -53,7 +53,7 @@ class Flip(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, List],
+        dims: Union[int, List[int]],
         axis: int = -1,
         dtype: str = "float64",
         name: str = "F",

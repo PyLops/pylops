@@ -73,7 +73,7 @@ class SecondDerivative(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, List],
+        dims: Union[int, List[int]],
         axis: int = -1,
         sampling: float = 1.0,
         kind: str = "centered",
@@ -93,7 +93,7 @@ class SecondDerivative(LinearOperator):
     def _register_multiplications(
         self,
         kind: str,
-    ) -> Callable:
+    ) -> None:
         # choose _matvec and _rmatvec kind
         if kind == "forward":
             self._matvec = self._matvec_forward

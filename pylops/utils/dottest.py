@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 
 from pylops.utils.backend import get_module, to_numpy
@@ -5,8 +7,8 @@ from pylops.utils.backend import get_module, to_numpy
 
 def dottest(
     Op,
-    nr: int = None,
-    nc: int = None,
+    nr: Optional[int] = None,
+    nc: Optional[int] = None,
     rtol: float = 1e-6,
     atol: float = 1e-21,
     complexflag: int = 0,

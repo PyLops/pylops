@@ -7,10 +7,10 @@ from pylops.LinearOperator import aslinearoperator
 
 
 def Laplacian(
-    dims: Union[int, Tuple],
-    axes: Tuple = (-2, -1),
-    weights: Tuple = (1, 1),
-    sampling: Tuple = (1, 1),
+    dims: Union[int, Tuple[int]],
+    axes: Tuple[int] = (-2, -1),
+    weights: Tuple[int] = (1, 1),
+    sampling: Tuple[int] = (1, 1),
     edge: bool = False,
     kind: str = "centered",
     dtype: str = "float64",

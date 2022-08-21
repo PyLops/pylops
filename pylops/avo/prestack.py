@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -38,11 +38,11 @@ def PrestackLinearModelling(
     theta: npt.ArrayLike,
     vsvp: Union[float, npt.ArrayLike] = 0.5,
     nt0: int = 1,
-    spatdims: Union[int, Tuple] = None,
+    spatdims: Optional[Union[int, Tuple[int]]] = None,
     linearization: str = "akirich",
     explicit: bool = False,
     kind: str = "centered",
-    name: str = None,
+    name: Optional[str] = None,
 ):
     r"""Pre-stack linearized seismic modelling operator.
 
@@ -220,10 +220,10 @@ def PrestackWaveletModelling(
     m: npt.ArrayLike,
     theta: npt.ArrayLike,
     nwav: int,
-    wavc: int = None,
+    wavc: Optional[int] = None,
     vsvp: Union[float, npt.ArrayLike] = 0.5,
     linearization: str = "akirich",
-    name: str = None,
+    name: Optional[str] = None,
 ):
     r"""Pre-stack linearized seismic modelling operator for wavelet.
 
@@ -350,15 +350,15 @@ def PrestackInversion(
     data: npt.ArrayLike,
     theta: npt.ArrayLike,
     wav: npt.ArrayLike,
-    m0: npt.ArrayLike = None,
+    m0: Optional[npt.ArrayLike] = None,
     linearization: str = "akirich",
     explicit: bool = False,
     simultaneous: bool = False,
-    epsI: float = None,
-    epsR: float = None,
+    epsI: Optional[float] = None,
+    epsR: Optional[float] = None,
     dottest: bool = False,
     returnres: bool = False,
-    epsRL1: float = None,
+    epsRL1: Optional[float] = None,
     kind: str = "centered",
     vsvp: Union[float, npt.ArrayLike] = 0.5,
     **kwargs_solver

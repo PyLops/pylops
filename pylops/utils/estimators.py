@@ -1,5 +1,6 @@
 from itertools import chain
-from typing import Union
+from types import ModuleType
+from typing import Optional, Tuple
 
 import numpy
 import numpy.typing as npt
@@ -8,12 +9,14 @@ from pylops.utils.backend import get_module
 
 
 def _sampler_gaussian(
-    m: float, batch_size: int, backend_module=numpy
-) -> Union[float, npt.ArrayLike]:
+    m: float, batch_size: int, backend_module: ModuleType = numpy
+) -> Tuple[float, npt.ArrayLike]:
     return backend_module.random.randn(m, batch_size)
 
 
-def _sampler_rayleigh(m: float, batch_size: int, backend_module=numpy) -> npt.ArrayLike:
+def _sampler_rayleigh(
+    m: float, batch_size: int, backend_module: ModuleType = numpy
+) -> npt.ArrayLike:
     z = backend_module.random.randn(m, batch_size)
     for i in range(batch_size):
         z[:, i] *= m / backend_module.dot(z[:, i].T, z[:, i])
@@ -21,7 +24,7 @@ def _sampler_rayleigh(m: float, batch_size: int, backend_module=numpy) -> npt.Ar
 
 
 def _sampler_rademacher(
-    m: float, batch_size: int, backend_module=numpy
+    m: float, batch_size: int, backend_module: ModuleType = numpy
 ) -> npt.ArrayLike:
     return 2 * backend_module.random.binomial(1, 0.5, size=(m, batch_size)) - 1
 
@@ -35,8 +38,8 @@ _SAMPLERS = {
 
 def trace_hutchinson(
     Op,
-    neval: int = None,
-    batch_size: int = None,
+    neval: Optional[int] = None,
+    batch_size: Optional[int] = None,
     sampler: str = "rademacher",
     backend: str = "numpy",
 ) -> float:
@@ -151,7 +154,7 @@ def trace_hutchinson(
 
 def trace_hutchpp(
     Op,
-    neval: int = None,
+    neval: Optional[int] = None,
     sampler: str = "rademacher",
     backend: str = "numpy",
 ) -> float:
@@ -244,7 +247,7 @@ def trace_hutchpp(
 
 def trace_nahutchpp(
     Op,
-    neval: int = None,
+    neval: Optional[int] = None,
     sampler: str = "rademacher",
     c1: float = 1.0 / 6.0,
     c2: float = 1.0 / 3.0,

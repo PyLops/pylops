@@ -61,9 +61,9 @@ def linear2d(
     x: npt.NDArray,
     t: npt.NDArray,
     v: float,
-    t0: Union[float, Tuple],
-    theta: Union[float, Tuple],
-    amp: Union[float, Tuple],
+    t0: Union[float, Tuple[float]],
+    theta: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
     wav: npt.NDArray,
 ) -> Tuple[npt.NDArray, npt.NDArray]:
     r"""Linear 2D events
@@ -142,10 +142,10 @@ def linear2d(
 def parabolic2d(
     x: npt.NDArray,
     t: npt.NDArray,
-    t0: Union[float, Tuple],
-    px: Union[float, Tuple],
-    pxx: Union[float, Tuple],
-    amp: Union[float, Tuple],
+    t0: Union[float, Tuple[float]],
+    px: Union[float, Tuple[float]],
+    pxx: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
     wav: npt.NDArray,
 ) -> Tuple[npt.NDArray, npt.NDArray]:
     r"""Parabolic 2D events
@@ -223,9 +223,9 @@ def parabolic2d(
 def hyperbolic2d(
     x: npt.NDArray,
     t: npt.NDArray,
-    t0: Union[float, Tuple],
-    vrms: Union[float, Tuple],
-    amp: Union[float, Tuple],
+    t0: Union[float, Tuple[float]],
+    vrms: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
     wav: npt.NDArray,
 ) -> Tuple[npt.NDArray, npt.NDArray]:
     r"""Hyperbolic 2D events
@@ -298,11 +298,11 @@ def linear3d(
     x: npt.NDArray,
     y: npt.NDArray,
     t: npt.NDArray,
-    v: Union[float, Tuple],
-    t0: Union[float, Tuple],
-    theta: Union[float, Tuple],
-    phi: Union[float, Tuple],
-    amp: Union[float, Tuple],
+    v: Union[float, Tuple[float]],
+    t0: Union[float, Tuple[float]],
+    theta: Union[float, Tuple[float]],
+    phi: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
     wav: npt.NDArray,
 ) -> Tuple[npt.NDArray, npt.NDArray]:
     r"""Linear 3D events
@@ -392,10 +392,10 @@ def hyperbolic3d(
     x: npt.NDArray,
     y: npt.NDArray,
     t: npt.NDArray,
-    t0: Union[float, Tuple],
-    vrms_x: Union[float, Tuple],
-    vrms_y: Union[float, Tuple],
-    amp: Union[float, Tuple],
+    t0: Union[float, Tuple[float]],
+    vrms_x: Union[float, Tuple[float]],
+    vrms_y: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
     wav: npt.NDArray,
 ):
     r"""Hyperbolic 3D events

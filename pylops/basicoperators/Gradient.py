@@ -5,7 +5,7 @@ from pylops.utils._internal import _value_or_list_like_to_tuple
 
 
 def Gradient(
-    dims: Union[int, List],
+    dims: Union[int, List[int]],
     sampling: int = 1,
     edge: bool = False,
     kind: str = "centered",

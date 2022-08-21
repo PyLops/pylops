@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Tuple
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -167,12 +167,12 @@ class Spread(LinearOperator):
 
     def __init__(
         self,
-        dims: Tuple,
-        dimsd: Tuple,
-        table: npt.ArrayLike = None,
-        dtable: npt.ArrayLike = None,
-        fh: Callable = None,
-        interp: bool = None,
+        dims: Tuple[int],
+        dimsd: Tuple[int],
+        table: Optional[npt.ArrayLike] = None,
+        dtable: Optional[npt.ArrayLike] = None,
+        fh: Optional[Callable] = None,
+        interp: Optional[bool] = None,
         engine: str = "numpy",
         dtype: str = "float64",
         name: str = "S",

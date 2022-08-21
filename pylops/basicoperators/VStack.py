@@ -13,7 +13,7 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
 else:
     from scipy.sparse.linalg._interface import _get_dtype
 
-from typing import List
+from typing import List, Optional
 
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
@@ -102,7 +102,7 @@ class VStack(LinearOperator):
         self,
         ops: List,
         nproc: int = 1,
-        dtype: str = None,
+        dtype: Optional[str] = None,
     ) -> None:
         self.ops = ops
         nops = np.zeros(len(self.ops), dtype=int)

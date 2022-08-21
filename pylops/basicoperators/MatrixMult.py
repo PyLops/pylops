@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -53,7 +53,7 @@ class MatrixMult(LinearOperator):
     def __init__(
         self,
         A: npt.ArrayLike,
-        otherdims: Tuple = None,
+        otherdims: Optional[Tuple[int]] = None,
         dtype: str = "float64",
         name: str = "M",
     ) -> None:

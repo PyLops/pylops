@@ -64,7 +64,7 @@ def _in_notebook() -> bool:
     return True
 
 
-def _assign_name(Op, Ops, names: List) -> str:
+def _assign_name(Op, Ops, names: List[str]) -> str:
     """Assign name to an operator as provided by the user
     (or randomly select one when not provided by the user)
 
@@ -115,7 +115,7 @@ def _assign_name(Op, Ops, names: List) -> str:
     return name
 
 
-def _describeop(Op, Ops, names: List):
+def _describeop(Op, Ops, names: List[str]):
     """Core steps to describe a single operator
 
     Parameters
@@ -163,7 +163,7 @@ def _describeop(Op, Ops, names: List):
 def _describe(
     Op,
     Ops,
-    names: Union[List, Set],
+    names: Union[List[str], Set[str]],
 ):
     """Core steps to describe a composite operator. This is done recursively.
 

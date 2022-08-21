@@ -68,8 +68,8 @@ class Pad(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, Tuple],
-        pad: Tuple,
+        dims: Union[int, Tuple[int]],
+        pad: Tuple[int],
         dtype: str = "float64",
         name: str = "P",
     ) -> None:

@@ -91,8 +91,8 @@ class Restriction(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, List],
-        iava: Union[List, npt.ArrayLike],
+        dims: Union[int, List[int]],
+        iava: Union[List[int], npt.ArrayLike],
         axis: int = -1,
         inplace: bool = True,
         dtype: str = "float64",

@@ -7,8 +7,8 @@ from pylops.signalprocessing import Convolve2D
 
 def Smoothing2D(
     nsmooth: int,
-    dims: Union[int, Tuple],
-    axes: Tuple = (-2, -1),
+    dims: Union[int, Tuple[int]],
+    axes: Tuple[int] = (-2, -1),
     dtype: str = "float64",
 ) -> None:
     r"""2D Smoothing.

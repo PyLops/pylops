@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import numpy.typing as npt
 
@@ -52,7 +54,7 @@ class Zero(LinearOperator):
     def __init__(
         self,
         N: int,
-        M: int = None,
+        M: Optional[int] = None,
         dtype: str = "float64",
         name: str = "Z",
     ) -> None:

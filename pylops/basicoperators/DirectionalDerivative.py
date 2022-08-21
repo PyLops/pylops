@@ -7,7 +7,7 @@ from pylops.basicoperators import Diagonal, Gradient, Sum
 
 
 def FirstDirectionalDerivative(
-    dims: Tuple,
+    dims: Tuple[int],
     v: npt.ArrayLike,
     sampling: int = 1,
     edge: bool = False,
@@ -82,7 +82,7 @@ def FirstDirectionalDerivative(
 
 
 def SecondDirectionalDerivative(
-    dims: Tuple,
+    dims: Tuple[int],
     v: npt.ArrayLike,
     sampling: int = 1,
     edge: bool = False,

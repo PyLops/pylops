@@ -47,7 +47,7 @@ def nonstationary_convmtx(
     H: npt.ArrayLike,
     n: int,
     hc: int = 0,
-    pad: Tuple = (0, 0),
+    pad: Tuple[int] = (0, 0),
 ) -> npt.ArrayLike:
     r"""Convolution matrix from a bank of filters
 
@@ -91,7 +91,7 @@ def slope_estimate(
     smooth: int = 5,
     eps: float = 0.0,
     dips: bool = False,
-) -> Union[npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
     r"""Local slope estimation
 
     Local slopes are estimated using the *Structure Tensor* algorithm [1]_.
@@ -242,7 +242,7 @@ def dip_estimate(
     dx: float = 1.0,
     smooth: int = 5,
     eps: float = 0.0,
-) -> Union[npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
     r"""Local dip estimation
 
     Local dips are estimated using the *Structure Tensor* algorithm [1]_.

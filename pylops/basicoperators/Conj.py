@@ -49,7 +49,7 @@ class Conj(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, Tuple],
+        dims: Union[int, Tuple[int]],
         dtype: str = "complex128",
         name: str = "C",
     ) -> None:

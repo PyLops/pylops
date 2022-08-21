@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, Tuple, Union
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -18,7 +18,7 @@ def _tcrop(t: npt.ArrayLike) -> npt.ArrayLike:
 def gaussian(
     t: npt.ArrayLike,
     std: float = 1,
-) -> Union[npt.ArrayLike, npt.ArrayLike, int]:
+) -> Tuple[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Gaussian wavelet
 
     Create a Gaussian wavelet given time axis ``t``
@@ -53,9 +53,9 @@ def gaussian(
 
 def klauder(
     t: npt.ArrayLike,
-    f: Tuple = (5, 20),
-    taper: Callable = None,
-) -> Union[npt.ArrayLike, npt.ArrayLike, int]:
+    f: Tuple[int] = (5, 20),
+    taper: Optional[Callable] = None,
+) -> Tuple[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Klauder wavelet
 
     Create a Klauder wavelet given time axis ``t``
@@ -101,9 +101,9 @@ def klauder(
 
 def ormsby(
     t: npt.ArrayLike,
-    f: Tuple = (5, 10, 45, 50),
-    taper: Callable = None,
-) -> Union[npt.ArrayLike, npt.ArrayLike, int]:
+    f: Tuple[int] = (5, 10, 45, 50),
+    taper: Optional[Callable] = None,
+) -> Tuple[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Ormsby wavelet
 
     Create a Ormsby wavelet given time axis ``t`` and frequency range
@@ -160,8 +160,8 @@ def ormsby(
 def ricker(
     t: npt.ArrayLike,
     f0: float = 10,
-    taper: Callable = None,
-) -> Union[npt.ArrayLike, npt.ArrayLike, int]:
+    taper: Optional[Callable] = None,
+) -> Tuple[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Ricker wavelet
 
     Create a Ricker wavelet given time axis ``t`` and central frequency ``f_0``

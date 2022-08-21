@@ -1,5 +1,5 @@
 import logging
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -329,7 +329,7 @@ def akirichards(
     theta: npt.ArrayLike,
     vsvp: Union[float, npt.ArrayLike],
     n: int = 1,
-) -> Union[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
     r"""Three terms Aki-Richards approximation.
 
     Computes the coefficients of the of three terms Aki-Richards approximation
@@ -403,7 +403,7 @@ def fatti(
     theta: npt.ArrayLike,
     vsvp: Union[float, npt.ArrayLike],
     n: int = 1,
-) -> Union[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
     r"""Three terms Fatti approximation.
 
     Computes the coefficients of the three terms Fatti approximation
@@ -479,7 +479,7 @@ def ps(
     theta: npt.ArrayLike,
     vsvp: Union[float, npt.ArrayLike],
     n: int = 1,
-) -> Union[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
     r"""PS reflection coefficient
 
     Computes the coefficients for the PS approximation
@@ -628,7 +628,7 @@ class AVOLinearModelling(LinearOperator):
         theta: npt.ArrayLike,
         vsvp: Union[float, npt.ArrayLike] = 0.5,
         nt0: int = 1,
-        spatdims: Union[int, Tuple] = None,
+        spatdims: Optional[Union[int, Tuple[int]]] = None,
         linearization: str = "akirich",
         dtype: str = "float64",
         name: str = "A",
