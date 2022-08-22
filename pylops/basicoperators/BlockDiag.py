@@ -1,6 +1,7 @@
 import multiprocessing as mp
 
 import numpy as np
+import numpy.typing as npt
 import scipy as sp
 from scipy.sparse.linalg.interface import LinearOperator as spLinearOperator
 
@@ -11,6 +12,8 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
     from scipy.sparse.linalg.interface import _get_dtype
 else:
     from scipy.sparse.linalg._interface import _get_dtype
+
+from typing import List, Optional
 
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
@@ -96,7 +99,7 @@ class BlockDiag(LinearOperator):
 
     """
 
-    def __init__(self, ops, nproc=1, dtype=None):
+    def __init__(self, ops: List, nproc: int = 1, dtype: Optional[str] = None) -> None:
         self.ops = ops
         mops = np.zeros(len(ops), dtype=int)
         nops = np.zeros(len(ops), dtype=int)
@@ -120,18 +123,18 @@ class BlockDiag(LinearOperator):
         super().__init__(dtype=dtype, shape=(self.nops, self.mops), clinear=clinear)
 
     @property
-    def nproc(self):
+    def nproc(self) -> int:
         return self._nproc
 
     @nproc.setter
-    def nproc(self, nprocnew):
+    def nproc(self, nprocnew: int) -> int:
         if self._nproc > 1:
             self.pool.close()
         if nprocnew > 1:
             self.pool = mp.Pool(processes=nprocnew)
         self._nproc = nprocnew
 
-    def _matvec_serial(self, x):
+    def _matvec_serial(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
@@ -140,7 +143,7 @@ class BlockDiag(LinearOperator):
             ).squeeze()
         return y
 
-    def _rmatvec_serial(self, x):
+    def _rmatvec_serial(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
@@ -149,7 +152,7 @@ class BlockDiag(LinearOperator):
             ).squeeze()
         return y
 
-    def _matvec_multiproc(self, x):
+    def _matvec_multiproc(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ys = self.pool.starmap(
             _matvec_rmatvec_map,
             [
@@ -160,7 +163,7 @@ class BlockDiag(LinearOperator):
         y = np.hstack(ys)
         return y
 
-    def _rmatvec_multiproc(self, x):
+    def _rmatvec_multiproc(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ys = self.pool.starmap(
             _matvec_rmatvec_map,
             [
@@ -171,14 +174,14 @@ class BlockDiag(LinearOperator):
         y = np.hstack(ys)
         return y
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.nproc == 1:
             y = self._matvec_serial(x)
         else:
             y = self._matvec_multiproc(x)
         return y
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.nproc == 1:
             y = self._rmatvec_serial(x)
         else:

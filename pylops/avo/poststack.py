@@ -1,6 +1,8 @@
 import logging
+from typing import Optional, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 from scipy.sparse.linalg import lsqr
 
 from pylops import FirstDerivative, Laplacian, MatrixMult, SecondDerivative
@@ -115,7 +117,13 @@ def _PoststackLinearModelling(
 
 
 def PoststackLinearModelling(
-    wav, nt0, spatdims=None, explicit=False, sparse=False, kind="centered", name=None
+    wav: npt.ArrayLike,
+    nt0: int,
+    spatdims: Optional[Union[int, Tuple[int]]] = None,
+    explicit: bool = False,
+    sparse: bool = False,
+    kind: str = "centered",
+    name: Optional[str] = None,
 ):
     r"""Post-stack linearized seismic modelling operator.
 
@@ -196,17 +204,17 @@ def PoststackLinearModelling(
 
 
 def PoststackInversion(
-    data,
-    wav,
-    m0=None,
-    explicit=False,
-    simultaneous=False,
-    epsI=None,
-    epsR=None,
-    dottest=False,
-    epsRL1=None,
+    data: npt.ArrayLike,
+    wav: npt.ArrayLike,
+    m0: Optional[npt.ArrayLike] = None,
+    explicit: bool = False,
+    simultaneous: bool = False,
+    epsI: Optional[float] = None,
+    epsR: Optional[float] = None,
+    dottest: bool = False,
+    epsRL1: Optional[float] = None,
     **kwargs_solver
-):
+) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
     r"""Post-stack linearized seismic inversion.
 
     Invert post-stack seismic operator to retrieve an elastic parameter of

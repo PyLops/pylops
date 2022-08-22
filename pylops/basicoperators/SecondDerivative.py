@@ -1,4 +1,7 @@
+from typing import List, Union
+
 import numpy as np
+import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
@@ -70,14 +73,14 @@ class SecondDerivative(LinearOperator):
 
     def __init__(
         self,
-        dims,
-        axis=-1,
-        sampling=1,
-        kind="centered",
-        edge=False,
-        dtype="float64",
-        name="S",
-    ):
+        dims: Union[int, List[int]],
+        axis: int = -1,
+        sampling: float = 1.0,
+        kind: str = "centered",
+        edge: bool = False,
+        dtype: str = "float64",
+        name: str = "S",
+    ) -> None:
         dims = _value_or_list_like_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
@@ -87,7 +90,10 @@ class SecondDerivative(LinearOperator):
         self.edge = edge
         self._register_multiplications(self.kind)
 
-    def _register_multiplications(self, kind):
+    def _register_multiplications(
+        self,
+        kind: str,
+    ) -> None:
         # choose _matvec and _rmatvec kind
         if kind == "forward":
             self._matvec = self._matvec_forward
@@ -122,7 +128,7 @@ class SecondDerivative(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _matvec_centered(self, x):
+    def _matvec_centered(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., 1:-1] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
@@ -133,7 +139,7 @@ class SecondDerivative(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _rmatvec_centered(self, x):
+    def _rmatvec_centered(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., :-2] += x[..., 1:-1]
@@ -150,7 +156,7 @@ class SecondDerivative(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _matvec_backward(self, x):
+    def _matvec_backward(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., 2:] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
@@ -158,7 +164,7 @@ class SecondDerivative(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _rmatvec_backward(self, x):
+    def _rmatvec_backward(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., :-2] += x[..., 2:]

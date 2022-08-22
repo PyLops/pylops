@@ -1,7 +1,15 @@
 import time
+from typing import List, Tuple
+
+import numpy.typing as npt
 
 
-def scalability_test(Op, x, workers=[1, 2, 4], forward=True):
+def scalability_test(
+    Op,
+    x: npt.ArrayLike,
+    workers: List[int] = [1, 2, 4],
+    forward: bool = True,
+) -> Tuple[List[float], List[float]]:
     r"""Scalability test.
 
     Small auxiliary routine to test the performance of operators using

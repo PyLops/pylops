@@ -1,4 +1,8 @@
+from types import ModuleType
+from typing import Callable
+
 import numpy as np
+import numpy.typing as npt
 from scipy.linalg import block_diag, lstsq, toeplitz
 from scipy.signal import convolve, correlate, fftconvolve, oaconvolve
 from scipy.sparse import csc_matrix, eye
@@ -23,7 +27,7 @@ cusignal_message = (
 )
 
 
-def get_module(backend="numpy"):
+def get_module(backend: str = "numpy") -> ModuleType:
     """Returns correct numerical module based on backend string
 
     Parameters
@@ -47,7 +51,7 @@ def get_module(backend="numpy"):
     return ncp
 
 
-def get_module_name(mod):
+def get_module_name(mod: ModuleType) -> str:
     """Returns name of numerical module based on input numerical module
 
     Parameters
@@ -71,7 +75,7 @@ def get_module_name(mod):
     return backend
 
 
-def get_array_module(x):
+def get_array_module(x: npt.ArrayLike) -> ModuleType:
     """Returns correct numerical module based on input
 
     Parameters
@@ -91,7 +95,7 @@ def get_array_module(x):
         return np
 
 
-def get_convolve(x):
+def get_convolve(x: npt.ArrayLike) -> Callable:
     """Returns correct convolve module based on input
 
     Parameters
@@ -117,7 +121,7 @@ def get_convolve(x):
             raise ModuleNotFoundError(cusignal_message)
 
 
-def get_fftconvolve(x):
+def get_fftconvolve(x: npt.ArrayLike) -> Callable:
     """Returns correct fftconvolve module based on input
 
     Parameters
@@ -143,7 +147,7 @@ def get_fftconvolve(x):
             raise ModuleNotFoundError(cusignal_message)
 
 
-def get_oaconvolve(x):
+def get_oaconvolve(x: npt.ArrayLike) -> Callable:
     """Returns correct oaconvolve module based on input
 
     Parameters
@@ -170,7 +174,7 @@ def get_oaconvolve(x):
         )
 
 
-def get_correlate(x):
+def get_correlate(x: npt.ArrayLike) -> Callable:
     """Returns correct correlate module based on input
 
     Parameters
@@ -196,7 +200,7 @@ def get_correlate(x):
             raise ModuleNotFoundError(cusignal_message)
 
 
-def get_add_at(x):
+def get_add_at(x: npt.ArrayLike) -> Callable:
     """Returns correct add.at module based on input
 
     Parameters
@@ -219,7 +223,7 @@ def get_add_at(x):
         return cupyx.scatter_add
 
 
-def get_block_diag(x):
+def get_block_diag(x: npt.ArrayLike) -> Callable:
     """Returns correct block_diag module based on input
 
     Parameters
@@ -242,7 +246,7 @@ def get_block_diag(x):
         return cp_block_diag
 
 
-def get_toeplitz(x):
+def get_toeplitz(x: npt.ArrayLike) -> Callable:
     """Returns correct toeplitz module based on input
 
     Parameters
@@ -265,7 +269,7 @@ def get_toeplitz(x):
         return cp_toeplitz
 
 
-def get_csc_matrix(x):
+def get_csc_matrix(x: npt.ArrayLike) -> Callable:
     """Returns correct csc_matrix module based on input
 
     Parameters
@@ -288,7 +292,7 @@ def get_csc_matrix(x):
         return cp_csc_matrix
 
 
-def get_sparse_eye(x):
+def get_sparse_eye(x: npt.ArrayLike) -> Callable:
     """Returns correct sparse eye module based on input
 
     Parameters
@@ -311,7 +315,7 @@ def get_sparse_eye(x):
         return cp_eye
 
 
-def get_lstsq(x):
+def get_lstsq(x: npt.ArrayLike) -> Callable:
     """Returns correct lstsq module based on input
 
     Parameters
@@ -334,7 +338,7 @@ def get_lstsq(x):
         return cp.linalg.lstsq
 
 
-def get_complex_dtype(dtype):
+def get_complex_dtype(dtype: npt.DTypeLike) -> npt.DTypeLike:
     """Returns a complex type in the precision of the input type.
 
     Parameters
@@ -346,11 +350,12 @@ def get_complex_dtype(dtype):
     -------
     complex_dtype : :obj:`numpy.dtype`
         Complex output type.
+
     """
     return (np.ones(1, dtype=dtype) + 1j * np.ones(1, dtype=dtype)).dtype
 
 
-def get_real_dtype(dtype):
+def get_real_dtype(dtype: npt.DTypeLike) -> npt.DTypeLike:
     """Returns a real type in the precision of the input type.
 
     Parameters
@@ -366,7 +371,7 @@ def get_real_dtype(dtype):
     return np.real(np.ones(1, dtype)).dtype
 
 
-def to_numpy(x):
+def to_numpy(x: npt.ArrayLike) -> npt.ArrayLike:
     """Convert x to numpy array
 
     Parameters
@@ -386,7 +391,7 @@ def to_numpy(x):
     return x
 
 
-def to_cupy_conditional(x, y):
+def to_cupy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> npt.ArrayLike:
     """Convert y to cupy array conditional to x being a cupy array
 
     Parameters
