@@ -41,6 +41,13 @@ should be used as a checklist when converting a piece of code using PyLops from 
   As previously stated in a warning message, the recommended option ``transpose=False`` is now selected as default.
   Ensure that the input array ``G`` is organized as follows ``[n_fmax X n_s X n_r]``.
 - The optional arguments ``design`` has been deprecated in ``pylops.waveeqprocessing.seismicinterpolation.SeismicInterpolation``.
+- The ``pylops.waveeqprocessing.lsm.Demigration`` operator has been renamed into
+  ``pylops.waveeqprocessing.kirchhoff.Kirchhoff``. Its internal working has been modified taking into account the
+  geometrical spreading of propagation. To maintain the previous behaviour simply fill the distance table ``dist`` with
+  ones.
+- The optional parameter ``engine`` has been added to ``pylops.waveeqprocessing.lsm.LSM`` to allow users to choose
+  between the original ``pylops.waveeqprocessing.kirchhoff.Kirchhoff`` modelling operator and the new
+  ``pylops.waveeqprocessing.twoway.AcousticWave2D`` modelling operator.
 
 ## Utils
 - `utils.dottest`: Change `tol` into `rtol`. Absolute tolerance is now also supported via the keyword `atol`.
