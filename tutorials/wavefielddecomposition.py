@@ -223,6 +223,7 @@ pup_inv, pdown_inv = pylops.waveeqprocessing.WavefieldDecomposition(
     kind="inverse",
     critical=critical * 100,
     ntaper=ntaper,
+    scaling=1.0 / vz.max(),
     dtype="complex128",
     **dict(damp=1e-10, iter_lim=20)
 )
