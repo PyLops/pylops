@@ -1,9 +1,16 @@
+from typing import Tuple, Union
+
 import numpy as np
 
 from pylops.signalprocessing import Convolve2D
 
 
-def Smoothing2D(nsmooth, dims, axes=(-2, -1), dtype="float64"):
+def Smoothing2D(
+    nsmooth: int,
+    dims: Union[int, Tuple[int]],
+    axes: Tuple[int] = (-2, -1),
+    dtype: str = "float64",
+) -> None:
     r"""2D Smoothing.
 
     Apply smoothing to model (and data) along two ``axes`` of a

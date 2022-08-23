@@ -1,4 +1,7 @@
+from typing import List, Union
+
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
@@ -88,13 +91,13 @@ class CausalIntegration(LinearOperator):
 
     def __init__(
         self,
-        dims,
-        axis=-1,
-        sampling=1,
-        kind="full",
-        removefirst=False,
-        dtype="float64",
-        name="C",
+        dims: Union[int, List[int]],
+        axis: int = -1,
+        sampling: float = 1,
+        kind: str = "full",
+        removefirst: bool = False,
+        dtype: str = "float64",
+        name: str = "C",
     ):
         self.axis = axis
         self.sampling = sampling
@@ -108,7 +111,7 @@ class CausalIntegration(LinearOperator):
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
     @reshaped(swapaxis=True)
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         y = self.sampling * np.cumsum(x, axis=-1)
         if self.kind in ("half", "trapezoidal"):
             y -= self.sampling * x / 2.0
@@ -119,7 +122,7 @@ class CausalIntegration(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.removefirst:
             x = np.insert(x, 0, 0, axis=-1)
         xflip = np.flip(x, axis=-1)

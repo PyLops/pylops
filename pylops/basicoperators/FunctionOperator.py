@@ -1,4 +1,7 @@
 from numbers import Integral
+from typing import Callable
+
+import numpy.typing as npt
 
 from pylops import LinearOperator
 
@@ -64,7 +67,12 @@ class FunctionOperator(LinearOperator):
     array([2.,  3.])
     """
 
-    def __init__(self, f, *args, **kwargs):
+    def __init__(
+        self,
+        f: Callable,
+        *args,
+        **kwargs,
+    ) -> None:
         # call is FunctionOperator(f, n)
         if len(args) == 1:
             shape = (args[0], args[0])
@@ -91,10 +99,10 @@ class FunctionOperator(LinearOperator):
         self.f = f
         self.fc = fc
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return self.f(x)
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.fc is None:
             raise NotImplementedError("Adjoint not implemented")
         return self.fc(x)

@@ -42,3 +42,6 @@ docupdate:
 
 lint:
 	flake8 docs/ examples/ pylops/ pytests/ tutorials/
+
+typeannot:
+	mypy pylops/

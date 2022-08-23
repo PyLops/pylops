@@ -45,6 +45,9 @@ autodoc_member_order = "bysource"
 # Default flags used by autodoc directives
 autodoc_default_flags = ["members"]
 
+# Avoid showing typing annotations in doc
+autodoc_typehints = "none"
+
 numpydoc_show_class_members = False
 numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False

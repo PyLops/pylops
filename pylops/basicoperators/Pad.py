@@ -1,4 +1,7 @@
+from typing import Tuple, Union
+
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
@@ -63,7 +66,13 @@ class Pad(LinearOperator):
 
     """
 
-    def __init__(self, dims, pad, dtype="float64", name="P"):
+    def __init__(
+        self,
+        dims: Union[int, Tuple[int]],
+        pad: Tuple[int],
+        dtype: str = "float64",
+        name: str = "P",
+    ) -> None:
         if np.any(np.array(pad) < 0):
             raise ValueError("Padding must be positive or zero")
         dims = _value_or_list_like_to_tuple(dims)
@@ -73,11 +82,11 @@ class Pad(LinearOperator):
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return np.pad(x, self.pad, mode="constant")
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         for ax, (before, _) in enumerate(self.pad):
             x = np.take(x, np.arange(before, before + self.dims[ax]), axis=ax)
         return x
