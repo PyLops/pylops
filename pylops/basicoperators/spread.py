@@ -10,7 +10,7 @@ from pylops.utils.decorators import reshaped
 try:
     from numba import jit
 
-    from ._Spread_numba import (
+    from ._spread_numba import (
         _matvec_numba_onthefly,
         _matvec_numba_table,
         _rmatvec_numba_onthefly,
