@@ -8,7 +8,7 @@ import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 
 
@@ -101,7 +101,7 @@ class Restriction(LinearOperator):
         name: str = "R",
     ) -> None:
         ncp = get_array_module(iava)
-        dims = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_sized_to_tuple(dims)
         axis = normalize_axis_index(axis, len(dims))
         dimsd = list(dims)  # data dimensions
         dimsd[axis] = len(iava)

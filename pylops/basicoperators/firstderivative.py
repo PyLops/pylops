@@ -7,7 +7,7 @@ import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 
@@ -92,7 +92,7 @@ class FirstDerivative(LinearOperator):
         dtype: str = "float64",
         name: str = "F",
     ) -> None:
-        dims = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_sized_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
         self.axis = normalize_axis_index(axis, len(self.dims))

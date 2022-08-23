@@ -8,8 +8,8 @@ from numpy.core.multiarray import normalize_axis_index
 from pylops import LinearOperator
 from pylops.utils._internal import (
     _raise_on_wrong_dtype,
-    _value_or_list_like_to_array,
-    _value_or_list_like_to_tuple,
+    _value_or_sized_to_array,
+    _value_or_sized_to_tuple,
 )
 from pylops.utils.backend import get_complex_dtype, get_real_dtype
 
@@ -37,19 +37,19 @@ class _BaseFFT(LinearOperator):
         fftshift_after=False,
         dtype="complex128",
     ):
-        dims = _value_or_list_like_to_array(dims)
+        dims = _value_or_sized_to_array(dims)
         _raise_on_wrong_dtype(dims, np.integer, "dims")
 
         self.ndim = len(dims)
 
-        axes = _value_or_list_like_to_array(axis)
+        axes = _value_or_sized_to_array(axis)
         _raise_on_wrong_dtype(axes, np.integer, "axis")
         self.axis = normalize_axis_index(axes[0], self.ndim)
 
         if nfft is None:
             nfft = dims[self.axis]
         else:
-            nffts = _value_or_list_like_to_array(nfft)
+            nffts = _value_or_sized_to_array(nfft)
             _raise_on_wrong_dtype(nffts, np.integer, "nfft")
             nfft = nffts[0]
         self.nfft = nfft
@@ -144,12 +144,12 @@ class _BaseFFTND(LinearOperator):
         fftshift_after=False,
         dtype="complex128",
     ):
-        dims = _value_or_list_like_to_array(dims)
+        dims = _value_or_sized_to_array(dims)
         _raise_on_wrong_dtype(dims, np.integer, "dims")
 
         self.ndim = len(dims)
 
-        axes = _value_or_list_like_to_array(axes)
+        axes = _value_or_sized_to_array(axes)
         _raise_on_wrong_dtype(axes, np.integer, "axes")
         self.axes = np.array([normalize_axis_index(d, self.ndim) for d in axes])
         self.naxes = len(self.axes)
@@ -158,29 +158,29 @@ class _BaseFFTND(LinearOperator):
                 "At least one direction is repeated. This may cause unexpected results."
             )
 
-        nffts = _value_or_list_like_to_array(nffts, repeat=self.naxes)
+        nffts = _value_or_sized_to_array(nffts, repeat=self.naxes)
         if len(nffts[np.equal(nffts, None)]) > 0:  # Found None(s) in nffts
             nffts[np.equal(nffts, None)] = np.array(
                 [dims[d] for d, n in zip(axes, nffts) if n is None]
             )
             nffts = nffts.astype(np.array(dims).dtype)
         _raise_on_wrong_dtype(nffts, np.integer, "nffts")
-        self.nffts = _value_or_list_like_to_tuple(
+        self.nffts = _value_or_sized_to_tuple(
             nffts
         )  # tuple is strictly needed for cupy
 
-        sampling = _value_or_list_like_to_array(sampling, repeat=self.naxes)
+        sampling = _value_or_sized_to_array(sampling, repeat=self.naxes)
         if np.issubdtype(sampling.dtype, np.integer):  # Promote to float64 if integer
             sampling = sampling.astype(np.float64)
         self.sampling = sampling
         _raise_on_wrong_dtype(self.sampling, np.floating, "sampling")
 
-        self.ifftshift_before = _value_or_list_like_to_array(
+        self.ifftshift_before = _value_or_sized_to_array(
             ifftshift_before, repeat=self.naxes
         )
         _raise_on_wrong_dtype(self.ifftshift_before, bool, "ifftshift_before")
 
-        self.fftshift_after = _value_or_list_like_to_array(
+        self.fftshift_after = _value_or_sized_to_array(
             fftshift_after, repeat=self.naxes
         )
         _raise_on_wrong_dtype(self.fftshift_after, bool, "fftshift_after")

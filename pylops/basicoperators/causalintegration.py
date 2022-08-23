@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
 
 
@@ -106,7 +106,7 @@ class CausalIntegration(LinearOperator):
         # backwards compatible
         self.kind = kind
         self.removefirst = removefirst
-        dims = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_sized_to_tuple(dims)
         dimsd = list(dims)
         if self.removefirst:
             dimsd[self.axis] -= 1

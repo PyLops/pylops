@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 
 
 class Imag(LinearOperator):
@@ -57,7 +57,7 @@ class Imag(LinearOperator):
         dtype: str = "complex128",
         name: str = "I",
     ) -> None:
-        dims = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_sized_to_tuple(dims)
         super().__init__(
             dtype=np.dtype(dtype), dims=dims, dimsd=dims, clinear=False, name=name
         )

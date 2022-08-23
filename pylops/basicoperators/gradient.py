@@ -3,7 +3,7 @@ __all__ = ["Gradient"]
 from typing import List, Union
 
 from pylops.basicoperators import FirstDerivative, VStack
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 
 
 def Gradient(
@@ -67,9 +67,9 @@ def Gradient(
     axes are instead summed together.
 
     """
-    dims = _value_or_list_like_to_tuple(dims)
+    dims = _value_or_sized_to_tuple(dims)
     ndims = len(dims)
-    sampling = _value_or_list_like_to_tuple(sampling, repeat=ndims)
+    sampling = _value_or_sized_to_tuple(sampling, repeat=ndims)
 
     gop = VStack(
         [

@@ -9,7 +9,7 @@ import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.basicoperators import Pad
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 
 try:
     import pywt
@@ -117,7 +117,7 @@ class DWT(LinearOperator):
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
 
-        dims = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_sized_to_tuple(dims)
         # define padding for length to be power of 2
         ndimpow2 = max(2 ** ceil(log(dims[axis], 2)), 2**level)
         pad = [(0, 0)] * len(dims)

@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 from pylops.utils.decorators import reshaped
 
@@ -77,7 +77,7 @@ class Diagonal(LinearOperator):
         name: str = "D",
     ) -> None:
         self.diag = diag.ravel()
-        dims = (len(self.diag),) if dims is None else _value_or_list_like_to_tuple(dims)
+        dims = (len(self.diag),) if dims is None else _value_or_sized_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
         ncp = get_array_module(diag)

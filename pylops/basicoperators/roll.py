@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
 
 
@@ -57,7 +57,7 @@ class Roll(LinearOperator):
         dtype: str = "float64",
         name: str = "R",
     ) -> None:
-        dims = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_sized_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
         self.axis = axis
         self.shift = shift

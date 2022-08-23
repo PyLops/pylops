@@ -8,7 +8,7 @@ from numpy.core.multiarray import normalize_axis_index
 
 from pylops.basicoperators import Diagonal
 from pylops.signalprocessing import FFT
-from pylops.utils._internal import _value_or_list_like_to_array
+from pylops.utils._internal import _value_or_sized_to_array
 
 
 def Shift(
@@ -105,7 +105,7 @@ def Shift(
         dimsdiag = list(dims)
         dimsdiag[axis] = len(Fop.f)
 
-    shift = _value_or_list_like_to_array(shift)
+    shift = _value_or_sized_to_array(shift)
 
     if shift.size == 1:
         shift = np.exp(-1j * 2 * np.pi * Fop.f * shift)

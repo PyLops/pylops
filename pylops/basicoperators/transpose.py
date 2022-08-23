@@ -7,7 +7,7 @@ import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
 
 
@@ -64,7 +64,7 @@ class Transpose(LinearOperator):
         dtype: str = "float64",
         name: str = "T",
     ) -> None:
-        dims = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_sized_to_tuple(dims)
         ndims = len(dims)
         self.axes = [normalize_axis_index(ax, ndims) for ax in axes]
 

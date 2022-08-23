@@ -9,7 +9,7 @@ import scipy as sp
 from scipy.sparse.linalg import inv
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_array
+from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.backend import get_array_module
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -70,7 +70,7 @@ class MatrixMult(LinearOperator):
             self.reshape = False
             explicit = True
         else:
-            otherdims = _value_or_list_like_to_array(otherdims)
+            otherdims = _value_or_sized_to_array(otherdims)
             self.otherdims = np.array(otherdims, dtype=int)
             dims, dimsd = np.insert(self.otherdims, 0, self.A.shape[1]), np.insert(
                 self.otherdims, 0, self.A.shape[0]

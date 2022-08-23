@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 
@@ -66,7 +66,7 @@ class Sum(LinearOperator):
         dtype: str = "float64",
         name: str = "S",
     ) -> None:
-        dims = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_sized_to_tuple(dims)
         # to avoid reducing matvec to a scalar
         dims = (dims[0], 1) if len(dims) == 1 else dims
         self.axis = axis

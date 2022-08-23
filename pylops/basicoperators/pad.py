@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
 
 
@@ -77,7 +77,7 @@ class Pad(LinearOperator):
     ) -> None:
         if np.any(np.array(pad) < 0):
             raise ValueError("Padding must be positive or zero")
-        dims = _value_or_list_like_to_tuple(dims)
+        dims = _value_or_sized_to_tuple(dims)
         # Accept (padbeg, padend) and [(padbeg, padend)]
         self.pad = [pad] if len(dims) == 1 and len(pad) == 2 else pad
         dimsd = [dim + before + after for dim, (before, after) in zip(dims, self.pad)]

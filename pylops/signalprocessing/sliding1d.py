@@ -11,7 +11,7 @@ import numpy as np
 from pylops import aslinearoperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.tapers import taper
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -140,8 +140,8 @@ def Sliding1D(
         shape (``dims``).
 
     """
-    dim = _value_or_list_like_to_tuple(dim)
-    dimd = _value_or_list_like_to_tuple(dimd)
+    dim = _value_or_sized_to_tuple(dim)
+    dimd = _value_or_sized_to_tuple(dimd)
 
     # data windows
     dwin_ins, dwin_ends = _slidingsteps(dimd[0], nwin, nover)
