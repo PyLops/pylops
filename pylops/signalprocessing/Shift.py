@@ -1,4 +1,7 @@
+from typing import Tuple, Union
+
 import numpy as np
+import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops.basicoperators import Diagonal
@@ -7,15 +10,15 @@ from pylops.utils._internal import _value_or_list_like_to_array
 
 
 def Shift(
-    dims,
-    shift,
-    axis=-1,
-    nfft=None,
-    sampling=1.0,
-    real=False,
-    engine="numpy",
-    dtype="complex128",
-    name="S",
+    dims: Tuple,
+    shift: Union[float, npt.ArrayLike],
+    axis: int = -1,
+    nfft: int = None,
+    sampling: float = 1.0,
+    real: bool = False,
+    engine: str = "numpy",
+    dtype: str = "complex128",
+    name: str = "S",
     **kwargs_fftw
 ):
     r"""Shift operator

@@ -1,6 +1,8 @@
 import logging
+from typing import Callable
 
 import numpy as np
+import numpy.typing as npt
 
 from pylops.basicoperators import Spread
 
@@ -20,19 +22,46 @@ except ModuleNotFoundError:
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def _linear(y, x, t, py, px):
+def _linear(
+    y: npt.ArrayLike,
+    x: npt.ArrayLike,
+    t: int,
+    py: float,
+    px: float,
+) -> npt.ArrayLike:
     return t + px * x + py * y
 
 
-def _parabolic(y, x, t, py, px):
-    return t + px * x ** 2 + py * y ** 2
+def _parabolic(
+    y: npt.ArrayLike,
+    x: npt.ArrayLike,
+    t: int,
+    py: float,
+    px: float,
+) -> npt.ArrayLike:
+    return t + px * x**2 + py * y**2
 
 
-def _hyperbolic(y, x, t, py, px):
-    return np.sqrt(t ** 2 + (x / px) ** 2 + (y / py) ** 2)
+def _hyperbolic(
+    y: npt.ArrayLike,
+    x: npt.ArrayLike,
+    t: int,
+    py: float,
+    px: float,
+) -> npt.ArrayLike:
+    return np.sqrt(t**2 + (x / px) ** 2 + (y / py) ** 2)
 
 
-def _indices_3d(f, y, x, py, px, t, nt, interp=True):
+def _indices_3d(
+    f: Callable,
+    y: npt.ArrayLike,
+    x: npt.ArrayLike,
+    py: float,
+    px: float,
+    t: int,
+    nt: int,
+    interp: bool = True,
+) -> npt.ArrayLike:
     """Compute time and space indices of parametric line in ``f`` function
 
     Parameters
@@ -78,7 +107,17 @@ def _indices_3d(f, y, x, py, px, t, nt, interp=True):
     return sscan, tscan, dtscan
 
 
-def _indices_3d_onthefly(f, y, x, py, px, ip, it, nt, interp=True):
+def _indices_3d_onthefly(
+    f: Callable,
+    y: npt.ArrayLike,
+    x: npt.ArrayLike,
+    py: float,
+    px: float,
+    ip: int,
+    it: int,
+    nt: int,
+    interp=True,
+) -> npt.ArrayLike:
     """Wrapper around _indices_3d to allow on-the-fly computation of
     parametric curves"""
     tscan = np.full(len(y), np.nan, dtype=np.float32)
@@ -93,7 +132,19 @@ def _indices_3d_onthefly(f, y, x, py, px, ip, it, nt, interp=True):
     return sscan, tscan, dtscan
 
 
-def _create_table(f, y, x, pyaxis, pxaxis, nt, npy, npx, ny, nx, interp):
+def _create_table(
+    f: Callable,
+    y: npt.ArrayLike,
+    x: npt.ArrayLike,
+    pyaxis: npt.ArrayLike,
+    pxaxis: npt.ArrayLike,
+    nt: int,
+    npy: int,
+    npx: int,
+    ny: int,
+    nx: int,
+    interp: bool,
+) -> npt.ArrayLike:
     """Create look up table"""
     table = np.full((npx * npy, nt, ny * nx), np.nan, dtype=np.float32)
     if interp:
@@ -111,18 +162,18 @@ def _create_table(f, y, x, pyaxis, pxaxis, nt, npy, npx, ny, nx, interp):
 
 
 def Radon3D(
-    taxis,
-    hyaxis,
-    hxaxis,
-    pyaxis,
-    pxaxis,
-    kind="linear",
-    centeredh=True,
-    interp=True,
-    onthefly=False,
-    engine="numpy",
-    dtype="float64",
-    name="R",
+    taxis: npt.ArrayLike,
+    hyaxis: npt.ArrayLike,
+    hxaxis: npt.ArrayLike,
+    pyaxis: npt.ArrayLike,
+    pxaxis: npt.ArrayLike,
+    kind: str = "linear",
+    centeredh: bool = True,
+    interp: bool = True,
+    onthefly: bool = False,
+    engine: str = "numpy",
+    dtype: str = "float64",
+    name: str = "R",
 ):
     r"""Three dimensional Radon transform.
 

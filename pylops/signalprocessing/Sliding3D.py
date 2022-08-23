@@ -1,4 +1,5 @@
 import logging
+from typing import List, Tuple, Union
 
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.LinearOperator import aslinearoperator
@@ -8,7 +9,12 @@ from pylops.utils.tapers import taper3d
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def sliding3d_design(dimsd, nwin, nover, nop):
+def sliding3d_design(
+    dimsd: Tuple,
+    nwin: Tuple,
+    nover: Tuple,
+    nop: Tuple,
+) -> Union[Tuple, Tuple, Tuple, Tuple]:
     """Design Sliding3D operator
 
     This routine can be used prior to creating the :class:`pylops.signalprocessing.Sliding3D`
@@ -74,15 +80,15 @@ def sliding3d_design(dimsd, nwin, nover, nop):
 
 def Sliding3D(
     Op,
-    dims,
-    dimsd,
-    nwin,
-    nover,
-    nop,
-    tapertype="hanning",
-    nproc=1,
-    name="S",
-):
+    dims: Tuple,
+    dimsd: Tuple,
+    nwin: Tuple,
+    nover: Tuple,
+    nop: Tuple,
+    tapertype: str = "hanning",
+    nproc: int = 1,
+    name: str = "P",
+) -> None:
     """3D Sliding transform operator.w
 
     Apply a transform operator ``Op`` repeatedly to patches of the model

@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.decorators import reshaped
@@ -82,13 +83,13 @@ class ChirpRadon3D(LinearOperator):
 
     def __init__(
         self,
-        taxis,
-        hyaxis,
-        hxaxis,
-        pmax,
-        engine="numpy",
-        dtype="float64",
-        name="C",
+        taxis: npt.ArrayLike,
+        hyaxis: npt.ArrayLike,
+        hxaxis: npt.ArrayLike,
+        pmax: npt.ArrayLike,
+        engine: str = "numpy",
+        dtype: str = "float64",
+        name: str = "C",
         **kwargs_fftw,
     ):
         dims = len(hyaxis), len(hxaxis), len(taxis)
@@ -105,7 +106,7 @@ class ChirpRadon3D(LinearOperator):
         self.kwargs_fftw = kwargs_fftw
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.engine == "fftw" and pyfftw is not None:
             return _chirp_radon_3d_fftw(
                 x, self.dt, self.dy, self.dx, self.pmax, mode="f", **self.kwargs_fftw
@@ -113,14 +114,14 @@ class ChirpRadon3D(LinearOperator):
         return _chirp_radon_3d(x, self.dt, self.dy, self.dx, self.pmax, mode="f")
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.engine == "fftw" and pyfftw is not None:
             return _chirp_radon_3d_fftw(
                 x, self.dt, self.dy, self.dx, self.pmax, mode="a", **self.kwargs_fftw
             )
         return _chirp_radon_3d(x, self.dt, self.dy, self.dx, self.pmax, mode="a")
 
-    def inverse(self, x):
+    def inverse(self, x: npt.ArrayLike) -> npt.ArrayLike:
         x = x.reshape(self.dimsd)
         if self.engine == "fftw" and pyfftw is not None:
             y = _chirp_radon_3d_fftw(

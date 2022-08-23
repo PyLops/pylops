@@ -1,8 +1,18 @@
+from typing import List, Tuple, Union
+
+import numpy.typing as npt
+
 from pylops.signalprocessing import ConvolveND
 
 
 def Convolve2D(
-    dims, h, offset=(0, 0), axes=(-2, -1), method="fft", dtype="float64", name="C"
+    dims: Union[int, List],
+    h: npt.ArrayLike,
+    offset: Tuple = (0, 0),
+    axes: Tuple = (-2, -1),
+    method: str = "fft",
+    dtype: str = "float64",
+    name: str = "C",
 ):
     r"""2D convolution operator.
 

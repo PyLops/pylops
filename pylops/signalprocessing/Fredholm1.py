@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
@@ -21,7 +22,7 @@ class Fredholm1(LinearOperator):
     G : :obj:`numpy.ndarray`
         Multi-dimensional convolution kernel of size
         :math:`[n_{\text{slice}} \times n_x \times n_y]`
-    nz : :obj:`numpy.ndarray`, optional
+    nz : :obj:`int`, optional
         Additional dimension of model
     saveGt : :obj:`bool`, optional
         Save ``G`` and ``G.H`` to speed up the computation of adjoint
@@ -84,7 +85,15 @@ class Fredholm1(LinearOperator):
 
     """
 
-    def __init__(self, G, nz=1, saveGt=True, usematmul=True, dtype="float64", name="F"):
+    def __init__(
+        self,
+        G: npt.ArrayLike,
+        nz: int = 1,
+        saveGt: bool = True,
+        usematmul: bool = True,
+        dtype: str = "float64",
+        name: str = "F",
+    ) -> None:
         self.nz = nz
         self.nsl, self.nx, self.ny = G.shape
         dims = (self.nsl, self.ny, self.nz)
@@ -97,7 +106,7 @@ class Fredholm1(LinearOperator):
         self.usematmul = usematmul
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         x = x.squeeze()
         if self.usematmul:
@@ -111,7 +120,7 @@ class Fredholm1(LinearOperator):
         return y
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         x = x.squeeze()
         if self.usematmul:
