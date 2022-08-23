@@ -106,14 +106,14 @@ class Kirchhoff(LinearOperator):
 
     .. math::
         d(\mathbf{x_r}, \mathbf{x_s}, t) =
-        \tilde{w(t)} * \int_V G(\mathbf{x_r}, \mathbf{x}, t)
+        \widetilde{w}(t) * \int_V G(\mathbf{x_r}, \mathbf{x}, t)
         m(\mathbf{x}) G(\mathbf{x}, \mathbf{x_s}, t)\,\mathrm{d}\mathbf{x}
 
     where :math:`m(\mathbf{x})` is the model that represents the reflectivity
     at every location in the subsurface, :math:`G(\mathbf{x}, \mathbf{x_s}, t)`
     and :math:`G(\mathbf{x_r}, \mathbf{x}, t)` are the Green's functions
-    from source-to-subsurface-to-receiver and finally :math:`\tilde{w(t)} is
-    a filtered version of the the wavelet :math:`w(t) [1]_.  In our current
+    from source-to-subsurface-to-receiver and finally :math:`\widetilde{w}(t)` is
+    a filtered version of the the wavelet :math:`w(t)` [1]_.  In our current
     implementation, the following high-frequency approximation of the Green's
     functions is adopted:
 
@@ -124,8 +124,10 @@ class Kirchhoff(LinearOperator):
     where :math:`a(\mathbf{x_r}, \mathbf{x})` is the amplitude and
     :math:`t(\mathbf{x_r}, \mathbf{x})` is the traveltime. In our current
     implementations with ``mode=analytic`` and ``mode=eikonal``, this amplitude
-    scaling is computed as `a=1/d` where d is the distance between the two points
-    and represents the geometrical spreading of the wavefront.
+    scaling is computed as
+    :math:`a(\mathbf{x}, \mathbf{y})=\frac{1}{\|\mathbf{x} - \mathbf{y}\|}`,
+    that is, the reciprocal of the distance between the two points,
+    approximating the geometrical spreading of the wavefront.
     In general, this multiplicative factor could contain other corrections (e.g.
     obliquity factors, reflection coefficient of the incident wave at the reflector,
     aperture tapers, etc.) [2]_.
