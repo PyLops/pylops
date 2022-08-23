@@ -1,4 +1,7 @@
+from typing import List, Union
+
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
@@ -44,16 +47,23 @@ class Roll(LinearOperator):
 
     """
 
-    def __init__(self, dims, axis=-1, shift=1, dtype="float64", name="R"):
+    def __init__(
+        self,
+        dims: Union[int, List[int]],
+        axis: int = -1,
+        shift: int = 1,
+        dtype: str = "float64",
+        name: str = "R",
+    ) -> None:
         dims = _value_or_list_like_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
         self.axis = axis
         self.shift = shift
 
     @reshaped(swapaxis=True)
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return np.roll(x, shift=self.shift, axis=-1)
 
     @reshaped(swapaxis=True)
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return np.roll(x, shift=-self.shift, axis=-1)

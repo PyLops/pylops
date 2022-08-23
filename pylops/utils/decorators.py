@@ -1,15 +1,22 @@
 from functools import wraps
+from typing import Callable, Optional
 
 from pylops.config import disabled_ndarray_multiplication
 
 
-def disable_ndarray_multiplication(func):
+def disable_ndarray_multiplication(func: Callable) -> Callable:
     """Decorator which disables ndarray multiplication.
 
     Parameters
     ----------
     func : :obj:`callable`
         Generic function
+
+    Returns
+    -------
+    wrapper : :obj:`callable`
+        Decorated function
+
     """
 
     @wraps(func)
@@ -21,7 +28,7 @@ def disable_ndarray_multiplication(func):
     return wrapper
 
 
-def add_ndarray_support_to_solver(func):
+def add_ndarray_support_to_solver(func: Callable) -> Callable:
     """Decorator which converts a solver-type function that only supports
     a 1d-array into one that supports one (dimsd-shaped) ndarray.
 
@@ -30,6 +37,12 @@ def add_ndarray_support_to_solver(func):
     func : :obj:`callable`
         Solver type function. Its signature must be ``func(A, b, *args, **kwargs)``.
         Its output must be a result-type tuple: ``(xinv, ...)``.
+
+    Returns
+    -------
+    wrapper : :obj:`callable`
+        Decorated function
+
     """
 
     @wraps(func)
@@ -44,7 +57,11 @@ def add_ndarray_support_to_solver(func):
     return wrapper
 
 
-def reshaped(func=None, forward=None, swapaxis=False):
+def reshaped(
+    func: Optional[Callable] = None,
+    forward: Optional[bool] = None,
+    swapaxis: bool = False,
+) -> Callable:
     """Decorator for the common reshape/flatten pattern used in many operators.
 
     Parameters
@@ -123,7 +140,11 @@ def reshaped(func=None, forward=None, swapaxis=False):
     return decorator
 
 
-def count(func=None, forward=None, matmat=None):
+def count(
+    func: Optional[Callable] = None,
+    forward: Optional[bool] = None,
+    matmat: bool = False,
+) -> Callable:
     """Decorator used to count the number of forward and adjoint performed by an operator.
 
     Parameters

@@ -1,4 +1,7 @@
+from typing import Tuple
+
 import numpy as np
+import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
@@ -52,7 +55,13 @@ class Transpose(LinearOperator):
 
     """
 
-    def __init__(self, dims, axes, dtype="float64", name="T"):
+    def __init__(
+        self,
+        dims: Tuple,
+        axes: Tuple,
+        dtype: str = "float64",
+        name: str = "T",
+    ) -> None:
         dims = _value_or_list_like_to_tuple(dims)
         ndims = len(dims)
         self.axes = [normalize_axis_index(ax, ndims) for ax in axes]
@@ -72,9 +81,9 @@ class Transpose(LinearOperator):
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return x.transpose(self.axes)
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return x.transpose(self.axesd)

@@ -1,4 +1,7 @@
+from typing import Tuple, Union
+
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
@@ -46,15 +49,20 @@ class Imag(LinearOperator):
 
     """
 
-    def __init__(self, dims, dtype="complex128", name="I"):
+    def __init__(
+        self,
+        dims: Union[int, Tuple[int]],
+        dtype: str = "complex128",
+        name: str = "I",
+    ) -> None:
         dims = _value_or_list_like_to_tuple(dims)
         super().__init__(
             dtype=np.dtype(dtype), dims=dims, dimsd=dims, clinear=False, name=name
         )
         self.rdtype = np.real(np.ones(1, self.dtype)).dtype
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return x.imag.astype(self.rdtype)
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return (0 + 1j * x.real).astype(self.dtype)

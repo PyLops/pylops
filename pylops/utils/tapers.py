@@ -1,7 +1,11 @@
 import numpy as np
+import numpy.typing as npt
 
 
-def hanningtaper(nmask, ntap):
+def hanningtaper(
+    nmask: int,
+    ntap: int,
+) -> npt.ArrayLike:
     r"""1D Hanning taper
 
     Create unitary mask of length ``nmask`` with Hanning tapering
@@ -38,7 +42,11 @@ def hanningtaper(nmask, ntap):
     return tpr_1d
 
 
-def cosinetaper(nmask, ntap, square=False):
+def cosinetaper(
+    nmask: int,
+    ntap: int,
+    square: bool = False,
+) -> npt.ArrayLike:
     r"""1D Cosine or Cosine square taper
 
     Create unitary mask of length ``nmask`` with Hanning tapering
@@ -84,7 +92,11 @@ def cosinetaper(nmask, ntap, square=False):
     return tpr_1d
 
 
-def taper(nmask, ntap, tapertype):
+def taper(
+    nmask: int,
+    ntap: int,
+    tapertype: str,
+) -> npt.ArrayLike:
     r"""1D taper
 
     Create unitary mask of length ``nmask`` with tapering of choice
@@ -116,7 +128,12 @@ def taper(nmask, ntap, tapertype):
     return tpr_1d
 
 
-def taper2d(nt, nmask, ntap, tapertype="hanning"):
+def taper2d(
+    nt: int,
+    nmask: int,
+    ntap: int,
+    tapertype: str = "hanning",
+) -> npt.ArrayLike:
     r"""2D taper
 
     Create 2d mask of size :math:`[n_\text{mask} \times n_t]`
@@ -162,7 +179,12 @@ def taper2d(nt, nmask, ntap, tapertype="hanning"):
     return tpr_2d
 
 
-def taper3d(nt, nmask, ntap, tapertype="hanning"):
+def taper3d(
+    nt: int,
+    nmask: int,
+    ntap: int,
+    tapertype: str = "hanning",
+) -> npt.ArrayLike:
     r"""3D taper
 
     Create 3d mask of size :math:`[n_\text{mask}[0] \times n_\text{mask}[1] \times n_t]`
@@ -212,7 +234,11 @@ def taper3d(nt, nmask, ntap, tapertype="hanning"):
     return tpr_3d
 
 
-def tapernd(nmask, ntap, tapertype="hanning"):
+def tapernd(
+    nmask: int,
+    ntap: int,
+    tapertype: str = "hanning",
+) -> npt.ArrayLike:
     r"""ND taper
 
     Create nd mask of size :math:`[n_\text{mask}[0] \times n_\text{mask}[1] \times ... \times n_\text{mask}[N-1]]`

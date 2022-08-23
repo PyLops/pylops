@@ -1,22 +1,31 @@
 from itertools import chain
+from types import ModuleType
+from typing import Optional, Tuple
 
 import numpy
+import numpy.typing as npt
 
 from pylops.utils.backend import get_module
 
 
-def _sampler_gaussian(m, batch_size, backend_module=numpy):
+def _sampler_gaussian(
+    m: float, batch_size: int, backend_module: ModuleType = numpy
+) -> Tuple[float, npt.ArrayLike]:
     return backend_module.random.randn(m, batch_size)
 
 
-def _sampler_rayleigh(m, batch_size, backend_module=numpy):
+def _sampler_rayleigh(
+    m: float, batch_size: int, backend_module: ModuleType = numpy
+) -> npt.ArrayLike:
     z = backend_module.random.randn(m, batch_size)
     for i in range(batch_size):
         z[:, i] *= m / backend_module.dot(z[:, i].T, z[:, i])
     return z
 
 
-def _sampler_rademacher(m, batch_size, backend_module=numpy):
+def _sampler_rademacher(
+    m: float, batch_size: int, backend_module: ModuleType = numpy
+) -> npt.ArrayLike:
     return 2 * backend_module.random.binomial(1, 0.5, size=(m, batch_size)) - 1
 
 
@@ -28,8 +37,12 @@ _SAMPLERS = {
 
 
 def trace_hutchinson(
-    Op, neval=None, batch_size=None, sampler="rademacher", backend="numpy"
-):
+    Op,
+    neval: Optional[int] = None,
+    batch_size: Optional[int] = None,
+    sampler: str = "rademacher",
+    backend: str = "numpy",
+) -> float:
     r"""Trace of linear operator using the Hutchinson method.
 
     Returns an estimate of the trace of a linear operator using the Hutchinson
@@ -37,6 +50,8 @@ def trace_hutchinson(
 
     Parameters
     ----------
+    Op : :obj:`pylops.LinearOperator`
+        Linear operator to compute trace on.
     neval : :obj:`int`, optional
         Maximum number of matrix-vector products compute. Defaults to 10%
         of ``shape[1]``.
@@ -62,7 +77,7 @@ def trace_hutchinson(
 
     Returns
     -------
-    trace : :obj:`self.dtype`
+    trace : :obj:`float`
         Operator trace.
 
     Raises
@@ -137,7 +152,12 @@ def trace_hutchinson(
     return trace[0]
 
 
-def trace_hutchpp(Op, neval=None, sampler="rademacher", backend="numpy"):
+def trace_hutchpp(
+    Op,
+    neval: Optional[int] = None,
+    sampler: str = "rademacher",
+    backend: str = "numpy",
+) -> float:
     r"""Trace of linear operator using the Hutch++ method.
 
     Returns an estimate of the trace of a linear operator using the Hutch++
@@ -145,6 +165,8 @@ def trace_hutchpp(Op, neval=None, sampler="rademacher", backend="numpy"):
 
     Parameters
     ----------
+    Op : :obj:`pylops.LinearOperator`
+        Linear operator to compute trace on.
     neval : :obj:`int`, optional
         Maximum number of matrix-vector products compute. Defaults to 10%
         of ``shape[1]``.
@@ -162,7 +184,7 @@ def trace_hutchpp(Op, neval=None, sampler="rademacher", backend="numpy"):
 
     Returns
     -------
-    trace : :obj:`self.dtype`
+    trace : :obj:`float`
         Operator trace.
 
     Raises
@@ -225,12 +247,12 @@ def trace_hutchpp(Op, neval=None, sampler="rademacher", backend="numpy"):
 
 def trace_nahutchpp(
     Op,
-    neval=None,
-    sampler="rademacher",
-    c1=1.0 / 6.0,
-    c2=1.0 / 3.0,
-    backend="numpy",
-):
+    neval: Optional[int] = None,
+    sampler: str = "rademacher",
+    c1: float = 1.0 / 6.0,
+    c2: float = 1.0 / 3.0,
+    backend: str = "numpy",
+) -> float:
     r"""Trace of linear operator using the NA-Hutch++ method.
 
     Returns an estimate of the trace of a linear operator using the
@@ -238,6 +260,8 @@ def trace_nahutchpp(
 
     Parameters
     ----------
+    Op : :obj:`pylops.LinearOperator`
+        Linear operator to compute trace on.
     neval : :obj:`int`, optional
         Maximum number of matrix-vector products compute. Defaults to 10%
         of ``shape[1]``.
@@ -260,7 +284,7 @@ def trace_nahutchpp(
 
     Returns
     -------
-    trace : :obj:`self.dtype`
+    trace : :obj:`float`
         Operator trace.
 
     Raises
