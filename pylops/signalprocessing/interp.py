@@ -4,8 +4,8 @@ from typing import List, Tuple, Union
 import numpy as np
 import numpy.typing as npt
 
+from pylops import aslinearoperator
 from pylops.basicoperators import Diagonal, MatrixMult, Restriction, Transpose
-from pylops.LinearOperator import aslinearoperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.backend import get_array_module
 

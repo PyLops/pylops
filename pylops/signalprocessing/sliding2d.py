@@ -4,8 +4,8 @@ from typing import List, Tuple, Union
 import numpy as np
 import numpy.typing as npt
 
+from pylops import aslinearoperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
-from pylops.LinearOperator import aslinearoperator
 from pylops.utils.tapers import taper2d
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)

@@ -3,8 +3,8 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
+from pylops import aslinearoperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
-from pylops.LinearOperator import aslinearoperator
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils.tapers import taper2d
 

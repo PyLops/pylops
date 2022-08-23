@@ -2,8 +2,8 @@ from typing import Tuple, Union
 
 from numpy.core.multiarray import normalize_axis_index
 
+from pylops import aslinearoperator
 from pylops.basicoperators import SecondDerivative
-from pylops.LinearOperator import aslinearoperator
 
 
 def Laplacian(

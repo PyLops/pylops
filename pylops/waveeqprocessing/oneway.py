@@ -3,8 +3,7 @@ import logging
 import numpy as np
 from scipy.sparse.linalg import lsqr
 
-from pylops import Diagonal, Identity, LinearOperator, Pad
-from pylops.LinearOperator import aslinearoperator
+from pylops import Diagonal, Identity, LinearOperator, Pad, aslinearoperator
 from pylops.signalprocessing import FFT
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import to_cupy_conditional

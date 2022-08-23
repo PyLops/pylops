@@ -46,7 +46,7 @@ utils
 """
 
 from .config import *
-from .LinearOperator import LinearOperator
+from .linearoperator import aslinearoperator, LinearOperator
 from .basicoperators import *
 from . import (
     avo,
