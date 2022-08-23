@@ -1,11 +1,13 @@
 __all__ = [
-    "NDArrayLike",
+    "NDArray",
     "ShapeLike",
 ]
 
-from typing import NewType, Tuple
+from typing import Sequence, Tuple
 
-import numpy as np
+import numpy.typing as npt
 
-NDArrayLike = NewType("NDArrayLike", np.ndarray)
+InputDimsLike = Sequence[int]
+NDArray = npt.NDArray
 ShapeLike = Tuple[int, ...]
+DTypeLike = npt.DTypeLike

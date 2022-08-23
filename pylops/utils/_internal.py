@@ -3,13 +3,10 @@ from typing import Sized, Tuple, Union
 import numpy as np
 import numpy.typing as npt
 
-from pylops.utils.typing import NDArrayLike
+from pylops.utils.typing import NDArray, DTypeLike
 
 
-def _value_or_sized_to_array(
-    value_or_sized: Union[np.number, Sized],
-    repeat: int = 1,
-) -> NDArrayLike:
+def _value_or_sized_to_array(value_or_sized, repeat: int = 1) -> NDArray:
     """Convert an object which is either single value or a list-like to an array.
 
     Parameters
@@ -34,10 +31,7 @@ def _value_or_sized_to_array(
     )
 
 
-def _value_or_sized_to_tuple(
-    value_or_sized: Union[np.number, Sized],
-    repeat: int = 1,
-) -> Tuple:
+def _value_or_sized_to_tuple(value_or_sized, repeat: int = 1) -> Tuple:
     """Convert an object which is either single value or a list-like to a tuple.
 
     Parameters
@@ -58,11 +52,7 @@ def _value_or_sized_to_tuple(
     return tuple(_value_or_sized_to_array(value_or_sized, repeat=repeat))
 
 
-def _raise_on_wrong_dtype(
-    arr: npt.ArrayLike,
-    dtype: npt.DTypeLike,
-    name: str,
-) -> None:
+def _raise_on_wrong_dtype(arr: npt.ArrayLike, dtype: DTypeLike, name: str) -> None:
     """Raises an error if dtype of `arr` is not a subdtype of `dtype`.
 
     Parameters
