@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 import scipy.fft
 
-from pylops.signalprocessing._BaseFFTs import _BaseFFT, _FFTNorms
+from pylops.signalprocessing._baseffts import _BaseFFT, _FFTNorms
 from pylops.utils.decorators import reshaped
 
 try:

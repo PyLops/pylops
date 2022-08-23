@@ -6,7 +6,7 @@ import numpy.typing as npt
 from pylops import LinearOperator
 from pylops.utils.decorators import reshaped
 
-from ._ChirpRadon2D import _chirp_radon_2d
+from ._chirpradon2d import _chirp_radon_2d
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 

@@ -9,10 +9,10 @@ from pylops.basicoperators import Spread
 try:
     from numba import jit
 
-    from ._Radon3D_numba import (
+    from ._radon2d_numba import (
         _create_table_numba,
         _hyperbolic_numba,
-        _indices_3d_onthefly_numba,
+        _indices_2d_onthefly_numba,
         _linear_numba,
         _parabolic_numba,
     )
@@ -23,40 +23,32 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _linear(
-    y: npt.ArrayLike,
     x: npt.ArrayLike,
     t: int,
-    py: float,
     px: float,
 ) -> npt.ArrayLike:
-    return t + px * x + py * y
+    return t + px * x
 
 
 def _parabolic(
-    y: npt.ArrayLike,
     x: npt.ArrayLike,
     t: int,
-    py: float,
     px: float,
 ) -> npt.ArrayLike:
-    return t + px * x**2 + py * y**2
+    return t + px * x**2
 
 
 def _hyperbolic(
-    y: npt.ArrayLike,
     x: npt.ArrayLike,
     t: int,
-    py: float,
     px: float,
 ) -> npt.ArrayLike:
-    return np.sqrt(t**2 + (x / px) ** 2 + (y / py) ** 2)
+    return np.sqrt(t**2 + (x / px) ** 2)
 
 
-def _indices_3d(
+def _indices_2d(
     f: Callable,
-    y: npt.ArrayLike,
     x: npt.ArrayLike,
-    py: float,
     px: float,
     t: int,
     nt: int,
@@ -68,25 +60,21 @@ def _indices_3d(
     ----------
     f : :obj:`func`
         Function computing values of parametric line for stacking
-    y : :obj:`np.ndarray`
-        Slow spatial axis (must be symmetrical around 0 and with sampling 1)
     x : :obj:`np.ndarray`
-        Fast spatial axis (must be symmetrical around 0 and with sampling 1)
-    py : :obj:`float`
-        Slowness/curvature in slow axis
+        Spatial axis (must be symmetrical around 0 and with sampling 1)
     px : :obj:`float`
-        Slowness/curvature in fast axis
+        Slowness/curvature
     t : :obj:`int`
         Time sample (time axis is assumed to have sampling 1)
     nt : :obj:`int`
-        Size scaof time axis
+        Size of time axis
     interp : :obj:`bool`, optional
         Apply linear interpolation (``True``) or nearest interpolation
         (``False``) during stacking/spreading along parametric curve
 
     Returns
     -------
-    sscan : :obj:`np.ndarray`
+    xscan : :obj:`np.ndarray`
         Spatial indices
     tscan : :obj:`np.ndarray`
         Time indices
@@ -94,78 +82,70 @@ def _indices_3d(
         Decimal time variations for interpolation
 
     """
-    tdecscan = f(y, x, t, py, px)
+    tdecscan = f(x, t, px)
     if not interp:
-        sscan = (tdecscan >= 0) & (tdecscan < nt)
+        xscan = (tdecscan >= 0) & (tdecscan < nt)
     else:
-        sscan = (tdecscan >= 0) & (tdecscan < nt - 1)
-    tscan = tdecscan[sscan].astype(int)
+        xscan = (tdecscan >= 0) & (tdecscan < nt - 1)
+    tscan = tdecscan[xscan].astype(int)
     if interp:
-        dtscan = tdecscan[sscan] - tscan
+        dtscan = tdecscan[xscan] - tscan
     else:
         dtscan = None
-    return sscan, tscan, dtscan
+    return xscan, tscan, dtscan
 
 
-def _indices_3d_onthefly(
+def _indices_2d_onthefly(
     f: Callable,
-    y: npt.ArrayLike,
     x: npt.ArrayLike,
-    py: float,
     px: float,
     ip: int,
-    it: int,
+    t: int,
     nt: int,
-    interp=True,
+    interp: bool = True,
 ) -> npt.ArrayLike:
-    """Wrapper around _indices_3d to allow on-the-fly computation of
+    """Wrapper around _indices_2d to allow on-the-fly computation of
     parametric curves"""
-    tscan = np.full(len(y), np.nan, dtype=np.float32)
+    tscan = np.full(len(x), np.nan, dtype=np.float32)
     if interp:
-        dtscan = np.full(len(y), np.nan)
+        dtscan = np.full(len(x), np.nan)
     else:
         dtscan = None
-    sscan, tscan1, dtscan1 = _indices_3d(f, y, x, py[ip], px[ip], it, nt, interp=interp)
-    tscan[sscan] = tscan1
+    xscan, tscan1, dtscan1 = _indices_2d(f, x, px[ip], t, nt, interp=interp)
+    tscan[xscan] = tscan1
     if interp:
-        dtscan[sscan] = dtscan1
-    return sscan, tscan, dtscan
+        dtscan[xscan] = dtscan1
+    return xscan, tscan, dtscan
 
 
 def _create_table(
     f: Callable,
-    y: npt.ArrayLike,
     x: npt.ArrayLike,
-    pyaxis: npt.ArrayLike,
     pxaxis: npt.ArrayLike,
     nt: int,
-    npy: int,
     npx: int,
-    ny: int,
     nx: int,
     interp: bool,
 ) -> npt.ArrayLike:
     """Create look up table"""
-    table = np.full((npx * npy, nt, ny * nx), np.nan, dtype=np.float32)
+    table = np.full((npx, nt, nx), np.nan, dtype=np.float32)
     if interp:
-        dtable = np.full((npx * npy, nt, ny * nx), np.nan)
+        dtable = np.full((npx, nt, nx), np.nan)
     else:
         dtable = None
 
-    for ip, (py, px) in enumerate(zip(pyaxis, pxaxis)):
+    for ipx, px in enumerate(pxaxis):
         for it in range(nt):
-            sscan, tscan, dtscan = _indices_3d(f, y, x, py, px, it, nt, interp=interp)
-            table[ip, it, sscan] = tscan
+            xscan, tscan, dtscan = _indices_2d(f, x, px, it, nt, interp=interp)
+            table[ipx, it, xscan] = tscan
             if interp:
-                dtable[ip, it, sscan] = dtscan
+                dtable[ipx, it, xscan] = dtscan
     return table, dtable
 
 
-def Radon3D(
+def Radon2D(
     taxis: npt.ArrayLike,
-    hyaxis: npt.ArrayLike,
-    hxaxis: npt.ArrayLike,
-    pyaxis: npt.ArrayLike,
+    haxis: npt.ArrayLike,
     pxaxis: npt.ArrayLike,
     kind: str = "linear",
     centeredh: bool = True,
@@ -175,32 +155,29 @@ def Radon3D(
     dtype: str = "float64",
     name: str = "R",
 ):
-    r"""Three dimensional Radon transform.
+    r"""Two dimensional Radon transform.
 
-    Apply three dimensional Radon forward (and adjoint) transform to a
-    3-dimensional array of size :math:`[n_{p_y} \times n_{p_x} \times n_t]`
-    (and :math:`[n_y \times n_x \times n_t]`).
+    Apply two dimensional Radon forward (and adjoint) transform to a
+    2-dimensional array of size :math:`[n_{p_x} \times n_t]`
+    (and :math:`[n_x \times n_t]`).
 
     In forward mode this entails to spreading the model vector
     along parametric curves (lines, parabolas, or hyperbolas depending on the
-    choice of ``kind``), while  stacking values in the data vector
+    choice of ``kind``), while stacking values in the data vector
     along the same parametric curves is performed in adjoint mode.
 
     Parameters
     ----------
     taxis : :obj:`np.ndarray`
         Time axis
-    hxaxis : :obj:`np.ndarray`
-        Fast patial axis
-    hyaxis : :obj:`np.ndarray`
-        Slow spatial axis
-    pyaxis : :obj:`np.ndarray`
-        Axis of scanning variable :math:`p_y` of parametric curve
+    haxis : :obj:`np.ndarray`
+        Spatial axis
     pxaxis : :obj:`np.ndarray`
         Axis of scanning variable :math:`p_x` of parametric curve
     kind : :obj:`str`, optional
         Curve to be used for stacking/spreading (``linear``, ``parabolic``,
-        and ``hyperbolic`` are currently supported)
+        and ``hyperbolic`` are currently supported) or a function that takes
+        :math:`(x, t_0, p_x)` as input and returns :math:`t` as output
     centeredh : :obj:`bool`, optional
         Assume centered spatial axis (``True``) or not (``False``). If ``True``
         the original ``haxis`` is ignored and a new axis is created.
@@ -223,7 +200,7 @@ def Radon3D(
 
     Returns
     -------
-    r3op : :obj:`pylops.LinearOperator`
+    r2op : :obj:`pylops.LinearOperator`
         Radon operator
 
     Raises
@@ -235,32 +212,31 @@ def Radon3D(
 
     See Also
     --------
-    pylops.signalprocessing.Radon2D: Two dimensional Radon transform
+    pylops.signalprocessing.Radon3D: Three dimensional Radon transform
     pylops.Spread: Spread operator
 
     Notes
     -----
-    The Radon3D operator applies the following linear transform in adjoint mode
-    to the data after reshaping it into a 3-dimensional array of
-    size :math:`[n_y \times n_x \times n_t]` in adjoint mode:
+    The Radon2D operator applies the following linear transform in adjoint mode
+    to the data after reshaping it into a 2-dimensional array of
+    size :math:`[n_x \times n_t]` in adjoint mode:
 
     .. math::
-        m(p_y, p_x, t_0) = \int{d(y, x, t = f(p_y, p_x, y, x, t))} \,\mathrm{d}x \,\mathrm{d}y
+        m(p_x, t_0) = \int{d(x, t = f(p_x, x, t))} \,\mathrm{d}x
 
-    where :math:`f(p_y, p_x, y, x, t) = t_0 + p_y y + p_x x` in linear
-    mode, :math:`f(p_y, p_x, y, x, t) = t_0 + p_y y^2 + p_x x^2` in
-    parabolic mode, and
-    :math:`f(p_y, p_x, y, x, t) = \sqrt{t_0^2 + y^2 / p_y^2 + x^2 / p_x^2}`
-    in hyperbolic mode. Note that internally the :math:`p_x` and :math:`p_y`
-    axes will be normalized by the ratio of the spatial and time axes and
-    used alongside unitless axes. Whilst this makes the linear mode fully
-    unitless, users are required to apply additional scalings to the :math:`p_x`
-    axis for other relationships
+    where :math:`f(p_x, x, t) = t_0 + p_x x` where
+    :math:`p_x = \sin(\theta)/v` in linear mode,
+    :math:`f(p_x, x, t) = t_0 + p_x x^2` in parabolic mode, and
+    :math:`f(p_x, x, t) = \sqrt{t_0^2 + x^2 / p_x^2}` in hyperbolic mode. Note
+    that internally the :math:`p_x` axis will be normalized by the ratio of the
+    spatial and time axes and used alongside unitless axes. Whilst this makes
+    the linear mode fully unitless, users are required to apply additional
+    scalings to the :math:`p_x` axis for other relationships:
 
-    - :math:`p_x` should be pre-multipled by :math:`d_x / d_y` for the parabolic
+    - :math:`p_x` should be pre-multipled by :math:`d_x` for the parabolic
       relationship;
-    - :math:`p_x` should be pre-multipled by :math:`(d_t/d_x)^2 / (d_t/d_y)^2`
-      for the hyperbolic relationship.
+    - :math:`p_x` should be pre-multipled by :math:`(d_t/d_x)^2` for the
+      hyperbolic relationship.
 
     As the adjoint operator can be interpreted as a repeated summation of sets
     of elements of the model vector along chosen parametric curves, the
@@ -274,90 +250,54 @@ def Radon3D(
         raise KeyError("engine must be numpy or numba")
     if engine == "numba" and jit is None:
         engine = "numpy"
-
     # axes
-    nt, nhy, nhx = taxis.size, hyaxis.size, hxaxis.size
-    npy, npx = pyaxis.size, pxaxis.size
+    nt, nh, npx = taxis.size, haxis.size, pxaxis.size
     if kind == "linear":
         f = _linear if engine == "numpy" else _linear_numba
     elif kind == "parabolic":
         f = _parabolic if engine == "numpy" else _parabolic_numba
     elif kind == "hyperbolic":
         f = _hyperbolic if engine == "numpy" else _hyperbolic_numba
+    elif callable(kind):
+        f = kind
     else:
         raise NotImplementedError("kind must be linear, " "parabolic, or hyperbolic...")
     # make axes unitless
-    dhy, dhx = np.abs(hyaxis[1] - hyaxis[0]), np.abs(hxaxis[1] - hxaxis[0])
-    dt = np.abs(taxis[1] - taxis[0])
-    dpy = dhy / dt
-    pyaxis = pyaxis * dpy
-    dpx = dhx / dt
+    dh, dt = np.abs(haxis[1] - haxis[0]), np.abs(taxis[1] - taxis[0])
+    dpx = dh / dt
     pxaxis = pxaxis * dpx
     if not centeredh:
-        hyaxisunitless = hyaxis // dhy
-        hxaxisunitless = hxaxis // dhx
+        haxisunitless = haxis // dh
     else:
-        hyaxisunitless = np.arange(nhy) - nhy // 2
-        hxaxisunitless = np.arange(nhx) - nhx // 2
-
-    # create grid for py and px axis
-    hyaxisunitless, hxaxisunitless = np.meshgrid(
-        hyaxisunitless, hxaxisunitless, indexing="ij"
-    )
-    pyaxis, pxaxis = np.meshgrid(pyaxis, pxaxis, indexing="ij")
-
-    dims = (npy * npx, nt)
-    dimsd = (nhy * nhx, nt)
+        haxisunitless = np.arange(nh) - nh // 2
+    dims = (npx, nt)
+    dimsd = (nh, nt)
 
     if onthefly:
         if engine == "numba":
 
             @jit(nopython=True, nogil=True)
             def ontheflyfunc(x, y):
-                return _indices_3d_onthefly_numba(
-                    f,
-                    hyaxisunitless.ravel(),
-                    hxaxisunitless.ravel(),
-                    pyaxis.ravel(),
-                    pxaxis.ravel(),
-                    x,
-                    y,
-                    nt,
-                    interp=interp,
+                return _indices_2d_onthefly_numba(
+                    f, haxisunitless, pxaxis, x, y, nt, interp=interp
                 )[1:]
 
         else:
             if interp:
 
                 def ontheflyfunc(x, y):
-                    return _indices_3d_onthefly(
-                        f,
-                        hyaxisunitless.ravel(),
-                        hxaxisunitless.ravel(),
-                        pyaxis.ravel(),
-                        pxaxis.ravel(),
-                        x,
-                        y,
-                        nt,
-                        interp=interp,
+                    return _indices_2d_onthefly(
+                        f, haxisunitless, pxaxis, x, y, nt, interp=interp
                     )[1:]
 
             else:
 
                 def ontheflyfunc(x, y):
-                    return _indices_3d_onthefly(
-                        f,
-                        hyaxisunitless.ravel(),
-                        hxaxisunitless.ravel(),
-                        pyaxis.ravel(),
-                        pxaxis.ravel(),
-                        x,
-                        y,
-                        nt,
-                        interp=interp,
+                    return _indices_2d_onthefly(
+                        f, haxisunitless, pxaxis, x, y, nt, interp=interp
                     )[1]
 
-        r3op = Spread(
+        r2op = Spread(
             dims, dimsd, fh=ontheflyfunc, interp=interp, engine=engine, dtype=dtype
         )
     else:
@@ -366,22 +306,10 @@ def Radon3D(
         else:
             tablefunc = _create_table
 
-        table, dtable = tablefunc(
-            f,
-            hyaxisunitless.ravel(),
-            hxaxisunitless.ravel(),
-            pyaxis.ravel(),
-            pxaxis.ravel(),
-            nt,
-            npy,
-            npx,
-            nhy,
-            nhx,
-            interp=interp,
-        )
+        table, dtable = tablefunc(f, haxisunitless, pxaxis, nt, npx, nh, interp)
         if not interp:
             dtable = None
-        r3op = Spread(
+        r2op = Spread(
             dims,
             dimsd,
             table=table,
@@ -390,5 +318,5 @@ def Radon3D(
             engine=engine,
             dtype=dtype,
         )
-    r3op.name = name
-    return r3op
+    r2op.name = name
+    return r2op

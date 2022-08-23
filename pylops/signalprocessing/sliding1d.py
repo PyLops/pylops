@@ -5,7 +5,7 @@ import numpy as np
 
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.LinearOperator import aslinearoperator
-from pylops.signalprocessing.Sliding2D import _slidingsteps
+from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils._internal import _value_or_list_like_to_tuple
 from pylops.utils.tapers import taper
 

@@ -5,7 +5,7 @@ import numpy as np
 
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.LinearOperator import aslinearoperator
-from pylops.signalprocessing.Sliding2D import _slidingsteps
+from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils.tapers import tapernd
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)

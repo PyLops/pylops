@@ -8,7 +8,7 @@ import numpy.typing as npt
 from pylops import LinearOperator
 from pylops.basicoperators import Pad
 
-from .DWT import _adjointwavelet, _checkwavelet
+from .dwt import _adjointwavelet, _checkwavelet
 
 try:
     import pywt

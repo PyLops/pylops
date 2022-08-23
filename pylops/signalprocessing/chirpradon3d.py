@@ -6,12 +6,12 @@ import numpy.typing as npt
 from pylops import LinearOperator
 from pylops.utils.decorators import reshaped
 
-from ._ChirpRadon3D import _chirp_radon_3d
+from ._chirpradon3d import _chirp_radon_3d
 
 try:
     import pyfftw
 
-    from ._ChirpRadon3D import _chirp_radon_3d_fftw
+    from ._chirpradon3d import _chirp_radon_3d_fftw
 except ModuleNotFoundError:
     pyfftw = None
     pyfftw_message = (

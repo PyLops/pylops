@@ -30,28 +30,28 @@ A list of operators present in pylops.signalprocessing:
 
 """
 
-from .FFT import *
-from .FFT2D import *
-from .FFTND import *
-from .Convolve1D import *
-from .ConvolveND import *
-from .Convolve2D import *
-from .Shift import *
-from .Interp import *
-from .Bilinear import *
-from .Radon2D import *
-from .Radon3D import *
-from .ChirpRadon2D import *
-from .ChirpRadon3D import *
-from .Sliding1D import *
-from .Sliding2D import *
-from .Sliding3D import *
-from .Patch2D import *
-from .Patch3D import *
-from .Fredholm1 import *
-from .DWT import *
-from .DWT2D import *
-from .Seislet import *
+from .fft import *
+from .fft2d import *
+from .fftnd import *
+from .convolve1d import *
+from .convolvend import *
+from .convolve2d import *
+from .shift import *
+from .interp import *
+from .bilinear import *
+from .radon2d import *
+from .radon3d import *
+from .chirpradon2d import *
+from .chirpradon3d import *
+from .sliding1d import *
+from .sliding2d import *
+from .sliding3d import *
+from .patch2d import *
+from .patch3d import *
+from .fredholm1 import *
+from .dwt import *
+from .dwt2d import *
+from .seislet import *
 
 __all__ = [
     "FFT",
