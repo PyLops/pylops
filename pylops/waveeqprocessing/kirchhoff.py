@@ -1,3 +1,5 @@
+__all__ = ["Kirchhoff"]
+
 import logging
 
 import numpy as np

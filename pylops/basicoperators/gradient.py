@@ -1,3 +1,5 @@
+__all__ = ["Gradient"]
+
 from typing import List, Union
 
 from pylops.basicoperators import FirstDerivative, VStack

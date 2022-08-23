@@ -1,5 +1,11 @@
 from __future__ import division
 
+__all__ = [
+    "LinearOperator",
+    "aslinearoperator",
+]
+
+
 import logging
 
 import numpy as np

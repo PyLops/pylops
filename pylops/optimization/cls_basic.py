@@ -1,3 +1,9 @@
+__all__ = [
+    "CG",
+    "CGLS",
+    "LSQR",
+]
+
 import time
 
 import numpy as np
@@ -719,7 +725,9 @@ class LSQR(Solver):
         self.beta = self.ncp.linalg.norm(self.u)
         if self.beta > 0:
             self.u = self.u / self.beta
-            self.anorm = np.linalg.norm([self.anorm, to_numpy(self.alfa), to_numpy(self.beta), self.damp])
+            self.anorm = np.linalg.norm(
+                [self.anorm, to_numpy(self.alfa), to_numpy(self.beta), self.damp]
+            )
             self.v = self.Op.rmatvec(self.u) - self.beta * self.v
             self.alfa = self.ncp.linalg.norm(self.v)
             if self.alfa > 0:

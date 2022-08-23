@@ -1,3 +1,9 @@
+__all__ = [
+    "normal_equations_inversion",
+    "regularized_inversion",
+    "preconditioned_inversion",
+]
+
 from pylops.optimization.cls_leastsquares import (
     NormalEquationsInversion,
     PreconditionedInversion,

@@ -1,3 +1,5 @@
+__all__ = ["Convolve1D"]
+
 from typing import Callable, List, Tuple, Union
 
 import numpy as np

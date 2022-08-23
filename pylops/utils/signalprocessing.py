@@ -1,3 +1,10 @@
+__all__ = [
+    "convmtx",
+    "nonstationary_convmtx",
+    "slope_estimate",
+    "dip_estimate",
+]
+
 from typing import Tuple
 
 import numpy as np

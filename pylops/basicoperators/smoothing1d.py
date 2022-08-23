@@ -1,3 +1,5 @@
+__all__ = ["Smoothing1D"]
+
 from typing import Tuple, Union
 
 import numpy as np

@@ -1,3 +1,5 @@
+__all__ = ["scalability_test"]
+
 import time
 from typing import List, Tuple
 

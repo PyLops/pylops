@@ -1,3 +1,5 @@
+__all__ = ["Convolve2D"]
+
 from typing import List, Tuple, Union
 
 import numpy.typing as npt

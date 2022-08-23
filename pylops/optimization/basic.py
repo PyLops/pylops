@@ -1,3 +1,9 @@
+__all__ = [
+    "cg",
+    "cgls",
+    "lsqr",
+]
+
 from pylops.optimization.cls_basic import CG, CGLS, LSQR
 from pylops.utils.decorators import add_ndarray_support_to_solver
 

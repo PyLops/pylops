@@ -1,3 +1,5 @@
+__all__ = ["LinearRegression"]
+
 import logging
 
 import numpy.typing as npt

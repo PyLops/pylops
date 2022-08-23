@@ -1,3 +1,5 @@
+__all__ = ["FunctionOperator"]
+
 from numbers import Integral
 from typing import Callable
 

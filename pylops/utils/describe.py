@@ -1,3 +1,5 @@
+__all__ = ["describe"]
+
 import logging
 import random
 import string

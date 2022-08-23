@@ -1,3 +1,5 @@
+__all__ = ["Block"]
+
 from typing import List, Optional
 
 from pylops.basicoperators import HStack, VStack

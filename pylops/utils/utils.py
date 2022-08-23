@@ -1,3 +1,5 @@
+__all__ = ["Report"]
+
 # scooby is a soft dependency for pylops
 from typing import Optional
 

@@ -1,3 +1,8 @@
+__all__ = [
+    "patch3d_design",
+    "Patch3D",
+]
+
 import logging
 from typing import List, Tuple, Union
 

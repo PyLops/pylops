@@ -1,3 +1,8 @@
+__all__ = [
+    "FirstDirectionalDerivative",
+    "SecondDirectionalDerivative",
+]
+
 from typing import Tuple
 
 import numpy.typing as npt

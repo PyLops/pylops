@@ -1,3 +1,5 @@
+__all__ = ["FFT2D"]
+
 import logging
 import warnings
 from typing import Tuple, Union

@@ -1,3 +1,5 @@
+__all__ = ["FirstDerivative"]
+
 from typing import List, Union
 
 import numpy as np

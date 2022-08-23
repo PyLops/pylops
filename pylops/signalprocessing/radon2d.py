@@ -1,3 +1,5 @@
+__all__ = ["Radon2D"]
+
 import logging
 from typing import Callable
 

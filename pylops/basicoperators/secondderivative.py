@@ -1,3 +1,5 @@
+__all__ = ["SecondDerivative"]
+
 from typing import List, Union
 
 import numpy as np

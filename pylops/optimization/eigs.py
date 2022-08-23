@@ -1,3 +1,5 @@
+__all__ = ["power_iteration"]
+
 import numpy as np
 
 from pylops.utils.backend import get_module

@@ -1,3 +1,5 @@
+__all__ = ["Spread"]
+
 import logging
 from typing import Callable, Optional, Tuple
 

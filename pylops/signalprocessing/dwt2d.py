@@ -1,3 +1,5 @@
+__all__ = ["DWT2D"]
+
 import logging
 from math import ceil, log
 from typing import List, Tuple, Union

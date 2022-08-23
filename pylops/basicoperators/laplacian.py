@@ -1,3 +1,6 @@
+__all__ = ["Laplacian"]
+
+
 from typing import Tuple, Union
 
 from numpy.core.multiarray import normalize_axis_index

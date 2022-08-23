@@ -1,3 +1,5 @@
+__all__ = ["AcousticWave2D"]
+
 import numpy as np
 
 from pylops import LinearOperator

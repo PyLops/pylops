@@ -1,3 +1,8 @@
+__all__ = [
+    "sliding2d_design",
+    "Sliding2D",
+]
+
 import logging
 from typing import List, Tuple, Union
 

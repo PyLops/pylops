@@ -1,3 +1,5 @@
+__all__ = ["HStack"]
+
 import multiprocessing as mp
 
 import numpy as np

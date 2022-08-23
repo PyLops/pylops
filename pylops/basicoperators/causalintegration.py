@@ -1,3 +1,5 @@
+__all__ = ["CausalIntegration"]
+
 from typing import List, Union
 
 import numpy as np

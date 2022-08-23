@@ -1,3 +1,5 @@
+__all__ = ["BlockDiag"]
+
 import multiprocessing as mp
 
 import numpy as np

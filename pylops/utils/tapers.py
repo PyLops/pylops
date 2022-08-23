@@ -1,3 +1,12 @@
+__all__ = [
+    "hanningtaper",
+    "cosinetaper",
+    "taper",
+    "taper2d",
+    "taper3d",
+    "tapernd",
+]
+
 import numpy as np
 import numpy.typing as npt
 
