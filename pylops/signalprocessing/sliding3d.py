@@ -4,7 +4,7 @@ __all__ = [
 ]
 
 import logging
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 from pylops import aslinearoperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction

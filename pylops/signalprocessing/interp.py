@@ -1,7 +1,7 @@
 __all__ = ["Interp"]
 
 import logging
-from typing import List, Tuple, Union
+from typing import List, Union
 
 import numpy as np
 import numpy.typing as npt

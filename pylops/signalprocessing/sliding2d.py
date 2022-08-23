@@ -4,7 +4,7 @@ __all__ = [
 ]
 
 import logging
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 import numpy as np
 import numpy.typing as npt

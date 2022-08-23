@@ -1,4 +1,7 @@
-__all__ = ["patch2d_design", "Patch2D",]
+__all__ = [
+    "patch2d_design",
+    "Patch2D",
+]
 
 import logging
 from typing import List, Tuple, Union
