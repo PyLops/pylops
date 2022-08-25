@@ -4,22 +4,28 @@ __all__ = [
 ]
 
 import logging
-from typing import Tuple, Union
+from typing import Tuple
 
-from pylops import aslinearoperator
+from pylops import aslinearoperator, LinearOperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils.tapers import taper3d
+from pylops.utils.typing import InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def sliding3d_design(
-    dimsd: Tuple,
-    nwin: Tuple,
-    nover: Tuple,
-    nop: Tuple,
-) -> Union[Tuple, Tuple, Tuple, Tuple]:
+    dimsd: Tuple[int, int, int],
+    nwin: Tuple[int, int],
+    nover: Tuple[int, int],
+    nop: Tuple[int, int, int],
+) -> Tuple[
+    Tuple[int, int],
+    Tuple[int, int, int],
+    Tuple[Tuple[NDArray, NDArray], Tuple[NDArray, NDArray]],
+    Tuple[Tuple[NDArray, NDArray], Tuple[NDArray, NDArray]],
+]:
     """Design Sliding3D operator
 
     This routine can be used prior to creating the :class:`pylops.signalprocessing.Sliding3D`
@@ -84,12 +90,12 @@ def sliding3d_design(
 
 
 def Sliding3D(
-    Op,
-    dims: Tuple,
-    dimsd: Tuple,
-    nwin: Tuple,
-    nover: Tuple,
-    nop: Tuple,
+    Op: LinearOperator,
+    dims: InputDimsLike,
+    dimsd: InputDimsLike,
+    nwin: Tuple[int, int],
+    nover: Tuple[int, int],
+    nop: Tuple[int, int, int],
     tapertype: str = "hanning",
     nproc: int = 1,
     name: str = "P",

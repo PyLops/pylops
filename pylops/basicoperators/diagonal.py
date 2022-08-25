@@ -1,14 +1,13 @@
 __all__ = ["Diagonal"]
 
-from typing import List, Optional
+from typing import Optional, Union
 
 import numpy as np
-import numpy.typing as npt
-
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 class Diagonal(LinearOperator):
@@ -70,10 +69,10 @@ class Diagonal(LinearOperator):
 
     def __init__(
         self,
-        diag: npt.ArrayLike,
-        dims: Optional[List[int]] = None,
+        diag: NDArray,
+        dims: Optional[Union[int, InputDimsLike]] = None,
         axis: int = -1,
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "D",
     ) -> None:
         self.diag = diag.ravel()
@@ -87,14 +86,14 @@ class Diagonal(LinearOperator):
         self.diag = self.diag.reshape(diagdims)
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         if type(self.diag) != type(x):
             self.diag = to_cupy_conditional(x, self.diag)
         y = self.diag * x
         return y
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         if type(self.diag) != type(x):
             self.diag = to_cupy_conditional(x, self.diag)
         if self.complex:
@@ -104,7 +103,7 @@ class Diagonal(LinearOperator):
         y = diagadj * x
         return y
 
-    def matrix(self) -> npt.ArrayLike:
+    def matrix(self) -> NDArray:
         """Return diagonal matrix as dense :obj:`numpy.ndarray`
 
         Returns
@@ -117,7 +116,7 @@ class Diagonal(LinearOperator):
         densemat = ncp.diag(self.diag.squeeze())
         return densemat
 
-    def todense(self) -> npt.ArrayLike:
+    def todense(self) -> NDArray:
         """Fast implementation of todense based on known structure of the
         operator
 

@@ -9,13 +9,13 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
-from scipy.sparse.linalg import lsqr
 
 from pylops import (
     Diagonal,
     FirstDerivative,
     Identity,
     Laplacian,
+    LinearOperator,
     MatrixMult,
     SecondDerivative,
     VStack,
@@ -33,6 +33,8 @@ from pylops.utils.backend import (
     get_module_name,
 )
 from pylops.utils.signalprocessing import convmtx
+from pylops.utils.typing import NDArray, ShapeLike
+from scipy.sparse.linalg import lsqr
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -40,16 +42,16 @@ _linearizations = {"akirich": 3, "fatti": 3, "ps": 3}
 
 
 def PrestackLinearModelling(
-    wav: npt.ArrayLike,
-    theta: npt.ArrayLike,
-    vsvp: Union[float, npt.ArrayLike] = 0.5,
+    wav: NDArray,
+    theta: NDArray,
+    vsvp: Union[float, NDArray] = 0.5,
     nt0: int = 1,
-    spatdims: Optional[Union[int, Tuple[int]]] = None,
+    spatdims: Optional[Union[int, ShapeLike]] = None,
     linearization: str = "akirich",
     explicit: bool = False,
     kind: str = "centered",
     name: Optional[str] = None,
-):
+) -> LinearOperator:
     r"""Pre-stack linearized seismic modelling operator.
 
     Create operator to be applied to elastic property profiles
@@ -144,6 +146,7 @@ def PrestackLinearModelling(
     ntheta = len(theta)
 
     # organize dimensions
+    dims: Optional[ShapeLike]
     if spatdims is None:
         dims = (nt0, ntheta)
         spatdims = None
@@ -189,7 +192,7 @@ def PrestackLinearModelling(
         D = get_block_diag(theta)(*([D] * nG))
 
         # Create wavelet operator
-        C = convmtx(wav, nt0)[:, len(wav) // 2 : -len(wav) // 2 + 1]
+        C = ncp.asarray(convmtx(wav, nt0))[:, len(wav) // 2 : -len(wav) // 2 + 1]
         C = [C] * ntheta
         C = get_block_diag(theta)(*C)
 
@@ -223,14 +226,14 @@ def PrestackLinearModelling(
 
 
 def PrestackWaveletModelling(
-    m: npt.ArrayLike,
-    theta: npt.ArrayLike,
+    m: NDArray,
+    theta: NDArray,
     nwav: int,
     wavc: Optional[int] = None,
-    vsvp: Union[float, npt.ArrayLike] = 0.5,
+    vsvp: Union[float, NDArray] = 0.5,
     linearization: str = "akirich",
     name: Optional[str] = None,
-):
+) -> LinearOperator:
     r"""Pre-stack linearized seismic modelling operator for wavelet.
 
     Create operator to be applied to a wavelet for generation of
@@ -353,10 +356,10 @@ def PrestackWaveletModelling(
 
 
 def PrestackInversion(
-    data: npt.ArrayLike,
-    theta: npt.ArrayLike,
-    wav: npt.ArrayLike,
-    m0: Optional[npt.ArrayLike] = None,
+    data: NDArray,
+    theta: NDArray,
+    wav: NDArray,
+    m0: Optional[NDArray] = None,
     linearization: str = "akirich",
     explicit: bool = False,
     simultaneous: bool = False,
@@ -366,9 +369,9 @@ def PrestackInversion(
     returnres: bool = False,
     epsRL1: Optional[float] = None,
     kind: str = "centered",
-    vsvp: Union[float, npt.ArrayLike] = 0.5,
+    vsvp: Union[float, NDArray] = 0.5,
     **kwargs_solver
-):
+) -> Union[NDArray, Tuple[NDArray, NDArray]]:
     r"""Pre-stack linearized seismic inversion.
 
     Invert pre-stack seismic operator to retrieve a set of elastic property

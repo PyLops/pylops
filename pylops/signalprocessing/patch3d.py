@@ -4,24 +4,30 @@ __all__ = [
 ]
 
 import logging
-from typing import List, Tuple, Union
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 
-from pylops import aslinearoperator
+from pylops import aslinearoperator, LinearOperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils.tapers import tapernd
+from pylops.utils.typing import InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def patch3d_design(
-    dimsd: Tuple,
-    nwin: Tuple,
-    nover: Tuple,
-    nop: Tuple,
-) -> Union[Tuple, Tuple, Tuple, Tuple]:
+    dimsd: InputDimsLike,
+    nwin: Tuple[int, int, int],
+    nover: Tuple[int, int, int],
+    nop: Tuple[int, int, int],
+) -> Tuple[
+    Tuple[int, int, int],
+    Tuple[int, int, int],
+    Tuple[Tuple[NDArray, NDArray], Tuple[NDArray, NDArray], Tuple[NDArray, NDArray]],
+    Tuple[Tuple[NDArray, NDArray], Tuple[NDArray, NDArray], Tuple[NDArray, NDArray]],
+]:
     """Design Patch3D operator
 
     This routine can be used prior to creating the :class:`pylops.signalprocessing.Patch3D`
@@ -102,15 +108,15 @@ def patch3d_design(
 
 def Patch3D(
     Op,
-    dims: Tuple,
-    dimsd: Tuple,
-    nwin: Tuple,
-    nover: Tuple,
-    nop: Tuple,
+    dims: InputDimsLike,
+    dimsd: InputDimsLike,
+    nwin: Tuple[int, int, int],
+    nover: Tuple[int, int, int],
+    nop: Tuple[int, int, int],
     tapertype: str = "hanning",
-    scalings: Union[List, Tuple] = None,
+    scalings: Optional[Sequence[float]] = None,
     name: str = "P",
-) -> None:
+) -> LinearOperator:
     """3D Patch transform operator.
 
     Apply a transform operator ``Op`` repeatedly to patches of the model

@@ -9,6 +9,7 @@ from numpy.core.multiarray import normalize_axis_index
 from pylops.basicoperators import Diagonal
 from pylops.signalprocessing import FFT
 from pylops.utils._internal import _value_or_sized_to_array
+from pylops.utils.typing import DTypeLike
 
 
 def Shift(
@@ -19,7 +20,7 @@ def Shift(
     sampling: float = 1.0,
     real: bool = False,
     engine: str = "numpy",
-    dtype: str = "complex128",
+    dtype: DTypeLike = "complex128",
     name: str = "S",
     **kwargs_fftw
 ):

@@ -3,22 +3,19 @@ __all__ = [
     "SecondDirectionalDerivative",
 ]
 
-from typing import Tuple
-
-import numpy.typing as npt
-
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, Gradient, Sum
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 def FirstDirectionalDerivative(
-    dims: Tuple[int],
-    v: npt.ArrayLike,
+    dims: InputDimsLike,
+    v: NDArray,
     sampling: int = 1,
     edge: bool = False,
     kind: str = "centered",
-    dtype: str = "float64",
-):
+    dtype: DTypeLike = "float64",
+) -> LinearOperator:
     r"""First Directional derivative.
 
     Apply a directional derivative operator to a multi-dimensional array
@@ -87,12 +84,12 @@ def FirstDirectionalDerivative(
 
 
 def SecondDirectionalDerivative(
-    dims: Tuple[int],
-    v: npt.ArrayLike,
+    dims: InputDimsLike,
+    v: NDArray,
     sampling: int = 1,
     edge: bool = False,
-    dtype: str = "float64",
-):
+    dtype: DTypeLike = "float64",
+) -> LinearOperator:
     r"""Second Directional derivative.
 
     Apply a second directional derivative operator to a multi-dimensional array

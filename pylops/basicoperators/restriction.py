@@ -1,15 +1,15 @@
 __all__ = ["Restriction"]
 
-from typing import List, Union
+from typing import Sequence, Union
 
 import numpy as np
 import numpy.ma as np_ma
-import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module, to_cupy_conditional
+from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
 
 
 def _compute_iavamask(dims, axis, iava, ncp):
@@ -93,11 +93,11 @@ class Restriction(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, List[int]],
-        iava: Union[List[int], npt.ArrayLike],
+        dims: Union[int, InputDimsLike],
+        iava: Union[IntNDArray, Sequence[int]],
         axis: int = -1,
         inplace: bool = True,
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "R",
     ) -> None:
         ncp = get_array_module(iava)
@@ -118,9 +118,9 @@ class Restriction(LinearOperator):
         self.inplace = inplace
         self.axis = axis
         self.iavareshape = iavareshape
-        self.iava = iava
+        self.iava = ncp.asarray(iava)
 
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         if not self.inplace:
             x = x.copy()
@@ -129,7 +129,7 @@ class Restriction(LinearOperator):
         y = y.ravel()
         return y
 
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         if not self.inplace:
             x = x.copy()
@@ -148,7 +148,7 @@ class Restriction(LinearOperator):
         y = y.ravel()
         return y
 
-    def mask(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def mask(self, x: NDArray) -> NDArray:
         """Apply mask to input signal returning a signal of same size with
         values at ``iava`` locations and ``0`` at other locations
 

@@ -1,16 +1,16 @@
 __all__ = ["MatrixMult"]
 
 import logging
-from typing import Optional, Tuple
+from typing import Optional, Union
 
 import numpy as np
-import numpy.typing as npt
 import scipy as sp
 from scipy.sparse.linalg import inv
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.backend import get_array_module
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -54,9 +54,9 @@ class MatrixMult(LinearOperator):
 
     def __init__(
         self,
-        A: npt.ArrayLike,
-        otherdims: Optional[Tuple[int]] = None,
-        dtype: str = "float64",
+        A: NDArray,
+        otherdims: Optional[Union[int, InputDimsLike]] = None,
+        dtype: DTypeLike = "float64",
         name: str = "M",
     ) -> None:
         ncp = get_array_module(A)
@@ -89,7 +89,7 @@ class MatrixMult(LinearOperator):
             dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, explicit=explicit, name=name
         )
 
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         if self.reshape:
             x = ncp.reshape(x, self.dimsflatten)
@@ -99,7 +99,7 @@ class MatrixMult(LinearOperator):
         else:
             return y
 
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         if self.reshape:
             x = ncp.reshape(x, self.dimsdflatten)
@@ -113,7 +113,7 @@ class MatrixMult(LinearOperator):
         else:
             return y
 
-    def inv(self) -> npt.ArrayLike:
+    def inv(self) -> NDArray:
         r"""Return the inverse of :math:`\mathbf{A}`.
 
         Returns

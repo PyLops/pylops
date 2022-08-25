@@ -2,14 +2,14 @@ __all__ = ["DWT"]
 
 import logging
 from math import ceil, log
-from typing import List, Union
+from typing import Union
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.basicoperators import Pad
 from pylops.utils._internal import _value_or_sized_to_tuple
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 try:
     import pywt
@@ -106,11 +106,11 @@ class DWT(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, List],
+        dims: Union[int, InputDimsLike],
         axis: int = -1,
         wavelet: str = "haar",
         level: int = 1,
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "D",
     ) -> None:
         if pywt is None:
@@ -143,7 +143,7 @@ class DWT(LinearOperator):
         self.waveletadj = _adjointwavelet(wavelet)
         self.level = level
 
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         x = self.pad.matvec(x)
         x = np.reshape(x, self.dimsd)
         y = pywt.coeffs_to_array(
@@ -158,7 +158,7 @@ class DWT(LinearOperator):
         )[0]
         return y.ravel()
 
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         x = np.reshape(x, self.dimsd)
         x = pywt.array_to_coeffs(x, self.sl, output_format="wavedecn")
         y = pywt.waverecn(

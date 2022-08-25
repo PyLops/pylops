@@ -1,15 +1,16 @@
 __all__ = ["Interp"]
 
 import logging
-from typing import List, Union
+from typing import Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
 
-from pylops import aslinearoperator
+from pylops import aslinearoperator, LinearOperator
 from pylops.basicoperators import Diagonal, MatrixMult, Restriction, Transpose
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
+from pylops.utils.typing import DTypeLike, IntNDArray, InputDimsLike
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -21,7 +22,10 @@ def _checkunique(iava: npt.ArrayLike) -> None:
 
 
 def _nearestinterp(
-    dims: Union[int, List], iava: npt.ArrayLike, axis: int = -1, dtype: str = "float64"
+    dims: Union[int, InputDimsLike],
+    iava: IntNDArray,
+    axis: int = -1,
+    dtype: DTypeLike = "float64",
 ):
     """Nearest neighbour interpolation."""
     iava = np.round(iava).astype(int)
@@ -30,7 +34,10 @@ def _nearestinterp(
 
 
 def _linearinterp(
-    dims: Union[int, List], iava: npt.ArrayLike, axis: int = -1, dtype: str = "float64"
+    dims: InputDimsLike,
+    iava: IntNDArray,
+    axis: int = -1,
+    dtype: DTypeLike = "float64",
 ):
     """Linear interpolation."""
     ncp = get_array_module(iava)
@@ -69,7 +76,10 @@ def _linearinterp(
 
 
 def _sincinterp(
-    dims: Union[int, List], iava: npt.ArrayLike, axis: int = 0, dtype: str = "float64"
+    dims: InputDimsLike,
+    iava: IntNDArray,
+    axis: int = 0,
+    dtype: DTypeLike = "float64",
 ):
     """Sinc interpolation."""
     ncp = get_array_module(iava)
@@ -100,13 +110,13 @@ def _sincinterp(
 
 
 def Interp(
-    dims: Union[int, List],
-    iava: npt.ArrayLike,
+    dims: Union[int, InputDimsLike],
+    iava: IntNDArray,
     axis: int = -1,
     kind: str = "linear",
-    dtype: str = "float64",
+    dtype: DTypeLike = "float64",
     name: str = "I",
-) -> None:
+) -> Tuple[LinearOperator, IntNDArray]:
     r"""Interpolation operator.
 
     Apply interpolation along ``axis``

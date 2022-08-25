@@ -1,14 +1,12 @@
 __all__ = ["Transpose"]
 
-from typing import Tuple
-
 import numpy as np
-import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 class Transpose(LinearOperator):
@@ -59,9 +57,9 @@ class Transpose(LinearOperator):
 
     def __init__(
         self,
-        dims: Tuple,
-        axes: Tuple,
-        dtype: str = "float64",
+        dims: InputDimsLike,
+        axes: InputDimsLike,
+        dtype: DTypeLike = "float64",
         name: str = "T",
     ) -> None:
         dims = _value_or_sized_to_tuple(dims)
@@ -73,19 +71,19 @@ class Transpose(LinearOperator):
             raise ValueError("axes must contain each direction once")
 
         # find out how axes should be transposed in adjoint mode
-        self.axesd = np.empty(ndims, dtype=int)
-        self.axesd[self.axes] = np.arange(ndims, dtype=int)
+        axesd = np.empty(ndims, dtype=int)
+        axesd[self.axes] = np.arange(ndims, dtype=int)
 
         dimsd = np.empty(ndims, dtype=int)
-        dimsd[self.axesd] = dims
-        self.axesd = list(self.axesd)
+        dimsd[axesd] = dims
+        self.axesd = list(axesd)
 
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         return x.transpose(self.axes)
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         return x.transpose(self.axesd)

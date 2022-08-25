@@ -3,10 +3,10 @@ __all__ = ["Zero"]
 from typing import Optional
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
+from pylops.utils.typing import DTypeLike, NDArray
 
 
 class Zero(LinearOperator):
@@ -57,16 +57,16 @@ class Zero(LinearOperator):
         self,
         N: int,
         M: Optional[int] = None,
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "Z",
     ) -> None:
         M = N if M is None else M
         super().__init__(dtype=np.dtype(dtype), shape=(N, M), name=name)
 
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         return ncp.zeros(self.shape[0], dtype=self.dtype)
 
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         return ncp.zeros(self.shape[1], dtype=self.dtype)

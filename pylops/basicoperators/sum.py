@@ -1,14 +1,12 @@
 __all__ = ["Sum"]
 
-from typing import Tuple
-
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 class Sum(LinearOperator):
@@ -61,9 +59,9 @@ class Sum(LinearOperator):
 
     def __init__(
         self,
-        dims: Tuple,
+        dims: InputDimsLike,
         axis: int = -1,
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "S",
     ) -> None:
         dims = _value_or_sized_to_tuple(dims)
@@ -80,11 +78,11 @@ class Sum(LinearOperator):
         self.tile[self.axis] = self.dims[self.axis]
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         return x.sum(axis=self.axis)
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.expand_dims(x, self.axis)
         y = ncp.tile(y, self.tile)

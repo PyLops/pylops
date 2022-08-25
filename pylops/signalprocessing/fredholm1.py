@@ -1,11 +1,11 @@
 __all__ = ["Fredholm1"]
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, NDArray
 
 
 class Fredholm1(LinearOperator):
@@ -89,11 +89,11 @@ class Fredholm1(LinearOperator):
 
     def __init__(
         self,
-        G: npt.ArrayLike,
+        G: NDArray,
         nz: int = 1,
         saveGt: bool = True,
         usematmul: bool = True,
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "F",
     ) -> None:
         self.nz = nz
@@ -108,7 +108,7 @@ class Fredholm1(LinearOperator):
         self.usematmul = usematmul
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         x = x.squeeze()
         if self.usematmul:
@@ -122,7 +122,7 @@ class Fredholm1(LinearOperator):
         return y
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         x = x.squeeze()
         if self.usematmul:

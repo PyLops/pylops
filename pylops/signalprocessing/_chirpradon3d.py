@@ -1,6 +1,7 @@
 import numpy as np
 
 from pylops.utils.backend import get_array_module
+from pylops.utils.typing import NDArray
 
 try:
     import pyfftw
@@ -8,7 +9,9 @@ except ImportError:
     pyfftw = None
 
 
-def _chirp_radon_3d(data, dt, dy, dx, pmax, mode="f"):
+def _chirp_radon_3d(
+    data: NDArray, dt: float, dy: float, dx: float, pmax: NDArray, mode: str = "f"
+) -> NDArray:
     r"""3D Chirp Radon transform
 
     Applies 3D Radon transform using Fast Fourier Transform and Chirp
@@ -104,7 +107,15 @@ def _chirp_radon_3d(data, dt, dy, dx, pmax, mode="f"):
     return g
 
 
-def _chirp_radon_3d_fftw(data, dt, dy, dx, pmax, mode="f", **kwargs_fftw):
+def _chirp_radon_3d_fftw(
+    data: NDArray,
+    dt: float,
+    dy: float,
+    dx: float,
+    pmax: NDArray,
+    mode: str = "f",
+    **kwargs_fftw
+) -> NDArray:
     """3D Chirp Radon transform with pyfftw
 
     Applies 3D Radon transform using Fast Fourier Transform and Chirp

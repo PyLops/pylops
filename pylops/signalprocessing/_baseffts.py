@@ -1,6 +1,7 @@
 import logging
 import warnings
 from enum import Enum, auto
+from typing import Optional, Sequence, Union
 
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
@@ -12,6 +13,7 @@ from pylops.utils._internal import (
     _value_or_sized_to_tuple,
 )
 from pylops.utils.backend import get_complex_dtype, get_real_dtype
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -27,15 +29,15 @@ class _BaseFFT(LinearOperator):
 
     def __init__(
         self,
-        dims,
-        axis=-1,
-        nfft=None,
-        sampling=1.0,
-        norm="ortho",
-        real=False,
-        ifftshift_before=False,
-        fftshift_after=False,
-        dtype="complex128",
+        dims: Union[int, InputDimsLike],
+        axis: int = -1,
+        nfft: Optional[int] = None,
+        sampling: float = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = False,
+        fftshift_after: bool = False,
+        dtype: DTypeLike = "complex128",
     ):
         dims = _value_or_sized_to_array(dims)
         _raise_on_wrong_dtype(dims, np.integer, "dims")
@@ -47,12 +49,11 @@ class _BaseFFT(LinearOperator):
         self.axis = normalize_axis_index(axes[0], self.ndim)
 
         if nfft is None:
-            nfft = dims[self.axis]
+            self.nfft = dims[self.axis]
         else:
             nffts = _value_or_sized_to_array(nfft)
             _raise_on_wrong_dtype(nffts, np.integer, "nfft")
-            nfft = nffts[0]
-        self.nfft = nfft
+            self.nfft = nffts[0]
 
         # Check if the user provided nfft smaller than n (size of signal in
         # original domain). If so, raise a warning as this is unlikely a
@@ -118,12 +119,12 @@ class _BaseFFT(LinearOperator):
         clinear = False if self.real or np.issubdtype(dtype, np.floating) else True
         super().__init__(dtype=self.cdtype, dims=dims, dimsd=dimsd, clinear=clinear)
 
-    def _matvec(self, x):
+    def _matvec(self, x: NDArray) -> NDArray:
         raise NotImplementedError(
             "_BaseFFT does not provide _matvec. It must be implemented separately."
         )
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: NDArray) -> NDArray:
         raise NotImplementedError(
             "_BaseFFT does not provide _rmatvec. It must be implemented separately."
         )
@@ -134,15 +135,15 @@ class _BaseFFTND(LinearOperator):
 
     def __init__(
         self,
-        dims,
-        axes=None,
-        nffts=None,
-        sampling=1.0,
-        norm="ortho",
-        real=False,
-        ifftshift_before=False,
-        fftshift_after=False,
-        dtype="complex128",
+        dims: Union[int, InputDimsLike],
+        axes: Optional[Union[int, InputDimsLike]] = None,
+        nffts: Optional[Union[int, InputDimsLike]] = None,
+        sampling: Optional[Union[float, Sequence[float]]] = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = False,
+        fftshift_after: bool = False,
+        dtype: DTypeLike = "complex128",
     ):
         dims = _value_or_sized_to_array(dims)
         _raise_on_wrong_dtype(dims, np.integer, "dims")
@@ -276,12 +277,12 @@ class _BaseFFTND(LinearOperator):
         clinear = False if self.real or np.issubdtype(dtype, np.floating) else True
         super().__init__(dtype=self.cdtype, dims=dims, dimsd=dimsd, clinear=clinear)
 
-    def _matvec(self, x):
+    def _matvec(self, x: NDArray) -> NDArray:
         raise NotImplementedError(
             "_BaseFFT does not provide _matvec. It must be implemented separately."
         )
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: NDArray) -> NDArray:
         raise NotImplementedError(
             "_BaseFFT does not provide _rmatvec. It must be implemented separately."
         )

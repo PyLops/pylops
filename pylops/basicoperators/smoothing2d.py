@@ -1,17 +1,18 @@
 __all__ = ["Smoothing2D"]
 
-from typing import Tuple, Union
+from typing import Union
 
 import numpy as np
 
 from pylops.signalprocessing import Convolve2D
+from pylops.utils.typing import DTypeLike, InputDimsLike
 
 
 def Smoothing2D(
-    nsmooth: int,
-    dims: Union[int, Tuple[int]],
-    axes: Tuple[int] = (-2, -1),
-    dtype: str = "float64",
+    nsmooth: InputDimsLike,
+    dims: Union[int, InputDimsLike],
+    axes: InputDimsLike = (-2, -1),
+    dtype: DTypeLike = "float64",
 ) -> None:
     r"""2D Smoothing.
 
@@ -60,12 +61,11 @@ def Smoothing2D(
     self-adjoint.
 
     """
-    if isinstance(nsmooth, tuple):
-        nsmooth = list(nsmooth)
+    nsmooth = list(nsmooth)
     if nsmooth[0] % 2 == 0:
         nsmooth[0] += 1
     if nsmooth[1] % 2 == 0:
         nsmooth[1] += 1
     h = np.ones((nsmooth[0], nsmooth[1])) / float(nsmooth[0] * nsmooth[1])
-    offset = [(nsmooth[0] - 1) / 2, (nsmooth[1] - 1) / 2]
+    offset = [(nsmooth[0] - 1) // 2, (nsmooth[1] - 1) // 2]
     return Convolve2D(dims, h=h, offset=offset, axes=axes, dtype=dtype)

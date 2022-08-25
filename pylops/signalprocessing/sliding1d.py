@@ -6,23 +6,22 @@ __all__ = [
 import logging
 from typing import Tuple, Union
 
-import numpy as np
-
-from pylops import aslinearoperator
+from pylops import aslinearoperator, LinearOperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.tapers import taper
+from pylops.utils.typing import InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def sliding1d_design(
-    dimd: Tuple,
-    nwin: Tuple,
-    nover: Tuple,
-    nop: Tuple,
-) -> Union[Tuple, Tuple, Tuple, Tuple]:
+    dimd: int,
+    nwin: int,
+    nover: int,
+    nop: int,
+) -> Tuple[int, int, Tuple[NDArray, NDArray], Tuple[NDArray, NDArray]]:
     """Design Sliding1D operator
 
     This routine can be used prior to creating the :class:`pylops.signalprocessing.Sliding1D`
@@ -79,14 +78,14 @@ def sliding1d_design(
 
 
 def Sliding1D(
-    Op,
-    dim: Tuple,
-    dimd: Tuple,
+    Op: LinearOperator,
+    dim: Union[int, InputDimsLike],
+    dimd: Union[int, InputDimsLike],
     nwin: int,
     nover: int,
     tapertype: str = "hanning",
     name: str = "S",
-):
+) -> LinearOperator:
     r"""1D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to slices of the model
@@ -140,8 +139,8 @@ def Sliding1D(
         shape (``dims``).
 
     """
-    dim = _value_or_sized_to_tuple(dim)
-    dimd = _value_or_sized_to_tuple(dimd)
+    dim: Tuple[int, ...] = _value_or_sized_to_tuple(dim)
+    dimd: Tuple[int, ...] = _value_or_sized_to_tuple(dimd)
 
     # data windows
     dwin_ins, dwin_ends = _slidingsteps(dimd[0], nwin, nover)
@@ -177,7 +176,7 @@ def Sliding1D(
 
     combining = HStack(
         [
-            Restriction(dimd, np.arange(win_in, win_end), dtype=Op.dtype).H
+            Restriction(dimd, range(win_in, win_end), dtype=Op.dtype).H
             for win_in, win_end in zip(dwin_ins, dwin_ends)
         ]
     )

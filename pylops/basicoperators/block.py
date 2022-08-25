@@ -1,13 +1,20 @@
 __all__ = ["Block"]
 
-from typing import List, Optional
+from typing import Iterable, Optional
 
+from pylops import LinearOperator
 from pylops.basicoperators import HStack, VStack
+from pylops.utils.typing import DTypeLike
 
 
 def _Block(
-    ops, dtype=None, _HStack=HStack, _VStack=VStack, args_HStack={}, args_VStack={}
-):
+    ops: Iterable[Iterable[LinearOperator]],
+    dtype: Optional[DTypeLike] = None,
+    _HStack=HStack,
+    _VStack=VStack,
+    args_HStack: dict = {},
+    args_VStack: dict = {},
+) -> LinearOperator:
     """Block operator.
 
     Used to be able to provide operators from different libraries to
@@ -17,7 +24,11 @@ def _Block(
     return _VStack(hblocks, dtype=dtype, **args_VStack)
 
 
-def Block(ops: List, nproc: int = 1, dtype: Optional[str] = None):
+def Block(
+    ops: Iterable[Iterable[LinearOperator]],
+    nproc: int = 1,
+    dtype: Optional[DTypeLike] = None,
+) -> LinearOperator:
     r"""Block operator.
 
     Create a block operator from N lists of M linear operators each.

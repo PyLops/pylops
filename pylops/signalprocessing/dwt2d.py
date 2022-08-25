@@ -2,13 +2,12 @@ __all__ = ["DWT2D"]
 
 import logging
 from math import ceil, log
-from typing import List, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.basicoperators import Pad
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 from .dwt import _adjointwavelet, _checkwavelet
 
@@ -84,11 +83,11 @@ class DWT2D(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, List],
-        axes: Tuple = (-2, -1),
+        dims: InputDimsLike,
+        axes: InputDimsLike = (-2, -1),
         wavelet: str = "haar",
         level: int = 1,
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "D",
     ) -> None:
         if pywt is None:
@@ -122,7 +121,7 @@ class DWT2D(LinearOperator):
         self.waveletadj = _adjointwavelet(wavelet)
         self.level = level
 
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         x = self.pad.matvec(x)
         x = np.reshape(x, self.dimsd)
         y = pywt.coeffs_to_array(
@@ -137,7 +136,7 @@ class DWT2D(LinearOperator):
         )[0]
         return y.ravel()
 
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         x = np.reshape(x, self.dimsd)
         x = pywt.array_to_coeffs(x, self.sl, output_format="wavedec2")
         y = pywt.waverec2(

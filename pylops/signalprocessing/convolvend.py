@@ -1,9 +1,8 @@
 __all__ = ["ConvolveND"]
 
-from typing import List, Tuple, Union
+from typing import Optional, Union
 
 import numpy as np
-import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
@@ -15,6 +14,7 @@ from pylops.utils.backend import (
     to_cupy_conditional,
 )
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 class ConvolveND(LinearOperator):
@@ -64,12 +64,12 @@ class ConvolveND(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, List],
-        h: npt.ArrayLike,
-        offset: int = None,
-        axes: Tuple = (-2, -1),
+        dims: Union[int, InputDimsLike],
+        h: NDArray,
+        offset: Optional[InputDimsLike] = None,
+        axes: InputDimsLike = (-2, -1),
         method: str = "fft",
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "C",
     ):
         dims = _value_or_sized_to_tuple(dims)
@@ -81,24 +81,24 @@ class ConvolveND(LinearOperator):
             else np.array([normalize_axis_index(ax, len(self.dims)) for ax in axes])
         )
         self.h = h
-        self.nh = np.array(self.h.shape)
+        hshape = np.array(self.h.shape)
 
         # padding
         if offset is None:
-            offset = np.zeros(self.h.ndim, dtype=int)
+            offsetpad = np.zeros(self.h.ndim, dtype=int)
         else:
-            offset = np.asarray(offset, dtype=int)
-        self.offset = 2 * (self.nh // 2 - offset)
+            offsetpad = np.asarray(offset, dtype=int)
+        self.offset = 2 * (hshape // 2 - offsetpad)
         pad = [(0, 0) for _ in range(self.h.ndim)]
         dopad = False
-        for inh, nh in enumerate(self.nh):
+        for inh, nh in enumerate(hshape):
             if nh % 2 == 0:
                 self.offset[inh] -= 1
             if self.offset[inh] != 0:
-                pad[inh] = [
+                pad[inh] = (
                     self.offset[inh] if self.offset[inh] > 0 else 0,
                     -self.offset[inh] if self.offset[inh] < 0 else 0,
-                ]
+                )
                 dopad = True
         if dopad:
             ncp = get_array_module(h)
@@ -118,7 +118,7 @@ class ConvolveND(LinearOperator):
         self.method = method
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         # correct type of h if different from x and choose methods accordingly
         if type(self.h) != type(x):
             self.h = to_cupy_conditional(x, self.h)
@@ -127,7 +127,7 @@ class ConvolveND(LinearOperator):
         return self.convolve(x, self.h, mode="same", method=self.method)
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         # correct type of h if different from x and choose methods accordingly
         if type(self.h) != type(x):
             self.h = to_cupy_conditional(x, self.h)

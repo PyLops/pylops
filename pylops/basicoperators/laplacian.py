@@ -1,23 +1,24 @@
 __all__ = ["Laplacian"]
 
 
-from typing import Tuple, Union
+from typing import Tuple
 
 from numpy.core.multiarray import normalize_axis_index
 
-from pylops import aslinearoperator
+from pylops import LinearOperator, aslinearoperator
 from pylops.basicoperators import SecondDerivative
+from pylops.utils.typing import DTypeLike, InputDimsLike
 
 
 def Laplacian(
-    dims: Union[int, Tuple[int]],
-    axes: Tuple[int] = (-2, -1),
-    weights: Tuple[int] = (1, 1),
-    sampling: Tuple[int] = (1, 1),
+    dims: InputDimsLike,
+    axes: InputDimsLike = (-2, -1),
+    weights: Tuple[float, ...] = (1, 1),
+    sampling: Tuple[float, ...] = (1, 1),
     edge: bool = False,
     kind: str = "centered",
-    dtype: str = "float64",
-):
+    dtype: DTypeLike = "float64",
+) -> LinearOperator:
     r"""Laplacian.
 
     Apply second-order centered Laplacian operator to a multi-dimensional array.

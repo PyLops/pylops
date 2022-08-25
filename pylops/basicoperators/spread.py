@@ -1,13 +1,13 @@
 __all__ = ["Spread"]
 
 import logging
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 try:
     from numba import jit
@@ -169,14 +169,14 @@ class Spread(LinearOperator):
 
     def __init__(
         self,
-        dims: Tuple[int],
-        dimsd: Tuple[int],
-        table: Optional[npt.ArrayLike] = None,
-        dtable: Optional[npt.ArrayLike] = None,
+        dims: InputDimsLike,
+        dimsd: InputDimsLike,
+        table: Optional[NDArray] = None,
+        dtable: Optional[NDArray] = None,
         fh: Optional[Callable] = None,
         interp: Optional[bool] = None,
         engine: str = "numpy",
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "S",
     ) -> None:
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
@@ -198,9 +198,9 @@ class Spread(LinearOperator):
         self.fh = fh
 
         # find out if mapping is in table of function handle
-        if table is None and fh is None:
+        if self.table is None and fh is None:
             raise NotImplementedError("provide either table or fh.")
-        elif table is not None:
+        elif self.table is not None:
             if fh is not None:
                 raise ValueError("provide only one of table or fh.")
             if self.table.shape != (self.nx0, self.nt0, self.nx):
@@ -214,7 +214,7 @@ class Spread(LinearOperator):
         # find out if linear interpolation has to be carried out
         self.interp = False
         if self.usetable:
-            if dtable is not None:
+            if self.dtable is not None:
                 if self.dtable.shape != (self.nx0, self.nt0, self.nx):
                     raise ValueError("dtable must have shape [nx0 x nt x nx]")
                 self.interp = True
@@ -227,7 +227,7 @@ class Spread(LinearOperator):
         if interp is not None and self.interp != interp:
             logging.warning("interp has been overridden to %r.", self.interp)
 
-    def _matvec_numpy(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec_numpy(self, x: NDArray) -> NDArray:
         y = np.zeros(self.dimsd, dtype=self.dtype)
         for it in range(self.dims[1]):
             for ix0 in range(self.dims[0]):
@@ -250,7 +250,7 @@ class Spread(LinearOperator):
                         y[mask, indices + 1] += dindices[mask] * x[ix0, it]
         return y
 
-    def _rmatvec_numpy(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec_numpy(self, x: NDArray) -> NDArray:
         y = np.zeros(self.dims, dtype=self.dtype)
         for it in range(self.dims[1]):
             for ix0 in range(self.dims[0]):
@@ -275,7 +275,7 @@ class Spread(LinearOperator):
         return y
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         if self.engine == "numba":
             y = np.zeros(self.dimsd, dtype=self.dtype)
             if self.usetable:
@@ -294,7 +294,7 @@ class Spread(LinearOperator):
         return y
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         if self.engine == "numba":
             y = np.zeros(self.dims, dtype=self.dtype)
             if self.usetable:

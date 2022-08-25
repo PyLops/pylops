@@ -12,9 +12,10 @@ import numpy.typing as npt
 from scipy.ndimage import gaussian_filter
 
 from pylops.utils.backend import get_array_module, get_toeplitz
+from pylops.utils.typing import NDArray
 
 
-def convmtx(h: npt.ArrayLike, n: int) -> npt.ArrayLike:
+def convmtx(h: npt.ArrayLike, n: int) -> NDArray:
     r"""Convolution matrix
 
     Equivalent of `MATLAB's convmtx function
@@ -55,7 +56,7 @@ def nonstationary_convmtx(
     n: int,
     hc: int = 0,
     pad: Tuple[int] = (0, 0),
-) -> npt.ArrayLike:
+) -> NDArray:
     r"""Convolution matrix from a bank of filters
 
     Makes a dense convolution matrix :math:`\mathbf{C}`
@@ -98,7 +99,7 @@ def slope_estimate(
     smooth: int = 5,
     eps: float = 0.0,
     dips: bool = False,
-) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[NDArray, NDArray]:
     r"""Local slope estimation
 
     Local slopes are estimated using the *Structure Tensor* algorithm [1]_.
@@ -249,7 +250,7 @@ def dip_estimate(
     dx: float = 1.0,
     smooth: int = 5,
     eps: float = 0.0,
-) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[NDArray, NDArray]:
     r"""Local dip estimation
 
     Local dips are estimated using the *Structure Tensor* algorithm [1]_.

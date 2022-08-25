@@ -1,7 +1,10 @@
 from pylops.utils.backend import get_array_module
+from pylops.utils.typing import NDArray
 
 
-def _chirp_radon_2d(data, dt, dx, pmax, mode="f"):
+def _chirp_radon_2d(
+    data: NDArray, dt: float, dx: float, pmax: float, mode: str = "f"
+) -> NDArray:
     r"""2D Chirp Radon transform
 
     Applies 2D Radon transform using Fast Fourier Transform and Chirp
@@ -16,7 +19,7 @@ def _chirp_radon_2d(data, dt, dx, pmax, mode="f"):
         Time sampling :math:`dt`
     dx : :obj:`float`
         Spatial sampling in :math:`x` direction :math:`dx`
-    pmax : :obj:`np.ndarray`
+    pmax : :obj:`float`
         Maximum slope defined as :math:`\tan` of maximum stacking angle
         :math:`x` direction :math:`p_{max} = \tan(\alpha_x_{max})`.
         If one operates in terms of minimum velocity :math:`c_0`, then

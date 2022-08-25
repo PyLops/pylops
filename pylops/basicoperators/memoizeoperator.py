@@ -1,9 +1,11 @@
 __all__ = ["MemoizeOperator"]
 
+from typing import List, Tuple
+
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator
+from pylops.utils.typing import NDArray
 
 
 class MemoizeOperator(LinearOperator):
@@ -34,16 +36,16 @@ class MemoizeOperator(LinearOperator):
 
     def __init__(
         self,
-        Op,
+        Op: LinearOperator,
         max_neval: int = 10,
     ) -> None:
         super().__init__(Op=Op)
 
         self.max_neval = max_neval
-        self.store = []  # Store a list of Tuples (x, y)
+        self.store: List[Tuple[NDArray, NDArray]] = []  # Store a list of (x, y)
         self.neval = 0  # Number of evaluations of the operator
 
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         for xstored, ystored in self.store:
             if np.allclose(xstored, x):
                 return ystored
@@ -54,7 +56,7 @@ class MemoizeOperator(LinearOperator):
         self.store.append((x.copy(), y.copy()))
         return y
 
-    def _rmatvec(self, y: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, y: NDArray) -> NDArray:
         for xstored, ystored in self.store:
             if np.allclose(ystored, y):
                 return xstored

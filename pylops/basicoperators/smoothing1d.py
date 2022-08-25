@@ -1,18 +1,20 @@
 __all__ = ["Smoothing1D"]
 
-from typing import Tuple, Union
+from typing import Union
 
 import numpy as np
 
+from pylops import LinearOperator
 from pylops.signalprocessing import Convolve1D
+from pylops.utils.typing import DTypeLike, InputDimsLike
 
 
 def Smoothing1D(
     nsmooth: int,
-    dims: Union[int, Tuple],
+    dims: Union[int, InputDimsLike],
     axis: int = -1,
-    dtype: str = "float64",
-) -> None:
+    dtype: DTypeLike = "float64",
+) -> LinearOperator:
     r"""1D Smoothing.
 
     Apply smoothing to model (and data) to a multi-dimensional array
@@ -73,5 +75,5 @@ def Smoothing1D(
     if nsmooth % 2 == 0:
         nsmooth += 1
     h = np.ones(nsmooth) / float(nsmooth)
-    offset = (nsmooth - 1) / 2
+    offset = (nsmooth - 1) // 2
     return Convolve1D(dims, h, axis=axis, offset=offset, dtype=dtype)

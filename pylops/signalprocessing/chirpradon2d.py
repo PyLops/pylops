@@ -3,10 +3,10 @@ __all__ = ["ChirpRadon2D"]
 import logging
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, NDArray
 
 from ._chirpradon2d import _chirp_radon_2d
 
@@ -61,10 +61,10 @@ class ChirpRadon2D(LinearOperator):
 
     def __init__(
         self,
-        taxis: npt.ArrayLike,
-        haxis: npt.ArrayLike,
-        pmax: npt.ArrayLike,
-        dtype: str = "float64",
+        taxis: NDArray,
+        haxis: NDArray,
+        pmax: float,
+        dtype: DTypeLike = "float64",
         name: str = "C",
     ) -> None:
         dims = len(haxis), len(taxis)
@@ -76,14 +76,14 @@ class ChirpRadon2D(LinearOperator):
         self.pmax = pmax
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         return _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="f")
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         return _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="a")
 
-    def inverse(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def inverse(self, x: NDArray) -> NDArray:
         x = x.reshape(self.dimsd)
         y = _chirp_radon_2d(x, self.dt, self.dh, self.pmax, mode="i")
         return y.ravel()

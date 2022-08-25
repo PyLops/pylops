@@ -4,15 +4,17 @@ import logging
 
 import numpy.typing as npt
 
+from pylops import LinearOperator
 from pylops.basicoperators import Regression
+from pylops.utils.typing import DTypeLike
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def LinearRegression(
     taxis: npt.ArrayLike,
-    dtype: str = "float64",
-) -> None:
+    dtype: DTypeLike = "float64",
+) -> LinearOperator:
     r"""Linear regression.
 
     Creates an operator that applies linear regression to a set of points.

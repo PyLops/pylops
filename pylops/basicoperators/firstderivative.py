@@ -1,15 +1,14 @@
 __all__ = ["FirstDerivative"]
 
-from typing import List, Union
+from typing import Callable, Union
 
 import numpy as np
-import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
-
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 class FirstDerivative(LinearOperator):
@@ -83,13 +82,13 @@ class FirstDerivative(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, List[int]],
+        dims: Union[int, InputDimsLike],
         axis: int = -1,
         sampling: float = 1.0,
         kind: str = "centered",
         edge: bool = False,
         order: int = 3,
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "F",
     ) -> None:
         dims = _value_or_sized_to_tuple(dims)
@@ -108,6 +107,8 @@ class FirstDerivative(LinearOperator):
         order: int,
     ) -> None:
         # choose _matvec and _rmatvec kind
+        self._matvec: Callable
+        self._rmatvec: Callable
         if kind == "forward":
             self._matvec = self._matvec_forward
             self._rmatvec = self._rmatvec_forward
@@ -129,14 +130,14 @@ class FirstDerivative(LinearOperator):
             )
 
     @reshaped(swapaxis=True)
-    def _matvec_forward(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec_forward(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., :-1] = (x[..., 1:] - x[..., :-1]) / self.sampling
         return y
 
     @reshaped(swapaxis=True)
-    def _rmatvec_forward(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec_forward(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., :-1] -= x[..., :-1]
@@ -145,7 +146,7 @@ class FirstDerivative(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _matvec_centered3(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec_centered3(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., 1:-1] = 0.5 * (x[..., 2:] - x[..., :-2])
@@ -156,7 +157,7 @@ class FirstDerivative(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _rmatvec_centered3(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec_centered3(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., :-2] -= 0.5 * x[..., 1:-1]
@@ -170,7 +171,7 @@ class FirstDerivative(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _matvec_centered5(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec_centered5(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., 2:-2] = (
@@ -188,7 +189,7 @@ class FirstDerivative(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _rmatvec_centered5(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec_centered5(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., :-4] += x[..., 2:-2] / 12.0
@@ -206,14 +207,14 @@ class FirstDerivative(LinearOperator):
         return y
 
     @reshaped(swapaxis=True)
-    def _matvec_backward(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec_backward(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., 1:] = (x[..., 1:] - x[..., :-1]) / self.sampling
         return y
 
     @reshaped(swapaxis=True)
-    def _rmatvec_backward(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec_backward(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         y[..., :-1] -= x[..., 1:]

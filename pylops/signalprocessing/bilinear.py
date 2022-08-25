@@ -1,7 +1,6 @@
 __all__ = ["Bilinear"]
 
 import logging
-from typing import List, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -9,6 +8,7 @@ import numpy.typing as npt
 from pylops import LinearOperator
 from pylops.utils.backend import get_add_at, get_array_module, to_numpy
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -88,9 +88,9 @@ class Bilinear(LinearOperator):
 
     def __init__(
         self,
-        iava: Union[List, npt.ArrayLike],
-        dims: List,
-        dtype: str = "float64",
+        iava: IntNDArray,
+        dims: InputDimsLike,
+        dtype: DTypeLike = "float64",
         name: str = "B",
     ) -> None:
         # define dimension of data
@@ -117,7 +117,7 @@ class Bilinear(LinearOperator):
                 self.weights_lr = ncp.expand_dims(self.weights_lr, axis=-1)
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         return (
             x[self.iava_t, self.iava_l] * (1 - self.weights_tb) * (1 - self.weights_lr)
             + x[self.iava_t, self.iava_r] * (1 - self.weights_tb) * self.weights_lr
@@ -126,7 +126,7 @@ class Bilinear(LinearOperator):
         )
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         ncp_add_at = get_add_at(x)
         y = ncp.zeros(self.dims, dtype=self.dtype)

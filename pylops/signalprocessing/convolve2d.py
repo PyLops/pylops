@@ -1,21 +1,21 @@
 __all__ = ["Convolve2D"]
 
-from typing import List, Tuple, Union
+from typing import Union
 
-import numpy.typing as npt
-
+from pylops import LinearOperator
 from pylops.signalprocessing import ConvolveND
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 def Convolve2D(
-    dims: Union[int, List],
-    h: npt.ArrayLike,
-    offset: Tuple = (0, 0),
-    axes: Tuple = (-2, -1),
+    dims: Union[int, InputDimsLike],
+    h: NDArray,
+    offset: InputDimsLike = (0, 0),
+    axes: InputDimsLike = (-2, -1),
     method: str = "fft",
-    dtype: str = "float64",
+    dtype: DTypeLike = "float64",
     name: str = "C",
-):
+) -> LinearOperator:
     r"""2D convolution operator.
 
     Apply two-dimensional convolution with a compact filter to model

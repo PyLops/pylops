@@ -1,12 +1,12 @@
 __all__ = ["Radon3D"]
 
 import logging
-from typing import Callable
+from typing import Callable, Optional, Tuple
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops.basicoperators import Spread
+from pylops.utils.typing import DTypeLike, NDArray
 
 try:
     from numba import jit
@@ -25,45 +25,45 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _linear(
-    y: npt.ArrayLike,
-    x: npt.ArrayLike,
+    y: NDArray,
+    x: NDArray,
     t: int,
     py: float,
     px: float,
-) -> npt.ArrayLike:
+) -> NDArray:
     return t + px * x + py * y
 
 
 def _parabolic(
-    y: npt.ArrayLike,
-    x: npt.ArrayLike,
+    y: NDArray,
+    x: NDArray,
     t: int,
     py: float,
     px: float,
-) -> npt.ArrayLike:
+) -> NDArray:
     return t + px * x**2 + py * y**2
 
 
 def _hyperbolic(
-    y: npt.ArrayLike,
-    x: npt.ArrayLike,
+    y: NDArray,
+    x: NDArray,
     t: int,
     py: float,
     px: float,
-) -> npt.ArrayLike:
+) -> NDArray:
     return np.sqrt(t**2 + (x / px) ** 2 + (y / py) ** 2)
 
 
 def _indices_3d(
     f: Callable,
-    y: npt.ArrayLike,
-    x: npt.ArrayLike,
+    y: NDArray,
+    x: NDArray,
     py: float,
     px: float,
     t: int,
     nt: int,
     interp: bool = True,
-) -> npt.ArrayLike:
+) -> Tuple[NDArray, NDArray, Optional[NDArray]]:
     """Compute time and space indices of parametric line in ``f`` function
 
     Parameters
@@ -111,48 +111,44 @@ def _indices_3d(
 
 def _indices_3d_onthefly(
     f: Callable,
-    y: npt.ArrayLike,
-    x: npt.ArrayLike,
-    py: float,
-    px: float,
+    y: NDArray,
+    x: NDArray,
+    py: NDArray,
+    px: NDArray,
     ip: int,
     it: int,
     nt: int,
-    interp=True,
-) -> npt.ArrayLike:
+    interp: bool = True,
+) -> Tuple[NDArray, NDArray, Optional[NDArray]]:
     """Wrapper around _indices_3d to allow on-the-fly computation of
     parametric curves"""
     tscan = np.full(len(y), np.nan, dtype=np.float32)
     if interp:
         dtscan = np.full(len(y), np.nan)
-    else:
-        dtscan = None
     sscan, tscan1, dtscan1 = _indices_3d(f, y, x, py[ip], px[ip], it, nt, interp=interp)
     tscan[sscan] = tscan1
     if interp:
         dtscan[sscan] = dtscan1
-    return sscan, tscan, dtscan
+    return sscan, tscan, (dtscan if interp else None)
 
 
 def _create_table(
     f: Callable,
-    y: npt.ArrayLike,
-    x: npt.ArrayLike,
-    pyaxis: npt.ArrayLike,
-    pxaxis: npt.ArrayLike,
+    y: NDArray,
+    x: NDArray,
+    pyaxis: NDArray,
+    pxaxis: NDArray,
     nt: int,
     npy: int,
     npx: int,
     ny: int,
     nx: int,
     interp: bool,
-) -> npt.ArrayLike:
+) -> Tuple[NDArray, Optional[NDArray]]:
     """Create look up table"""
     table = np.full((npx * npy, nt, ny * nx), np.nan, dtype=np.float32)
     if interp:
         dtable = np.full((npx * npy, nt, ny * nx), np.nan)
-    else:
-        dtable = None
 
     for ip, (py, px) in enumerate(zip(pyaxis, pxaxis)):
         for it in range(nt):
@@ -160,21 +156,21 @@ def _create_table(
             table[ip, it, sscan] = tscan
             if interp:
                 dtable[ip, it, sscan] = dtscan
-    return table, dtable
+    return table, (dtable if interp else None)
 
 
 def Radon3D(
-    taxis: npt.ArrayLike,
-    hyaxis: npt.ArrayLike,
-    hxaxis: npt.ArrayLike,
-    pyaxis: npt.ArrayLike,
-    pxaxis: npt.ArrayLike,
+    taxis: NDArray,
+    hyaxis: NDArray,
+    hxaxis: NDArray,
+    pyaxis: NDArray,
+    pxaxis: NDArray,
     kind: str = "linear",
     centeredh: bool = True,
     interp: bool = True,
     onthefly: bool = False,
     engine: str = "numpy",
-    dtype: str = "float64",
+    dtype: DTypeLike = "float64",
     name: str = "R",
 ):
     r"""Three dimensional Radon transform.

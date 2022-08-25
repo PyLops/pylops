@@ -1,13 +1,13 @@
 __all__ = ["Pad"]
 
-from typing import Tuple, Union
+from typing import Union, Sequence, Tuple
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 class Pad(LinearOperator):
@@ -70,25 +70,25 @@ class Pad(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, Tuple[int]],
-        pad: Tuple[int],
-        dtype: str = "float64",
+        dims: Union[int, InputDimsLike],
+        pad: Union[Tuple[int, int], Sequence[Tuple[int, int]]],
+        dtype: DTypeLike = "float64",
         name: str = "P",
     ) -> None:
         if np.any(np.array(pad) < 0):
             raise ValueError("Padding must be positive or zero")
         dims = _value_or_sized_to_tuple(dims)
         # Accept (padbeg, padend) and [(padbeg, padend)]
-        self.pad = [pad] if len(dims) == 1 and len(pad) == 2 else pad
+        self.pad: Sequence = [pad] if len(dims) == 1 and len(pad) == 2 else pad
         dimsd = [dim + before + after for dim, (before, after) in zip(dims, self.pad)]
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         return np.pad(x, self.pad, mode="constant")
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         for ax, (before, _) in enumerate(self.pad):
             x = np.take(x, np.arange(before, before + self.dims[ax]), axis=ax)
         return x

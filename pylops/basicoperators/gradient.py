@@ -1,18 +1,20 @@
 __all__ = ["Gradient"]
 
-from typing import List, Union
+from typing import Union
 
+from pylops import LinearOperator
 from pylops.basicoperators import FirstDerivative, VStack
 from pylops.utils._internal import _value_or_sized_to_tuple
+from pylops.utils.typing import DTypeLike, InputDimsLike
 
 
 def Gradient(
-    dims: Union[int, List[int]],
+    dims: Union[int, InputDimsLike],
     sampling: int = 1,
     edge: bool = False,
     kind: str = "centered",
-    dtype: str = "float64",
-):
+    dtype: DTypeLike = "float64",
+) -> LinearOperator:
     r"""Gradient.
 
     Apply gradient operator to a multi-dimensional array.

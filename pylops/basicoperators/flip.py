@@ -1,13 +1,12 @@
 __all__ = ["Flip"]
 
-from typing import List, Union
+from typing import Union
 
 import numpy as np
-import numpy.typing as npt
-
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 class Flip(LinearOperator):
@@ -55,9 +54,9 @@ class Flip(LinearOperator):
 
     def __init__(
         self,
-        dims: Union[int, List[int]],
+        dims: Union[int, InputDimsLike],
         axis: int = -1,
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "F",
     ) -> None:
         dims = _value_or_sized_to_tuple(dims)
@@ -65,9 +64,9 @@ class Flip(LinearOperator):
         self.axis = axis
 
     @reshaped(swapaxis=True)
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         y = np.flip(x, axis=-1)
         return y
 
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         return self._matvec(x)

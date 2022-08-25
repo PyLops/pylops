@@ -1,12 +1,12 @@
 __all__ = ["Radon2D"]
 
 import logging
-from typing import Callable
+from typing import Callable, Optional, Tuple
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops.basicoperators import Spread
+from pylops.utils.typing import DTypeLike, NDArray
 
 try:
     from numba import jit
@@ -25,37 +25,37 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _linear(
-    x: npt.ArrayLike,
+    x: NDArray,
     t: int,
     px: float,
-) -> npt.ArrayLike:
+) -> NDArray:
     return t + px * x
 
 
 def _parabolic(
-    x: npt.ArrayLike,
+    x: NDArray,
     t: int,
     px: float,
-) -> npt.ArrayLike:
+) -> NDArray:
     return t + px * x**2
 
 
 def _hyperbolic(
-    x: npt.ArrayLike,
+    x: NDArray,
     t: int,
     px: float,
-) -> npt.ArrayLike:
+) -> NDArray:
     return np.sqrt(t**2 + (x / px) ** 2)
 
 
 def _indices_2d(
     f: Callable,
-    x: npt.ArrayLike,
+    x: NDArray,
     px: float,
     t: int,
     nt: int,
     interp: bool = True,
-) -> npt.ArrayLike:
+) -> Tuple[NDArray, NDArray, Optional[NDArray]]:
     """Compute time and space indices of parametric line in ``f`` function
 
     Parameters
@@ -92,43 +92,39 @@ def _indices_2d(
     tscan = tdecscan[xscan].astype(int)
     if interp:
         dtscan = tdecscan[xscan] - tscan
-    else:
-        dtscan = None
-    return xscan, tscan, dtscan
+    return xscan, tscan, (dtscan if interp else None)
 
 
 def _indices_2d_onthefly(
     f: Callable,
-    x: npt.ArrayLike,
-    px: float,
+    x: NDArray,
+    px: NDArray,
     ip: int,
     t: int,
     nt: int,
     interp: bool = True,
-) -> npt.ArrayLike:
+) -> Tuple[NDArray, NDArray, Optional[NDArray]]:
     """Wrapper around _indices_2d to allow on-the-fly computation of
     parametric curves"""
     tscan = np.full(len(x), np.nan, dtype=np.float32)
     if interp:
         dtscan = np.full(len(x), np.nan)
-    else:
-        dtscan = None
     xscan, tscan1, dtscan1 = _indices_2d(f, x, px[ip], t, nt, interp=interp)
     tscan[xscan] = tscan1
     if interp:
         dtscan[xscan] = dtscan1
-    return xscan, tscan, dtscan
+    return xscan, tscan, (dtscan if interp else None)
 
 
 def _create_table(
     f: Callable,
-    x: npt.ArrayLike,
-    pxaxis: npt.ArrayLike,
+    x: NDArray,
+    pxaxis: NDArray,
     nt: int,
     npx: int,
     nx: int,
     interp: bool,
-) -> npt.ArrayLike:
+) -> Tuple[NDArray, Optional[NDArray]]:
     """Create look up table"""
     table = np.full((npx, nt, nx), np.nan, dtype=np.float32)
     if interp:
@@ -146,15 +142,15 @@ def _create_table(
 
 
 def Radon2D(
-    taxis: npt.ArrayLike,
-    haxis: npt.ArrayLike,
-    pxaxis: npt.ArrayLike,
+    taxis: NDArray,
+    haxis: NDArray,
+    pxaxis: NDArray,
     kind: str = "linear",
     centeredh: bool = True,
     interp: bool = True,
     onthefly: bool = False,
     engine: str = "numpy",
-    dtype: str = "float64",
+    dtype: DTypeLike = "float64",
     name: str = "R",
 ):
     r"""Two dimensional Radon transform.

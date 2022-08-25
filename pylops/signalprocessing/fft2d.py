@@ -2,13 +2,15 @@ __all__ = ["FFT2D"]
 
 import logging
 import warnings
-from typing import Tuple, Union
+from typing import Optional, Sequence, Union
 
 import numpy as np
 import scipy.fft
 
+from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -18,15 +20,15 @@ class _FFT2D_numpy(_BaseFFTND):
 
     def __init__(
         self,
-        dims: Tuple,
-        axes: Tuple = (-2, -1),
-        nffts: Union[int, Tuple] = None,
-        sampling: float = 1.0,
+        dims: InputDimsLike,
+        axes: InputDimsLike = (-2, -1),
+        nffts: Optional[Union[int, InputDimsLike]] = None,
+        sampling: Optional[Union[float, Sequence[float]]] = 1.0,
         norm: str = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
-        dtype: str = "complex128",
+        dtype: DTypeLike = "complex128",
     ) -> None:
         super().__init__(
             dims=dims,
@@ -121,15 +123,15 @@ class _FFT2D_scipy(_BaseFFTND):
 
     def __init__(
         self,
-        dims: Tuple,
-        axes: Tuple = (-2, -1),
-        nffts: Union[int, Tuple] = None,
-        sampling: float = 1.0,
+        dims: InputDimsLike,
+        axes: InputDimsLike = (-2, -1),
+        nffts: Optional[Union[int, InputDimsLike]] = None,
+        sampling: Optional[Union[float, Sequence[float]]] = 1.0,
         norm: str = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
-        dtype: str = "complex128",
+        dtype: DTypeLike = "complex128",
     ) -> None:
         super().__init__(
             dims=dims,
@@ -210,18 +212,18 @@ class _FFT2D_scipy(_BaseFFTND):
 
 
 def FFT2D(
-    dims: Tuple,
-    axes: Tuple = (-2, -1),
-    nffts: Union[int, Tuple] = None,
-    sampling: float = 1.0,
+    dims: InputDimsLike,
+    axes: InputDimsLike = (-2, -1),
+    nffts: Optional[Union[int, InputDimsLike]] = None,
+    sampling: Optional[Union[float, Sequence[float]]] = 1.0,
     norm: str = "ortho",
     real: bool = False,
     ifftshift_before: bool = False,
     fftshift_after: bool = False,
     engine: str = "numpy",
-    dtype: str = "complex128",
+    dtype: DTypeLike = "complex128",
     name: str = "F",
-) -> None:
+) -> LinearOperator:
     r"""Two dimensional Fast-Fourier Transform.
 
     Apply two dimensional Fast-Fourier Transform (FFT) to any pair of ``axes`` of a

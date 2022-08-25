@@ -7,6 +7,7 @@ import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
+from pylops.utils.typing import DTypeLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -86,7 +87,7 @@ class Regression(LinearOperator):
         self,
         taxis: npt.ArrayLike,
         order: int,
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "R",
     ) -> None:
         ncp = get_array_module(taxis)
@@ -99,19 +100,19 @@ class Regression(LinearOperator):
         shape = (len(self.taxis), self.order + 1)
         super().__init__(dtype=np.dtype(dtype), shape=shape, name=name)
 
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros_like(self.taxis)
         for i in range(self.order + 1):
             y += x[i] * self.taxis**i
         return y
 
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
 
         return ncp.vstack([ncp.dot(self.taxis**i, x) for i in range(self.order + 1)])
 
-    def apply(self, t: npt.ArrayLike, x: npt.ArrayLike) -> npt.ArrayLike:
+    def apply(self, t: npt.ArrayLike, x: NDArray) -> NDArray:
         """Return values along y-axis given certain ``t`` location(s) along
         t-axis and regression coefficients ``x``
 

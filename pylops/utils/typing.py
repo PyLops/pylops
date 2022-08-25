@@ -3,11 +3,14 @@ __all__ = [
     "ShapeLike",
 ]
 
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Union
 
+import numpy as np
 import numpy.typing as npt
 
-InputDimsLike = Sequence[int]
+IntNDArray = npt.NDArray[np.int_]
 NDArray = npt.NDArray
+
+InputDimsLike = Union[Sequence[int], IntNDArray]
 ShapeLike = Tuple[int, ...]
 DTypeLike = npt.DTypeLike

@@ -1,4 +1,4 @@
-from typing import Sized, Tuple, Union
+from typing import Sized, Tuple
 
 import numpy as np
 import numpy.typing as npt

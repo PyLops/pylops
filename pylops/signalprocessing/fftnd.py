@@ -2,7 +2,7 @@ __all__ = ["FFTND"]
 
 import logging
 import warnings
-from typing import List, Tuple, Union
+from typing import Optional, Sequence, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -10,6 +10,7 @@ import scipy.fft
 
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -19,15 +20,15 @@ class _FFTND_numpy(_BaseFFTND):
 
     def __init__(
         self,
-        dims: Union[int, List],
-        axes: Tuple = (-3, -2, -1),
-        nffts: Tuple = None,
-        sampling: float = 1.0,
+        dims: Union[int, InputDimsLike],
+        axes: Union[int, InputDimsLike] = (-3, -2, -1),
+        nffts: Optional[Union[int, InputDimsLike]] = None,
+        sampling: Union[float, Sequence[float]] = 1.0,
         norm: str = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
-        dtype: str = "complex128",
+        dtype: DTypeLike = "complex128",
     ) -> None:
         super().__init__(
             dims=dims,
@@ -54,7 +55,7 @@ class _FFTND_numpy(_BaseFFTND):
             self._scale = 1.0 / np.prod(self.nffts)
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         if self.ifftshift_before.any():
             x = np.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
@@ -75,7 +76,7 @@ class _FFTND_numpy(_BaseFFTND):
         return y
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         if self.fftshift_after.any():
             x = np.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
@@ -112,15 +113,15 @@ class _FFTND_scipy(_BaseFFTND):
 
     def __init__(
         self,
-        dims: Union[int, List],
-        axes: Tuple = (-3, -2, -1),
-        nffts: Tuple = None,
-        sampling: float = 1.0,
+        dims: Union[int, InputDimsLike],
+        axes: Union[int, InputDimsLike] = (-3, -2, -1),
+        nffts: Optional[Union[int, InputDimsLike]] = None,
+        sampling: Union[float, Sequence[float]] = 1.0,
         norm: str = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
-        dtype: str = "complex128",
+        dtype: DTypeLike = "complex128",
     ) -> None:
         super().__init__(
             dims=dims,
@@ -143,7 +144,7 @@ class _FFTND_scipy(_BaseFFTND):
             self._scale = 1.0 / np.prod(self.nffts)
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         if self.ifftshift_before.any():
             x = scipy.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
@@ -163,7 +164,7 @@ class _FFTND_scipy(_BaseFFTND):
         return y
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         if self.fftshift_after.any():
             x = scipy.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
@@ -195,16 +196,16 @@ class _FFTND_scipy(_BaseFFTND):
 
 
 def FFTND(
-    dims: Union[int, List],
-    axes: Tuple = (-3, -2, -1),
-    nffts: Tuple = None,
-    sampling: float = 1.0,
+    dims: Union[int, InputDimsLike],
+    axes: Union[int, InputDimsLike] = (-3, -2, -1),
+    nffts: Optional[Union[int, InputDimsLike]] = None,
+    sampling: Union[float, Sequence[float]] = 1.0,
     norm: str = "ortho",
     real: bool = False,
     ifftshift_before: bool = False,
     fftshift_after: bool = False,
     engine: str = "scipy",
-    dtype: str = "complex128",
+    dtype: DTypeLike = "complex128",
     name: str = "F",
 ):
     r"""N-dimensional Fast-Fourier Transform.
