@@ -1,6 +1,9 @@
 __all__ = [
+    "IntNDArray",
     "NDArray",
+    "InputDimsLike",
     "ShapeLike",
+    "DTypeLike",
 ]
 
 from typing import Sequence, Tuple, Union
