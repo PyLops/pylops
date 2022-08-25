@@ -136,7 +136,7 @@ _ = dottest(Dop, N, N, rtol=1e-6, complexflag=0, verb=True)
 
 dt = 0.005
 nt = 100
-nfft = 2 ** 10
+nfft = 2**10
 
 FFTop = pylops.signalprocessing.FFT(
     dims=(nt,), nfft=nfft, sampling=dt, dtype=np.complex128

@@ -6,7 +6,7 @@ __all__ = [
 import logging
 from typing import Tuple, Union
 
-from pylops import aslinearoperator, LinearOperator
+from pylops import LinearOperator, aslinearoperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils._internal import _value_or_sized_to_tuple

@@ -15,12 +15,12 @@ def _linear_numba(y, x, t, py, px):
 
 @jit(nopython=True)
 def _parabolic_numba(y, x, t, py, px):
-    return t + px * x ** 2 + py * y ** 2
+    return t + px * x**2 + py * y**2
 
 
 @jit(nopython=True)
 def _hyperbolic_numba(y, x, t, py, px):
-    return np.sqrt(t ** 2 + (x / px) ** 2 + (y / py) ** 2)
+    return np.sqrt(t**2 + (x / px) ** 2 + (y / py) ** 2)
 
 
 @jit(nopython=True, parallel=parallel, nogil=True)

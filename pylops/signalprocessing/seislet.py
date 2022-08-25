@@ -1,7 +1,7 @@
 __all__ = ["Seislet"]
 
 from math import ceil, log
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 import numpy as np
 

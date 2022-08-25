@@ -14,7 +14,7 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
 else:
     from scipy.sparse.linalg._interface import _get_dtype
 
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult

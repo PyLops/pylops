@@ -1,6 +1,6 @@
 __all__ = ["Pad"]
 
-from typing import Union, Sequence, Tuple
+from typing import Sequence, Tuple, Union
 
 import numpy as np
 

@@ -8,7 +8,7 @@ from typing import Tuple
 
 import numpy as np
 
-from pylops import aslinearoperator, LinearOperator
+from pylops import LinearOperator, aslinearoperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.utils.tapers import taper2d
 from pylops.utils.typing import InputDimsLike, NDArray

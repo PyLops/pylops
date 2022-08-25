@@ -3,7 +3,7 @@ from typing import Sized, Tuple
 import numpy as np
 import numpy.typing as npt
 
-from pylops.utils.typing import NDArray, DTypeLike
+from pylops.utils.typing import DTypeLike, NDArray
 
 
 def _value_or_sized_to_array(value_or_sized, repeat: int = 1) -> NDArray:

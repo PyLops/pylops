@@ -8,7 +8,7 @@ from typing import Optional, Sequence, Tuple
 
 import numpy as np
 
-from pylops import aslinearoperator, LinearOperator
+from pylops import LinearOperator, aslinearoperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils.tapers import tapernd

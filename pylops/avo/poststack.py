@@ -8,6 +8,7 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
+from scipy.sparse.linalg import lsqr
 
 from pylops import (
     FirstDerivative,
@@ -29,7 +30,6 @@ from pylops.utils.backend import (
 )
 from pylops.utils.signalprocessing import convmtx, nonstationary_convmtx
 from pylops.utils.typing import NDArray, ShapeLike
-from scipy.sparse.linalg import lsqr
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
