@@ -47,6 +47,7 @@ utils
 
 from .config import *
 from .LinearOperator import LinearOperator
+from .TorchOperator import TorchOperator
 from .basicoperators import *
 from . import (
     avo,
