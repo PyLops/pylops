@@ -751,7 +751,7 @@ class OMP(Solver):
         # create variables to track the residual norm and iterations
         self.res = self.y.copy()
         self.cost = [
-            np.linalg.norm(self.y),
+            float(np.linalg.norm(self.y)),
         ]
         self.iiter = 0
 
@@ -827,7 +827,7 @@ class OMP(Solver):
             self.res = self.y - Opcol.matvec(x)
 
         self.iiter += 1
-        self.cost.append(np.linalg.norm(self.res))
+        self.cost.append(float(np.linalg.norm(self.res)))
         if show:
             self._print_step(x)
         return x, cols
@@ -1289,7 +1289,7 @@ class ISTA(Solver):
 
         costdata = 0.5 * np.linalg.norm(res) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
-        self.cost.append(costdata + costreg)
+        self.cost.append(float(costdata + costreg))
         self.iiter += 1
         if show:
             self._print_step(x, costdata, costreg, xupdate)
@@ -1541,7 +1541,7 @@ class FISTA(ISTA):
                 self.normresold = self.normres
 
         # compute gradient
-        grad = self.alpha * self.Op.H @ resz
+        grad = self.alpha * (self.Op.H @ resz)
 
         # update inverted model
         x_unthesh = z + grad
@@ -1564,7 +1564,7 @@ class FISTA(ISTA):
 
         costdata = 0.5 * np.linalg.norm(self.y - self.Op @ x) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
-        self.cost.append(costdata + costreg)
+        self.cost.append(float(costdata + costreg))
         self.iiter += 1
         if show:
             self._print_step(x, costdata, costreg, xupdate)
@@ -2167,7 +2167,7 @@ class SplitBregman(Solver):
 
         # update history parameters
         self.iiter += 1
-        self.cost.append(self.costtot)
+        self.cost.append(float(self.costtot))
         if show:
             self._print_step(x)
         return x
