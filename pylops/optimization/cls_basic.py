@@ -322,9 +322,11 @@ class CGLS(Solver):
         # create variables to track the residual norm and iterations
         self.cost = []
         self.cost1 = []
-        self.cost.append(self.ncp.linalg.norm(self.s))
+        self.cost.append(float(self.ncp.linalg.norm(self.s)))
         self.cost1.append(
-            self.ncp.sqrt(self.cost[0] ** 2 + damp * self.ncp.abs(x.dot(x.conj())))
+            float(
+                self.ncp.sqrt(self.cost[0] ** 2 + damp * self.ncp.abs(x.dot(x.conj())))
+            )
         )
         self.iiter = 0
 
@@ -356,10 +358,13 @@ class CGLS(Solver):
         self.q = self.Op.matvec(self.c)
         self.kold = k
         self.iiter += 1
-        self.cost.append(self.ncp.linalg.norm(self.s))
+        self.cost.append(float(self.ncp.linalg.norm(self.s)))
         self.cost1.append(
             self.ncp.sqrt(
-                self.cost[self.iiter] ** 2 + self.damp * self.ncp.abs(x.dot(x.conj()))
+                float(
+                    self.cost[self.iiter] ** 2
+                    + self.damp * self.ncp.abs(x.dot(x.conj()))
+                )
             )
         )
         if show:
@@ -674,7 +679,10 @@ class LSQR(Solver):
             self.alfa = self.ncp.linalg.norm(self.v)
             if self.alfa > 0:
                 self.v = self.v / self.alfa
-                self.w = self.v.copy()
+        else:
+            self.v = x.copy()
+            self.alfa = 0
+        self.w = self.v.copy()
 
         # check if solution is already found
         self.arnorm = self.alfa * self.beta
