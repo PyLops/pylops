@@ -100,6 +100,10 @@ class Kirchhoff(LinearOperator):
         .. versionadded:: 2.0.0
 
         Maximum allowed angle (either source or receiver side) in degrees
+    anglerefl : :obj:`float`, optional
+        .. versionadded:: 2.0.0
+
+        Angle between the normal of the reflectors and the vertical axis in degrees
     snell : :obj:`float`, optional
         .. versionadded:: 2.0.0
 
@@ -168,7 +172,7 @@ class Kirchhoff(LinearOperator):
     .. math::
         d(\mathbf{x_r}, \mathbf{x_s}, t) =
         \tilde{w}(t) * \int_V a(\mathbf{x}, \mathbf{x_r}, \mathbf{x_s})
-        \frac{(cos \theta_s + cos \theta_r)} {v(\mathbf{x})} e^{j \omega (t(\mathbf{x_r}, \mathbf{x}) +
+        \frac{|cos \theta_s + cos \theta_r|} {v(\mathbf{x})} e^{j \omega (t(\mathbf{x_r}, \mathbf{x}) +
          t(\mathbf{x}, \mathbf{x_s}))} m(\mathbf{x}) \,\mathrm{d}\mathbf{x}
 
     where :math:`\theta_s` and :math:`\theta_r` are the angles between the source-side
@@ -222,7 +226,7 @@ class Kirchhoff(LinearOperator):
         aperture=None,
         aperturetap=20,
         angleaperture=90,
-        sloperefl=None,
+        anglerefl=None,
         snell=None,
         engine="numpy",
         dtype="float64",
@@ -277,22 +281,31 @@ class Kirchhoff(LinearOperator):
                     # compute angles
                     if self.ndims == 2:
                         # 2d with vertical
-                        self.angle_srcs = np.arctan2(
-                            trav_srcs_grad[0], trav_srcs_grad[1]
-                        ).reshape(np.prod(dims), ns)
-                        self.angle_recs = np.arctan2(
-                            trav_recs_grad[0], trav_recs_grad[1]
-                        ).reshape(np.prod(dims), nr)
-                        self.cosangle = np.cos(self.angle_srcs).reshape(
-                            np.prod(dims), ns, 1
-                        ) + np.cos(self.angle_recs).reshape(np.prod(dims), 1, nr)
-                        self.cosangle = self.cosangle.reshape(np.prod(dims), ns * nr)
-                        self.amp *= self.cosangle
+                        if anglerefl is None:
+                            self.angle_srcs = np.arctan2(
+                                trav_srcs_grad[0], trav_srcs_grad[1]
+                            ).reshape(np.prod(dims), ns)
+                            self.angle_recs = np.arctan2(
+                                trav_recs_grad[0], trav_recs_grad[1]
+                            ).reshape(np.prod(dims), nr)
+                            self.cosangle = np.cos(self.angle_srcs).reshape(
+                                np.prod(dims), ns, 1
+                            ) + np.cos(self.angle_recs).reshape(np.prod(dims), 1, nr)
+                            self.cosangle = self.cosangle.reshape(
+                                np.prod(dims), ns * nr
+                            )
+                        else:
+                            # TODO: 2D with normal
+                            raise NotImplementedError(
+                                "angle scaling with anglerefl currently not available"
+                            )
+
+                        self.amp *= np.abs(self.cosangle)
                         if mode == "analytic":
                             self.amp /= vel
                         else:
                             self.amp /= vel.reshape(np.prod(dims), 1)
-                        # TODO: 2d with normal
+
                     else:
                         # TODO: 3D
                         raise NotImplementedError(
@@ -312,7 +325,7 @@ class Kirchhoff(LinearOperator):
         # create wavelet operator
         self.wav = self._wavelet_reshaping(wav, dt)
         self.cop = Convolve1D(
-            (ns * nr, self.nt), h=wav, offset=wavcenter, axis=1, dtype=dtype
+            (ns * nr, self.nt), h=self.wav, offset=wavcenter, axis=1, dtype=dtype
         )
 
         # define aperture and create aperture taper (of size 100)
@@ -566,7 +579,6 @@ class Kirchhoff(LinearOperator):
         angles_recs,
         snell,
     ):
-        # TODO: NEED TO ADD Y FOR 3D CASE
         ns, nr = angles_srcs.shape[-1], angles_recs.shape[-1]
         for isrcrec in prange(nsnr):
             # extract traveltime, amplitude, src/rec coordinates at given src/pair
@@ -625,7 +637,6 @@ class Kirchhoff(LinearOperator):
         angles_recs,
         snell,
     ):
-        # TODO: NEED TO ADD Y FOR 3D CASE
         ns, nr = angles_srcs.shape[-1], angles_recs.shape[-1]
         for ii in prange(ni):
             itravii = itrav[ii]
