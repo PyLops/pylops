@@ -51,8 +51,10 @@ r3d = np.vstack((ryy.ravel(), rxx.ravel(), 2 * np.ones(PAR["nrx"] * PAR["nry"]))
 
 wav, _, wavc = ricker(t[:41], f0=40)
 
-par1 = {"mode": "analytic"}
-par2 = {"mode": "eikonal"}
+par1 = {"mode": "analytic", "dynamic": False}
+par2 = {"mode": "eikonal", "dynamic": False}
+par1d = {"mode": "analytic", "dynamic": True}
+par2d = {"mode": "eikonal", "dynamic": True}
 
 
 def test_unknown_mode():
@@ -61,7 +63,7 @@ def test_unknown_mode():
         _ = LSM(z, x, t, s2d, r2d, 0, np.ones(3), 1, mode="foo")
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par1d), (par2d)])
 def test_lsm2d(par):
     """Dot-test and inverse for LSM operator"""
     if skfmm_enabled or par["mode"] != "eikonal":
@@ -80,21 +82,18 @@ def test_lsm2d(par):
             wav,
             wavc,
             mode=par["mode"],
+            dynamic=par["dynamic"],
             dottest=True,
         )
 
-        # Try both v1 and v2 versions of amp
-        for amp in [lsm.Demop.amp, np.ones_like(lsm.Demop.trav)]:
-            lsm.Demop.amp = amp
+        d = lsm.Demop * refl.ravel()
+        d = d.reshape(PAR["nsx"], PAR["nrx"], PAR["nt"])
 
-            d = lsm.Demop * refl.ravel()
-            d = d.reshape(PAR["nsx"], PAR["nrx"], PAR["nt"])
+        minv = lsm.solve(d.ravel(), **dict(iter_lim=100, show=True))
+        minv = minv.reshape(PAR["nx"], PAR["nz"])
 
-            minv = lsm.solve(d.ravel(), **dict(iter_lim=100, show=True))
-            minv = minv.reshape(PAR["nx"], PAR["nz"])
+        dinv = lsm.Demop * minv.ravel()
+        dinv = dinv.reshape(PAR["nsx"], PAR["nrx"], PAR["nt"])
 
-            dinv = lsm.Demop * minv.ravel()
-            dinv = dinv.reshape(PAR["nsx"], PAR["nrx"], PAR["nt"])
-
-            assert_array_almost_equal(d, dinv, decimal=1)
-            assert_array_almost_equal(refl, minv, decimal=1)
+        assert_array_almost_equal(d / d.max(), dinv / d.max(), decimal=2)
+        assert_array_almost_equal(refl / refl.max(), minv / refl.max(), decimal=1)
