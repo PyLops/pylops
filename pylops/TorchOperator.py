@@ -101,8 +101,8 @@ class TorchOperator:
             self.matvec = Op.matvec
             self.rmatvec = Op.rmatvec
         else:
-            self.matvec = lambda x: Op.matmat(x.T, kfirst=True).T
-            self.rmatvec = lambda x: Op.rmatmat(x.T, kfirst=True).T
+            self.matvec = lambda x: Op.matmat(x.T).T
+            self.rmatvec = lambda x: Op.rmatmat(x.T).T
         self.Top = _TorchOperator.apply
 
     def apply(self, x):
