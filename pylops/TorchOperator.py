@@ -1,3 +1,6 @@
+import numpy as np
+
+from pylops import LinearOperator
 from pylops.utils import deps
 
 if deps.torch_enabled:
@@ -64,7 +67,7 @@ class _TorchOperator(torch.autograd.Function):
         return x, None, None, None, None
 
 
-class TorchOperator:
+class TorchOperator(LinearOperator):
     """Wrap a PyLops operator into a Torch function.
 
     This class can be used to wrap a pylops operator into a
@@ -104,6 +107,9 @@ class TorchOperator:
             self.matvec = lambda x: Op.matmat(x.T).T
             self.rmatvec = lambda x: Op.rmatmat(x.T).T
         self.Top = _TorchOperator.apply
+        super().__init__(
+            dtype=np.dtype(Op.dtype), dims=Op.dims, dimsd=Op.dims, name=Op.name
+        )
 
     def apply(self, x):
         """Apply forward pass to input vector
