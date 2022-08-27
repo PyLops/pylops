@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
@@ -79,7 +80,13 @@ class Regression(LinearOperator):
 
     """
 
-    def __init__(self, taxis, order, dtype="float64", name="R"):
+    def __init__(
+        self,
+        taxis: npt.ArrayLike,
+        order: int,
+        dtype: str = "float64",
+        name: str = "R",
+    ) -> None:
         ncp = get_array_module(taxis)
         if not isinstance(taxis, ncp.ndarray):
             logging.error("t must be ndarray...")
@@ -90,29 +97,29 @@ class Regression(LinearOperator):
         shape = (len(self.taxis), self.order + 1)
         super().__init__(dtype=np.dtype(dtype), shape=shape, name=name)
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.zeros_like(self.taxis)
         for i in range(self.order + 1):
             y += x[i] * self.taxis**i
         return y
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
 
         return ncp.vstack([ncp.dot(self.taxis**i, x) for i in range(self.order + 1)])
 
-    def apply(self, t, x):
+    def apply(self, t: npt.ArrayLike, x: npt.ArrayLike) -> npt.ArrayLike:
         """Return values along y-axis given certain ``t`` location(s) along
         t-axis and regression coefficients ``x``
 
         Parameters
         ----------
-        taxis : :obj:`numpy.ndarray`
+        t : :obj:`numpy.ndarray`
             Elements along the t-axis.
         x : :obj:`numpy.ndarray`
             Regression coefficients
-        dtype : :obj:`str`, optional
+
         Returns
         ----------
         y : :obj:`numpy.ndarray`

@@ -1,5 +1,6 @@
 import logging
 import warnings
+from typing import Tuple, Union
 
 import numpy as np
 import scipy.fft
@@ -15,16 +16,16 @@ class _FFT2D_numpy(_BaseFFTND):
 
     def __init__(
         self,
-        dims,
-        axes=(-2, -1),
-        nffts=None,
-        sampling=1.0,
-        norm="ortho",
-        real=False,
-        ifftshift_before=False,
-        fftshift_after=False,
-        dtype="complex128",
-    ):
+        dims: Tuple,
+        axes: Tuple = (-2, -1),
+        nffts: Union[int, Tuple] = None,
+        sampling: float = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = False,
+        fftshift_after: bool = False,
+        dtype: str = "complex128",
+    ) -> None:
         super().__init__(
             dims=dims,
             axes=axes,
@@ -118,16 +119,16 @@ class _FFT2D_scipy(_BaseFFTND):
 
     def __init__(
         self,
-        dims,
-        axes=(-2, -1),
-        nffts=None,
-        sampling=1.0,
-        norm="ortho",
-        real=False,
-        ifftshift_before=False,
-        fftshift_after=False,
-        dtype="complex128",
-    ):
+        dims: Tuple,
+        axes: Tuple = (-2, -1),
+        nffts: Union[int, Tuple] = None,
+        sampling: float = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = False,
+        fftshift_after: bool = False,
+        dtype: str = "complex128",
+    ) -> None:
         super().__init__(
             dims=dims,
             axes=axes,
@@ -207,18 +208,18 @@ class _FFT2D_scipy(_BaseFFTND):
 
 
 def FFT2D(
-    dims,
-    axes=(-2, -1),
-    nffts=None,
-    sampling=1.0,
-    norm="ortho",
-    real=False,
-    ifftshift_before=False,
-    fftshift_after=False,
-    engine="numpy",
-    dtype="complex128",
-    name="F",
-):
+    dims: Tuple,
+    axes: Tuple = (-2, -1),
+    nffts: Union[int, Tuple] = None,
+    sampling: float = 1.0,
+    norm: str = "ortho",
+    real: bool = False,
+    ifftshift_before: bool = False,
+    fftshift_after: bool = False,
+    engine: str = "numpy",
+    dtype: str = "complex128",
+    name: str = "F",
+) -> None:
     r"""Two dimensional Fast-Fourier Transform.
 
     Apply two dimensional Fast-Fourier Transform (FFT) to any pair of ``axes`` of a
@@ -245,7 +246,7 @@ def FFT2D(
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension
-    axes : :obj:`int`, optional
+    axes : :obj:`tuple`, optional
         .. versionadded:: 2.0.0
 
         Pair of axes along which FFT2D is applied

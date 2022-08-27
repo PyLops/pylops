@@ -1,6 +1,8 @@
 import logging
+from typing import List, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_add_at, get_array_module, to_numpy
@@ -9,7 +11,8 @@ from pylops.utils.decorators import reshaped
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def _checkunique(iava):
+def _checkunique(iava: npt.ArrayLike) -> None:
+    """Check that vector as only unique values"""
     _, count = np.unique(iava, axis=1, return_counts=True)
     if np.any(count > 1):
         raise ValueError("Repeated values in iava array")
@@ -81,7 +84,13 @@ class Bilinear(LinearOperator):
 
     """
 
-    def __init__(self, iava, dims, dtype="float64", name="B"):
+    def __init__(
+        self,
+        iava: Union[List, npt.ArrayLike],
+        dims: List,
+        dtype: str = "float64",
+        name: str = "B",
+    ) -> None:
         # define dimension of data
         ndims = len(dims)
         dimsd = [len(iava[1])] + list(dims[2:])
@@ -106,7 +115,7 @@ class Bilinear(LinearOperator):
                 self.weights_lr = ncp.expand_dims(self.weights_lr, axis=-1)
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return (
             x[self.iava_t, self.iava_l] * (1 - self.weights_tb) * (1 - self.weights_lr)
             + x[self.iava_t, self.iava_r] * (1 - self.weights_tb) * self.weights_lr
@@ -115,7 +124,7 @@ class Bilinear(LinearOperator):
         )
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         ncp_add_at = get_add_at(x)
         y = ncp.zeros(self.dims, dtype=self.dtype)

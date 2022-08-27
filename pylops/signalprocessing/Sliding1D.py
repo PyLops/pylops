@@ -1,4 +1,5 @@
 import logging
+from typing import List, Tuple, Union
 
 import numpy as np
 
@@ -11,7 +12,12 @@ from pylops.utils.tapers import taper
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def sliding1d_design(dimd, nwin, nover, nop):
+def sliding1d_design(
+    dimd: Tuple,
+    nwin: Tuple,
+    nover: Tuple,
+    nop: Tuple,
+) -> Union[Tuple, Tuple, Tuple, Tuple]:
     """Design Sliding1D operator
 
     This routine can be used prior to creating the :class:`pylops.signalprocessing.Sliding1D`
@@ -67,7 +73,15 @@ def sliding1d_design(dimd, nwin, nover, nop):
     return nwins, dim, mwins_inends, dwins_inends
 
 
-def Sliding1D(Op, dim, dimd, nwin, nover, tapertype="hanning", name="S"):
+def Sliding1D(
+    Op,
+    dim: Tuple,
+    dimd: Tuple,
+    nwin: int,
+    nover: int,
+    tapertype: str = "hanning",
+    name: str = "S",
+):
     r"""1D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to slices of the model

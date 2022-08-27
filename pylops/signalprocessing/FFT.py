@@ -1,7 +1,9 @@
 import logging
 import warnings
+from typing import List, Union
 
 import numpy as np
+import numpy.typing as npt
 import scipy.fft
 
 from pylops.signalprocessing._BaseFFTs import _BaseFFT, _FFTNorms
@@ -28,16 +30,16 @@ class _FFT_numpy(_BaseFFT):
 
     def __init__(
         self,
-        dims,
-        axis=-1,
-        nfft=None,
-        sampling=1.0,
-        norm="ortho",
-        real=False,
-        ifftshift_before=False,
-        fftshift_after=False,
-        dtype="complex128",
-    ):
+        dims: Union[int, List],
+        axis: int = -1,
+        nfft: int = None,
+        sampling: float = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = False,
+        fftshift_after: bool = False,
+        dtype: str = "complex128",
+    ) -> None:
         super().__init__(
             dims=dims,
             axis=axis,
@@ -63,7 +65,7 @@ class _FFT_numpy(_BaseFFT):
             self._scale = 1.0 / self.nfft
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.ifftshift_before:
             x = np.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
@@ -84,7 +86,7 @@ class _FFT_numpy(_BaseFFT):
         return y
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.fftshift_after:
             x = np.fft.ifftshift(x, axes=self.axis)
         if self.real:
@@ -111,7 +113,7 @@ class _FFT_numpy(_BaseFFT):
         y = y.astype(self.rdtype)
         return y
 
-    def __truediv__(self, y):
+    def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
@@ -122,16 +124,16 @@ class _FFT_scipy(_BaseFFT):
 
     def __init__(
         self,
-        dims,
-        axis=-1,
-        nfft=None,
-        sampling=1.0,
-        norm="ortho",
-        real=False,
-        ifftshift_before=False,
-        fftshift_after=False,
-        dtype="complex128",
-    ):
+        dims: Union[int, List],
+        axis: int = -1,
+        nfft: int = None,
+        sampling: float = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = False,
+        fftshift_after: bool = False,
+        dtype: str = "complex128",
+    ) -> None:
         super().__init__(
             dims=dims,
             axis=axis,
@@ -153,7 +155,7 @@ class _FFT_scipy(_BaseFFT):
             self._scale = 1.0 / self.nfft
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.ifftshift_before:
             x = scipy.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
@@ -173,7 +175,7 @@ class _FFT_scipy(_BaseFFT):
         return y
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.fftshift_after:
             x = scipy.fft.ifftshift(x, axes=self.axis)
         if self.real:
@@ -210,17 +212,17 @@ class _FFT_fftw(_BaseFFT):
 
     def __init__(
         self,
-        dims,
-        axis=-1,
-        nfft=None,
-        sampling=1.0,
-        norm="ortho",
-        real=False,
-        ifftshift_before=None,
-        fftshift_after=False,
-        dtype="complex128",
+        dims: Union[int, List],
+        axis: int = -1,
+        nfft: int = None,
+        sampling: float = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = None,
+        fftshift_after: bool = False,
+        dtype: str = "complex128",
         **kwargs_fftw,
-    ):
+    ) -> None:
         if np.dtype(dtype) == np.float16:
             warnings.warn(
                 "fftw backend is unavailable with float16 dtype. Will use float32."
@@ -297,7 +299,7 @@ class _FFT_fftw(_BaseFFT):
         )
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.ifftshift_before:
             x = np.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
@@ -325,7 +327,7 @@ class _FFT_fftw(_BaseFFT):
         return y
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.fftshift_after:
             x = np.fft.ifftshift(x, axes=self.axis)
 
@@ -360,26 +362,26 @@ class _FFT_fftw(_BaseFFT):
             y = np.real(y)
         return y
 
-    def __truediv__(self, y):
+    def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
         if self.norm is _FFTNorms.ORTHO:
             return self._rmatvec(y)
         return self._rmatvec(y) / self._scale
 
 
 def FFT(
-    dims,
-    axis=-1,
-    nfft=None,
-    sampling=1.0,
-    norm="ortho",
-    real=False,
-    ifftshift_before=None,
-    fftshift_after=False,
-    engine="numpy",
-    dtype="complex128",
-    name="F",
+    dims: Union[int, List],
+    axis: int = -1,
+    nfft: int = None,
+    sampling: float = 1.0,
+    norm: str = "ortho",
+    real: bool = False,
+    ifftshift_before: bool = None,
+    fftshift_after: bool = False,
+    engine: str = "numpy",
+    dtype: str = "complex128",
+    name: str = "F",
     **kwargs_fftw,
-):
+) -> None:
     r"""One dimensional Fast-Fourier Transform.
 
     Apply Fast-Fourier Transform (FFT) along an ``axis`` of a

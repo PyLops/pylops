@@ -1,4 +1,7 @@
+from typing import Tuple
+
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
@@ -54,7 +57,13 @@ class Sum(LinearOperator):
 
     """
 
-    def __init__(self, dims, axis=-1, dtype="float64", name="S"):
+    def __init__(
+        self,
+        dims: Tuple,
+        axis: int = -1,
+        dtype: str = "float64",
+        name: str = "S",
+    ) -> None:
         dims = _value_or_list_like_to_tuple(dims)
         # to avoid reducing matvec to a scalar
         dims = (dims[0], 1) if len(dims) == 1 else dims
@@ -69,11 +78,11 @@ class Sum(LinearOperator):
         self.tile[self.axis] = self.dims[self.axis]
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         return x.sum(axis=self.axis)
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         y = ncp.expand_dims(x, self.axis)
         y = ncp.tile(y, self.tile)

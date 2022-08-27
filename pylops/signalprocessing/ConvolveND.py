@@ -1,4 +1,7 @@
+from typing import List, Tuple, Union
+
 import numpy as np
+import numpy.typing as npt
 from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
@@ -59,13 +62,13 @@ class ConvolveND(LinearOperator):
 
     def __init__(
         self,
-        dims,
-        h,
-        offset=None,
-        axes=(-2, -1),
-        method="fft",
-        dtype="float64",
-        name="C",
+        dims: Union[int, List],
+        h: npt.ArrayLike,
+        offset: int = None,
+        axes: Tuple = (-2, -1),
+        method: str = "fft",
+        dtype: str = "float64",
+        name: str = "C",
     ):
         dims = _value_or_list_like_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
@@ -113,7 +116,7 @@ class ConvolveND(LinearOperator):
         self.method = method
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         # correct type of h if different from x and choose methods accordingly
         if type(self.h) != type(x):
             self.h = to_cupy_conditional(x, self.h)
@@ -122,7 +125,7 @@ class ConvolveND(LinearOperator):
         return self.convolve(x, self.h, mode="same", method=self.method)
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         # correct type of h if different from x and choose methods accordingly
         if type(self.h) != type(x):
             self.h = to_cupy_conditional(x, self.h)

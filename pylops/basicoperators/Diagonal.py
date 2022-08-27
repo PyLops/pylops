@@ -1,4 +1,7 @@
+from typing import List, Optional
+
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_list_like_to_tuple
@@ -63,7 +66,14 @@ class Diagonal(LinearOperator):
 
     """
 
-    def __init__(self, diag, dims=None, axis=-1, dtype="float64", name="D"):
+    def __init__(
+        self,
+        diag: npt.ArrayLike,
+        dims: Optional[List[int]] = None,
+        axis: int = -1,
+        dtype: str = "float64",
+        name: str = "D",
+    ) -> None:
         self.diag = diag.ravel()
         dims = (len(self.diag),) if dims is None else _value_or_list_like_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
@@ -75,14 +85,14 @@ class Diagonal(LinearOperator):
         self.diag = self.diag.reshape(diagdims)
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if type(self.diag) != type(x):
             self.diag = to_cupy_conditional(x, self.diag)
         y = self.diag * x
         return y
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if type(self.diag) != type(x):
             self.diag = to_cupy_conditional(x, self.diag)
         if self.complex:
@@ -92,7 +102,7 @@ class Diagonal(LinearOperator):
         y = diagadj * x
         return y
 
-    def matrix(self):
+    def matrix(self) -> npt.ArrayLike:
         """Return diagonal matrix as dense :obj:`numpy.ndarray`
 
         Returns
@@ -105,7 +115,7 @@ class Diagonal(LinearOperator):
         densemat = ncp.diag(self.diag.squeeze())
         return densemat
 
-    def todense(self):
+    def todense(self) -> npt.ArrayLike:
         """Fast implementation of todense based on known structure of the
         operator
 

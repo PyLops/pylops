@@ -1,7 +1,9 @@
 import logging
 from math import ceil, log
+from typing import List, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.basicoperators import Pad
@@ -79,8 +81,14 @@ class DWT2D(LinearOperator):
     """
 
     def __init__(
-        self, dims, axes=(-2, -1), wavelet="haar", level=1, dtype="float64", name="D"
-    ):
+        self,
+        dims: Union[int, List],
+        axes: Tuple = (-2, -1),
+        wavelet: str = "haar",
+        level: int = 1,
+        dtype: str = "float64",
+        name: str = "D",
+    ) -> None:
         if pywt is None:
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
@@ -112,7 +120,7 @@ class DWT2D(LinearOperator):
         self.waveletadj = _adjointwavelet(wavelet)
         self.level = level
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         x = self.pad.matvec(x)
         x = np.reshape(x, self.dimsd)
         y = pywt.coeffs_to_array(
@@ -127,7 +135,7 @@ class DWT2D(LinearOperator):
         )[0]
         return y.ravel()
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         x = np.reshape(x, self.dimsd)
         x = pywt.array_to_coeffs(x, self.sl, output_format="wavedec2")
         y = pywt.waverec2(

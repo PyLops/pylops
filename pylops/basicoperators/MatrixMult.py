@@ -1,6 +1,8 @@
 import logging
+from typing import Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 import scipy as sp
 from scipy.sparse.linalg import inv
 
@@ -48,7 +50,13 @@ class MatrixMult(LinearOperator):
 
     """
 
-    def __init__(self, A, otherdims=None, dtype="float64", name="M"):
+    def __init__(
+        self,
+        A: npt.ArrayLike,
+        otherdims: Optional[Tuple[int]] = None,
+        dtype: str = "float64",
+        name: str = "M",
+    ) -> None:
         ncp = get_array_module(A)
         self.A = A
         if isinstance(A, ncp.ndarray):
@@ -79,7 +87,7 @@ class MatrixMult(LinearOperator):
             dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, explicit=explicit, name=name
         )
 
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         if self.reshape:
             x = ncp.reshape(x, self.dimsflatten)
@@ -89,7 +97,7 @@ class MatrixMult(LinearOperator):
         else:
             return y
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         ncp = get_array_module(x)
         if self.reshape:
             x = ncp.reshape(x, self.dimsdflatten)
@@ -103,7 +111,7 @@ class MatrixMult(LinearOperator):
         else:
             return y
 
-    def inv(self):
+    def inv(self) -> npt.ArrayLike:
         r"""Return the inverse of :math:`\mathbf{A}`.
 
         Returns

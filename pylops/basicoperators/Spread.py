@@ -1,6 +1,8 @@
 import logging
+from typing import Callable, Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.decorators import reshaped
@@ -165,16 +167,16 @@ class Spread(LinearOperator):
 
     def __init__(
         self,
-        dims,
-        dimsd,
-        table=None,
-        dtable=None,
-        fh=None,
-        interp=None,
-        engine="numpy",
-        dtype="float64",
-        name="S",
-    ):
+        dims: Tuple[int],
+        dimsd: Tuple[int],
+        table: Optional[npt.ArrayLike] = None,
+        dtable: Optional[npt.ArrayLike] = None,
+        fh: Optional[Callable] = None,
+        interp: Optional[bool] = None,
+        engine: str = "numpy",
+        dtype: str = "float64",
+        name: str = "S",
+    ) -> None:
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
         if engine not in ["numpy", "numba"]:
@@ -223,7 +225,7 @@ class Spread(LinearOperator):
         if interp is not None and self.interp != interp:
             logging.warning("interp has been overridden to %r.", self.interp)
 
-    def _matvec_numpy(self, x):
+    def _matvec_numpy(self, x: npt.ArrayLike) -> npt.ArrayLike:
         y = np.zeros(self.dimsd, dtype=self.dtype)
         for it in range(self.dims[1]):
             for ix0 in range(self.dims[0]):
@@ -246,7 +248,7 @@ class Spread(LinearOperator):
                         y[mask, indices + 1] += dindices[mask] * x[ix0, it]
         return y
 
-    def _rmatvec_numpy(self, x):
+    def _rmatvec_numpy(self, x: npt.ArrayLike) -> npt.ArrayLike:
         y = np.zeros(self.dims, dtype=self.dtype)
         for it in range(self.dims[1]):
             for ix0 in range(self.dims[0]):
@@ -271,7 +273,7 @@ class Spread(LinearOperator):
         return y
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.engine == "numba":
             y = np.zeros(self.dimsd, dtype=self.dtype)
             if self.usetable:
@@ -290,7 +292,7 @@ class Spread(LinearOperator):
         return y
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
         if self.engine == "numba":
             y = np.zeros(self.dims, dtype=self.dtype)
             if self.usetable:

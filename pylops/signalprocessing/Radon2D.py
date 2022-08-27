@@ -1,6 +1,8 @@
 import logging
+from typing import Callable
 
 import numpy as np
+import numpy.typing as npt
 
 from pylops.basicoperators import Spread
 
@@ -20,19 +22,38 @@ except ModuleNotFoundError:
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def _linear(x, t, px):
+def _linear(
+    x: npt.ArrayLike,
+    t: int,
+    px: float,
+) -> npt.ArrayLike:
     return t + px * x
 
 
-def _parabolic(x, t, px):
-    return t + px * x ** 2
+def _parabolic(
+    x: npt.ArrayLike,
+    t: int,
+    px: float,
+) -> npt.ArrayLike:
+    return t + px * x**2
 
 
-def _hyperbolic(x, t, px):
-    return np.sqrt(t ** 2 + (x / px) ** 2)
+def _hyperbolic(
+    x: npt.ArrayLike,
+    t: int,
+    px: float,
+) -> npt.ArrayLike:
+    return np.sqrt(t**2 + (x / px) ** 2)
 
 
-def _indices_2d(f, x, px, t, nt, interp=True):
+def _indices_2d(
+    f: Callable,
+    x: npt.ArrayLike,
+    px: float,
+    t: int,
+    nt: int,
+    interp: bool = True,
+) -> npt.ArrayLike:
     """Compute time and space indices of parametric line in ``f`` function
 
     Parameters
@@ -74,7 +95,15 @@ def _indices_2d(f, x, px, t, nt, interp=True):
     return xscan, tscan, dtscan
 
 
-def _indices_2d_onthefly(f, x, px, ip, t, nt, interp=True):
+def _indices_2d_onthefly(
+    f: Callable,
+    x: npt.ArrayLike,
+    px: float,
+    ip: int,
+    t: int,
+    nt: int,
+    interp: bool = True,
+) -> npt.ArrayLike:
     """Wrapper around _indices_2d to allow on-the-fly computation of
     parametric curves"""
     tscan = np.full(len(x), np.nan, dtype=np.float32)
@@ -89,7 +118,15 @@ def _indices_2d_onthefly(f, x, px, ip, t, nt, interp=True):
     return xscan, tscan, dtscan
 
 
-def _create_table(f, x, pxaxis, nt, npx, nx, interp):
+def _create_table(
+    f: Callable,
+    x: npt.ArrayLike,
+    pxaxis: npt.ArrayLike,
+    nt: int,
+    npx: int,
+    nx: int,
+    interp: bool,
+) -> npt.ArrayLike:
     """Create look up table"""
     table = np.full((npx, nt, nx), np.nan, dtype=np.float32)
     if interp:
@@ -107,16 +144,16 @@ def _create_table(f, x, pxaxis, nt, npx, nx, interp):
 
 
 def Radon2D(
-    taxis,
-    haxis,
-    pxaxis,
-    kind="linear",
-    centeredh=True,
-    interp=True,
-    onthefly=False,
-    engine="numpy",
-    dtype="float64",
-    name="R",
+    taxis: npt.ArrayLike,
+    haxis: npt.ArrayLike,
+    pxaxis: npt.ArrayLike,
+    kind: str = "linear",
+    centeredh: bool = True,
+    interp: bool = True,
+    onthefly: bool = False,
+    engine: str = "numpy",
+    dtype: str = "float64",
+    name: str = "R",
 ):
     r"""Two dimensional Radon transform.
 

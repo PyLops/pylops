@@ -1,6 +1,8 @@
 import logging
+from typing import List, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.LinearOperator import aslinearoperator
@@ -9,7 +11,11 @@ from pylops.utils.tapers import taper2d
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def _slidingsteps(ntr, nwin, nover):
+def _slidingsteps(
+    ntr: int,
+    nwin: int,
+    nover: int,
+) -> Union[npt.ArrayLike, npt.ArrayLike]:
     """Identify sliding window initial and end points given overall
     trace length, window length and overlap
 
@@ -38,7 +44,12 @@ def _slidingsteps(ntr, nwin, nover):
     return starts, ends
 
 
-def sliding2d_design(dimsd, nwin, nover, nop):
+def sliding2d_design(
+    dimsd: Tuple,
+    nwin: Tuple,
+    nover: Tuple,
+    nop: Tuple,
+) -> Union[Tuple, Tuple, Tuple, Tuple]:
     """Design Sliding2D operator
 
     This routine can be used prior to creating the :class:`pylops.signalprocessing.Sliding2D`
@@ -94,7 +105,15 @@ def sliding2d_design(dimsd, nwin, nover, nop):
     return nwins, dims, mwins_inends, dwins_inends
 
 
-def Sliding2D(Op, dims, dimsd, nwin, nover, tapertype="hanning", name="S"):
+def Sliding2D(
+    Op,
+    dims: Tuple,
+    dimsd: Tuple,
+    nwin: int,
+    nover: int,
+    tapertype: str = "hanning",
+    name: str = "S",
+):
     """2D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to slices of the model
