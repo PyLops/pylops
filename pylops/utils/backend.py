@@ -1,3 +1,23 @@
+__all__ = [
+    "get_module",
+    "get_module_name",
+    "get_array_module",
+    "get_convolve",
+    "get_fftconvolve",
+    "get_oaconvolve",
+    "get_correlate",
+    "get_add_at",
+    "get_block_diag",
+    "get_toeplitz",
+    "get_csc_matrix",
+    "get_sparse_eye",
+    "get_lstsq",
+    "get_complex_dtype",
+    "get_real_dtype",
+    "to_numpy",
+    "to_cupy_conditional",
+]
+
 from types import ModuleType
 from typing import Callable
 
@@ -8,6 +28,7 @@ from scipy.signal import convolve, correlate, fftconvolve, oaconvolve
 from scipy.sparse import csc_matrix, eye
 
 from pylops.utils import deps
+from pylops.utils.typing import DTypeLike, NDArray
 
 if deps.cupy_enabled:
     import cupy as cp
@@ -338,7 +359,7 @@ def get_lstsq(x: npt.ArrayLike) -> Callable:
         return cp.linalg.lstsq
 
 
-def get_complex_dtype(dtype: npt.DTypeLike) -> npt.DTypeLike:
+def get_complex_dtype(dtype: DTypeLike) -> DTypeLike:
     """Returns a complex type in the precision of the input type.
 
     Parameters
@@ -355,7 +376,7 @@ def get_complex_dtype(dtype: npt.DTypeLike) -> npt.DTypeLike:
     return (np.ones(1, dtype=dtype) + 1j * np.ones(1, dtype=dtype)).dtype
 
 
-def get_real_dtype(dtype: npt.DTypeLike) -> npt.DTypeLike:
+def get_real_dtype(dtype: DTypeLike) -> DTypeLike:
     """Returns a real type in the precision of the input type.
 
     Parameters
@@ -371,7 +392,7 @@ def get_real_dtype(dtype: npt.DTypeLike) -> npt.DTypeLike:
     return np.real(np.ones(1, dtype)).dtype
 
 
-def to_numpy(x: npt.ArrayLike) -> npt.ArrayLike:
+def to_numpy(x: NDArray) -> NDArray:
     """Convert x to numpy array
 
     Parameters
@@ -391,7 +412,7 @@ def to_numpy(x: npt.ArrayLike) -> npt.ArrayLike:
     return x
 
 
-def to_cupy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> npt.ArrayLike:
+def to_cupy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> NDArray:
     """Convert y to cupy array conditional to x being a cupy array
 
     Parameters

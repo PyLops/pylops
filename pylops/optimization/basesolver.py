@@ -1,3 +1,5 @@
+__all__ = ["Solver"]
+
 import functools
 import time
 from abc import ABCMeta, abstractmethod

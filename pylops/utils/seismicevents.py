@@ -1,3 +1,12 @@
+__all__ = [
+    "makeaxis",
+    "linear2d",
+    "parabolic2d",
+    "hyperbolic2d",
+    "linear3d",
+    "hyperbolic3d",
+]
+
 from typing import Dict, Tuple, Union
 
 import numpy as np

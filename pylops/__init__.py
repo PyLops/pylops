@@ -46,8 +46,8 @@ utils
 """
 
 from .config import *
-from .LinearOperator import LinearOperator
-from .TorchOperator import TorchOperator
+from .linearoperator import *
+from .torchoperator import *
 from .basicoperators import *
 from . import (
     avo,
@@ -64,7 +64,7 @@ from .optimization.leastsquares import *
 from .optimization.sparsity import *
 from .utils.seismicevents import *
 from .utils.tapers import *
-from .utils.utils import Report
+from .utils.utils import *
 from .utils.wavelets import *
 
 try:

@@ -27,6 +27,7 @@ and a list of applications:
 
 """
 
+from .kirchhoff import *
 from .lsm import *
 from .marchenko import *
 from .mdd import *

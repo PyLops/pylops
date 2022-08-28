@@ -28,7 +28,7 @@ from matplotlib.ticker import FuncFormatter, MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import pylops
-from pylops.signalprocessing.Seislet import _predict_trace
+from pylops.signalprocessing.seislet import _predict_trace
 from pylops.utils.signalprocessing import dip_estimate, slope_estimate
 
 plt.close("all")

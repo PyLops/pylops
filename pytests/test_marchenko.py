@@ -83,10 +83,8 @@ def test_Marchenko_freq(par):
     """Solve marchenko equations using input Rs in frequency domain"""
     if par["prescaled"]:
         Rtwosided_fft_sc = np.sqrt(2 * nt - 1) * dt * dr * Rtwosided_fft
-        R1twosided_fft_sc = np.sqrt(2 * nt - 1) * dt * dr * R1twosided_fft
     else:
         Rtwosided_fft_sc = Rtwosided_fft
-        R1twosided_fft_sc = R1twosided_fft
     MarchenkoWM = Marchenko(
         Rtwosided_fft_sc,
         nt=nt,
