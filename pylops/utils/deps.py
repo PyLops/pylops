@@ -1,7 +1,8 @@
 __all__ = [
-    "numba_enabled",
     "cupy_enabled",
     "cusignal_enabled",
+    "numba_enabled",
+    "torch_enabled",
 ]
 
 import os

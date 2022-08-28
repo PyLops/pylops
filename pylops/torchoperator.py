@@ -6,6 +6,8 @@ from pylops.utils import deps
 if deps.torch_enabled:
     import torch
     from torch.utils.dlpack import from_dlpack, to_dlpack
+
+    from pylops.utils.typing import TensorTypeLike
 else:
     torch_message = (
         "Torch package not installed. In order to be able to use"
@@ -14,8 +16,6 @@ else:
     )
 if deps.cupy_enabled:
     import cupy as cp
-else:
-    cp = None
 
 
 class _TorchOperator(torch.autograd.Function):
@@ -91,14 +91,14 @@ class TorchOperator(LinearOperator):
     device : :obj:`str`, optional
         Device to be used for output vectors when ``Op`` is a pylops operator
 
-    Returns
-    -------
-    y : :obj:`torch.Tensor`
-        Output array resulting from the application of the operator to ``x``.
-
     """
 
-    def __init__(self, Op, batch=False, device="cpu"):
+    def __init__(
+        self,
+        Op: LinearOperator,
+        batch: bool = False,
+        device: str = "cpu",
+    ) -> None:
         self.device = device
         if not batch:
             self.matvec = Op.matvec
@@ -111,7 +111,7 @@ class TorchOperator(LinearOperator):
             dtype=np.dtype(Op.dtype), dims=Op.dims, dimsd=Op.dims, name=Op.name
         )
 
-    def apply(self, x):
+    def apply(self, x: TensorTypeLike) -> TensorTypeLike:
         """Apply forward pass to input vector
 
         Parameters
