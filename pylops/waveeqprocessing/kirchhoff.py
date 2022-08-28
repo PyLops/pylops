@@ -72,6 +72,10 @@ class Kirchhoff(LinearOperator):
     mode : :obj:`str`, optional
         Computation mode (``analytic``, ``eikonal`` or ``byot``, see Notes for
         more details)
+    wavfilter : :obj:`bool`, optional
+        .. versionadded:: 2.0.0
+
+        Apply wavelet filter (``True``) or not (``False``)
     dynamic : :obj:`bool`, optional
         .. versionadded:: 2.0.0
 
@@ -147,8 +151,9 @@ class Kirchhoff(LinearOperator):
     at every location in the subsurface, :math:`G(\mathbf{x}, \mathbf{x_s}, t)`
     and :math:`G(\mathbf{x_r}, \mathbf{x}, t)` are the Green's functions
     from source-to-subsurface-to-receiver and finally :math:`\tilde{w}(t)` is
-    a filtered version of the wavelet :math:`w(t)`.  In our implementation,
-    the following high-frequency approximation of the Green's functions is adopted:
+    a filtered version of the wavelet :math:`w(t)` [3]_ (or the wavelet itself when ``wavfilter=False``.
+    In our implementation, the following high-frequency approximation of the Green's
+    functions is adopted:
 
     .. math::
         G(\mathbf{x_r}, \mathbf{x}, \omega) = a(\mathbf{x_r}, \mathbf{x})
@@ -206,6 +211,9 @@ class Kirchhoff(LinearOperator):
     .. [2] Santos, L.T., Schleicher, J., Tygel, M., and Hubral, P.
        "Seismic modeling by demigration", Geophysics, 65(4), pp. 1281-1289, 2000.
 
+    .. [3] Safron, L. "Multicomponent least-squares Kirchhoff depth migration",
+       MSc Thesis, 2018.
+
     """
 
     def __init__(
@@ -220,6 +228,7 @@ class Kirchhoff(LinearOperator):
         wavcenter,
         y=None,
         mode="eikonal",
+        wavfilter=False,
         dynamic=False,
         trav=None,
         amp=None,
@@ -323,7 +332,10 @@ class Kirchhoff(LinearOperator):
         self.travd = self.trav / dt - self.itrav
 
         # create wavelet operator
-        self.wav = self._wavelet_reshaping(wav, dt)
+        if wavfilter:
+            self.wav = self._wavelet_reshaping(wav, dt)
+        else:
+            self.wav = wav
         self.cop = Convolve1D(
             (ns * nr, self.nt), h=self.wav, offset=wavcenter, axis=1, dtype=dtype
         )
