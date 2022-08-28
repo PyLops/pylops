@@ -1,3 +1,14 @@
+__all__ = [
+    "zoeppritz_scattering",
+    "zoeppritz_element",
+    "zoeppritz_pp",
+    "approx_zoeppritz_pp",
+    "akirichards",
+    "fatti",
+    "ps",
+    "AVOLinearModelling",
+]
+
 import logging
 from typing import List, Optional, Tuple, Union
 
@@ -6,9 +17,10 @@ import numpy.typing as npt
 from numpy import cos, sin, tan
 
 from pylops import LinearOperator
-from pylops.utils._internal import _value_or_list_like_to_tuple
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -21,7 +33,7 @@ def zoeppritz_scattering(
     vs0: float,
     rho0: float,
     theta1: Union[float, npt.ArrayLike],
-) -> npt.ArrayLike:
+) -> NDArray:
     r"""Zoeppritz solution.
 
     Calculates the angle dependent p-wave reflectivity of an
@@ -136,9 +148,9 @@ def zoeppritz_element(
     vp0: float,
     vs0: float,
     rho0: float,
-    theta1: Union[float, npt.ArrayLike],
+    theta1: Union[float, NDArray],
     element: str = "PdPu",
-) -> npt.ArrayLike:
+) -> NDArray:
     """Single element of Zoeppritz solution.
 
     Simple wrapper to :py:class:`pylops.avo.avo.scattering_matrix`,
@@ -200,8 +212,8 @@ def zoeppritz_pp(
     vp0: float,
     vs0: float,
     rho0: float,
-    theta1: Union[float, npt.ArrayLike],
-) -> npt.ArrayLike:
+    theta1: Union[float, NDArray],
+) -> NDArray:
     """PP reflection coefficient from the Zoeppritz scattering matrix.
 
     Simple wrapper to :py:class:`pylops.avo.avo.scattering_matrix`,
@@ -247,8 +259,8 @@ def approx_zoeppritz_pp(
     vp0: Union[List, Tuple, npt.ArrayLike],
     vs0: Union[List, Tuple, npt.ArrayLike],
     rho0: Union[List, Tuple, npt.ArrayLike],
-    theta1: Union[float, npt.ArrayLike],
-) -> npt.ArrayLike:
+    theta1: Union[float, NDArray],
+) -> NDArray:
     """PP reflection coefficient from the approximate Zoeppritz equation.
 
     Approximate calculation of PP reflection from the Zoeppritz
@@ -327,9 +339,9 @@ def approx_zoeppritz_pp(
 
 def akirichards(
     theta: npt.ArrayLike,
-    vsvp: Union[float, npt.ArrayLike],
+    vsvp: Union[float, NDArray],
     n: int = 1,
-) -> Tuple[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[NDArray, NDArray, NDArray]:
     r"""Three terms Aki-Richards approximation.
 
     Computes the coefficients of the of three terms Aki-Richards approximation
@@ -401,9 +413,9 @@ def akirichards(
 
 def fatti(
     theta: npt.ArrayLike,
-    vsvp: Union[float, npt.ArrayLike],
+    vsvp: Union[float, NDArray],
     n: int = 1,
-) -> Tuple[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[NDArray, NDArray, NDArray]:
     r"""Three terms Fatti approximation.
 
     Computes the coefficients of the three terms Fatti approximation
@@ -477,9 +489,9 @@ def fatti(
 
 def ps(
     theta: npt.ArrayLike,
-    vsvp: Union[float, npt.ArrayLike],
+    vsvp: Union[float, NDArray],
     n: int = 1,
-) -> Tuple[npt.ArrayLike, npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[NDArray, NDArray, NDArray]:
     r"""PS reflection coefficient
 
     Computes the coefficients for the PS approximation
@@ -625,21 +637,19 @@ class AVOLinearModelling(LinearOperator):
 
     def __init__(
         self,
-        theta: npt.ArrayLike,
-        vsvp: Union[float, npt.ArrayLike] = 0.5,
+        theta: NDArray,
+        vsvp: Union[float, NDArray] = 0.5,
         nt0: int = 1,
         spatdims: Optional[Union[int, Tuple[int]]] = None,
         linearization: str = "akirich",
-        dtype: str = "float64",
+        dtype: DTypeLike = "float64",
         name: str = "A",
     ) -> None:
         self.ncp = get_array_module(theta)
 
         self.nt0 = nt0 if not isinstance(vsvp, self.ncp.ndarray) else len(vsvp)
         self.ntheta = len(theta)
-        self.spatdims = (
-            () if spatdims is None else _value_or_list_like_to_tuple(spatdims)
-        )
+        self.spatdims = () if spatdims is None else _value_or_sized_to_tuple(spatdims)
 
         # Compute AVO coefficients
         if linearization == "akirich":
@@ -654,8 +664,8 @@ class AVOLinearModelling(LinearOperator):
                 "%s not an available linearization..." % linearization
             )
         self.npars = len(Gs)
-        dims = (self.nt0, self.npars)
-        dimsd = (self.nt0, self.ntheta)
+        dims: Tuple[int, ...] = (self.nt0, self.npars)
+        dimsd: Tuple[int, ...] = (self.nt0, self.ntheta)
         if spatdims is not None:
             dims += self.spatdims
             dimsd += self.spatdims
@@ -667,9 +677,9 @@ class AVOLinearModelling(LinearOperator):
             self.G = self.G[..., np.newaxis]
 
     @reshaped
-    def _matvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _matvec(self, x: NDArray) -> NDArray:
         return self.ncp.sum(self.G * x[:, :, self.ncp.newaxis], axis=1)
 
     @reshaped
-    def _rmatvec(self, x: npt.ArrayLike) -> npt.ArrayLike:
+    def _rmatvec(self, x: NDArray) -> NDArray:
         return self.ncp.sum(self.G * x[:, self.ncp.newaxis], axis=2)

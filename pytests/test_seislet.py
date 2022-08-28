@@ -4,7 +4,7 @@ from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import FunctionOperator
 from pylops.signalprocessing import Seislet
-from pylops.signalprocessing.Seislet import _predict_haar, _predict_lin, _predict_trace
+from pylops.signalprocessing.seislet import _predict_haar, _predict_lin, _predict_trace
 from pylops.utils import dottest
 
 par1 = {

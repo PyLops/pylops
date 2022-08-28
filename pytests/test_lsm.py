@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from pylops.utils import dottest
 from pylops.utils.wavelets import ricker
 from pylops.waveeqprocessing.lsm import LSM
 

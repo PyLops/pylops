@@ -1,3 +1,8 @@
+__all__ = [
+    "PoststackLinearModelling",
+    "PoststackInversion",
+]
+
 import logging
 from typing import Optional, Tuple, Union
 
@@ -5,7 +10,13 @@ import numpy as np
 import numpy.typing as npt
 from scipy.sparse.linalg import lsqr
 
-from pylops import FirstDerivative, Laplacian, MatrixMult, SecondDerivative
+from pylops import (
+    FirstDerivative,
+    Laplacian,
+    LinearOperator,
+    MatrixMult,
+    SecondDerivative,
+)
 from pylops.optimization.basic import cgls
 from pylops.optimization.leastsquares import regularized_inversion
 from pylops.optimization.sparsity import splitbregman
@@ -18,6 +29,7 @@ from pylops.utils.backend import (
     get_module_name,
 )
 from pylops.utils.signalprocessing import convmtx, nonstationary_convmtx
+from pylops.utils.typing import NDArray, ShapeLike
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -57,6 +69,7 @@ def _PoststackLinearModelling(
     if len(wav.shape) == 2 and wav.shape[0] != nt0:
         raise ValueError("Provide 1d wavelet or 2d wavelet composed of nt0 " "wavelets")
 
+    spatdims: Union[int, ShapeLike]
     # organize dimensions
     if spatdims is None:
         dims = (nt0,)
@@ -119,12 +132,12 @@ def _PoststackLinearModelling(
 def PoststackLinearModelling(
     wav: npt.ArrayLike,
     nt0: int,
-    spatdims: Optional[Union[int, Tuple[int]]] = None,
+    spatdims: Optional[Union[int, ShapeLike]] = None,
     explicit: bool = False,
     sparse: bool = False,
     kind: str = "centered",
     name: Optional[str] = None,
-):
+) -> LinearOperator:
     r"""Post-stack linearized seismic modelling operator.
 
     Create operator to be applied to an elastic parameter trace (or stack of
@@ -204,9 +217,9 @@ def PoststackLinearModelling(
 
 
 def PoststackInversion(
-    data: npt.ArrayLike,
+    data: NDArray,
     wav: npt.ArrayLike,
-    m0: Optional[npt.ArrayLike] = None,
+    m0: Optional[NDArray] = None,
     explicit: bool = False,
     simultaneous: bool = False,
     epsI: Optional[float] = None,
@@ -214,7 +227,7 @@ def PoststackInversion(
     dottest: bool = False,
     epsRL1: Optional[float] = None,
     **kwargs_solver
-) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
+) -> Tuple[NDArray, NDArray]:
     r"""Post-stack linearized seismic inversion.
 
     Invert post-stack seismic operator to retrieve an elastic parameter of
@@ -305,6 +318,7 @@ def PoststackInversion(
     if m0 is not None and data.shape != m0.shape:
         raise ValueError("data and m0 must have same shape")
 
+    nspat: Optional[Union[int, ShapeLike]]
     # find out dimensions
     if data.ndim == 1:
         dims = 1

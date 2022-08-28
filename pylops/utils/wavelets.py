@@ -1,5 +1,12 @@
+__all__ = [
+    "gaussian",
+    "klauder",
+    "ormsby",
+    "ricker",
+]
+
 import warnings
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Sequence, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -17,7 +24,7 @@ def _tcrop(t: npt.ArrayLike) -> npt.ArrayLike:
 
 def gaussian(
     t: npt.ArrayLike,
-    std: float = 1,
+    std: float = 1.0,
 ) -> Tuple[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Gaussian wavelet
 
@@ -53,7 +60,7 @@ def gaussian(
 
 def klauder(
     t: npt.ArrayLike,
-    f: Tuple[int] = (5, 20),
+    f: Sequence[float] = (5.0, 20.0),
     taper: Optional[Callable] = None,
 ) -> Tuple[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Klauder wavelet
@@ -101,7 +108,7 @@ def klauder(
 
 def ormsby(
     t: npt.ArrayLike,
-    f: Tuple[int] = (5, 10, 45, 50),
+    f: Sequence[float] = (5.0, 10.0, 45.0, 50.0),
     taper: Optional[Callable] = None,
 ) -> Tuple[npt.ArrayLike, npt.ArrayLike, int]:
     r"""Ormsby wavelet

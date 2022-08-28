@@ -1,3 +1,10 @@
+__all__ = [
+    "PressureToVelocity",
+    "UpDownComposition2D",
+    "UpDownComposition3D",
+    "WavefieldDecomposition",
+]
+
 import logging
 
 import numpy as np
@@ -40,7 +47,7 @@ def _filter_obliquity(OBL, F, Kx, vel, critical, ntaper, Ky=0):
 
     """
     critical /= 100.0
-    mask = np.sqrt(Kx ** 2 + Ky ** 2) < critical * np.abs(F) / vel
+    mask = np.sqrt(Kx**2 + Ky**2) < critical * np.abs(F) / vel
     OBL *= mask
     OBL = filtfilt(np.ones(ntaper) / float(ntaper), 1, OBL, axis=0)
     OBL = filtfilt(np.ones(ntaper) / float(ntaper), 1, OBL, axis=1)
@@ -111,7 +118,7 @@ def _obliquity2D(
     # create obliquity operator
     [Kx, F] = np.meshgrid(FFTop.f1, FFTop.f2, indexing="ij")
     k = F / vel
-    Kz = np.sqrt((k ** 2 - Kx ** 2).astype(dtype))
+    Kz = np.sqrt((k**2 - Kx**2).astype(dtype))
     Kz[np.isnan(Kz)] = 0
 
     if composition:
@@ -192,7 +199,7 @@ def _obliquity3D(
     # create obliquity operator
     [Ky, Kx, F] = np.meshgrid(FFTop.fs[0], FFTop.fs[1], FFTop.fs[2], indexing="ij")
     k = F / vel
-    Kz = np.sqrt((k ** 2 - Ky ** 2 - Kx ** 2).astype(dtype))
+    Kz = np.sqrt((k**2 - Ky**2 - Kx**2).astype(dtype))
     Kz[np.isnan(Kz)] = 0
     if composition:
         OBL = Kz / (rho * np.abs(F))

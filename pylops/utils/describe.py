@@ -1,3 +1,5 @@
+__all__ = ["describe"]
+
 import logging
 import random
 import string
@@ -24,7 +26,7 @@ from typing import List, Set, Union
 
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, VStack
-from pylops.LinearOperator import _ScaledLinearOperator, _SumLinearOperator
+from pylops.linearoperator import _ScaledLinearOperator, _SumLinearOperator
 
 try:
     from sympy import BlockDiagMatrix, BlockMatrix, MatrixSymbol
