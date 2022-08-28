@@ -6,20 +6,30 @@ __all__ = [
 ]
 
 import logging
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 from scipy.signal import filtfilt
 from scipy.sparse.linalg import lsqr
 
-from pylops import Block, BlockDiag, Diagonal, Identity
+from pylops import Block, BlockDiag, Diagonal, Identity, LinearOperator
 from pylops.signalprocessing import FFT2D, FFTND
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import get_array_module, get_module, get_module_name
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def _filter_obliquity(OBL, F, Kx, vel, critical, ntaper, Ky=0):
+def _filter_obliquity(
+    OBL: NDArray,
+    F: NDArray,
+    Kx: NDArray,
+    vel: float,
+    critical: float,
+    ntaper: int,
+    Ky: NDArray = 0,
+) -> NDArray:
     """Apply masking of ``OBL`` based on critical angle and tapering at edges
 
     Parameters
@@ -57,19 +67,19 @@ def _filter_obliquity(OBL, F, Kx, vel, critical, ntaper, Ky=0):
 
 
 def _obliquity2D(
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts,
-    critical=100.0,
-    ntaper=10,
-    composition=True,
-    backend="numpy",
-    dtype="complex128",
-):
+    nt: int,
+    nr: int,
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: InputDimsLike,
+    critical: float = 100.0,
+    ntaper: int = 10,
+    composition: bool = True,
+    backend: str = "numpy",
+    dtype: DTypeLike = "complex128",
+) -> Tuple[LinearOperator, LinearOperator]:
     r"""2D Obliquity operator and FFT operator
 
     Parameters
@@ -136,19 +146,19 @@ def _obliquity2D(
 
 
 def _obliquity3D(
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts,
-    critical=100.0,
-    ntaper=10,
-    composition=True,
-    backend="numpy",
-    dtype="complex128",
-):
+    nt: int,
+    nr: int,
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: InputDimsLike,
+    critical: float = 100.0,
+    ntaper: int = 10,
+    composition: bool = True,
+    backend: str = "numpy",
+    dtype: DTypeLike = "complex128",
+) -> Tuple[LinearOperator, LinearOperator]:
     r"""3D Obliquity operator and FFT operator
 
     Parameters
@@ -216,20 +226,20 @@ def _obliquity3D(
 
 
 def PressureToVelocity(
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts=(None, None, None),
-    critical=100.0,
-    ntaper=10,
-    topressure=False,
-    backend="numpy",
-    dtype="complex128",
-    name="P",
-):
+    nt: int,
+    nr: int,
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: Optional[InputDimsLike] = (None, None, None),
+    critical: float = 100.0,
+    ntaper: int = 10,
+    topressure: bool = False,
+    backend: str = "numpy",
+    dtype: DTypeLike = "complex128",
+    name: str = "P",
+) -> LinearOperator:
     r"""Pressure to Vertical velocity conversion.
 
     Apply conversion from pressure to vertical velocity seismic wavefield
@@ -355,20 +365,20 @@ def PressureToVelocity(
 
 
 def UpDownComposition2D(
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts=(None, None),
-    critical=100.0,
-    ntaper=10,
-    scaling=1.0,
-    backend="numpy",
-    dtype="complex128",
-    name="U",
-):
+    nt: int,
+    nr: int,
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: Optional[InputDimsLike] = (None, None),
+    critical: float = 100.0,
+    ntaper: int = 10,
+    scaling: str = 1.0,
+    backend: str = "numpy",
+    dtype: DTypeLike = "complex128",
+    name: str = "U",
+) -> LinearOperator:
     r"""2D Up-down wavefield composition.
 
     Apply multi-component seismic wavefield composition from its
@@ -527,20 +537,20 @@ def UpDownComposition2D(
 
 
 def UpDownComposition3D(
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts=(None, None, None),
-    critical=100.0,
-    ntaper=10,
-    scaling=1.0,
-    backend="numpy",
-    dtype="complex128",
-    name="U",
-):
+    nt: int,
+    nr: int,
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: Optional[InputDimsLike] = (None, None, None),
+    critical: float = 100.0,
+    ntaper: int = 10,
+    scaling: str = 1.0,
+    backend: str = "numpy",
+    dtype: DTypeLike = "complex128",
+    name: str = "U",
+) -> LinearOperator:
     r"""3D Up-down wavefield composition.
 
     Apply multi-component seismic wavefield composition from its
@@ -651,26 +661,26 @@ def UpDownComposition3D(
 
 
 def WavefieldDecomposition(
-    p,
-    vz,
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts=(None, None, None),
-    critical=100.0,
-    ntaper=10,
-    scaling=1.0,
-    kind="inverse",
-    restriction=None,
-    sptransf=None,
-    solver=lsqr,
-    dottest=False,
-    dtype="complex128",
+    p: NDArray,
+    vz: NDArray,
+    nt: int,
+    nr: int,
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: Optional[InputDimsLike] = (None, None, None),
+    critical: float = 100.0,
+    ntaper: int = 10,
+    scaling: float = 1.0,
+    kind: str = "inverse",
+    restriction: Optional[LinearOperator] = None,
+    sptransf: Optional[LinearOperator] = None,
+    solver: Callable = lsqr,
+    dottest: bool = False,
+    dtype: DTypeLike = "complex128",
     **kwargs_solver
-):
+) -> Tuple[NDArray, NDArray]:
     r"""Up-down wavefield decomposition.
 
     Apply seismic wavefield decomposition from multi-component (pressure

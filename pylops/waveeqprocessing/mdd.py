@@ -4,12 +4,13 @@ __all__ = [
 ]
 
 import logging
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 from scipy.signal import filtfilt
 from scipy.sparse.linalg import lsqr
 
-from pylops import Diagonal, Identity, Transpose
+from pylops import Diagonal, Identity, LinearOperator, Transpose
 from pylops.optimization.basic import cgls
 from pylops.optimization.leastsquares import preconditioned_inversion
 from pylops.signalprocessing import FFT, Fredholm1
@@ -20,28 +21,29 @@ from pylops.utils.backend import (
     get_module_name,
     to_cupy_conditional,
 )
+from pylops.utils.typing import DTypeLike, NDArray
 
 
 def _MDC(
-    G,
-    nt,
-    nv,
-    dt=1.0,
-    dr=1.0,
-    twosided=True,
-    saveGt=True,
-    conj=False,
-    prescaled=False,
-    _Identity=Identity,
-    _Transpose=Transpose,
-    _FFT=FFT,
-    _Fredholm1=Fredholm1,
-    args_Identity={},
-    args_FFT={},
-    args_Identity1={},
-    args_FFT1={},
-    args_Fredholm1={},
-):
+    G: NDArray,
+    nt: int,
+    nv: int,
+    dt: float = 1.0,
+    dr: float = 1.0,
+    twosided: bool = True,
+    saveGt: bool = True,
+    conj: bool = False,
+    prescaled: bool = False,
+    _Identity: LinearOperator = Identity,
+    _Transpose: LinearOperator = Transpose,
+    _FFT: LinearOperator = FFT,
+    _Fredholm1: LinearOperator = Fredholm1,
+    args_Identity: Dict = {},
+    args_FFT: Dict = {},
+    args_Identity1: Dict = {},
+    args_FFT1: Dict = {},
+    args_Fredholm1: Dict = {},
+) -> LinearOperator:
     r"""Multi-dimensional convolution.
 
     Used to be able to provide operators from different libraries (e.g., pylops-distributed) to
@@ -114,19 +116,19 @@ def _MDC(
 
 
 def MDC(
-    G,
-    nt,
-    nv,
-    dt=1.0,
-    dr=1.0,
-    twosided=True,
-    fftengine="numpy",
-    saveGt=True,
-    conj=False,
-    usematmul=False,
-    prescaled=False,
-    name="M",
-):
+    G: NDArray,
+    nt: int,
+    nv: int,
+    dt: float = 1.0,
+    dr: float = 1.0,
+    twosided: bool = True,
+    fftengine: str = "numpy",
+    saveGt: bool = True,
+    conj: bool = False,
+    usematmul: bool = False,
+    prescaled: bool = False,
+    name: str = "M",
+) -> LinearOperator:
     r"""Multi-dimensional convolution.
 
     Apply multi-dimensional convolution between two datasets.
@@ -237,23 +239,23 @@ def MDC(
 
 
 def MDD(
-    G,
-    d,
-    dt=0.004,
-    dr=1.0,
-    nfmax=None,
-    wav=None,
-    twosided=True,
-    causality_precond=False,
-    adjoint=False,
-    psf=False,
-    dottest=False,
-    saveGt=True,
-    add_negative=True,
-    smooth_precond=0,
-    fftengine="numpy",
+    G: NDArray,
+    d: NDArray,
+    dt: float = 0.004,
+    dr: float = 1.0,
+    nfmax: Optional[int] = None,
+    wav: Optional[NDArray] = None,
+    twosided: bool = True,
+    causality_precond: bool = False,
+    adjoint: bool = False,
+    psf: bool = False,
+    dottest: bool = False,
+    saveGt: bool = True,
+    add_negative: bool = True,
+    smooth_precond: int = 0,
+    fftengine: str = "numpy",
     **kwargs_solver
-):
+) -> Tuple[NDArray, NDArray, NDArray, NDArray]:
     r"""Multi-dimensional deconvolution.
 
     Solve multi-dimensional deconvolution problem using

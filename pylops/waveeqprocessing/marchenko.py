@@ -1,6 +1,7 @@
 __all__ = ["Marchenko"]
 
 import logging
+from typing import Optional, Tuple
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -11,12 +12,22 @@ from pylops import Block, BlockDiag, Diagonal, Identity, Roll
 from pylops.optimization.basic import cgls
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import get_array_module, get_module_name, to_cupy_conditional
+from pylops.utils.typing import DTypeLike, NDArray
 from pylops.waveeqprocessing.mdd import MDC
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=True):
+def directwave(
+    wav: NDArray,
+    trav: NDArray,
+    nt: int,
+    dt: float,
+    nfft: Optional[int] = None,
+    dist: NDArray = None,
+    kind: str = "2d",
+    derivative: bool = True,
+) -> NDArray:
     r"""Analytical direct wave in acoustic media
 
     Compute the analytical acoustic 2d or 3d Green's function in frequency
@@ -221,19 +232,19 @@ class Marchenko:
 
     def __init__(
         self,
-        R,
-        dt=0.004,
-        nt=None,
-        dr=1.0,
-        nfmax=None,
-        wav=None,
-        toff=0.0,
-        nsmooth=10,
-        saveRt=True,
-        prescaled=False,
-        fftengine="numpy",
-        dtype="float64",
-    ):
+        R: NDArray,
+        dt: float = 0.004,
+        nt: Optional[int] = None,
+        dr: float = 1.0,
+        nfmax: Optional[int] = None,
+        wav: Optional[NDArray] = None,
+        toff: float = 0.0,
+        nsmooth: int = 10,
+        saveRt: bool = True,
+        prescaled: bool = False,
+        fftengine: str = "numpy",
+        dtype: DTypeLike = "float64",
+    ) -> None:
         # Save inputs into class
         self.dt = dt
         self.dr = dr
@@ -281,15 +292,15 @@ class Marchenko:
 
     def apply_onepoint(
         self,
-        trav,
-        G0=None,
-        nfft=None,
-        rtm=False,
-        greens=False,
-        dottest=False,
-        usematmul=False,
+        trav: NDArray,
+        G0: Optional[NDArray] = None,
+        nfft: Optional[int] = None,
+        rtm: bool = False,
+        greens: bool = False,
+        dottest: bool = False,
+        usematmul: bool = False,
         **kwargs_solver
-    ):
+    ) -> Tuple[NDArray, NDArray, NDArray, NDArray, NDArray]:
         r"""Marchenko redatuming for one point
 
         Solve the Marchenko redatuming inverse problem for a single point
@@ -482,15 +493,15 @@ class Marchenko:
 
     def apply_multiplepoints(
         self,
-        trav,
-        G0=None,
-        nfft=None,
-        rtm=False,
-        greens=False,
-        dottest=False,
-        usematmul=False,
+        trav: NDArray,
+        G0: Optional[NDArray] = None,
+        nfft: Optional[int] = None,
+        rtm: bool = False,
+        greens: bool = False,
+        dottest: bool = False,
+        usematmul: bool = False,
         **kwargs_solver
-    ):
+    ) -> Tuple[NDArray, NDArray, NDArray, NDArray, NDArray]:
         r"""Marchenko redatuming for multiple points
 
         Solve the Marchenko redatuming inverse problem for multiple
