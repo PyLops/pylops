@@ -6,7 +6,7 @@ __all__ = [
 ]
 
 import logging
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -147,9 +147,9 @@ def _obliquity2D(
 
 def _obliquity3D(
     nt: int,
-    nr: int,
+    nr: Union[int, Sequence[int]],
     dt: float,
-    dr: float,
+    dr: Union[float, Sequence[float]],
     rho: float,
     vel: float,
     nffts: InputDimsLike,
@@ -374,7 +374,7 @@ def UpDownComposition2D(
     nffts: Optional[InputDimsLike] = (None, None),
     critical: float = 100.0,
     ntaper: int = 10,
-    scaling: str = 1.0,
+    scaling: float = 1.0,
     backend: str = "numpy",
     dtype: DTypeLike = "complex128",
     name: str = "U",
@@ -546,7 +546,7 @@ def UpDownComposition3D(
     nffts: Optional[InputDimsLike] = (None, None, None),
     critical: float = 100.0,
     ntaper: int = 10,
-    scaling: str = 1.0,
+    scaling: float = 1.0,
     backend: str = "numpy",
     dtype: DTypeLike = "complex128",
     name: str = "U",
@@ -664,7 +664,7 @@ def WavefieldDecomposition(
     p: NDArray,
     vz: NDArray,
     nt: int,
-    nr: int,
+    nr: Union[int, InputDimsLike],
     dt: float,
     dr: float,
     rho: float,
@@ -831,10 +831,10 @@ def WavefieldDecomposition(
             backend=backend,
             dtype=dtype,
         )
-        VZ = FFTop * vz.ravel()
+        VZ: NDArray = FFTop * vz.ravel()
 
         # scaled Vz
-        VZ_obl = OBLop * VZ
+        VZ_obl: NDArray = OBLop * VZ
         vz_obl = FFTop.H * VZ_obl
         vz_obl = ncp.real(vz_obl.reshape(dims))
 

@@ -4,7 +4,7 @@ __all__ = [
 ]
 
 import logging
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -34,10 +34,10 @@ def _MDC(
     saveGt: bool = True,
     conj: bool = False,
     prescaled: bool = False,
-    _Identity: LinearOperator = Identity,
-    _Transpose: LinearOperator = Transpose,
-    _FFT: LinearOperator = FFT,
-    _Fredholm1: LinearOperator = Fredholm1,
+    _Identity=Identity,
+    _Transpose=Transpose,
+    _FFT=FFT,
+    _Fredholm1=Fredholm1,
     args_Identity: Dict = {},
     args_FFT: Dict = {},
     args_Identity1: Dict = {},
@@ -255,7 +255,11 @@ def MDD(
     smooth_precond: int = 0,
     fftengine: str = "numpy",
     **kwargs_solver
-) -> Tuple[NDArray, NDArray, NDArray, NDArray]:
+) -> Union[
+    Tuple[NDArray, NDArray],
+    Tuple[NDArray, NDArray, NDArray],
+    Tuple[NDArray, NDArray, NDArray, NDArray],
+]:
     r"""Multi-dimensional deconvolution.
 
     Solve multi-dimensional deconvolution problem using

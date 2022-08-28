@@ -1,7 +1,7 @@
 __all__ = ["Marchenko"]
 
 import logging
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -12,7 +12,7 @@ from pylops import Block, BlockDiag, Diagonal, Identity, Roll
 from pylops.optimization.basic import cgls
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import get_array_module, get_module_name, to_cupy_conditional
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops.utils.typing import DTypeLike, IntNDArray, NDArray
 from pylops.waveeqprocessing.mdd import MDC
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -24,7 +24,7 @@ def directwave(
     nt: int,
     dt: float,
     nfft: Optional[int] = None,
-    dist: NDArray = None,
+    dist: Optional[NDArray] = None,
     kind: str = "2d",
     derivative: bool = True,
 ) -> NDArray:
@@ -300,7 +300,12 @@ class Marchenko:
         dottest: bool = False,
         usematmul: bool = False,
         **kwargs_solver
-    ) -> Tuple[NDArray, NDArray, NDArray, NDArray, NDArray]:
+    ) -> Union[
+        Tuple[NDArray, NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray],
+    ]:
         r"""Marchenko redatuming for one point
 
         Solve the Marchenko redatuming inverse problem for a single point
@@ -501,7 +506,12 @@ class Marchenko:
         dottest: bool = False,
         usematmul: bool = False,
         **kwargs_solver
-    ) -> Tuple[NDArray, NDArray, NDArray, NDArray, NDArray]:
+    ) -> Union[
+        Tuple[NDArray, NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray],
+    ]:
         r"""Marchenko redatuming for multiple points
 
         Solve the Marchenko redatuming inverse problem for multiple

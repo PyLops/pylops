@@ -27,7 +27,7 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 def SeismicInterpolation(
     data: NDArray,
-    nrec: int,
+    nrec: Union[int, Tuple[int, int]],
     iava: Union[List[Union[int, float]], NDArray],
     iava1: Optional[Union[List[Union[int, float]], NDArray]] = None,
     kind: str = "fk",

@@ -5,7 +5,7 @@ __all__ = [
 
 
 import logging
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from scipy.sparse.linalg import lsqr
@@ -35,7 +35,7 @@ class _PhaseShift(LinearOperator):
         dz: float,
         freq: NDArray,
         kx: NDArray,
-        ky: Optional[NDArray] = None,
+        ky: Optional[Union[int, NDArray]] = None,
         dtype: str = "complex64",
     ) -> None:
         self.vel = vel
@@ -84,7 +84,7 @@ def PhaseShift(
     ky: Optional[NDArray] = None,
     dtype: DTypeLike = "float64",
     name: str = "P",
-) -> None:
+) -> LinearOperator:
     r"""Phase shift operator
 
     Apply positive (forward) phase shift with constant velocity in
@@ -186,15 +186,15 @@ def PhaseShift(
 def Deghosting(
     p: NDArray,
     nt: int,
-    nr: int,
+    nr: Union[int, Tuple[int, int]],
     dt: float,
-    dr: float,
+    dr: Sequence[float],
     vel: float,
     zrec: float,
     pd: Optional[NDArray] = None,
     win: Optional[NDArray] = None,
-    npad: InputDimsLike = (11, 11),
-    ntaper: InputDimsLike = (11, 11),
+    npad: Tuple[int, int] = (11, 11),
+    ntaper: Tuple[int, int] = (11, 11),
     restriction: Optional[LinearOperator] = None,
     sptransf: Optional[LinearOperator] = None,
     solver: Callable = lsqr,
