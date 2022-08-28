@@ -21,7 +21,7 @@ from pylops.utils.backend import (
     get_module_name,
     to_cupy_conditional,
 )
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops.utils.typing import NDArray
 
 
 def _MDC(

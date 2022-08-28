@@ -20,7 +20,7 @@ from pylops.signalprocessing import (
     Sliding3D,
 )
 from pylops.utils.dottest import dottest as Dottest
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from pylops.utils.typing import InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
