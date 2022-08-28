@@ -1,3 +1,5 @@
+__all__ = ["LSM"]
+
 import logging
 
 from scipy.sparse.linalg import lsqr

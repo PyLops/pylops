@@ -1,3 +1,5 @@
+__all__ = ["Kirchhoff"]
+
 import logging
 import os
 
@@ -144,16 +146,16 @@ class Kirchhoff(LinearOperator):
 
     .. math::
         d(\mathbf{x_r}, \mathbf{x_s}, t) =
-        \tilde{w}(t) * \int_V \frac{ \partial ( G(\mathbf{x_r}, \mathbf{x}, t)
-         G(\mathbf{x}, \mathbf{x_s}, t))}{\partial n}  m(\mathbf{x}) \,\mathrm{d}\mathbf{x}
+        \widetilde{w}(t) * \int_V G(\mathbf{x_r}, \mathbf{x}, t)
+        m(\mathbf{x}) G(\mathbf{x}, \mathbf{x_s}, t)\,\mathrm{d}\mathbf{x}
 
     where :math:`m(\mathbf{x})` represents the reflectivity
     at every location in the subsurface, :math:`G(\mathbf{x}, \mathbf{x_s}, t)`
     and :math:`G(\mathbf{x_r}, \mathbf{x}, t)` are the Green's functions
-    from source-to-subsurface-to-receiver and finally :math:`\tilde{w}(t)` is
-    a filtered version of the wavelet :math:`w(t)` [3]_ (or the wavelet itself when ``wavfilter=False``.
-    In our implementation, the following high-frequency approximation of the Green's
-    functions is adopted:
+    from source-to-subsurface-to-receiver and finally :math:`\widetilde{w}(t)` is
+    a filtered version of the wavelet :math:`w(t)` [3]_ (or the wavelet itself when
+    ``wavfilter=False``). In our implementation, the following high-frequency
+    approximation of the Green's functions is adopted:
 
     .. math::
         G(\mathbf{x_r}, \mathbf{x}, \omega) = a(\mathbf{x_r}, \mathbf{x})
@@ -169,14 +171,15 @@ class Kirchhoff(LinearOperator):
         t(\mathbf{x}, \mathbf{x_s}))} m(\mathbf{x}) \,\mathrm{d}\mathbf{x}
 
     On the  other hand, when ``dynamic=True``, the amplitude scaling is defined as
-    :math:`a(\mathbf{x_r}, \mathbf{x})=1/d(\mathbf{x_r}, \mathbf{x})`, where ``d`` is
-    the distance between the two points and represents the geometrical spreading
-    of the wavefront. Moreover an angle scaling is included in the modelling operator
+    :math:`a(\mathbf{x}, \mathbf{y})=\frac{1}{\|\mathbf{x} - \mathbf{y}\|}`,
+    that is, the reciprocal of the distance between the two points,
+    approximating the geometrical spreading of the wavefront.
+    Moreover an angle scaling is included in the modelling operator
     added as follows:
 
     .. math::
         d(\mathbf{x_r}, \mathbf{x_s}, t) =
-        \tilde{w}(t) * \int_V a(\mathbf{x}, \mathbf{x_r}, \mathbf{x_s})
+        \tilde{w}(t) * \int_V a(\mathbf{x}, \mathbf{x_s}) a(\mathbf{x}, \mathbf{x_r})
         \frac{|cos \theta_s + cos \theta_r|} {v(\mathbf{x})} e^{j \omega (t(\mathbf{x_r}, \mathbf{x}) +
          t(\mathbf{x}, \mathbf{x_s}))} m(\mathbf{x}) \,\mathrm{d}\mathbf{x}
 
@@ -197,10 +200,10 @@ class Kirchhoff(LinearOperator):
       can provide their own amplitude scaling ``amp`` (which should include the angle
       scaling too).
 
-    Finally, an aperture limitation is also implemented as defined by ``aperture``
+    An aperture limitation is also implemented as defined by ``aperture``
     and a taper is added at the edges of the aperture.
 
-    The adjoint of the demigration operator is a *migration* operator which
+    Finally, the adjoint of the demigration operator is a *migration* operator which
     projects data in the model domain creating an image of the subsurface
     reflectivity.
 

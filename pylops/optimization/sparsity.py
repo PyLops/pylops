@@ -1,3 +1,11 @@
+__all__ = [
+    "irls",
+    "omp",
+    "ista",
+    "fista",
+    "spgl1",
+    "splitbregman",
+]
 from pylops.optimization.cls_sparsity import FISTA, IRLS, ISTA, OMP, SPGL1, SplitBregman
 from pylops.utils.decorators import add_ndarray_support_to_solver
 

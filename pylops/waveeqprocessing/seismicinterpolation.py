@@ -1,3 +1,5 @@
+__all__ = ["SeismicInterpolation"]
+
 import logging
 
 import numpy as np

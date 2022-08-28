@@ -5,9 +5,9 @@ from numpy.testing import assert_array_almost_equal
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
 from pylops.signalprocessing import Sliding1D, Sliding2D, Sliding3D
-from pylops.signalprocessing.Sliding1D import sliding1d_design
-from pylops.signalprocessing.Sliding2D import sliding2d_design
-from pylops.signalprocessing.Sliding3D import sliding3d_design
+from pylops.signalprocessing.sliding1d import sliding1d_design
+from pylops.signalprocessing.sliding2d import sliding2d_design
+from pylops.signalprocessing.sliding3d import sliding3d_design
 from pylops.utils import dottest
 
 par1 = {

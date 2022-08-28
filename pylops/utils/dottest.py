@@ -1,3 +1,5 @@
+__all__ = ["dottest"]
+
 from typing import Optional
 
 import numpy as np

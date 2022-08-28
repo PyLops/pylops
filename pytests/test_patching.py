@@ -5,8 +5,8 @@ from numpy.testing import assert_array_almost_equal
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
 from pylops.signalprocessing import Patch2D, Patch3D
-from pylops.signalprocessing.Patch2D import patch2d_design
-from pylops.signalprocessing.Patch3D import patch3d_design
+from pylops.signalprocessing.patch2d import patch2d_design
+from pylops.signalprocessing.patch3d import patch3d_design
 from pylops.utils import dottest
 
 par1 = {

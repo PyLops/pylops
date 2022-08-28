@@ -1,5 +1,18 @@
+__all__ = [
+    "hanningtaper",
+    "cosinetaper",
+    "taper",
+    "taper2d",
+    "taper3d",
+    "tapernd",
+]
+
+from typing import Tuple, Union
+
 import numpy as np
 import numpy.typing as npt
+
+from pylops.utils.typing import InputDimsLike, NDArray
 
 
 def hanningtaper(
@@ -96,7 +109,7 @@ def taper(
     nmask: int,
     ntap: int,
     tapertype: str,
-) -> npt.ArrayLike:
+) -> NDArray:
     r"""1D taper
 
     Create unitary mask of length ``nmask`` with tapering of choice
@@ -131,9 +144,9 @@ def taper(
 def taper2d(
     nt: int,
     nmask: int,
-    ntap: int,
+    ntap: Union[int, Tuple[int, int]],
     tapertype: str = "hanning",
-) -> npt.ArrayLike:
+) -> NDArray:
     r"""2D taper
 
     Create 2d mask of size :math:`[n_\text{mask} \times n_t]`
@@ -181,10 +194,10 @@ def taper2d(
 
 def taper3d(
     nt: int,
-    nmask: int,
-    ntap: int,
+    nmask: Tuple[int, int],
+    ntap: Tuple[int, int],
     tapertype: str = "hanning",
-) -> npt.ArrayLike:
+) -> NDArray:
     r"""3D taper
 
     Create 3d mask of size :math:`[n_\text{mask}[0] \times n_\text{mask}[1] \times n_t]`
@@ -235,10 +248,10 @@ def taper3d(
 
 
 def tapernd(
-    nmask: int,
-    ntap: int,
+    nmask: InputDimsLike,
+    ntap: InputDimsLike,
     tapertype: str = "hanning",
-) -> npt.ArrayLike:
+) -> NDArray:
     r"""ND taper
 
     Create nd mask of size :math:`[n_\text{mask}[0] \times n_\text{mask}[1] \times ... \times n_\text{mask}[N-1]]`
