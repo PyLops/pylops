@@ -5,11 +5,13 @@ __all__ = [
 ]
 
 import time
+from typing import List, Optional, Tuple
 
 import numpy as np
 
 from pylops.optimization.basesolver import Solver
 from pylops.utils.backend import get_array_module, to_numpy
+from pylops.utils.typing import NDArray
 
 
 class CG(Solver):
@@ -34,7 +36,7 @@ class CG(Solver):
 
     """
 
-    def _print_setup(self, xcomplex=False):
+    def _print_setup(self, xcomplex: bool = False) -> None:
         self._print_solver(nbar=55)
 
         if self.niter is not None:
@@ -49,12 +51,19 @@ class CG(Solver):
             head1 = "    Itn              x[0]                  r2norm"
         print(head1)
 
-    def _print_step(self, x):
+    def _print_step(self, x: NDArray) -> None:
         strx = f"{x[0]:1.2e}        " if np.iscomplexobj(x) else f"{x[0]:11.4e}        "
         msg = f"{self.iiter:6g}        " + strx + f"{self.cost[self.iiter]:11.4e}"
         print(msg)
 
-    def setup(self, y, x0=None, niter=None, tol=1e-4, show=False):
+    def setup(
+        self,
+        y: NDArray,
+        x0: Optional[NDArray] = None,
+        niter: Optional[int] = None,
+        tol: float = 1e-4,
+        show: bool = False,
+    ) -> NDArray:
         r"""Setup solver
 
         Parameters
@@ -103,7 +112,7 @@ class CG(Solver):
             self._print_setup(np.iscomplexobj(x))
         return x
 
-    def step(self, x, show=False):
+    def step(self, x: NDArray, show: bool = False) -> NDArray:
         r"""Run one step of solver
 
         Parameters
@@ -134,7 +143,13 @@ class CG(Solver):
             self._print_step(x)
         return x
 
-    def run(self, x, niter=None, show=False, itershow=[10, 10, 10]):
+    def run(
+        self,
+        x: NDArray,
+        niter: Optional[int] = None,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> NDArray:
         r"""Run solver
 
         Parameters
@@ -173,7 +188,7 @@ class CG(Solver):
             self.callback(x)
         return x
 
-    def finalize(self, show=False):
+    def finalize(self, show: bool = False) -> None:
         r"""Finalize solver
 
         Parameters
@@ -188,7 +203,15 @@ class CG(Solver):
         if show:
             self._print_finalize(nbar=55)
 
-    def solve(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10]):
+    def solve(
+        self,
+        y: NDArray,
+        x0: Optional[NDArray] = None,
+        niter: int = 10,
+        tol: float = 1e-4,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> Tuple[NDArray, int, NDArray]:
         r"""Run entire solver
 
         Parameters
@@ -215,7 +238,7 @@ class CG(Solver):
             Estimated model of size :math:`[N \times 1]`
         iit : :obj:`int`
             Number of executed iterations
-        cost : :obj:`numpy.ndarray`, optional
+        cost : :obj:`numpy.ndarray`
             History of the L2 norm of the residual
 
         """
@@ -248,7 +271,7 @@ class CGLS(Solver):
 
     """
 
-    def _print_setup(self, xcomplex=False):
+    def _print_setup(self, xcomplex: bool = False) -> None:
         self._print_solver(nbar=65)
 
         if self.niter is not None:
@@ -265,7 +288,7 @@ class CGLS(Solver):
             head1 = "    Itn             x[0]             r1norm         r2norm"
         print(head1)
 
-    def _print_step(self, x):
+    def _print_step(self, x: NDArray) -> None:
         strx = f"{x[0]:1.2e}   " if np.iscomplexobj(x) else f"{x[0]:11.4e}        "
         msg = (
             f"{self.iiter:6g}       "
@@ -274,7 +297,15 @@ class CGLS(Solver):
         )
         print(msg)
 
-    def setup(self, y, x0=None, niter=None, damp=0.0, tol=1e-4, show=False):
+    def setup(
+        self,
+        y: NDArray,
+        x0: Optional[NDArray] = None,
+        niter: Optional[int] = None,
+        damp: float = 0.0,
+        tol: float = 1e-4,
+        show: bool = False,
+    ) -> NDArray:
         r"""Setup solver
 
         Parameters
@@ -335,7 +366,7 @@ class CGLS(Solver):
             self._print_setup(np.iscomplexobj(x))
         return x
 
-    def step(self, x, show=False):
+    def step(self, x: NDArray, show: bool = False) -> NDArray:
         r"""Run one step of solver
 
         Parameters
@@ -371,7 +402,13 @@ class CGLS(Solver):
             self._print_step(x)
         return x
 
-    def run(self, x, niter=None, show=False, itershow=[10, 10, 10]):
+    def run(
+        self,
+        x: NDArray,
+        niter: Optional[int] = None,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> NDArray:
         r"""Run solver
 
         Parameters
@@ -410,7 +447,7 @@ class CGLS(Solver):
             self.callback(x)
         return x
 
-    def finalize(self, show=False):
+    def finalize(self, show: bool = False) -> None:
         r"""Finalize solver
 
         Parameters
@@ -431,14 +468,14 @@ class CGLS(Solver):
 
     def solve(
         self,
-        y,
-        x0=None,
-        niter=10,
-        damp=0.0,
-        tol=1e-4,
-        show=False,
-        itershow=[10, 10, 10],
-    ):
+        y: NDArray,
+        x0: Optional[NDArray] = None,
+        niter: int = 10,
+        damp: float = 0.0,
+        tol: float = 1e-4,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> Tuple[NDArray, int, int, float, float, NDArray]:
         r"""Run entire solver
 
         Parameters
@@ -536,7 +573,7 @@ class LSQR(Solver):
             "The iteration limit has been reached                      ",
         )
 
-    def _print_setup(self, x, xcomplex=False):
+    def _print_setup(self, x: NDArray, xcomplex: bool = False) -> None:
         self._print_solver(nbar=90)
         print(f"damp = {self.damp:20.14e}     calc_var = {self.calc_var:6g}")
         print(f"atol = {self.atol:8.2e}                 conlim = {self.conlim:8.2e}")
@@ -560,7 +597,7 @@ class LSQR(Solver):
         str3 = f"  {test1:8.1e} {test2:8.1e}"
         print(str1 + str2 + str3)
 
-    def _print_step(self, x):
+    def _print_step(self, x: NDArray) -> None:
         strx = f"{x[0]:1.2e}   " if np.iscomplexobj(x) else f"{x[0]:11.4e}"
         str1 = f"{self.iiter:6g} " + strx
         str2 = f" {self.r1norm:10.3e} {self.r2norm:10.3e}"
@@ -568,7 +605,7 @@ class LSQR(Solver):
         str4 = f" {self.anorm:8.1e} {self.acond:8.1e}"
         print(str1 + str2 + str3 + str4)
 
-    def _print_finalize(self):
+    def _print_finalize(self) -> None:
         print(" ")
         print(f"LSQR finished, {self.msg[self.istop]}")
         print(" ")
@@ -584,16 +621,16 @@ class LSQR(Solver):
 
     def setup(
         self,
-        y,
-        x0=None,
-        damp=0.0,
-        atol=1e-08,
-        btol=1e-08,
-        conlim=100000000.0,
-        niter=10,
-        calc_var=True,
-        show=False,
-    ):
+        y: NDArray,
+        x0: Optional[NDArray] = None,
+        damp: float = 0.0,
+        atol: float = 1e-08,
+        btol: float = 1e-08,
+        conlim: float = 100000000.0,
+        niter: int = 10,
+        calc_var: bool = True,
+        show: bool = False,
+    ) -> NDArray:
         r"""Setup solver
 
         Parameters
@@ -709,7 +746,7 @@ class LSQR(Solver):
             print(self.msg[self.istop])
         return x
 
-    def step(self, x, show=False):
+    def step(self, x: NDArray, show: bool = False) -> NDArray:
         r"""Run one step of solver
 
         Parameters
@@ -837,7 +874,13 @@ class LSQR(Solver):
             self._print_step(x)
         return x
 
-    def run(self, x, niter=None, show=False, itershow=[10, 10, 10]):
+    def run(
+        self,
+        x: NDArray,
+        niter: Optional[int] = None,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> NDArray:
         r"""Run solver
 
         Parameters
@@ -881,7 +924,7 @@ class LSQR(Solver):
             self.callback(x)
         return x
 
-    def finalize(self, show=False):
+    def finalize(self, show: bool = False) -> None:
         r"""Finalize solver
 
         Parameters
@@ -898,17 +941,17 @@ class LSQR(Solver):
 
     def solve(
         self,
-        y,
-        x0=None,
-        damp=0.0,
-        atol=1e-08,
-        btol=1e-08,
-        conlim=100000000.0,
-        niter=10,
-        calc_var=True,
-        show=False,
-        itershow=[10, 10, 10],
-    ):
+        y: NDArray,
+        x0: Optional[NDArray] = None,
+        damp: float = 0.0,
+        atol: float = 1e-08,
+        btol: float = 1e-08,
+        conlim: float = 100000000.0,
+        niter: int = 10,
+        calc_var: bool = True,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> Tuple[NDArray, int, float, float, float, float, float, float, NDArray]:
         r"""Run entire solver
 
         Parameters

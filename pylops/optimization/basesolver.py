@@ -3,8 +3,8 @@ __all__ = ["Solver"]
 import functools
 import time
 from abc import ABCMeta, abstractmethod
+from typing import Any
 
-from pylops import LinearOperator
 from pylops.optimization.callback import Callbacks
 from pylops.utils.typing import NDArray
 
@@ -46,7 +46,7 @@ class Solver(metaclass=ABCMeta):
 
     def __init__(
         self,
-        Op: LinearOperator,
+        Op,
         callbacks: Callbacks = None,
     ) -> None:
         self.Op = Op
@@ -61,13 +61,13 @@ class Solver(metaclass=ABCMeta):
             f"The Operator Op has {self.Op.shape[0]} rows and {self.Op.shape[1]} cols"
         )
 
-    def _print_setup(self) -> None:
+    def _print_setup(self, *args: Any, **kwargs: Any) -> None:
         pass
 
-    def _print_step(self) -> None:
+    def _print_step(self, *args: Any, **kwargs: Any) -> None:
         pass
 
-    def _print_finalize(self, nbar: int = 80) -> None:
+    def _print_finalize(self, *args: Any, nbar: int = 80, **kwargs: Any) -> None:
         print(
             f"\nIterations = {self.iiter}        Total time (s) = {self.telapsed:.2f}"
         )
@@ -147,7 +147,7 @@ class Solver(metaclass=ABCMeta):
         *args,
         show: bool = False,
         **kwargs,
-    ) -> None:
+    ) -> Any:
         """Run one step of solver
 
         This method is used to run one step of the solver. Users can change the
@@ -171,7 +171,7 @@ class Solver(metaclass=ABCMeta):
         *args,
         show: bool = False,
         **kwargs,
-    ) -> None:
+    ) -> Any:
         """Run multiple steps of solver
 
         This method is used to run multiple step of the solver. Users can change the
@@ -193,7 +193,7 @@ class Solver(metaclass=ABCMeta):
         *args,
         show: bool = False,
         **kwargs,
-    ) -> None:
+    ) -> Any:
         """Finalize solver
 
         This method is used to finalize the solver. Users can change the
@@ -218,7 +218,7 @@ class Solver(metaclass=ABCMeta):
         *args,
         show: bool = False,
         **kwargs,
-    ) -> None:
+    ) -> Any:
         """Solve
 
         This method is used to run the entire optimization process. Users can change the

@@ -2,6 +2,7 @@ __all__ = [
     "IntNDArray",
     "NDArray",
     "InputDimsLike",
+    "SamplingLike",
     "ShapeLike",
     "DTypeLike",
 ]

@@ -6,7 +6,6 @@ __all__ = [
 
 from typing import Callable, List, Optional, Tuple
 
-from pylops import LinearOperator
 from pylops.optimization.cls_basic import CG, CGLS, LSQR
 from pylops.utils.decorators import add_ndarray_support_to_solver
 from pylops.utils.typing import NDArray
@@ -14,7 +13,7 @@ from pylops.utils.typing import NDArray
 
 @add_ndarray_support_to_solver
 def cg(
-    Op: LinearOperator,
+    Op,
     y: NDArray,
     x0: Optional[NDArray] = None,
     niter: int = 10,
@@ -75,7 +74,7 @@ def cg(
 
 @add_ndarray_support_to_solver
 def cgls(
-    Op: LinearOperator,
+    Op,
     y: NDArray,
     x0: Optional[NDArray] = None,
     niter: int = 10,
@@ -154,7 +153,7 @@ def cgls(
 
 @add_ndarray_support_to_solver
 def lsqr(
-    Op: LinearOperator,
+    Op,
     y: NDArray,
     x0: Optional[NDArray] = None,
     damp: float = 0.0,

@@ -4,10 +4,8 @@ __all__ = [
 ]
 
 
-from typing import Dict, Optional, Sequence
+from typing import Dict, Sequence
 
-from pylops import LinearOperator
-from pylops.optimization.basesolver import Solver
 from pylops.utils.metrics import mae, mse, psnr, snr
 from pylops.utils.typing import NDArray
 
@@ -52,7 +50,7 @@ class Callbacks:
     def __init__(self) -> None:
         pass
 
-    def on_setup_begin(self, solver: Solver, x0: NDArray) -> None:
+    def on_setup_begin(self, solver, x0: NDArray) -> None:
         """Callback before setup
 
         Parameters
@@ -66,7 +64,7 @@ class Callbacks:
         """
         pass
 
-    def on_setup_end(self, solver: Solver, x: NDArray) -> None:
+    def on_setup_end(self, solver, x: NDArray) -> None:
         """Callback after setup
 
         Parameters
@@ -79,7 +77,7 @@ class Callbacks:
         """
         pass
 
-    def on_step_begin(self, solver: Solver, x: NDArray) -> None:
+    def on_step_begin(self, solver, x: NDArray) -> None:
         """Callback before step of solver
 
         Parameters
@@ -105,7 +103,7 @@ class Callbacks:
         """
         pass
 
-    def on_run_begin(self, solver: Solver, x: NDArray) -> None:
+    def on_run_begin(self, solver, x: NDArray) -> None:
         """Callback before entire solver run
 
         Parameters
@@ -118,7 +116,7 @@ class Callbacks:
         """
         pass
 
-    def on_run_end(self, solver: Solver, x: NDArray) -> None:
+    def on_run_end(self, solver, x: NDArray) -> None:
         """Callback after entire solver run
 
         Parameters
@@ -152,7 +150,7 @@ class MetricsCallback(Callbacks):
     def __init__(
         self,
         xtrue: NDArray,
-        Op: Optional[LinearOperator] = None,
+        Op=None,
         which: Sequence[str] = ("mae", "mse", "snr", "psnr"),
     ):
         self.xtrue = xtrue
