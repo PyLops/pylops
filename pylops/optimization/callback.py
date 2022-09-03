@@ -166,7 +166,7 @@ class MetricsCallback(Callbacks):
         if "psnr" in self.which:
             self.metrics["psnr"] = []
 
-    def on_step_end(self, solver, x):
+    def on_step_end(self, solver, x: NDArray) -> None:
         if self.Op is not None:
             x = self.Op * x
 
