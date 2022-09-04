@@ -1,3 +1,9 @@
+__all__ = [
+    "TorchOperator",
+]
+
+import logging
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -22,10 +28,19 @@ class _TorchOperator(torch.autograd.Function):
     """Wrapper class for PyLops operators into Torch functions"""
 
     @staticmethod
-    def forward(ctx, x, forw, adj, device):
+    def forward(ctx, x, forw, adj, device, devicetorch):
         ctx.forw = forw
         ctx.adj = adj
         ctx.device = device
+        ctx.devicetorch = devicetorch
+
+        # check if data is moved to cpu and warn user
+        if ctx.device == "cpu" and ctx.devicetorch != "cpu":
+            logging.warning(
+                "pylops operator will be applied on the cpu "
+                "whilst the input torch vector is on "
+                "%s, this may lead to poor performance" % ctx.devicetorch
+            )
 
         # prepare input
         if ctx.device == "cpu":
@@ -41,7 +56,7 @@ class _TorchOperator(torch.autograd.Function):
         # prepare output
         if ctx.device == "cpu":
             # move y to torch and device
-            y = torch.from_numpy(y)
+            y = torch.from_numpy(y).to(ctx.devicetorch)
         else:
             # move y to torch and device
             y = from_dlpack(y.toDlpack())
@@ -61,10 +76,10 @@ class _TorchOperator(torch.autograd.Function):
 
         # prepare output
         if ctx.device == "cpu":
-            x = torch.from_numpy(x)
+            x = torch.from_numpy(x).to(ctx.devicetorch)
         else:
             x = from_dlpack(x.toDlpack())
-        return x, None, None, None, None
+        return x, None, None, None, None, None
 
 
 class TorchOperator(LinearOperator):
@@ -89,7 +104,9 @@ class TorchOperator(LinearOperator):
         if `batch==False`` the input must be a 2-d Torch tensor with
         batches along the first dimension
     device : :obj:`str`, optional
-        Device to be used for output vectors when ``Op`` is a pylops operator
+        Device to be used when applying operator (``cpu`` or ``gpu``)
+    devicetorch : :obj:`str`, optional
+        Device to be assigned the output of the operator to (any Torch-compatible device)
 
     """
 
@@ -98,8 +115,10 @@ class TorchOperator(LinearOperator):
         Op: LinearOperator,
         batch: bool = False,
         device: str = "cpu",
+        devicetorch: str = "cpu",
     ) -> None:
         self.device = device
+        self.devicetorch = devicetorch
         if not batch:
             self.matvec = Op.matvec
             self.rmatvec = Op.rmatvec
@@ -125,4 +144,4 @@ class TorchOperator(LinearOperator):
             Output array resulting from the application of the operator to ``x``.
 
         """
-        return self.Top(x, self.matvec, self.rmatvec, self.device)
+        return self.Top(x, self.matvec, self.rmatvec, self.device, self.devicetorch)

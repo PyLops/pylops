@@ -90,6 +90,7 @@ input = (
     Aop.matvec,
     Aop.rmatvec,
     Aop.device,
+    "cpu",
 )
 test = gradcheck(Aop.Top, input, eps=1e-6, atol=1e-4)
 print(test)
@@ -101,7 +102,6 @@ print(test)
 # :class:`pylops.TorchOperator`. As already mentioned, this gives us the
 # ability to use much more complex linear operators provided by PyLops within
 # a chain of mixed linear and nonlinear AD-enabled operators.
-#
 # To conclude, let's see how we can chain a torch convolutional network
 # with PyLops :class:`pylops.Smoothing2D` operator. First of all, we consider
 # a single training sample.
