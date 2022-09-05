@@ -76,15 +76,17 @@ class Diagonal(LinearOperator):
         dtype: DTypeLike = "float64",
         name: str = "D",
     ) -> None:
-        self.diag = diag.ravel()
-        dims = (len(self.diag),) if dims is None else _value_or_sized_to_tuple(dims)
+        self.diag = diag
+        origdims = dims
+        dims = self.diag.shape if dims is None else _value_or_sized_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
         ncp = get_array_module(diag)
         self.complex = True if ncp.iscomplexobj(self.diag) else False
-        diagdims = np.ones_like(self.dims)
-        diagdims[axis] = self.dims[axis]
-        self.diag = self.diag.reshape(diagdims)
+        if origdims is not None:
+            diagdims = np.ones_like(self.dims)
+            diagdims[axis] = self.dims[axis]
+            self.diag = self.diag.reshape(diagdims)
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
