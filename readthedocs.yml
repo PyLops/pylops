@@ -4,4 +4,4 @@ python:
   version: 3.8
   setup_py_install: true
 
-requirements_file: requirements-dev.txt
+requirements_file: requirements-doc.txt

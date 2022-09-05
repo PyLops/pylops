@@ -5,8 +5,8 @@ from numpy.testing import assert_equal
 from pylops.basicoperators import Transpose
 from pylops.utils import dottest
 
-par1 = {"ny": 21, "nx": 11, "nt": 20, "imag": 0, "dtype": "float32"}  # real
-par2 = {"ny": 21, "nx": 11, "nt": 20, "imag": 1j, "dtype": "complex64"}  # complex
+par1 = {"ny": 21, "nx": 11, "nt": 20, "imag": 0, "dtype": "float64"}  # real
+par2 = {"ny": 21, "nx": 11, "nt": 20, "imag": 1j, "dtype": "complex128"}  # complex
 
 np.random.seed(10)
 
