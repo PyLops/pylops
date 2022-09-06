@@ -3,10 +3,13 @@ __all__ = ["Solver"]
 import functools
 import time
 from abc import ABCMeta, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pylops.optimization.callback import Callbacks
 from pylops.utils.typing import NDArray
+
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
 
 
 class Solver(metaclass=ABCMeta):
@@ -46,7 +49,7 @@ class Solver(metaclass=ABCMeta):
 
     def __init__(
         self,
-        Op,
+        Op: "LinearOperator",
         callbacks: Callbacks = None,
     ) -> None:
         self.Op = Op
