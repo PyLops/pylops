@@ -1,7 +1,7 @@
 __all__ = ["IRLS"]
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from scipy.sparse.linalg import lsqr
@@ -478,7 +478,7 @@ class IRLS(Solver):
         x = self._step(x, **kwargs_solver)
 
         # compute residual
-        self.r = self.y - self.Op * x
+        self.r: NDArray = self.y - self.Op * x
         self.rnorm = self.ncp.linalg.norm(self.r)
 
         self.iiter += 1
@@ -592,7 +592,7 @@ class IRLS(Solver):
             or damping (``False``)
         epsR : :obj:`float`, optional
             Damping to be applied to residuals for weighting term
-        espI : :obj:`float`, optional
+        epsI : :obj:`float`, optional
             Tikhonov damping
         tolIRLS : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
@@ -1104,7 +1104,7 @@ class ISTA(Solver):
         y: NDArray,
         x0: Optional[NDArray] = None,
         niter: Optional[int] = None,
-        SOp=None,
+        SOp: Optional[LinearOperator] = None,
         eps: float = 0.1,
         alpha: Optional[float] = None,
         eigsdict: Optional[Dict[str, Any]] = None,
@@ -1406,7 +1406,7 @@ class ISTA(Solver):
         y: NDArray,
         x0: Optional[NDArray] = None,
         niter: Optional[int] = None,
-        SOp=None,
+        SOp: Optional[LinearOperator] = None,
         eps: float = 0.1,
         alpha: Optional[float] = None,
         eigsdict: Optional[Dict[str, Any]] = None,
@@ -1734,7 +1734,7 @@ class SPGL1(Solver):
     def setup(
         self,
         y: NDArray,
-        SOp=None,
+        SOp: Optional[LinearOperator] = None,
         tau: int = 0,
         sigma: int = 0,
         show: bool = False,
@@ -1863,7 +1863,7 @@ class SPGL1(Solver):
         self,
         y: NDArray,
         x0: Optional[NDArray] = None,
-        SOp=None,
+        SOp: Optional[LinearOperator] = None,
         tau: float = 0.0,
         sigma: float = 0,
         show: bool = False,
@@ -2047,12 +2047,12 @@ class SplitBregman(Solver):
     def setup(
         self,
         y: NDArray,
-        RegsL1: List,
+        RegsL1: List[LinearOperator],
         x0: Optional[NDArray] = None,
         niter_outer: int = 3,
         niter_inner: int = 5,
-        RegsL2: Optional[List] = None,
-        dataregsL2=None,
+        RegsL2: Optional[List[LinearOperator]] = None,
+        dataregsL2: Optional[Sequence[NDArray]] = None,
         mu: float = 1.0,
         epsRL1s: Optional[SamplingLike] = None,
         epsRL2s: Optional[SamplingLike] = None,
@@ -2327,11 +2327,11 @@ class SplitBregman(Solver):
     def solve(
         self,
         y: NDArray,
-        RegsL1,
+        RegsL1: List[LinearOperator],
         x0: Optional[NDArray] = None,
         niter_outer: int = 3,
         niter_inner: int = 5,
-        RegsL2: Optional[List] = None,
+        RegsL2: Optional[List[LinearOperator]] = None,
         dataregsL2: Optional[List[NDArray]] = None,
         mu: float = 1.0,
         epsRL1s: Optional[SamplingLike] = None,

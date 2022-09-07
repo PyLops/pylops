@@ -5,13 +5,16 @@ __all__ = [
 ]
 
 import time
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import numpy as np
 
 from pylops.optimization.basesolver import Solver
 from pylops.utils.backend import get_array_module, to_numpy
 from pylops.utils.typing import NDArray
+
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
 
 
 class CG(Solver):
@@ -103,7 +106,7 @@ class CG(Solver):
         self.kold = self.ncp.abs(self.r.dot(self.r.conj()))
 
         # create variables to track the residual norm and iterations
-        self.cost = []
+        self.cost: List = []
         self.cost.append(np.sqrt(self.kold))
         self.iiter = 0
 
@@ -172,7 +175,7 @@ class CG(Solver):
             Estimated model of size :math:`[M \times 1]`
 
         """
-        niter = self.niter if niter is None else niter
+        niter: int = self.niter if niter is None else niter
         while self.iiter < niter and self.kold > self.tol:
             showstep = (
                 True
@@ -560,7 +563,7 @@ class LSQR(Solver):
 
     """
 
-    def __init__(self, Op):
+    def __init__(self, Op: "LinearOperator"):
         super().__init__(Op)
         self.msg = (
             "The exact solution is x = 0                               ",
@@ -589,12 +592,12 @@ class LSQR(Solver):
         else:
             head1 = "   Itn        x[0]              r1norm    r2norm  "
         print(head1 + head2)
-        test1 = 1
-        test2 = self.alfa / self.beta
-        strx = f"{x[0]:1.2e}   " if np.iscomplexobj(x) else f"{x[0]:11.4e}"
-        str1 = f"{0:6g} " + strx
-        str2 = f" {self.r1norm:10.3e} {self.r2norm:10.3e}"
-        str3 = f"  {test1:8.1e} {test2:8.1e}"
+        test1: int = 1
+        test2: float = self.alfa / self.beta
+        strx: str = f"{x[0]:1.2e}   " if np.iscomplexobj(x) else f"{x[0]:11.4e}"
+        str1: str = f"{0:6g} " + strx
+        str2: str = f" {self.r1norm:10.3e} {self.r2norm:10.3e}"
+        str3: str = f"  {test1:8.1e} {test2:8.1e}"
         print(str1 + str2 + str3)
 
     def _print_step(self, x: NDArray) -> None:
@@ -722,16 +725,16 @@ class LSQR(Solver):
         self.w = self.v.copy()
 
         # check if solution is already found
-        self.arnorm = self.alfa * self.beta
+        self.arnorm: float = self.alfa * self.beta
 
         # finalize setup
-        self.arnorm0 = self.arnorm
-        self.rhobar = self.alfa
-        self.phibar = self.beta
-        self.bnorm = self.beta
-        self.rnorm = self.beta
-        self.r1norm = self.rnorm
-        self.r2norm = self.rnorm
+        self.arnorm0: float = self.arnorm
+        self.rhobar: float = self.alfa
+        self.phibar: float = self.beta
+        self.bnorm: float = self.beta
+        self.rnorm: float = self.beta
+        self.r1norm: float = self.rnorm
+        self.r2norm: float = self.rnorm
 
         # create variables to track the residual norm and iterations
         self.cost = []

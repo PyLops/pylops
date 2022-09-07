@@ -55,6 +55,7 @@ class Solver(metaclass=ABCMeta):
         self.Op = Op
         self.callbacks = callbacks
         self._registercallbacks()
+        self.iiter = 0
         self.tstart = time.time()
 
     def _print_solver(self, text: str = "", nbar: int = 80) -> None:

@@ -6,7 +6,7 @@ __all__ = [
 ]
 
 import logging
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Iterable, Optional, Sequence, Tuple
 
 import numpy as np
 from scipy.sparse.linalg import cg as sp_cg
@@ -19,11 +19,15 @@ from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import disable_ndarray_multiplication
 from pylops.utils.typing import NDArray
 
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
+
+
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _check_regularization_dims(
-    Regs: Sequence,
+    Regs: Sequence["LinearOperator"],
     dataregs: Optional[Iterable[NDArray]] = None,
     epsRs: Optional[Iterable[float]] = None,
 ) -> None:
@@ -89,12 +93,12 @@ class NormalEquationsInversion(Solver):
     def setup(
         self,
         y: NDArray,
-        Regs: Sequence,
-        Weight=None,
+        Regs: Sequence["LinearOperator"],
+        Weight: Optional["LinearOperator"] = None,
         dataregs: Optional[Iterable[NDArray]] = None,
         epsI: float = 0,
         epsRs: Optional[Iterable[float]] = None,
-        NRegs=None,
+        NRegs: Optional[Sequence["LinearOperator"]] = None,
         epsNRs: Optional[Iterable[float]] = None,
         show: bool = False,
     ) -> None:
@@ -257,18 +261,18 @@ class NormalEquationsInversion(Solver):
     def solve(
         self,
         y: NDArray,
-        Regs: Sequence,
+        Regs: Sequence["LinearOperator"],
         x0: Optional[NDArray] = None,
-        Weight=None,
+        Weight: Optional["LinearOperator"] = None,
         dataregs: Optional[Iterable[NDArray]] = None,
         epsI: float = 0,
         epsRs: Optional[Iterable[float]] = None,
-        NRegs=None,
+        NRegs: Optional[Sequence["LinearOperator"]] = None,
         epsNRs: Optional[Iterable[float]] = None,
         engine: str = "scipy",
         show: bool = False,
         **kwargs_solver,
-    ):
+    ) -> Tuple[NDArray, int]:
         r"""Run entire solver
 
         Parameters
@@ -335,10 +339,10 @@ class NormalEquationsInversion(Solver):
 
 
 def RegularizedOperator(
-    Op,
-    Regs,
+    Op: "LinearOperator",
+    Regs: Sequence["LinearOperator"],
     epsRs: Iterable[float] = (1,),
-):
+) -> "LinearOperator":
     r"""Regularized operator.
 
     Creates a regularized operator given the operator ``Op``
@@ -448,8 +452,8 @@ class RegularizedInversion(Solver):
     def setup(
         self,
         y: NDArray,
-        Regs,
-        Weight=None,
+        Regs: Sequence["LinearOperator"],
+        Weight: Optional["LinearOperator"] = None,
         dataregs: Optional[Iterable[NDArray]] = None,
         epsRs: Optional[Iterable[float]] = None,
         show: bool = False,
@@ -509,7 +513,7 @@ class RegularizedInversion(Solver):
 
         # augumented data
         if Weight is not None:
-            self.datatot = Weight * self.y.copy()
+            self.datatot: NDArray = Weight * self.y.copy()
         else:
             self.datatot = self.y.copy()
 
@@ -603,9 +607,9 @@ class RegularizedInversion(Solver):
     def solve(
         self,
         y: NDArray,
-        Regs,
+        Regs: Sequence["LinearOperator"],
         x0: Optional[NDArray] = None,
-        Weight=None,
+        Weight: Optional["LinearOperator"] = None,
         dataregs: Optional[Iterable[NDArray]] = None,
         epsRs: Optional[Iterable[float]] = None,
         engine: str = "scipy",
@@ -718,7 +722,7 @@ class PreconditionedInversion(Solver):
     def setup(
         self,
         y: NDArray,
-        P,
+        P: "LinearOperator",
         show: bool = False,
     ) -> None:
         r"""Setup solver
@@ -828,7 +832,7 @@ class PreconditionedInversion(Solver):
     def solve(
         self,
         y: NDArray,
-        P,
+        P: "LinearOperator",
         x0: Optional[NDArray] = None,
         engine: str = "scipy",
         show: bool = False,

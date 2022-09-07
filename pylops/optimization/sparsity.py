@@ -7,15 +7,18 @@ __all__ = [
     "splitbregman",
 ]
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from pylops.optimization.cls_sparsity import FISTA, IRLS, ISTA, OMP, SPGL1, SplitBregman
 from pylops.utils.decorators import add_ndarray_support_to_solver
 from pylops.utils.typing import NDArray, SamplingLike
 
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
+
 
 def irls(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
     x0: Optional[NDArray] = None,
     nouter: int = 10,
@@ -115,7 +118,7 @@ def irls(
 
 
 def omp(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
     niter_outer: int = 10,
     niter_inner: int = 40,
@@ -198,11 +201,11 @@ def omp(
 
 
 def ista(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
     x0: Optional[NDArray] = None,
     niter: int = 10,
-    SOp=None,
+    SOp: Optional["LinearOperator"] = None,
     eps: float = 0.1,
     alpha: Optional[float] = None,
     eigsdict: Optional[Dict[str, Any]] = None,
@@ -324,11 +327,11 @@ def ista(
 
 
 def fista(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
     x0: Optional[NDArray] = None,
     niter: int = 10,
-    SOp=None,
+    SOp: Optional["LinearOperator"] = None,
     eps: float = 0.1,
     alpha: Optional[float] = None,
     eigsdict: Optional[Dict[str, Any]] = None,
@@ -449,10 +452,10 @@ def fista(
 
 @add_ndarray_support_to_solver
 def spgl1(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
     x0: Optional[NDArray] = None,
-    SOp=None,
+    SOp: Optional["LinearOperator"] = None,
     tau: float = 0.0,
     sigma: float = 0.0,
     show: bool = False,
@@ -486,6 +489,8 @@ def spgl1(
     sigma : :obj:`list`, optional
         BPDN scalar. If different from ``0``,
         SPGL1 will solve BPDN problem
+    show : :obj:`bool`, optional
+        Display iterations log
     **kwargs_spgl1
         Arbitrary keyword arguments for
         :py:func:`spgl1.spgl1` solver
@@ -563,13 +568,13 @@ def spgl1(
 
 
 def splitbregman(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
-    RegsL1: List,
+    RegsL1: List["LinearOperator"],
     x0: Optional[NDArray] = None,
     niter_outer: int = 3,
     niter_inner: int = 5,
-    RegsL2: Optional[List] = None,
+    RegsL2: Optional[List["LinearOperator"]] = None,
     dataregsL2: Optional[List[NDArray]] = None,
     mu: float = 1.0,
     epsRL1s: Optional[SamplingLike] = None,

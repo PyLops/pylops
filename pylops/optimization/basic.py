@@ -4,16 +4,19 @@ __all__ = [
     "lsqr",
 ]
 
-from typing import Callable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 
 from pylops.optimization.cls_basic import CG, CGLS, LSQR
 from pylops.utils.decorators import add_ndarray_support_to_solver
 from pylops.utils.typing import NDArray
 
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
+
 
 @add_ndarray_support_to_solver
 def cg(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
     x0: Optional[NDArray] = None,
     niter: int = 10,
@@ -74,7 +77,7 @@ def cg(
 
 @add_ndarray_support_to_solver
 def cgls(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
     x0: Optional[NDArray] = None,
     niter: int = 10,
@@ -153,7 +156,7 @@ def cgls(
 
 @add_ndarray_support_to_solver
 def lsqr(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
     x0: Optional[NDArray] = None,
     damp: float = 0.0,

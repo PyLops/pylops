@@ -3,11 +3,14 @@ __all__ = [
     "MetricsCallback",
 ]
 
-
-from typing import Dict, Sequence
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
 
 from pylops.utils.metrics import mae, mse, psnr, snr
 from pylops.utils.typing import NDArray
+
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
+    from pylops.optimization.basesolver import Solver
 
 
 class Callbacks:
@@ -50,7 +53,7 @@ class Callbacks:
     def __init__(self) -> None:
         pass
 
-    def on_setup_begin(self, solver, x0: NDArray) -> None:
+    def on_setup_begin(self, solver: "Solver", x0: NDArray) -> None:
         """Callback before setup
 
         Parameters
@@ -64,7 +67,7 @@ class Callbacks:
         """
         pass
 
-    def on_setup_end(self, solver, x: NDArray) -> None:
+    def on_setup_end(self, solver: "Solver", x: NDArray) -> None:
         """Callback after setup
 
         Parameters
@@ -77,7 +80,7 @@ class Callbacks:
         """
         pass
 
-    def on_step_begin(self, solver, x: NDArray) -> None:
+    def on_step_begin(self, solver: "Solver", x: NDArray) -> None:
         """Callback before step of solver
 
         Parameters
@@ -90,7 +93,7 @@ class Callbacks:
         """
         pass
 
-    def on_step_end(self, solver, x):
+    def on_step_end(self, solver: "Solver", x: NDArray) -> None:
         """Callback after step of solver
 
         Parameters
@@ -103,7 +106,7 @@ class Callbacks:
         """
         pass
 
-    def on_run_begin(self, solver, x: NDArray) -> None:
+    def on_run_begin(self, solver: "Solver", x: NDArray) -> None:
         """Callback before entire solver run
 
         Parameters
@@ -116,7 +119,7 @@ class Callbacks:
         """
         pass
 
-    def on_run_end(self, solver, x: NDArray) -> None:
+    def on_run_end(self, solver: "Solver", x: NDArray) -> None:
         """Callback after entire solver run
 
         Parameters
@@ -150,13 +153,13 @@ class MetricsCallback(Callbacks):
     def __init__(
         self,
         xtrue: NDArray,
-        Op=None,
+        Op: Optional["LinearOperator"] = None,
         which: Sequence[str] = ("mae", "mse", "snr", "psnr"),
     ):
         self.xtrue = xtrue
         self.Op = Op
         self.which = which
-        self.metrics: Dict[str, str] = {}
+        self.metrics: Dict[str, List] = {}
         if "mae" in self.which:
             self.metrics["mae"] = []
         if "mse" in self.which:
@@ -166,7 +169,7 @@ class MetricsCallback(Callbacks):
         if "psnr" in self.which:
             self.metrics["psnr"] = []
 
-    def on_step_end(self, solver, x: NDArray) -> None:
+    def on_step_end(self, solver: "Solver", x: NDArray) -> None:
         if self.Op is not None:
             x = self.Op * x
 

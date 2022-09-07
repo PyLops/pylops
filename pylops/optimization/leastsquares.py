@@ -4,7 +4,7 @@ __all__ = [
     "preconditioned_inversion",
 ]
 
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 
 from pylops.optimization.cls_leastsquares import (
     NormalEquationsInversion,
@@ -13,17 +13,20 @@ from pylops.optimization.cls_leastsquares import (
 )
 from pylops.utils.typing import NDArray, SamplingLike
 
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
+
 
 def normal_equations_inversion(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
-    Regs: List,
+    Regs: List["LinearOperator"],
     x0: Optional[NDArray] = None,
-    Weight=None,
+    Weight: Optional["LinearOperator"] = None,
     dataregs: Optional[List[NDArray]] = None,
     epsI: float = 0.0,
     epsRs: Optional[SamplingLike] = None,
-    NRegs=None,
+    NRegs: Optional[Sequence["LinearOperator"]] = None,
     epsNRs: Optional[SamplingLike] = None,
     engine: str = "scipy",
     show: bool = False,
@@ -121,9 +124,9 @@ def normal_equations_inversion(
 def regularized_inversion(
     Op,
     y: NDArray,
-    Regs: List,
+    Regs: List["LinearOperator"],
     x0: Optional[NDArray] = None,
-    Weight=None,
+    Weight: Optional["LinearOperator"] = None,
     dataregs: Optional[List[NDArray]] = None,
     epsRs: Optional[SamplingLike] = None,
     engine: str = "scipy",
@@ -212,9 +215,9 @@ def regularized_inversion(
 
 
 def preconditioned_inversion(
-    Op,
+    Op: "LinearOperator",
     y: NDArray,
-    P,
+    P: "LinearOperator",
     x0: Optional[NDArray] = None,
     engine: str = "scipy",
     show: bool = False,
