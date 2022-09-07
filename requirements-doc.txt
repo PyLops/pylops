@@ -1,6 +1,6 @@
 numpy>=1.21.0
 scipy>=1.4.0
-https://download.pytorch.org/whl/cpu/torch-1.8.1%2Bcpu-cp36-cp36m-linux_x86_64.whl
+https://download.pytorch.org/whl/cpu/torch-1.8.1+cpu-cp38-cp38-linux_x86_64.whl
 numba
 pyfftw
 PyWavelets
