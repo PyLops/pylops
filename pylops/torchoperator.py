@@ -9,13 +9,13 @@ from pylops.utils import deps
 
 if deps.torch_enabled:
     from pylops._torchoperator import _TorchOperator
-    from pylops.utils.typing import TensorTypeLike
 else:
     torch_message = (
         "Torch package not installed. In order to be able to use"
         'the twoway module run "pip install torch" or'
         '"conda install -c pytorch torch".'
     )
+from pylops.utils.typing import TensorTypeLike
 
 
 class TorchOperator(LinearOperator):
