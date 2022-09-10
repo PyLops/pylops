@@ -1,9 +1,10 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
-from scipy.sparse.linalg import lsqr
+from scipy.sparse.linalg import lsqr as sp_lsqr
 
 from pylops.basicoperators import Diagonal
+from pylops.optimization.basic import lsqr
 from pylops.utils import dottest
 
 par1 = {"ny": 21, "nx": 11, "nt": 20, "imag": 0, "dtype": "float32"}  # real
@@ -22,7 +23,7 @@ def test_Diagonal_1dsignal(par):
         assert dottest(Dop, ddim, ddim, complexflag=0 if par["imag"] == 0 else 3)
 
         x = np.ones(ddim) + par["imag"] * np.ones(ddim)
-        xlsqr = lsqr(Dop, Dop * x, damp=1e-20, iter_lim=300, show=0)[0]
+        xlsqr = sp_lsqr(Dop, Dop * x, damp=1e-20, iter_lim=300, show=0)[0]
 
         assert_array_almost_equal(x, xlsqr, decimal=4)
 
@@ -44,7 +45,7 @@ def test_Diagonal_2dsignal(par):
         x = np.ones((par["nx"], par["nt"])) + par["imag"] * np.ones(
             (par["nx"], par["nt"])
         )
-        xlsqr = lsqr(Dop, Dop * x.ravel(), damp=1e-20, iter_lim=300, show=0)[0]
+        xlsqr = sp_lsqr(Dop, Dop * x.ravel(), damp=1e-20, iter_lim=300, show=0)[0]
 
         assert_array_almost_equal(x.ravel(), xlsqr.ravel(), decimal=4)
 
@@ -68,6 +69,52 @@ def test_Diagonal_3dsignal(par):
         x = np.ones((par["ny"], par["nx"], par["nt"])) + par["imag"] * np.ones(
             (par["ny"], par["nx"], par["nt"])
         )
-        xlsqr = lsqr(Dop, Dop * x.ravel(), damp=1e-20, iter_lim=300, show=0)[0]
+        xlsqr = sp_lsqr(Dop, Dop * x.ravel(), damp=1e-20, iter_lim=300, show=0)[0]
 
         assert_array_almost_equal(x.ravel(), xlsqr.ravel(), decimal=4)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
+def test_Diagonal_2dsignal_unflattened(par):
+    """Dot-test and inversion for Diagonal operator for unflattened 2d signal (v2 behaviour)"""
+    for idim, ddim in enumerate((par["nx"], par["nt"])):
+        d = np.arange(ddim) + 1.0 + par["imag"] * (np.arange(ddim) + 1.0)
+
+        Dop = Diagonal(d, dims=(par["nx"], par["nt"]), axis=idim, dtype=par["dtype"])
+        assert dottest(
+            Dop,
+            par["nx"] * par["nt"],
+            par["nx"] * par["nt"],
+            complexflag=0 if par["imag"] == 0 else 3,
+        )
+
+        x = np.ones((par["nx"], par["nt"])) + par["imag"] * np.ones(
+            (par["nx"], par["nt"])
+        )
+        xlsqr = lsqr(Dop, Dop * x, damp=1e-20, niter=300, show=0)[0]
+
+        assert_array_almost_equal(x, xlsqr, decimal=4)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
+def test_Diagonal_3dsignal_unflattened(par):
+    """Dot-test and inversion for Diagonal operator unflattened 3d signal (v2 behaviour)"""
+    for idim, ddim in enumerate((par["ny"], par["nx"], par["nt"])):
+        d = np.arange(ddim) + 1.0 + par["imag"] * (np.arange(ddim) + 1.0)
+
+        Dop = Diagonal(
+            d, dims=(par["ny"], par["nx"], par["nt"]), axis=idim, dtype=par["dtype"]
+        )
+        assert dottest(
+            Dop,
+            par["ny"] * par["nx"] * par["nt"],
+            par["ny"] * par["nx"] * par["nt"],
+            complexflag=0 if par["imag"] == 0 else 3,
+        )
+
+        x = np.ones((par["ny"], par["nx"], par["nt"])) + par["imag"] * np.ones(
+            (par["ny"], par["nx"], par["nt"])
+        )
+        xlsqr = lsqr(Dop, Dop * x, damp=1e-20, niter=300, show=0)[0]
+
+        assert_array_almost_equal(x, xlsqr, decimal=4)
