@@ -28,6 +28,7 @@ Templates
     LinearOperator
     FunctionOperator
     MemoizeOperator
+    TorchOperator
 
 Basic operators
 ~~~~~~~~~~~~~~~
