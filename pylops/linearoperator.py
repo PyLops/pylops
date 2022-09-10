@@ -276,17 +276,11 @@ class LinearOperator(spLinearOperator):
             if hasattr(self, attr):
                 setattr(dest, attr, getattr(self, attr))
 
-    def _matvec(self, x: NDArray) -> Union[NDArray, None]:
-        if callable(self.Op._matvec):
-            return self.Op._matvec(x)
-        else:
-            return None
+    def _matvec(self, x: NDArray) -> NDArray:
+        return self.Op._matvec(x)
 
-    def _rmatvec(self, x: NDArray) -> Union[NDArray, None]:
-        if callable(self.Op._rmatvec):
-            return self.Op._rmatvec(x)
-        else:
-            return None
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return self.Op._rmatvec(x)
 
     def _matmat(self, X: NDArray) -> NDArray:
         """Matrix-matrix multiplication handler.
