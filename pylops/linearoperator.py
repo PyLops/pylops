@@ -86,6 +86,9 @@ class LinearOperator(spLinearOperator):
 
     """
 
+    H: Callable[[LinearOperator], LinearOperator]
+    T: Callable[[LinearOperator], LinearOperator]
+
     def __init__(
         self,
         Op: Optional[spLinearOperator] = None,

@@ -150,6 +150,8 @@ def PhaseShift(
 
     """
     dtypefft = (np.ones(1, dtype=dtype) + 1j * np.ones(1, dtype=dtype)).dtype
+    dims: Union[Tuple[int, int], Tuple[int, int, int]]
+    dimsfft: Union[Tuple[int, int], Tuple[int, int, int]]
     if ky is None:
         dims = (nt, kx.size)
         dimsfft = (freq.size, kx.size)
@@ -193,7 +195,7 @@ def Deghosting(
     zrec: float,
     pd: Optional[NDArray] = None,
     win: Optional[NDArray] = None,
-    npad: Tuple[int, int] = (11, 11),
+    npad: Union[Tuple[int], Tuple[int, int]] = (11, 11),
     ntaper: Tuple[int, int] = (11, 11),
     restriction: Optional[LinearOperator] = None,
     sptransf: Optional[LinearOperator] = None,

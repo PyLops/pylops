@@ -5,7 +5,7 @@ __all__ = [
 ]
 
 import time
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -175,7 +175,9 @@ class CG(Solver):
             Estimated model of size :math:`[M \times 1]`
 
         """
-        niter: int = self.niter if niter is None else niter
+        niter = self.niter if niter is None else niter
+        if niter is None:
+            raise ValueError("niter must not be None")
         while self.iiter < niter and self.kold > self.tol:
             showstep = (
                 True
@@ -435,6 +437,8 @@ class CGLS(Solver):
 
         """
         niter = self.niter if niter is None else niter
+        if niter is None:
+            raise ValueError("niter must not be None")
         while self.iiter < niter and self.kold > self.tol:
             showstep = (
                 True
@@ -841,7 +845,7 @@ class LSQR(Solver):
         self.cost.append(float(self.r1norm))
         if self.r1sq < 0:
             self.r1norm = -self.r1norm
-        self.r2norm = self.rnorm.copy()
+        self.r2norm = self.rnorm
 
         # use these norms to estimate certain other quantities,
         # some of which will be small near a solution.
@@ -954,7 +958,19 @@ class LSQR(Solver):
         calc_var: bool = True,
         show: bool = False,
         itershow: List[int] = [10, 10, 10],
-    ) -> Tuple[NDArray, int, float, float, float, float, float, float, NDArray]:
+    ) -> Tuple[
+        NDArray,
+        int,
+        int,
+        float,
+        float,
+        float,
+        float,
+        float,
+        float,
+        Union[None, NDArray],
+        NDArray,
+    ]:
         r"""Run entire solver
 
         Parameters

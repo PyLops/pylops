@@ -90,7 +90,7 @@ def directwave(
     nr = len(trav)
     nfft = nt if nfft is None or nfft < nt else nfft
     W = np.abs(np.fft.rfft(wav, nfft)) * dt
-    f = 2 * np.pi * ncp.arange(nfft) / (dt * nfft)
+    f: NDArray = 2 * np.pi * ncp.arange(nfft) / (dt * nfft)
     direct = ncp.zeros((nfft // 2 + 1, nr), dtype=np.complex128)
     for it in range(len(W)):
         if kind == "2d":
@@ -98,7 +98,7 @@ def directwave(
             #             + np.sign(f[it]) * np.pi / 4)) / \
             #             np.sqrt(8 * np.pi * np.abs(f[it]) * trav + 1e-10)
             direct[it] = -W[it] * 1j * hankel2(0, f[it] * trav + 1e-10) / 4.0
-        else:
+        elif dist is not None:
             direct[it] = W[it] * np.exp(-1j * f[it] * trav) / (4 * np.pi * dist)
         if derivative:
             direct[it] *= 1j * f[it]

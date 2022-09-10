@@ -1,7 +1,7 @@
 __all__ = ["IRLS"]
 import logging
 import time
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from scipy.sparse.linalg import lsqr
@@ -980,7 +980,8 @@ class OMP(Solver):
             normalizecols=normalizecols,
             show=show,
         )
-        x, cols = [], []
+        x: List[NDArray] = []
+        cols: List[InputDimsLike] = []
         x, cols = self.run(x, cols, show=show, itershow=itershow)
         x = self.finalize(x, cols, show)
         return x, self.nouter, self.cost
@@ -1197,6 +1198,7 @@ class ISTA(Solver):
             )
 
         # choose thresholding function
+        self.threshf: Callable[[NDArray, float], NDArray]
         if threshkind == "soft":
             self.threshf = _softthreshold
         elif threshkind == "hard":
@@ -1223,7 +1225,7 @@ class ISTA(Solver):
             # compute largest eigenvalues of Op^H * Op
             Op1 = LinearOperator(self.Op.H * self.Op, explicit=False)
             if get_module_name(self.ncp) == "numpy":
-                maxeig = np.abs(
+                maxeig: float = np.abs(
                     Op1.eigs(
                         neigs=1,
                         symmetric=True,
@@ -1270,7 +1272,7 @@ class ISTA(Solver):
         self.t = 1.0
 
         # create variables to track the residual norm and iterations
-        self.cost = []
+        self.cost: List[float] = []
         self.iiter = 0
 
         # print setup
@@ -1299,7 +1301,7 @@ class ISTA(Solver):
         # store old vector
         xold = x.copy()
         # compute residual
-        res = self.y - self.Op @ x
+        res: NDArray = self.y - self.Op @ x
         if self.monitorres:
             self.normres = np.linalg.norm(res)
             if self.normres > self.normresold:
@@ -1312,15 +1314,15 @@ class ISTA(Solver):
                 self.normresold = self.normres
 
         # compute gradient
-        grad = self.alpha * self.Op.H @ res
+        grad: NDArray = self.alpha * self.Op.H @ res
 
         # update inverted model
-        x_unthesh = x + grad
+        x_unthesh: NDArray = x + grad
         if self.SOp is not None:
             x_unthesh = self.SOp.H @ x_unthesh
-        if self.perc is None:
+        if self.perc is None and self.decay is not None:
             x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
-        else:
+        elif self.perc is not None:
             x = self.threshf(x_unthesh, 100 - self.perc)
         if self.SOp is not None:
             x = self.SOp @ x
@@ -1367,6 +1369,8 @@ class ISTA(Solver):
         """
         xupdate = np.inf
         niter = self.niter if niter is None else niter
+        if niter is None:
+            raise ValueError("niter must not be None")
         while self.iiter < niter and xupdate > self.tol:
             showstep = (
                 True
@@ -1575,7 +1579,7 @@ class FISTA(ISTA):
         # store old vector
         xold = x.copy()
         # compute residual
-        resz = self.y - self.Op @ z
+        resz: NDArray = self.y - self.Op @ z
         if self.monitorres:
             self.normres = np.linalg.norm(resz)
             if self.normres > self.normresold:
@@ -1588,15 +1592,15 @@ class FISTA(ISTA):
                 self.normresold = self.normres
 
         # compute gradient
-        grad = self.alpha * (self.Op.H @ resz)
+        grad: NDArray = self.alpha * (self.Op.H @ resz)
 
         # update inverted model
-        x_unthesh = z + grad
+        x_unthesh: NDArray = z + grad
         if self.SOp is not None:
             x_unthesh = self.SOp.H @ x_unthesh
-        if self.perc is None:
+        if self.perc is None and self.decay is not None:
             x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
-        else:
+        elif self.perc is not None:
             x = self.threshf(x_unthesh, 100 - self.perc)
         if self.SOp is not None:
             x = self.SOp @ x
@@ -1649,6 +1653,8 @@ class FISTA(ISTA):
         z = x.copy()
         xupdate = np.inf
         niter = self.niter if niter is None else niter
+        if niter is None:
+            raise ValueError("niter must not be None")
         while self.iiter < niter and xupdate > self.tol:
             showstep = (
                 True
@@ -2118,11 +2124,10 @@ class SplitBregman(Solver):
         self.niter_outer = niter_outer
         self.niter_inner = niter_inner
         self.RegsL2 = RegsL2
-        self.dataregsL2 = dataregsL2
-        self.dataregsL2 = dataregsL2
+        self.dataregsL2 = list(dataregsL2) if dataregsL2 is not None else []
         self.mu = mu
-        self.epsRL1s = epsRL1s
-        self.epsRL2s = epsRL2s
+        self.epsRL1s = list(epsRL1s) if epsRL1s is not None else []
+        self.epsRL2s = list(epsRL2s) if epsRL2s is not None else []
         self.tol = tol
         self.tau = tau
         self.restart = restart
@@ -2137,7 +2142,7 @@ class SplitBregman(Solver):
 
         # L2 regularizations
         self.nregsL2 = 0 if RegsL2 is None else len(RegsL2)
-        if self.nregsL2 > 0:
+        if self.nregsL2 > 0 and RegsL2 is not None:
             self.Regs = RegsL2 + RegsL1
             if dataregsL2 is None:
                 self.dataregsL2 = [
@@ -2148,17 +2153,23 @@ class SplitBregman(Solver):
             self.dataregsL2 = []
 
         # Rescale dampings
-        self.epsRs = [
-            np.sqrt(epsRL2s[ireg] / 2) / np.sqrt(mu / 2) for ireg in range(self.nregsL2)
-        ] + [
-            np.sqrt(epsRL1s[ireg] / 2) / np.sqrt(mu / 2) for ireg in range(self.nregsL1)
-        ]
+        self.epsRs: List[float] = []
+        if epsRL2s is not None:
+            self.epsRs += [
+                np.sqrt(epsRL2s[ireg] / 2) / np.sqrt(mu / 2)
+                for ireg in range(self.nregsL2)
+            ]
+        if epsRL1s is not None:
+            self.epsRs += [
+                np.sqrt(epsRL1s[ireg] / 2) / np.sqrt(mu / 2)
+                for ireg in range(self.nregsL1)
+            ]
 
         self.x0 = x0
         x = self.ncp.zeros(self.Op.shape[1], dtype=self.Op.dtype) if x0 is None else x0
 
         # create variables to track the residual norm and iterations
-        self.cost = []
+        self.cost: List[float] = []
         self.iiter = 0
 
         if show:

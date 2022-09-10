@@ -15,9 +15,9 @@ or use context managers (with blocks):
     disabled_ndarray_multiplication         Disable ndarray multiplication within context.
 
 """
-
 from contextlib import contextmanager
 from dataclasses import dataclass
+from typing import Generator
 
 __all__ = [
     "get_ndarray_multiplication",
@@ -35,7 +35,7 @@ class Config:
 _config = Config()
 
 
-def get_ndarray_multiplication() -> None:
+def get_ndarray_multiplication() -> bool:
     return _config.ndarray_multiplication
 
 
@@ -44,7 +44,7 @@ def set_ndarray_multiplication(val: bool) -> None:
 
 
 @contextmanager
-def enabled_ndarray_multiplication() -> None:
+def enabled_ndarray_multiplication() -> Generator:
     enabled = get_ndarray_multiplication()
     set_ndarray_multiplication(True)
     try:
@@ -54,7 +54,7 @@ def enabled_ndarray_multiplication() -> None:
 
 
 @contextmanager
-def disabled_ndarray_multiplication() -> None:
+def disabled_ndarray_multiplication() -> Generator:
     enabled = get_ndarray_multiplication()
     set_ndarray_multiplication(False)
     try:

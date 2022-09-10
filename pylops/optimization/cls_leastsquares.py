@@ -6,7 +6,7 @@ __all__ = [
 ]
 
 import logging
-from typing import TYPE_CHECKING, Iterable, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 import numpy as np
 from scipy.sparse.linalg import cg as sp_cg
@@ -28,8 +28,8 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 def _check_regularization_dims(
     Regs: Sequence["LinearOperator"],
-    dataregs: Optional[Iterable[NDArray]] = None,
-    epsRs: Optional[Iterable[float]] = None,
+    dataregs: Optional[Sequence[NDArray]] = None,
+    epsRs: Optional[Sequence[float]] = None,
 ) -> None:
     """check Regs, dataregs, and epsRs have same dimensions"""
     nRegs = len(Regs)
@@ -95,11 +95,11 @@ class NormalEquationsInversion(Solver):
         y: NDArray,
         Regs: Sequence["LinearOperator"],
         Weight: Optional["LinearOperator"] = None,
-        dataregs: Optional[Iterable[NDArray]] = None,
+        dataregs: Optional[Sequence[NDArray]] = None,
         epsI: float = 0,
-        epsRs: Optional[Iterable[float]] = None,
+        epsRs: Optional[Sequence[float]] = None,
         NRegs: Optional[Sequence["LinearOperator"]] = None,
-        epsNRs: Optional[Iterable[float]] = None,
+        epsNRs: Optional[Sequence[float]] = None,
         show: bool = False,
     ) -> None:
         r"""Setup solver
@@ -173,13 +173,17 @@ class NormalEquationsInversion(Solver):
                 dtype=self.Op.dtype,
             )
 
-        if Regs is not None:
+        if (
+            self.epsRs is not None
+            and self.Regs is not None
+            and self.dataregs is not None
+        ):
             for epsR, Reg, datareg in zip(self.epsRs, self.Regs, self.dataregs):
                 self.RegH = Reg.H
                 self.y_normal += epsR**2 * self.RegH * datareg
                 self.Op_normal += epsR**2 * self.RegH * Reg
 
-        if NRegs is not None:
+        if epsNRs is not None and NRegs is not None:
             for epsNR, NReg in zip(epsNRs, NRegs):
                 self.Op_normal += epsNR**2 * NReg
 
@@ -264,11 +268,11 @@ class NormalEquationsInversion(Solver):
         Regs: Sequence["LinearOperator"],
         x0: Optional[NDArray] = None,
         Weight: Optional["LinearOperator"] = None,
-        dataregs: Optional[Iterable[NDArray]] = None,
+        dataregs: Optional[Sequence[NDArray]] = None,
         epsI: float = 0,
-        epsRs: Optional[Iterable[float]] = None,
+        epsRs: Optional[Sequence[float]] = None,
         NRegs: Optional[Sequence["LinearOperator"]] = None,
-        epsNRs: Optional[Iterable[float]] = None,
+        epsNRs: Optional[Sequence[float]] = None,
         engine: str = "scipy",
         show: bool = False,
         **kwargs_solver,
@@ -341,7 +345,7 @@ class NormalEquationsInversion(Solver):
 def RegularizedOperator(
     Op: "LinearOperator",
     Regs: Sequence["LinearOperator"],
-    epsRs: Iterable[float] = (1,),
+    epsRs: Sequence[float] = (1,),
 ) -> "LinearOperator":
     r"""Regularized operator.
 
@@ -454,8 +458,8 @@ class RegularizedInversion(Solver):
         y: NDArray,
         Regs: Sequence["LinearOperator"],
         Weight: Optional["LinearOperator"] = None,
-        dataregs: Optional[Iterable[NDArray]] = None,
-        epsRs: Optional[Iterable[float]] = None,
+        dataregs: Optional[Sequence[NDArray]] = None,
+        epsRs: Optional[Sequence[float]] = None,
         show: bool = False,
     ) -> None:
         r"""Setup solver
@@ -498,6 +502,7 @@ class RegularizedInversion(Solver):
             self.epsRs = [1] * len(Regs)
 
         # create regularization operators
+        self.RegOp: LinearOperator
         if Weight is not None:
             if Regs is None:
                 self.RegOp = Weight * self.Op
@@ -518,7 +523,7 @@ class RegularizedInversion(Solver):
             self.datatot = self.y.copy()
 
         # augumented operator
-        if Regs is not None:
+        if self.epsRs is not None and self.dataregs is not None:
             for epsR, datareg in zip(self.epsRs, self.dataregs):
                 self.datatot = np.hstack((self.datatot, epsR * datareg))
 
@@ -610,8 +615,8 @@ class RegularizedInversion(Solver):
         Regs: Sequence["LinearOperator"],
         x0: Optional[NDArray] = None,
         Weight: Optional["LinearOperator"] = None,
-        dataregs: Optional[Iterable[NDArray]] = None,
-        epsRs: Optional[Iterable[float]] = None,
+        dataregs: Optional[Sequence[NDArray]] = None,
+        epsRs: Optional[Sequence[float]] = None,
         engine: str = "scipy",
         show: bool = False,
         **kwargs_solver,

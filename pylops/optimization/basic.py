@@ -168,7 +168,7 @@ def lsqr(
     show: bool = False,
     itershow: List[int] = [10, 10, 10],
     callback: Optional[Callable] = None,
-) -> Tuple[NDArray, int, float, float, float, float, float, float, NDArray]:
+) -> Tuple[NDArray, int, int, float, float, float, float, float, float, float, NDArray]:
     r"""LSQR
 
     Solve an overdetermined system of equations given an operator ``Op`` and
