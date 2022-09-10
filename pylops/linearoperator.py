@@ -88,14 +88,14 @@ class LinearOperator(spLinearOperator):
 
     def __init__(
         self,
-        Op: spLinearOperator = None,
-        dtype: DTypeLike = None,
-        shape: ShapeLike = None,
-        dims: ShapeLike = None,
-        dimsd: ShapeLike = None,
-        clinear: bool = None,
-        explicit: bool = None,
-        name: str = None,
+        Op: Optional[spLinearOperator] = None,
+        dtype: Optional[DTypeLike] = None,
+        shape: Optional[ShapeLike] = None,
+        dims: Optional[ShapeLike] = None,
+        dimsd: Optional[ShapeLike] = None,
+        clinear: Optional[bool] = None,
+        explicit: Optional[bool] = None,
+        name: Optional[str] = None,
     ) -> None:
         if Op is not None:
             self.Op = Op
