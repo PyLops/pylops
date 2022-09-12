@@ -6,6 +6,7 @@ __all__ = [
 ]
 
 import logging
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 import numpy as np
 from scipy.sparse.linalg import cg as sp_cg
@@ -16,11 +17,20 @@ from pylops.optimization.basesolver import Solver
 from pylops.optimization.basic import cg, cgls
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import disable_ndarray_multiplication
+from pylops.utils.typing import NDArray
+
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
+
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def _check_regularization_dims(Regs, dataregs, epsRs):
+def _check_regularization_dims(
+    Regs: Sequence["LinearOperator"],
+    dataregs: Optional[Sequence[NDArray]] = None,
+    epsRs: Optional[Sequence[float]] = None,
+) -> None:
     """check Regs, dataregs, and epsRs have same dimensions"""
     nRegs = len(Regs)
     ndataregs = nRegs if dataregs is None else len(dataregs)
@@ -68,30 +78,30 @@ class NormalEquationsInversion(Solver):
 
     """
 
-    def _print_setup(self):
+    def _print_setup(self) -> None:
         self._print_solver(nbar=55)
         strreg = f"Regs={self.Regs}"
         streps = f"\nepsRs={self.epsRs}     epsI={self.epsI}"
         print(strreg + streps)
         print("-" * 55)
 
-    def _print_finalize(self):
+    def _print_finalize(self) -> None:
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 55 + "\n")
 
     @disable_ndarray_multiplication
     def setup(
         self,
-        y,
-        Regs,
-        Weight=None,
-        dataregs=None,
-        epsI=0,
-        epsRs=None,
-        NRegs=None,
-        epsNRs=None,
-        show=False,
-    ):
+        y: NDArray,
+        Regs: Sequence["LinearOperator"],
+        Weight: Optional["LinearOperator"] = None,
+        dataregs: Optional[Sequence[NDArray]] = None,
+        epsI: float = 0,
+        epsRs: Optional[Sequence[float]] = None,
+        NRegs: Optional[Sequence["LinearOperator"]] = None,
+        epsNRs: Optional[Sequence[float]] = None,
+        show: bool = False,
+    ) -> None:
         r"""Setup solver
 
         Parameters
@@ -163,13 +173,17 @@ class NormalEquationsInversion(Solver):
                 dtype=self.Op.dtype,
             )
 
-        if Regs is not None:
+        if (
+            self.epsRs is not None
+            and self.Regs is not None
+            and self.dataregs is not None
+        ):
             for epsR, Reg, datareg in zip(self.epsRs, self.Regs, self.dataregs):
                 self.RegH = Reg.H
                 self.y_normal += epsR**2 * self.RegH * datareg
                 self.Op_normal += epsR**2 * self.RegH * Reg
 
-        if NRegs is not None:
+        if epsNRs is not None and NRegs is not None:
             for epsNR, NReg in zip(epsNRs, NRegs):
                 self.Op_normal += epsNR**2 * NReg
 
@@ -177,7 +191,7 @@ class NormalEquationsInversion(Solver):
         if show:
             self._print_setup()
 
-    def step(self):
+    def step(self) -> None:
         raise NotImplementedError(
             "NormalEquationsInversion uses as default the"
             " scipy.sparse.linalg.cg solver, therefore the "
@@ -185,7 +199,13 @@ class NormalEquationsInversion(Solver):
         )
 
     @disable_ndarray_multiplication
-    def run(self, x, engine="scipy", show=False, **kwargs_solver):
+    def run(
+        self,
+        x: NDArray,
+        engine: str = "scipy",
+        show: bool = False,
+        **kwargs_solver,
+    ) -> Tuple[NDArray, int]:
         r"""Run solver
 
         Parameters
@@ -244,19 +264,19 @@ class NormalEquationsInversion(Solver):
 
     def solve(
         self,
-        y,
-        Regs,
-        x0=None,
-        Weight=None,
-        dataregs=None,
-        epsI=0,
-        epsRs=None,
-        NRegs=None,
-        epsNRs=None,
-        engine="scipy",
-        show=False,
+        y: NDArray,
+        Regs: Sequence["LinearOperator"],
+        x0: Optional[NDArray] = None,
+        Weight: Optional["LinearOperator"] = None,
+        dataregs: Optional[Sequence[NDArray]] = None,
+        epsI: float = 0,
+        epsRs: Optional[Sequence[float]] = None,
+        NRegs: Optional[Sequence["LinearOperator"]] = None,
+        epsNRs: Optional[Sequence[float]] = None,
+        engine: str = "scipy",
+        show: bool = False,
         **kwargs_solver,
-    ):
+    ) -> Tuple[NDArray, int]:
         r"""Run entire solver
 
         Parameters
@@ -287,6 +307,8 @@ class NormalEquationsInversion(Solver):
         epsNRs : :obj:`list`, optional
              Regularization dampings for normal operators (must have the same
              number of elements as ``NRegs``)
+        engine : :obj:`str`, optional
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display setup log
 
@@ -320,7 +342,11 @@ class NormalEquationsInversion(Solver):
         return x, istop
 
 
-def RegularizedOperator(Op, Regs, epsRs=(1,)):
+def RegularizedOperator(
+    Op: "LinearOperator",
+    Regs: Sequence["LinearOperator"],
+    epsRs: Sequence[float] = (1,),
+) -> "LinearOperator":
     r"""Regularized operator.
 
     Creates a regularized operator given the operator ``Op``
@@ -415,27 +441,27 @@ class RegularizedInversion(Solver):
 
     """
 
-    def _print_setup(self):
+    def _print_setup(self) -> None:
         self._print_solver(nbar=65)
         strreg = f"Regs={self.Regs}"
         streps = f"\nepsRs={self.epsRs}"
         print(strreg + streps)
         print("-" * 65)
 
-    def _print_finalize(self):
+    def _print_finalize(self) -> None:
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 65 + "\n")
 
     @disable_ndarray_multiplication
     def setup(
         self,
-        y,
-        Regs,
-        Weight=None,
-        dataregs=None,
-        epsRs=None,
-        show=False,
-    ):
+        y: NDArray,
+        Regs: Sequence["LinearOperator"],
+        Weight: Optional["LinearOperator"] = None,
+        dataregs: Optional[Sequence[NDArray]] = None,
+        epsRs: Optional[Sequence[float]] = None,
+        show: bool = False,
+    ) -> None:
         r"""Setup solver
 
         Parameters
@@ -476,6 +502,7 @@ class RegularizedInversion(Solver):
             self.epsRs = [1] * len(Regs)
 
         # create regularization operators
+        self.RegOp: LinearOperator
         if Weight is not None:
             if Regs is None:
                 self.RegOp = Weight * self.Op
@@ -491,12 +518,12 @@ class RegularizedInversion(Solver):
 
         # augumented data
         if Weight is not None:
-            self.datatot = Weight * self.y.copy()
+            self.datatot: NDArray = Weight * self.y.copy()
         else:
             self.datatot = self.y.copy()
 
         # augumented operator
-        if Regs is not None:
+        if self.epsRs is not None and self.dataregs is not None:
             for epsR, datareg in zip(self.epsRs, self.dataregs):
                 self.datatot = np.hstack((self.datatot, epsR * datareg))
 
@@ -504,7 +531,7 @@ class RegularizedInversion(Solver):
         if show:
             self._print_setup()
 
-    def step(self):
+    def step(self) -> None:
         raise NotImplementedError(
             "RegularizedInversion uses as default the"
             " scipy.sparse.linalg.lsqr solver, therefore the "
@@ -512,7 +539,13 @@ class RegularizedInversion(Solver):
         )
 
     @disable_ndarray_multiplication
-    def run(self, x, engine="scipy", show=False, **kwargs_solver):
+    def run(
+        self,
+        x: NDArray,
+        engine: str = "scipy",
+        show: bool = False,
+        **kwargs_solver,
+    ) -> Tuple[NDArray, int, int, float, float]:
         r"""Run solver
 
         Parameters
@@ -578,16 +611,16 @@ class RegularizedInversion(Solver):
 
     def solve(
         self,
-        y,
-        Regs,
-        x0=None,
-        Weight=None,
-        dataregs=None,
-        epsRs=None,
-        engine="scipy",
-        show=False,
+        y: NDArray,
+        Regs: Sequence["LinearOperator"],
+        x0: Optional[NDArray] = None,
+        Weight: Optional["LinearOperator"] = None,
+        dataregs: Optional[Sequence[NDArray]] = None,
+        epsRs: Optional[Sequence[float]] = None,
+        engine: str = "scipy",
+        show: bool = False,
         **kwargs_solver,
-    ):
+    ) -> Tuple[NDArray, int, int, float, float]:
         r"""Run entire solver
 
         Parameters
@@ -680,18 +713,23 @@ class PreconditionedInversion(Solver):
 
     """
 
-    def _print_setup(self):
+    def _print_setup(self) -> None:
         self._print_solver(nbar=65)
         strprec = f"Prec={self.P}"
         print(strprec)
         print("-" * 65)
 
-    def _print_finalize(self):
+    def _print_finalize(self) -> None:
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 65 + "\n")
 
     @disable_ndarray_multiplication
-    def setup(self, y, P, show=False):
+    def setup(
+        self,
+        y: NDArray,
+        P: "LinearOperator",
+        show: bool = False,
+    ) -> None:
         r"""Setup solver
 
         Parameters
@@ -715,7 +753,7 @@ class PreconditionedInversion(Solver):
         if show:
             self._print_setup()
 
-    def step(self):
+    def step(self) -> None:
         raise NotImplementedError(
             "PreconditionedInversion uses as default the"
             " scipy.sparse.linalg.lsqr solver, therefore the "
@@ -723,7 +761,13 @@ class PreconditionedInversion(Solver):
         )
 
     @disable_ndarray_multiplication
-    def run(self, x, engine="scipy", show=False, **kwargs_solver):
+    def run(
+        self,
+        x: NDArray,
+        engine: str = "scipy",
+        show: bool = False,
+        **kwargs_solver,
+    ) -> Tuple[NDArray, int, int, float, float]:
         r"""Run solver
 
         Parameters
@@ -790,7 +834,15 @@ class PreconditionedInversion(Solver):
             xinv = x + xinv
         return xinv, istop, itn, r1norm, r2norm
 
-    def solve(self, y, P, x0=None, engine="scipy", show=False, **kwargs_solver):
+    def solve(
+        self,
+        y: NDArray,
+        P: "LinearOperator",
+        x0: Optional[NDArray] = None,
+        engine: str = "scipy",
+        show: bool = False,
+        **kwargs_solver,
+    ) -> Tuple[NDArray, int, int, float, float]:
         r"""Run entire solver
 
         Parameters

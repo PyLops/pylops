@@ -138,7 +138,7 @@ class _BaseFFTND(LinearOperator):
         dims: Union[int, InputDimsLike],
         axes: Optional[Union[int, InputDimsLike]] = None,
         nffts: Optional[Union[int, InputDimsLike]] = None,
-        sampling: Optional[Union[float, Sequence[float]]] = 1.0,
+        sampling: Union[float, Sequence[float]] = 1.0,
         norm: str = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,

@@ -1,11 +1,21 @@
 __all__ = ["power_iteration"]
 
+from typing import Tuple
+
 import numpy as np
 
+from pylops import LinearOperator
 from pylops.utils.backend import get_module
+from pylops.utils.typing import NDArray
 
 
-def power_iteration(Op, niter=10, tol=1e-5, dtype="float32", backend="numpy"):
+def power_iteration(
+    Op: LinearOperator,
+    niter: int = 10,
+    tol: float = 1e-5,
+    dtype: str = "float32",
+    backend: str = "numpy",
+) -> Tuple[float, NDArray, int]:
     """Power iteration algorithm.
 
     Power iteration algorithm, used to compute the largest eigenvector and
@@ -30,7 +40,7 @@ def power_iteration(Op, niter=10, tol=1e-5, dtype="float32", backend="numpy"):
 
     Returns
     -------
-    maxeig : :obj:`int`
+    maxeig : :obj:`float`
         Largest eigenvalue
     b_k : :obj:`np.ndarray` or :obj:`cp.ndarray`
         Largest eigenvector

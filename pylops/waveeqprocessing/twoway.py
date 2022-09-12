@@ -1,9 +1,12 @@
 __all__ = ["AcousticWave2D"]
 
+from typing import Tuple
+
 import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, SamplingLike
 
 try:
     import devito
@@ -26,11 +29,11 @@ class AcousticWave2D(LinearOperator):
 
     Parameters
     ----------
-    shape : :obj:`numpy.ndarray`
+    shape : :obj:`tuple` or :obj:`numpy.ndarray`
         Model shape ``(nx, nz)``
-    origin : :obj:`numpy.ndarray`
+    origin : :obj:`tuple` or :obj:`numpy.ndarray`
         Model origin ``(ox, oz)``
-    spacing : :obj:`numpy.ndarray`
+    spacing : :obj:`tuple` or  :obj:`numpy.ndarray`
         Model spacing ``(dx, dz)``
     vp : :obj:`numpy.ndarray`
         Velocity model in m/s
@@ -75,24 +78,24 @@ class AcousticWave2D(LinearOperator):
 
     def __init__(
         self,
-        shape,
-        origin,
-        spacing,
-        vp,
-        src_x,
-        src_z,
-        rec_x,
-        rec_z,
-        t0,
-        tn,
-        src_type="Ricker",
-        space_order=6,
-        nbl=20,
-        f0=20,
-        checkpointing=False,
-        dtype="float32",
-        name="A",
-    ):
+        shape: InputDimsLike,
+        origin: SamplingLike,
+        spacing: SamplingLike,
+        vp: NDArray,
+        src_x: NDArray,
+        src_z: NDArray,
+        rec_x: NDArray,
+        rec_z: NDArray,
+        t0: float,
+        tn: int,
+        src_type: str = "Ricker",
+        space_order: int = 6,
+        nbl: int = 20,
+        f0: float = 20.0,
+        checkpointing: bool = False,
+        dtype: DTypeLike = "float32",
+        name: str = "A",
+    ) -> None:
         if not devito:
             raise NotImplementedError(devito_message)
         # create model
@@ -109,13 +112,19 @@ class AcousticWave2D(LinearOperator):
         )
 
     @staticmethod
-    def _crop_model(m, nbl):
+    def _crop_model(m: NDArray, nbl: int) -> NDArray:
         """Remove absorbing boundaries from model"""
         return m[nbl:-nbl, nbl:-nbl]
 
     def _create_model(
-        self, shape, origin, spacing, vp, space_order: int = 6, nbl: int = 20
-    ):
+        self,
+        shape: InputDimsLike,
+        origin: SamplingLike,
+        spacing: SamplingLike,
+        vp: NDArray,
+        space_order: int = 6,
+        nbl: int = 20,
+    ) -> None:
         """Create model
 
         Parameters
@@ -146,7 +155,17 @@ class AcousticWave2D(LinearOperator):
             bcs="damp",
         )
 
-    def _create_geometry(self, src_x, src_z, rec_x, rec_z, t0, tn, src_type, f0=20):
+    def _create_geometry(
+        self,
+        src_x: NDArray,
+        src_z: NDArray,
+        rec_x: NDArray,
+        rec_z: NDArray,
+        t0: float,
+        tn: int,
+        src_type: str,
+        f0: float = 20.0,
+    ) -> None:
         """Create geometry and time axis
 
         Parameters
@@ -189,7 +208,7 @@ class AcousticWave2D(LinearOperator):
             f0=None if f0 is None else f0 * 1e-3,
         )
 
-    def _srcillumination_oneshot(self, isrc):
+    def _srcillumination_oneshot(self, isrc: int) -> Tuple[NDArray, NDArray]:
         """Source wavefield and illumination for one shot
 
         Parameters
@@ -223,7 +242,7 @@ class AcousticWave2D(LinearOperator):
         src_ill = self._crop_model((u0.data**2).sum(axis=0), self.model.nbl)
         return u0, src_ill
 
-    def srcillumination_allshots(self, savewav=False):
+    def srcillumination_allshots(self, savewav: bool = False) -> None:
         """Source wavefield and illumination for all shots
 
         Parameters
@@ -243,7 +262,7 @@ class AcousticWave2D(LinearOperator):
                 self.src_wavefield.append(src_wav)
             self.src_illumination += src_ill
 
-    def _born_oneshot(self, isrc, dm):
+    def _born_oneshot(self, isrc: int, dm: NDArray) -> NDArray:
         """Born modelling for one shot
 
         Parameters
@@ -280,7 +299,7 @@ class AcousticWave2D(LinearOperator):
         d = d.resample(geometry.dt).data[:][: geometry.nt].T
         return d
 
-    def _born_allshots(self, dm):
+    def _born_allshots(self, dm: NDArray) -> NDArray:
         """Born modelling for all shots
 
         Parameters
@@ -346,7 +365,7 @@ class AcousticWave2D(LinearOperator):
         )[0]
         return model
 
-    def _bornadj_allshots(self, dobs):
+    def _bornadj_allshots(self, dobs: NDArray) -> NDArray:
         """Adjoint Born modelling for all shots
 
         Parameters
@@ -369,11 +388,11 @@ class AcousticWave2D(LinearOperator):
         return mtot
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: NDArray) -> NDArray:
         y = self._born_allshots(x)
         return y
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: NDArray) -> NDArray:
         y = self._bornadj_allshots(x)
         return y

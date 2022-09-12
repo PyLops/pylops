@@ -2,6 +2,7 @@ __all__ = [
     "IntNDArray",
     "NDArray",
     "InputDimsLike",
+    "SamplingLike",
     "ShapeLike",
     "DTypeLike",
     "TensorTypeLike",
@@ -21,6 +22,7 @@ IntNDArray = npt.NDArray[np.int_]
 NDArray = npt.NDArray
 
 InputDimsLike = Union[Sequence[int], IntNDArray]
+SamplingLike = Union[Sequence[float], NDArray]
 ShapeLike = Tuple[int, ...]
 DTypeLike = npt.DTypeLike
 

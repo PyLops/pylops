@@ -6,25 +6,32 @@ __all__ = [
     "spgl1",
     "splitbregman",
 ]
+
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+
 from pylops.optimization.cls_sparsity import FISTA, IRLS, ISTA, OMP, SPGL1, SplitBregman
 from pylops.utils.decorators import add_ndarray_support_to_solver
+from pylops.utils.typing import NDArray, SamplingLike
+
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
 
 
 def irls(
-    Op,
-    y,
-    x0=None,
-    nouter=10,
-    threshR=False,
-    epsR=1e-10,
-    epsI=1e-10,
-    tolIRLS=1e-10,
-    kind="data",
-    show=False,
-    itershow=[10, 10, 10],
-    callback=None,
+    Op: "LinearOperator",
+    y: NDArray,
+    x0: Optional[NDArray] = None,
+    nouter: int = 10,
+    threshR: bool = False,
+    epsR: float = 1e-10,
+    epsI: float = 1e-10,
+    tolIRLS: float = 1e-10,
+    kind: str = "data",
+    show: bool = False,
+    itershow: List[int] = [10, 10, 10],
+    callback: Optional[Callable] = None,
     **kwargs_solver,
-):
+) -> Tuple[NDArray, int]:
     r"""Iteratively reweighted least squares.
 
     Solve an optimization problem with :math:`L_1` cost function (data IRLS)
@@ -45,7 +52,7 @@ def irls(
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
-    data : :obj:`numpy.ndarray`
+    y : :obj:`numpy.ndarray`
         Data
     x0 : :obj:`numpy.ndarray`, optional
         Initial guess
@@ -56,7 +63,7 @@ def irls(
         or damping (``False``)
     epsR : :obj:`float`, optional
         Damping to be applied to residuals for weighting term
-    espI : :obj:`float`, optional
+    epsI : :obj:`float`, optional
         Tikhonov damping
     tolIRLS : :obj:`float`, optional
         Tolerance. Stop outer iterations if difference between inverted model
@@ -111,16 +118,16 @@ def irls(
 
 
 def omp(
-    Op,
-    y,
-    niter_outer=10,
-    niter_inner=40,
-    sigma=1e-4,
-    normalizecols=False,
-    show=False,
-    itershow=[10, 10, 10],
-    callback=None,
-):
+    Op: "LinearOperator",
+    y: NDArray,
+    niter_outer: int = 10,
+    niter_inner: int = 40,
+    sigma: float = 1e-4,
+    normalizecols: bool = False,
+    show: bool = False,
+    itershow: List[int] = [10, 10, 10],
+    callback: Optional[Callable] = None,
+) -> Tuple[NDArray, int, NDArray]:
     r"""Orthogonal Matching Pursuit (OMP).
 
     Solve an optimization problem with :math:`L^0` regularization function given
@@ -163,7 +170,7 @@ def omp(
         Inverted model
     niter_outer : :obj:`int`
         Number of effective outer iterations
-    cost : :obj:`numpy.ndarray`, optional
+    cost : :obj:`numpy.ndarray`
         History of cost function
 
     See Also
@@ -194,23 +201,23 @@ def omp(
 
 
 def ista(
-    Op,
-    y,
-    x0=None,
-    niter=10,
-    SOp=None,
-    eps=0.1,
-    alpha=None,
-    eigsdict=None,
-    tol=1e-10,
-    threshkind="soft",
-    perc=None,
-    decay=None,
-    monitorres=False,
-    show=False,
-    itershow=[10, 10, 10],
-    callback=None,
-):
+    Op: "LinearOperator",
+    y: NDArray,
+    x0: Optional[NDArray] = None,
+    niter: int = 10,
+    SOp: Optional["LinearOperator"] = None,
+    eps: float = 0.1,
+    alpha: Optional[float] = None,
+    eigsdict: Optional[Dict[str, Any]] = None,
+    tol: float = 1e-10,
+    threshkind: str = "soft",
+    perc: Optional[float] = None,
+    decay: Optional[NDArray] = None,
+    monitorres: bool = False,
+    show: bool = False,
+    itershow: List[int] = [10, 10, 10],
+    callback: Optional[Callable] = None,
+) -> Tuple[NDArray, int, NDArray]:
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
     Solve an optimization problem with :math:`L^p, \; p=0, 0.5, 1`
@@ -271,7 +278,7 @@ def ista(
         Inverted model
     niter : :obj:`int`
         Number of effective iterations
-    cost : :obj:`numpy.ndarray`, optional
+    cost : :obj:`numpy.ndarray`
         History of cost function
 
     Raises
@@ -320,23 +327,23 @@ def ista(
 
 
 def fista(
-    Op,
-    y,
-    x0=None,
-    niter=10,
-    SOp=None,
-    eps=0.1,
-    alpha=None,
-    eigsdict=None,
-    tol=1e-10,
-    threshkind="soft",
-    perc=None,
-    decay=None,
-    monitorres=False,
-    show=False,
-    itershow=[10, 10, 10],
-    callback=None,
-):
+    Op: "LinearOperator",
+    y: NDArray,
+    x0: Optional[NDArray] = None,
+    niter: int = 10,
+    SOp: Optional["LinearOperator"] = None,
+    eps: float = 0.1,
+    alpha: Optional[float] = None,
+    eigsdict: Optional[Dict[str, Any]] = None,
+    tol: float = 1e-10,
+    threshkind: str = "soft",
+    perc: Optional[float] = None,
+    decay: Optional[NDArray] = None,
+    monitorres: bool = False,
+    show: bool = False,
+    itershow: List[int] = [10, 10, 10],
+    callback: Optional[Callable] = None,
+) -> Tuple[NDArray, int, NDArray]:
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
     Solve an optimization problem with :math:`L^p, \; p=0, 0.5, 1`
@@ -444,7 +451,16 @@ def fista(
 
 
 @add_ndarray_support_to_solver
-def spgl1(Op, y, x0=None, SOp=None, tau=0, sigma=0, show=False, **kwargs_spgl1):
+def spgl1(
+    Op: "LinearOperator",
+    y: NDArray,
+    x0: Optional[NDArray] = None,
+    SOp: Optional["LinearOperator"] = None,
+    tau: float = 0.0,
+    sigma: float = 0.0,
+    show: bool = False,
+    **kwargs_spgl1,
+) -> Tuple[NDArray, NDArray, Dict[str, Any]]:
     r"""Spectral Projected-Gradient for L1 norm.
 
     Solve a constrained system of equations given the operator ``Op``
@@ -473,6 +489,8 @@ def spgl1(Op, y, x0=None, SOp=None, tau=0, sigma=0, show=False, **kwargs_spgl1):
     sigma : :obj:`list`, optional
         BPDN scalar. If different from ``0``,
         SPGL1 will solve BPDN problem
+    show : :obj:`bool`, optional
+        Display iterations log
     **kwargs_spgl1
         Arbitrary keyword arguments for
         :py:func:`spgl1.spgl1` solver
@@ -550,26 +568,26 @@ def spgl1(Op, y, x0=None, SOp=None, tau=0, sigma=0, show=False, **kwargs_spgl1):
 
 
 def splitbregman(
-    Op,
-    y,
-    RegsL1,
-    x0=None,
-    niter_outer=3,
-    niter_inner=5,
-    RegsL2=None,
-    dataregsL2=None,
-    mu=1.0,
-    epsRL1s=None,
-    epsRL2s=None,
-    tol=1e-10,
-    tau=1.0,
-    restart=False,
-    show=False,
-    itershow=[10, 10, 10],
-    show_inner=False,
-    callback=None,
+    Op: "LinearOperator",
+    y: NDArray,
+    RegsL1: List["LinearOperator"],
+    x0: Optional[NDArray] = None,
+    niter_outer: int = 3,
+    niter_inner: int = 5,
+    RegsL2: Optional[List["LinearOperator"]] = None,
+    dataregsL2: Optional[List[NDArray]] = None,
+    mu: float = 1.0,
+    epsRL1s: Optional[SamplingLike] = None,
+    epsRL2s: Optional[SamplingLike] = None,
+    tol: float = 1e-10,
+    tau: float = 1.0,
+    restart: bool = False,
+    show: bool = False,
+    itershow: List[int] = [10, 10, 10],
+    show_inner: bool = False,
+    callback: Optional[Callable] = None,
     **kwargs_lsqr,
-):
+) -> Tuple[NDArray, int, NDArray]:
     r"""Split Bregman for mixed L2-L1 norms.
 
     Solve an unconstrained system of equations with mixed :math:`L_2` and :math:`L_1`
