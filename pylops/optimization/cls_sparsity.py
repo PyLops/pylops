@@ -7,7 +7,7 @@ import numpy as np
 from scipy.sparse.linalg import lsqr
 
 from pylops import LinearOperator
-from pylops.basicoperators import Diagonal, Identity
+from pylops.basicoperators import Diagonal, Identity, VStack
 from pylops.optimization.basesolver import Solver
 from pylops.optimization.basic import cgls
 from pylops.optimization.eigs import power_iteration
@@ -331,6 +331,7 @@ class IRLS(Solver):
         epsR: float = 1e-10,
         epsI: float = 1e-10,
         tolIRLS: float = 1e-10,
+        warm: bool = False,
         kind: str = "data",
         show: bool = False,
     ) -> None:
@@ -348,12 +349,16 @@ class IRLS(Solver):
         epsR : :obj:`float`, optional
             Damping to be applied to residuals for weighting term
         epsI : :obj:`float`, optional
-            Tikhonov damping
+            Tikhonov damping (for ``kind="data"``) or L1 model damping
+            (for ``kind="datamodel"``)
         tolIRLS : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
             at subsequent iterations is smaller than ``tolIRLS``
+        warm  : :obj:`bool`, optional
+            Warm start each inversion inner step with previous estimate (``True``) or not (``False``).
+            This only applies to ``kind="data"`` and ``kind="datamodel"``
         kind : :obj:`str`, optional
-            Kind of solver (``data`` or ``model``)
+            Kind of solver (``model``, ``data`` or ``datamodel``)
         show : :obj:`bool`, optional
             Display setup log
 
@@ -364,6 +369,7 @@ class IRLS(Solver):
         self.epsR = epsR
         self.epsI = epsI
         self.tolIRLS = tolIRLS
+        self.warm = warm
         self.kind = kind
         self.ncp = get_array_module(y)
         self.iiter = 0
@@ -374,8 +380,14 @@ class IRLS(Solver):
         elif self.kind == "model":
             self._step = self._step_model
             self.Iop = Identity(y.size, dtype=y.dtype)
+        elif self.kind == "datamodel":
+            self._step = self._step_data
+            # augment Op and y
+            self.Op = VStack([self.Op, epsI * Identity(self.Op.shape[1])])
+            self.epsI = 0.0  # as epsI is added to the augmented system already
+            self.y = np.hstack([self.y, np.zeros(self.Op.shape[1])])
         else:
-            raise NotImplementedError("kind must be model or data")
+            raise NotImplementedError("kind must be model, data or datamodel")
 
         # print setup
         if show:
@@ -385,8 +397,17 @@ class IRLS(Solver):
         r"""Run one step of solver with L1 data term"""
         if self.iiter == 0:
             # first iteration (unweighted least-squares)
-            x = normal_equations_inversion(
-                self.Op, self.y, None, epsI=self.epsI, **kwargs_solver
+            # x = normal_equations_inversion(
+            #    self.Op, self.y, None, x0=x if self.warm else None,
+            #    epsI=self.epsI, **kwargs_solver
+            # )[0]
+            x = regularized_inversion(
+                self.Op,
+                self.y,
+                None,
+                x0=x if self.warm else None,
+                damp=self.epsI,
+                **kwargs_solver,
             )[0]
         else:
             # other iterations (weighted least-squares)
@@ -395,9 +416,21 @@ class IRLS(Solver):
             else:
                 self.rw = 1.0 / (self.ncp.abs(self.r) + self.epsR)
             self.rw = self.rw / self.rw.max()
+            # R = Diagonal(self.rw)
+            # x = normal_equations_inversion(
+            #    self.Op, self.y, [], Weight=R, x0=x if self.warm else None,
+            #    epsI=self.epsI, **kwargs_solver
+            # )[0]
+            # R = Diagonal(np.sqrt(self.rw))
             R = Diagonal(self.rw)
-            x = normal_equations_inversion(
-                self.Op, self.y, [], Weight=R, epsI=self.epsI, **kwargs_solver
+            x = regularized_inversion(
+                self.Op,
+                self.y,
+                None,
+                Weight=R,
+                x0=x if self.warm else None,
+                damp=self.epsI,
+                **kwargs_solver,
             )[0]
         return x
 
@@ -572,6 +605,7 @@ class IRLS(Solver):
         epsI: float = 1e-10,
         tolIRLS: float = 1e-10,
         kind: str = "data",
+        warm: bool = False,
         show: bool = False,
         itershow: List[int] = [10, 10, 10],
         **kwargs_solver,
@@ -597,6 +631,9 @@ class IRLS(Solver):
         tolIRLS : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
             at subsequent iterations is smaller than ``tolIRLS``
+        warm  : :obj:`bool`, optional
+            Warm start each inversion inner step with previous estimate (``True``) or not (``False``).
+            This only applies to ``kind="data"`` and ``kind="datamodel"``
         kind : :obj:`str`, optional
             Kind of solver (``data`` or ``model``)
         show : :obj:`bool`, optional
@@ -624,6 +661,7 @@ class IRLS(Solver):
             epsR=epsR,
             epsI=epsI,
             tolIRLS=tolIRLS,
+            warm=warm,
             kind=kind,
             show=show,
         )
