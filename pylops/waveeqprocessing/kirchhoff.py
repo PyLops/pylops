@@ -2,11 +2,13 @@ __all__ = ["Kirchhoff"]
 
 import logging
 import os
+import warnings
 
 import numpy as np
 
 from pylops import LinearOperator
 from pylops.signalprocessing import Convolve1D
+from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper
 
@@ -94,28 +96,32 @@ class Kirchhoff(LinearOperator):
         Amplitude table of size
         :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` (to be provided if
         ``mode='byot'``)
-    aperture : :obj:`float`, optional
+    aperture : :obj:`float` or :obj:`tuple`, optional
         .. versionadded:: 2.0.0
 
-        Maximum allowed aperture expressed as the ratio of offset over depth
-    aperturetap : :obj:`int`, optional
+        Maximum allowed aperture expressed as the ratio of offset over depth. If ``None``,
+        no aperture limitations are introduced. If scalar, a taper from 80% to 100% of
+        aperture is applied. If tuple, apertures below the first value are
+        accepted and those after the second value are rejected. A tapering is implemented
+        for those between such values.
+    angleaperture : :obj:`float` or :obj:`tuple`, optional
         .. versionadded:: 2.0.0
 
-        Size of hanning taper to apply at the edges of the aperture
-    angleaperture : :obj:`float`, optional
-        .. versionadded:: 2.0.0
+        Maximum allowed angle (either source or receiver side) in degrees. If ``None``,
+        angle aperture limitations are introduced. See ``aperture`` for implementation
+        details regarding scalar and tuple cases.
 
-        Maximum allowed angle (either source or receiver side) in degrees
-    anglerefl : :obj:`float`, optional
+    anglerefl : :obj:`np.ndarray`, optional
         .. versionadded:: 2.0.0
 
         Angle between the normal of the reflectors and the vertical axis in degrees
-    snell : :obj:`float`, optional
+    snell : :obj:`float` or :obj:`tuple`, optional
         .. versionadded:: 2.0.0
 
-        Threshold of Snell's law evaluation. If larger, the source-receiver-image
-        point is discarded. If ``None``, no check on the validiyy of the Snell's
-        law is performed
+        Threshold on Snell's law evaluation. If larger, the source-receiver-image
+        point is discarded. If ``None``, no check on the validity of the Snell's
+        law is performed.  See ``aperture`` for implementation details regarding
+        scalar and tuple cases.
     engine : :obj:`str`, optional
         Engine used for computations (``numpy`` or ``numba``).
     dtype : :obj:`str`, optional
@@ -200,8 +206,23 @@ class Kirchhoff(LinearOperator):
       can provide their own amplitude scaling ``amp`` (which should include the angle
       scaling too).
 
-    An aperture limitation is also implemented as defined by ``aperture``
-    and a taper is added at the edges of the aperture.
+    Three aperture limitations have been also implemented as defined by:
+
+    * ``aperture``: the maximum allowed aperture is expressed as the ratio of
+      offset over depth. This aperture limitation avoid including grazing angles
+      whose contributions can introduce aliasing effects. A taper is added at the
+      edges of the aperture;
+    * ``angleaperture``: the maximum allowed angle aperture is expressed as the
+      difference between the incident or emerging angle at every image point and
+      the vertical axis (or the normal to the reflector if ``anglerefl`` is provided.
+      This aperture limitation also avoid including grazing angles whose contributions
+      can introduce aliasing effects. Note that for a homogenous medium and slowly varying
+      heterogenous medium the offset and angle aperture limits may work in the same way;
+    * ``snell``: the maximum allowed snell's angle is expressed as the absolute value of
+      the sum between incident and emerging angles defined as in the ``angleaperture`` case.
+      This aperture limitation is introduced to turn a scattering-based Kirchhoff engine into
+      a reflection-based Kirchhoff engine where each image point is not considered as scatter
+      but as a local horizontal (or straight) reflector.
 
     Finally, the adjoint of the demigration operator is a *migration* operator which
     projects data in the model domain creating an image of the subsurface
@@ -236,7 +257,6 @@ class Kirchhoff(LinearOperator):
         trav=None,
         amp=None,
         aperture=None,
-        aperturetap=20,
         angleaperture=90,
         anglerefl=None,
         snell=None,
@@ -268,6 +288,9 @@ class Kirchhoff(LinearOperator):
         if self.ndims == 2:
             self.six = np.tile((srcs[0] - x[0]) // dx, (nr, 1)).T.astype(int).ravel()
             self.rix = np.tile((recs[0] - x[0]) // dx, (ns, 1)).astype(int).ravel()
+        elif self.ndims == 3:
+            # TODO: 3D normalized distances
+            pass
 
         # compute traveltime
         self.dynamic = dynamic
@@ -329,27 +352,50 @@ class Kirchhoff(LinearOperator):
                     self.amp = amp
 
         else:
-            raise NotImplementedError("method must be analytic or eikonal")
+            raise NotImplementedError("method must be analytic, eikonal or byot")
 
         self.itrav = (self.trav / dt).astype("int32")
         self.travd = self.trav / dt - self.itrav
 
         # create wavelet operator
         if wavfilter:
-            self.wav = self._wavelet_reshaping(wav, dt)
+            self.wav = self._wavelet_reshaping(
+                wav, dt, srcs.shape[0], recs.shape[0], self.ndims
+            )
         else:
             self.wav = wav
         self.cop = Convolve1D(
             (ns * nr, self.nt), h=self.wav, offset=wavcenter, axis=1, dtype=dtype
         )
 
-        # define aperture and create aperture taper (of size 100)
-        self.aperture = self.nx / self.nz if aperture is None else aperture
-        self.aperturetap = taper(201, aperturetap, "hanning")[101:]
+        # create fixed-size aperture taper for all apertures
+        self.aperturetap = taper(41, 20, "hanning")[20:]
+
+        # define aperture
+        if aperture is not None:
+            warnings.warn(
+                "Aperture is currently defined as ratio of offset over depth, "
+                "and may be not ideal for highly heterogenous media"
+            )
+        self.aperture = (
+            (2 * self.nx / self.nz,)
+            if aperture is None
+            else _value_or_sized_to_array(aperture)
+        )
+        if len(self.aperture) == 1:
+            self.aperture = np.array([0.8 * self.aperture[0], self.aperture[0]])
 
         # define angle aperture and snell law
-        self.angleaperture = np.deg2rad(angleaperture)
-        self.snell = np.pi if snell is None else np.deg2rad(snell)
+        self.angleaperture = np.deg2rad(_value_or_sized_to_array(angleaperture))
+        if len(self.angleaperture) == 1:
+            self.angleaperture = np.array(
+                [0.8 * self.angleaperture[0], self.angleaperture[0]]
+            )
+        self.snell = (
+            (np.pi,) if snell is None else np.deg2rad(_value_or_sized_to_array(snell))
+        )
+        if len(self.snell) == 1:
+            self.snell = np.array([0.8 * self.snell[0], self.snell[0]])
 
         # dimensions
         self.nsnr = ns * nr
@@ -537,13 +583,18 @@ class Kirchhoff(LinearOperator):
 
         return trav, trav_srcs, trav_recs, dist, trav_srcs_grad, trav_recs_grad
 
-    def _wavelet_reshaping(self, wav, dt):
+    def _wavelet_reshaping(self, wav, dt, dimsrc, dimrec, dimv):
         """Apply wavelet reshaping as from theory in [1]_"""
         f = np.fft.rfftfreq(len(wav), dt)
         W = np.fft.rfft(wav, n=len(wav))
-        if self.ndims == 2:
+        if dimsrc == 2 and dimv == 2:
+            # 2D
             Wfilt = W * (2 * np.pi * f)
-        else:
+        elif (dimsrc == 2 or dimrec == 2) and dimv == 3:
+            # 2.5D
+            raise NotImplementedError("2.D wavelet currently not available")
+        elif dimsrc == 3 and dimrec == 3 and dimv == 3:
+            # 3D
             Wfilt = W * (-1j * 2 * np.pi * f)
         wavfilt = np.fft.irfft(Wfilt, n=len(wav))
         return wavfilt
@@ -584,17 +635,23 @@ class Kirchhoff(LinearOperator):
         itrav,
         travd,
         amp,
+        aperturemin,
         aperturemax,
         aperturetap,
         nz,
         six,
         rix,
-        angleaperture,
+        angleaperturemin,
+        angleaperturemax,
         angles_srcs,
         angles_recs,
-        snell,
+        snellmin,
+        snellmax,
     ):
-        ns, nr = angles_srcs.shape[-1], angles_recs.shape[-1]
+        nr = angles_recs.shape[-1]
+        daperture = aperturemax - aperturemin
+        dangleaperture = angleaperturemax - angleaperturemin
+        dsnell = snellmax - snellmin
         for isrcrec in prange(nsnr):
             # extract traveltime, amplitude, src/rec coordinates at given src/pair
             itravisrcrec = itrav[:, isrcrec]
@@ -613,18 +670,62 @@ class Kirchhoff(LinearOperator):
                 # extract source and receiver angle
                 angle_src = angles_src[ii]
                 angle_rec = angles_rec[ii]
+                abs_angle_src = abs(angle_src)
+                abs_angle_rec = abs(angle_rec)
+                abs_angle_src_rec = abs(angle_src + angle_rec)
+                aptap = 1.0
+                # angle apertures checks
                 if (
-                    abs(angle_src) < angleaperture
-                    and abs(angle_rec) < angleaperture
-                    and abs(angle_src + angle_rec) < snell
+                    abs_angle_src < angleaperturemax
+                    and abs_angle_rec < angleaperturemax
+                    and abs_angle_src_rec < snellmax
                 ):
+                    if abs_angle_src >= angleaperturemin:
+                        # extract source angle aperture taper value
+                        aptap = (
+                            aptap
+                            * aperturetap[
+                                int(
+                                    20
+                                    * (abs_angle_src - angleaperturemin)
+                                    // dangleaperture
+                                )
+                            ]
+                        )
+                    if abs_angle_rec >= angleaperturemin:
+                        # extract receiver angle aperture taper value
+                        aptap = (
+                            aptap
+                            * aperturetap[
+                                int(
+                                    20
+                                    * (abs_angle_rec - angleaperturemin)
+                                    // dangleaperture
+                                )
+                            ]
+                        )
+                    if abs_angle_src_rec >= snellmin:
+                        # extract snell taper value
+                        aptap = (
+                            aptap
+                            * aperturetap[
+                                int(20 * (abs_angle_src_rec - snellmin) // dsnell)
+                            ]
+                        )
+
                     # identify x-index of image point
                     iz = ii % nz
                     # aperture check
                     aperture = abs(sixisrcrec - rixisrcrec) / iz
                     if aperture < aperturemax:
-                        # extract aperture taper value
-                        aptap = aperturetap[int(100 * aperture // aperturemax)]
+                        if aperture >= aperturemin:
+                            # extract aperture taper value
+                            aptap = (
+                                aptap
+                                * aperturetap[
+                                    int(20 * ((aperture - aperturemin) // daperture))
+                                ]
+                            )
                         # time limit check
                         if 0 <= index < nt - 1:
                             # assign values
@@ -642,17 +743,23 @@ class Kirchhoff(LinearOperator):
         itrav,
         travd,
         amp,
+        aperturemin,
         aperturemax,
         aperturetap,
         nz,
         six,
         rix,
-        angleaperture,
+        angleaperturemin,
+        angleaperturemax,
         angles_srcs,
         angles_recs,
-        snell,
+        snellmin,
+        snellmax,
     ):
-        ns, nr = angles_srcs.shape[-1], angles_recs.shape[-1]
+        nr = angles_recs.shape[-1]
+        daperture = aperturemax - aperturemin
+        dangleaperture = angleaperturemax - angleaperturemin
+        dsnell = snellmax - snellmin
         for ii in prange(ni):
             itravii = itrav[ii]
             travdii = travd[ii]
@@ -670,16 +777,60 @@ class Kirchhoff(LinearOperator):
                 # extract source and receiver angle
                 angle_src = angle_srcs[isrcrec // nr]
                 angle_rec = angle_recs[isrcrec % nr]
+                abs_angle_src = abs(angle_src)
+                abs_angle_rec = abs(angle_rec)
+                abs_angle_src_rec = abs(angle_src + angle_rec)
+                aptap = 1.0
+                # angle apertures checks
                 if (
-                    abs(angle_src) < angleaperture
-                    and abs(angle_rec) < angleaperture
-                    and abs(angle_src + angle_rec) < snell
+                    abs_angle_src < angleaperturemax
+                    and abs_angle_rec < angleaperturemax
+                    and abs_angle_src_rec < snellmax
                 ):
+                    if abs_angle_src >= angleaperturemin:
+                        # extract source angle aperture taper value
+                        aptap = (
+                            aptap
+                            * aperturetap[
+                                int(
+                                    20
+                                    * (abs_angle_src - angleaperturemin)
+                                    // dangleaperture
+                                )
+                            ]
+                        )
+                    if abs_angle_rec >= angleaperturemin:
+                        # extract receiver angle aperture taper value
+                        aptap = (
+                            aptap
+                            * aperturetap[
+                                int(
+                                    20
+                                    * (abs_angle_rec - angleaperturemin)
+                                    // dangleaperture
+                                )
+                            ]
+                        )
+                    if abs_angle_src_rec >= snellmin:
+                        # extract snell taper value
+                        aptap = (
+                            aptap
+                            * aperturetap[
+                                int(20 * (abs_angle_src_rec - snellmin) // dsnell)
+                            ]
+                        )
+
                     # aperture check
                     aperture = abs(sixisrcrec - rixisrcrec) / iz
                     if aperture < aperturemax:
-                        # extract aperture taper value
-                        aptap = aperturetap[int(100 * aperture // aperturemax)]
+                        if aperture >= aperturemin:
+                            # extract aperture taper value
+                            aptap = (
+                                aptap
+                                * aperturetap[
+                                    int(20 * ((aperture - aperturemin) // daperture))
+                                ]
+                            )
                         # time limit check
                         if 0 <= index < nt - 1:
                             # assign values
@@ -730,15 +881,18 @@ class Kirchhoff(LinearOperator):
                 self.itrav,
                 self.travd,
                 self.amp,
-                self.aperture,
+                self.aperture[0],
+                self.aperture[1],
                 self.aperturetap,
                 self.nz,
                 self.six,
                 self.rix,
-                self.angleaperture,
+                self.angleaperture[0],
+                self.angleaperture[1],
                 self.angle_srcs,
                 self.angle_recs,
-                self.snell,
+                self.snell[0],
+                self.snell[1],
             )
         else:
             inputs = (x.ravel(), y, self.nsnr, self.nt, self.ni, self.itrav, self.travd)
@@ -761,15 +915,18 @@ class Kirchhoff(LinearOperator):
                 self.itrav,
                 self.travd,
                 self.amp,
-                self.aperture,
+                self.aperture[0],
+                self.aperture[1],
                 self.aperturetap,
                 self.nz,
                 self.six,
                 self.rix,
-                self.angleaperture,
+                self.angleaperture[0],
+                self.angleaperture[1],
                 self.angle_srcs,
                 self.angle_recs,
-                self.snell,
+                self.snell[0],
+                self.snell[1],
             )
         else:
             inputs = (x, y, self.nsnr, self.nt, self.ni, self.itrav, self.travd)
