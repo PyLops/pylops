@@ -421,7 +421,7 @@ It can also be checked dynamically with ``numba.config.NUMBA_DEFAULT_NUM_THREADS
 
 PyWavelets
 ----------
-`PyWavelets <https://pywavelets.readthedocs.io/en/latest/>`_ used to implement the wavelet operators.
+`PyWavelets <https://pywavelets.readthedocs.io/en/latest/>`_ is used to implement the wavelet operators.
 Install it via ``conda`` with:
 
 .. code-block:: bash
@@ -437,7 +437,7 @@ or via ``pip`` with
 
 scikit-fmm
 ----------
-`scikit-fmm <https://github.com/scikit-fmm/scikit-fmm>`_ is library which implements the
+`scikit-fmm <https://github.com/scikit-fmm/scikit-fmm>`_ is a library which implements the
 fast marching method. It is used in PyLops to compute traveltime tables in the
 initialization of :py:class:`pylops.waveeqprocessing.Kirchhoff`
 when choosing ``mode="eikonal"``. As this may not be of interest for many users, this library has not been added
@@ -456,7 +456,7 @@ or with ``pip`` via
 
 SPGL1
 -----
-`SPGL1 <https://spgl1.readthedocs.io/en/latest/>`_ is library used to solve sparsity-promoting
+`SPGL1 <https://spgl1.readthedocs.io/en/latest/>`_ is used to solve sparsity-promoting
 basis pursuit, basis pursuit denoise, and Lasso problems
 in :py:func:`pylops.optimization.sparsity.SPGL1` solver.
 
@@ -483,6 +483,23 @@ or via ``pip`` with
 .. code-block:: bash
 
    >> pip install sympy
+
+
+Torch
+-----
+`Torch <http://pytorch.org>`_ used to allow seamless integration between PyLops and PyTorch operators.
+
+Install it via ``conda`` with:
+
+.. code-block:: bash
+
+   >> conda install -c pytorch pytorch
+
+or via ``pip`` with
+
+.. code-block:: bash
+
+   >> pip install torch
 
 
 .. _OptionalGPU:

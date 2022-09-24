@@ -3,6 +3,13 @@ __all__ = ["Solver"]
 import functools
 import time
 from abc import ABCMeta, abstractmethod
+from typing import TYPE_CHECKING, Any
+
+from pylops.optimization.callback import Callbacks
+from pylops.utils.typing import NDArray
+
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
 
 
 class Solver(metaclass=ABCMeta):
@@ -40,32 +47,37 @@ class Solver(metaclass=ABCMeta):
 
     """
 
-    def __init__(self, Op, callbacks=None):
+    def __init__(
+        self,
+        Op: "LinearOperator",
+        callbacks: Callbacks = None,
+    ) -> None:
         self.Op = Op
         self.callbacks = callbacks
         self._registercallbacks()
+        self.iiter = 0
         self.tstart = time.time()
 
-    def _print_solver(self, text="", nbar=80):
+    def _print_solver(self, text: str = "", nbar: int = 80) -> None:
         print(f"{type(self).__name__}" + text)
         print(
             "-" * nbar + "\n"
             f"The Operator Op has {self.Op.shape[0]} rows and {self.Op.shape[1]} cols"
         )
 
-    def _print_setup(self):
+    def _print_setup(self, *args: Any, **kwargs: Any) -> None:
         pass
 
-    def _print_step(self):
+    def _print_step(self, *args: Any, **kwargs: Any) -> None:
         pass
 
-    def _print_finalize(self, nbar=80):
+    def _print_finalize(self, *args: Any, nbar: int = 80, **kwargs: Any) -> None:
         print(
             f"\nIterations = {self.iiter}        Total time (s) = {self.telapsed:.2f}"
         )
         print("-" * nbar + "\n")
 
-    def _registercallbacks(self):
+    def _registercallbacks(self) -> None:
         # We want to make sure that the appropriate callbacks are called
         # for each method. Instead of just calling self.step, we want
         # to call self.callbacks[:].on_step_begin, self.step and finally
@@ -110,7 +122,13 @@ class Solver(metaclass=ABCMeta):
             )
 
     @abstractmethod
-    def setup(self, y, *args, show=False, **kwargs):
+    def setup(
+        self,
+        y: NDArray,
+        *args,
+        show: bool = False,
+        **kwargs,
+    ) -> None:
         """Setup solver
 
         This method is used to setup the solver. Users can change the function signature
@@ -127,7 +145,13 @@ class Solver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def step(self, x, *args, show=False, **kwargs):
+    def step(
+        self,
+        x: NDArray,
+        *args,
+        show: bool = False,
+        **kwargs,
+    ) -> Any:
         """Run one step of solver
 
         This method is used to run one step of the solver. Users can change the
@@ -145,7 +169,13 @@ class Solver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def run(self, x, *args, show=False, **kwargs):
+    def run(
+        self,
+        x: NDArray,
+        *args,
+        show: bool = False,
+        **kwargs,
+    ) -> Any:
         """Run multiple steps of solver
 
         This method is used to run multiple step of the solver. Users can change the
@@ -162,7 +192,12 @@ class Solver(metaclass=ABCMeta):
         """
         pass
 
-    def finalize(self, *args, show=False, **kwargs):
+    def finalize(
+        self,
+        *args,
+        show: bool = False,
+        **kwargs,
+    ) -> Any:
         """Finalize solver
 
         This method is used to finalize the solver. Users can change the
@@ -181,7 +216,13 @@ class Solver(metaclass=ABCMeta):
             self._print_finalize()
 
     @abstractmethod
-    def solve(self, y, *args, show=False, **kwargs):
+    def solve(
+        self,
+        y: NDArray,
+        *args,
+        show: bool = False,
+        **kwargs,
+    ) -> Any:
         """Solve
 
         This method is used to run the entire optimization process. Users can change the
@@ -197,7 +238,12 @@ class Solver(metaclass=ABCMeta):
         """
         pass
 
-    def callback(self, x, *args, **kwargs):
+    def callback(
+        self,
+        x: NDArray,
+        *args,
+        **kwargs,
+    ) -> None:
         """Callback routine
 
         This routine must be passed by the user. Its function signature must contain

@@ -2,7 +2,7 @@ __all__ = ["FFT2D"]
 
 import logging
 import warnings
-from typing import Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union
 
 import numpy as np
 import scipy.fft
@@ -23,7 +23,7 @@ class _FFT2D_numpy(_BaseFFTND):
         dims: InputDimsLike,
         axes: InputDimsLike = (-2, -1),
         nffts: Optional[Union[int, InputDimsLike]] = None,
-        sampling: Optional[Union[float, Sequence[float]]] = 1.0,
+        sampling: Union[float, Sequence[float]] = 1.0,
         norm: str = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
@@ -55,7 +55,9 @@ class _FFT2D_numpy(_BaseFFTND):
         self.f1, self.f2 = self.fs
         del self.fs
 
-        self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
+        self._norm_kwargs: Dict[str, Union[None, str]] = {
+            "norm": None
+        }  # equivalent to "backward" in Numpy/Scipy
         if self.norm is _FFTNorms.ORTHO:
             self._norm_kwargs["norm"] = "ortho"
         elif self.norm is _FFTNorms.NONE:
@@ -126,7 +128,7 @@ class _FFT2D_scipy(_BaseFFTND):
         dims: InputDimsLike,
         axes: InputDimsLike = (-2, -1),
         nffts: Optional[Union[int, InputDimsLike]] = None,
-        sampling: Optional[Union[float, Sequence[float]]] = 1.0,
+        sampling: Union[float, Sequence[float]] = 1.0,
         norm: str = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
@@ -154,7 +156,9 @@ class _FFT2D_scipy(_BaseFFTND):
         self.f1, self.f2 = self.fs
         del self.fs
 
-        self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
+        self._norm_kwargs: Dict[str, Union[None, str]] = {
+            "norm": None
+        }  # equivalent to "backward" in Numpy/Scipy
         if self.norm is _FFTNorms.ORTHO:
             self._norm_kwargs["norm"] = "ortho"
         elif self.norm is _FFTNorms.NONE:
@@ -215,7 +219,7 @@ def FFT2D(
     dims: InputDimsLike,
     axes: InputDimsLike = (-2, -1),
     nffts: Optional[Union[int, InputDimsLike]] = None,
-    sampling: Optional[Union[float, Sequence[float]]] = 1.0,
+    sampling: Union[float, Sequence[float]] = 1.0,
     norm: str = "ortho",
     real: bool = False,
     ifftshift_before: bool = False,

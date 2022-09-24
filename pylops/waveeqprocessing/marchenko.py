@@ -1,6 +1,7 @@
 __all__ = ["Marchenko"]
 
 import logging
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -11,12 +12,22 @@ from pylops import Block, BlockDiag, Diagonal, Identity, Roll
 from pylops.optimization.basic import cgls
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import get_array_module, get_module_name, to_cupy_conditional
+from pylops.utils.typing import DTypeLike, NDArray
 from pylops.waveeqprocessing.mdd import MDC
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=True):
+def directwave(
+    wav: NDArray,
+    trav: NDArray,
+    nt: int,
+    dt: float,
+    nfft: Optional[int] = None,
+    dist: Optional[NDArray] = None,
+    kind: str = "2d",
+    derivative: bool = True,
+) -> NDArray:
     r"""Analytical direct wave in acoustic media
 
     Compute the analytical acoustic 2d or 3d Green's function in frequency
@@ -79,7 +90,7 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=Tr
     nr = len(trav)
     nfft = nt if nfft is None or nfft < nt else nfft
     W = np.abs(np.fft.rfft(wav, nfft)) * dt
-    f = 2 * np.pi * ncp.arange(nfft) / (dt * nfft)
+    f: NDArray = 2 * np.pi * ncp.arange(nfft) / (dt * nfft)
     direct = ncp.zeros((nfft // 2 + 1, nr), dtype=np.complex128)
     for it in range(len(W)):
         if kind == "2d":
@@ -87,7 +98,7 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=Tr
             #             + np.sign(f[it]) * np.pi / 4)) / \
             #             np.sqrt(8 * np.pi * np.abs(f[it]) * trav + 1e-10)
             direct[it] = -W[it] * 1j * hankel2(0, f[it] * trav + 1e-10) / 4.0
-        else:
+        elif dist is not None:
             direct[it] = W[it] * np.exp(-1j * f[it] * trav) / (4 * np.pi * dist)
         if derivative:
             direct[it] *= 1j * f[it]
@@ -221,19 +232,19 @@ class Marchenko:
 
     def __init__(
         self,
-        R,
-        dt=0.004,
-        nt=None,
-        dr=1.0,
-        nfmax=None,
-        wav=None,
-        toff=0.0,
-        nsmooth=10,
-        saveRt=True,
-        prescaled=False,
-        fftengine="numpy",
-        dtype="float64",
-    ):
+        R: NDArray,
+        dt: float = 0.004,
+        nt: Optional[int] = None,
+        dr: float = 1.0,
+        nfmax: Optional[int] = None,
+        wav: Optional[NDArray] = None,
+        toff: float = 0.0,
+        nsmooth: int = 10,
+        saveRt: bool = True,
+        prescaled: bool = False,
+        fftengine: str = "numpy",
+        dtype: DTypeLike = "float64",
+    ) -> None:
         # Save inputs into class
         self.dt = dt
         self.dr = dr
@@ -281,15 +292,20 @@ class Marchenko:
 
     def apply_onepoint(
         self,
-        trav,
-        G0=None,
-        nfft=None,
-        rtm=False,
-        greens=False,
-        dottest=False,
-        usematmul=False,
+        trav: NDArray,
+        G0: Optional[NDArray] = None,
+        nfft: Optional[int] = None,
+        rtm: bool = False,
+        greens: bool = False,
+        dottest: bool = False,
+        usematmul: bool = False,
         **kwargs_solver
-    ):
+    ) -> Union[
+        Tuple[NDArray, NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray],
+    ]:
         r"""Marchenko redatuming for one point
 
         Solve the Marchenko redatuming inverse problem for a single point
@@ -482,15 +498,20 @@ class Marchenko:
 
     def apply_multiplepoints(
         self,
-        trav,
-        G0=None,
-        nfft=None,
-        rtm=False,
-        greens=False,
-        dottest=False,
-        usematmul=False,
+        trav: NDArray,
+        G0: Optional[NDArray] = None,
+        nfft: Optional[int] = None,
+        rtm: bool = False,
+        greens: bool = False,
+        dottest: bool = False,
+        usematmul: bool = False,
         **kwargs_solver
-    ):
+    ) -> Union[
+        Tuple[NDArray, NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray],
+    ]:
         r"""Marchenko redatuming for multiple points
 
         Solve the Marchenko redatuming inverse problem for multiple

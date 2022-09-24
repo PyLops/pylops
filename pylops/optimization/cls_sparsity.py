@@ -1,6 +1,7 @@
 __all__ = ["IRLS"]
 import logging
 import time
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from scipy.sparse.linalg import lsqr
@@ -16,6 +17,7 @@ from pylops.optimization.leastsquares import (
 )
 from pylops.utils.backend import get_array_module, get_module_name
 from pylops.utils.decorators import disable_ndarray_multiplication
+from pylops.utils.typing import InputDimsLike, NDArray, SamplingLike
 
 try:
     from spgl1 import spgl1 as ext_spgl1
@@ -27,7 +29,7 @@ except Exception as e:
     spgl1_message = f"Failed to import spgl1 (error:{e})."
 
 
-def _hardthreshold(x, thresh):
+def _hardthreshold(x: NDArray, thresh: float) -> NDArray:
     r"""Hard thresholding.
 
     Applies hard thresholding to vector ``x`` (equal to the proximity
@@ -55,7 +57,7 @@ def _hardthreshold(x, thresh):
     return x1
 
 
-def _softthreshold(x, thresh):
+def _softthreshold(x: NDArray, thresh: float) -> NDArray:
     r"""Soft thresholding.
 
     Applies soft thresholding to vector ``x`` (equal to the proximity
@@ -87,7 +89,7 @@ def _softthreshold(x, thresh):
     return x1
 
 
-def _halfthreshold(x, thresh):
+def _halfthreshold(x: NDArray, thresh: float) -> NDArray:
     r"""Half thresholding.
 
     Applies half thresholding to vector ``x`` (equal to the proximity
@@ -123,7 +125,7 @@ def _halfthreshold(x, thresh):
     return x1
 
 
-def _hardthreshold_percentile(x, perc):
+def _hardthreshold_percentile(x: NDArray, perc: float) -> NDArray:
     r"""Percentile Hard thresholding.
 
     Applies hard thresholding to vector ``x`` using a percentile to define
@@ -150,7 +152,7 @@ def _hardthreshold_percentile(x, perc):
     return _hardthreshold(x, 0.5 * thresh**2)
 
 
-def _softthreshold_percentile(x, perc):
+def _softthreshold_percentile(x: NDArray, perc: float) -> NDArray:
     r"""Percentile Soft thresholding.
 
     Applies soft thresholding to vector ``x`` using a percentile to define
@@ -177,7 +179,7 @@ def _softthreshold_percentile(x, perc):
     return _softthreshold(x, thresh)
 
 
-def _halfthreshold_percentile(x, perc):
+def _halfthreshold_percentile(x: NDArray, perc: float) -> NDArray:
     r"""Percentile Half thresholding.
 
     Applies half thresholding to vector ``x`` using a percentile to define
@@ -298,7 +300,7 @@ class IRLS(Solver):
 
     """
 
-    def _print_setup(self, xcomplex=False):
+    def _print_setup(self, xcomplex: bool = False) -> None:
         self._print_solver(f" ({self.kind})")
 
         strpar = f"threshR = {self.threshR}\tepsR = {self.epsR}\tepsI = {self.epsI}"
@@ -315,7 +317,7 @@ class IRLS(Solver):
             head1 = "    Itn              x[0]                  r2norm"
         print(head1)
 
-    def _print_step(self, x):
+    def _print_step(self, x: NDArray) -> None:
         strx = f"{x[0]:1.2e}   " if np.iscomplexobj(x) else f"{x[0]:11.4e}"
         str1 = f"{self.iiter:6g}        " + strx
         str2 = f"         {self.rnorm:10.3e}"
@@ -323,15 +325,15 @@ class IRLS(Solver):
 
     def setup(
         self,
-        y,
-        nouter=None,
-        threshR=False,
-        epsR=1e-10,
-        epsI=1e-10,
-        tolIRLS=1e-10,
-        kind="data",
-        show=False,
-    ):
+        y: NDArray,
+        nouter: Optional[int] = None,
+        threshR: bool = False,
+        epsR: float = 1e-10,
+        epsI: float = 1e-10,
+        tolIRLS: float = 1e-10,
+        kind: str = "data",
+        show: bool = False,
+    ) -> None:
         r"""Setup solver
 
         Parameters
@@ -345,7 +347,7 @@ class IRLS(Solver):
             or damping (``False``)
         epsR : :obj:`float`, optional
             Damping to be applied to residuals for weighting term
-        espI : :obj:`float`, optional
+        epsI : :obj:`float`, optional
             Tikhonov damping
         tolIRLS : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
@@ -379,7 +381,7 @@ class IRLS(Solver):
         if show:
             self._print_setup()
 
-    def _step_data(self, x, **kwargs_solver):
+    def _step_data(self, x: NDArray, **kwargs_solver) -> NDArray:
         r"""Run one step of solver with L1 data term"""
         if self.iiter == 0:
             # first iteration (unweighted least-squares)
@@ -399,7 +401,7 @@ class IRLS(Solver):
             )[0]
         return x
 
-    def _step_model(self, x, **kwargs_solver):
+    def _step_model(self, x: NDArray, **kwargs_solver) -> NDArray:
         r"""Run one step of solver with L1 model term"""
         if self.iiter == 0:
             # first iteration (unweighted least-squares)
@@ -450,7 +452,7 @@ class IRLS(Solver):
                 )
         return x
 
-    def step(self, x, show=False, **kwargs_solver):
+    def step(self, x: NDArray, show: bool = False, **kwargs_solver) -> NDArray:
         r"""Run one step of solver
 
         Parameters
@@ -476,7 +478,7 @@ class IRLS(Solver):
         x = self._step(x, **kwargs_solver)
 
         # compute residual
-        self.r = self.y - self.Op * x
+        self.r: NDArray = self.y - self.Op * x
         self.rnorm = self.ncp.linalg.norm(self.r)
 
         self.iiter += 1
@@ -484,7 +486,14 @@ class IRLS(Solver):
             self._print_step(x)
         return x
 
-    def run(self, x, nouter=10, show=False, itershow=[10, 10, 10], **kwargs_solver):
+    def run(
+        self,
+        x: NDArray,
+        nouter: int = 10,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+        **kwargs_solver,
+    ) -> NDArray:
         r"""Run solver
 
         Parameters
@@ -538,7 +547,7 @@ class IRLS(Solver):
             x = self.x0 + x
         return x
 
-    def finalize(self, show=False):
+    def finalize(self, show: bool = False) -> None:
         r"""Finalize solver
 
         Parameters
@@ -555,18 +564,18 @@ class IRLS(Solver):
 
     def solve(
         self,
-        y,
-        x0=None,
-        nouter=10,
-        threshR=False,
-        epsR=1e-10,
-        epsI=1e-10,
-        tolIRLS=1e-10,
-        kind="data",
-        show=False,
-        itershow=[10, 10, 10],
+        y: NDArray,
+        x0: Optional[NDArray] = None,
+        nouter: int = 10,
+        threshR: bool = False,
+        epsR: float = 1e-10,
+        epsI: float = 1e-10,
+        tolIRLS: float = 1e-10,
+        kind: str = "data",
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
         **kwargs_solver,
-    ):
+    ) -> NDArray:
         r"""Run entire solver
 
         Parameters
@@ -583,7 +592,7 @@ class IRLS(Solver):
             or damping (``False``)
         epsR : :obj:`float`, optional
             Damping to be applied to residuals for weighting term
-        espI : :obj:`float`, optional
+        epsI : :obj:`float`, optional
             Tikhonov damping
         tolIRLS : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
@@ -679,7 +688,7 @@ class OMP(Solver):
 
     """
 
-    def _print_setup(self, xcomplex=False):
+    def _print_setup(self, xcomplex: bool = False) -> None:
         self._print_solver("(Only MP)" if self.niter_inner == 0 else "", nbar=55)
 
         strpar = (
@@ -694,7 +703,7 @@ class OMP(Solver):
             head1 = "    Itn              x[0]                  r2norm"
         print(head1)
 
-    def _print_step(self, x):
+    def _print_step(self, x: NDArray) -> None:
         strx = f"{x[0]:1.2e}   " if np.iscomplexobj(x) else f"{x[0]:11.4e}"
         str1 = f"{self.iiter:6g}        " + strx
         str2 = f"         {self.cost[-1]:10.3e}"
@@ -702,13 +711,13 @@ class OMP(Solver):
 
     def setup(
         self,
-        y,
-        niter_outer=10,
-        niter_inner=40,
-        sigma=1e-4,
-        normalizecols=False,
-        show=False,
-    ):
+        y: NDArray,
+        niter_outer: int = 10,
+        niter_inner: int = 40,
+        sigma: float = 1e-4,
+        normalizecols: bool = False,
+        show: bool = False,
+    ) -> None:
         r"""Setup solver
 
         Parameters
@@ -759,7 +768,12 @@ class OMP(Solver):
         if show:
             self._print_setup()
 
-    def step(self, x, cols, show=False):
+    def step(
+        self,
+        x: NDArray,
+        cols: InputDimsLike,
+        show: bool = False,
+    ) -> NDArray:
         r"""Run one step of solver
 
         Parameters
@@ -833,7 +847,13 @@ class OMP(Solver):
             self._print_step(x)
         return x, cols
 
-    def run(self, x, cols, show=False, itershow=[10, 10, 10]):
+    def run(
+        self,
+        x: NDArray,
+        cols: InputDimsLike,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> Tuple[NDArray, InputDimsLike]:
         r"""Run solver
 
         Parameters
@@ -872,7 +892,12 @@ class OMP(Solver):
             self.callback(x)
         return x, cols
 
-    def finalize(self, x, cols, show=False):
+    def finalize(
+        self,
+        x: NDArray,
+        cols: InputDimsLike,
+        show: bool = False,
+    ) -> NDArray:
         r"""Finalize solver
 
         Parameters
@@ -903,14 +928,14 @@ class OMP(Solver):
 
     def solve(
         self,
-        y,
-        niter_outer=10,
-        niter_inner=40,
-        sigma=1e-4,
-        normalizecols=False,
-        show=False,
-        itershow=[10, 10, 10],
-    ):
+        y: NDArray,
+        niter_outer: int = 10,
+        niter_inner: int = 40,
+        sigma: float = 1e-4,
+        normalizecols: bool = False,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> Tuple[NDArray, int, NDArray]:
         r"""Run entire solver
 
         Parameters
@@ -941,6 +966,10 @@ class OMP(Solver):
         -------
         x : :obj:`np.ndarray`
             Estimated model of size :math:`[M \times 1]`
+        niter_outer : :obj:`int`
+            Number of effective outer iterations
+        cost : :obj:`numpy.ndarray`, optional
+            History of cost function
 
         """
         self.setup(
@@ -951,7 +980,8 @@ class OMP(Solver):
             normalizecols=normalizecols,
             show=show,
         )
-        x, cols = [], []
+        x: List[NDArray] = []
+        cols: List[InputDimsLike] = []
         x, cols = self.run(x, cols, show=show, itershow=itershow)
         x = self.finalize(x, cols, show)
         return x, self.nouter, self.cost
@@ -1036,7 +1066,7 @@ class ISTA(Solver):
 
     """
 
-    def _print_setup(self):
+    def _print_setup(self) -> None:
         self._print_solver(f" ({self.threshkind} thresholding)")
         if self.niter is not None:
             strpar = f"eps = {self.eps:10e}\ttol = {self.tol:10e}\tniter = {self.niter}"
@@ -1052,7 +1082,13 @@ class ISTA(Solver):
         print("-" * 80)
         print(head1)
 
-    def _print_step(self, x, costdata, costreg, xupdate):
+    def _print_step(
+        self,
+        x: NDArray,
+        costdata: float,
+        costreg: float,
+        xupdate: float,
+    ) -> None:
         strx = (
             f"  {x[0]:1.2e}   " if np.iscomplexobj(x) else f"     {x[0]:11.4e}        "
         )
@@ -1066,20 +1102,20 @@ class ISTA(Solver):
 
     def setup(
         self,
-        y,
-        x0=None,
-        niter=None,
-        SOp=None,
-        eps=0.1,
-        alpha=None,
-        eigsdict=None,
-        tol=1e-10,
-        threshkind="soft",
-        perc=None,
-        decay=None,
-        monitorres=False,
-        show=False,
-    ):
+        y: NDArray,
+        x0: Optional[NDArray] = None,
+        niter: Optional[int] = None,
+        SOp: Optional[LinearOperator] = None,
+        eps: float = 0.1,
+        alpha: Optional[float] = None,
+        eigsdict: Optional[Dict[str, Any]] = None,
+        tol: float = 1e-10,
+        threshkind: str = "soft",
+        perc: Optional[float] = None,
+        decay: Optional[NDArray] = None,
+        monitorres: bool = False,
+        show: bool = False,
+    ) -> NDArray:
         r"""Setup solver
 
         Parameters
@@ -1120,6 +1156,11 @@ class ISTA(Solver):
         show : :obj:`bool`, optional
             Display setup log
 
+        Returns
+        -------
+        x : :obj:`np.ndarray`
+            Initial model vector
+
         """
         self.y = y
         self.SOp = SOp
@@ -1157,6 +1198,7 @@ class ISTA(Solver):
             )
 
         # choose thresholding function
+        self.threshf: Callable[[NDArray, float], NDArray]
         if threshkind == "soft":
             self.threshf = _softthreshold
         elif threshkind == "hard":
@@ -1183,7 +1225,7 @@ class ISTA(Solver):
             # compute largest eigenvalues of Op^H * Op
             Op1 = LinearOperator(self.Op.H * self.Op, explicit=False)
             if get_module_name(self.ncp) == "numpy":
-                maxeig = np.abs(
+                maxeig: float = np.abs(
                     Op1.eigs(
                         neigs=1,
                         symmetric=True,
@@ -1230,7 +1272,7 @@ class ISTA(Solver):
         self.t = 1.0
 
         # create variables to track the residual norm and iterations
-        self.cost = []
+        self.cost: List[float] = []
         self.iiter = 0
 
         # print setup
@@ -1238,7 +1280,7 @@ class ISTA(Solver):
             self._print_setup()
         return x
 
-    def step(self, x, show=False):
+    def step(self, x: NDArray, show: bool = False) -> Tuple[NDArray, float]:
         r"""Run one step of solver
 
         Parameters
@@ -1259,7 +1301,7 @@ class ISTA(Solver):
         # store old vector
         xold = x.copy()
         # compute residual
-        res = self.y - self.Op @ x
+        res: NDArray = self.y - self.Op @ x
         if self.monitorres:
             self.normres = np.linalg.norm(res)
             if self.normres > self.normresold:
@@ -1272,15 +1314,15 @@ class ISTA(Solver):
                 self.normresold = self.normres
 
         # compute gradient
-        grad = self.alpha * self.Op.H @ res
+        grad: NDArray = self.alpha * self.Op.H @ res
 
         # update inverted model
-        x_unthesh = x + grad
+        x_unthesh: NDArray = x + grad
         if self.SOp is not None:
             x_unthesh = self.SOp.H @ x_unthesh
-        if self.perc is None:
+        if self.perc is None and self.decay is not None:
             x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
-        else:
+        elif self.perc is not None:
             x = self.threshf(x_unthesh, 100 - self.perc)
         if self.SOp is not None:
             x = self.SOp @ x
@@ -1296,7 +1338,13 @@ class ISTA(Solver):
             self._print_step(x, costdata, costreg, xupdate)
         return x, xupdate
 
-    def run(self, x, niter=None, show=False, itershow=[10, 10, 10]):
+    def run(
+        self,
+        x: NDArray,
+        niter: Optional[int] = None,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> NDArray:
         r"""Run solver
 
         Parameters
@@ -1321,6 +1369,8 @@ class ISTA(Solver):
         """
         xupdate = np.inf
         niter = self.niter if niter is None else niter
+        if niter is None:
+            raise ValueError("niter must not be None")
         while self.iiter < niter and xupdate > self.tol:
             showstep = (
                 True
@@ -1340,7 +1390,7 @@ class ISTA(Solver):
             )
         return x
 
-    def finalize(self, show=False):
+    def finalize(self, show: bool = False) -> None:
         r"""Finalize solver
 
         Parameters
@@ -1357,21 +1407,21 @@ class ISTA(Solver):
 
     def solve(
         self,
-        y,
-        x0=None,
-        niter=None,
-        SOp=None,
-        eps=0.1,
-        alpha=None,
-        eigsdict=None,
-        tol=1e-10,
-        threshkind="soft",
-        perc=None,
-        decay=None,
-        monitorres=False,
-        show=False,
-        itershow=[10, 10, 10],
-    ):
+        y: NDArray,
+        x0: Optional[NDArray] = None,
+        niter: Optional[int] = None,
+        SOp: Optional[LinearOperator] = None,
+        eps: float = 0.1,
+        alpha: Optional[float] = None,
+        eigsdict: Optional[Dict[str, Any]] = None,
+        tol: float = 1e-10,
+        threshkind: str = "soft",
+        perc: Optional[float] = None,
+        decay: Optional[NDArray] = None,
+        monitorres: bool = False,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> Tuple[NDArray, int, NDArray]:
         r"""Run entire solver
 
         Parameters
@@ -1504,7 +1554,7 @@ class FISTA(ISTA):
 
     """
 
-    def step(self, x, z, show=False):
+    def step(self, x: NDArray, z: NDArray, show: bool = False) -> NDArray:
         r"""Run one step of solver
 
         Parameters
@@ -1529,7 +1579,7 @@ class FISTA(ISTA):
         # store old vector
         xold = x.copy()
         # compute residual
-        resz = self.y - self.Op @ z
+        resz: NDArray = self.y - self.Op @ z
         if self.monitorres:
             self.normres = np.linalg.norm(resz)
             if self.normres > self.normresold:
@@ -1542,15 +1592,15 @@ class FISTA(ISTA):
                 self.normresold = self.normres
 
         # compute gradient
-        grad = self.alpha * (self.Op.H @ resz)
+        grad: NDArray = self.alpha * (self.Op.H @ resz)
 
         # update inverted model
-        x_unthesh = z + grad
+        x_unthesh: NDArray = z + grad
         if self.SOp is not None:
             x_unthesh = self.SOp.H @ x_unthesh
-        if self.perc is None:
+        if self.perc is None and self.decay is not None:
             x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
-        else:
+        elif self.perc is not None:
             x = self.threshf(x_unthesh, 100 - self.perc)
         if self.SOp is not None:
             x = self.SOp @ x
@@ -1571,7 +1621,13 @@ class FISTA(ISTA):
             self._print_step(x, costdata, costreg, xupdate)
         return x, z, xupdate
 
-    def run(self, x, niter=None, show=False, itershow=[10, 10, 10]):
+    def run(
+        self,
+        x: NDArray,
+        niter: Optional[int] = None,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+    ) -> NDArray:
         r"""Run solver
 
         Parameters
@@ -1597,6 +1653,8 @@ class FISTA(ISTA):
         z = x.copy()
         xupdate = np.inf
         niter = self.niter if niter is None else niter
+        if niter is None:
+            raise ValueError("niter must not be None")
         while self.iiter < niter and xupdate > self.tol:
             showstep = (
                 True
@@ -1622,7 +1680,7 @@ class SPGL1(Solver):
 
     Solve a constrained system of equations given the operator ``Op``
     and a sparsyfing transform ``SOp`` aiming to retrive a model that
-    is sparse in the sparsyfing domain.
+    is sparse in the sparsifying domain.
 
     This is a simple wrapper to :py:func:`spgl1.spgl1`
     which is a porting of the well-known
@@ -1666,7 +1724,7 @@ class SPGL1(Solver):
 
     """
 
-    def _print_setup(self, xcomplex=False):
+    def _print_setup(self, xcomplex: bool = False) -> None:
         self._print_solver()
         strprec = f"SOp={self.SOp}"
         strreg = f"tau={self.tau}     sigma={self.sigma}"
@@ -1674,12 +1732,19 @@ class SPGL1(Solver):
         print(strreg)
         print("-" * 80)
 
-    def _print_finalize(self):
+    def _print_finalize(self) -> None:
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 80 + "\n")
 
     @disable_ndarray_multiplication
-    def setup(self, y, SOp=None, tau=0, sigma=0, show=False):
+    def setup(
+        self,
+        y: NDArray,
+        SOp: Optional[LinearOperator] = None,
+        tau: int = 0,
+        sigma: int = 0,
+        show: bool = False,
+    ) -> None:
         r"""Setup solver
 
         Parameters
@@ -1694,7 +1759,6 @@ class SPGL1(Solver):
         sigma : :obj:`list`, optional
             BPDN scalar. If different from ``0``,
             SPGL1 will solve BPDN problem
-
         show : :obj:`bool`, optional
             Display setup log
 
@@ -1712,7 +1776,7 @@ class SPGL1(Solver):
         if show:
             self._print_setup()
 
-    def step(self):
+    def step(self) -> None:
         raise NotImplementedError(
             "SPGL1 uses as default the"
             "spgl1.spgl1 solver, therefore the "
@@ -1720,7 +1784,12 @@ class SPGL1(Solver):
         )
 
     @disable_ndarray_multiplication
-    def run(self, x, show=False, **kwargs_spgl1):
+    def run(
+        self,
+        x: NDArray,
+        show: bool = False,
+        **kwargs_spgl1,
+    ) -> Tuple[NDArray, NDArray, Dict[str, Any]]:
         r"""Run solver
 
         Parameters
@@ -1796,7 +1865,16 @@ class SPGL1(Solver):
         xinv = pinv.copy() if self.SOp is None else self.SOp.H * pinv
         return xinv, pinv, info
 
-    def solve(self, y, x0=None, SOp=None, tau=0, sigma=0, show=False, **kwargs_spgl1):
+    def solve(
+        self,
+        y: NDArray,
+        x0: Optional[NDArray] = None,
+        SOp: Optional[LinearOperator] = None,
+        tau: float = 0.0,
+        sigma: float = 0,
+        show: bool = False,
+        **kwargs_spgl1,
+    ) -> Tuple[NDArray, NDArray, Dict[str, Any]]:
         r"""Run entire solver
 
         Parameters
@@ -1951,7 +2029,7 @@ class SplitBregman(Solver):
 
     """
 
-    def _print_setup(self, xcomplex=False):
+    def _print_setup(self, xcomplex: bool = False) -> None:
         self._print_solver(nbar=65)
 
         strpar = (
@@ -1966,7 +2044,7 @@ class SplitBregman(Solver):
             head1 = "    Itn          x[0]            r2norm           r12norm"
         print(head1)
 
-    def _print_step(self, x):
+    def _print_step(self, x: NDArray) -> None:
         strx = f"{x[0]:1.2e}   " if np.iscomplexobj(x) else f"{x[0]:11.4e}      "
         str1 = f"{self.iiter:6g}    " + strx
         str2 = f"{self.costdata:10.3e}        {self.costtot:9.3e}"
@@ -1974,21 +2052,21 @@ class SplitBregman(Solver):
 
     def setup(
         self,
-        y,
-        RegsL1,
-        x0=None,
-        niter_outer=3,
-        niter_inner=5,
-        RegsL2=None,
-        dataregsL2=None,
-        mu=1.0,
-        epsRL1s=None,
-        epsRL2s=None,
-        tol=1e-10,
-        tau=1.0,
-        restart=False,
-        show=False,
-    ):
+        y: NDArray,
+        RegsL1: List[LinearOperator],
+        x0: Optional[NDArray] = None,
+        niter_outer: int = 3,
+        niter_inner: int = 5,
+        RegsL2: Optional[List[LinearOperator]] = None,
+        dataregsL2: Optional[Sequence[NDArray]] = None,
+        mu: float = 1.0,
+        epsRL1s: Optional[SamplingLike] = None,
+        epsRL2s: Optional[SamplingLike] = None,
+        tol: float = 1e-10,
+        tau: float = 1.0,
+        restart: bool = False,
+        show: bool = False,
+    ) -> NDArray:
         r"""Setup solver
 
         Parameters
@@ -2046,11 +2124,10 @@ class SplitBregman(Solver):
         self.niter_outer = niter_outer
         self.niter_inner = niter_inner
         self.RegsL2 = RegsL2
-        self.dataregsL2 = dataregsL2
-        self.dataregsL2 = dataregsL2
+        self.dataregsL2 = list(dataregsL2) if dataregsL2 is not None else []
         self.mu = mu
-        self.epsRL1s = epsRL1s
-        self.epsRL2s = epsRL2s
+        self.epsRL1s = list(epsRL1s) if epsRL1s is not None else []
+        self.epsRL2s = list(epsRL2s) if epsRL2s is not None else []
         self.tol = tol
         self.tau = tau
         self.restart = restart
@@ -2065,7 +2142,7 @@ class SplitBregman(Solver):
 
         # L2 regularizations
         self.nregsL2 = 0 if RegsL2 is None else len(RegsL2)
-        if self.nregsL2 > 0:
+        if self.nregsL2 > 0 and RegsL2 is not None:
             self.Regs = RegsL2 + RegsL1
             if dataregsL2 is None:
                 self.dataregsL2 = [
@@ -2076,24 +2153,36 @@ class SplitBregman(Solver):
             self.dataregsL2 = []
 
         # Rescale dampings
-        self.epsRs = [
-            np.sqrt(epsRL2s[ireg] / 2) / np.sqrt(mu / 2) for ireg in range(self.nregsL2)
-        ] + [
-            np.sqrt(epsRL1s[ireg] / 2) / np.sqrt(mu / 2) for ireg in range(self.nregsL1)
-        ]
+        self.epsRs: List[float] = []
+        if epsRL2s is not None:
+            self.epsRs += [
+                np.sqrt(epsRL2s[ireg] / 2) / np.sqrt(mu / 2)
+                for ireg in range(self.nregsL2)
+            ]
+        if epsRL1s is not None:
+            self.epsRs += [
+                np.sqrt(epsRL1s[ireg] / 2) / np.sqrt(mu / 2)
+                for ireg in range(self.nregsL1)
+            ]
 
         self.x0 = x0
         x = self.ncp.zeros(self.Op.shape[1], dtype=self.Op.dtype) if x0 is None else x0
 
         # create variables to track the residual norm and iterations
-        self.cost = []
+        self.cost: List[float] = []
         self.iiter = 0
 
         if show:
             self._print_setup(np.iscomplexobj(x))
         return x
 
-    def step(self, x, show=False, show_inner=False, **kwargs_lsqr):
+    def step(
+        self,
+        x: NDArray,
+        show: bool = False,
+        show_inner: bool = False,
+        **kwargs_lsqr,
+    ) -> NDArray:
         r"""Run one step of solver
 
         Parameters
@@ -2174,8 +2263,13 @@ class SplitBregman(Solver):
         return x
 
     def run(
-        self, x, show=False, itershow=[10, 10, 10], show_inner=False, **kwargs_lsqr
-    ):
+        self,
+        x: NDArray,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+        show_inner: bool = False,
+        **kwargs_lsqr,
+    ) -> NDArray:
         r"""Run solver
 
         Parameters
@@ -2220,7 +2314,7 @@ class SplitBregman(Solver):
             self.callback(x)
         return x
 
-    def finalize(self, show=False):
+    def finalize(self, show: bool = False) -> NDArray:
         r"""Finalize solver
 
         Parameters
@@ -2243,24 +2337,24 @@ class SplitBregman(Solver):
 
     def solve(
         self,
-        y,
-        RegsL1,
-        x0=None,
-        niter_outer=3,
-        niter_inner=5,
-        RegsL2=None,
-        dataregsL2=None,
-        mu=1.0,
-        epsRL1s=None,
-        epsRL2s=None,
-        tol=1e-10,
-        tau=1.0,
-        restart=False,
-        show=False,
-        itershow=[10, 10, 10],
-        show_inner=False,
+        y: NDArray,
+        RegsL1: List[LinearOperator],
+        x0: Optional[NDArray] = None,
+        niter_outer: int = 3,
+        niter_inner: int = 5,
+        RegsL2: Optional[List[LinearOperator]] = None,
+        dataregsL2: Optional[List[NDArray]] = None,
+        mu: float = 1.0,
+        epsRL1s: Optional[SamplingLike] = None,
+        epsRL2s: Optional[SamplingLike] = None,
+        tol: float = 1e-10,
+        tau: float = 1.0,
+        restart: bool = False,
+        show: bool = False,
+        itershow: List[int] = [10, 10, 10],
+        show_inner: bool = False,
         **kwargs_lsqr,
-    ):
+    ) -> Tuple[NDArray, int, NDArray]:
         r"""Run entire solver
 
         Parameters

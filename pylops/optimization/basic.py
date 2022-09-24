@@ -4,14 +4,27 @@ __all__ = [
     "lsqr",
 ]
 
+from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
+
 from pylops.optimization.cls_basic import CG, CGLS, LSQR
 from pylops.utils.decorators import add_ndarray_support_to_solver
+from pylops.utils.typing import NDArray
+
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
 
 
 @add_ndarray_support_to_solver
 def cg(
-    Op, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10], callback=None
-):
+    Op: "LinearOperator",
+    y: NDArray,
+    x0: Optional[NDArray] = None,
+    niter: int = 10,
+    tol: float = 1e-4,
+    show: bool = False,
+    itershow: List[int] = [10, 10, 10],
+    callback: Optional[Callable] = None,
+) -> Tuple[NDArray, int, NDArray]:
     r"""Conjugate gradient
 
     Solve a square system of equations given an operator ``Op`` and
@@ -64,16 +77,16 @@ def cg(
 
 @add_ndarray_support_to_solver
 def cgls(
-    Op,
-    y,
-    x0=None,
-    niter=10,
-    damp=0.0,
-    tol=1e-4,
-    show=False,
-    itershow=[10, 10, 10],
-    callback=None,
-):
+    Op: "LinearOperator",
+    y: NDArray,
+    x0: Optional[NDArray] = None,
+    niter: int = 10,
+    damp: float = 0.0,
+    tol: float = 1e-4,
+    show: bool = False,
+    itershow: List[int] = [10, 10, 10],
+    callback: Optional[Callable] = None,
+) -> Tuple[NDArray, int, int, float, float, NDArray]:
     r"""Conjugate gradient least squares
 
     Solve an overdetermined system of equations given an operator ``Op`` and
@@ -143,19 +156,19 @@ def cgls(
 
 @add_ndarray_support_to_solver
 def lsqr(
-    Op,
-    y,
-    x0=None,
-    damp=0.0,
-    atol=1e-08,
-    btol=1e-08,
-    conlim=100000000.0,
-    niter=10,
-    calc_var=True,
-    show=False,
-    itershow=[10, 10, 10],
-    callback=None,
-):
+    Op: "LinearOperator",
+    y: NDArray,
+    x0: Optional[NDArray] = None,
+    damp: float = 0.0,
+    atol: float = 1e-08,
+    btol: float = 1e-08,
+    conlim: float = 100000000.0,
+    niter: int = 10,
+    calc_var: bool = True,
+    show: bool = False,
+    itershow: List[int] = [10, 10, 10],
+    callback: Optional[Callable] = None,
+) -> Tuple[NDArray, int, int, float, float, float, float, float, float, float, NDArray]:
     r"""LSQR
 
     Solve an overdetermined system of equations given an operator ``Op`` and
@@ -193,6 +206,10 @@ def lsqr(
         \epsilon^2\mathbf{I})^{-1}`.
     show : :obj:`bool`, optional
         Display iterations log
+    itershow : :obj:`list`, optional
+        Display set log for the first N1 steps, last N2 steps,
+        and every N3 steps in between where N1, N2, N3 are the
+        three element of the list.
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector

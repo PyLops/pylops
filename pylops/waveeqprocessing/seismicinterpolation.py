@@ -1,6 +1,7 @@
 __all__ = ["SeismicInterpolation"]
 
 import logging
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -19,31 +20,32 @@ from pylops.signalprocessing import (
     Sliding3D,
 )
 from pylops.utils.dottest import dottest as Dottest
+from pylops.utils.typing import InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def SeismicInterpolation(
-    data,
-    nrec,
-    iava,
-    iava1=None,
-    kind="fk",
-    nffts=None,
-    sampling=None,
-    spataxis=None,
-    spat1axis=None,
-    taxis=None,
-    paxis=None,
-    p1axis=None,
-    centeredh=True,
-    nwins=None,
-    nwin=None,
-    nover=None,
-    engine="numba",
-    dottest=False,
+    data: NDArray,
+    nrec: Union[int, Tuple[int, int]],
+    iava: Union[List[Union[int, float]], NDArray],
+    iava1: Optional[Union[List[Union[int, float]], NDArray]] = None,
+    kind: str = "fk",
+    nffts: Optional[Union[int, InputDimsLike]] = None,
+    sampling: Optional[Sequence[float]] = None,
+    spataxis: Optional[NDArray] = None,
+    spat1axis: Optional[NDArray] = None,
+    taxis: Optional[NDArray] = None,
+    paxis: Optional[NDArray] = None,
+    p1axis: Optional[NDArray] = None,
+    centeredh: bool = True,
+    nwins: InputDimsLike = None,
+    nwin: InputDimsLike = None,
+    nover: InputDimsLike = None,
+    engine: str = "numba",
+    dottest: bool = False,
     **kwargs_solver,
-):
+) -> Tuple[NDArray, NDArray, NDArray]:
     r"""Seismic interpolation (or regularization).
 
     Interpolate seismic data from irregular to regular spatial grid.
