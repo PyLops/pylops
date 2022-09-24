@@ -6,9 +6,12 @@ from typing import Callable, Optional, Tuple
 import numpy as np
 
 from pylops.basicoperators import Spread
+from pylops.utils import deps
 from pylops.utils.typing import DTypeLike, NDArray
 
-try:
+jit_message = deps.numba_import("the radon3d module")
+
+if jit_message is None:
     from numba import jit
 
     from ._radon3d_numba import (
@@ -18,8 +21,6 @@ try:
         _linear_numba,
         _parabolic_numba,
     )
-except ModuleNotFoundError:
-    jit = None
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -270,7 +271,7 @@ def Radon3D(
     # engine
     if engine not in ["numpy", "numba"]:
         raise KeyError("engine must be numpy or numba")
-    if engine == "numba" and jit is None:
+    if engine == "numba" and jit_message is not None:
         engine = "numpy"
 
     # axes

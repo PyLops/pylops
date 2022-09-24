@@ -5,23 +5,15 @@ from typing import Tuple
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils import deps
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, SamplingLike
 
-try:
-    import devito
+devito_message = deps.devito_import("the twoway module")
 
+if devito_message is None:
     from examples.seismic import AcquisitionGeometry, Model
     from examples.seismic.acoustic import AcousticWaveSolver
-except ModuleNotFoundError:
-    devito = None
-    devito_message = (
-        "Devito package not installed. In order to be able to use"
-        'the twoway module run "pip install devito".'
-    )
-except Exception as e:
-    devito = None
-    devito_message = f"Failed to import devito (error:{e})."
 
 
 class AcousticWave2D(LinearOperator):
@@ -96,8 +88,9 @@ class AcousticWave2D(LinearOperator):
         dtype: DTypeLike = "float32",
         name: str = "A",
     ) -> None:
-        if not devito:
+        if devito_message is not None:
             raise NotImplementedError(devito_message)
+
         # create model
         self._create_model(shape, origin, spacing, vp, space_order, nbl)
         self._create_geometry(src_x, src_z, rec_x, rec_z, t0, tn, src_type, f0=f0)

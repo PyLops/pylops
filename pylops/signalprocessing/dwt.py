@@ -8,21 +8,14 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.basicoperators import Pad
+from pylops.utils import deps
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-try:
+pywt_message = deps.pywt_import("the dwt module")
+
+if pywt_message is None:
     import pywt
-except ModuleNotFoundError:
-    pywt = None
-    pywt_message = (
-        "Pywt package not installed. "
-        'Run "pip install PyWavelets" or '
-        'conda install pywavelets".'
-    )
-except Exception as e:
-    pywt = None
-    pywt_message = f"Failed to import pywt (error:{e})."
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -113,7 +106,7 @@ class DWT(LinearOperator):
         dtype: DTypeLike = "float64",
         name: str = "D",
     ) -> None:
-        if pywt is None:
+        if pywt_message is not None:
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
 
