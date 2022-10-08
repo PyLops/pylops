@@ -6,10 +6,13 @@ from typing import Callable, Optional
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils import deps
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-try:
+jit_message = deps.numba_import("the spread module")
+
+if jit_message is None:
     from numba import jit
 
     from ._spread_numba import (
@@ -18,12 +21,6 @@ try:
         _rmatvec_numba_onthefly,
         _rmatvec_numba_table,
     )
-except ModuleNotFoundError:
-    jit = None
-    jit_message = "Numba not available, reverting to numpy."
-except Exception as e:
-    jit = None
-    jit_message = "Failed to import numba (error:%s), use numpy." % e
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -183,10 +180,10 @@ class Spread(LinearOperator):
 
         if engine not in ["numpy", "numba"]:
             raise KeyError("engine must be numpy or numba")
-        if engine == "numba" and jit is not None:
+        if engine == "numba" and jit_message is None:
             self.engine = "numba"
         else:
-            if engine == "numba" and jit is None:
+            if engine == "numba" and jit is not None:
                 logging.warning(jit_message)
             self.engine = "numpy"
 

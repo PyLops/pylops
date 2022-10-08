@@ -15,18 +15,15 @@ from pylops.optimization.leastsquares import (
     normal_equations_inversion,
     regularized_inversion,
 )
+from pylops.utils import deps
 from pylops.utils.backend import get_array_module, get_module_name
 from pylops.utils.decorators import disable_ndarray_multiplication
 from pylops.utils.typing import InputDimsLike, NDArray, SamplingLike
 
-try:
+spgl1_message = deps.spgl1_import("the spgl1 solver")
+
+if spgl1_message is None:
     from spgl1 import spgl1 as ext_spgl1
-except ModuleNotFoundError:
-    ext_spgl1 = None
-    spgl1_message = "Spgl1 not installed. " 'Run "pip install spgl1".'
-except Exception as e:
-    ext_spgl1 = None
-    spgl1_message = f"Failed to import spgl1 (error:{e})."
 
 
 def _hardthreshold(x: NDArray, thresh: float) -> NDArray:
@@ -1763,7 +1760,7 @@ class SPGL1(Solver):
             Display setup log
 
         """
-        if ext_spgl1 is None:
+        if spgl1_message is not None:
             raise ModuleNotFoundError(spgl1_message)
 
         self.y = y
