@@ -54,15 +54,11 @@ class LSM:
     y : :obj:`numpy.ndarray`
         Additional spatial axis (for 3-dimensional problems)
     kind : :str`, optional
-        Kind of modelling operator (``kirchhoff``, ``twowayac``)
-    mode : :obj:`str`, optional
-        Computation mode (``eikonal``, ``analytic`` - only for
-        constant velocity)
-    engine : :obj:`str`, optional
-        Engine used for computations (``numpy`` or ``numba``) when ``kind=kirchhoff``
-        is used
+        Kind of modelling operator (``kirchhoff``, ``twoway``)
     dottest : :obj:`bool`, optional
         Apply dot-test
+    **kwargs_mod : :obj:`int`, optional
+        Additional arguments to pass to modelling operators
 
     Attributes
     ----------
@@ -124,25 +120,14 @@ class LSM:
         wavcenter,
         y=None,
         kind="kirchhoff",
-        mode="eikonal",
-        engine="numba",
         dottest=False,
+        **kwargs_mod,
     ):
         self.y, self.x, self.z = y, x, z
 
         if kind == "kirchhoff":
             self.Demop = Kirchhoff(
-                z,
-                x,
-                t,
-                srcs,
-                recs,
-                vel,
-                wav,
-                wavcenter,
-                y=y,
-                mode=mode,
-                engine=engine,
+                z, x, t, srcs, recs, vel, wav, wavcenter, y=y, **kwargs_mod
             )
         elif kind == "twowayac":
             shape = (len(x), len(z))
@@ -159,6 +144,7 @@ class LSM:
                 recs[1],
                 t[0],
                 len(t),
+                **kwargs_mod,
             )
 
         else:
