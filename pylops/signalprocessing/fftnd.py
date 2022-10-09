@@ -6,7 +6,6 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 import numpy.typing as npt
-import scipy.fft
 
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
 from pylops.utils.backend import get_sp_fft
