@@ -9,6 +9,7 @@ import numpy.typing as npt
 import scipy.fft
 
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
+from pylops.utils.backend import get_sp_fft
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -145,37 +146,39 @@ class _FFTND_scipy(_BaseFFTND):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
+        sp_fft = get_sp_fft(x)
         if self.ifftshift_before.any():
-            x = scipy.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
+            x = sp_fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = scipy.fft.rfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = sp_fft.rfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.axes[-1], -1)
         else:
-            y = scipy.fft.fftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = sp_fft.fftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after.any():
-            y = scipy.fft.fftshift(y, axes=self.axes[self.fftshift_after])
+            y = sp_fft.fftshift(y, axes=self.axes[self.fftshift_after])
         return y
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
+        sp_fft = get_sp_fft(x)
         if self.fftshift_after.any():
-            x = scipy.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
+            x = sp_fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
             x = np.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.axes[-1], -1)
-            y = scipy.fft.irfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = sp_fft.irfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         else:
-            y = scipy.fft.ifftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = sp_fft.ifftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
         for ax, nfft in zip(self.axes, self.nffts):
@@ -186,7 +189,7 @@ class _FFTND_scipy(_BaseFFTND):
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before.any():
-            y = scipy.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
+            y = sp_fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
     def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
