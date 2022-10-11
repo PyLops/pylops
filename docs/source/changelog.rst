@@ -12,7 +12,7 @@ PyLops has undergone significant changes in this release, including new ``Linear
 To aid users in navigating the breaking changes, we provide the following document
 `MIGRATION_V1_V2.md <https://github.com/PyLops/pylops/blob/dev/MIGRATION_V1_V2.md>`_.
 
-## New Features
+**New Features**
 
 * Multiplication of linear operators by N-dimensional arrays is now supported via the new ``dims``/``dimsd`` properties.
   Users do not need to use ``.ravel`` and ``.reshape`` as often anymore. See the migration guide for more information.
@@ -38,7 +38,7 @@ To aid users in navigating the breaking changes, we provide the following docume
 * New :func:`pylops.utils.tapers.tapernd` for N-dimensional tapers
 * New wavelets :func:`pylops.utils.wavelets.klauder` and :func:`pylops.utils.wavelets.ormsby`
 
-## Documentation
+**Documentation**
 
 * `Installation <https://pylops.readthedocs.io/en/latest/installation.html>`_ has been revamped
 * Revamped guide on how to `implement a new LinearOperator from scratch <https://pylops.readthedocs.io/en/latest/adding.html>`_
