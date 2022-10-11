@@ -1311,7 +1311,7 @@ class ISTA(Solver):
                 self.normresold = self.normres
 
         # compute gradient
-        grad: NDArray = self.alpha * self.Op.H @ res
+        grad: NDArray = self.alpha * (self.Op.H @ res)
 
         # update inverted model
         x_unthesh: NDArray = x + grad

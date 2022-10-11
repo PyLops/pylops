@@ -169,7 +169,6 @@ class NormalEquationsInversion(Solver):
         if epsI > 0:
             self.Op_normal += epsI**2 * Diagonal(
                 self.ncp.ones(self.Op.dims, dtype=self.Op.dtype),
-                dims=self.Op.dims,
                 dtype=self.Op.dtype,
             )
 
@@ -242,17 +241,17 @@ class NormalEquationsInversion(Solver):
         """
         if x is not None:
             self.y_normal = self.y_normal - self.Op_normal * x
-        if engine == "scipy":
+        if engine == "scipy" and self.ncp == np:
             if "atol" not in kwargs_solver:
                 kwargs_solver["atol"] = "legacy"
             xinv, istop = sp_cg(self.Op_normal, self.y_normal, **kwargs_solver)
-        elif engine == "pylops":
+        elif engine == "pylops" or self.ncp != np:
             if show:
                 kwargs_solver["show"] = True
             xinv = cg(
                 self.Op_normal,
                 self.y_normal,
-                self.ncp.zeros(self.Op_normal.dims, dtype=self.Op_normal.dtype),
+                self.ncp.zeros(self.Op_normal.shape[1], dtype=self.Op_normal.dtype),
                 **kwargs_solver,
             )[0]
             istop = None
@@ -588,13 +587,13 @@ class RegularizedInversion(Solver):
         """
         if x is not None:
             self.datatot = self.datatot - self.RegOp * x
-        if engine == "scipy":
+        if engine == "scipy" and self.ncp == np:
             if show:
                 kwargs_solver["show"] = 1
             xinv, istop, itn, r1norm, r2norm = lsqr(
                 self.RegOp, self.datatot, **kwargs_solver
             )[0:5]
-        elif engine == "pylops":
+        elif engine == "pylops" or self.ncp != np:
             if show:
                 kwargs_solver["show"] = True
             xinv, istop, itn, r1norm, r2norm = cgls(
@@ -810,7 +809,7 @@ class PreconditionedInversion(Solver):
         """
         if x is not None:
             self.y = self.y - self.Op * x
-        if engine == "scipy":
+        if engine == "scipy" and self.ncp == np:
             if show:
                 kwargs_solver["show"] = 1
             pinv, istop, itn, r1norm, r2norm = lsqr(
@@ -818,15 +817,17 @@ class PreconditionedInversion(Solver):
                 self.y,
                 **kwargs_solver,
             )[0:5]
-        elif engine == "pylops":
+        elif engine == "pylops" or self.ncp != np:
             if show:
                 kwargs_solver["show"] = True
             pinv, istop, itn, r1norm, r2norm = cgls(
                 self.POp,
                 self.y,
-                self.ncp.zeros(self.POp.dims, dtype=self.POp.dtype),
+                self.ncp.zeros(self.POp.shape[1], dtype=self.POp.dtype),
                 **kwargs_solver,
             )[0:5]
+            # force it 1d as we decorate this method with disable_ndarray_multiplication
+            pinv = pinv.ravel()
         else:
             raise NotImplementedError("Engine must be scipy or pylops")
         xinv = self.P * pinv

@@ -107,7 +107,7 @@ class CG(Solver):
 
         # create variables to track the residual norm and iterations
         self.cost: List = []
-        self.cost.append(np.sqrt(self.kold))
+        self.cost.append(float(np.sqrt(self.kold)))
         self.iiter = 0
 
         # print setup
@@ -141,7 +141,7 @@ class CG(Solver):
         self.c = self.r + b * self.c
         self.kold = k
         self.iiter += 1
-        self.cost.append(np.sqrt(self.kold))
+        self.cost.append(float(np.sqrt(self.kold)))
         if show:
             self._print_step(x)
         return x

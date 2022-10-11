@@ -1185,6 +1185,7 @@ class _ColumnLinearOperator(LinearOperator):
         self.Op = Op
         self.cols = cols
         self._shape = (Op.shape[0], len(cols))
+        self._dims = len(cols)
         if self.explicit:
             self.Opcol = Op.A[:, cols]
 

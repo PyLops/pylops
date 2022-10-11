@@ -82,6 +82,9 @@ should be used as a checklist when converting a piece of code using PyLops from 
     `pylops.optimization.sparsity.fista` have been deprecated in favour of ``eigsdict`` (a dictionary containing any
     parameter to be passed to the ``pylops.LinearOperator.eigs`` method when computing the largest eigenvalue of
     the operator).
+  * The optional parameter ``engine`` has been added to all least-squares solvers. Users are in charge of choosing whether
+    to use ``engine="scipy"`` or ``engine="pylops"``. Note that to be able to use these solvers with cupy arrays, one must
+    choose ``engine="pylops"``. The same also applies to the `pylops.optimization.sparsity.irls` solver.
 
 
 ## Table of supported multiplication shapes
