@@ -89,6 +89,22 @@ Scalability test
 
     scalability_test
 
+Sliding and Patching
+--------------------
+
+.. currentmodule:: pylops.signalprocessing
+
+.. autosummary::
+   :toctree: generated/
+
+    sliding1d.sliding1d_design
+    sliding2d.sliding2d_design
+    sliding3d.sliding3d_design
+    patch2d.patch2d_design
+    patch3d.patch3d_design
+
+
+
 Synthetics
 ----------
 

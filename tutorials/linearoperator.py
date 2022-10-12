@@ -230,7 +230,7 @@ D1 = Dop1.todense()
 
 plt.figure(figsize=(5, 5))
 plt.imshow(np.abs(D1))
-plt.title(r"Dense representation of $|D + D^*|$")
+plt.title(r"Dense representation of $|D - D^*|$")
 plt.axis("tight")
 plt.colorbar()
 plt.tight_layout()
