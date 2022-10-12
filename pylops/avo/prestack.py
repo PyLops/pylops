@@ -1,4 +1,11 @@
+__all__ = [
+    "PrestackLinearModelling",
+    "PrestackWaveletModelling",
+    "PrestackInversion",
+]
+
 import logging
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from scipy.sparse.linalg import lsqr
@@ -8,14 +15,15 @@ from pylops import (
     FirstDerivative,
     Identity,
     Laplacian,
+    LinearOperator,
     MatrixMult,
     SecondDerivative,
     VStack,
 )
 from pylops.avo.avo import AVOLinearModelling, akirichards, fatti, ps
-from pylops.optimization.leastsquares import RegularizedInversion
-from pylops.optimization.solver import cgls
-from pylops.optimization.sparsity import SplitBregman
+from pylops.optimization.basic import cgls
+from pylops.optimization.leastsquares import regularized_inversion
+from pylops.optimization.sparsity import splitbregman
 from pylops.signalprocessing import Convolve1D
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import (
@@ -25,6 +33,7 @@ from pylops.utils.backend import (
     get_module_name,
 )
 from pylops.utils.signalprocessing import convmtx
+from pylops.utils.typing import NDArray, ShapeLike
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -32,15 +41,16 @@ _linearizations = {"akirich": 3, "fatti": 3, "ps": 3}
 
 
 def PrestackLinearModelling(
-    wav,
-    theta,
-    vsvp=0.5,
-    nt0=1,
-    spatdims=None,
-    linearization="akirich",
-    explicit=False,
-    kind="centered",
-):
+    wav: NDArray,
+    theta: NDArray,
+    vsvp: Union[float, NDArray] = 0.5,
+    nt0: int = 1,
+    spatdims: Optional[Union[int, ShapeLike]] = None,
+    linearization: str = "akirich",
+    explicit: bool = False,
+    kind: str = "centered",
+    name: Optional[str] = None,
+) -> LinearOperator:
     r"""Pre-stack linearized seismic modelling operator.
 
     Create operator to be applied to elastic property profiles
@@ -83,6 +93,10 @@ def PrestackLinearModelling(
         (``True``, preferred for small data)
     kind : :obj:`str`, optional
         Derivative kind (``forward`` or ``centered``).
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -131,6 +145,7 @@ def PrestackLinearModelling(
     ntheta = len(theta)
 
     # organize dimensions
+    dims: Optional[ShapeLike]
     if spatdims is None:
         dims = (nt0, ntheta)
         spatdims = None
@@ -176,22 +191,21 @@ def PrestackLinearModelling(
         D = get_block_diag(theta)(*([D] * nG))
 
         # Create wavelet operator
-        C = convmtx(wav, nt0)[:, len(wav) // 2 : -len(wav) // 2 + 1]
+        C = ncp.asarray(convmtx(wav, nt0))[:, len(wav) // 2 : -len(wav) // 2 + 1]
         C = [C] * ntheta
         C = get_block_diag(theta)(*C)
 
         # Combine operators
         M = ncp.dot(C, ncp.dot(G, D))
-        Preop = MatrixMult(M, dims=spatdims, dtype=dtype)
+        Preop = MatrixMult(M, otherdims=spatdims, dtype=dtype)
 
     else:
         # Create wavelet operator
         Cop = Convolve1D(
-            np.prod(np.array(dims)),
+            dims,
             h=wav,
             offset=len(wav) // 2,
-            dir=0,
-            dims=dims,
+            axis=0,
             dtype=dtype,
         )
 
@@ -203,21 +217,22 @@ def PrestackLinearModelling(
         # Create derivative operator
         dimsm = list(dims)
         dimsm[1] = AVOop.npars
-        Dop = FirstDerivative(
-            np.prod(np.array(dimsm)),
-            dims=dimsm,
-            dir=0,
-            sampling=1.0,
-            kind=kind,
-            dtype=dtype,
-        )
+        Dop = FirstDerivative(dimsm, axis=0, sampling=1.0, kind=kind, dtype=dtype)
         Preop = Cop * AVOop * Dop
+
+    Preop.name = name
     return Preop
 
 
 def PrestackWaveletModelling(
-    m, theta, nwav, wavc=None, vsvp=0.5, linearization="akirich"
-):
+    m: NDArray,
+    theta: NDArray,
+    nwav: int,
+    wavc: Optional[int] = None,
+    vsvp: Union[float, NDArray] = 0.5,
+    linearization: str = "akirich",
+    name: Optional[str] = None,
+) -> LinearOperator:
     r"""Pre-stack linearized seismic modelling operator for wavelet.
 
     Create operator to be applied to a wavelet for generation of
@@ -247,6 +262,10 @@ def PrestackWaveletModelling(
         * "PS": PS. See :py:func:`pylops.avo.avo.ps`.
 
         * Function with the same signature as :py:func:`pylops.avo.avo.akirichards`
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -331,26 +350,27 @@ def PrestackWaveletModelling(
             for itheta in range(ntheta)
         ]
     )
+    Mconv.name = name
     return Mconv
 
 
 def PrestackInversion(
-    data,
-    theta,
-    wav,
-    m0=None,
-    linearization="akirich",
-    explicit=False,
-    simultaneous=False,
-    epsI=None,
-    epsR=None,
-    dottest=False,
-    returnres=False,
-    epsRL1=None,
-    kind="centered",
-    vsvp=0.5,
+    data: NDArray,
+    theta: NDArray,
+    wav: NDArray,
+    m0: Optional[NDArray] = None,
+    linearization: str = "akirich",
+    explicit: bool = False,
+    simultaneous: bool = False,
+    epsI: Optional[float] = None,
+    epsR: Optional[float] = None,
+    dottest: bool = False,
+    returnres: bool = False,
+    epsRL1: Optional[float] = None,
+    kind: str = "centered",
+    vsvp: Union[float, NDArray] = 0.5,
     **kwargs_solver
-):
+) -> Union[NDArray, Tuple[NDArray, NDArray]]:
     r"""Pre-stack linearized seismic inversion.
 
     Invert pre-stack seismic operator to retrieve a set of elastic property
@@ -512,7 +532,7 @@ def PrestackInversion(
         ]
         if explicit:
             PPop = MatrixMult(
-                np.vstack([Op.A for Op in PPop]), dims=nspat, dtype=PPop[0].A.dtype
+                np.vstack([Op.A for Op in PPop]), otherdims=nspat, dtype=PPop[0].A.dtype
             )
         else:
             PPop = VStack(PPop)
@@ -568,7 +588,7 @@ def PrestackInversion(
                     minv = get_lstsq(data)(PP, datarn, **kwargs_solver)[0]
                 else:
                     # solve regularized normal equations simultaneously
-                    PPop_reg = MatrixMult(PP, dims=nspatprod)
+                    PPop_reg = MatrixMult(PP, otherdims=nspatprod)
                     if ncp == np:
                         minv = lsqr(PPop_reg, datarn.ravel(), **kwargs_solver)[0]
                     else:
@@ -582,7 +602,7 @@ def PrestackInversion(
             #    # create regularized normal eqs. and solve them simultaneously
             #    PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0*nm)
             #    datarn = PPop.A.T * datar.reshape(nt0*ntheta, nspatprod)
-            #    PPop_reg = MatrixMult(PP, dims=ntheta*nspatprod)
+            #    PPop_reg = MatrixMult(PP, otherdims=ntheta*nspatprod)
             #    minv = lstsq(PPop_reg, datarn.ravel(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
@@ -601,50 +621,43 @@ def PrestackInversion(
             if isinstance(epsI, (list, tuple)):
                 if len(epsI) != nm:
                     raise ValueError("epsI must be a scalar or a list of" "size nm")
-                RegI = Diagonal(np.array(epsI), dims=(nt0, nm, nspatprod), dir=1)
+                RegI = Diagonal(np.array(epsI), dims=(nt0, nm, nspatprod), axis=1)
             else:
                 RegI = epsI * Identity(nt0 * nm * nspatprod)
 
         if epsRL1 is None:
             # L2 inversion with spatial regularization
             if dims == 1:
-                Regop = SecondDerivative(nt0 * nm, dtype=PPop.dtype, dims=(nt0, nm))
+                Regop = SecondDerivative((nt0, nm), axis=0, dtype=PPop.dtype)
             elif dims == 2:
-                Regop = Laplacian((nt0, nm, nx), dirs=(0, 2), dtype=PPop.dtype)
+                Regop = Laplacian((nt0, nm, nx), axes=(0, 2), dtype=PPop.dtype)
             else:
-                Regop = Laplacian((nt0, nm, nx, ny), dirs=(2, 3), dtype=PPop.dtype)
+                Regop = Laplacian((nt0, nm, nx, ny), axes=(2, 3), dtype=PPop.dtype)
             if epsI is None:
                 Regop = (Regop,)
                 epsR = (epsR,)
             else:
                 Regop = (Regop, RegI)
                 epsR = (epsR, 1)
-            minv = RegularizedInversion(
+            minv = regularized_inversion(
                 PPop,
-                Regop,
                 data.ravel(),
+                Regop,
                 x0=m0.ravel() if m0 is not None else None,
                 epsRs=epsR,
-                returninfo=False,
                 **kwargs_solver
-            )
+            )[0]
         else:
             # Blockiness-promoting inversion with spatial regularization
             if dims == 1:
                 RegL1op = FirstDerivative(nt0 * nm, dtype=PPop.dtype)
                 RegL2op = None
             elif dims == 2:
-                RegL1op = FirstDerivative(
-                    nt0 * nx * nm, dims=(nt0, nm, nx), dir=0, dtype=PPop.dtype
-                )
-                RegL2op = SecondDerivative(
-                    nt0 * nx * nm, dims=(nt0, nm, nx), dir=2, dtype=PPop.dtype
-                )
+                RegL1op = FirstDerivative((nt0, nm, nx), axis=0, dtype=PPop.dtype)
+                RegL2op = SecondDerivative((nt0, nm, nx), axis=2, dtype=PPop.dtype)
             else:
-                RegL1op = FirstDerivative(
-                    nt0 * nx * ny * nm, dims=(nt0, nm, nx, ny), dir=0, dtype=PPop.dtype
-                )
-                RegL2op = Laplacian((nt0, nm, nx, ny), dirs=(2, 3), dtype=PPop.dtype)
+                RegL1op = FirstDerivative((nt0, nm, nx, ny), axis=0, dtype=PPop.dtype)
+                RegL2op = Laplacian((nt0, nm, nx, ny), axes=(2, 3), dtype=PPop.dtype)
             if dims == 1:
                 if epsI is not None:
                     RegL2op = (RegI,)
@@ -672,10 +685,10 @@ def PrestackInversion(
                 kwargs_solver.pop("niter_inner")
             else:
                 niter_inner = 5
-            minv = SplitBregman(
+            minv = splitbregman(
                 PPop,
-                (RegL1op,),
                 data.ravel(),
+                (RegL1op,),
                 RegsL2=RegL2op,
                 epsRL1s=epsRL1,
                 epsRL2s=epsR,

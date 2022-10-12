@@ -80,7 +80,6 @@ def test_CausalIntegration1d(par):
             par["nt"],
             sampling=par["dt"],
             kind=kind,
-            halfcurrent=False,
             removefirst=rf,
             dtype=par["dtype"],
         )
@@ -96,9 +95,9 @@ def test_CausalIntegration1d(par):
             y = Cop * x
             # analytical integration
             yana = (
-                t ** 2 / 2.0
+                t**2 / 2.0
                 - t[0] ** 2 / 2.0
-                + par["imag"] * (t ** 2 / 2.0 - t[0] ** 2 / 2.0)
+                + par["imag"] * (t**2 / 2.0 - t[0] ** 2 / 2.0)
             )
 
             assert_array_almost_equal(y, yana[rf1:], decimal=4)
@@ -129,17 +128,14 @@ def test_CausalIntegration2d(par):
 
     for kind, rf in itertools.product(("full", "half", "trapezoidal"), (False, True)):
         Cop = CausalIntegration(
-            par["nt"] * par["nx"],
-            dims=(par["nt"], par["nx"]),
+            (par["nt"], par["nx"]),
             sampling=dt,
-            dir=0,
+            axis=0,
             kind=kind,
-            halfcurrent=False,
             removefirst=rf,
             dtype=par["dtype"],
         )
         rf1 = 1 if rf else 0
-        print(Cop.shape, (par["nt"] - rf1) * par["nx"], par["nt"] * par["nx"])
         assert dottest(
             Cop,
             (par["nt"] - rf1) * par["nx"],
@@ -167,11 +163,7 @@ def test_CausalIntegration2d(par):
 
             # numerical derivative
             Dop = FirstDerivative(
-                par["nt"] * par["nx"],
-                dims=(par["nt"], par["nx"]),
-                dir=0,
-                sampling=dt,
-                dtype=par["dtype"],
+                (par["nt"], par["nx"]), axis=0, sampling=dt, dtype=par["dtype"]
             )
             xder = Dop * y.ravel()
             xder = xder.reshape(par["nt"], par["nx"])

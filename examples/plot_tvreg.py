@@ -53,6 +53,7 @@ plt.plot(x, "k", lw=3, label="x")
 plt.plot(y, ".k", label="y=x+n")
 plt.legend()
 plt.title("Model and data")
+plt.tight_layout()
 
 ###############################################################################
 # To start we will try to use a simple L2 regularization that enforces
@@ -61,9 +62,9 @@ plt.title("Model and data")
 D2op = pylops.SecondDerivative(nx, edge=True)
 lamda = 1e2
 
-xinv = pylops.optimization.leastsquares.RegularizedInversion(
-    Iop, [D2op], y, epsRs=[np.sqrt(lamda / 2)], **dict(iter_lim=30)
-)
+xinv = pylops.optimization.leastsquares.regularized_inversion(
+    Iop, y, [D2op], epsRs=[np.sqrt(lamda / 2)], **dict(iter_lim=30)
+)[0]
 
 plt.figure(figsize=(10, 5))
 plt.plot(x, "k", lw=3, label="x")
@@ -71,6 +72,7 @@ plt.plot(y, ".k", label="y=x+n")
 plt.plot(xinv, "r", lw=5, label="xinv")
 plt.legend()
 plt.title("L2 inversion")
+plt.tight_layout()
 
 ###############################################################################
 # Now we impose blockiness in the solution using the Split Bregman solver
@@ -80,18 +82,18 @@ lamda = 0.3
 niter_out = 50
 niter_in = 3
 
-xinv, niter = pylops.optimization.sparsity.SplitBregman(
+xinv = pylops.optimization.sparsity.splitbregman(
     Iop,
-    [Dop],
     y,
-    niter_out,
-    niter_in,
+    [Dop],
+    niter_outer=niter_out,
+    niter_inner=niter_in,
     mu=mu,
     epsRL1s=[lamda],
     tol=1e-4,
     tau=1.0,
     **dict(iter_lim=30, damp=1e-10)
-)
+)[0]
 
 plt.figure(figsize=(10, 5))
 plt.plot(x, "k", lw=3, label="x")
@@ -99,6 +101,7 @@ plt.plot(y, ".k", label="y=x+n")
 plt.plot(xinv, "r", lw=5, label="xinv")
 plt.legend()
 plt.title("TV inversion")
+plt.tight_layout()
 
 ###############################################################################
 # Finally, we repeat the same exercise on a 2-dimensional image. In this case
@@ -112,7 +115,7 @@ ny, nx = x.shape
 perc_subsampling = 0.6
 nxsub = int(np.round(ny * nx * perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(ny * nx))[:nxsub])
-Rop = pylops.Restriction(ny * nx, iava, dtype=np.complex128)
+Rop = pylops.Restriction(ny * nx, iava, axis=0, dtype=np.complex128)
 Fop = pylops.signalprocessing.FFT2D(dims=(ny, nx))
 
 n = np.random.normal(0, 0.0, (ny, nx))
@@ -135,6 +138,7 @@ axs[1].axis("tight")
 axs[2].imshow(np.abs(ymask), vmin=0, vmax=1, cmap="rainbow")
 axs[2].set_title("Sampled data")
 axs[2].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # Let's attempt now to reconstruct the model using the Split Bregman
@@ -145,35 +149,34 @@ axs[2].axis("tight")
 #         J = \mu/2 ||\mathbf{y} - \mathbf{R} \mathbf{F} \mathbf{x}||_2
 #         + || \nabla_x \mathbf{x}||_1 + || \nabla_y \mathbf{x}||_1
 
-
 Dop = [
     pylops.FirstDerivative(
-        ny * nx, dims=(ny, nx), dir=0, edge=False, kind="backward", dtype=np.complex128
+        (ny, nx), axis=0, edge=False, kind="backward", dtype=np.complex128
     ),
     pylops.FirstDerivative(
-        ny * nx, dims=(ny, nx), dir=1, edge=False, kind="backward", dtype=np.complex128
+        (ny, nx), axis=1, edge=False, kind="backward", dtype=np.complex128
     ),
 ]
 
 # TV
 mu = 1.5
 lamda = [0.1, 0.1]
-niter = 20
-niterinner = 10
+niter_out = 20
+niter_in = 10
 
-xinv, niter = pylops.optimization.sparsity.SplitBregman(
+xinv = pylops.optimization.sparsity.splitbregman(
     Rop * Fop,
-    Dop,
     y.ravel(),
-    niter,
-    niterinner,
+    Dop,
+    niter_outer=niter_out,
+    niter_inner=niter_in,
     mu=mu,
     epsRL1s=lamda,
     tol=1e-4,
     tau=1.0,
     show=False,
     **dict(iter_lim=5, damp=1e-4)
-)
+)[0]
 xinv = np.real(xinv.reshape(ny, nx))
 
 fig, axs = plt.subplots(1, 2, figsize=(9, 5))
@@ -183,6 +186,7 @@ axs[0].axis("tight")
 axs[1].imshow(xinv, vmin=0, vmax=1, cmap="gray")
 axs[1].set_title("TV Inversion")
 axs[1].axis("tight")
+plt.tight_layout()
 
 fig, axs = plt.subplots(2, 1, figsize=(10, 5))
 axs[0].plot(x[ny // 2], "k", lw=5, label="x")
@@ -193,6 +197,7 @@ axs[1].plot(x[:, nx // 2], "k", lw=5, label="x")
 axs[1].plot(xinv[:, nx // 2], "r", lw=3, label="xinv TV")
 axs[1].set_title("Vertical section")
 axs[1].legend()
+plt.tight_layout()
 
 ###############################################################################
 # Note that more optimized variations of the Split Bregman algorithm have been

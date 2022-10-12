@@ -8,7 +8,6 @@ This operator returns the real part of the data in forward and adjoint mode,
 but the forward output will be a real number, while the adjoint output will
 be a complex number with a zero-valued imaginary part.
 """
-import matplotlib.gridspec as pltgs
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -40,3 +39,4 @@ axs[2].plot(np.real(xadj), lw=2, label="Real")
 axs[2].plot(np.imag(xadj), lw=2, label="Imag")
 axs[2].legend()
 axs[2].set_title("Adjoint of Forward")
+plt.tight_layout()

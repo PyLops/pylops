@@ -24,10 +24,10 @@ dev-install:
 	$(PIP) install -r requirements-dev.txt && $(PIP) install -e .
 
 install_conda:
-	conda env create -f environment.yml && source activate pylops && pip install .
+	conda env create -f environment.yml && conda activate pylops && pip install .
 
 dev-install_conda:
-	conda env create -f environment-dev.yml && source activate pylops && pip install -e .
+	conda env create -f environment-dev.yml && conda activate pylops && pip install -e .
 
 tests:
 	make pythoncheck
@@ -39,3 +39,9 @@ doc:
 
 docupdate:
 	cd docs && make html && cd ..
+
+lint:
+	flake8 docs/ examples/ pylops/ pytests/ tutorials/
+
+typeannot:
+	mypy pylops/

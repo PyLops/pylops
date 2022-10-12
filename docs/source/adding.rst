@@ -26,7 +26,7 @@ which will be used as *parent* class for any of our operators:
 This class is a child of the
 :py:class:`scipy.sparse.linalg.LinearOperator` class itself which implements the same methods of its parent class
 as well as an additional method for quick inversion: such method can be easily accessed by using ``\`` between the
-operator and the data (e.g., ``A\y``).
+operator and the data (e.g., ``A \ y``).
 
 After that we define our new object:
 
@@ -39,6 +39,9 @@ followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/for
 contain at least a short description of the operator, a ``Parameters`` section with a detailed description of the
 input parameters and a ``Notes`` section providing a mathematical explanation of the operator. Take a look at
 some of the core operators of PyLops to get a feeling of the level of details of the mathematical explanation.
+
+Initialization (``__init__``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We then need to create the ``__init__`` where the input parameters are passed and saved as members of our class.
 While the input parameters change from operator to operator, it is always required to create three members, the first
@@ -58,6 +61,23 @@ of the matrix we want to multiply to the model and data.
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
+Alternatively, since version 2.0.0, the recommended way of initializing operators derived from the base
+:py:class:`pylops.LinearOperator` class is to invoke ``super`` to assign the required attributes:
+
+.. code-block:: python
+
+    def __init__(self, d, dtype=None):
+        self.d = d.ravel()
+        super().__init__(dtype=np.dtype(dtype), shape=(len(self.d), len(self.d)))
+
+In this case, there is no need to declare ``explicit`` as it already defaults to ``False``.
+Since version 2.0.0, every :py:class:`pylops.LinearOperator` class is imbued with ``dims``,
+``dimsd``, ``clinear`` and ``explicit``, in addition to the required ``dtype`` and ``shape``.
+See the docs of :py:class:`pylops.LinearOperator` for more information about what these
+attributes mean.
+
+Forward mode (``_matvec``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 We can then move onto writing the *forward mode* in the method ``_matvec``. In other words, we will need to write
 the piece of code that will implement the following operation :math:`\mathbf{y} = \mathbf{A}\mathbf{x}`.
 Such method is always composed of two inputs (the object itself ``self`` and the input model  ``x``).
@@ -68,8 +88,10 @@ We will finally need to ``return`` the result of this operation:
 .. code-block:: python
 
     def _matvec(self, x):
-        return self.d*x
+        return self.d * x
 
+Adjoint mode (``_rmatvec``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Finally we need to implement the *adjoint mode* in the method ``_rmatvec``. In other words, we will need to write
 the piece of code that will implement the following operation :math:`\mathbf{x} = \mathbf{A}^H\mathbf{y}`.
 Such method is also composed of two inputs (the object itself ``self`` and the input data ``y``).
@@ -79,7 +101,7 @@ different from operator to operator):
 .. code-block:: python
 
     def _rmatvec(self, x):
-        return self.d*x
+        return self.d * x
 
 And that's it, we have implemented our first linear operator!
 
@@ -135,7 +157,7 @@ Once the operator has been created, we can add it to the documentation of PyLops
 the operator within the ``index.rst`` file in ``docs/source/api`` directory.
 
 Moreover, in order to facilitate the user of your operator by other users, a simple example should be provided as part of the
-Sphinx-gallery of the documentation of the PyLops library. The directory ``examples`` containes several scripts that
+Sphinx-gallery of the documentation of the PyLops library. The directory ``examples`` contains several scripts that
 can be used as template.
 
 

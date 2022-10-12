@@ -1,4 +1,4 @@
-import multiprocessing
+# import multiprocessing
 
 import numpy as np
 import pytest
@@ -48,18 +48,10 @@ _, x2d = linear2d(yaxis, taxis, v, t0, theta, amp, wav)
 _, x3d = linear3d(xaxis, yaxis, taxis, v, t0, theta, phi, amp, wav)
 
 # Create restriction operator
-Rop2d = Restriction(
-    par["ny"] * par["nt"], iava, dims=(par["ny"], par["nt"]), dir=0, dtype="float64"
-)
+Rop2d = Restriction((par["ny"], par["nt"]), iava, axis=0, dtype="float64")
 y2d = Rop2d * x2d.ravel()
 y2d = y2d.reshape(nysub, par["nt"])
-Rop3d = Restriction(
-    par["ny"] * par["nx"] * par["nt"],
-    iava,
-    dims=(par["ny"], par["nx"], par["nt"]),
-    dir=0,
-    dtype="float64",
-)
+Rop3d = Restriction((par["ny"], par["nx"], par["nt"]), iava, axis=0, dtype="float64")
 y3d = Rop3d * x3d.ravel()
 y3d = y3d.reshape(nysub, par["nx"], par["nt"])
 
@@ -71,11 +63,11 @@ par1_2d = {
 par2_2d = {
     "kind": "fk",
     "kwargs": dict(
-        nffts=(2 ** 9, 2 ** 9),
+        nffts=(2**9, 2**9),
         sampling=(par["dy"], par["dt"]),
         niter=20,
         eps=1e-2,
-        eigsiter=4,
+        eigsdict={"niter": 4},
     ),
 }
 par3_2d = {
@@ -85,7 +77,7 @@ par3_2d = {
         centeredh=True,
         niter=20,
         eps=1e-1,
-        eigsiter=4,
+        eigsdict={"niter": 4},
     ),
 }
 par4_2d = {
@@ -95,10 +87,9 @@ par4_2d = {
         nwin=12,
         nwins=3,
         nover=3,
-        design=False,
         niter=20,
         eps=1e-1,
-        eigsiter=4,
+        eigsdict={"niter": 4},
     ),
 }
 par1_2d.update(par)
@@ -110,8 +101,7 @@ par1_3d = par1_2d
 par2_3d = {
     "kind": "fk",
     "kwargs": dict(
-        nffts=(2 ** 7, 2 ** 7, 2 ** 8),
-        returninfo=False,
+        nffts=(2**7, 2**7, 2**8),
         sampling=(par["dy"], par["dx"], par["dt"]),
         niter=20,
         eps=5e-2,
@@ -139,7 +129,6 @@ par4_3d = {
         nwin=(12, 5),
         nwins=(3, 2),
         nover=(3, 2),
-        design=True,
         niter=20,
         eps=1e-2,
         alpha=1.3e-4,

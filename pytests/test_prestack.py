@@ -284,7 +284,6 @@ def test_PrestackLinearModelling(par):
             kind=par["kind"],
             **dict_inv
         )
-        print(np.linalg.norm(m - minv) / np.linalg.norm(minv))
         assert np.linalg.norm(m - minv) / np.linalg.norm(minv) < 4e-2
 
 

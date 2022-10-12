@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from pylops.utils.signalprocessing import *
+from pylops.utils.signalprocessing import convmtx, nonstationary_convmtx
 
 par1 = {"nt": 51, "imag": 0, "dtype": "float32"}  # real
 par2 = {"nt": 51, "imag": 1j, "dtype": "complex64"}  # complex

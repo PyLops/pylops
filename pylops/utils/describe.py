@@ -1,3 +1,6 @@
+__all__ = ["describe"]
+
+import logging
 import random
 import string
 
@@ -10,29 +13,27 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
     from scipy.sparse.linalg.interface import (
         _AdjointLinearOperator,
         _ProductLinearOperator,
-        _SumLinearOperator,
         _TransposedLinearOperator,
     )
 else:
     from scipy.sparse.linalg._interface import (
         _AdjointLinearOperator,
         _ProductLinearOperator,
-        _SumLinearOperator,
         _TransposedLinearOperator,
     )
 
+from typing import List, Set, Union
+
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, VStack
-from pylops.LinearOperator import _ScaledLinearOperator
+from pylops.linearoperator import _ScaledLinearOperator, _SumLinearOperator
+from pylops.utils import deps
 
-try:
+sympy_message = deps.sympy_import("the describe module")
+
+if sympy_message is None:
     from sympy import BlockDiagMatrix, BlockMatrix, MatrixSymbol
-except ModuleNotFoundError:
-    raise ModuleNotFoundError(
-        "Sympy package not installed. In order to use "
-        "the describe method run "
-        "install sympy."
-    )
+
 
 compositeops = (
     LinearOperator,
@@ -46,8 +47,10 @@ compositeops = (
     BlockDiag,
 )
 
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
-def _in_notebook():
+
+def _in_notebook() -> bool:
     """Check if code is running inside notebook"""
     try:
         from IPython import get_ipython
@@ -61,7 +64,7 @@ def _in_notebook():
     return True
 
 
-def _assign_name(Op, Ops, names):
+def _assign_name(Op, Ops, names: List[str]) -> str:
     """Assign name to an operator as provided by the user
     (or randomly select one when not provided by the user)
 
@@ -70,21 +73,29 @@ def _assign_name(Op, Ops, names):
     Op : :obj:`pylops.LinearOperator`
         Linear Operator to assign name to
     Ops : :obj:`dict`
-        Dictionary of Operators found by the _describe method whilst crawling
+        dictionary of Operators found by the _describe method whilst crawling
         through the composite operator to describe
     names : :obj:`list`
-        List of currently assigned names
+        list of currently assigned names
+
+    Returns
+    -------
+    name : :obj:`str`
+        Name assigned to operator
 
     """
     # Add a suffix when all letters of the alphabet are already in use. This
     # decision is made by counting the length of the names list and using the
     # English vocabulary (26 characters)
-    suffix = "1" * (len(names) // 26)
-    # Propose a new name, where a random letter is chosen if Op does not
-    # have a name
-    proposedname = (
-        getattr(Op, "name", random.choice(string.ascii_letters).upper()) + suffix
-    )
+    suffix = str(len(names) // 26) * (len(names) // 26 > 0)
+
+    # Propose a new name, where a random letter
+    # is chosen if Op does not have a name or the name is set to None
+    if getattr(Op, "name", None) is None:
+        proposedname = random.choice(string.ascii_letters).upper() + suffix
+    else:
+        proposedname = Op.name + suffix
+
     if proposedname not in names or (Ops[proposedname][1] == id(Op)):
         # Assign the proposed name if this is not yet in use or if it is
         # used by the same operator. Note that an operator may reapper
@@ -96,7 +107,7 @@ def _assign_name(Op, Ops, names):
         while proposedname in names:
             proposedname = random.choice(string.ascii_letters).upper() + suffix
         name = proposedname
-        print(
+        logging.warning(
             f"The user has used the same name {origname} for two distinct operators, "
             f"changing name of operator {type(Op).__name__} to {name}..."
         )
@@ -104,7 +115,7 @@ def _assign_name(Op, Ops, names):
     return name
 
 
-def _describeop(Op, Ops, names):
+def _describeop(Op, Ops, names: List[str]):
     """Core steps to describe a single operator
 
     Parameters
@@ -112,10 +123,17 @@ def _describeop(Op, Ops, names):
     Op : :obj:`pylops.LinearOperator`
         Linear Operator to assign name to
     Ops : :obj:`dict`
-        Dictionary of Operators found by the _describe method whilst crawling
+        dictionary of Operators found by the _describe method whilst crawling
         through the composite operator to describe
     names : :obj:`list`
-        List of currently assigned names
+        list of currently assigned names
+
+    Returns
+    -------
+    Op0 : :obj:`sympy.MatrixSymbol`
+        Sympy equivalent od Linear Operator ``Op``
+    Ops_ : :obj:`dict`
+        New or updated dictionary of Operators
 
     """
     if type(Op) not in compositeops:
@@ -131,18 +149,22 @@ def _describeop(Op, Ops, names):
         # further disected into its components
         name = getattr(Op, "name", None)
         if name is None:
-            Op0, Ops_ = _describe(Op.Op)
+            Op0, Ops_, names = _describe(Op.Op, Ops, names)
         else:
             Ops_ = {name: (type(Op).__name__, id(Op))}
             Op0 = MatrixSymbol(name, 1, 1)
     else:
         # When finding a composite operator, send it again to the _describe
         # method
-        Op0, Ops_ = _describe(Op)
+        Op0, Ops_, names = _describe(Op, Ops, names)
     return Op0, Ops_
 
 
-def _describe(Op):
+def _describe(
+    Op,
+    Ops,
+    names: Union[List[str], Set[str]],
+):
     """Core steps to describe a composite operator. This is done recursively.
 
     Parameters
@@ -150,42 +172,55 @@ def _describe(Op):
     Op : :obj:`pylops.LinearOperator`
         Linear Operator to assign name to
     Ops : :obj:`dict`
-        Dictionary of Operators found by the _describe method whilst crawling
+        dictionary of Operators found by the _describe method whilst crawling
         through the composite operator to describe
     names : :obj:`list`
-        List of currently assigned names
+        list of currently assigned names
+
+    Returns
+    -------
+    Opsym : :obj:`sympy.MatrixSymbol`
+        Sympy equivalent od Linear Operator ``Op``
+    Ops : :obj:`dict`
+        dictionary of Operators
 
     """
-    Ops = {}
+    # Check if a name has been given to the operator and store it as
+    # MatrixSymbol (this is useful when users do not want an operator to be
+    # further disected into its components)
+    name = getattr(Op, "name", None)
+    if name is not None:
+        Ops[name] = (type(Op).__name__, id(Op))
+        Opsym = MatrixSymbol(Op.name, 1, 1)
+        names.update(name)
+        return Opsym, Ops, names
+
+    # Given that no name has been assigned, interpret the operator further
     if type(Op) not in compositeops:
-        # A native PyLops operator has been found, assign a name and store
-        # it as MatrixSymbol
+        # A native PyLops operator has been found, assign a name
+        # or if a name has been given to the operator treat as
+        # it is and store it as MatrixSymbol
         name = _assign_name(Op, Ops, list(Ops.keys()))
         Ops[name] = (type(Op).__name__, id(Op))
         Opsym = MatrixSymbol(Op.name, 1, 1)
+        names.update(name)
     else:
         if type(Op) == LinearOperator:
             # A LinearOperator has been found, either extract Op and start to
             # describe it or if a name has been given to the operator treat as
-            # it is (this is useful when users do not want an operator to be
-            # further disected into its components
-            name = getattr(Op, "name", None)
-            if name is None:
-                Opsym, Ops_ = _describe(Op.Op)
-                Ops.update(Ops_)
-            else:
-                Ops[name] = (type(Op).__name__, id(Op))
-                Opsym = MatrixSymbol(Op.name, 1, 1)
+            # it is and store it as MatrixSymbol
+            Opsym, Ops_, names = _describe(Op.Op, Ops, names)
+            Ops.update(Ops_)
         elif type(Op) == _AdjointLinearOperator:
             # An adjoint LinearOperator has been found, describe it and attach
             # the adjoint symbol to its sympy representation
-            Opsym, Ops_ = _describe(Op.args[0])
+            Opsym, Ops_, names = _describe(Op.args[0], Ops, names)
             Opsym = Opsym.adjoint()
             Ops.update(Ops_)
         elif type(Op) == _TransposedLinearOperator:
             # A transposed LinearOperator has been found, describe it and
             # attach the transposed symbol to its sympy representation
-            Opsym, Ops_ = _describe(Op.args[0])
+            Opsym, Ops_, names = _describe(Op.args[0], Ops, names)
             Opsym = Opsym.T
             Ops.update(Ops_)
         elif type(Op) == _ScaledLinearOperator:
@@ -194,35 +229,42 @@ def _describe(Op):
             # scaling could either on the left or right side of the operator,
             # so we need to try both
             if isinstance(Op.args[0], LinearOperator):
-                Opsym, Ops_ = _describeop(Op.args[0], Ops, list(Ops.keys()))
+                Opsym, Ops_ = _describeop(Op.args[0], Ops, names)
                 Opsym = Op.args[1] * Opsym
                 Ops.update(Ops_)
+                names.update(list(Ops_.keys()))
             else:
-                Opsym, Ops_ = _describeop(Op.args[1], Ops, list(Ops.keys()))
+                Opsym, Ops_ = _describeop(Op.args[1], Ops, names)
                 Opsym = Op.args[1] * Opsym
                 Ops.update(Ops_)
+                names.update(list(Ops_.keys()))
         elif type(Op) == _SumLinearOperator:
             # A sum LinearOperator has been found, describe both operators
             # either side of the plus sign and sum their sympy representations
-            Opsym0, Ops_ = _describeop(Op.args[0], Ops, list(Ops.keys()))
+            Opsym0, Ops_ = _describeop(Op.args[0], Ops, names)
             Ops.update(Ops_)
-            Opsym1, Ops_ = _describeop(Op.args[1], Ops, list(Ops.keys()))
+            names.update(list(Ops_.keys()))
+            Opsym1, Ops_ = _describeop(Op.args[1], Ops, names)
             Ops.update(Ops_)
+            names.update(list(Ops_.keys()))
             Opsym = Opsym0 + Opsym1
         elif type(Op) == _ProductLinearOperator:
             # Same as sum LinearOperator but for product
-            Opsym0, Ops_ = _describeop(Op.args[0], Ops, list(Ops.keys()))
+            Opsym0, Ops_ = _describeop(Op.args[0], Ops, names)
             Ops.update(Ops_)
-            Opsym1, Ops_ = _describeop(Op.args[1], Ops, list(Ops.keys()))
+            names.update(list(Ops_.keys()))
+            Opsym1, Ops_ = _describeop(Op.args[1], Ops, names)
             Ops.update(Ops_)
+            names.update(list(Ops_.keys()))
             Opsym = Opsym0 * Opsym1
         elif type(Op) in (VStack, HStack, BlockDiag):
             # A special composite operator has been found, stack its components
             # horizontally, vertically, or along a diagonal
             Opsyms = []
             for op in Op.ops:
-                Opsym, Ops_ = _describeop(op, Ops, list(Ops.keys()))
+                Opsym, Ops_ = _describeop(op, Ops, names)
                 Opsyms.append(Opsym)
+                names.update(list(Ops_.keys()))
                 Ops.update(Ops_)
             Ops.update(Ops_)
             if type(Op) == VStack:
@@ -231,11 +273,11 @@ def _describe(Op):
                 Opsym = BlockMatrix(Opsyms)
             elif type(Op) == BlockDiag:
                 Opsym = BlockDiagMatrix(*Opsyms)
-    return Opsym, Ops
+    return Opsym, Ops, names
 
 
-def describe(Op):
-    """Describe a PyLops operator
+def describe(Op) -> None:
+    r"""Describe a PyLops operator
 
     .. versionadded:: 1.17.0
 
@@ -255,8 +297,13 @@ def describe(Op):
         Linear Operator to describe
 
     """
+    if sympy_message is not None:
+        raise NotImplementedError(sympy_message)
+
     # Describe the operator
-    Opsym, Ops = _describe(Op)
+    Ops = {}
+    names = set()
+    Opsym, Ops, names = _describe(Op, Ops=Ops, names=names)
     # Clean up Ops from id
     Ops = {op: Ops[op][0] for op in Ops.keys()}
     # Check if this command is run in a Jupyter notebook or normal shell and

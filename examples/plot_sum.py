@@ -19,14 +19,13 @@ x = (np.arange(ny * nx)).reshape(ny, nx)
 
 ###############################################################################
 # We can now create the operator and peform forward and adjoint
-Sop = pylops.Sum(dims=(ny, nx), dir=0)
+Sop = pylops.Sum(dims=(ny, nx), axis=0)
 
-y = Sop * x.ravel()
+y = Sop * x
 xadj = Sop.H * y
-xadj = xadj.reshape(ny, nx)
 
 gs = pltgs.GridSpec(1, 7)
-fig = plt.figure(figsize=(7, 3))
+fig = plt.figure(figsize=(7, 4))
 ax = plt.subplot(gs[0, 0:3])
 im = ax.imshow(x, cmap="rainbow", vmin=0, vmax=ny * nx)
 ax.set_title("x", size=20, fontweight="bold")
@@ -54,6 +53,7 @@ ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
 ax.axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # Note that since the Sum operator creates and under-determined system of

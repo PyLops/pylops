@@ -17,6 +17,18 @@ Dot-test
 
     dottest
 
+Decorators
+----------
+
+.. currentmodule:: pylops.utils.decorators
+
+.. autosummary::
+   :toctree: generated/
+
+    add_ndarray_support_to_solver
+    disable_ndarray_multiplication
+    reshaped
+
 Describe
 --------
 
@@ -30,7 +42,7 @@ Describe
 Estimators
 ----------
 
-.. currentmodule:: pylops.utils
+.. currentmodule:: pylops.utils.estimators
 
 .. autosummary::
    :toctree: generated/
@@ -38,6 +50,34 @@ Estimators
     trace_hutchinson
     trace_hutchpp
     trace_nahutchpp
+
+Metrics
+-------
+.. currentmodule:: pylops.utils.metrics
+
+.. autosummary::
+   :toctree: generated/
+
+    mae
+    mse
+    snr
+    psnr
+
+Geophysical Reservoir characterization
+--------------------------------------
+
+.. currentmodule:: pylops.avo
+
+.. autosummary::
+   :toctree: generated/
+
+    avo.zoeppritz_scattering
+    avo.zoeppritz_element
+    avo.zoeppritz_pp
+    avo.approx_zoeppritz_pp
+    avo.akirichards
+    avo.fatti
+    avo.ps
 
 Scalability test
 ----------------
@@ -48,6 +88,22 @@ Scalability test
    :toctree: generated/
 
     scalability_test
+
+Sliding and Patching
+--------------------
+
+.. currentmodule:: pylops.signalprocessing
+
+.. autosummary::
+   :toctree: generated/
+
+    sliding1d.sliding1d_design
+    sliding2d.sliding2d_design
+    sliding3d.sliding3d_design
+    patch2d.patch2d_design
+    patch3d.patch3d_design
+
+
 
 Synthetics
 ----------
@@ -71,8 +127,6 @@ Synthetics
 
    marchenko.directwave
 
-
-
 Signal-processing
 -----------------
 
@@ -83,8 +137,8 @@ Signal-processing
 
     signalprocessing.convmtx
     signalprocessing.nonstationary_convmtx
+    signalprocessing.dip_estimate
     signalprocessing.slope_estimate
-
 
 Tapers
 ------
@@ -96,7 +150,7 @@ Tapers
 
     tapers.taper2d
     tapers.taper3d
-
+    tapers.tapernd
 
 Wavelets
 --------
@@ -106,22 +160,8 @@ Wavelets
 .. autosummary::
    :toctree: generated/
 
-    wavelets.ricker
     wavelets.gaussian
+    wavelets.klauder
+    wavelets.ormsby
+    wavelets.ricker
 
-
-Geophysical Reservoir characterization
---------------------------------------
-
-.. currentmodule:: pylops.avo
-
-.. autosummary::
-   :toctree: generated/
-
-    avo.zoeppritz_scattering
-    avo.zoeppritz_element
-    avo.zoeppritz_pp
-    avo.approx_zoeppritz_pp
-    avo.akirichards
-    avo.fatti
-    avo.ps

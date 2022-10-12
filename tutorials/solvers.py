@@ -50,7 +50,7 @@ np.random.seed(10)
 ifreqs = [41, 25, 66]
 amps = [1.0, 1.0, 1.0]
 N = 200
-nfft = 2 ** 11
+nfft = 2**11
 dt = 0.004
 t = np.arange(N) * dt
 f = np.fft.rfftfreq(nfft, dt)
@@ -68,6 +68,7 @@ axs[0].set_title("Data(frequency domain)")
 axs[1].plot(t, x, "k", lw=2)
 axs[1].set_title("Data(time domain)")
 axs[1].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # We now define the locations at which the signal will be sampled.
@@ -91,6 +92,7 @@ plt.plot(t, x, ".k", ms=20, label="all samples")
 plt.plot(t, ymask, ".g", ms=15, label="available samples")
 plt.legend()
 plt.title("Data restriction")
+plt.tight_layout()
 
 ###############################################################################
 # To start let's consider the simplest *'solver'*, i.e., *least-square inversion
@@ -115,18 +117,18 @@ plt.title("Data restriction")
 xinv = Rop / y
 
 ###############################################################################
-# We can also use :py:func:`pylops.optimization.leastsquares.RegularizedInversion`
+# We can also use :py:func:`pylops.optimization.leastsquares.regularized_inversion`
 # (without regularization term for now) and customize our solvers using
 # ``kwargs``.
-xinv = pylops.optimization.leastsquares.RegularizedInversion(
-    Rop, [], y, **dict(damp=0, iter_lim=10, show=1)
-)
+xinv = pylops.optimization.leastsquares.regularized_inversion(
+    Rop, y, [], **dict(damp=0, iter_lim=10, show=True)
+)[0]
 
 ###############################################################################
 # Finally we can select a different starting guess from the null vector
-xinv_fromx0 = pylops.optimization.leastsquares.RegularizedInversion(
-    Rop, [], y, x0=np.ones(N), **dict(damp=0, iter_lim=10, show=0)
-)
+xinv_fromx0 = pylops.optimization.leastsquares.regularized_inversion(
+    Rop, y, [], x0=np.ones(N), **dict(damp=0, iter_lim=10, show=True)
+)[0]
 
 ###############################################################################
 # The cost function above can be also expanded in terms of
@@ -136,14 +138,14 @@ xinv_fromx0 = pylops.optimization.leastsquares.RegularizedInversion(
 #       \mathbf{x}_{ne}= (\mathbf{R}^T \mathbf{R})^{-1}
 #       \mathbf{R}^T \mathbf{y}
 #
-# The method :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion`
+# The method :py:func:`pylops.optimization.leastsquares.normal_equations_inversion`
 # implements such system of equations explicitly and solves them using an
 # iterative scheme suitable for square matrices (i.e., :math:`M=N`).
 #
 # While this approach may seem not very useful, we will soon see how
 # regularization terms could be easily added to the normal equations using
 # this method.
-xne = pylops.optimization.leastsquares.NormalEquationsInversion(Rop, [], y)
+xne = pylops.optimization.leastsquares.normal_equations_inversion(Rop, y, [])[0]
 
 ###############################################################################
 # Let's now visualize the different inversion results
@@ -154,6 +156,7 @@ plt.plot(t, xinv_fromx0, "--r", ms=10, label="inversion from x0")
 plt.plot(t, xne, "--g", ms=10, label="normal equations")
 plt.legend()
 plt.title("Data reconstruction without regularization")
+plt.tight_layout()
 
 ###############################################################################
 # Regularization
@@ -167,9 +170,9 @@ plt.title("Data reconstruction without regularization")
 # form of regularization (or preconditioning). This can be done in two
 # different ways
 #
-# * regularization via :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion`
-#   or :py:func:`pylops.optimization.leastsquares.RegularizedInversion`)
-# * preconditioning via :py:func:`pylops.optimization.leastsquares.PreconditionedInversion`
+# * regularization via :py:func:`pylops.optimization.leastsquares.normal_equations_inversion`
+#   or :py:func:`pylops.optimization.leastsquares.regularized_inversion`)
+# * preconditioning via :py:func:`pylops.optimization.leastsquares.preconditioned_inversion`
 #
 # Let's start by regularizing the normal equations using a second
 # derivative operator
@@ -179,38 +182,31 @@ plt.title("Data reconstruction without regularization")
 #                    \mathbf{R^Ty}
 
 # Create regularization operator
-D2op = pylops.SecondDerivative(N, dims=None, dtype="float64")
+D2op = pylops.SecondDerivative(N, dtype="float64")
 
 # Regularized inversion
 epsR = np.sqrt(0.1)
 epsI = np.sqrt(1e-4)
 
-xne = pylops.optimization.leastsquares.NormalEquationsInversion(
-    Rop, [D2op], y, epsI=epsI, epsRs=[epsR], returninfo=False, **dict(maxiter=50)
-)
+xne = pylops.optimization.leastsquares.normal_equations_inversion(
+    Rop, y, [D2op], epsI=epsI, epsRs=[epsR], **dict(maxiter=50)
+)[0]
 
 ###############################################################################
 # Note that in case we have access to a fast implementation for the chain of
 # forward and adjoint for the regularization operator
 # (i.e., :math:`\nabla^T\nabla`), we can modify our call to
-# :py:func:`pylops.optimization.leastsquares.NormalEquationsInversion` as
+# :py:func:`pylops.optimization.leastsquares.normal_equations_inversion` as
 # follows:
 ND2op = pylops.MatrixMult((D2op.H * D2op).tosparse())  # mimic fast D^T D
 
-xne1 = pylops.optimization.leastsquares.NormalEquationsInversion(
-    Rop,
-    [],
-    y,
-    NRegs=[ND2op],
-    epsI=epsI,
-    epsNRs=[epsR],
-    returninfo=False,
-    **dict(maxiter=50)
-)
+xne1 = pylops.optimization.leastsquares.normal_equations_inversion(
+    Rop, y, [], NRegs=[ND2op], epsI=epsI, epsNRs=[epsR], **dict(maxiter=50)
+)[0]
 
 ###############################################################################
 # We can do the same while using
-# :py:func:`pylops.optimization.leastsquares.RegularizedInversion`
+# :py:func:`pylops.optimization.leastsquares.regularized_inversion`
 # which solves the following augmented problem
 #
 #   .. math::
@@ -223,14 +219,13 @@ xne1 = pylops.optimization.leastsquares.NormalEquationsInversion(
 #           0
 #       \end{bmatrix}
 
-xreg = pylops.optimization.leastsquares.RegularizedInversion(
+xreg = pylops.optimization.leastsquares.regularized_inversion(
     Rop,
-    [D2op],
     y,
+    [D2op],
     epsRs=[np.sqrt(0.1)],
-    returninfo=False,
     **dict(damp=np.sqrt(1e-4), iter_lim=50, show=0)
-)
+)[0]
 
 ###############################################################################
 # We can also write a preconditioned problem, whose cost function is
@@ -244,15 +239,15 @@ xreg = pylops.optimization.leastsquares.RegularizedInversion(
 # space we want to solve for. Note that a preconditioned problem converges
 # much faster to its solution than its corresponding regularized problem.
 # This can be done using the routine
-# :py:func:`pylops.optimization.leastsquares.PreconditionedInversion`.
+# :py:func:`pylops.optimization.leastsquares.preconditioned_inversion`.
 
 # Create regularization operator
 Sop = pylops.Smoothing1D(nsmooth=11, dims=[N], dtype="float64")
 
 # Invert for interpolated signal
-xprec = pylops.optimization.leastsquares.PreconditionedInversion(
-    Rop, Sop, y, returninfo=False, **dict(damp=np.sqrt(1e-9), iter_lim=20, show=0)
-)
+xprec = pylops.optimization.leastsquares.preconditioned_inversion(
+    Rop, y, Sop, **dict(damp=np.sqrt(1e-9), iter_lim=20, show=0)
+)[0]
 
 ###############################################################################
 # Let's finally visualize these solutions
@@ -276,7 +271,7 @@ subax.plot(t, xne1, "--c", lw=3)
 subax.plot(t, xreg, "-.r", lw=3)
 subax.plot(t, xprec, "--g", lw=3)
 subax.set_xlim(0.05, 0.3)
-
+plt.tight_layout()
 
 ###############################################################################
 # Much better estimates! We have seen here how regularization and/or
@@ -297,17 +292,25 @@ subax.set_xlim(0.05, 0.3)
 #              \epsilon \|\mathbf{p}\|_1
 #
 # where :math:`\mathbf{F}` is the FFT operator. We will thus use the
-# :py:class:`pylops.optimization.sparsity.ISTA` and
-# :py:class:`pylops.optimization.sparsity.FISTA` solvers to estimate our input
+# :py:class:`pylops.optimization.sparsity.ista` and
+# :py:class:`pylops.optimization.sparsity.fista` solvers to estimate our input
 # signal.
 
-pista, niteri, costi = pylops.optimization.sparsity.ISTA(
-    Rop * FFTop.H, y, niter=1000, eps=0.1, tol=1e-7, returninfo=True
+pista, niteri, costi = pylops.optimization.sparsity.ista(
+    Rop * FFTop.H,
+    y,
+    niter=1000,
+    eps=0.1,
+    tol=1e-7,
 )
 xista = FFTop.H * pista
 
-pfista, niterf, costf = pylops.optimization.sparsity.FISTA(
-    Rop * FFTop.H, y, niter=1000, eps=0.1, tol=1e-7, returninfo=True
+pfista, niterf, costf = pylops.optimization.sparsity.fista(
+    Rop * FFTop.H,
+    y,
+    niter=1000,
+    eps=0.1,
+    tol=1e-7,
 )
 xfista = FFTop.H * pfista
 
@@ -353,10 +356,10 @@ plt.tight_layout()
 #              \mathbf{R} \mathbf{F} \mathbf{p}\|
 #
 # A very popular solver to solve such kind of cost function is called *spgl1*
-# and can be accessed via :py:class:`pylops.optimization.sparsity.SPGL1`.
+# and can be accessed via :py:class:`pylops.optimization.sparsity.spgl1`.
 
-xspgl1, pspgl1, info = pylops.optimization.sparsity.SPGL1(
-    Rop, y, FFTop, tau=3, iter_lim=200
+xspgl1, pspgl1, info = pylops.optimization.sparsity.spgl1(
+    Rop, y, SOp=FFTop, tau=3, iter_lim=200
 )
 
 fig, axs = plt.subplots(2, 1, figsize=(12, 8))

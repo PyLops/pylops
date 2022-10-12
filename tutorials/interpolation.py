@@ -60,25 +60,18 @@ y1 = Rop.mask(x)
 # We will now use two different routines from our optimization toolbox
 # to estimate our original image in the regular grid.
 
-xcg_reg_lop = pylops.optimization.leastsquares.NormalEquationsInversion(
-    Rop, [D2op], y, epsRs=[np.sqrt(0.1)], returninfo=False, **dict(maxiter=200)
-)
+xcg_reg_lop = pylops.optimization.leastsquares.normal_equations_inversion(
+    Rop, y, [D2op], epsRs=[np.sqrt(0.1)], **dict(maxiter=200)
+)[0]
 
 # Invert for interpolated signal, lsqrt
-(
-    xlsqr_reg_lop,
-    istop,
-    itn,
-    r1norm,
-    r2norm,
-) = pylops.optimization.leastsquares.RegularizedInversion(
+xlsqr_reg_lop = pylops.optimization.leastsquares.regularized_inversion(
     Rop,
-    [D2op],
     y,
+    [D2op],
     epsRs=[np.sqrt(0.1)],
-    returninfo=True,
-    **dict(damp=0, iter_lim=200, show=0)
-)
+    **dict(damp=0, iter_lim=200, show=0),
+)[0]
 
 # Reshape estimated images
 im_sampled = y1.reshape((Nz, Nx))
@@ -94,7 +87,7 @@ fig.suptitle("Data reconstruction - normal eqs", fontsize=14, fontweight="bold",
 axs[0].imshow(im, cmap="viridis", vmin=0, vmax=250)
 axs[0].axis("tight")
 axs[0].set_title("Original")
-axs[1].imshow(im_sampled, cmap="viridis", vmin=0, vmax=250)
+axs[1].imshow(im_sampled.data, cmap="viridis", vmin=0, vmax=250)
 axs[1].axis("tight")
 axs[1].set_title("Sampled")
 axs[2].imshow(im_rec_lap_cg, cmap="viridis", vmin=0, vmax=250)
@@ -113,7 +106,7 @@ fig.suptitle(
 axs[0].imshow(im, cmap="viridis", vmin=0, vmax=250)
 axs[0].axis("tight")
 axs[0].set_title("Original")
-axs[1].imshow(im_sampled, cmap="viridis", vmin=0, vmax=250)
+axs[1].imshow(im_sampled.data, cmap="viridis", vmin=0, vmax=250)
 axs[1].axis("tight")
 axs[1].set_title("Sampled")
 axs[2].imshow(im_rec_lap_lsqr, cmap="viridis", vmin=0, vmax=250)

@@ -3,11 +3,13 @@ channels:
   - defaults
   - conda-forge
   - numba
+  - pytorch
 dependencies:
   - python>=3.6.4
   - pip
-  - numpy>=1.15.0
+  - numpy>=1.21.0
   - scipy>=1.4.0
+  - pytorch>=1.2.0
   - pyfftw
   - pywavelets
   - sympy
@@ -23,6 +25,7 @@ dependencies:
   - isort
   - black
   - pip:
+    - devito
     - scikit-fmm
     - spgl1
     - pytest-runner
@@ -31,3 +34,5 @@ dependencies:
     - sphinx-gallery
     - nbsphinx
     - image
+    - flake8
+    - mypy

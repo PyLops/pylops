@@ -59,7 +59,7 @@ D1op = pylops.FirstDerivative(nx, dtype="float32")
 y_lop = D1op * x
 xadj_lop = D1op.H * y_lop
 
-fig, axs = plt.subplots(3, 1, figsize=(13, 8))
+fig, axs = plt.subplots(3, 1, figsize=(13, 8), sharex=True)
 axs[0].stem(np.arange(nx), x, linefmt="k", markerfmt="ko")
 axs[0].set_title("Input", size=20, fontweight="bold")
 axs[1].stem(np.arange(nx), y_dir, linefmt="k", markerfmt="ko", label="direct")
@@ -83,10 +83,10 @@ nx, ny = 11, 21
 A = np.zeros((nx, ny))
 A[nx // 2, ny // 2] = 1.0
 
-D1op = pylops.FirstDerivative(nx * ny, dims=(nx, ny), dir=0, dtype="float64")
-B = np.reshape(D1op * A.ravel(), (nx, ny))
+D1op = pylops.FirstDerivative((nx, ny), axis=0, dtype="float64")
+B = D1op * A
 
-fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+fig, axs = plt.subplots(1, 2, figsize=(10, 3), sharey=True)
 fig.suptitle(
     "First Derivative in 1st direction", fontsize=12, fontweight="bold", y=0.95
 )
@@ -106,10 +106,10 @@ plt.subplots_adjust(top=0.8)
 A = np.zeros((nx, ny))
 A[nx // 2, ny // 2] = 1.0
 
-D2op = pylops.SecondDerivative(nx * ny, dims=(nx, ny), dir=0, dtype="float64")
-B = np.reshape(D2op * A.ravel(), (nx, ny))
+D2op = pylops.SecondDerivative(dims=(nx, ny), axis=0, dtype="float64")
+B = D2op * A
 
-fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+fig, axs = plt.subplots(1, 2, figsize=(10, 3), sharey=True)
 fig.suptitle(
     "Second Derivative in 1st direction", fontsize=12, fontweight="bold", y=0.95
 )
@@ -126,11 +126,11 @@ plt.subplots_adjust(top=0.8)
 
 ###############################################################################
 # We can also apply the second derivative to the second direction of
-# our data (``dir=1``)
-D2op = pylops.SecondDerivative(nx * ny, dims=(nx, ny), dir=1, dtype="float64")
-B = np.reshape(D2op * np.ndarray.flatten(A), (nx, ny))
+# our data (``axis=1``)
+D2op = pylops.SecondDerivative(dims=(nx, ny), axis=1, dtype="float64")
+B = D2op * A
 
-fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+fig, axs = plt.subplots(1, 2, figsize=(10, 3), sharey=True)
 fig.suptitle(
     "Second Derivative in 2nd direction", fontsize=12, fontweight="bold", y=0.95
 )
@@ -157,10 +157,10 @@ L2symop = pylops.Laplacian(dims=(nx, ny), weights=(1, 1), dtype="float64")
 # asymmetrical
 L2asymop = pylops.Laplacian(dims=(nx, ny), weights=(3, 1), dtype="float64")
 
-Bsym = np.reshape(L2symop * A.ravel(), (nx, ny))
-Basym = np.reshape(L2asymop * A.ravel(), (nx, ny))
+Bsym = L2symop * A
+Basym = L2asymop * A
 
-fig, axs = plt.subplots(1, 3, figsize=(10, 3))
+fig, axs = plt.subplots(1, 3, figsize=(10, 3), sharey=True)
 fig.suptitle("Laplacian", fontsize=12, fontweight="bold", y=0.95)
 im = axs[0].imshow(A, interpolation="nearest", cmap="rainbow")
 axs[0].axis("tight")
@@ -184,25 +184,28 @@ plt.subplots_adjust(top=0.8)
 # concatenates them.
 Gop = pylops.Gradient(dims=(nx, ny), dtype="float64")
 
-B = np.reshape(Gop * A.ravel(), (2 * nx, ny))
-C = np.reshape(Gop.H * B.ravel(), (nx, ny))
+B = Gop * A
+C = Gop.H * B
 
-fig, axs = plt.subplots(1, 3, figsize=(10, 3))
+fig, axs = plt.subplots(2, 2, figsize=(10, 6), sharex=True, sharey=True)
 fig.suptitle("Gradient", fontsize=12, fontweight="bold", y=0.95)
-im = axs[0].imshow(A, interpolation="nearest", cmap="rainbow")
-axs[0].axis("tight")
-axs[0].set_title("x")
-plt.colorbar(im, ax=axs[0])
-im = axs[1].imshow(B, interpolation="nearest", cmap="rainbow")
-axs[1].axis("tight")
-axs[1].set_title("y")
-plt.colorbar(im, ax=axs[1])
-im = axs[2].imshow(C, interpolation="nearest", cmap="rainbow")
-axs[2].axis("tight")
-axs[2].set_title("xadj")
-plt.colorbar(im, ax=axs[2])
+im = axs[0, 0].imshow(A, interpolation="nearest", cmap="rainbow")
+axs[0, 0].axis("tight")
+axs[0, 0].set_title("x")
+plt.colorbar(im, ax=axs[0, 0])
+im = axs[0, 1].imshow(B[0, ...], interpolation="nearest", cmap="rainbow")
+axs[0, 1].axis("tight")
+axs[0, 1].set_title("y - 1st direction")
+plt.colorbar(im, ax=axs[0, 1])
+im = axs[1, 1].imshow(B[1, ...], interpolation="nearest", cmap="rainbow")
+axs[1, 1].axis("tight")
+axs[1, 1].set_title("y - 2nd direction")
+plt.colorbar(im, ax=axs[1, 1])
+im = axs[1, 0].imshow(C, interpolation="nearest", cmap="rainbow")
+axs[1, 0].axis("tight")
+axs[1, 0].set_title("xadj")
+plt.colorbar(im, ax=axs[1, 0])
 plt.tight_layout()
-plt.subplots_adjust(top=0.8)
 
 ###############################################################################
 # Finally we use the Gradient operator to compute directional derivatives.
@@ -232,13 +235,11 @@ v[1, horlayers[-1] :] = 1
 Ddop = pylops.FirstDirectionalDerivative((nz, nx), v=v, sampling=(nz, nx))
 D2dop = pylops.SecondDirectionalDerivative((nz, nx), v=v, sampling=(nz, nx))
 
-dirder = Ddop * A.ravel()
-dirder = dirder.reshape(nz, nx)
-dir2der = D2dop * A.ravel()
-dir2der = dir2der.reshape(nz, nx)
+dirder = Ddop * A
+dir2der = D2dop * A
 
 jump = 4
-fig, axs = plt.subplots(3, 1, figsize=(4, 9))
+fig, axs = plt.subplots(3, 1, figsize=(4, 9), sharex=True)
 im = axs[0].imshow(A, cmap="gist_rainbow", extent=(0, nx // jump, nz // jump, 0))
 q = axs[0].quiver(
     np.arange(nx // jump) + 0.5,

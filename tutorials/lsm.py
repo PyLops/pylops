@@ -68,15 +68,18 @@ sz = 10 * np.ones(ns)
 sources = np.vstack((sx, sz))
 ds = sources[0, 1] - sources[0, 0]
 
+###############################################################################
 plt.figure(figsize=(10, 5))
-im = plt.imshow(vel.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]))
+im = plt.imshow(vel.T, cmap="summer", extent=(x[0], x[-1], z[-1], z[0]))
 plt.scatter(recs[0], recs[1], marker="v", s=150, c="b", edgecolors="k")
 plt.scatter(sources[0], sources[1], marker="*", s=150, c="r", edgecolors="k")
-plt.colorbar(im)
+cb = plt.colorbar(im)
+cb.set_label("[m/s]")
 plt.axis("tight")
 plt.xlabel("x [m]"), plt.ylabel("y [m]")
 plt.title("Velocity")
 plt.xlim(x[0], x[-1])
+plt.tight_layout()
 
 plt.figure(figsize=(10, 5))
 im = plt.imshow(refl.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]))
@@ -87,11 +90,12 @@ plt.axis("tight")
 plt.xlabel("x [m]"), plt.ylabel("y [m]")
 plt.title("Reflectivity")
 plt.xlim(x[0], x[-1])
+plt.tight_layout()
 
 ###############################################################################
 # We can now create our LSM object and invert for the reflectivity using two
 # different solvers: :py:func:`scipy.sparse.linalg.lsqr` (LS solution) and
-# :py:func:`pylops.optimization.sparsity.FISTA` (LS solution with sparse model).
+# :py:func:`pylops.optimization.sparsity.fista` (LS solution with sparse model).
 nt = 651
 dt = 0.004
 t = np.arange(nt) * dt
@@ -99,31 +103,40 @@ wav, wavt, wavc = pylops.utils.wavelets.ricker(t[:41], f0=20)
 
 
 lsm = pylops.waveeqprocessing.LSM(
-    z, x, t, sources, recs, v0, wav, wavc, mode="analytic"
+    z,
+    x,
+    t,
+    sources,
+    recs,
+    v0,
+    wav,
+    wavc,
+    mode="analytic",
+    engine="numba",
 )
 
-d = lsm.Demop * refl.ravel()
-d = d.reshape(ns, nr, nt)
+d = lsm.Demop * refl
 
-madj = lsm.Demop.H * d.ravel()
-madj = madj.reshape(nx, nz)
+madj = lsm.Demop.H * d
 
 minv = lsm.solve(d.ravel(), solver=lsqr, **dict(iter_lim=100))
 minv = minv.reshape(nx, nz)
 
 minv_sparse = lsm.solve(
-    d.ravel(), solver=pylops.optimization.sparsity.FISTA, **dict(eps=1e2, niter=100)
+    d.ravel(), solver=pylops.optimization.sparsity.fista, **dict(eps=1e2, niter=100)
 )
 minv_sparse = minv_sparse.reshape(nx, nz)
 
 # demigration
-dadj = lsm.Demop * madj.ravel()
+d = d.reshape(ns, nr, nt)
+
+dadj = lsm.Demop * madj  # (ns * nr, nt)
 dadj = dadj.reshape(ns, nr, nt)
 
-dinv = lsm.Demop * minv.ravel()
+dinv = lsm.Demop * minv
 dinv = dinv.reshape(ns, nr, nt)
 
-dinv_sparse = lsm.Demop * minv_sparse.ravel()
+dinv_sparse = lsm.Demop * minv_sparse
 dinv_sparse = dinv_sparse.reshape(ns, nr, nt)
 
 # sphinx_gallery_thumbnail_number = 2
@@ -140,6 +153,7 @@ axs[1][0].set_title(r"$m_{inv}$")
 axs[1][1].imshow(minv_sparse.T, cmap="gray", vmin=-1, vmax=1)
 axs[1][1].axis("tight")
 axs[1][1].set_title(r"$m_{FISTA}$")
+plt.tight_layout()
 
 fig, axs = plt.subplots(1, 4, figsize=(10, 4))
 axs[0].imshow(d[0, :, :300].T, cmap="gray", vmin=-d.max(), vmax=d.max())
@@ -154,6 +168,7 @@ axs[2].axis("tight")
 axs[3].imshow(dinv_sparse[0, :, :300].T, cmap="gray", vmin=-d.max(), vmax=d.max())
 axs[3].set_title(r"$d_{fista}$")
 axs[3].axis("tight")
+plt.tight_layout()
 
 fig, axs = plt.subplots(1, 4, figsize=(10, 4))
 axs[0].imshow(d[ns // 2, :, :300].T, cmap="gray", vmin=-d.max(), vmax=d.max())
@@ -168,6 +183,7 @@ axs[2].axis("tight")
 axs[3].imshow(dinv_sparse[ns // 2, :, :300].T, cmap="gray", vmin=-d.max(), vmax=d.max())
 axs[3].set_title(r"$d_{fista}$")
 axs[3].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # This was just a short teaser, for a more advanced set of examples of 2D and

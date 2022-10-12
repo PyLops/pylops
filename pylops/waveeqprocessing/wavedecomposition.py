@@ -1,18 +1,35 @@
+__all__ = [
+    "PressureToVelocity",
+    "UpDownComposition2D",
+    "UpDownComposition3D",
+    "WavefieldDecomposition",
+]
+
 import logging
+from typing import Callable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
 from scipy.sparse.linalg import lsqr
 
-from pylops import Block, BlockDiag, Diagonal, Identity
+from pylops import Block, BlockDiag, Diagonal, Identity, LinearOperator
 from pylops.signalprocessing import FFT2D, FFTND
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import get_array_module, get_module, get_module_name
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def _filter_obliquity(OBL, F, Kx, vel, critical, ntaper, Ky=0):
+def _filter_obliquity(
+    OBL: NDArray,
+    F: NDArray,
+    Kx: NDArray,
+    vel: float,
+    critical: float,
+    ntaper: int,
+    Ky: NDArray = 0,
+) -> NDArray:
     """Apply masking of ``OBL`` based on critical angle and tapering at edges
 
     Parameters
@@ -40,7 +57,7 @@ def _filter_obliquity(OBL, F, Kx, vel, critical, ntaper, Ky=0):
 
     """
     critical /= 100.0
-    mask = np.sqrt(Kx ** 2 + Ky ** 2) < critical * np.abs(F) / vel
+    mask = np.sqrt(Kx**2 + Ky**2) < critical * np.abs(F) / vel
     OBL *= mask
     OBL = filtfilt(np.ones(ntaper) / float(ntaper), 1, OBL, axis=0)
     OBL = filtfilt(np.ones(ntaper) / float(ntaper), 1, OBL, axis=1)
@@ -50,19 +67,19 @@ def _filter_obliquity(OBL, F, Kx, vel, critical, ntaper, Ky=0):
 
 
 def _obliquity2D(
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts,
-    critical=100.0,
-    ntaper=10,
-    composition=True,
-    backend="numpy",
-    dtype="complex128",
-):
+    nt: int,
+    nr: int,
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: InputDimsLike,
+    critical: float = 100.0,
+    ntaper: int = 10,
+    composition: bool = True,
+    backend: str = "numpy",
+    dtype: DTypeLike = "complex128",
+) -> Tuple[LinearOperator, LinearOperator]:
     r"""2D Obliquity operator and FFT operator
 
     Parameters
@@ -111,7 +128,7 @@ def _obliquity2D(
     # create obliquity operator
     [Kx, F] = np.meshgrid(FFTop.f1, FFTop.f2, indexing="ij")
     k = F / vel
-    Kz = np.sqrt((k ** 2 - Kx ** 2).astype(dtype))
+    Kz = np.sqrt((k**2 - Kx**2).astype(dtype))
     Kz[np.isnan(Kz)] = 0
 
     if composition:
@@ -129,19 +146,19 @@ def _obliquity2D(
 
 
 def _obliquity3D(
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts,
-    critical=100.0,
-    ntaper=10,
-    composition=True,
-    backend="numpy",
-    dtype="complex128",
-):
+    nt: int,
+    nr: Union[int, Sequence[int]],
+    dt: float,
+    dr: Union[float, Sequence[float]],
+    rho: float,
+    vel: float,
+    nffts: InputDimsLike,
+    critical: float = 100.0,
+    ntaper: int = 10,
+    composition: bool = True,
+    backend: str = "numpy",
+    dtype: DTypeLike = "complex128",
+) -> Tuple[LinearOperator, LinearOperator]:
     r"""3D Obliquity operator and FFT operator
 
     Parameters
@@ -192,7 +209,7 @@ def _obliquity3D(
     # create obliquity operator
     [Ky, Kx, F] = np.meshgrid(FFTop.fs[0], FFTop.fs[1], FFTop.fs[2], indexing="ij")
     k = F / vel
-    Kz = np.sqrt((k ** 2 - Ky ** 2 - Kx ** 2).astype(dtype))
+    Kz = np.sqrt((k**2 - Ky**2 - Kx**2).astype(dtype))
     Kz[np.isnan(Kz)] = 0
     if composition:
         OBL = Kz / (rho * np.abs(F))
@@ -209,19 +226,20 @@ def _obliquity3D(
 
 
 def PressureToVelocity(
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts=(None, None, None),
-    critical=100.0,
-    ntaper=10,
-    topressure=False,
-    backend="numpy",
-    dtype="complex128",
-):
+    nt: int,
+    nr: int,
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: Union[InputDimsLike, Tuple[None, None, None]] = (None, None, None),
+    critical: float = 100.0,
+    ntaper: int = 10,
+    topressure: bool = False,
+    backend: str = "numpy",
+    dtype: DTypeLike = "complex128",
+    name: str = "P",
+) -> LinearOperator:
     r"""Pressure to Vertical velocity conversion.
 
     Apply conversion from pressure to vertical velocity seismic wavefield
@@ -260,6 +278,10 @@ def PressureToVelocity(
         (``numpy`` or ``cupy``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -338,23 +360,25 @@ def PressureToVelocity(
 
     # create conversion operator
     Cop = FFTop.H * OBLop * FFTop
+    Cop.name = name
     return Cop
 
 
 def UpDownComposition2D(
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts=(None, None),
-    critical=100.0,
-    ntaper=10,
-    scaling=1.0,
-    backend="numpy",
-    dtype="complex128",
-):
+    nt: int,
+    nr: int,
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: Union[InputDimsLike, Tuple[None, None]] = (None, None),
+    critical: float = 100.0,
+    ntaper: int = 10,
+    scaling: float = 1.0,
+    backend: str = "numpy",
+    dtype: DTypeLike = "complex128",
+    name: str = "U",
+) -> LinearOperator:
     r"""2D Up-down wavefield composition.
 
     Apply multi-component seismic wavefield composition from its
@@ -397,6 +421,10 @@ def UpDownComposition2D(
         (``numpy`` or ``cupy``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -504,23 +532,25 @@ def UpDownComposition2D(
         )
         * BlockDiag([FFTop, FFTop])
     )
+    UDop.name = name
     return UDop
 
 
 def UpDownComposition3D(
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts=(None, None, None),
-    critical=100.0,
-    ntaper=10,
-    scaling=1.0,
-    backend="numpy",
-    dtype="complex128",
-):
+    nt: int,
+    nr: int,
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: Union[InputDimsLike, Tuple[None, None, None]] = (None, None, None),
+    critical: float = 100.0,
+    ntaper: int = 10,
+    scaling: float = 1.0,
+    backend: str = "numpy",
+    dtype: DTypeLike = "complex128",
+    name: str = "U",
+) -> LinearOperator:
     r"""3D Up-down wavefield composition.
 
     Apply multi-component seismic wavefield composition from its
@@ -563,6 +593,10 @@ def UpDownComposition3D(
         (``numpy`` or ``cupy``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -622,30 +656,31 @@ def UpDownComposition3D(
         )
         * BlockDiag([FFTop, FFTop])
     )
+    UDop.name = name
     return UDop
 
 
 def WavefieldDecomposition(
-    p,
-    vz,
-    nt,
-    nr,
-    dt,
-    dr,
-    rho,
-    vel,
-    nffts=(None, None, None),
-    critical=100.0,
-    ntaper=10,
-    scaling=1.0,
-    kind="inverse",
-    restriction=None,
-    sptransf=None,
-    solver=lsqr,
-    dottest=False,
-    dtype="complex128",
+    p: NDArray,
+    vz: NDArray,
+    nt: int,
+    nr: Union[int, InputDimsLike],
+    dt: float,
+    dr: float,
+    rho: float,
+    vel: float,
+    nffts: Union[InputDimsLike, Tuple[None, None, None]] = (None, None, None),
+    critical: float = 100.0,
+    ntaper: int = 10,
+    scaling: float = 1.0,
+    kind: str = "inverse",
+    restriction: Optional[LinearOperator] = None,
+    sptransf: Optional[LinearOperator] = None,
+    solver: Callable = lsqr,
+    dottest: bool = False,
+    dtype: DTypeLike = "complex128",
     **kwargs_solver
-):
+) -> Tuple[NDArray, NDArray]:
     r"""Up-down wavefield decomposition.
 
     Apply seismic wavefield decomposition from multi-component (pressure
@@ -796,10 +831,10 @@ def WavefieldDecomposition(
             backend=backend,
             dtype=dtype,
         )
-        VZ = FFTop * vz.ravel()
+        VZ: NDArray = FFTop * vz.ravel()
 
         # scaled Vz
-        VZ_obl = OBLop * VZ
+        VZ_obl: NDArray = OBLop * VZ
         vz_obl = FFTop.H * VZ_obl
         vz_obl = ncp.real(vz_obl.reshape(dims))
 

@@ -1,15 +1,39 @@
+__all__ = [
+    "zoeppritz_scattering",
+    "zoeppritz_element",
+    "zoeppritz_pp",
+    "approx_zoeppritz_pp",
+    "akirichards",
+    "fatti",
+    "ps",
+    "AVOLinearModelling",
+]
+
 import logging
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 from numpy import cos, sin, tan
 
 from pylops import LinearOperator
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
+from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
+def zoeppritz_scattering(
+    vp1: float,
+    vs1: float,
+    rho1: float,
+    vp0: float,
+    vs0: float,
+    rho0: float,
+    theta1: Union[float, npt.ArrayLike],
+) -> NDArray:
     r"""Zoeppritz solution.
 
     Calculates the angle dependent p-wave reflectivity of an
@@ -117,7 +141,16 @@ def zoeppritz_scattering(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     return zoep
 
 
-def zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta1, element="PdPu"):
+def zoeppritz_element(
+    vp1: float,
+    vs1: float,
+    rho1: float,
+    vp0: float,
+    vs0: float,
+    rho0: float,
+    theta1: Union[float, NDArray],
+    element: str = "PdPu",
+) -> NDArray:
     """Single element of Zoeppritz solution.
 
     Simple wrapper to :py:class:`pylops.avo.avo.scattering_matrix`,
@@ -172,7 +205,15 @@ def zoeppritz_element(vp1, vs1, rho1, vp0, vs0, rho0, theta1, element="PdPu"):
     return np.squeeze(refl[element])
 
 
-def zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
+def zoeppritz_pp(
+    vp1: float,
+    vs1: float,
+    rho1: float,
+    vp0: float,
+    vs0: float,
+    rho0: float,
+    theta1: Union[float, NDArray],
+) -> NDArray:
     """PP reflection coefficient from the Zoeppritz scattering matrix.
 
     Simple wrapper to :py:class:`pylops.avo.avo.scattering_matrix`,
@@ -211,7 +252,15 @@ def zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     return PPrefl
 
 
-def approx_zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
+def approx_zoeppritz_pp(
+    vp1: Union[List, Tuple, npt.ArrayLike],
+    vs1: Union[List, Tuple, npt.ArrayLike],
+    rho1: Union[List, Tuple, npt.ArrayLike],
+    vp0: Union[List, Tuple, npt.ArrayLike],
+    vs0: Union[List, Tuple, npt.ArrayLike],
+    rho0: Union[List, Tuple, npt.ArrayLike],
+    theta1: Union[float, NDArray],
+) -> NDArray:
     """PP reflection coefficient from the approximate Zoeppritz equation.
 
     Approximate calculation of PP reflection from the Zoeppritz
@@ -271,24 +320,28 @@ def approx_zoeppritz_pp(vp1, vs1, rho1, vp0, vs0, rho0, theta1):
     a = rho0 * (1 - 2 * np.sin(phi0) ** 2.0) - rho1 * (1 - 2 * np.sin(phi1) ** 2.0)
     b = rho0 * (1 - 2 * np.sin(phi0) ** 2.0) + 2 * rho1 * np.sin(phi1) ** 2.0
     c = rho1 * (1 - 2 * np.sin(phi1) ** 2.0) + 2 * rho0 * np.sin(phi0) ** 2.0
-    d = 2 * (rho0 * vs0 ** 2 - rho1 * vs1 ** 2)
+    d = 2 * (rho0 * vs0**2 - rho1 * vs1**2)
 
     E = (b * np.cos(theta1) / vp1) + (c * np.cos(theta0) / vp0)
     F = (b * np.cos(phi1) / vs1) + (c * np.cos(phi0) / vs0)
     G = a - d * np.cos(theta1) / vp1 * np.cos(phi0) / vs0
     H = a - d * np.cos(theta0) / vp0 * np.cos(phi1) / vs1
 
-    D = E * F + G * H * p ** 2
+    D = E * F + G * H * p**2
 
     rpp = (1 / D) * (
         F * (b * (ncp.cos(theta1) / vp1) - c * (ncp.cos(theta0) / vp0))
-        - H * p ** 2 * (a + d * (ncp.cos(theta1) / vp1) * (ncp.cos(phi0) / vs0))
+        - H * p**2 * (a + d * (ncp.cos(theta1) / vp1) * (ncp.cos(phi0) / vs0))
     )
 
     return rpp
 
 
-def akirichards(theta, vsvp, n=1):
+def akirichards(
+    theta: npt.ArrayLike,
+    vsvp: Union[float, NDArray],
+    n: int = 1,
+) -> Tuple[NDArray, NDArray, NDArray]:
     r"""Three terms Aki-Richards approximation.
 
     Computes the coefficients of the of three terms Aki-Richards approximation
@@ -352,13 +405,17 @@ def akirichards(theta, vsvp, n=1):
     vsvp = vsvp[:, np.newaxis].T if vsvp.size > 1 else vsvp
 
     G1 = 1.0 / (2.0 * cos(theta) ** 2) + 0 * vsvp
-    G2 = -4.0 * vsvp ** 2 * np.sin(theta) ** 2
-    G3 = 0.5 - 2.0 * vsvp ** 2 * sin(theta) ** 2
+    G2 = -4.0 * vsvp**2 * np.sin(theta) ** 2
+    G3 = 0.5 - 2.0 * vsvp**2 * sin(theta) ** 2
 
     return G1, G2, G3
 
 
-def fatti(theta, vsvp, n=1):
+def fatti(
+    theta: npt.ArrayLike,
+    vsvp: Union[float, NDArray],
+    n: int = 1,
+) -> Tuple[NDArray, NDArray, NDArray]:
     r"""Three terms Fatti approximation.
 
     Computes the coefficients of the three terms Fatti approximation
@@ -424,13 +481,17 @@ def fatti(theta, vsvp, n=1):
     vsvp = vsvp[:, np.newaxis].T if vsvp.size > 1 else vsvp
 
     G1 = 0.5 * (1 + np.tan(theta) ** 2) + 0 * vsvp
-    G2 = -4 * vsvp ** 2 * np.sin(theta) ** 2
-    G3 = 0.5 * (4 * vsvp ** 2 * np.sin(theta) ** 2 - tan(theta) ** 2)
+    G2 = -4 * vsvp**2 * np.sin(theta) ** 2
+    G3 = 0.5 * (4 * vsvp**2 * np.sin(theta) ** 2 - tan(theta) ** 2)
 
     return G1, G2, G3
 
 
-def ps(theta, vsvp, n=1):
+def ps(
+    theta: npt.ArrayLike,
+    vsvp: Union[float, NDArray],
+    n: int = 1,
+) -> Tuple[NDArray, NDArray, NDArray]:
     r"""PS reflection coefficient
 
     Computes the coefficients for the PS approximation
@@ -539,6 +600,10 @@ class AVOLinearModelling(LinearOperator):
 
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
@@ -572,23 +637,19 @@ class AVOLinearModelling(LinearOperator):
 
     def __init__(
         self,
-        theta,
-        vsvp=0.5,
-        nt0=1,
-        spatdims=None,
-        linearization="akirich",
-        dtype="float64",
-    ):
+        theta: NDArray,
+        vsvp: Union[float, NDArray] = 0.5,
+        nt0: int = 1,
+        spatdims: Optional[Union[int, Tuple[int]]] = None,
+        linearization: str = "akirich",
+        dtype: DTypeLike = "float64",
+        name: str = "A",
+    ) -> None:
         self.ncp = get_array_module(theta)
 
         self.nt0 = nt0 if not isinstance(vsvp, self.ncp.ndarray) else len(vsvp)
         self.ntheta = len(theta)
-        if spatdims is None:
-            self.spatdims = ()
-            nspatdims = 1
-        else:
-            self.spatdims = spatdims if isinstance(spatdims, tuple) else (spatdims,)
-            nspatdims = np.prod(spatdims)
+        self.spatdims = () if spatdims is None else _value_or_sized_to_tuple(spatdims)
 
         # Compute AVO coefficients
         if linearization == "akirich":
@@ -602,43 +663,23 @@ class AVOLinearModelling(LinearOperator):
             raise NotImplementedError(
                 "%s not an available linearization..." % linearization
             )
+        self.npars = len(Gs)
+        dims: Tuple[int, ...] = (self.nt0, self.npars)
+        dimsd: Tuple[int, ...] = (self.nt0, self.ntheta)
+        if spatdims is not None:
+            dims += self.spatdims
+            dimsd += self.spatdims
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
         self.G = self.ncp.concatenate([gs.T[:, self.ncp.newaxis] for gs in Gs], axis=1)
         # add dimensions to G to account for horizonal axes
         for _ in range(len(self.spatdims)):
             self.G = self.G[..., np.newaxis]
-        self.npars = len(Gs)
-        self.shape = (
-            self.nt0 * self.ntheta * nspatdims,
-            self.nt0 * self.npars * nspatdims,
-        )
-        self.dtype = np.dtype(dtype)
-        self.explicit = False
 
-    def _matvec(self, x):
-        if self.spatdims is None:
-            x = x.reshape(self.nt0, self.npars)
-        else:
-            x = x.reshape(
-                (
-                    self.nt0,
-                    self.npars,
-                )
-                + self.spatdims
-            )
-        y = self.ncp.sum(self.G * x[:, :, self.ncp.newaxis], axis=1)
-        return y
+    @reshaped
+    def _matvec(self, x: NDArray) -> NDArray:
+        return self.ncp.sum(self.G * x[:, :, self.ncp.newaxis], axis=1)
 
-    def _rmatvec(self, x):
-        if self.spatdims is None:
-            x = x.reshape(self.nt0, self.ntheta)
-        else:
-            x = x.reshape(
-                (
-                    self.nt0,
-                    self.ntheta,
-                )
-                + self.spatdims
-            )
-        y = self.ncp.sum(self.G * x[:, self.ncp.newaxis], axis=2)
-        return y
+    @reshaped
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return self.ncp.sum(self.G * x[:, self.ncp.newaxis], axis=2)

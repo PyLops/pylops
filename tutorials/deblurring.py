@@ -39,7 +39,7 @@ fig.colorbar(him, ax=ax)
 ax.axis("tight")
 
 Cop = pylops.signalprocessing.Convolve2D(
-    Nz * Nx, h=h, offset=(nh[0] // 2, nh[1] // 2), dims=(Nz, Nx), dtype="float32"
+    (Nz, Nx), h=h, offset=(nh[0] // 2, nh[1] // 2), dtype="float32"
 )
 
 ###############################################################################
@@ -49,30 +49,30 @@ Cop = pylops.signalprocessing.Convolve2D(
 # regularization, the deblurred image will show some ringing due to the
 # instabilities of the inverse process. Using a L1 solver with a DWT
 # preconditioner or TV regularization allows to recover sharper contrasts.
-imblur = Cop * im.ravel()
+imblur = Cop * im
 
-imdeblur = pylops.optimization.leastsquares.NormalEquationsInversion(
-    Cop, None, imblur, maxiter=50
-)
+imdeblur = pylops.optimization.leastsquares.normal_equations_inversion(
+    Cop, imblur.ravel(), None, maxiter=50  # solvers need 1D arrays
+)[0]
+imdeblur = imdeblur.reshape(Cop.dims)
 
 Wop = pylops.signalprocessing.DWT2D((Nz, Nx), wavelet="haar", level=3)
 Dop = [
-    pylops.FirstDerivative(Nz * Nx, dims=(Nz, Nx), dir=0, edge=False),
-    pylops.FirstDerivative(Nz * Nx, dims=(Nz, Nx), dir=1, edge=False),
+    pylops.FirstDerivative((Nz, Nx), axis=0, edge=False),
+    pylops.FirstDerivative((Nz, Nx), axis=1, edge=False),
 ]
-DWop = Dop + [
-    Wop,
-]
+DWop = Dop + [Wop]
 
-imdeblurfista = pylops.optimization.sparsity.FISTA(
-    Cop * Wop.H, imblur, eps=1e-1, niter=100
+imdeblurfista = pylops.optimization.sparsity.fista(
+    Cop * Wop.H, imblur.ravel(), eps=1e-1, niter=100
 )[0]
+imdeblurfista = imdeblurfista.reshape((Cop * Wop.H).dims)
 imdeblurfista = Wop.H * imdeblurfista
 
-imdeblurtv = pylops.optimization.sparsity.SplitBregman(
+imdeblurtv = pylops.optimization.sparsity.splitbregman(
     Cop,
-    Dop,
     imblur.ravel(),
+    Dop,
     niter_outer=10,
     niter_inner=5,
     mu=1.5,
@@ -82,11 +82,12 @@ imdeblurtv = pylops.optimization.sparsity.SplitBregman(
     show=False,
     **dict(iter_lim=5, damp=1e-4)
 )[0]
+imdeblurtv = imdeblurtv.reshape(Cop.dims)
 
-imdeblurtv1 = pylops.optimization.sparsity.SplitBregman(
+imdeblurtv1 = pylops.optimization.sparsity.splitbregman(
     Cop,
-    DWop,
     imblur.ravel(),
+    DWop,
     niter_outer=10,
     niter_inner=5,
     mu=1.5,
@@ -96,13 +97,7 @@ imdeblurtv1 = pylops.optimization.sparsity.SplitBregman(
     show=False,
     **dict(iter_lim=5, damp=1e-4)
 )[0]
-
-# Reshape images
-imblur = imblur.reshape((Nz, Nx))
-imdeblur = imdeblur.reshape((Nz, Nx))
-imdeblurfista = imdeblurfista.reshape((Nz, Nx))
-imdeblurtv = imdeblurtv.reshape((Nz, Nx))
-imdeblurtv1 = imdeblurtv1.reshape((Nz, Nx))
+imdeblurtv1 = imdeblurtv1.reshape(Cop.dims)
 
 ###############################################################################
 # Finally we visualize the original, blurred, and recovered images.

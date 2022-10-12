@@ -1,7 +1,24 @@
+__all__ = [
+    "hanningtaper",
+    "cosinetaper",
+    "taper",
+    "taper2d",
+    "taper3d",
+    "tapernd",
+]
+
+from typing import Tuple, Union
+
 import numpy as np
+import numpy.typing as npt
+
+from pylops.utils.typing import InputDimsLike, NDArray
 
 
-def hanningtaper(nmask, ntap):
+def hanningtaper(
+    nmask: int,
+    ntap: int,
+) -> npt.ArrayLike:
     r"""1D Hanning taper
 
     Create unitary mask of length ``nmask`` with Hanning tapering
@@ -22,10 +39,8 @@ def hanningtaper(nmask, ntap):
     """
     if ntap > 0:
         if (nmask // ntap) < 2:
-            ntap_min = nmask / 2 if nmask % 2 == 0 else (nmask - 1) / 2
-            raise ValueError(
-                "ntap=%d must be smaller or " "equal than %d" % (ntap, ntap_min)
-            )
+            ntap_min = nmask // 2 if nmask % 2 == 0 else (nmask - 1) // 2
+            raise ValueError(f"ntap={ntap} must be smaller or equal than {ntap_min}")
     han_win = np.hanning(ntap * 2 - 1)
     st_tpr = han_win[
         :ntap,
@@ -40,7 +55,11 @@ def hanningtaper(nmask, ntap):
     return tpr_1d
 
 
-def cosinetaper(nmask, ntap, square=False):
+def cosinetaper(
+    nmask: int,
+    ntap: int,
+    square: bool = False,
+) -> npt.ArrayLike:
     r"""1D Cosine or Cosine square taper
 
     Create unitary mask of length ``nmask`` with Hanning tapering
@@ -86,7 +105,11 @@ def cosinetaper(nmask, ntap, square=False):
     return tpr_1d
 
 
-def taper(nmask, ntap, tapertype):
+def taper(
+    nmask: int,
+    ntap: int,
+    tapertype: str,
+) -> NDArray:
     r"""1D taper
 
     Create unitary mask of length ``nmask`` with tapering of choice
@@ -118,7 +141,12 @@ def taper(nmask, ntap, tapertype):
     return tpr_1d
 
 
-def taper2d(nt, nmask, ntap, tapertype="hanning"):
+def taper2d(
+    nt: int,
+    nmask: int,
+    ntap: Union[int, Tuple[int, int]],
+    tapertype: str = "hanning",
+) -> NDArray:
     r"""2D taper
 
     Create 2d mask of size :math:`[n_\text{mask} \times n_t]`
@@ -164,10 +192,15 @@ def taper2d(nt, nmask, ntap, tapertype="hanning"):
     return tpr_2d
 
 
-def taper3d(nt, nmask, ntap, tapertype="hanning"):
+def taper3d(
+    nt: int,
+    nmask: Tuple[int, int],
+    ntap: Tuple[int, int],
+    tapertype: str = "hanning",
+) -> NDArray:
     r"""3D taper
 
-    Create 2d mask of size :math:`[n_\text{mask}[0] \times n_\text{mask}[1] \times n_t]`
+    Create 3d mask of size :math:`[n_\text{mask}[0] \times n_\text{mask}[1] \times n_t]`
     with tapering of size ``ntap`` along the first and second dimension
 
     Parameters
@@ -175,9 +208,9 @@ def taper3d(nt, nmask, ntap, tapertype="hanning"):
     nt : :obj:`int`
         Number of time samples of mask along third dimension
     nmask : :obj:`tuple`
-        Number of space samples of mask along first dimension
+        Number of space samples of mask along first and second dimensions
     ntap : :obj:`tuple`
-        Number of samples of tapering at edges of first dimension
+        Number of samples of tapering at edges of first and second dimensions
     tapertype : :obj:`int`
         Type of taper (``hanning``, ``cosine``,
         ``cosinesquare`` or ``None``)
@@ -185,7 +218,7 @@ def taper3d(nt, nmask, ntap, tapertype="hanning"):
     Returns
     -------
     taper : :obj:`numpy.ndarray`
-        2d mask with tapering along first dimension
+        3d mask with tapering along first dimension
         of size :math:`[n_\text{mask,0} \times n_\text{mask,1} \times n_t]`
 
     """
@@ -212,3 +245,47 @@ def taper3d(nt, nmask, ntap, tapertype="hanning"):
     tpr_3d = np.tile(tpr_yx[:, :, np.newaxis], (1, nt))
 
     return tpr_3d
+
+
+def tapernd(
+    nmask: InputDimsLike,
+    ntap: InputDimsLike,
+    tapertype: str = "hanning",
+) -> NDArray:
+    r"""ND taper
+
+    Create nd mask of size :math:`[n_\text{mask}[0] \times n_\text{mask}[1] \times ... \times n_\text{mask}[N-1]]`
+    with tapering of size ``ntap`` along all dimensions
+
+    Parameters
+    ----------
+    nmask : :obj:`tuple`
+        Number of space samples of mask along every dimension
+    ntap : :obj:`tuple`
+        Number of samples of tapering at edges of every dimension
+    tapertype : :obj:`int`
+        Type of taper (``hanning``, ``cosine``,
+        ``cosinesquare`` or ``None``)
+
+    Returns
+    -------
+    taper : :obj:`numpy.ndarray`
+        Nd mask with tapering along first dimension
+        of size :math:`[n_\text{mask,0} \times n_\text{mask,1} \times ... \times n_\text{mask,N-1}]`
+
+    """
+    # create 1d window
+    if tapertype == "hanning":
+        tpr = [hanningtaper(nm, nt) for nm, nt in zip(nmask, ntap)]
+    elif tapertype == "cosine":
+        tpr = [cosinetaper(nm, nt, False) for nm, nt in zip(nmask, ntap)]
+    elif tapertype == "cosinesquare":
+        tpr = [cosinetaper(nm, nt, True) for nm, nt in zip(nmask, ntap)]
+    else:
+        tpr = [np.ones(nm) for nm in nmask]
+
+    # create nd tapers via repeated outer products
+    taper = tpr[-1]
+    for tpr_tmp in tpr[:-1][::-1]:
+        taper = np.outer(tpr_tmp, taper).reshape(tpr_tmp.size, *taper.shape)
+    return taper

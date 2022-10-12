@@ -19,6 +19,7 @@ from scipy.ndimage import gaussian_filter
 
 from pylops import LinearOperator, Spread
 from pylops.utils import dottest
+from pylops.utils.decorators import reshaped
 from pylops.utils.seismicevents import hyperbolic2d, makeaxis
 from pylops.utils.wavelets import ricker
 
@@ -180,7 +181,7 @@ def nmo_forward(data, taxis, haxis, vels_rms):
         h = haxis[ih]
         for it0, (t0, vrms) in enumerate(zip(taxis, vels_rms)):
             # Compute NMO traveltime
-            tx = np.sqrt(t0 ** 2 + (h / vrms) ** 2)
+            tx = np.sqrt(t0**2 + (h / vrms) ** 2)
             it_frac = (tx - ot) / dt  # Fractional index
             it_floor = floor(it_frac)
             it_ceil = it_floor + 1
@@ -245,7 +246,7 @@ def nmo_adjoint(dnmo, taxis, haxis, vels_rms):
         h = haxis[ih]
         for it0, (t0, vrms) in enumerate(zip(taxis, vels_rms)):
             # Compute NMO traveltime
-            tx = np.sqrt(t0 ** 2 + (h / vrms) ** 2)
+            tx = np.sqrt(t0**2 + (h / vrms) ** 2)
             it_frac = (tx - ot) / dt  # Fractional index
             it_floor = floor(it_frac)
             it_ceil = it_floor + 1
@@ -264,30 +265,28 @@ def nmo_adjoint(dnmo, taxis, haxis, vels_rms):
 # Finally, we can create our linear operator. To exemplify the
 # class-based interface we will subclass :py:class:`pylops.LinearOperator` and
 # implement the required methods: ``_matvec`` which will compute the forward and
-# ``_rmatvec`` which will compute the adjoint.
+# ``_rmatvec`` which will compute the adjoint. Note the use of the ``reshaped``
+# decorator which allows us to pass ``x`` directly into our auxiliary function
+# without having to do ``x.reshape(self.dims)`` and to output without having to
+# call ``ravel()``.
 class NMO(LinearOperator):
     def __init__(self, taxis, haxis, vels_rms, dtype=None):
         self.taxis = taxis
         self.haxis = haxis
         self.vels_rms = vels_rms
-        self.dims = (len(haxis), len(taxis))
 
-        # Required LinearOperator attributes
-        self.explicit = False
-        self.shape = (np.prod(self.dims),) * 2
-        argdtypes = np.result_type(taxis.dtype, haxis.dtype, vels_rms.dtype)
-        self.dtype = argdtypes if dtype is None else dtype
-        self.clinear = False
+        dims = (len(haxis), len(taxis))
+        if dtype is None:
+            dtype = np.result_type(taxis.dtype, haxis.dtype, vels_rms.dtype)
+        super().__init__(dims=dims, dimsd=dims, dtype=dtype)
 
+    @reshaped
     def _matvec(self, x):
-        y = nmo_forward(x.reshape(self.dims), self.taxis, self.haxis, self.vels_rms)
-        y = y.ravel()
-        return y
+        return nmo_forward(x, self.taxis, self.haxis, self.vels_rms)
 
+    @reshaped
     def _rmatvec(self, y):
-        x = nmo_adjoint(y.reshape(self.dims), self.taxis, self.haxis, self.vels_rms)
-        x = x.ravel()
-        return x
+        return nmo_adjoint(y, self.taxis, self.haxis, self.vels_rms)
 
 
 ###############################################################################
@@ -296,7 +295,7 @@ class NMO(LinearOperator):
 # and adjoint transforms truly are adjoints of each other.
 
 NMOOp = NMO(t, x, vel_t)
-dottest(NMOOp, *NMOOp.shape, tol=1e-4)
+dottest(NMOOp, rtol=1e-4, verb=True)
 
 ###############################################################################
 # NMO using :py:class:`pylops.Spread`
@@ -348,7 +347,7 @@ def create_tables(taxis, haxis, vels_rms):
     for ih, h in enumerate(haxis):
         for it0, (t0, vrms) in enumerate(zip(taxis, vels_rms)):
             # Compute NMO traveltime
-            tx = np.sqrt(t0 ** 2 + (h / vrms) ** 2)
+            tx = np.sqrt(t0**2 + (h / vrms) ** 2)
             it_frac = (tx - ot) / dt
             it_floor = floor(it_frac)
             w = it_frac - it_floor
@@ -364,25 +363,26 @@ nmo_table, nmo_dtable = create_tables(t, x, vel_t)
 
 ###############################################################################
 SpreadNMO = Spread(
-    data.shape,  # "Input" shape: NMO-ed data shape
-    data.shape,  # "Output" shape: original data shape
+    dims=data.shape,  # "Input" shape: NMO-ed data shape
+    dimsd=data.shape,  # "Output" shape: original data shape
     table=nmo_table,  # Table of time indices
     dtable=nmo_dtable,  # Table of weights for linear interpolation
     engine="numba",  # numba or numpy
 ).H  # To perform NMO *correction*, we need the adjoint
-dottest(SpreadNMO, *SpreadNMO.shape, tol=1e-4)
+dottest(SpreadNMO, rtol=1e-4)
 
 ###############################################################################
 # We see it passes the dot test, but are the results right? Let's find out.
-dnmo_spr = (SpreadNMO @ data.ravel()).reshape(data.shape)
+dnmo_spr = SpreadNMO @ data
 
 start = time()
-SpreadNMO @ data.ravel()
+SpreadNMO @ data
 end = time()
 
 print(f"Ran in {1e6*(end-start):.0f} μs")
-
 ###############################################################################
+# Note that since v2.0, we do not need to pass a flattened array. Consequently,
+# the output will not be flattened, but will have ``SpreadNMO.dimsd`` as shape.
 
 # Plot Data and NMO-corrected data
 fig = plt.figure(figsize=(6.5, 5))

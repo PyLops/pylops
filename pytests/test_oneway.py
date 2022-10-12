@@ -3,16 +3,16 @@ import pytest
 
 from pylops.basicoperators import Identity
 from pylops.utils import dottest
-from pylops.utils.seismicevents import hyperbolic2d, hyperbolic3d, makeaxis
+from pylops.utils.seismicevents import hyperbolic2d, makeaxis
 from pylops.utils.wavelets import ricker
 from pylops.waveeqprocessing.oneway import Deghosting, PhaseShift
 
 np.random.seed(10)
 
 parmod = {
-    "ox": -100,
+    "ox": -400,
     "dx": 10,
-    "nx": 21,
+    "nx": 81,
     "oy": -50,
     "dy": 10,
     "ny": 11,
@@ -66,7 +66,7 @@ def test_PhaseShift_2dsignal(par):
     kx = np.fft.fftshift(np.fft.fftfreq(par["nx"], 1.0))
 
     Pop = PhaseShift(vel, zprop, par["nt"], freq, kx, dtype=par["dtype"])
-    assert dottest(Pop, par["nt"] * par["nx"], par["nt"] * par["nx"], tol=1e-5)
+    assert dottest(Pop, par["nt"] * par["nx"], par["nt"] * par["nx"], rtol=1e-4)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
@@ -83,7 +83,7 @@ def test_PhaseShift_3dsignal(par):
         Pop,
         par["nt"] * par["nx"] * par["ny"],
         par["nt"] * par["nx"] * par["ny"],
-        tol=1e-5,
+        rtol=1e-4,
     )
 
 
@@ -107,5 +107,4 @@ def test_Deghosting_2dsignal(par, create_data2D):
         **dict(damp=1e-10, iter_lim=60)
     )
 
-    print(np.linalg.norm(p2d_minus_inv - p2d_minus) / np.linalg.norm(p2d_minus))
     assert np.linalg.norm(p2d_minus_inv - p2d_minus) / np.linalg.norm(p2d_minus) < 3e-1

@@ -85,7 +85,6 @@ def test_sincinterp():
     iava = tsub[20:-20] / (dtsub * ntsub)  # exclude edges
     SI1op, iava = Interp(nt, iava, kind="sinc", dtype="float64")
     y = SI1op * x
-    print(np.max(np.abs(xsub[20:-20] - y)))
     assert_array_almost_equal(xsub[20:-20], y, decimal=1)
 
 
@@ -138,10 +137,9 @@ def test_Interp_2dsignal(par):
 
     # fixed indeces
     Iop, _ = Interp(
-        par["nx"] * par["nt"],
+        (par["nx"], par["nt"]),
         iava,
-        dims=(par["nx"], par["nt"]),
-        dir=0,
+        axis=0,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -154,10 +152,9 @@ def test_Interp_2dsignal(par):
 
     # decimal indeces
     Idecop, _ = Interp(
-        par["nx"] * par["nt"],
+        (par["nx"], par["nt"]),
         iava + 0.3,
-        dims=(par["nx"], par["nt"]),
-        dir=0,
+        axis=0,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -168,10 +165,9 @@ def test_Interp_2dsignal(par):
         iava_rep[-2] = 0
         iava_rep[-1] = 0
         _, _ = Interp(
-            par["nx"] * par["nt"],
+            (par["nx"], par["nt"]),
             iava_rep + 0.3,
-            dims=(par["nx"], par["nt"]),
-            dir=0,
+            axis=0,
             kind=par["kind"],
             dtype=par["dtype"],
         )
@@ -189,10 +185,9 @@ def test_Interp_2dsignal(par):
 
     # fixed indeces
     Iop, _ = Interp(
-        par["nx"] * par["nt"],
+        (par["nx"], par["nt"]),
         iava,
-        dims=(par["nx"], par["nt"]),
-        dir=1,
+        axis=1,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -205,10 +200,9 @@ def test_Interp_2dsignal(par):
 
     # decimal indeces
     Idecop, _ = Interp(
-        par["nx"] * par["nt"],
+        (par["nx"], par["nt"]),
         iava + 0.3,
-        dims=(par["nx"], par["nt"]),
-        dir=1,
+        axis=1,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -241,10 +235,9 @@ def test_Interp_3dsignal(par):
 
     # fixed indeces
     Iop, _ = Interp(
-        par["ny"] * par["nx"] * par["nt"],
+        (par["ny"], par["nx"], par["nt"]),
         iava,
-        dims=(par["ny"], par["nx"], par["nt"]),
-        dir=0,
+        axis=0,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -257,10 +250,9 @@ def test_Interp_3dsignal(par):
 
     # decimal indeces
     Idecop, _ = Interp(
-        par["ny"] * par["nx"] * par["nt"],
+        (par["ny"], par["nx"], par["nt"]),
         iava + 0.3,
-        dims=(par["ny"], par["nx"], par["nt"]),
-        dir=0,
+        axis=0,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -277,10 +269,9 @@ def test_Interp_3dsignal(par):
         iava_rep[-2] = 0
         iava_rep[-1] = 0
         _, _ = Interp(
-            par["ny"] * par["nx"] * par["nt"],
+            (par["ny"], par["nx"], par["nt"]),
             iava_rep + 0.3,
-            dims=(par["ny"], par["nx"], par["nt"]),
-            dir=0,
+            axis=0,
             kind=par["kind"],
             dtype=par["dtype"],
         )
@@ -298,10 +289,9 @@ def test_Interp_3dsignal(par):
 
     # fixed indeces
     Iop, _ = Interp(
-        par["ny"] * par["nx"] * par["nt"],
+        (par["ny"], par["nx"], par["nt"]),
         iava,
-        dims=(par["ny"], par["nx"], par["nt"]),
-        dir=1,
+        axis=1,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -314,10 +304,9 @@ def test_Interp_3dsignal(par):
 
     # decimal indeces
     Idecop, _ = Interp(
-        par["ny"] * par["nx"] * par["nt"],
+        (par["ny"], par["nx"], par["nt"]),
         iava + 0.3,
-        dims=(par["ny"], par["nx"], par["nt"]),
-        dir=1,
+        axis=1,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -341,10 +330,9 @@ def test_Interp_3dsignal(par):
 
     # fixed indeces
     Iop, _ = Interp(
-        par["ny"] * par["nx"] * par["nt"],
+        (par["ny"], par["nx"], par["nt"]),
         iava,
-        dims=(par["ny"], par["nx"], par["nt"]),
-        dir=2,
+        axis=2,
         kind=par["kind"],
         dtype=par["dtype"],
     )
@@ -357,10 +345,9 @@ def test_Interp_3dsignal(par):
 
     # decimal indeces
     Idecop, _ = Interp(
-        par["ny"] * par["nx"] * par["nt"],
+        (par["ny"], par["nx"], par["nt"]),
         iava + 0.3,
-        dims=(par["ny"], par["nx"], par["nt"]),
-        dir=2,
+        axis=2,
         kind=par["kind"],
         dtype=par["dtype"],
     )

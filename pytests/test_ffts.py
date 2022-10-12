@@ -186,7 +186,7 @@ def test_FFT_small_real(par):
 
     FFTop = FFT(
         dims=x.shape,
-        dir=0,
+        axis=0,
         norm=norm,
         real=True,
         ifftshift_before=ifftshift_before,
@@ -216,8 +216,8 @@ def test_FFT_small_real(par):
         y_true *= np.exp(2 * np.pi * 1j * FFTop.f * x0)
 
     assert_array_almost_equal(y, y_true, decimal=decimal)
-    assert dottest(FFTop, len(y), len(x), complexflag=0, tol=10 ** (-decimal))
-    assert dottest(FFTop, len(y), len(x), complexflag=2, tol=10 ** (-decimal))
+    assert dottest(FFTop, len(y), len(x), complexflag=0, rtol=10 ** (-decimal))
+    assert dottest(FFTop, len(y), len(x), complexflag=2, rtol=10 ** (-decimal))
 
     x_inv = FFTop / y
     x_inv = x_inv.reshape(x.shape)
@@ -259,7 +259,7 @@ def test_FFT_random_real(par):
 
     FFTop = FFT(
         dims=x.shape,
-        dir=axis,
+        axis=axis,
         ifftshift_before=ifftshift_before,
         real=True,
         dtype=dtype,
@@ -275,8 +275,8 @@ def test_FFT_random_real(par):
 
     # Dot tests
     nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, tol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, tol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
 
 
 par_lists_fft_small_cpx = dict(
@@ -303,7 +303,7 @@ def test_FFT_small_complex(par):
 
     FFTop = FFT(
         dims=x.shape,
-        dir=0,
+        axis=0,
         norm=norm,
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
@@ -327,7 +327,7 @@ def test_FFT_small_complex(par):
     # Compute FFT with FFTop and compare with y_true
     y = FFTop * x.ravel()
     assert_array_almost_equal(y, y_true, decimal=decimal)
-    assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
+    assert dottest(FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal))
 
     x_inv = FFTop / y
     x_inv = x_inv.reshape(x.shape)
@@ -377,7 +377,7 @@ def test_FFT_random_complex(par):
 
     FFTop = FFT(
         dims=x.shape,
-        dir=axis,
+        axis=axis,
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
         dtype=dtype,
@@ -409,11 +409,11 @@ def test_FFT_random_complex(par):
 
     # Dot tests
     nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, tol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, tol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
     if np.issubdtype(dtype, np.complexfloating):
-        assert dottest(FFTop, nr, nc, complexflag=1, tol=10 ** (-decimal))
-        assert dottest(FFTop, nr, nc, complexflag=3, tol=10 ** (-decimal))
+        assert dottest(FFTop, nr, nc, complexflag=1, rtol=10 ** (-decimal))
+        assert dottest(FFTop, nr, nc, complexflag=3, rtol=10 ** (-decimal))
 
 
 par_lists_fft2d_random_real = dict(
@@ -453,7 +453,7 @@ def test_FFT2D_random_real(par):
 
     FFTop = FFT2D(
         dims=x.shape,
-        dirs=axes,
+        axes=axes,
         ifftshift_before=ifftshift_before,
         real=True,
         dtype=dtype,
@@ -470,8 +470,8 @@ def test_FFT2D_random_real(par):
 
     # Dot tests
     nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, tol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, tol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
 
 
 par_lists_fft2d_random_cpx = dict(
@@ -519,7 +519,7 @@ def test_FFT2D_random_complex(par):
 
     FFTop = FFT2D(
         dims=x.shape,
-        dirs=axes,
+        axes=axes,
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
         dtype=dtype,
@@ -550,11 +550,11 @@ def test_FFT2D_random_complex(par):
 
     # Dot tests
     nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, tol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, tol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
     if np.issubdtype(dtype, np.complexfloating):
-        assert dottest(FFTop, nr, nc, complexflag=1, tol=10 ** (-decimal))
-        assert dottest(FFTop, nr, nc, complexflag=3, tol=10 ** (-decimal))
+        assert dottest(FFTop, nr, nc, complexflag=1, rtol=10 ** (-decimal))
+        assert dottest(FFTop, nr, nc, complexflag=3, rtol=10 ** (-decimal))
 
 
 par_lists_fftnd_random_real = dict(
@@ -595,7 +595,7 @@ def test_FFTND_random_real(par):
 
     FFTop = FFTND(
         dims=x.shape,
-        dirs=axes,
+        axes=axes,
         ifftshift_before=ifftshift_before,
         real=True,
         dtype=dtype,
@@ -612,8 +612,8 @@ def test_FFTND_random_real(par):
 
     # Dot tests
     nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, tol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, tol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
 
 
 par_lists_fftnd_random_cpx = dict(
@@ -661,7 +661,7 @@ def test_FFTND_random_complex(par):
 
     FFTop = FFTND(
         dims=x.shape,
-        dirs=axes,
+        axes=axes,
         ifftshift_before=ifftshift_before,
         fftshift_after=fftshift_after,
         dtype=dtype,
@@ -692,11 +692,11 @@ def test_FFTND_random_complex(par):
 
     # Dot tests
     nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, tol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, tol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
     if np.issubdtype(dtype, np.complexfloating):
-        assert dottest(FFTop, nr, nc, complexflag=1, tol=10 ** (-decimal))
-        assert dottest(FFTop, nr, nc, complexflag=3, tol=10 ** (-decimal))
+        assert dottest(FFTop, nr, nc, complexflag=1, rtol=10 ** (-decimal))
+        assert dottest(FFTop, nr, nc, complexflag=3, rtol=10 ** (-decimal))
 
 
 par_lists_fft2dnd_small_cpx = dict(
@@ -726,7 +726,7 @@ def test_FFT2D_small_complex(par):
 
     FFTop = FFT2D(
         dims=x.shape,
-        dirs=(0, 1),
+        axes=(0, 1),
         norm=norm,
         dtype=dtype,
     )
@@ -748,9 +748,9 @@ def test_FFT2D_small_complex(par):
 
     # Compute FFT with FFTop and compare with y_true
     y = FFTop * x.ravel()
-    y = y.reshape(FFTop.dims_fft)
+    y = y.reshape(FFTop.dimsd)
     assert_array_almost_equal(y, y_true, decimal=decimal)
-    assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
+    assert dottest(FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal))
 
     x_inv = FFTop / y.ravel()
     x_inv = x_inv.reshape(x.shape)
@@ -773,7 +773,7 @@ def test_FFTND_small_complex(par):
 
     FFTop = FFTND(
         dims=x.shape,
-        dirs=(0, 1),
+        axes=(0, 1),
         norm=norm,
         dtype=dtype,
     )
@@ -795,9 +795,9 @@ def test_FFTND_small_complex(par):
 
     # Compute FFT with FFTop and compare with y_true
     y = FFTop * x.ravel()
-    y = y.reshape(FFTop.dims_fft)
+    y = y.reshape(FFTop.dimsd)
     assert_array_almost_equal(y, y_true, decimal=decimal)
-    assert dottest(FFTop, *FFTop.shape, complexflag=3, tol=10 ** (-decimal))
+    assert dottest(FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal))
 
     x_inv = FFTop / y.ravel()
     x_inv = x_inv.reshape(x.shape)
@@ -842,11 +842,11 @@ def test_FFT_1dsignal(par):
 
     if par["real"]:
         assert dottest(
-            FFTop, nfft // 2 + 1, par["nt"], complexflag=2, tol=10 ** (-decimal)
+            FFTop, nfft // 2 + 1, par["nt"], complexflag=2, rtol=10 ** (-decimal)
         )
     else:
-        assert dottest(FFTop, nfft, par["nt"], complexflag=2, tol=10 ** (-decimal))
-        assert dottest(FFTop, nfft, par["nt"], complexflag=3, tol=10 ** (-decimal))
+        assert dottest(FFTop, nfft, par["nt"], complexflag=2, rtol=10 ** (-decimal))
+        assert dottest(FFTop, nfft, par["nt"], complexflag=3, rtol=10 ** (-decimal))
 
     y = FFTop * x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
@@ -912,7 +912,7 @@ def test_FFT_2dsignal(par):
     nfft = par["nt"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
         dims=(nt, nx),
-        dir=0,
+        axis=0,
         nfft=nfft,
         sampling=dt,
         real=par["real"],
@@ -922,11 +922,11 @@ def test_FFT_2dsignal(par):
 
     if par["real"]:
         assert dottest(
-            FFTop, (nfft // 2 + 1) * nx, nt * nx, complexflag=2, tol=10 ** (-decimal)
+            FFTop, (nfft // 2 + 1) * nx, nt * nx, complexflag=2, rtol=10 ** (-decimal)
         )
     else:
-        assert dottest(FFTop, nfft * nx, nt * nx, complexflag=2, tol=10 ** (-decimal))
-        assert dottest(FFTop, nfft * nx, nt * nx, complexflag=3, tol=10 ** (-decimal))
+        assert dottest(FFTop, nfft * nx, nt * nx, complexflag=2, rtol=10 ** (-decimal))
+        assert dottest(FFTop, nfft * nx, nt * nx, complexflag=3, rtol=10 ** (-decimal))
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is same as inverse for fft
@@ -943,7 +943,7 @@ def test_FFT_2dsignal(par):
     if not par["real"]:
         FFTop_fftshift = FFT(
             dims=(nt, nx),
-            dir=0,
+            axis=0,
             nfft=nfft,
             sampling=dt,
             real=par["real"],
@@ -970,7 +970,7 @@ def test_FFT_2dsignal(par):
     nfft = par["nx"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
         dims=(nt, nx),
-        dir=1,
+        axis=1,
         nfft=nfft,
         sampling=dt,
         real=par["real"],
@@ -980,11 +980,11 @@ def test_FFT_2dsignal(par):
 
     if par["real"]:
         assert dottest(
-            FFTop, nt * (nfft // 2 + 1), nt * nx, complexflag=2, tol=10 ** (-decimal)
+            FFTop, nt * (nfft // 2 + 1), nt * nx, complexflag=2, rtol=10 ** (-decimal)
         )
     else:
-        assert dottest(FFTop, nt * nfft, nt * nx, complexflag=2, tol=10 ** (-decimal))
-        assert dottest(FFTop, nt * nfft, nt * nx, complexflag=3, tol=10 ** (-decimal))
+        assert dottest(FFTop, nt * nfft, nt * nx, complexflag=2, rtol=10 ** (-decimal))
+        assert dottest(FFTop, nt * nfft, nt * nx, complexflag=3, rtol=10 ** (-decimal))
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
@@ -1001,7 +1001,7 @@ def test_FFT_2dsignal(par):
     if not par["real"]:
         FFTop_fftshift = FFT(
             dims=(nt, nx),
-            dir=1,
+            axis=1,
             nfft=nfft,
             sampling=dt,
             real=par["real"],
@@ -1059,7 +1059,7 @@ def test_FFT_3dsignal(par):
     nfft = par["nt"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
         dims=(nt, nx, ny),
-        dir=0,
+        axis=0,
         nfft=nfft,
         sampling=dt,
         real=par["real"],
@@ -1073,14 +1073,14 @@ def test_FFT_3dsignal(par):
             (nfft // 2 + 1) * nx * ny,
             nt * nx * ny,
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
     else:
         assert dottest(
-            FFTop, nfft * nx * ny, nt * nx * ny, complexflag=2, tol=10 ** (-decimal)
+            FFTop, nfft * nx * ny, nt * nx * ny, complexflag=2, rtol=10 ** (-decimal)
         )
         assert dottest(
-            FFTop, nfft * nx * ny, nt * nx * ny, complexflag=3, tol=10 ** (-decimal)
+            FFTop, nfft * nx * ny, nt * nx * ny, complexflag=3, rtol=10 ** (-decimal)
         )
 
     D = FFTop * d.ravel()
@@ -1099,7 +1099,7 @@ def test_FFT_3dsignal(par):
     nfft = par["nx"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
         dims=(nt, nx, ny),
-        dir=1,
+        axis=1,
         nfft=nfft,
         sampling=dt,
         real=par["real"],
@@ -1113,14 +1113,14 @@ def test_FFT_3dsignal(par):
             nt * (nfft // 2 + 1) * ny,
             nt * nx * ny,
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
     else:
         assert dottest(
-            FFTop, nt * nfft * ny, nt * nx * ny, complexflag=2, tol=10 ** (-decimal)
+            FFTop, nt * nfft * ny, nt * nx * ny, complexflag=2, rtol=10 ** (-decimal)
         )
         assert dottest(
-            FFTop, nt * nfft * ny, nt * nx * ny, complexflag=3, tol=10 ** (-decimal)
+            FFTop, nt * nfft * ny, nt * nx * ny, complexflag=3, rtol=10 ** (-decimal)
         )
 
     D = FFTop * d.ravel()
@@ -1132,7 +1132,6 @@ def test_FFT_3dsignal(par):
 
     # check all signal if nx>nfft and only up to nfft if nfft<nx
     imax = nx if nfft is None else min([nx, nfft])
-    print(d.shape, dadj.shape, nx, nfft)
     assert_array_almost_equal(d[:, :imax], dadj[:, :imax], decimal=decimal)
     assert_array_almost_equal(d[:, :imax], dinv[:, :imax], decimal=decimal)
 
@@ -1140,7 +1139,7 @@ def test_FFT_3dsignal(par):
     nfft = par["ny"] if par["nfft"] is None else par["nfft"]
     FFTop = FFT(
         dims=(nt, nx, ny),
-        dir=2,
+        axis=2,
         nfft=nfft,
         sampling=dt,
         real=par["real"],
@@ -1154,14 +1153,14 @@ def test_FFT_3dsignal(par):
             nt * nx * (nfft // 2 + 1),
             nt * nx * ny,
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
     else:
         assert dottest(
-            FFTop, nt * nx * nfft, nt * nx * ny, complexflag=2, tol=10 ** (-decimal)
+            FFTop, nt * nx * nfft, nt * nx * ny, complexflag=2, rtol=10 ** (-decimal)
         )
         assert dottest(
-            FFTop, nt * nx * nfft, nt * nx * ny, complexflag=3, tol=10 ** (-decimal)
+            FFTop, nt * nx * nfft, nt * nx * ny, complexflag=3, rtol=10 ** (-decimal)
         )
 
     D = FFTop * d.ravel()
@@ -1179,7 +1178,7 @@ def test_FFT_3dsignal(par):
     if not par["real"]:
         FFTop_fftshift = FFT(
             dims=(nt, nx, ny),
-            dir=2,
+            axis=2,
             nfft=nfft,
             sampling=dt,
             real=par["real"],
@@ -1216,13 +1215,13 @@ def test_FFT2D(par):
     d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(par["nx"]) + 1)
     d = d.astype(par["dtype"])
 
-    # first fft on dir 1
+    # first fft on axis 1
     FFTop = FFT2D(
         dims=(par["nt"], par["nx"]),
         nffts=(nfft1, nfft2),
         sampling=(dt, dx),
         real=par["real"],
-        dirs=(0, 1),
+        axes=(0, 1),
     )
 
     if par["real"]:
@@ -1231,7 +1230,7 @@ def test_FFT2D(par):
             nfft1 * (nfft2 // 2 + 1),
             par["nt"] * par["nx"],
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
     else:
         assert dottest(
@@ -1239,14 +1238,14 @@ def test_FFT2D(par):
             nfft1 * nfft2,
             par["nt"] * par["nx"],
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
         assert dottest(
             FFTop,
             nfft1 * nfft2,
             par["nt"] * par["nx"],
             complexflag=3,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
 
     D = FFTop * d.ravel()
@@ -1262,13 +1261,13 @@ def test_FFT2D(par):
     assert_array_almost_equal(d[:imax1, :imax2], dadj[:imax1, :imax2], decimal=decimal)
     assert_array_almost_equal(d[:imax1, :imax2], dinv[:imax1, :imax2], decimal=decimal)
 
-    # first fft on dir 0
+    # first fft on axis 0
     FFTop = FFT2D(
         dims=(par["nt"], par["nx"]),
         nffts=(nfft2, nfft1),
         sampling=(dx, dt),
         real=par["real"],
-        dirs=(1, 0),
+        axes=(1, 0),
     )
 
     if par["real"]:
@@ -1277,7 +1276,7 @@ def test_FFT2D(par):
             nfft2 * (nfft1 // 2 + 1),
             par["nt"] * par["nx"],
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
     else:
         assert dottest(
@@ -1285,14 +1284,14 @@ def test_FFT2D(par):
             nfft1 * nfft2,
             par["nt"] * par["nx"],
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
         assert dottest(
             FFTop,
             nfft1 * nfft2,
             par["nt"] * par["nx"],
             complexflag=3,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
 
     D = FFTop * d.ravel()
@@ -1322,11 +1321,11 @@ def test_FFT3D(par):
     d = np.tile(d[:, :, np.newaxis], [1, 1, par["ny"]])
     d = d.astype(par["dtype"])
 
-    # first fft on dir 2
+    # first fft on axis 2
     FFTop = FFTND(
         dims=(par["nt"], par["nx"], par["ny"]),
         nffts=(nfft1, nfft2, nfft3),
-        dirs=(0, 1, 2),
+        axes=(0, 1, 2),
         sampling=(dt, dx, dy),
         real=par["real"],
     )
@@ -1337,7 +1336,7 @@ def test_FFT3D(par):
             nfft1 * nfft2 * (nfft3 // 2 + 1),
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
     else:
         assert dottest(
@@ -1345,14 +1344,14 @@ def test_FFT3D(par):
             nfft1 * nfft2 * nfft3,
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
         assert dottest(
             FFTop,
             nfft1 * nfft2 * nfft3,
             par["nt"] * par["nx"] * par["ny"],
             complexflag=3,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
 
     D = FFTop * d.ravel()
@@ -1373,11 +1372,11 @@ def test_FFT3D(par):
         d[:imax1, :imax2, :imax3], dinv[:imax1, :imax2, :imax3], decimal=decimal
     )
 
-    # first fft on dir 1
+    # first fft on axis 1
     FFTop = FFTND(
         dims=(par["nt"], par["nx"], par["ny"]),
         nffts=(nfft1, nfft3, nfft2),
-        dirs=(0, 2, 1),
+        axes=(0, 2, 1),
         sampling=(dt, dy, dx),
         real=par["real"],
     )
@@ -1388,7 +1387,7 @@ def test_FFT3D(par):
             nfft1 * nfft3 * (nfft2 // 2 + 1),
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
     else:
         assert dottest(
@@ -1396,14 +1395,14 @@ def test_FFT3D(par):
             nfft1 * nfft2 * nfft3,
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
         assert dottest(
             FFTop,
             nfft1 * nfft2 * nfft3,
             par["nt"] * par["nx"] * par["ny"],
             complexflag=3,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
 
     D = FFTop * d.ravel()
@@ -1420,11 +1419,11 @@ def test_FFT3D(par):
         d[:imax1, :imax2, :imax3], dinv[:imax1, :imax2, :imax3], decimal=decimal
     )
 
-    # first fft on dir 0
+    # first fft on axis 0
     FFTop = FFTND(
         dims=(par["nt"], par["nx"], par["ny"]),
         nffts=(nfft2, nfft3, nfft1),
-        dirs=(1, 2, 0),
+        axes=(1, 2, 0),
         sampling=(dx, dy, dt),
         real=par["real"],
     )
@@ -1435,7 +1434,7 @@ def test_FFT3D(par):
             nfft2 * nfft3 * (nfft1 // 2 + 1),
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
     else:
         assert dottest(
@@ -1443,14 +1442,14 @@ def test_FFT3D(par):
             nfft1 * nfft2 * nfft3,
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
         assert dottest(
             FFTop,
             nfft1 * nfft2 * nfft3,
             par["nt"] * par["nx"] * par["ny"],
             complexflag=3,
-            tol=10 ** (-decimal),
+            rtol=10 ** (-decimal),
         )
 
     D = FFTop * d.ravel()

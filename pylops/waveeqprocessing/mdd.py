@@ -1,13 +1,18 @@
+__all__ = [
+    "MDC",
+    "MDD",
+]
+
 import logging
-import warnings
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
 from scipy.sparse.linalg import lsqr
 
-from pylops import Diagonal, Identity, Transpose
-from pylops.optimization.leastsquares import PreconditionedInversion
-from pylops.optimization.solver import cgls
+from pylops import Diagonal, Identity, LinearOperator, Transpose
+from pylops.optimization.basic import cgls
+from pylops.optimization.leastsquares import preconditioned_inversion
 from pylops.signalprocessing import FFT, Fredholm1
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import (
@@ -16,59 +21,41 @@ from pylops.utils.backend import (
     get_module_name,
     to_cupy_conditional,
 )
+from pylops.utils.typing import NDArray
 
 
 def _MDC(
-    G,
-    nt,
-    nv,
-    dt=1.0,
-    dr=1.0,
-    twosided=True,
-    fast=None,
-    dtype=None,
-    transpose=True,
-    saveGt=True,
-    conj=False,
-    prescaled=False,
+    G: NDArray,
+    nt: int,
+    nv: int,
+    dt: float = 1.0,
+    dr: float = 1.0,
+    twosided: bool = True,
+    saveGt: bool = True,
+    conj: bool = False,
+    prescaled: bool = False,
     _Identity=Identity,
     _Transpose=Transpose,
     _FFT=FFT,
     _Fredholm1=Fredholm1,
-    args_Identity={},
-    args_Transpose={},
-    args_FFT={},
-    args_Identity1={},
-    args_Transpose1={},
-    args_FFT1={},
-    args_Fredholm1={},
-):
+    args_Identity: Dict = {},
+    args_FFT: Dict = {},
+    args_Identity1: Dict = {},
+    args_FFT1: Dict = {},
+    args_Fredholm1: Dict = {},
+) -> LinearOperator:
     r"""Multi-dimensional convolution.
 
-    Used to be able to provide operators from different libraries to
+    Used to be able to provide operators from different libraries (e.g., pylops-distributed) to
     MDC. It operates in the same way as public method
-    (PoststackLinearModelling) but has additional input parameters allowing
+    (MDC) but has additional input parameters allowing
     passing a different operator and additional arguments to be passed to such
     operator.
 
     """
-    warnings.warn(
-        "A new implementation of MDC is provided in v1.5.0. This "
-        "currently affects only the inner working of the operator, "
-        "end-users can continue using the operator in the same way. "
-        "Nevertheless, it is now recommended to start using the "
-        "operator with transpose=True, as this behaviour will "
-        "become default in version v2.0.0 and the behaviour with "
-        "transpose=False will be deprecated.",
-        FutureWarning,
-    )
 
     if twosided and nt % 2 == 0:
         raise ValueError("nt must be odd number")
-
-    # transpose G
-    if transpose:
-        G = np.transpose(G, axes=(2, 0, 1))
 
     # find out dtype of G
     dtype = G[0, 0, 0].dtype
@@ -90,11 +77,11 @@ def _MDC(
     nfft = int(np.ceil((nt + 1) / 2))
     if nfmax > nfft:
         nfmax = nfft
-        logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]" % nfmax)
+        logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]", nfmax)
 
     Fop = _FFT(
         dims=(nt, nr, nv),
-        dir=0,
+        axis=0,
         real=True,
         ifftshift_before=twosided,
         dtype=rdtype,
@@ -102,7 +89,7 @@ def _MDC(
     )
     F1op = _FFT(
         dims=(nt, ns, nv),
-        dir=0,
+        axis=0,
         real=True,
         ifftshift_before=False,
         dtype=rdtype,
@@ -119,20 +106,8 @@ def _MDC(
     F1opH = F1op.H
     I1opH = I1op.H
 
-    # create transpose operator
-    if transpose:
-        dims = [nr, nt] if nv == 1 else [nr, nv, nt]
-        axes = (1, 0) if nv == 1 else (2, 0, 1)
-        Top = _Transpose(dims, axes, dtype=dtype, **args_Transpose)
-
-        dims = [nt, ns] if nv == 1 else [nt, ns, nv]
-        axes = (1, 0) if nv == 1 else (1, 2, 0)
-        TopH = _Transpose(dims, axes, dtype=dtype, **args_Transpose1)
-
     # create MDC operator
     MDCop = F1opH * I1opH * Frop * Iop * Fop
-    if transpose:
-        MDCop = TopH * MDCop * Top
 
     # force dtype to be real (as FFT operators assume real inputs and outputs)
     MDCop.dtype = rdtype
@@ -141,46 +116,32 @@ def _MDC(
 
 
 def MDC(
-    G,
-    nt,
-    nv,
-    dt=1.0,
-    dr=1.0,
-    twosided=True,
-    fast=None,
-    dtype=None,
-    fftengine="numpy",
-    transpose=True,
-    saveGt=True,
-    conj=False,
-    usematmul=False,
-    prescaled=False,
-):
+    G: NDArray,
+    nt: int,
+    nv: int,
+    dt: float = 1.0,
+    dr: float = 1.0,
+    twosided: bool = True,
+    fftengine: str = "numpy",
+    saveGt: bool = True,
+    conj: bool = False,
+    usematmul: bool = False,
+    prescaled: bool = False,
+    name: str = "M",
+) -> LinearOperator:
     r"""Multi-dimensional convolution.
 
-    Apply multi-dimensional convolution between two datasets. If
-    ``transpose=True``, model and data should be provided after flattening
-    2- or 3-dimensional arrays of size :math:`[n_r \;(\times n_{vs}) \times n_t]`
-    and :math:`[n_s \;(\times n_{vs}) \times n_t]` (or :math:`2n_t-1` for
-    ``twosided=True``), respectively. If ``transpose=False``, model and data
-    should be provided after flattening 2- or 3-dimensional arrays of size
-    :math:`[n_t \times n_r \;(\times n_{vs})]` and
+    Apply multi-dimensional convolution between two datasets.
+    Model and data should be provided after flattening 2- or 3-dimensional arrays
+    of size :math:`[n_t \times n_r \;(\times n_{vs})]` and
     :math:`[n_t \times n_s \;(\times n_{vs})]` (or :math:`2n_t-1` for
     ``twosided=True``), respectively.
-
-    .. warning:: A new implementation of MDC is provided in v1.5.0. This
-      currently affects only the inner working of the operator and end-users
-      can use the operator in the same way as they used to do with the previous
-      one. Nevertheless, it is now reccomended to use the operator with
-      ``transpose=False``, as this behaviour will become default in version
-      v2.0.0 and the behaviour with ``transpose=True`` will be deprecated.
 
     Parameters
     ----------
     G : :obj:`numpy.ndarray`
         Multi-dimensional convolution kernel in frequency domain of size
-        :math:`[n_s \times n_r \times n_{f_\text{max}}]` if ``transpose=True``
-        or size :math:`[n_{f_\text{max}} \times n_s \times n_r]` if ``transpose=False``
+        :math:`[n_{f_\text{max}} \times n_s \times n_r]`
     nt : :obj:`int`
         Number of samples along time axis for model and data (note that this
         must be equal to :math:`2n_t-1` when working with ``twosided=True``.
@@ -193,17 +154,8 @@ def MDC(
     twosided : :obj:`bool`, optional
         MDC operator has both negative and positive time (``True``) or
         only positive (``False``)
-    fast : :obj:`bool`, optional
-        *Deprecated*, will be removed in v2.0.0
-    dtype : :obj:`str`, optional
-        *Deprecated*, will be removed in v2.0.0
     fftengine : :obj:`str`, optional
         Engine used for fft computation (``numpy``, ``scipy`` or ``fftw``)
-    transpose : :obj:`bool`, optional
-        Transpose ``G`` and inputs such that time/frequency is placed in first
-        dimension. This allows back-compatibility with v1.4.0 and older but
-        will be removed in v2.0.0 where time/frequency axis will be required
-        to be in first dimension for efficiency reasons.
     saveGt : :obj:`bool`, optional
         Save ``G`` and ``G.H`` to speed up the computation of adjoint of
         :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
@@ -220,6 +172,10 @@ def MDC(
         spatial and temporal summations. In case ``prescaled=True``, the
         kernel is assumed to have been pre-scaled when passed to the MDC
         routine.
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Raises
     ------
@@ -265,43 +221,45 @@ def MDC(
        pp. 1335-1364. 2011.
 
     """
-    return _MDC(
+    MOp = _MDC(
         G,
         nt,
         nv,
         dt=dt,
         dr=dr,
         twosided=twosided,
-        fast=fast,
-        dtype=dtype,
-        transpose=transpose,
         saveGt=saveGt,
         conj=conj,
         prescaled=prescaled,
         args_FFT={"engine": fftengine},
         args_Fredholm1={"usematmul": usematmul},
     )
+    MOp.name = name
+    return MOp
 
 
 def MDD(
-    G,
-    d,
-    dt=0.004,
-    dr=1.0,
-    nfmax=None,
-    wav=None,
-    twosided=True,
-    causality_precond=False,
-    adjoint=False,
-    psf=False,
-    dtype="float64",
-    dottest=False,
-    saveGt=True,
-    add_negative=True,
-    smooth_precond=0,
-    fftengine="numpy",
+    G: NDArray,
+    d: NDArray,
+    dt: float = 0.004,
+    dr: float = 1.0,
+    nfmax: Optional[int] = None,
+    wav: Optional[NDArray] = None,
+    twosided: bool = True,
+    causality_precond: bool = False,
+    adjoint: bool = False,
+    psf: bool = False,
+    dottest: bool = False,
+    saveGt: bool = True,
+    add_negative: bool = True,
+    smooth_precond: int = 0,
+    fftengine: str = "numpy",
     **kwargs_solver
-):
+) -> Union[
+    Tuple[NDArray, NDArray],
+    Tuple[NDArray, NDArray, NDArray],
+    Tuple[NDArray, NDArray, NDArray, NDArray],
+]:
     r"""Multi-dimensional deconvolution.
 
     Solve multi-dimensional deconvolution problem using
@@ -347,8 +305,6 @@ def MDD(
         Compute and return adjoint(s)
     psf : :obj:`bool`, optional
         Compute and return Point Spread Function (PSF) and its inverse
-    dtype : :obj:`bool`, optional
-        Type of elements in input array.
     dottest : :obj:`bool`, optional
         Apply dot-test
     saveGt : :obj:`bool`, optional
@@ -434,7 +390,7 @@ def MDD(
     # Fix nfmax to be at maximum equal to half of the size of fft samples
     if nfmax is None or nfmax > nfmax_allowed:
         nfmax = nfmax_allowed
-        logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]" % nfmax)
+        logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]", nfmax)
 
     # Add negative part to data and model
     if twosided and add_negative:
@@ -458,7 +414,6 @@ def MDD(
         dt=dt,
         dr=dr,
         twosided=twosided,
-        transpose=False,
         saveGt=saveGt,
         fftengine=fftengine,
     )
@@ -470,7 +425,6 @@ def MDD(
             dt=dt,
             dr=dr,
             twosided=twosided,
-            transpose=False,
             saveGt=saveGt,
             fftengine=fftengine,
         )
@@ -505,9 +459,7 @@ def MDD(
             P = filtfilt(np.ones(smooth_precond) / smooth_precond, 1, P, axis=0)
         P = to_cupy_conditional(d, P)
         Pop = Diagonal(P)
-        minv = PreconditionedInversion(
-            MDCop, Pop, d.ravel(), returninfo=False, **kwargs_solver
-        )
+        minv = preconditioned_inversion(MDCop, d.ravel(), Pop, **kwargs_solver)[0]
     else:
         if ncp == np and "callback" not in kwargs_solver:
             minv = lsqr(MDCop, d.ravel(), **kwargs_solver)[0]

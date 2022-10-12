@@ -26,15 +26,23 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Scientific/Engineering :: Mathematics",
     ],
     author="mrava",
     author_email="matteoravasi@gmail.com",
-    install_requires=["numpy >= 1.15.0", "scipy >= 1.4.0"],
+    install_requires=["numpy >= 1.21.0", "scipy >= 1.4.0"],
     extras_require={
-        "advanced": ["llvmlite", "numba", "pyfftw", "PyWavelets", "scikit-fmm", "spgl1"]
+        "advanced": [
+            "llvmlite",
+            "numba",
+            "pyfftw",
+            "PyWavelets",
+            "scikit-fmm",
+            "spgl1",
+            "devito",
+        ]
     },
     packages=find_packages(exclude=["pytests"]),
     use_scm_version=dict(

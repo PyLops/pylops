@@ -37,15 +37,9 @@ par = {
     "ny": 51,
     "f0": 40,
 }
-theta = [
-    0,
-]
-t0 = [
-    0.1,
-]
-amp = [
-    1.0,
-]
+theta = [0.0]
+t0 = [0.1]
+amp = [1.0]
 
 # Create axes
 t, t2, x, y = pylops.utils.seismicevents.makeaxis(par)
@@ -65,44 +59,40 @@ npx, pxmax = par["nx"], 5e-4
 px = np.linspace(-pxmax, pxmax, npx)
 
 R2Op = pylops.signalprocessing.ChirpRadon2D(t, x, pxmax * dx / dt, dtype="float64")
-dL_chirp = R2Op * d.ravel()
+dL_chirp = R2Op * d
 dadj_chirp = R2Op.H * dL_chirp
-dinv_chirp = R2Op.inverse(dL_chirp)
+dinv_chirp = R2Op.inverse(dL_chirp).reshape(R2Op.dimsd)
 
-dL_chirp = dL_chirp.reshape(par["nx"], par["nt"])
-dadj_chirp = dadj_chirp.reshape(par["nx"], par["nt"])
-dinv_chirp = dinv_chirp.reshape(par["nx"], par["nt"])
-
-fig, axs = plt.subplots(1, 4, figsize=(12, 4))
-axs[0].imshow(d.T, vmin=-1, vmax=1, cmap="seismic_r", extent=(x[0], x[-1], t[-1], t[0]))
-axs[0].set_title("Input model")
+fig, axs = plt.subplots(1, 4, figsize=(12, 4), sharey=True)
+axs[0].imshow(d.T, vmin=-1, vmax=1, cmap="bwr_r", extent=(x[0], x[-1], t[-1], t[0]))
+axs[0].set(xlabel=r"$x$ [m]", ylabel=r"$t$ [s]", title="Input model")
 axs[0].axis("tight")
 axs[1].imshow(
     dL_chirp.T,
-    cmap="seismic_r",
+    cmap="bwr_r",
     vmin=-dL_chirp.max(),
     vmax=dL_chirp.max(),
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1].set_title("Radon Chirp")
+axs[1].set(xlabel=r"$p$ [s/km]", title="Radon Chirp")
 axs[1].axis("tight")
 axs[2].imshow(
     dadj_chirp.T,
-    cmap="seismic_r",
+    cmap="bwr_r",
     vmin=-dadj_chirp.max(),
     vmax=dadj_chirp.max(),
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(x[0], x[-1], t[-1], t[0]),
 )
-axs[2].set_title("Adj Radon Chirp")
+axs[2].set(xlabel=r"$x$ [m]", title="Adj Radon Chirp")
 axs[2].axis("tight")
 axs[3].imshow(
     dinv_chirp.T,
-    cmap="seismic_r",
+    cmap="bwr_r",
     vmin=-d.max(),
     vmax=d.max(),
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(x[0], x[-1], t[-1], t[0]),
 )
-axs[3].set_title("Inv Radon Chirp")
+axs[3].set(xlabel=r"$x$ [m]", title="Inv Radon Chirp")
 axs[3].axis("tight")
 plt.tight_layout()
 
@@ -122,18 +112,10 @@ par = {
     "ny": 61,
     "f0": 20,
 }
-theta = [
-    10,
-]
-phi = [
-    0,
-]
-t0 = [
-    0.1,
-]
-amp = [
-    1.0,
-]
+theta = [10]
+phi = [0]
+t0 = [0.1]
+amp = [1.0]
 
 # Create axes
 t, t2, x, y = pylops.utils.seismicevents.makeaxis(par)
@@ -150,89 +132,84 @@ px = np.linspace(-pxmax, pxmax, npx)
 R3Op = pylops.signalprocessing.ChirpRadon3D(
     t, y, x, (pymax * dy / dt, pxmax * dx / dt), dtype="float64"
 )
-dL_chirp = R3Op * d.ravel()
+dL_chirp = R3Op * d
 dadj_chirp = R3Op.H * dL_chirp
-dinv_chirp = R3Op.inverse(dL_chirp)
+dinv_chirp = R3Op.inverse(dL_chirp).reshape(R3Op.dimsd)
 
-dL_chirp = dL_chirp.reshape(par["ny"], par["nx"], par["nt"])
-dadj_chirp = dadj_chirp.reshape(par["ny"], par["nx"], par["nt"])
-dinv_chirp = dinv_chirp.reshape(par["ny"], par["nx"], par["nt"])
-
-
-fig, axs = plt.subplots(1, 4, figsize=(12, 4))
+fig, axs = plt.subplots(1, 4, figsize=(12, 4), sharey=True)
 axs[0].imshow(
     d[par["ny"] // 2].T,
     vmin=-1,
     vmax=1,
-    cmap="seismic_r",
+    cmap="bwr_r",
     extent=(x[0], x[-1], t[-1], t[0]),
 )
-axs[0].set_title("Input model")
+axs[0].set(xlabel=r"$x$ [m]", ylabel=r"$t$ [s]", title="Input model")
 axs[0].axis("tight")
 axs[1].imshow(
     dL_chirp[par["ny"] // 2].T,
-    cmap="seismic_r",
+    cmap="bwr_r",
     vmin=-dL_chirp.max(),
     vmax=dL_chirp.max(),
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1].set_title("Radon Chirp")
+axs[1].set(xlabel=r"$p_x$ [s/km]", title="Radon Chirp")
 axs[1].axis("tight")
 axs[2].imshow(
     dadj_chirp[par["ny"] // 2].T,
-    cmap="seismic_r",
+    cmap="bwr_r",
     vmin=-dadj_chirp.max(),
     vmax=dadj_chirp.max(),
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(x[0], x[-1], t[-1], t[0]),
 )
-axs[2].set_title("Adj Radon Chirp")
+axs[2].set(xlabel=r"$x$ [m]", title="Adj Radon Chirp")
 axs[2].axis("tight")
 axs[3].imshow(
     dinv_chirp[par["ny"] // 2].T,
-    cmap="seismic_r",
+    cmap="bwr_r",
     vmin=-d.max(),
     vmax=d.max(),
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(x[0], x[-1], t[-1], t[0]),
 )
-axs[3].set_title("Inv Radon Chirp")
+axs[3].set(xlabel=r"$x$ [m]", title="Inv Radon Chirp")
 axs[3].axis("tight")
 plt.tight_layout()
 
-fig, axs = plt.subplots(1, 4, figsize=(12, 4))
+fig, axs = plt.subplots(1, 4, figsize=(12, 4), sharey=True)
 axs[0].imshow(
     d[:, par["nx"] // 2].T,
     vmin=-1,
     vmax=1,
-    cmap="seismic_r",
+    cmap="bwr_r",
     extent=(x[0], x[-1], t[-1], t[0]),
 )
-axs[0].set_title("Input model")
+axs[0].set(xlabel=r"$y$ [m]", ylabel=r"$t$ [s]", title="Input model")
 axs[0].axis("tight")
 axs[1].imshow(
     dL_chirp[:, 2 * par["nx"] // 3].T,
-    cmap="seismic_r",
+    cmap="bwr_r",
     vmin=-dL_chirp.max(),
     vmax=dL_chirp.max(),
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(1e3 * py[0], 1e3 * py[-1], t[-1], t[0]),
 )
-axs[1].set_title("Radon Chirp")
+axs[1].set(xlabel=r"$p_y$ [s/km]", title="Radon Chirp")
 axs[1].axis("tight")
 axs[2].imshow(
     dadj_chirp[:, par["nx"] // 2].T,
-    cmap="seismic_r",
+    cmap="bwr_r",
     vmin=-dadj_chirp.max(),
     vmax=dadj_chirp.max(),
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(x[0], x[-1], t[-1], t[0]),
 )
-axs[2].set_title("Adj Radon Chirp")
+axs[2].set(xlabel=r"$y$ [m]", title="Adj Radon Chirp")
 axs[2].axis("tight")
 axs[3].imshow(
     dinv_chirp[:, par["nx"] // 2].T,
-    cmap="seismic_r",
+    cmap="bwr_r",
     vmin=-d.max(),
     vmax=d.max(),
-    extent=(px[0], px[-1], t[-1], t[0]),
+    extent=(x[0], x[-1], t[-1], t[0]),
 )
-axs[3].set_title("Inv Radon Chirp")
+axs[3].set(xlabel=r"$y$ [m]", title="Inv Radon Chirp")
 axs[3].axis("tight")
 plt.tight_layout()

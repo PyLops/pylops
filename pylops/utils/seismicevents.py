@@ -1,8 +1,22 @@
+__all__ = [
+    "makeaxis",
+    "linear2d",
+    "parabolic2d",
+    "hyperbolic2d",
+    "linear3d",
+    "hyperbolic3d",
+]
+
+from typing import Dict, Tuple, Union
+
 import numpy as np
+import numpy.typing as npt
 import scipy.signal as filt
 
 
-def _filterdata(d, nt, wav, wcenter):
+def _filterdata(
+    d: npt.NDArray, nt: int, wav: npt.ArrayLike, wcenter: int
+) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
     r"""Apply filtering to data with wavelet wav"""
     dwav = filt.lfilter(wav, 1, d, axis=-1)
     dwav = dwav[..., wcenter:]
@@ -10,7 +24,7 @@ def _filterdata(d, nt, wav, wcenter):
     return d, dwav
 
 
-def makeaxis(par):
+def makeaxis(par: Dict) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]:
     r"""Create axes t, x, and y axes
 
     Create space and time axes from dictionary containing initial values ``ot``, ``ox``, ``oy``,
@@ -52,7 +66,15 @@ def makeaxis(par):
     return t, t2, x, y
 
 
-def linear2d(x, t, v, t0, theta, amp, wav):
+def linear2d(
+    x: npt.NDArray,
+    t: npt.NDArray,
+    v: float,
+    t0: Union[float, Tuple[float]],
+    theta: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
+    wav: npt.NDArray,
+) -> Tuple[npt.NDArray, npt.NDArray]:
     r"""Linear 2D events
 
     Create 2d linear events given propagation velocity, intercept time, angle,
@@ -126,7 +148,15 @@ def linear2d(x, t, v, t0, theta, amp, wav):
     return d, dwav
 
 
-def parabolic2d(x, t, t0, px, pxx, amp, wav):
+def parabolic2d(
+    x: npt.NDArray,
+    t: npt.NDArray,
+    t0: Union[float, Tuple[float]],
+    px: Union[float, Tuple[float]],
+    pxx: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
+    wav: npt.NDArray,
+) -> Tuple[npt.NDArray, npt.NDArray]:
     r"""Parabolic 2D events
 
     Create 2d parabolic events given intercept time,
@@ -185,7 +215,7 @@ def parabolic2d(x, t, t0, px, pxx, amp, wav):
     # create events
     d = np.zeros((nx, nt))
     for ievent in range(nevents):
-        tevent = t0[ievent] + px[ievent] * x + pxx[ievent] * x ** 2
+        tevent = t0[ievent] + px[ievent] * x + pxx[ievent] * x**2
         tevent = (tevent - t[0]) / dt
         itevent = tevent.astype(int)
         dtevent = tevent - itevent
@@ -199,7 +229,14 @@ def parabolic2d(x, t, t0, px, pxx, amp, wav):
     return d, dwav
 
 
-def hyperbolic2d(x, t, t0, vrms, amp, wav):
+def hyperbolic2d(
+    x: npt.NDArray,
+    t: npt.NDArray,
+    t0: Union[float, Tuple[float]],
+    vrms: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
+    wav: npt.NDArray,
+) -> Tuple[npt.NDArray, npt.NDArray]:
     r"""Hyperbolic 2D events
 
     Create 2d hyperbolic events given intercept time, root-mean-square
@@ -252,7 +289,7 @@ def hyperbolic2d(x, t, t0, vrms, amp, wav):
     # create events
     d = np.zeros((nx, nt))
     for ievent in range(nevents):
-        tevent = np.sqrt(t0[ievent] ** 2 + x ** 2 / vrms[ievent] ** 2)
+        tevent = np.sqrt(t0[ievent] ** 2 + x**2 / vrms[ievent] ** 2)
         tevent = (tevent - t[0]) / dt
         itevent = tevent.astype(int)
         dtevent = tevent - itevent
@@ -266,7 +303,17 @@ def hyperbolic2d(x, t, t0, vrms, amp, wav):
     return d, dwav
 
 
-def linear3d(x, y, t, v, t0, theta, phi, amp, wav):
+def linear3d(
+    x: npt.NDArray,
+    y: npt.NDArray,
+    t: npt.NDArray,
+    v: Union[float, Tuple[float]],
+    t0: Union[float, Tuple[float]],
+    theta: Union[float, Tuple[float]],
+    phi: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
+    wav: npt.NDArray,
+) -> Tuple[npt.NDArray, npt.NDArray]:
     r"""Linear 3D events
 
     Create 3d linear events given propagation velocity, intercept time, angles,
@@ -350,7 +397,16 @@ def linear3d(x, y, t, v, t0, theta, phi, amp, wav):
     return d, dwav
 
 
-def hyperbolic3d(x, y, t, t0, vrms_x, vrms_y, amp, wav):
+def hyperbolic3d(
+    x: npt.NDArray,
+    y: npt.NDArray,
+    t: npt.NDArray,
+    t0: Union[float, Tuple[float]],
+    vrms_x: Union[float, Tuple[float]],
+    vrms_y: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
+    wav: npt.NDArray,
+):
     r"""Hyperbolic 3D events
 
     Create 3d hyperbolic events given intercept time, root-mean-square
@@ -418,7 +474,7 @@ def hyperbolic3d(x, y, t, t0, vrms_x, vrms_y, amp, wav):
         for iy in range(ny):
             tevent = np.sqrt(
                 t0[ievent] ** 2
-                + x ** 2 / vrms_x[ievent] ** 2
+                + x**2 / vrms_x[ievent] ** 2
                 + y[iy] ** 2 / vrms_y[ievent] ** 2
             )
             tevent = (tevent - t[0]) / dt

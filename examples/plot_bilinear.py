@@ -4,7 +4,6 @@ Bilinear Interpolation
 This example shows how to use the :py:class:`pylops.signalprocessing.Bilinar`
 operator to perform bilinear interpolation to a 2-dimensional input vector.
 """
-import matplotlib.gridspec as pltgs
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import misc
@@ -29,7 +28,7 @@ iava = np.vstack(
 )
 
 Bop = pylops.signalprocessing.Bilinear(iava, (nz, nx))
-y = Bop * x.ravel()
+y = Bop * x
 
 ###############################################################################
 # At this point we try to reconstruct the input signal imposing a smooth
@@ -39,9 +38,9 @@ y = Bop * x.ravel()
 D2op = pylops.Laplacian((nz, nx), weights=(1, 1), dtype="float64")
 
 xadj = Bop.H * y
-xinv = pylops.optimization.leastsquares.NormalEquationsInversion(
-    Bop, [D2op], y, epsRs=[np.sqrt(0.1)], returninfo=False, **dict(maxiter=100)
-)
+xinv = pylops.optimization.leastsquares.normal_equations_inversion(
+    Bop, y, [D2op], epsRs=[np.sqrt(0.1)], **dict(maxiter=100)
+)[0]
 xadj = xadj.reshape(nz, nx)
 xinv = xinv.reshape(nz, nx)
 

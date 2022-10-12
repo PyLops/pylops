@@ -1,7 +1,6 @@
 import numpy as np
-import pytest
 
-from pylops.basicoperators import BlockDiag, Diagonal, HStack, MatrixMult, VStack
+from pylops.basicoperators import BlockDiag, Diagonal, HStack, MatrixMult
 from pylops.utils.describe import describe
 
 

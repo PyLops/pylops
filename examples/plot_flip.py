@@ -34,17 +34,16 @@ plt.plot(y, "r", lw=3, label=r"$y=Fx$")
 plt.plot(xadj, "--g", lw=3, label=r"$x_{adj} = F^H y$")
 plt.title("Flip in 1st direction", fontsize=14, fontweight="bold")
 plt.legend()
+plt.tight_layout()
 
 ###############################################################################
 # Let's now repeat the same exercise on a two dimensional signal. We will
 # first flip the model along the first axis and then along the second axis
 nt, nx = 10, 5
 x = np.outer(np.arange(nt), np.ones(nx))
-Fop = pylops.Flip(nt * nx, dims=(nt, nx), dir=0)
-y = Fop * x.ravel()
-xadj = Fop.H * y.ravel()
-y = y.reshape(nt, nx)
-xadj = xadj.reshape(nt, nx)
+Fop = pylops.Flip((nt, nx), axis=0)
+y = Fop * x
+xadj = Fop.H * y
 
 fig, axs = plt.subplots(1, 3, figsize=(7, 3))
 fig.suptitle(
@@ -64,11 +63,9 @@ plt.subplots_adjust(top=0.8)
 
 
 x = np.outer(np.ones(nt), np.arange(nx))
-Fop = pylops.Flip(nt * nx, dims=(nt, nx), dir=1)
-y = Fop * x.ravel()
-xadj = Fop.H * y.ravel()
-y = y.reshape(nt, nx)
-xadj = xadj.reshape(nt, nx)
+Fop = pylops.Flip(dims=(nt, nx), axis=1)
+y = Fop * x
+xadj = Fop.H * y
 
 # sphinx_gallery_thumbnail_number = 3
 fig, axs = plt.subplots(1, 3, figsize=(7, 3))

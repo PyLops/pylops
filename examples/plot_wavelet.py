@@ -32,11 +32,13 @@ plt.figure(figsize=(8, 2))
 plt.plot(y, "k", label="Full")
 plt.plot(yf, "r", label="Extracted")
 plt.title("Discrete Wavelet Transform")
+plt.tight_layout()
 
 plt.figure(figsize=(8, 2))
 plt.plot(x, "k", label="Original")
 plt.plot(xinv, "r", label="Reconstructed")
 plt.title("Reconstructed signal")
+plt.tight_layout()
 
 ###############################################################################
 # We repeat the same procedure with an image. In this case the 2-dimensional
@@ -46,19 +48,22 @@ im = np.load("../testdata/python.npy")[::5, ::5, 0]
 
 Nz, Nx = im.shape
 Wop = pylops.signalprocessing.DWT2D((Nz, Nx), wavelet="haar", level=5)
-y = Wop * im.ravel()
+y = Wop * im
 yf = y.copy()
-yf[len(y) // 4 :] = 0
+yf.flat[y.size // 4 :] = 0
 iminv = Wop.H * yf
-iminv = iminv.reshape(Nz, Nx)
 
-fig, axs = plt.subplots(1, 3, figsize=(12, 4))
-axs[0].imshow(im, cmap="gray")
-axs[0].set_title("Image")
-axs[0].axis("tight")
-axs[1].imshow(y.reshape(Wop.dimsd), cmap="gray_r", vmin=-1e2, vmax=1e2)
-axs[1].set_title("DWT2 coefficients")
-axs[1].axis("tight")
-axs[2].imshow(iminv, cmap="gray")
-axs[2].set_title("Reconstructed image")
-axs[2].axis("tight")
+fig, axs = plt.subplots(2, 2, figsize=(6, 6))
+axs[0, 0].imshow(im, cmap="gray")
+axs[0, 0].set_title("Image")
+axs[0, 0].axis("tight")
+axs[0, 1].imshow(y, cmap="gray_r", vmin=-1e2, vmax=1e2)
+axs[0, 1].set_title("DWT2 coefficients")
+axs[0, 1].axis("tight")
+axs[1, 0].imshow(iminv, cmap="gray")
+axs[1, 0].set_title("Reconstructed image")
+axs[1, 0].axis("tight")
+axs[1, 1].imshow(yf, cmap="gray_r", vmin=-1e2, vmax=1e2)
+axs[1, 1].set_title("DWT2 coefficients (zeroed)")
+axs[1, 1].axis("tight")
+plt.tight_layout()

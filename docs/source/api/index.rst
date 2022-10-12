@@ -28,6 +28,7 @@ Templates
     LinearOperator
     FunctionOperator
     MemoizeOperator
+    TorchOperator
 
 Basic operators
 ~~~~~~~~~~~~~~~
@@ -105,6 +106,7 @@ Signal processing
     Sliding2D
     Sliding3D
     Patch2D
+    Patch3D
     Fredholm1
 
 
@@ -121,7 +123,8 @@ Wave-Equation processing
     UpDownComposition3D
     MDC
     PhaseShift
-    Demigration
+    Kirchhoff
+    AcousticWave2D
 
 
 Geophysical subsurface characterization
@@ -140,45 +143,96 @@ Geophysical subsurface characterization
 
 Solvers
 -------
+Template
+~~~~~~~~
+.. currentmodule:: pylops.optimization.basesolver
+
+.. autosummary::
+   :toctree: generated/
+
+    Solver
 
 Basic
 ~~~~~
 
-.. currentmodule:: pylops.optimization
+.. currentmodule:: pylops.optimization.cls_basic
 
 .. autosummary::
    :toctree: generated/
 
-    solver.cg
-    solver.cgls
-    solver.lsqr
+    CG
+    CGLS
+    LSQR
+
+.. currentmodule:: pylops.optimization.basic
+
+.. autosummary::
+   :toctree: generated/
+
+    cg
+    cgls
+    lsqr
 
 Least-squares
 ~~~~~~~~~~~~~
 
-.. currentmodule:: pylops.optimization
+.. currentmodule:: pylops.optimization.cls_leastsquares
 
 .. autosummary::
    :toctree: generated/
 
-    leastsquares.NormalEquationsInversion
-    leastsquares.RegularizedInversion
-    leastsquares.PreconditionedInversion
+    NormalEquationsInversion
+    RegularizedInversion
+    PreconditionedInversion
+
+
+.. currentmodule:: pylops.optimization.leastsquares
+
+.. autosummary::
+   :toctree: generated/
+
+    normal_equations_inversion
+    regularized_inversion
+    preconditioned_inversion
 
 
 Sparsity
 ~~~~~~~~
 
+.. currentmodule:: pylops.optimization.cls_sparsity
+
 .. autosummary::
    :toctree: generated/
 
-    sparsity.IRLS
-    sparsity.OMP
-    sparsity.ISTA
-    sparsity.FISTA
-    sparsity.SPGL1
-    sparsity.SplitBregman
+    IRLS
+    OMP
+    ISTA
+    FISTA
+    SPGL1
+    SplitBregman
 
+.. currentmodule:: pylops.optimization.sparsity
+
+.. autosummary::
+   :toctree: generated/
+
+    irls
+    omp
+    ista
+    fista
+    spgl1
+    splitbregman
+
+Callbacks
+~~~~~~~~~
+
+.. currentmodule:: pylops.optimization.callback
+
+.. autosummary::
+   :toctree: generated/
+
+    Callbacks
+    MetricsCallback
 
 
 Applications

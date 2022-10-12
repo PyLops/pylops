@@ -87,6 +87,7 @@ plt.plot(t3, "g", label="@")
 plt.plot(t4, "b", label="*")
 plt.axis("tight")
 plt.legend()
+plt.tight_layout()
 
 ###############################################################################
 # Similarly we now consider the adjoint mode. This can be done in
@@ -131,6 +132,7 @@ plt.plot(t3, "g", label=".H* (pre-computed H)")
 plt.plot(t4, "b", label=".H*")
 plt.axis("tight")
 plt.legend()
+plt.tight_layout()
 
 ###############################################################################
 # Just to reiterate once again, it is advised to call ``matvec``
@@ -159,6 +161,8 @@ plt.legend()
 # * ``Op.cond()``: estimates the condition number of the operator
 # * ``Op.conj()``: create complex conjugate operator
 
+Dop = pylops.Diagonal(d)
+
 # +
 print(Dop + Dop)
 
@@ -167,7 +171,7 @@ print(-Dop)
 print(Dop - 0.5 * Dop)
 
 # **
-print(Dop ** 3)
+print(Dop**3)
 
 # * and /
 y = Dop * x
@@ -193,8 +197,8 @@ d = 1j * (np.arange(n) + 1.0)
 x = np.ones(n)
 Dop = pylops.Diagonal(d)
 
-print("y = Dx = ", Dop * x)
-print("y = conj(D)x = ", Dop.conj() * x)
+print(f"y = Dx = {Dop * x}")
+print(f"y = conj(D)x = {Dop.conj() * x}")
 
 ###############################################################################
 # At this point, the concept of linear operator may sound abstract.
@@ -208,10 +212,11 @@ plt.imshow(np.abs(D))
 plt.title("Dense representation of Diagonal operator")
 plt.axis("tight")
 plt.colorbar()
+plt.tight_layout()
 
 ###############################################################################
-# Finally it is worth reiterating that if two linear operators are combined by
-# means of the algebraical operations shown above, the resulting
+# At this point it is worth reiterating that if two linear operators are
+# combined by means of the algebraical operations shown above, the resulting
 # operator is still a :py:class:`pylops.LinearOperator` operator. This means
 # that we can still apply any of the methods implemented in the original
 # scipy class definition like ``*``, as well as those in our class
@@ -219,15 +224,37 @@ plt.colorbar()
 Dop1 = Dop - Dop.conj()
 
 y = Dop1 * x
-print("x = (Dop - conj(Dop))/y = ", Dop1 / y)
+print(f"x = (Dop - conj(Dop))/y = {Dop1 / y}")
 
 D1 = Dop1.todense()
 
 plt.figure(figsize=(5, 5))
 plt.imshow(np.abs(D1))
-plt.title(r"Dense representation of $|D + D^*|$")
+plt.title(r"Dense representation of $|D - D^*|$")
 plt.axis("tight")
 plt.colorbar()
+plt.tight_layout()
+
+###############################################################################
+# Finally, another important feature of PyLops linear operators is that we can
+# always keep track of how many times the forward and adjoint passes have been
+# applied (and reset when needed). This is particularly useful when running a
+# third party solver to see how many evaluations of our operator are performed
+# inside the solver.
+
+Dop = pylops.Diagonal(d)
+
+y = Dop.matvec(x)
+y = Dop.matvec(x)
+y = Dop.rmatvec(y)
+
+print(f"Forward evaluations: {Dop.matvec_count}")
+print(f"Adjoint evaluations: {Dop.rmatvec_count}")
+
+# Reset
+Dop.reset_count()
+print(f"Forward evaluations: {Dop.matvec_count}")
+print(f"Adjoint evaluations: {Dop.rmatvec_count}")
 
 ###############################################################################
 # This first tutorial is completed. You have seen the basic operations that

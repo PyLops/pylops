@@ -1,10 +1,13 @@
+__all__ = ["SeismicInterpolation"]
+
 import logging
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
 from pylops import Laplacian, Restriction, SecondDerivative
-from pylops.optimization.leastsquares import RegularizedInversion
-from pylops.optimization.sparsity import FISTA
+from pylops.optimization.leastsquares import regularized_inversion
+from pylops.optimization.sparsity import fista
 from pylops.signalprocessing import (
     FFT2D,
     FFTND,
@@ -16,34 +19,33 @@ from pylops.signalprocessing import (
     Sliding2D,
     Sliding3D,
 )
-from pylops.utils.backend import get_array_module
 from pylops.utils.dottest import dottest as Dottest
+from pylops.utils.typing import InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def SeismicInterpolation(
-    data,
-    nrec,
-    iava,
-    iava1=None,
-    kind="fk",
-    nffts=None,
-    sampling=None,
-    spataxis=None,
-    spat1axis=None,
-    taxis=None,
-    paxis=None,
-    p1axis=None,
-    centeredh=True,
-    nwins=None,
-    nwin=None,
-    nover=None,
-    design=False,
-    engine="numba",
-    dottest=False,
-    **kwargs_solver
-):
+    data: NDArray,
+    nrec: Union[int, Tuple[int, int]],
+    iava: Union[List[Union[int, float]], NDArray],
+    iava1: Optional[Union[List[Union[int, float]], NDArray]] = None,
+    kind: str = "fk",
+    nffts: Optional[Union[int, InputDimsLike]] = None,
+    sampling: Optional[Sequence[float]] = None,
+    spataxis: Optional[NDArray] = None,
+    spat1axis: Optional[NDArray] = None,
+    taxis: Optional[NDArray] = None,
+    paxis: Optional[NDArray] = None,
+    p1axis: Optional[NDArray] = None,
+    centeredh: bool = True,
+    nwins: InputDimsLike = None,
+    nwin: InputDimsLike = None,
+    nover: InputDimsLike = None,
+    engine: str = "numba",
+    dottest: bool = False,
+    **kwargs_solver,
+) -> Tuple[NDArray, NDArray, NDArray]:
     r"""Seismic interpolation (or regularization).
 
     Interpolate seismic data from irregular to regular spatial grid.
@@ -120,9 +122,6 @@ def SeismicInterpolation(
     nover : :obj:`int` or :obj:`tuple`, optional
         Number of samples of overlapping part of window. Required for
         ``kind='sliding'`` and ``kind='chirp-sliding'``
-    design : :obj:`bool`, optional
-        Print number of sliding window (``True``) or not (``False``) when
-        using ``kind='sliding'`` and ``kind='chirp-sliding'``
     engine : :obj:`str`, optional
         Engine used for Radon computations (``numpy/numba``
         for ``Radon2D`` and ``Radon3D`` or ``numpy/fftw``
@@ -131,7 +130,7 @@ def SeismicInterpolation(
         Apply dot-test
     **kwargs_solver
         Arbitrary keyword arguments for
-        :py:func:`pylops.optimization.leastsquares.RegularizedInversion` solver
+        :py:func:`pylops.optimization.leastsquares.regularized_inversion` solver
         if ``kind='spatial'`` or
         :py:func:`pylops.optimization.sparsity.FISTA` solver otherwise
 
@@ -203,8 +202,6 @@ def SeismicInterpolation(
           in 3-dimensional case
 
     """
-    ncp = get_array_module(data)
-
     dtype = data.dtype
     ndims = data.ndim
     if ndims == 1 or ndims > 3:
@@ -226,18 +223,16 @@ def SeismicInterpolation(
 
     # create restriction/interpolation operator
     if iava.dtype == float:
-        Rop = Interp(np.prod(dims), iava, dims=dims, dir=0, kind="linear", dtype=dtype)
+        Rop = Interp(dims, iava, axis=0, kind="linear", dtype=dtype)
         if ndims == 3 and iava1 is not None:
             dims1 = (len(iava), nrec[1], dimsd[2])
-            Rop1 = Interp(
-                np.prod(dims1), iava1, dims=dims1, dir=1, kind="linear", dtype=dtype
-            )
+            Rop1 = Interp(dims1, iava1, axis=1, kind="linear", dtype=dtype)
             Rop = Rop1 * Rop
     else:
-        Rop = Restriction(np.prod(dims), iava, dims=dims, dir=0, dtype=dtype)
+        Rop = Restriction(dims, iava, axis=0, dtype=dtype)
         if ndims == 3 and iava1 is not None:
             dims1 = (len(iava), nrec[1], dimsd[2])
-            Rop1 = Restriction(np.prod(dims1), iava1, dims=dims1, dir=1, dtype=dtype)
+            Rop1 = Restriction(dims1, iava1, axis=1, dtype=dtype)
             Rop = Rop1 * Rop
 
     # create other operators for inversion
@@ -245,9 +240,9 @@ def SeismicInterpolation(
         prec = False
         dotcflag = 0
         if ndims == 3 and iava1 is not None:
-            Regop = Laplacian(dims=dims, dirs=(0, 1), dtype=dtype)
+            Regop = Laplacian(dims=dims, axes=(0, 1), dtype=dtype)
         else:
-            Regop = SecondDerivative(np.prod(dims), dims=(dims), dir=0, dtype=dtype)
+            Regop = SecondDerivative(dims, axis=0, dtype=dtype)
         SIop = Rop
     elif kind == "fk":
         prec = True
@@ -258,7 +253,7 @@ def SeismicInterpolation(
                 if spataxis is None or spat1axis is None or taxis is None:
                     raise ValueError(
                         "Provide either sampling or spataxis, "
-                        "spat1axis and taxis for kind=%s" % kind
+                        f"spat1axis and taxis for kind=%{kind}"
                     )
                 else:
                     sampling = (
@@ -273,7 +268,7 @@ def SeismicInterpolation(
                 if spataxis is None or taxis is None:
                     raise ValueError(
                         "Provide either sampling or spataxis, "
-                        "and taxis for kind=%s" % kind
+                        f"and taxis for kind={kind}"
                     )
                 else:
                     sampling = (
@@ -382,9 +377,7 @@ def SeismicInterpolation(
                 npaxis = nwin
                 Op = ChirpRadon2D(taxis, spataxis_local, np.max(paxis) * dspat / dt).H
             dimsp = (nwins * npaxis, dimsslid[1])
-            Pop = Sliding2D(
-                Op, dimsp, dimsslid, nwin, nover, tapertype="cosine", design=design
-            )
+            Pop = Sliding2D(Op, dimsp, dimsslid, nwin, nover, tapertype="cosine")
         SIop = Rop * Pop
     else:
         raise KeyError(
@@ -405,14 +398,14 @@ def SeismicInterpolation(
 
     # inversion
     if kind == "spatial":
-        recdata = RegularizedInversion(SIop, [Regop], data.ravel(), **kwargs_solver)
+        recdata = regularized_inversion(SIop, data.ravel(), [Regop], **kwargs_solver)
         if isinstance(recdata, tuple):
             recdata = recdata[0]
         recdata = recdata.reshape(dims)
         recprec = None
         cost = None
     else:
-        recprec = FISTA(SIop, data.ravel(), **kwargs_solver)
+        recprec = fista(SIop, data.ravel(), **kwargs_solver)
         if len(recprec) == 3:
             cost = recprec[2]
         else:

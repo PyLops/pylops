@@ -24,13 +24,11 @@ A = np.zeros((N, M))
 A[5, 10] = 1
 
 Sop = pylops.Smoothing2D(nsmooth=[nsmooth1, nsmooth2], dims=[N, M], dtype="float64")
-B = Sop * A.ravel()
-B = np.reshape(B, (N, M))
+B = Sop * A
 
 ###############################################################################
 # After applying smoothing, we will also try to invert it.
-Aest = Sop / B.ravel()
-Aest = np.reshape(Aest, (N, M))
+Aest = (Sop / B.ravel()).reshape(Sop.dims)
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 3))
 im = axs[0].imshow(A, interpolation="nearest", vmin=0, vmax=1)
@@ -45,3 +43,4 @@ im = axs[2].imshow(Aest, interpolation="nearest", vmin=0, vmax=1)
 axs[2].axis("tight")
 axs[2].set_title("Estimated model")
 plt.colorbar(im, ax=axs[2])
+plt.tight_layout()

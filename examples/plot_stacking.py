@@ -27,8 +27,8 @@ plt.close("all")
 ###############################################################################
 # Let's start by defining two second derivatives :py:class:`pylops.SecondDerivative`
 # that we will be using in this example.
-D2hop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=1, dtype="float32")
-D2vop = pylops.SecondDerivative(11 * 21, dims=[11, 21], dir=0, dtype="float32")
+D2hop = pylops.SecondDerivative(dims=(11, 21), axis=1, dtype="float32")
+D2vop = pylops.SecondDerivative(dims=(11, 21), axis=0, dtype="float32")
 
 ###############################################################################
 # Chaining of operators represents the simplest concatenation that
@@ -42,7 +42,7 @@ X = np.zeros((Nv, Nh))
 X[int(Nv / 2), int(Nh / 2)] = 1
 
 D2op = D2vop * D2hop
-Y = np.reshape(D2op * X.ravel(), (Nv, Nh))
+Y = D2op * X
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 fig.suptitle("Chain", fontsize=14, fontweight="bold", y=0.95)
@@ -253,12 +253,12 @@ y = AB.dot(x)
 yop = ABop * x
 xinv = ABop / yop
 
-print("AB = \n", AB)
+print(f"AB = \n {AB}")
 
-print("x = ", x)
-print("y = ", y)
-print("yop = ", yop)
-print("xinv = ", x)
+print(f"x = {x}")
+print(f"y = {y}")
+print(f"yop = {yop}")
+print(f"xinv = {xinv}")
 
 ###############################################################################
 # We can also use :py:class:`pylops.Kronecker` to do something more
@@ -268,7 +268,7 @@ print("xinv = ", x)
 # :py:class:`pylops.FirstDerivative` to the second dimension of the model.
 #
 # Note that for those operators whose implementation allows their application
-# to a single axis via the ``dir`` parameter, using the Kronecker product
+# to a single axis via the ``axis`` parameter, using the Kronecker product
 # would lead to slower performance. Nevertheless, the Kronecker product allows
 # any other operator to be applied to a single dimension.
 Nv, Nh = 11, 21

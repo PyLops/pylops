@@ -62,9 +62,7 @@ nxsub = int(np.round(par["nx"] * perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(par["nx"]))[:nxsub])
 
 # restriction operator
-Rop = pylops.Restriction(
-    par["nx"] * par["nt"], iava, dims=(par["nx"], par["nt"]), dir=0, dtype="float64"
-)
+Rop = pylops.Restriction((par["nx"], par["nt"]), iava, axis=0, dtype="float64")
 
 # data
 y = Rop * x.ravel()
@@ -92,6 +90,7 @@ axs[1].imshow(
 )
 axs[1].set_title("Masked model")
 axs[1].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # As we can see, inverting the restriction operator is not possible without
@@ -112,9 +111,7 @@ axs[1].axis("tight")
 #        \epsilon \|\mathbf{F}^H \mathbf{x}\|_1
 
 # smooth inversion
-D2op = pylops.SecondDerivative(
-    par["nx"] * par["nt"], dims=(par["nx"], par["nt"]), dir=0, dtype="float64"
-)
+D2op = pylops.SecondDerivative((par["nx"], par["nt"]), axis=0, dtype="float64")
 
 xsmooth, _, _ = pylops.waveeqprocessing.SeismicInterpolation(
     y,
@@ -125,7 +122,7 @@ xsmooth, _, _ = pylops.waveeqprocessing.SeismicInterpolation(
 )
 
 # sparse inversion with FFT2
-nfft = 2 ** 8
+nfft = 2**8
 FFTop = pylops.signalprocessing.FFT2D(
     dims=[par["nx"], par["nt"]], nffts=[nfft, nfft], sampling=[par["dx"], par["dt"]]
 )
@@ -139,7 +136,7 @@ xl1, Xl1, cost = pylops.waveeqprocessing.SeismicInterpolation(
     kind="fk",
     nffts=(nfft, nfft),
     sampling=(par["dx"], par["dt"]),
-    **dict(niter=50, eps=1e-1, returninfo=True)
+    **dict(niter=50, eps=1e-1)
 )
 
 fig, axs = plt.subplots(1, 4, sharey=True, figsize=(13, 4))
@@ -205,6 +202,7 @@ axs[1].set_xlim(-0.1, 0.1)
 axs[1].set_ylim(50, 0)
 axs[2].plot(cost, "k", lw=3)
 axs[2].set_title("FISTA convergence")
+plt.tight_layout()
 
 ###############################################################################
 # We see how adding prior information to the inversion can help improving the
@@ -237,7 +235,7 @@ xl1, Xl1, cost = pylops.waveeqprocessing.SeismicInterpolation(
     taxis=taxis,
     paxis=px,
     centeredh=True,
-    **dict(niter=50, eps=1e-1, returninfo=True)
+    **dict(niter=50, eps=1e-1)
 )
 
 fig, axs = plt.subplots(2, 3, sharey=True, figsize=(12, 7))
@@ -283,6 +281,7 @@ axs[1][2].imshow(
 )
 axs[1][2].set_title("Inverse Radon on subsampled data", fontsize=12)
 axs[1][2].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # Finally, let's take now a more realistic dataset. We will use once again the
@@ -309,7 +308,7 @@ x = np.apply_along_axis(convolve, 1, x, wav, mode="full")
 x = x[:, wav_c:][:, : par["nt"]]
 
 # gain
-gain = np.tile((taxis ** 2)[:, np.newaxis], (1, par["nx"])).T
+gain = np.tile((taxis**2)[:, np.newaxis], (1, par["nx"])).T
 x = x * gain
 
 # subsampling locations
@@ -318,9 +317,7 @@ Nsub = int(np.round(par["nx"] * perc_subsampling))
 iava = np.sort(np.random.permutation(np.arange(par["nx"]))[:Nsub])
 
 # restriction operator
-Rop = pylops.Restriction(
-    par["nx"] * par["nt"], iava, dims=(par["nx"], par["nt"]), dir=0, dtype="float64"
-)
+Rop = pylops.Restriction((par["nx"], par["nt"]), iava, axis=0, dtype="float64")
 
 y = Rop * x.ravel()
 xadj = Rop.H * y.ravel()
@@ -351,7 +348,7 @@ Op = pylops.signalprocessing.Radon2D(
     engine="numba",
 )
 Slidop = pylops.signalprocessing.Sliding2D(
-    Op, dims, dimsd, nwin, nover, tapertype="cosine", design=True
+    Op, dims, dimsd, nwin, nover, tapertype="cosine"
 )
 
 # adjoint
@@ -433,6 +430,7 @@ axs[1][2].imshow(
 )
 axs[1][2].set_title("Inverse Radon on subsampled data")
 axs[1][2].axis("tight")
+plt.tight_layout()
 
 ###############################################################################
 # As expected the linear :py:class:`pylops.signalprocessing.Radon2D` is

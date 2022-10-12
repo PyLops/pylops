@@ -1,5 +1,7 @@
+__all__ = ["Marchenko"]
+
 import logging
-import warnings
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -7,19 +9,29 @@ from scipy.sparse.linalg import lsqr
 from scipy.special import hankel2
 
 from pylops import Block, BlockDiag, Diagonal, Identity, Roll
-from pylops.optimization.solver import cgls
+from pylops.optimization.basic import cgls
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import get_array_module, get_module_name, to_cupy_conditional
+from pylops.utils.typing import DTypeLike, NDArray
 from pylops.waveeqprocessing.mdd import MDC
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=True):
+def directwave(
+    wav: NDArray,
+    trav: NDArray,
+    nt: int,
+    dt: float,
+    nfft: Optional[int] = None,
+    dist: Optional[NDArray] = None,
+    kind: str = "2d",
+    derivative: bool = True,
+) -> NDArray:
     r"""Analytical direct wave in acoustic media
 
     Compute the analytical acoustic 2d or 3d Green's function in frequency
-    domain givena wavelet ``wav``, traveltime curve ``trav`` and distance
+    domain given a wavelet ``wav``, traveltime curve ``trav`` and distance
     ``dist`` (for 3d case only).
 
     Parameters
@@ -78,7 +90,7 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=Tr
     nr = len(trav)
     nfft = nt if nfft is None or nfft < nt else nfft
     W = np.abs(np.fft.rfft(wav, nfft)) * dt
-    f = 2 * np.pi * ncp.arange(nfft) / (dt * nfft)
+    f: NDArray = 2 * np.pi * ncp.arange(nfft) / (dt * nfft)
     direct = ncp.zeros((nfft // 2 + 1, nr), dtype=np.complex128)
     for it in range(len(W)):
         if kind == "2d":
@@ -86,7 +98,7 @@ def directwave(wav, trav, nt, dt, nfft=None, dist=None, kind="2d", derivative=Tr
             #             + np.sign(f[it]) * np.pi / 4)) / \
             #             np.sqrt(8 * np.pi * np.abs(f[it]) * trav + 1e-10)
             direct[it] = -W[it] * 1j * hankel2(0, f[it] * trav + 1e-10) / 4.0
-        else:
+        elif dist is not None:
             direct[it] = W[it] * np.exp(-1j * f[it] * trav) / (4 * np.pi * dist)
         if derivative:
             direct[it] *= 1j * f[it]
@@ -108,9 +120,6 @@ class Marchenko:
         domain of size :math:`[n_s \times n_r \times n_t (n_{f_\text{max}})]`. If
         provided in time, ``R`` should not be of complex type. Note that the
         reflection response should have already been multiplied by 2.
-    R1 : :obj:`bool`, optional
-        *Deprecated*, will be removed in v2.0.0. Simply kept for
-        back-compatibility with previous implementation
     dt : :obj:`float`, optional
         Sampling of time integration axis
     nt : :obj:`float`, optional
@@ -125,8 +134,6 @@ class Marchenko:
         Time-offset to apply to traveltime
     nsmooth : :obj:`int`, optional
         Number of samples of smoothing operator to apply to window
-    dtype : :obj:`bool`, optional
-        Type of elements in input array.
     saveRt : :obj:`bool`, optional
         Save ``R`` and ``R.H`` to speed up the computation of adjoint of
         :class:`pylops.signalprocessing.Fredholm1` (``True``) or create
@@ -142,6 +149,8 @@ class Marchenko:
         .. versionadded:: 1.17.0
 
         Engine used for fft computation (``numpy``, ``scipy`` or ``fftw``)
+    dtype : :obj:`bool`, optional
+        Type of elements in input array.
 
     Attributes
     ----------
@@ -223,31 +232,19 @@ class Marchenko:
 
     def __init__(
         self,
-        R,
-        R1=None,
-        dt=0.004,
-        nt=None,
-        dr=1.0,
-        nfmax=None,
-        wav=None,
-        toff=0.0,
-        nsmooth=10,
-        dtype="float64",
-        saveRt=True,
-        prescaled=False,
-        fftengine="numpy",
-    ):
-        warnings.warn(
-            "A new implementation of Marchenko is provided in v1.5.0. "
-            "This currently affects only the inner working of the "
-            "operator, end-users can continue using the operator in "
-            "the same way. Nevertheless, R1 is not required anymore"
-            "even when R is provided in frequency domain. It is "
-            "recommended to start using the operator without the R1 "
-            "input as this behaviour will become default in "
-            "version v2.0.0 and R1 will be removed from the inputs.",
-            FutureWarning,
-        )
+        R: NDArray,
+        dt: float = 0.004,
+        nt: Optional[int] = None,
+        dr: float = 1.0,
+        nfmax: Optional[int] = None,
+        wav: Optional[NDArray] = None,
+        toff: float = 0.0,
+        nsmooth: int = 10,
+        saveRt: bool = True,
+        prescaled: bool = False,
+        fftengine: str = "numpy",
+        dtype: DTypeLike = "float64",
+    ) -> None:
         # Save inputs into class
         self.dt = dt
         self.dr = dr
@@ -295,16 +292,20 @@ class Marchenko:
 
     def apply_onepoint(
         self,
-        trav,
-        G0=None,
-        nfft=None,
-        rtm=False,
-        greens=False,
-        dottest=False,
-        fast=None,
-        usematmul=False,
+        trav: NDArray,
+        G0: Optional[NDArray] = None,
+        nfft: Optional[int] = None,
+        rtm: bool = False,
+        greens: bool = False,
+        dottest: bool = False,
+        usematmul: bool = False,
         **kwargs_solver
-    ):
+    ) -> Union[
+        Tuple[NDArray, NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray],
+    ]:
         r"""Marchenko redatuming for one point
 
         Solve the Marchenko redatuming inverse problem for a single point
@@ -327,8 +328,6 @@ class Marchenko:
             Compute and return Green's functions
         dottest : :obj:`bool`, optional
             Apply dot-test
-        fast : :obj:`bool`
-            *Deprecated*, will be removed in v2.0.0
         usematmul : :obj:`bool`, optional
             Use :func:`numpy.matmul` (``True``) or for-loop with :func:`numpy.dot`
             (``False``) in :py:class:`pylops.signalprocessing.Fredholm1` operator.
@@ -379,11 +378,9 @@ class Marchenko:
             twosided=True,
             conj=False,
             fftengine=self.fftengine,
-            transpose=False,
             saveGt=self.saveRt,
             prescaled=self.prescaled,
             usematmul=usematmul,
-            dtype=self.dtype,
         )
         R1op = MDC(
             self.Rtwosided_fft,
@@ -394,16 +391,13 @@ class Marchenko:
             twosided=True,
             conj=True,
             fftengine=self.fftengine,
-            transpose=False,
             saveGt=self.saveRt,
             prescaled=self.prescaled,
             usematmul=usematmul,
-            dtype=self.dtype,
         )
         Rollop = Roll(
-            self.nt2 * self.ns,
-            dims=(self.nt2, self.ns),
-            dir=0,
+            (self.nt2, self.ns),
+            axis=0,
             shift=-1,
             dtype=self.dtype,
         )
@@ -504,15 +498,20 @@ class Marchenko:
 
     def apply_multiplepoints(
         self,
-        trav,
-        G0=None,
-        nfft=None,
-        rtm=False,
-        greens=False,
-        dottest=False,
-        usematmul=False,
+        trav: NDArray,
+        G0: Optional[NDArray] = None,
+        nfft: Optional[int] = None,
+        rtm: bool = False,
+        greens: bool = False,
+        dottest: bool = False,
+        usematmul: bool = False,
         **kwargs_solver
-    ):
+    ) -> Union[
+        Tuple[NDArray, NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray, NDArray],
+        Tuple[NDArray, NDArray],
+    ]:
         r"""Marchenko redatuming for multiple points
 
         Solve the Marchenko redatuming inverse problem for multiple
@@ -591,10 +590,8 @@ class Marchenko:
             twosided=True,
             conj=False,
             fftengine=self.fftengine,
-            transpose=False,
             prescaled=self.prescaled,
             usematmul=usematmul,
-            dtype=self.dtype,
         )
         R1op = MDC(
             self.Rtwosided_fft,
@@ -605,15 +602,12 @@ class Marchenko:
             twosided=True,
             conj=True,
             fftengine=self.fftengine,
-            transpose=False,
             prescaled=self.prescaled,
             usematmul=usematmul,
-            dtype=self.dtype,
         )
         Rollop = Roll(
-            self.ns * nvs * self.nt2,
-            dims=(self.nt2, self.ns, nvs),
-            dir=0,
+            (self.nt2, self.ns, nvs),
+            axis=0,
             shift=-1,
             dtype=self.dtype,
         )

@@ -42,7 +42,7 @@ x = Op.rmatvec(v)
 yy = np.dot(y, v)  # (Op  * u)' * v
 xx = np.dot(u, x)  # u' * (Op' * v)
 
-print("Dot-test %e" % np.abs((yy - xx) / ((yy + xx + 1e-15) / 2)))
+print(f"Dot-test {np.abs((yy - xx) / ((yy + xx + 1e-15) / 2)):.2e}")
 
 
 ###############################################################################
@@ -111,6 +111,7 @@ ax.set_yticks(np.arange(N - 1) + 0.5)
 ax.grid(linewidth=3, color="white")
 ax.xaxis.set_ticklabels([])
 ax.yaxis.set_ticklabels([])
+plt.tight_layout()
 
 ###############################################################################
 # From now on, we can simply use the :py:func:`pylops.utils.dottest` implementation
@@ -125,7 +126,7 @@ N = 10
 d = np.arange(N)
 Dop = pylops.Diagonal(d)
 
-dottest(Dop, N, N, tol=1e-6, complexflag=0, verb=True)
+_ = dottest(Dop, N, N, rtol=1e-6, complexflag=0, verb=True)
 
 ###############################################################################
 # We move now to a more complicated operator, the :py:func:`pylops.signalprocessing.FFT`
@@ -135,10 +136,10 @@ dottest(Dop, N, N, tol=1e-6, complexflag=0, verb=True)
 
 dt = 0.005
 nt = 100
-nfft = 2 ** 10
+nfft = 2**10
 
 FFTop = pylops.signalprocessing.FFT(
     dims=(nt,), nfft=nfft, sampling=dt, dtype=np.complex128
 )
 dottest(FFTop, nfft, nt, complexflag=2, verb=True)
-dottest(FFTop, nfft, nt, complexflag=3, verb=True)
+_ = dottest(FFTop, nfft, nt, complexflag=3, verb=True)

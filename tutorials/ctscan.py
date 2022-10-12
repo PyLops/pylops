@@ -38,8 +38,8 @@ np.random.seed(10)
 @jit(nopython=True)
 def radoncurve(x, r, theta):
     return (
-        (r - ny // 2) / (np.sin(np.deg2rad(theta)) + 1e-15)
-        + np.tan(np.deg2rad(90 - theta)) * x
+        (r - ny // 2) / (np.sin(theta) + 1e-15)
+        + np.tan(np.pi / 2.0 - theta) * x
         + ny // 2
     )
 
@@ -48,8 +48,8 @@ x = np.load("../testdata/optimization/shepp_logan_phantom.npy").T
 x = x / x.max()
 nx, ny = x.shape
 
-ntheta = 150
-theta = np.linspace(0.0, 180.0, ntheta, endpoint=False)
+ntheta = 151
+theta = np.linspace(0.0, np.pi, ntheta, endpoint=False)
 
 RLop = pylops.signalprocessing.Radon2D(
     np.arange(ny),
@@ -62,8 +62,7 @@ RLop = pylops.signalprocessing.Radon2D(
     dtype="float64",
 )
 
-y = RLop.H * x.ravel()
-y = y.reshape(ntheta, ny)
+y = RLop.H * x
 
 ###############################################################################
 # We can now first perform the adjoint, which in the medical imaging literature
@@ -72,8 +71,7 @@ y = y.reshape(ntheta, ny)
 # This is the first step of a common reconstruction technique, named filtered
 # back-projection, which simply applies a correction filter in the
 # frequency domain to the adjoint model.
-xrec = RLop * y.ravel()
-xrec = xrec.reshape(nx, ny)
+xrec = RLop * y
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 4))
 axs[0].imshow(x.T, vmin=0, vmax=1, cmap="gray")
@@ -93,18 +91,18 @@ fig.tight_layout()
 # modelling operator both in a least-squares sense and using TV-reg.
 Dop = [
     pylops.FirstDerivative(
-        ny * nx, dims=(nx, ny), dir=0, edge=True, kind="backward", dtype=np.float64
+        (nx, ny), axis=0, edge=True, kind="backward", dtype=np.float64
     ),
     pylops.FirstDerivative(
-        ny * nx, dims=(nx, ny), dir=1, edge=True, kind="backward", dtype=np.float64
+        (nx, ny), axis=1, edge=True, kind="backward", dtype=np.float64
     ),
 ]
 D2op = pylops.Laplacian(dims=(nx, ny), edge=True, dtype=np.float64)
 
 # L2
-xinv_sm = pylops.optimization.leastsquares.RegularizedInversion(
-    RLop.H, [D2op], y.ravel(), epsRs=[1e1], **dict(iter_lim=20)
-)
+xinv_sm = pylops.optimization.leastsquares.regularized_inversion(
+    RLop.H, y.ravel(), [D2op], epsRs=[1e1], **dict(iter_lim=20)
+)[0]
 xinv_sm = np.real(xinv_sm.reshape(nx, ny))
 
 # TV
@@ -113,19 +111,19 @@ lamda = [1.0, 1.0]
 niter = 3
 niterinner = 4
 
-xinv, niter = pylops.optimization.sparsity.SplitBregman(
+xinv = pylops.optimization.sparsity.splitbregman(
     RLop.H,
-    Dop,
     y.ravel(),
-    niter,
-    niterinner,
+    Dop,
+    niter_outer=niter,
+    niter_inner=niterinner,
     mu=mu,
     epsRL1s=lamda,
     tol=1e-4,
     tau=1.0,
     show=False,
     **dict(iter_lim=20, damp=1e-2)
-)
+)[0]
 xinv = np.real(xinv.reshape(nx, ny))
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 4))

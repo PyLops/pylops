@@ -34,8 +34,8 @@ vel_sep = 1000.0  # velocity at separation level
 rho_sep = 1000.0  # density at separation level
 critical = 0.99
 ntaper = 5
-nfftf = 2 ** 6
-nfftk = 2 ** 6
+nfftf = 2**6
+nfftk = 2**6
 
 # axes and wavelet
 t, t2, x, y = makeaxis(PAR)

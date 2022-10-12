@@ -92,6 +92,7 @@ plt.plot(
 plt.scatter(t, y, c="r", s=70)
 plt.scatter(t, yn, c="g", s=70)
 plt.legend(fontsize="x-small")
+plt.tight_layout()
 
 ###############################################################################
 # We consider now the case where some of the observations have large errors.
@@ -112,17 +113,16 @@ epsI = 0
 tolIRLS = 1e-2
 
 xnest = PRop / yn
-xirls, nouter, xirls_hist, rw_hist = pylops.optimization.sparsity.IRLS(
+xirls, nouter = pylops.optimization.sparsity.irls(
     PRop,
     yn,
-    nouter,
+    nouter=nouter,
     threshR=False,
     epsR=epsR,
     epsI=epsI,
     tolIRLS=tolIRLS,
-    returnhistory=True,
 )
-print("IRLS converged at %d iterations..." % nouter)
+print(f"IRLS converged at {nouter} iterations...")
 
 plt.figure(figsize=(5, 7))
 plt.plot(
@@ -152,3 +152,4 @@ plt.plot(
 plt.scatter(t, y, c="r", s=70)
 plt.scatter(t, yn, c="g", s=70)
 plt.legend(fontsize="x-small")
+plt.tight_layout()
