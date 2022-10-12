@@ -41,7 +41,6 @@ setup(
             "PyWavelets",
             "scikit-fmm",
             "spgl1",
-            "devito",
         ]
     },
     packages=find_packages(exclude=["pytests"]),
