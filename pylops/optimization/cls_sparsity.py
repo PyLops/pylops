@@ -11,10 +11,7 @@ from pylops.basicoperators import Diagonal, Identity, VStack
 from pylops.optimization.basesolver import Solver
 from pylops.optimization.basic import cgls
 from pylops.optimization.eigs import power_iteration
-from pylops.optimization.leastsquares import (
-    normal_equations_inversion,
-    regularized_inversion,
-)
+from pylops.optimization.leastsquares import regularized_inversion
 from pylops.utils.backend import get_array_module, get_module_name
 from pylops.utils.decorators import disable_ndarray_multiplication
 from pylops.utils.typing import InputDimsLike, NDArray, SamplingLike
