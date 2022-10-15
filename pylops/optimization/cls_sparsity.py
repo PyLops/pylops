@@ -396,11 +396,6 @@ class IRLS(Solver):
     def _step_data(self, x: NDArray, **kwargs_solver) -> NDArray:
         r"""Run one step of solver with L1 data term"""
         if self.iiter == 0:
-            # first iteration (unweighted least-squares)
-            # x = normal_equations_inversion(
-            #    self.Op, self.y, None, x0=x if self.warm else None,
-            #    epsI=self.epsI, **kwargs_solver
-            # )[0]
             x = regularized_inversion(
                 self.Op,
                 self.y,
@@ -416,13 +411,7 @@ class IRLS(Solver):
             else:
                 self.rw = 1.0 / (self.ncp.abs(self.r) + self.epsR)
             self.rw = self.rw / self.rw.max()
-            # R = Diagonal(self.rw)
-            # x = normal_equations_inversion(
-            #    self.Op, self.y, [], Weight=R, x0=x if self.warm else None,
-            #    epsI=self.epsI, **kwargs_solver
-            # )[0]
-            # R = Diagonal(np.sqrt(self.rw))
-            R = Diagonal(self.rw)
+            R = Diagonal(np.sqrt(self.rw))
             x = regularized_inversion(
                 self.Op,
                 self.y,
