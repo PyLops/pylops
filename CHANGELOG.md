@@ -1,3 +1,71 @@
+# 2.0.0
+PyLops has undergone significant changes in this release, including new ``LinearOperator``s, more features, new examples and bugfixes.
+To aid users in navigating the breaking changes, we provide the following document [MIGRATION_V1_V2.md](https://github.com/PyLops/pylops/blob/dev/MIGRATION_V1_V2.md).
+
+### New Features
+
+* Multiplication of linear operators by N-dimensional arrays is now supported via the new ``dims``/``dimsd`` properties.
+  Users do not need to use ``.ravel`` and ``.reshape`` as often anymore. See the migration guide for more information.
+* Typing annotations for several submodules (``avo``, ``basicoperators``, ``signalprocessing``, ``utils``, ``optimization``, ``waveeqprocessing``)
+* New [pylops.TorchOperator](https://pylops.readthedocs.io/en/latest/api/generated/pylops.TorchOperator.html#pylops.TorchOperator)
+  wraps a Pylops operator into a PyTorch function
+* New [pylops.signalprocessing.Patch3D](https://pylops.readthedocs.io/en/latest/api/generated/pylops.signalprocessing.Patch3D.html)
+  applies a linear operator repeatedly to patches of the model vector
+* Each of [Sliding1D](https://pylops.readthedocs.io/en/latest/api/generated/pylops.signalprocessing.Sliding1D.html),
+  [Sliding2D](https://pylops.readthedocs.io/en/latest/api/generated/pylops.signalprocessing.Sliding2D.html),
+  [Sliding3D](https://pylops.readthedocs.io/en/latest/api/generated/pylops.signalprocessing.Sliding3D.html),
+  [Patch2D](https://pylops.readthedocs.io/en/latest/api/generated/pylops.signalprocessing.Patch2D.html) and
+  [Patch3D](https://pylops.readthedocs.io/en/latest/api/generated/pylops.signalprocessing.Patch3D.html) have an associated
+  `slidingXd_design` or `patchXd_design` functions associated with them to aid the user in designing the windows
+* [FirstDerivative](https://pylops.readthedocs.io/en/latest/api/generated/pylops.FirstDerivative.html) and
+  [SecondDerivative](https://pylops.readthedocs.io/en/latest/api/generated/pylops.SecondDerivative.html), and therefore
+  other derivative operators which rely on the (e.g., [Gradient](https://pylops.readthedocs.io/en/latest/api/generated/pylops.Gradient.html))
+  support higher order stencils
+* [pylops.waveeqprocessing.Kirchhoff](https://pylops.readthedocs.io/en/latest/api/generated/pylops.waveeqprocessing.Kirchhoff.html)
+  substitutes [pylops.waveeqprocessing.Demigration](https://pylops.readthedocs.io/en/v1.18.3/api/generated/pylops.waveeqprocessing.Demigration.html)
+  and incorporates a variety of new functionalities
+* New [pylops.waveeqprocessing.AcousticWave2D](https://pylops.readthedocs.io/en/latest/api/generated/pylops.waveeqprocessing.AcousticWave2D.html) wraps the [Devito](https://www.devitoproject.org/)
+  acoutic wave propagator providing a wave-equation based Born modeling operator with a reverse-time migration adjoint
+* Solvers can now be implemented via the [pylops.optimization.basesolver.Solver](https://pylops.readthedocs.io/en/latest/api/generated/pylops.optimization.basesolver.Solver.html) class.
+  They can now be used through a functional interface with lowercase name (e.g., [splitbregman](https://pylops.readthedocs.io/en/latest/api/generated/pylops.optimization.sparsity.splitbregman.html))
+  or via class interface with CamelCase name (e.g., [SplitBregman](https://pylops.readthedocs.io/en/latest/api/generated/pylops.optimization.cls_sparsity.SplitBregman.html)).
+  Moreover, solvers now accept callbacks defined by the [Callbacks](https://pylops.readthedocs.io/en/latest/api/generated/pylops.optimization.callback.Callbacks.html)
+  interface (see e.g., [MetricsCallback](https://pylops.readthedocs.io/en/latest/api/generated/pylops.optimization.callback.MetricsCallback.html)).
+* [Metrics](https://pylops.readthedocs.io/en/latest/api/others.html#metrics) such as [mean absolute error (mae)](https://pylops.readthedocs.io/en/latest/api/generated/pylops.utils.metrics.mae.html#pylops.utils.metrics.mae), [mean squared error (mse)](https://pylops.readthedocs.io/en/latest/api/generated/pylops.utils.metrics.mse.html#pylops.utils.metrics.mse) and others
+* New [pylops.utils.signalprocessing.dip_estimate](https://pylops.readthedocs.io/en/latest/api/generated/pylops.utils.signalprocessing.dip_estimate.html)
+  estimates local dips in an image (measured in radians) in a stabler way than [pylops.utils.signalprocessing.dip_estimate](https://pylops.readthedocs.io/en/latest/api/generated/pylops.utils.signalprocessing.slope_estimate.html) did for slopes.
+* New [pylops.utils.tapers.tapernd](https://pylops.readthedocs.io/en/latest/api/generated/pylops.utils.tapers.tapernd.html) for N-dimensional tapers
+* New wavelets [Klauder](https://pylops.readthedocs.io/en/latest/api/generated/pylops.utils.wavelets.klauder.html) and [Ormsby](https://pylops.readthedocs.io/en/latest/api/generated/pylops.utils.wavelets.ormsby.html)
+
+### Documentation
+
+* [Installation](https://pylops.readthedocs.io/en/latest/installation.html) has been revamped
+* Revamped guide on how to [implement a new `LinearOperator` from scratch](https://pylops.readthedocs.io/en/latest/adding.html)
+* New guide on how to [implement a new solver from scratch](https://pylops.readthedocs.io/en/latest/addingsolver.html)
+* New tutorials:
+  * [Solvers (Advanced)](https://pylops.readthedocs.io/en/latest/tutorials/classsolvers.html)
+  * [Deblending](https://pylops.readthedocs.io/en/latest/tutorials/deblending.html)
+  * [Automatic Differentiation](https://pylops.readthedocs.io/en/latest/tutorials/torchop.html)
+* New gallery examples:
+  * [Patching](https://pylops.readthedocs.io/en/latest/gallery/plot_patching.html#sphx-glr-gallery-plot-patching-py)
+  * [Wavelets](https://pylops.readthedocs.io/en/latest/gallery/plot_wavs.html)
+
+# 1.18.3
+* Fixed ``pylops.optimization.basic.lsqr``, ``pylops.optimization.sparsity.ISTA``, and
+  ``pylops.optimization.sparsity.FISTA`` to work with cupy arrays. This change was required
+  by how recent cupy versions handle scalars, which are not converted directly into float types,
+  rather kept as cupy arrays.
+* Fixed bug in ``pylops.waveeqprocessing.Deghosting`` introduced in
+  commit [7e596d4](https://github.com/PyLops/pylops/commit/7e596d4dad3793d6430204b7a9b214a9dc39616c)
+
+# 1.18.2
+* Refractored `pylops.utils.dottest`, and added two new optional input parameters
+  (``atol`` and ``rtol``)
+* Added optional parameter ``densesolver`` to ``pylops.LinearOperator.div``
+
+# 1.18.1
+* !DELETED! due to a mistake in the release process
+
 # 1.18.0
 * Added `NMO` example to gallery
 * Extended `pylops.basicoperators.Laplacian` to N-dimensional arrays

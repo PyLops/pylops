@@ -92,8 +92,8 @@ def _sincinterp(
     sinc = ncp.sinc(sinc)
 
     # identify additional dimensions and create MatrixMult operator
-    otherdims = ncp.array(dims)
-    otherdims = ncp.roll(otherdims, -axis)
+    otherdims = np.array(dims)
+    otherdims = np.roll(otherdims, -axis)
     otherdims = otherdims[1:]
     Op = MatrixMult(sinc, otherdims=otherdims, dtype=dtype)
 

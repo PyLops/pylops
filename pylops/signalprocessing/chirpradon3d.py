@@ -5,26 +5,18 @@ import logging
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.utils import deps
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
 
 from ._chirpradon3d import _chirp_radon_3d
 
-try:
+pyfftw_message = deps.pyfftw_import("the chirpradon3d module")
+
+if pyfftw_message is None:
     import pyfftw
 
     from ._chirpradon3d import _chirp_radon_3d_fftw
-except ModuleNotFoundError:
-    pyfftw = None
-    pyfftw_message = (
-        "Pyfftw not installed, use numpy or run "
-        '"pip install pyFFTW" or '
-        '"conda install -c conda-forge pyfftw".'
-    )
-except Exception as e:
-    pyfftw = None
-    pyfftw_message = f"Failed to import pyfftw (error:{e}), use numpy."
-
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 

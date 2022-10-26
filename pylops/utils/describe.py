@@ -27,15 +27,13 @@ from typing import List, Set, Union
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, VStack
 from pylops.linearoperator import _ScaledLinearOperator, _SumLinearOperator
+from pylops.utils import deps
 
-try:
+sympy_message = deps.sympy_import("the describe module")
+
+if sympy_message is None:
     from sympy import BlockDiagMatrix, BlockMatrix, MatrixSymbol
-except ModuleNotFoundError:
-    raise ModuleNotFoundError(
-        "Sympy package not installed. In order to use "
-        "the describe method run "
-        "install sympy."
-    )
+
 
 compositeops = (
     LinearOperator,
@@ -299,6 +297,9 @@ def describe(Op) -> None:
         Linear Operator to describe
 
     """
+    if sympy_message is not None:
+        raise NotImplementedError(sympy_message)
+
     # Describe the operator
     Ops = {}
     names = set()

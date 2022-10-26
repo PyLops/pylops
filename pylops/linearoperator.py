@@ -666,7 +666,7 @@ class LinearOperator(spLinearOperator):
             # use numpy for small matrices (faster but heavier on memory)
             identity = ncp.eye(shapemin, dtype=self.dtype)
         else:
-            # use scipy for small matrices (slower but lighter on memory)
+            # use scipy for large matrices (slower but lighter on memory)
             identity = get_sparse_eye(ncp.ones(1))(shapemin, dtype=self.dtype).tocsc()
 
         # Apply operator
@@ -1185,6 +1185,7 @@ class _ColumnLinearOperator(LinearOperator):
         self.Op = Op
         self.cols = cols
         self._shape = (Op.shape[0], len(cols))
+        self._dims = len(cols)
         if self.explicit:
             self.Opcol = Op.A[:, cols]
 

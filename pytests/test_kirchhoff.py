@@ -7,7 +7,7 @@ from pylops.utils.wavelets import ricker
 from pylops.waveeqprocessing.kirchhoff import Kirchhoff
 
 PAR = {
-    "ny": 10,
+    "ny": 3,
     "nx": 12,
     "nz": 20,
     "nt": 50,
@@ -16,9 +16,9 @@ PAR = {
     "dz": 2,
     "dt": 0.004,
     "nsy": 4,
-    "nry": 8,
+    "nry": 3,
     "nsx": 6,
-    "nrx": 4,
+    "nrx": 2,
 }
 
 # Check if skfmm is available and by-pass tests using it otherwise. This is
@@ -51,9 +51,12 @@ r3d = np.vstack((ryy.ravel(), rxx.ravel(), 2 * np.ones(PAR["nrx"] * PAR["nry"]))
 
 wav, _, wavc = ricker(t[:41], f0=40)
 
-par1 = {"mode": "analytic"}
-par2 = {"mode": "eikonal"}
-par3 = {"mode": "byot"}
+par1 = {"mode": "analytic", "dynamic": False}
+par2 = {"mode": "eikonal", "dynamic": False}
+par3 = {"mode": "byot", "dynamic": False}
+par1d = {"mode": "analytic", "dynamic": True}
+par2d = {"mode": "eikonal", "dynamic": True}
+par3d = {"mode": "byot", "dynamic": True}
 
 
 def test_identify_geometry():
@@ -120,7 +123,7 @@ def test_traveltime_ana():
     """
     src = np.array([100, 0])[:, np.newaxis]
 
-    _, trav_srcs_ana, trav_recs_ana, dist_ana = Kirchhoff._traveltime_table(
+    _, trav_srcs_ana, trav_recs_ana, dist_ana, _, _ = Kirchhoff._traveltime_table(
         np.arange(0, 200, 1), np.arange(0, 200, 1), src, src, v0, mode="analytic"
     )
     assert dist_ana[0, 0] == 200
@@ -132,11 +135,23 @@ def test_traveltime_table():
     """Compare analytical and eikonal traveltimes in homogenous medium"""
     if skfmm_enabled:
         # 2d
-        trav_ana, trav_srcs_ana, trav_recs_ana, dist_ana = Kirchhoff._traveltime_table(
-            z, x, s2d, r2d, v0, mode="analytic"
-        )
+        (
+            trav_ana,
+            trav_srcs_ana,
+            trav_recs_ana,
+            dist_ana,
+            _,
+            _,
+        ) = Kirchhoff._traveltime_table(z, x, s2d, r2d, v0, mode="analytic")
 
-        trav_eik, trav_srcs_eik, trav_recs_eik, dist_eik = Kirchhoff._traveltime_table(
+        (
+            trav_eik,
+            trav_srcs_eik,
+            trav_recs_eik,
+            dist_eik,
+            _,
+            _,
+        ) = Kirchhoff._traveltime_table(
             z, x, s2d, r2d, v0 * np.ones((PAR["nx"], PAR["nz"])), mode="eikonal"
         )
 
@@ -145,11 +160,23 @@ def test_traveltime_table():
         assert_array_almost_equal(trav_ana, trav_eik, decimal=2)
 
         # 3d
-        trav_ana, trav_srcs_ana, trav_recs_ana, dist_ana = Kirchhoff._traveltime_table(
-            z, x, s3d, r3d, v0, y=y, mode="analytic"
-        )
+        (
+            trav_ana,
+            trav_srcs_ana,
+            trav_recs_ana,
+            dist_ana,
+            _,
+            _,
+        ) = Kirchhoff._traveltime_table(z, x, s3d, r3d, v0, y=y, mode="analytic")
 
-        trav_eik, trav_srcs_eik, trav_recs_eik, dist_eik = Kirchhoff._traveltime_table(
+        (
+            trav_eik,
+            trav_srcs_eik,
+            trav_recs_eik,
+            dist_eik,
+            _,
+            _,
+        ) = Kirchhoff._traveltime_table(
             z,
             x,
             s3d,
@@ -164,13 +191,13 @@ def test_traveltime_table():
         assert_array_almost_equal(trav_ana, trav_eik, decimal=2)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par1d), (par2d), (par3d)])
 def test_kirchhoff2d(par):
     """Dot-test for Kirchhoff operator"""
     vel = v0 * np.ones((PAR["nx"], PAR["nz"]))
 
     if par["mode"] == "byot":
-        trav, _, _, dist = Kirchhoff._traveltime_table(
+        trav, _, _, dist, _, _ = Kirchhoff._traveltime_table(
             z, x, s2d, r2d, v0, mode="analytic"
         )
         amp = 1 / (dist + 1e-2 * dist.max())
@@ -194,3 +221,39 @@ def test_kirchhoff2d(par):
             mode=par["mode"],
         )
         assert dottest(Dop, PAR["nsx"] * PAR["nrx"] * PAR["nt"], PAR["nz"] * PAR["nx"])
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3)])
+def test_kirchhoff3d(par):
+    """Dot-test for Kirchhoff operator"""
+    vel = v0 * np.ones((PAR["ny"], PAR["nx"], PAR["nz"]))
+
+    if par["mode"] == "byot":
+        trav, _, _, dist, _, _ = Kirchhoff._traveltime_table(
+            z, x, s3d, r3d, v0, y=y, mode="analytic"
+        )
+        amp = 1 / (dist + 1e-2 * dist.max())
+    else:
+        trav = None
+        amp = None
+
+    if skfmm_enabled or par["mode"] != "eikonal":
+        Dop = Kirchhoff(
+            z,
+            x,
+            t,
+            s3d,
+            r3d,
+            vel if par["mode"] == "eikonal" else v0,
+            wav,
+            wavc,
+            y=y,
+            trav=trav,
+            amp=amp,
+            mode=par["mode"],
+        )
+        assert dottest(
+            Dop,
+            PAR["nsx"] * PAR["nrx"] * PAR["nsy"] * PAR["nry"] * PAR["nt"],
+            PAR["nz"] * PAR["nx"] * PAR["ny"],
+        )

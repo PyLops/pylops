@@ -95,7 +95,7 @@ plt.tight_layout()
 ###############################################################################
 # We can now create our LSM object and invert for the reflectivity using two
 # different solvers: :py:func:`scipy.sparse.linalg.lsqr` (LS solution) and
-# :py:func:`pylops.optimization.sparsity.FISTA` (LS solution with sparse model).
+# :py:func:`pylops.optimization.sparsity.fista` (LS solution with sparse model).
 nt = 651
 dt = 0.004
 t = np.arange(nt) * dt
@@ -103,7 +103,16 @@ wav, wavt, wavc = pylops.utils.wavelets.ricker(t[:41], f0=20)
 
 
 lsm = pylops.waveeqprocessing.LSM(
-    z, x, t, sources, recs, v0, wav, wavc, mode="analytic"
+    z,
+    x,
+    t,
+    sources,
+    recs,
+    v0,
+    wav,
+    wavc,
+    mode="analytic",
+    engine="numba",
 )
 
 d = lsm.Demop * refl

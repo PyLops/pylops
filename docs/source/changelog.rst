@@ -3,6 +3,92 @@
 Changelog
 =========
 
+Version 2.0.0
+-------------
+
+*Released on: 12/08/2022*
+
+PyLops has undergone significant changes in this release, including new ``LinearOperator`` s, more features, new examples and bugfixes.
+To aid users in navigating the breaking changes, we provide the following document
+`MIGRATION_V1_V2.md <https://github.com/PyLops/pylops/blob/dev/MIGRATION_V1_V2.md>`_.
+
+**New Features**
+
+* Multiplication of linear operators by N-dimensional arrays is now supported via the new ``dims``/``dimsd`` properties.
+  Users do not need to use ``.ravel`` and ``.reshape`` as often anymore. See the migration guide for more information.
+* Typing annotations for several submodules (``avo``, ``basicoperators``, ``signalprocessing``, ``utils``, ``optimization``,
+  ``waveeqprocessing``)
+* New :class:`pylops.TorchOperator` wraps a Pylops operator into a PyTorch function
+* New :class:`pylops.signalprocessing.Patch3D` applies a linear operator repeatedly to patches of the model vector
+* Each of :class:`pylops.signalprocessing.Sliding1D`, :class:`pylops.signalprocessing.Sliding2D`,
+  :class:`pylops.signalprocessing.Sliding3D`, :class:`pylops.signalprocessing.Patch2D` and :class:`pylops.signalprocessing.Patch3D`
+  have an associated ``slidingXd_design`` or ``patchXd_design`` functions associated with them to aid the user in designing the windows
+* :class:`pylops.FirstDerivative` and :class:`pylops.SecondDerivative`, and therefore other derivative operators which rely on the
+  (e.g., :class:`pylops.Gradient`) support higher order stencils
+* :class:`pylops.waveeqprocessing.Kirchhoff` substitutes :class:`pylops.waveeqprocessing.Demigration` and incorporates a variety of
+  new functionalities
+* New :class:`pylops.waveeqprocessing.AcousticWave2D` wraps the `Devito <https://www.devitoproject.org/>`_ acoutic wave propagator
+  providing a wave-equation based Born modeling operator with a reverse-time migration adjoint
+* Solvers can now be implemented via the :class:`pylops.optimization.basesolver.Solver` class. They can now be used through a
+  functional interface with lowercase name (e.g., :func:`pylops.optimization.sparsity.splitbregman`) or via class interface with CamelCase name
+  (e.g., :class:`pylops.optimization.cls_sparsity.SplitBregman`. Moreover, solvers now accept callbacks defined by the
+  :class:`pylops.optimization.callback.Callbacks` interface (see e.g., :class:`pylops.optimization.callback.MetricsCallback`).
+* Metrics such as :func:`pylops.utils.metrics.mae` and :func:`pylops.utils.metrics.mse` and others
+* New :func:`pylops.utils.signalprocessing.dip_estimate` estimates local dips in an image (measured in radians) in a stabler way than the old :func:`pylops.utils.signalprocessing.dip_estimate` did for slopes.
+* New :func:`pylops.utils.tapers.tapernd` for N-dimensional tapers
+* New wavelets :func:`pylops.utils.wavelets.klauder` and :func:`pylops.utils.wavelets.ormsby`
+
+**Documentation**
+
+* `Installation <https://pylops.readthedocs.io/en/latest/installation.html>`_ has been revamped
+* Revamped guide on how to `implement a new LinearOperator from scratch <https://pylops.readthedocs.io/en/latest/adding.html>`_
+* New guide on how to `implement a new solver from scratch <https://pylops.readthedocs.io/en/latest/addingsolver.html>`_
+* New tutorials:
+
+  - `Solvers (Advanced) <https://pylops.readthedocs.io/en/latest/tutorials/classsolvers.html>`_
+  - `Deblending <https://pylops.readthedocs.io/en/latest/tutorials/deblending.html>`_
+  - `Automatic Differentiation <https://pylops.readthedocs.io/en/latest/tutorials/torchop.html>`_
+
+* New gallery examples:
+
+  - `Patching <https://pylops.readthedocs.io/en/latest/gallery/plot_patching.html#sphx-glr-gallery-plot-patching-py>`_
+  - `Wavelets <https://pylops.readthedocs.io/en/latest/gallery/plot_wavs.html>`_
+
+
+Version 1.18.3
+--------------
+
+*Released on: 30/07/2022*
+
+* Refractored :py:func:`pylops.utils.dottest`, and added two new optional input parameters
+  (`atol` and `rtol`)
+* Added optional parameter `densesolver` to :py:func:`pylops.LinearOperator.div`
+* Fixed :py:class:`pylops.optimization.basic.lsqr`, :py:class:`pylops.optimization.sparsity.ISTA`, and
+  :py:class:`pylops.optimization.sparsity.FISTA` to work with cupy arrays. This change was required
+  by how recent cupy versions handle scalars, which are not converted directly into float types,
+  rather kept as cupy arrays.
+* Fix bug in :py:class:`pylops.waveeqprocessing.Deghosting` introduced in
+  commit `7e596d4 <https://github.com/PyLops/pylops/commit/7e596d4dad3793d6430204b7a9b214a9dc39616c>`_.
+
+
+Version 1.18.2
+--------------
+
+*Released on: 29/04/2022*
+
+* Refractored :py:func:`pylops.utils.dottest`, and added two new optional input parameters
+  (`atol` and `rtol`)
+* Added optional parameter `densesolver` to :py:func:`pylops.LinearOperator.div`
+
+
+Version 1.18.1
+--------------
+
+*Released on: 29/04/2022*
+
+* !DELETED! due to a mistake in the release process
+
+
 Version 1.18.0
 --------------
 

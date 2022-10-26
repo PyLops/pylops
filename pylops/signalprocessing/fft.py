@@ -10,21 +10,14 @@ import scipy.fft
 
 from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFT, _FFTNorms
+from pylops.utils import deps
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-try:
+pyfftw_message = deps.pyfftw_import("the fft module")
+
+if pyfftw_message is None:
     import pyfftw
-except ModuleNotFoundError:
-    pyfftw = None
-    pyfftw_message = (
-        "Pyfftw not installed, use numpy or run "
-        '"pip install pyFFTW" or '
-        '"conda install -c conda-forge pyfftw".'
-    )
-except Exception as e:
-    pyfftw = None
-    pyfftw_message = f"Failed to import pyfftw (error:{e}), use numpy."
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -544,7 +537,7 @@ def FFT(
     signals.
 
     """
-    if engine == "fftw" and pyfftw is not None:
+    if engine == "fftw" and pyfftw_message is None:
         f = _FFT_fftw(
             dims,
             axis=axis,
@@ -557,8 +550,8 @@ def FFT(
             dtype=dtype,
             **kwargs_fftw,
         )
-    elif engine == "numpy" or (engine == "fftw" and pyfftw is None):
-        if engine == "fftw" and pyfftw is None:
+    elif engine == "numpy" or (engine == "fftw" and pyfftw_message is not None):
+        if engine == "fftw" and pyfftw_message is not None:
             logging.warning(pyfftw_message)
         f = _FFT_numpy(
             dims,

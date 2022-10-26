@@ -77,6 +77,7 @@ class Diagonal(LinearOperator):
         name: str = "D",
     ) -> None:
         self.diag = diag
+        self.axis = axis
         origdims = dims
         dims = self.diag.shape if dims is None else _value_or_sized_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
@@ -128,4 +129,10 @@ class Diagonal(LinearOperator):
         densemat : :obj:`numpy.ndarray`
             Dense matrix.
         """
-        return self.matrix()
+        if self.diag.ndim == 1:
+            return self.matrix()
+        else:
+            dims = list(self.dims)
+            dims[self.axis] = 1
+            matrix = np.diag(np.tile(self.diag, dims).ravel())
+            return matrix

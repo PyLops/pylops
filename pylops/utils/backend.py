@@ -23,6 +23,7 @@ from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
+import scipy.fft as sp_fft
 from scipy.linalg import block_diag, lstsq, toeplitz
 from scipy.signal import convolve, correlate, fftconvolve, oaconvolve
 from scipy.sparse import csc_matrix, eye
@@ -33,6 +34,7 @@ from pylops.utils.typing import DTypeLike, NDArray
 if deps.cupy_enabled:
     import cupy as cp
     import cupyx
+    import cupyx.scipy.fft as cp_fft
     from cupyx.scipy.linalg import block_diag as cp_block_diag
     from cupyx.scipy.linalg import toeplitz as cp_toeplitz
     from cupyx.scipy.sparse import csc_matrix as cp_csc_matrix
@@ -357,6 +359,29 @@ def get_lstsq(x: npt.ArrayLike) -> Callable:
         return lstsq
     else:
         return cp.linalg.lstsq
+
+
+def get_sp_fft(x: npt.ArrayLike) -> Callable:
+    """Returns correct scipy.fft module based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Array
+
+    Returns
+    -------
+    mod : :obj:`func`
+        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+
+    """
+    if not deps.cupy_enabled:
+        return sp_fft
+
+    if cp.get_array_module(x) == np:
+        return sp_fft
+    else:
+        return cp_fft
 
 
 def get_complex_dtype(dtype: DTypeLike) -> DTypeLike:
