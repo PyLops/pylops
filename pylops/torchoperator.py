@@ -37,7 +37,7 @@ class TorchOperator(LinearOperator):
     batch : :obj:`bool`, optional
         Input has single sample (``False``) or batch of samples (``True``).
         If ``batch==False`` the input must be a 1-d Torch tensor,
-        if `batch==False`` the input must be a 2-d Torch tensor with
+        if `batch==True`` the input must be a 2-d Torch tensor with
         batches along the first dimension
     device : :obj:`str`, optional
         Device to be used when applying operator (``cpu`` or ``gpu``)
