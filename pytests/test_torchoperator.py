@@ -39,7 +39,7 @@ def test_TorchOperator(par):
 
 @pytest.mark.parametrize("par", [(par1)])
 def test_TorchOperator_batch(par):
-    """Apply forward for input with multiple samples (= batch)"""
+    """Apply forward for input with multiple samples (= batch) and flattened arrays"""
     Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])))
     Top = TorchOperator(Dop, batch=True)
 
@@ -48,6 +48,22 @@ def test_TorchOperator_batch(par):
     xt.requires_grad = True
 
     y = Dop.matmat(x.T).T
+    yt = Top.apply(xt)
+
+    assert_array_equal(y, yt.detach().cpu().numpy())
+
+
+@pytest.mark.parametrize("par", [(par1)])
+def test_TorchOperator_batch_nd(par):
+    """Apply forward for input with multiple samples (= batch) and nd-arrays"""
+    Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])), otherdims=(2,))
+    Top = TorchOperator(Dop, batch=True, dims=(par["nx"], 2))
+
+    x = np.random.normal(0.0, 1.0, (4, par["nx"], 2))
+    xt = torch.from_numpy(x)
+    xt.requires_grad = True
+
+    y = (Dop @ x.transpose(1, 2, 0)).transpose(2, 0, 1)
     yt = Top.apply(xt)
 
     assert_array_equal(y, yt.detach().cpu().numpy())
