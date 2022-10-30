@@ -69,8 +69,8 @@ class TorchOperator(LinearOperator):
         self.transpf = np.roll(np.arange(2 if dims is None else len(self.dims) + 1), -1)
         self.transpb = np.roll(np.arange(2 if dims is None else len(self.dims) + 1), 1)
         if not batch:
-            self.matvec = Op.matvec
-            self.rmatvec = Op.rmatvec
+            self.matvec = lambda x: Op @ x
+            self.rmatvec = lambda x: Op.H @ x
         else:
             self.matvec = lambda x: (Op @ x.transpose(self.transpf)).transpose(
                 self.transpb
