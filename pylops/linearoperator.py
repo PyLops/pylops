@@ -318,7 +318,13 @@ class LinearOperator(spLinearOperator):
     def __rmul__(self, x: float) -> LinearOperator:
         if np.isscalar(x):
             Op = aslinearoperator(_ScaledLinearOperator(self, x))
-            self._copy_attributes(Op)
+            self._copy_attributes(
+                Op,
+                exclude=[
+                    "explicit",
+                ],
+            )
+            Op.explicit = False
             return Op
         else:
             return NotImplemented
@@ -326,7 +332,13 @@ class LinearOperator(spLinearOperator):
     def __pow__(self, p: int) -> LinearOperator:
         if np.isscalar(p):
             Op = aslinearoperator(_PowerLinearOperator(self, p))
-            self._copy_attributes(Op)
+            self._copy_attributes(
+                Op,
+                exclude=[
+                    "explicit",
+                ],
+            )
+            Op.explicit = False
             return Op
         else:
             return NotImplemented
@@ -335,8 +347,14 @@ class LinearOperator(spLinearOperator):
         if isinstance(x, spLinearOperator):
             Op = aslinearoperator(_SumLinearOperator(self, x))
             Opx = aslinearoperator(x)
-            self._copy_attributes(Op)
+            self._copy_attributes(
+                Op,
+                exclude=[
+                    "explicit",
+                ],
+            )
             Op.clinear = Op.clinear and Opx.clinear
+            Op.explicit = False
             # Replace if shape-like
             if len(self.dims) == 1:
                 Op.dims = Opx.dims
@@ -348,7 +366,13 @@ class LinearOperator(spLinearOperator):
 
     def __neg__(self) -> LinearOperator:
         Op = aslinearoperator(_ScaledLinearOperator(self, -1))
-        self._copy_attributes(Op)
+        self._copy_attributes(
+            Op,
+            exclude=[
+                "explicit",
+            ],
+        )
+        Op.explicit = False
         return Op
 
     def __sub__(self, x):
@@ -356,14 +380,16 @@ class LinearOperator(spLinearOperator):
 
     def _adjoint(self) -> LinearOperator:
         Op = aslinearoperator(super()._adjoint())
-        self._copy_attributes(Op, exclude=["dims", "dimsd", "name"])
+        self._copy_attributes(Op, exclude=["dims", "dimsd", "explicit", "name"])
+        Op.explicit = False
         Op.dims = self.dimsd
         Op.dimsd = self.dims
         return Op
 
     def _transpose(self) -> LinearOperator:
         Op = aslinearoperator(super()._transpose())
-        self._copy_attributes(Op, exclude=["dims", "dimsd", "name"])
+        self._copy_attributes(Op, exclude=["dims", "dimsd", "explicit", "name"])
+        Op.explicit = False
         Op.dims = self.dimsd
         Op.dimsd = self.dims
         return Op
@@ -505,13 +531,20 @@ class LinearOperator(spLinearOperator):
         """
         if isinstance(x, LinearOperator):
             Op = aslinearoperator(_ProductLinearOperator(self, x))
-            self._copy_attributes(Op, exclude=["dims", "name"])
+            self._copy_attributes(Op, exclude=["dims", "explicit", "name"])
             Op.clinear = Op.clinear and x.clinear
+            Op.explicit = False
             Op.dims = x.dims
             return Op
         elif np.isscalar(x):
             Op = aslinearoperator(_ScaledLinearOperator(self, x))
-            self._copy_attributes(Op)
+            self._copy_attributes(
+                Op,
+                exclude=[
+                    "explicit",
+                ],
+            )
+            Op.explicit = False
             return Op
         else:
             if not get_ndarray_multiplication() and (
