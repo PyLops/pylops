@@ -123,7 +123,6 @@ class CallbackIRLS(pylops.optimization.callback.Callbacks):
         self.rw_hist = []
 
     def on_step_end(self, solver, x):
-        print(solver.iiter)
         if solver.iiter > 1:
             self.xirls_hist.append(x)
             self.rw_hist.append(solver.rw)

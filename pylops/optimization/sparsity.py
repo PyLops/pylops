@@ -26,6 +26,7 @@ def irls(
     epsR: float = 1e-10,
     epsI: float = 1e-10,
     tolIRLS: float = 1e-10,
+    warm: bool = False,
     kind: str = "data",
     show: bool = False,
     itershow: List[int] = [10, 10, 10],
@@ -68,8 +69,11 @@ def irls(
     tolIRLS : :obj:`float`, optional
         Tolerance. Stop outer iterations if difference between inverted model
         at subsequent iterations is smaller than ``tolIRLS``
+    warm  : :obj:`bool`, optional
+        Warm start each inversion inner step with previous estimate (``True``) or not (``False``).
+        This only applies to ``kind="data"`` and ``kind="datamodel"``
     kind : :obj:`str`, optional
-        Kind of solver (``data`` or ``model``)
+        Kind of solver (``model``, ``data`` or ``datamodel``)
     show : :obj:`bool`, optional
         Display logs
     itershow : :obj:`list`, optional
@@ -109,6 +113,7 @@ def irls(
         epsR=epsR,
         epsI=epsI,
         tolIRLS=tolIRLS,
+        warm=warm,
         kind=kind,
         show=show,
         itershow=itershow,
