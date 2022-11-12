@@ -15,3 +15,5 @@ Contributors
 *  `Alan Richardson <https://github.com/ar4>`_, ar4
 *  `BurningKarl <https://github.com/BurningKarl>`_, BurningKarl
 *  `Nick Luiken <https://github.com/NickLuiken>`_, NickLuiken
+*  `Muhammad Izzatullah <https://github.com/izzatum>`_, izzatum
+*  `Juan Daniel Romero <https://github.com/jdromerom>`_, jdromerom
