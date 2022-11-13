@@ -2,7 +2,7 @@ __all__ = [
     "TorchOperator",
 ]
 
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
@@ -17,7 +17,7 @@ else:
         'the twoway module run "pip install torch" or'
         '"conda install -c pytorch torch".'
     )
-from pylops.utils.typing import InputDimsLike, TensorTypeLike
+from pylops.utils.typing import TensorTypeLike
 
 
 class TorchOperator(LinearOperator):
@@ -39,9 +39,11 @@ class TorchOperator(LinearOperator):
     batch : :obj:`bool`, optional
         Input has single sample (``False``) or batch of samples (``True``).
         If ``batch==False`` the input must be a 1-d Torch tensor or a tensor of
-        size equal to ``Op.dims``; if ``batch==True`` the input must be a 2-d Torch tensor with
-        batches along the first dimension or a tensor of
-        size equal to ``[nbatch, *Op.dims]`` where ``nbatch`` is the size of the batch.
+        size equal to ``Op.dims``; if ``batch==True`` the input must be a 2-d Torch
+        tensor with batches along the first dimension or a tensor of size equal to
+        ``[nbatch, *Op.dims]`` where ``nbatch`` is the size of the batch
+    flatten : :obj:`bool`, optional
+        Input is flattened along ``Op.dims`` (``True``) or not (``False``)
     device : :obj:`str`, optional
         Device to be used when applying operator (``cpu`` or ``gpu``)
     devicetorch : :obj:`str`, optional
@@ -53,7 +55,7 @@ class TorchOperator(LinearOperator):
         self,
         Op: LinearOperator,
         batch: bool = False,
-        dims: Optional[Union[int, InputDimsLike]] = None,
+        flatten: Optional[bool] = True,
         device: str = "cpu",
         devicetorch: str = "cpu",
     ) -> None:
@@ -66,8 +68,8 @@ class TorchOperator(LinearOperator):
         )
         # define transpose indices to bring batch to last dimension before applying
         # pylops forward and adjoint (this will call matmat and rmatmat)
-        self.transpf = np.roll(np.arange(2 if dims is None else len(self.dims) + 1), -1)
-        self.transpb = np.roll(np.arange(2 if dims is None else len(self.dims) + 1), 1)
+        self.transpf = np.roll(np.arange(2 if flatten else len(self.dims) + 1), -1)
+        self.transpb = np.roll(np.arange(2 if flatten else len(self.dims) + 1), 1)
         if not batch:
             self.matvec = lambda x: Op @ x
             self.rmatvec = lambda x: Op.H @ x

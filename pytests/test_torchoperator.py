@@ -57,7 +57,7 @@ def test_TorchOperator_batch(par):
 def test_TorchOperator_batch_nd(par):
     """Apply forward for input with multiple samples (= batch) and nd-arrays"""
     Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])), otherdims=(2,))
-    Top = TorchOperator(Dop, batch=True, dims=(par["nx"], 2))
+    Top = TorchOperator(Dop, batch=True, flatten=False)
 
     x = np.random.normal(0.0, 1.0, (4, par["nx"], 2))
     xt = torch.from_numpy(x)
