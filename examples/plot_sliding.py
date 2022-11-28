@@ -229,10 +229,10 @@ for i in range(0, 305, 61):
 # :math:`n_y \times n_x \times n_t` composed of 3 hyperbolic events
 
 par = {
-    "oy": -15,
+    "oy": -13,
     "dy": 2,
     "ny": 14,
-    "ox": -18,
+    "ox": -17,
     "dx": 2,
     "nx": 18,
     "ot": 0,
