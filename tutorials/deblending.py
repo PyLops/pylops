@@ -49,27 +49,11 @@ import pylops
 np.random.seed(10)
 plt.close("all")
 
-
-###############################################################################
-# Let's start by defining a blending operator
-def Blending(nt, ns, dt, overlap, times, dtype="float64"):
-    """Blending operator"""
-    pad = int(overlap * nt)
-    OpShiftPad = []
-    for i in range(ns):
-        PadOp = pylops.Pad(nt, (pad * i, pad * (ns - 1 - i)), dtype=dtype)
-        ShiftOp = pylops.signalprocessing.Shift(
-            pad * (ns - 1) + nt, times[i], axis=0, sampling=dt, real=False, dtype=dtype
-        )
-        OpShiftPad.append(ShiftOp * PadOp)
-    return pylops.HStack(OpShiftPad)
-
-
 ###############################################################################
 # We can now load and display a small portion of the MobilAVO dataset composed
 # of 60 shots and a single receiver. This data is unblended.
 
-data = np.load("../testdata/deblending/mobil.npy")
+data = np.load("../../pylops/testdata/deblending/mobil.npy")
 ns, nt = data.shape
 
 dt = 0.004
@@ -98,11 +82,15 @@ plt.tight_layout()
 # some burst like noise in the data. Deblending can hopefully fix this.
 
 overlap = 0.5
-pad = int(overlap * nt)
 ignition_times = 2.0 * np.random.rand(ns) - 1.0
-Bop = Blending(nt, ns, dt, overlap, ignition_times, dtype="complex128")
-data_blended = Bop * data.ravel()
-data_pseudo = Bop.H * data_blended.ravel()
+ignition_times = np.arange(0, overlap * nt * ns, overlap * nt) * dt + ignition_times
+ignition_times[0] = 0.0
+Bop = pylops.waveeqprocessing.Blending(
+    nt, 1, ns, dt, ignition_times, kind="continous", dtype="complex128"
+)
+
+data_blended = Bop * data[:, np.newaxis]
+data_pseudo = Bop.H * data_blended
 data_pseudo = data_pseudo.reshape(ns, nt)
 
 fig, ax = plt.subplots(1, 1, figsize=(12, 8))
@@ -149,16 +137,15 @@ alpha = 1.0 / maxeig
 niter = 60
 decay = (np.exp(-0.05 * np.arange(niter)) + 0.2) / 1.2
 
-with pylops.disabled_ndarray_multiplication():
-    p_inv = pylops.optimization.sparsity.fista(
-        Op,
-        data_blended.ravel(),
-        niter=niter,
-        eps=5e0,
-        alpha=alpha,
-        decay=decay,
-        show=True,
-    )[0]
+p_inv = pylops.optimization.sparsity.fista(
+    Op,
+    data_blended.ravel(),
+    niter=niter,
+    eps=5e0,
+    alpha=alpha,
+    decay=decay,
+    show=True,
+)[0]
 data_inv = Sop * p_inv
 data_inv = data_inv.reshape(ns, nt)
 
