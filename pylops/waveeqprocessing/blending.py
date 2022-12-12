@@ -1,12 +1,15 @@
 __all__ = ["Blending"]
 
+from typing import Optional
+
 import numpy as np
 
 from pylops import LinearOperator
-from pylops.basicoperators import Block, BlockDiag, HStack, Pad
+from pylops.basicoperators import BlockDiag, HStack, Pad
 from pylops.signalprocessing import Shift
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, NDArray
 
 
 class _ContinuousBlending(LinearOperator):
@@ -30,6 +33,8 @@ class _ContinuousBlending(LinearOperator):
         Number of processors used when applying operator
     dtype : :obj:`str`, optional
         Operator dtype
+    name : :obj:`str`, optional
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     """
 
@@ -101,7 +106,18 @@ class _ContinuousBlending(LinearOperator):
         return deblended_data
 
 
-class _GroupBlending(LinearOperator):
+def _GroupBlending(
+    nt,
+    nr,
+    ns,
+    dt,
+    times,
+    group_size,
+    n_groups,
+    nproc=1,
+    dtype="float64",
+    name: str = "B",
+):
     """Group blending operator
 
     Blend seismic shot gathers in group blending mode based on pre-defined
@@ -121,81 +137,33 @@ class _GroupBlending(LinearOperator):
     dt : :obj:`float`
         Time sampling in seconds
     times : :obj:`np.ndarray`
-        Dithering ignition times.
+        Dithering ignition times. This should have dimensions :math`n_{groups} \times group_{size}`,
+        where each row contains the firing times for every group.
     group_size : :obj:`int`
         The number of sources per group
     n_groups : :obj:`int`
         The number of groups
+    nproc : :obj:`int`, optional
+        Number of processors used when applying operator
     dtype : :obj:`str`, optional
         Operator dtype
-
     """
-
-    def __init__(
-        self,
-        nt,
-        nr,
-        ns,
-        dt,
-        times,
-        group_size,
-        n_groups,
-        dtype="float64",
-        name: str = "B",
-    ):
-        self.dtype = np.dtype(dtype)
-        self.nt = nt
-        self.nr = nr
-        self.ns = ns
-        self.dt = dt
-        self.group_size = group_size
-        self.n_groups = n_groups
-        self.times = times
-        # Define shift operators
-        self.ShiftOps = []
-        for i in range(n_groups):
-            for j in range(group_size):
-                self.ShiftOps.append(
-                    Shift(
-                        (self.nr, self.nt),
-                        self.times[j, i],
-                        axis=1,
-                        sampling=self.dt,
-                        real=False,
-                        dtype=dtype,
-                    )
-                )
-        super().__init__(
-            dtype=np.dtype(dtype),
-            dims=(self.ns, self.nr, self.nt),
-            dimsd=(self.n_groups, self.nr, self.nt),
-            name=name,
-        )
-
-    @reshaped()
-    def _matvec(self, x):
-        ncp = get_array_module(x)
-        blended_data = ncp.zeros((self.n_groups, self.nr, self.nt), dtype=self.dtype)
-        for i in range(self.n_groups):
-            # shift n sources and sum them together
-            shifted_signal = ncp.zeros((self.nr, self.nt), dtype=self.dtype)
-            for j in range(self.group_size):
-                shot = x[i * self.group_size + j, :, :]
-                shifted_signal += self.ShiftOps[i * self.group_size + j] * shot
-            blended_data[i, :, :] = shifted_signal
-        return blended_data
-
-    @reshaped()
-    def _rmatvec(self, x):
-        ncp = get_array_module(x)
-        deblended_data = ncp.zeros((self.ns, self.nr, self.nt), dtype=self.dtype)
-        for i in range(self.n_groups):
-            # shift n sources and sum them together
-            shot = x[i, :, :]
-            for j in range(self.group_size):
-                shifted_signal = self.ShiftOps[i * self.group_size + j].H * shot
-                deblended_data[i * self.group_size + j, :, :] = shifted_signal
-        return deblended_data
+    if times.shape[0] != group_size:
+        raise ValueError("The first dimension of times must equal group_size")
+    Bop = []
+    for i in range(n_groups):
+        Hop = []
+        for j in range(group_size):
+            ShiftOp = Shift(
+                (nr, nt), times[j, i], axis=1, sampling=dt, real=False, dtype=dtype
+            )
+            Hop.append(ShiftOp)
+        Bop.append(HStack(Hop))
+    Bop = BlockDiag(Bop, nproc=nproc)
+    Bop.dims = (ns, nr, nt)
+    Bop.dimsd = (n_groups, nr, nt)
+    Bop.name = name
+    return Bop
 
 
 def _HalfBlending(
@@ -229,11 +197,14 @@ def _HalfBlending(
         Number of processors used when applying operator
     dtype : :obj:`str`, optional
         Operator dtype
+    name : :obj:`str`, optional
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+
     """
     if times.shape[0] != group_size:
         raise ValueError("The first dimension of times must equal group_size")
 
-    H = []
+    Bop = []
     for j in range(group_size):
         OpShift = []
         for i in range(n_groups):
@@ -241,9 +212,9 @@ def _HalfBlending(
                 (nr, nt), times[j, i], axis=1, sampling=dt, real=False, dtype=dtype
             )
             OpShift.append(ShiftOp)
-        D = BlockDiag(OpShift, nproc=nproc)
-        H.append(D)
-    Bop = HStack(H)
+        Dop = BlockDiag(OpShift, nproc=nproc)
+        Bop.append(Dop)
+    Bop = HStack(Bop)
     Bop.dims = (ns, nr, nt)
     Bop.dimsd = (n_groups, nr, nt)
     Bop.name = name
@@ -251,17 +222,18 @@ def _HalfBlending(
 
 
 def Blending(
-    nt,
-    nr,
-    ns,
-    dt,
-    times,
-    group_size=None,
-    n_groups=None,
-    kind="continuous",
-    nproc=1,
-    dtype="float64",
-):
+    nt: int,
+    nr: int,
+    ns: int,
+    dt: float,
+    times: NDArray,
+    group_size: Optional[NDArray] = None,
+    n_groups: Optional[NDArray] = None,
+    kind: str = "continuous",
+    nproc: int = 1,
+    dtype: DTypeLike = "float64",
+    name: str = "B",
+) -> None:
     r"""Blending operator.
 
     Blend seismic shot gathers in either of the following blending modes: continuous, group, or half. The size of input
@@ -290,9 +262,13 @@ def Blending(
     kind : :obj:`str`, optional
         Blending type: `continuous`, `group`, or `half`
     nproc : :obj:`int`, optional
-        Number of processors used when applying the operator (only for ``kind=="half"``)
+        Number of processors used when applying the operator (only for ``kind="group"`` or ``kind=="half"``)
     dtype : :obj:`str`, optional
         Operator dtype
+    name : :obj:`str`, optional
+        .. versionadded:: 2.0.0
+
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Returns
     -------
@@ -338,12 +314,32 @@ def Blending(
     """
 
     if kind == "continuous":
-        Bop = _ContinuousBlending(nt, nr, ns, dt, times, dtype=dtype)
+        Bop = _ContinuousBlending(nt, nr, ns, dt, times, dtype=dtype, name=name)
     elif kind == "group":
-        Bop = _GroupBlending(nt, nr, ns, dt, times, group_size, n_groups, dtype=dtype)
+        Bop = _GroupBlending(
+            nt,
+            nr,
+            ns,
+            dt,
+            times,
+            group_size,
+            n_groups,
+            nproc=nproc,
+            dtype=dtype,
+            name=name,
+        )
     elif kind == "half":
         Bop = _HalfBlending(
-            nt, nr, ns, dt, times, group_size, n_groups, nproc=nproc, dtype=dtype
+            nt,
+            nr,
+            ns,
+            dt,
+            times,
+            group_size,
+            n_groups,
+            nproc=nproc,
+            dtype=dtype,
+            name=name,
         )
     else:
         raise NotImplementedError("kind must be continuous, group, or half.")

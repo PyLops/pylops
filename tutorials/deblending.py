@@ -21,7 +21,7 @@ Here :math:`\mathbf{d} = [\mathbf{d}_1^T, \mathbf{d}_2^T,\ldots,
 \boldsymbol\Phi_N]` is the blending operator, :math:`\mathbf{d}^b` is the
 so-called supergather than contains all shots superimposed to each other.
 
-In order to successfully invert this severely underdetermined problem, two key
+In order to successfully invert this severely under-determined problem, two key
 ingredients must be introduced:
 
 - the firing time of each source (i.e., shifts of the blending operator) must be
@@ -86,7 +86,7 @@ ignition_times = 2.0 * np.random.rand(ns) - 1.0
 ignition_times = np.arange(0, overlap * nt * ns, overlap * nt) * dt + ignition_times
 ignition_times[0] = 0.0
 Bop = pylops.waveeqprocessing.Blending(
-    nt, 1, ns, dt, ignition_times, kind="continous", dtype="complex128"
+    nt, 1, ns, dt, ignition_times, kind="continuous", dtype="complex128"
 )
 
 data_blended = Bop * data[:, np.newaxis]
