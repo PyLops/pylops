@@ -53,7 +53,7 @@ plt.close("all")
 # We can now load and display a small portion of the MobilAVO dataset composed
 # of 60 shots and a single receiver. This data is unblended.
 
-data = np.load("../../pylops/testdata/deblending/mobil.npy")
+data = np.load("../testdata/deblending/mobil.npy")
 ns, nt = data.shape
 
 dt = 0.004
