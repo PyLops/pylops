@@ -38,7 +38,16 @@ class _ContinuousBlending(LinearOperator):
 
     """
 
-    def __init__(self, nt, nr, ns, dt, times, dtype="float64", name: str = "B"):
+    def __init__(
+        self,
+        nt: int,
+        nr: int,
+        ns: int,
+        dt: float,
+        times: NDArray,
+        dtype: DTypeLike = "float64",
+        name: str = "B",
+    ) -> None:
         self.dtype = np.dtype(dtype)
         self.nt = nt
         self.nr = nr
@@ -78,7 +87,7 @@ class _ContinuousBlending(LinearOperator):
         )
 
     @reshaped()
-    def _matvec(self, x):
+    def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         blended_data = ncp.zeros((self.nr, self.nttot), dtype=self.dtype)
         for i, shift_int in enumerate(self.shifts):
@@ -90,7 +99,7 @@ class _ContinuousBlending(LinearOperator):
         return blended_data
 
     @reshaped()
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         deblended_data = ncp.zeros((self.ns, self.nr, self.nt), dtype=self.dtype)
         for i, shift_int in enumerate(self.shifts):
@@ -107,17 +116,17 @@ class _ContinuousBlending(LinearOperator):
 
 
 def _GroupBlending(
-    nt,
-    nr,
-    ns,
-    dt,
-    times,
-    group_size,
-    n_groups,
-    nproc=1,
-    dtype="float64",
+    nt: int,
+    nr: int,
+    ns: int,
+    dt: float,
+    times: NDArray,
+    group_size: int,
+    n_groups: int,
+    nproc: int = 1,
+    dtype: DTypeLike = "float64",
     name: str = "B",
-):
+) -> LinearOperator:
     """Group blending operator
 
     Blend seismic shot gathers in group blending mode based on pre-defined
@@ -167,8 +176,17 @@ def _GroupBlending(
 
 
 def _HalfBlending(
-    nt, nr, ns, dt, times, group_size, n_groups, nproc=1, dtype="float64", name="B"
-):
+    nt: int,
+    nr: int,
+    ns: int,
+    dt: float,
+    times: NDArray,
+    group_size: int,
+    n_groups: int,
+    nproc: int = 1,
+    dtype: DTypeLike = "float64",
+    name: str = "B",
+) -> LinearOperator:
     """Half blending operator
 
     Blend seismic shot gathers in half blending mode based on pre-defined
