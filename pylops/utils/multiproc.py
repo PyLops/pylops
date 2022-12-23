@@ -1,7 +1,7 @@
 __all__ = ["scalability_test"]
 
 import time
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy.typing as npt
 
@@ -9,7 +9,7 @@ import numpy.typing as npt
 def scalability_test(
     Op,
     x: npt.ArrayLike,
-    workers: List[int] = [1, 2, 4],
+    workers: Optional[List[int]] = None,
     forward: bool = True,
 ) -> Tuple[List[float], List[float]]:
     r"""Scalability test.
@@ -25,7 +25,7 @@ def scalability_test(
     x : :obj:`numpy.ndarray`, optional
         Input vector.
     workers : :obj:`list`, optional
-        Number of workers to test out.
+        Number of workers to test out. Defaults to `[1, 2, 4]`.
     forward : :obj:`bool`, optional
         Apply forward (``True``) or adjoint (``False``)
 
@@ -37,6 +37,8 @@ def scalability_test(
         Speedup as function of workers
 
     """
+    if workers is None:
+        workers = [1, 2, 4]
     compute_times = []
     speedup = []
     for nworkers in workers:
