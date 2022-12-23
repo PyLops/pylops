@@ -143,7 +143,7 @@ model and the same hyperparameters of the setup method and runs the entire optim
 
 .. code-block:: python
 
-    def solve(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10]):
+    def solve(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=(10, 10, 10)):
         x = self.setup(y=y, x0=x0, niter=niter, tol=tol, show=show)
         x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)
@@ -169,7 +169,7 @@ input and returns some of the most valuable properties of the class-based solver
 
 .. code-block:: python
 
-    def cg(Op, y, x0, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10], callback=None):
+    def cg(Op, y, x0, niter=10, tol=1e-4, show=False, itershow=(10, 10, 10), callback=None):
         cgsolve = CG(Op)
         if callback is not None:
             cgsolve.callback = callback

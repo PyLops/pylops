@@ -151,7 +151,7 @@ class CG(Solver):
         x: NDArray,
         niter: Optional[int] = None,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> NDArray:
         r"""Run solver
 
@@ -164,7 +164,7 @@ class CG(Solver):
             provided in the setup call
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -215,7 +215,7 @@ class CG(Solver):
         niter: int = 10,
         tol: float = 1e-4,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
         r"""Run entire solver
 
@@ -232,7 +232,7 @@ class CG(Solver):
             Tolerance on residual norm
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -412,7 +412,7 @@ class CGLS(Solver):
         x: NDArray,
         niter: Optional[int] = None,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> NDArray:
         r"""Run solver
 
@@ -425,7 +425,7 @@ class CGLS(Solver):
             provided in the setup call
         show : :obj:`bool`, optional
             Display iterations log
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -481,7 +481,7 @@ class CGLS(Solver):
         damp: float = 0.0,
         tol: float = 1e-4,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, int, float, float, NDArray]:
         r"""Run entire solver
 
@@ -501,7 +501,7 @@ class CGLS(Solver):
             Tolerance on residual norm
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -886,7 +886,7 @@ class LSQR(Solver):
         x: NDArray,
         niter: Optional[int] = None,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> NDArray:
         r"""Run solver
 
@@ -899,7 +899,7 @@ class LSQR(Solver):
             provided in the setup call
         show : :obj:`bool`, optional
             Display iterations log
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -957,7 +957,7 @@ class LSQR(Solver):
         niter: int = 10,
         calc_var: bool = True,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[
         NDArray,
         int,
@@ -1001,7 +1001,7 @@ class LSQR(Solver):
             \epsilon^2\mathbf{I})^{-1}`.
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
