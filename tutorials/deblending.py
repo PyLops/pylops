@@ -5,9 +5,9 @@ The cocktail party problem arises when sounds from different sources mix before 
 (or any recording device), requiring the brain (or any hardware in the recording device) to estimate
 individual sources from the received mixture. In seismic acquisition, an analog problem is present
 when multiple sources are fired simultaneously. This family of acquisition methods is usually referred to as
-simultaneous shooting and the problem of separating the blendend shot gathers into their individual
+simultaneous shooting and the problem of separating the blended shot gathers into their individual
 components is called deblending. Whilst various firing strategies can be adopted, in this example
-we consider the continuos blending problem where a single source is fired sequentially at an interval
+we consider the continuous blending problem where a single source is fired sequentially at an interval
 shorter than the amount of time required for waves to travel into the Earth and come back.
 
 Simply stated the forward problem can be written as:
@@ -26,7 +26,7 @@ ingredients must be introduced:
 
 - the firing time of each source (i.e., shifts of the blending operator) must be
   chosen to be dithered around a nominal regular, periodic firing interval.
-  In our case, we consider shots of duration :math:`T=4s`, regular firing time of :math:`T_s=2s`
+  In our case, we consider shots of duration :math:`T=4\,\text{s}`, regular firing time of :math:`T_s=2\,\text{s}`
   and a dithering code as follows :math:`\Delta t = U(-1,1)`;
 - prior information about the data to reconstruct, either in the form of regularization
   or preconditioning must be introduced. In our case we will use a patch-FK transform
