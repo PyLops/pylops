@@ -12,14 +12,18 @@ def _Block(
     dtype: Optional[DTypeLike] = None,
     _HStack=HStack,
     _VStack=VStack,
-    args_HStack: dict = {},
-    args_VStack: dict = {},
+    args_HStack: Optional[dict] = None,
+    args_VStack: Optional[dict] = None,
 ) -> LinearOperator:
     """Block operator.
 
     Used to be able to provide operators from different libraries to
     Block.
     """
+    if args_HStack is None:
+        args_HStack = {}
+    if args_VStack is None:
+        args_VStack = {}
     hblocks = [_HStack(hblock, dtype=dtype, **args_HStack) for hblock in ops]
     return _VStack(hblocks, dtype=dtype, **args_VStack)
 
