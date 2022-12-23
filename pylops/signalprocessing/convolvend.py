@@ -120,7 +120,7 @@ class ConvolveND(LinearOperator):
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
         # correct type of h if different from x and choose methods accordingly
-        if type(self.h) != type(x):
+        if type(self.h) is not type(x):
             self.h = to_cupy_conditional(x, self.h)
             self.convolve = get_convolve(self.h)
             self.correlate = get_correlate(self.h)
@@ -129,7 +129,7 @@ class ConvolveND(LinearOperator):
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
         # correct type of h if different from x and choose methods accordingly
-        if type(self.h) != type(x):
+        if type(self.h) is not type(x):
             self.h = to_cupy_conditional(x, self.h)
             self.convolve = get_convolve(self.h)
             self.correlate = get_correlate(self.h)
