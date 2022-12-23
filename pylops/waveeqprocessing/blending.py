@@ -86,7 +86,7 @@ class _ContinuousBlending(LinearOperator):
             name=name,
         )
 
-    @reshaped()
+    @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         blended_data = ncp.zeros((self.nr, self.nttot), dtype=self.dtype)
@@ -98,7 +98,7 @@ class _ContinuousBlending(LinearOperator):
                 blended_data[:, shift_int : shift_int + self.nt + 1] += shifted_data
         return blended_data
 
-    @reshaped()
+    @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         deblended_data = ncp.zeros((self.ns, self.nr, self.nt), dtype=self.dtype)
