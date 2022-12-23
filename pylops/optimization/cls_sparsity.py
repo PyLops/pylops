@@ -1119,7 +1119,6 @@ class ISTA(Solver):
             + f"{costdata:10.3e}   {costdata + costreg:9.3e}  {xupdate:10.3e}"
         )
         print(msg)
-        pass
 
     def setup(
         self,
