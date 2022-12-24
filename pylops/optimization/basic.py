@@ -4,7 +4,7 @@ __all__ = [
     "lsqr",
 ]
 
-from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
 from pylops.optimization.cls_basic import CG, CGLS, LSQR
 from pylops.utils.decorators import add_ndarray_support_to_solver

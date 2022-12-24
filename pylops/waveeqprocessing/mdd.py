@@ -4,7 +4,7 @@ __all__ = [
 ]
 
 import logging
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
