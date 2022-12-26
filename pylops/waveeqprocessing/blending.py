@@ -17,7 +17,7 @@ from pylops.utils.typing import DTypeLike, NDArray
 
 
 class BlendingContinuous(LinearOperator):
-    """Continuous blending operator
+    r"""Continuous blending operator
 
     Blend seismic shot gathers in continuous mode based on pre-defined sequence of firing times.
     The size of input model vector must be :math:`n_s \times n_r \times n_t`, whilst the size of the data
@@ -34,7 +34,7 @@ class BlendingContinuous(LinearOperator):
     dt : :obj:`float`
         Time sampling in seconds
     times : :obj:`np.ndarray`
-        Dithering ignition times. This the firing time after the last shot.
+        Absolute ignition times for each source
     nproc : :obj:`int`, optional
         Number of processors used when applying operator
     dtype : :obj:`str`, optional
@@ -53,6 +53,9 @@ class BlendingContinuous(LinearOperator):
 
       .. math::
         \Phi = [\Phi_1, \Phi_2, ..., \Phi_N]
+
+    where each :math:`\Phi_i` operator applies a time-shift equal to the absolute ignition time provided in the
+    variable ``times``.
 
     """
 
@@ -145,7 +148,7 @@ def BlendingGroup(
     dtype: DTypeLike = "float64",
     name: str = "B",
 ) -> LinearOperator:
-    """Group blending operator
+    r"""Group blending operator
 
     Blend seismic shot gathers in group blending mode based on pre-defined
     sequence of firing times. In group blending a number of spatially closed
@@ -165,8 +168,9 @@ def BlendingGroup(
     dt : :obj:`float`
         Time sampling in seconds
     times : :obj:`np.ndarray`
-        Dithering ignition times. This should have dimensions :math`n_{groups} \times group_{size}`,
-        where each row contains the firing times for every group.
+        Absolute ignition times for each source. This should have dimensions
+        :math:`n_{groups} \times group_{size}`, where each row contains the
+        firing times for every group.
     group_size : :obj:`int`
         The number of sources per group
     n_groups : :obj:`int`
@@ -202,6 +206,9 @@ def BlendingGroup(
         \mathbf{0} & \mathbf{0}  & \mathbf{0} & \mathbf{0} & ... & \Phi_{N-1} & \Phi_{N}
         \end{bmatrix}
 
+    where each :math:`\Phi_i` operator applies a time-shift equal to the absolute ignition time provided in the
+    variable ``times``.
+
     """
     if times.shape[0] != group_size:
         raise ValueError("The first dimension of times must equal group_size")
@@ -233,7 +240,7 @@ def BlendingHalf(
     dtype: DTypeLike = "float64",
     name: str = "B",
 ) -> LinearOperator:
-    """Half blending operator
+    r"""Half blending operator
 
     Blend seismic shot gathers in half blending mode based on pre-defined
     sequence of firing times. This type of blending assumes that there are
@@ -253,8 +260,9 @@ def BlendingHalf(
     dt : :obj:`float`
         Time sampling in seconds
     times : :obj:`np.ndarray`
-        Dithering ignition times. This should have dimensions :math`n_{groups} \times group_{size}`,
-        where each row contains the firing times for every group.
+        Absolute ignition times for each source. This should have dimensions
+        :math`n_{groups} \times group_{size}`, where each row contains the firing
+        times for every group.
     group_size : :obj:`int`
         The number of sources per group
     n_groups : :obj:`int`
@@ -288,6 +296,9 @@ def BlendingHalf(
         ...        & ...          & ...           & ...          & ...         & ...          & ...  \\
         \mathbf{0} & \mathbf{0}   & \mathbf{0}    & \Phi_{N/2-1} & \mathbf{0}  & \mathbf{0}   & \Phi_{N} \\
         \end{bmatrix}
+
+    where each :math:`\Phi_i` operator applies a time-shift equal to the absolute ignition time provided in the
+    variable ``times``.
 
     """
     if times.shape[0] != group_size:
