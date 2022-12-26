@@ -40,6 +40,9 @@ doc:
 docupdate:
 	cd docs && make html && cd ..
 
+servedoc:
+	$(PYTHON) -m http.server --directory docs/build/html/
+
 lint:
 	flake8 docs/ examples/ pylops/ pytests/ tutorials/
 
