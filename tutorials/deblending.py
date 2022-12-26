@@ -85,8 +85,8 @@ overlap = 0.5
 ignition_times = 2.0 * np.random.rand(ns) - 1.0
 ignition_times = np.arange(0, overlap * nt * ns, overlap * nt) * dt + ignition_times
 ignition_times[0] = 0.0
-Bop = pylops.waveeqprocessing.Blending(
-    nt, 1, ns, dt, ignition_times, kind="continuous", dtype="complex128"
+Bop = pylops.waveeqprocessing.BlendingContinuous(
+    nt, 1, ns, dt, ignition_times, dtype="complex128"
 )
 
 data_blended = Bop * data[:, np.newaxis]

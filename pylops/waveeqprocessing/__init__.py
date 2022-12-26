@@ -13,7 +13,9 @@ A list of operators present in pylops.waveeqprocessing:
     UpDownComposition3D             3D Up-down wavefield composition.
     MDC                             Multi-dimensional convolution.
     PhaseShift                      Phase shift operator.
-    Blending                        Blending operator.
+    BlendingContinuous              Continuous Blending operator.
+    BlendingGroup                   Group Blending operator.
+    BlendingHalf                    Half Blending operator.
     Kirchhoff                       Kirchoff demigration operator.
     AcousticWave2D                  Two-way wave equation demigration operator.
 
@@ -49,7 +51,9 @@ __all__ = [
     "WavefieldDecomposition",
     "PhaseShift",
     "Deghosting",
-    "Blending",
+    "BlendingContinuous",
+    "BlendingGroup",
+    "BlendingHalf",
     "Kirchhoff",
     "AcousticWave2D",
     "LSM",

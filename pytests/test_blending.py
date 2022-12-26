@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from pylops.utils import dottest
-from pylops.waveeqprocessing import Blending
+from pylops.waveeqprocessing import BlendingContinuous, BlendingGroup, BlendingHalf
 
 par = {"nt": 101, "ns": 50, "nr": 20, "dtype": "float64"}
 
@@ -21,13 +21,12 @@ def test_Blending_continuous(par):
         np.arange(0, overlap * par["nt"] * par["ns"], overlap * par["nt"]) * dt
     )
     ignition_times[0] = 0.0
-    Bop = Blending(
+    Bop = BlendingContinuous(
         par["nt"],
         par["nr"],
         par["ns"],
         dt,
         ignition_times,
-        kind="continuous",
         dtype=par["dtype"],
     )
     assert dottest(
@@ -45,7 +44,7 @@ def test_Blending_group(par):
     n_groups = par["ns"] // group_size
     ignition_times = 0.8 * np.random.rand(par["ns"])
 
-    Bop = Blending(
+    Bop = BlendingGroup(
         par["nt"],
         par["nr"],
         par["ns"],
@@ -53,7 +52,6 @@ def test_Blending_group(par):
         ignition_times.reshape(group_size, n_groups),
         n_groups=n_groups,
         group_size=group_size,
-        kind="group",
         dtype=par["dtype"],
     )
     assert dottest(
@@ -71,7 +69,7 @@ def test_Blending_half(par):
     n_groups = par["ns"] // group_size
     ignition_times = 0.8 * np.random.rand(par["ns"])
 
-    Bop = Blending(
+    Bop = BlendingHalf(
         par["nt"],
         par["nr"],
         par["ns"],
@@ -79,7 +77,6 @@ def test_Blending_half(par):
         ignition_times.reshape(group_size, n_groups),
         n_groups=n_groups,
         group_size=group_size,
-        kind="half",
         dtype=par["dtype"],
     )
     assert dottest(

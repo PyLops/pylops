@@ -115,13 +115,12 @@ plt.figure(figsize=(12, 4))
 plt.plot(ignition_times, "k")
 plt.title("Continuous blending times")
 
-Bop = pylops.waveeqprocessing.Blending(
+Bop = pylops.waveeqprocessing.BlendingContinuous(
     nt,
     nr_streamer,
     ns_streamer,
     dt,
     ignition_times,
-    kind="continuous",
     dtype="complex128",
 )
 data_blended = Bop * data_streamer
@@ -182,7 +181,7 @@ plt.figure(figsize=(12, 4))
 plt.plot(ignition_times.reshape(group_size, n_groups).T, "k")
 plt.title("Group blending times")
 
-Bop = pylops.waveeqprocessing.Blending(
+Bop = pylops.waveeqprocessing.BlendingGroup(
     nt,
     nr_obc,
     ns_obc,
@@ -190,7 +189,6 @@ Bop = pylops.waveeqprocessing.Blending(
     ignition_times.reshape(group_size, n_groups),
     group_size=group_size,
     n_groups=n_groups,
-    kind="group",
     dtype="complex128",
 )
 data_blended = Bop * data_obc
@@ -247,7 +245,7 @@ plt.figure(figsize=(12, 4))
 plt.plot(ignition_times.reshape(group_size, n_groups).T, "k")
 plt.title("Half blending times")
 
-Bop = pylops.waveeqprocessing.Blending(
+Bop = pylops.waveeqprocessing.BlendingHalf(
     nt,
     nr_obc,
     ns_obc,
@@ -255,7 +253,6 @@ Bop = pylops.waveeqprocessing.Blending(
     ignition_times.reshape(group_size, n_groups),
     group_size=group_size,
     n_groups=n_groups,
-    kind="half",
     dtype="complex128",
     name=None,
 )

@@ -121,7 +121,9 @@ Wave-Equation processing
     PressureToVelocity
     UpDownComposition2D
     UpDownComposition3D
-    Blending
+    BlendingContinuous
+    BlendingHalf
+    BlendingGroup
     MDC
     PhaseShift
     Kirchhoff

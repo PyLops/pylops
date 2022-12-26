@@ -1,4 +1,8 @@
-__all__ = ["Blending"]
+__all__ = [
+    "BlendingContinuous",
+    "BlendingGroup",
+    "BlendingHalf",
+]
 
 from typing import Optional
 
@@ -12,10 +16,12 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
 
 
-class _ContinuousBlending(LinearOperator):
+class BlendingContinuous(LinearOperator):
     """Continuous blending operator
 
     Blend seismic shot gathers in continuous mode based on pre-defined sequence of firing times.
+    The size of input model vector must be :math:`n_s \times n_r \times n_t`, whilst the size of the data
+    vector is :math:`n_r \times n_{t,tot}`.
 
     Parameters
     ----------
@@ -35,6 +41,18 @@ class _ContinuousBlending(LinearOperator):
         Operator dtype
     name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+
+    Notes
+    -----
+    Simultaneous shooting or blending is the process of acquiring seismic data firing consecutive sources
+    at short time intervals (shorter than the time requires for all significant waves to come back from the Earth
+    interior).
+
+    Continuous blending refers to an acquisition scenario where a source towed behind a single vessel is fired at
+    irregular time intervals (``times``) to create a continuous recording whose modelling operator is
+
+      .. math::
+        \Phi = [\Phi_1, \Phi_2, ..., \Phi_N]
 
     """
 
@@ -115,7 +133,7 @@ class _ContinuousBlending(LinearOperator):
         return deblended_data
 
 
-def _GroupBlending(
+def BlendingGroup(
     nt: int,
     nr: int,
     ns: int,
@@ -133,7 +151,8 @@ def _GroupBlending(
     sequence of firing times. In group blending a number of spatially closed
     sources are fired in a short interval. These sources belong to one group.
     The next group of sources is fired after all the data of the previous
-    group has been recorded.
+    group has been recorded. The size of input model vector must be :math:`n_s \times n_r \times n_t`,
+    whilst the size of the data vector is :math:`n_{groups} \times n_r \times n_{t,tot}`.
 
     Parameters
     ----------
@@ -156,6 +175,33 @@ def _GroupBlending(
         Number of processors used when applying operator
     dtype : :obj:`str`, optional
         Operator dtype
+    name : :obj:`str`, optional
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+
+    Returns
+    -------
+    Bop : :obj:`pylops.LinearOperator`
+        Blending operator
+
+    Notes
+    -----
+    Simultaneous shooting or blending is the process of acquiring seismic data firing consecutive sources
+    at short time intervals (shorter than the time requires for all significant waves to come back from the Earth
+    interior).
+
+    Group blending refers to an acquisition scenario where two or more sources are towed behind a single vessel
+    and fired at short time differences. The same experiment is repeated :math:`n_{groups}` times to create
+    :math:`n_{groups}` blended recordings. For the case of 2 sources and an overall number of
+    :math:`N=n_{groups}*group_{size}` shots, the modelling operator is
+
+    .. math::
+        \Phi = \begin{bmatrix}
+        \Phi_1     & \Phi_2      & \mathbf{0} & \mathbf{0} & ... & \mathbf{0} & \mathbf{0}  \\
+        \mathbf{0} & \mathbf{0}  & \Phi_3     & \Phi_4     & ... & \mathbf{0} & \mathbf{0}  \\
+        ...        & ...         & ...        & ...        & ... & ...        & ...  \\
+        \mathbf{0} & \mathbf{0}  & \mathbf{0} & \mathbf{0} & ... & \Phi_{N-1} & \Phi_{N}
+        \end{bmatrix}
+
     """
     if times.shape[0] != group_size:
         raise ValueError("The first dimension of times must equal group_size")
@@ -175,7 +221,7 @@ def _GroupBlending(
     return Bop
 
 
-def _HalfBlending(
+def BlendingHalf(
     nt: int,
     nr: int,
     ns: int,
@@ -193,6 +239,8 @@ def _HalfBlending(
     sequence of firing times. This type of blending assumes that there are
     multiple sources at different spatial locations firing at the same time.
     This means that the blended data only partially overlaps in space.
+    The size of input model vector must be :math:`n_s \times n_r \times n_t`,
+    whilst the size of the data vector is :math:`n_{groups} \times n_r \times n_{t,tot}`.
 
     Parameters
     ----------
@@ -218,6 +266,29 @@ def _HalfBlending(
     name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
+    Returns
+    -------
+    Bop : :obj:`pylops.LinearOperator`
+        Blending operator
+
+    Notes
+    -----
+    Simultaneous shooting or blending is the process of acquiring seismic data firing consecutive sources
+    at short time intervals (shorter than the time requires for all significant waves to come back from the Earth
+    interior).
+
+    Half blending refers to an acquisition scenario where two or more vessels, each with a source are fired at
+    short time differences. The same experiment is repeated :math:`n_{groups}` times to create :math:`n_{groups}`
+    blended recordings. For the case of 2 sources and an overall number of :math:`N=n_{groups}*group_{size}` shots
+
+    .. math::
+        \Phi = \begin{bmatrix}
+        \Phi_1     & \mathbf{0}   & \mathbf{0}    & ...          & \Phi_{N/2}  & \mathbf{0}   & \mathbf{0}    &  \\
+        \mathbf{0} & \Phi_2       & \mathbf{0}    &              & \mathbf{0}  & \Phi_{N/2+1} & \mathbf{0}  \\
+        ...        & ...          & ...           & ...          & ...         & ...          & ...  \\
+        \mathbf{0} & \mathbf{0}   & \mathbf{0}    & \Phi_{N/2-1} & \mathbf{0}  & \mathbf{0}   & \Phi_{N} \\
+        \end{bmatrix}
+
     """
     if times.shape[0] != group_size:
         raise ValueError("The first dimension of times must equal group_size")
@@ -236,129 +307,4 @@ def _HalfBlending(
     Bop.dims = (ns, nr, nt)
     Bop.dimsd = (n_groups, nr, nt)
     Bop.name = name
-    return Bop
-
-
-def Blending(
-    nt: int,
-    nr: int,
-    ns: int,
-    dt: float,
-    times: NDArray,
-    group_size: Optional[NDArray] = None,
-    n_groups: Optional[NDArray] = None,
-    kind: str = "continuous",
-    nproc: int = 1,
-    dtype: DTypeLike = "float64",
-    name: str = "B",
-) -> None:
-    r"""Blending operator.
-
-    Blend seismic shot gathers in either of the following blending modes: continuous, group, or half. The size of input
-    model vector must be :math:`n_s \times n_r \times n_t` for any choice of ``kind``, whilst the size of the data
-    vector is :math:`n_r \times n_{t,tot}` for ``kind="continuous"`` and :math:`n_{groups} \times n_r \times n_{t,tot}`
-    for ``kind="group"`` or ``kind="half"``.
-
-    Parameters
-    ----------
-    nt : :obj:`int`
-        Number of time samples
-    nr : :obj:`int`
-        Number of receivers
-    ns : :obj:`int`
-        Number of sources. Equal to group_size x n_groups
-    dt : :obj:`float`
-        Time sampling in seconds
-    times : :obj:`np.ndarray`
-        Dithering ignition times. For both ``kind="group"`` and ``kind="half"``
-        it should have dimensions :math:`n_{groups} \times group_{size}`,
-        where each row contains the firing times for every group.
-    group_size : :obj:`int`, optional
-        Number of sources per group. Not required for ``kind=="continuous"``
-    n_groups : :obj:`int`
-        Number of groups, optional. Not required for ``kind=="continuous"``
-    kind : :obj:`str`, optional
-        Blending type: `continuous`, `group`, or `half`
-    nproc : :obj:`int`, optional
-        Number of processors used when applying the operator (only for ``kind="group"`` or ``kind=="half"``)
-    dtype : :obj:`str`, optional
-        Operator dtype
-    name : :obj:`str`, optional
-        .. versionadded:: 2.0.0
-
-        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
-
-    Returns
-    -------
-    Bop : :obj:`pylops.LinearOperator`
-        Blending operator
-
-    Notes
-    -----
-    Simultaneous shooting or blending is the process of acquiring seismic data firing consecutive sources
-    at short time intervals (shorter than the time requires for all significant waves to come back from the Earth
-    interior). Blending comes in different flavours, and this operator implements three different scenarios:
-
-    - continuous blending: a source towed behind a single vessel is fired at irregular time intervals (``times``) to
-      create a continuous recording
-
-      .. math::
-        \Phi = [\Phi_1, \Phi_2, ..., \Phi_N]
-
-    - group blending: two or more sources are towed behind a single vessel and fired at short time differences. The
-      same experiment is repeated :math:`n_{groups}` times to create :math:`n_{groups}` blended recordings. For the
-      case of 2 sources and an overall number of :math:`N=n_{groups}*group_{size}` shots
-
-    .. math::
-        \Phi = \begin{bmatrix}
-        \Phi_1     & \Phi_2      & \mathbf{0} & \mathbf{0} & ... & \mathbf{0} & \mathbf{0}  \\
-        \mathbf{0} & \mathbf{0}  & \Phi_3     & \Phi_4     & ... & \mathbf{0} & \mathbf{0}  \\
-        ...        & ...         & ...        & ...        & ... & ...        & ...  \\
-        \mathbf{0} & \mathbf{0}  & \mathbf{0} & \mathbf{0} & ... & \Phi_{N-1} & \Phi_{N}
-        \end{bmatrix}
-
-    - half blending: two or more vessels, each with a source are fired at short time differences. The
-      same experiment is repeated :math:`n_{groups}` times to create :math:`n_{groups}` blended recordings. For the
-      case of 2 sources and an overall number of :math:`N=n_{groups}*group_{size}` shots
-
-    .. math::
-        \Phi = \begin{bmatrix}
-        \Phi_1     & \mathbf{0}   & \mathbf{0}    & ...          & \Phi_{N/2}  & \mathbf{0}   & \mathbf{0}    &  \\
-        \mathbf{0} & \Phi_2       & \mathbf{0}    &              & \mathbf{0}  & \Phi_{N/2+1} & \mathbf{0}  \\
-        ...        & ...          & ...           & ...          & ...         & ...          & ...  \\
-        \mathbf{0} & \mathbf{0}   & \mathbf{0}    & \Phi_{N/2-1} & \mathbf{0}  & \mathbf{0}   & \Phi_{N} \\
-        \end{bmatrix}
-
-    """
-
-    if kind == "continuous":
-        Bop = _ContinuousBlending(nt, nr, ns, dt, times, dtype=dtype, name=name)
-    elif kind == "group":
-        Bop = _GroupBlending(
-            nt,
-            nr,
-            ns,
-            dt,
-            times,
-            group_size,
-            n_groups,
-            nproc=nproc,
-            dtype=dtype,
-            name=name,
-        )
-    elif kind == "half":
-        Bop = _HalfBlending(
-            nt,
-            nr,
-            ns,
-            dt,
-            times,
-            group_size,
-            n_groups,
-            nproc=nproc,
-            dtype=dtype,
-            name=name,
-        )
-    else:
-        raise NotImplementedError("kind must be continuous, group, or half.")
     return Bop
