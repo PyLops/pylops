@@ -5,9 +5,9 @@ The cocktail party problem arises when sounds from different sources mix before 
 (or any recording device), requiring the brain (or any hardware in the recording device) to estimate
 individual sources from the received mixture. In seismic acquisition, an analog problem is present
 when multiple sources are fired simultaneously. This family of acquisition methods is usually referred to as
-simultaneous shooting and the problem of separating the blendend shot gathers into their individual
+simultaneous shooting and the problem of separating the blended shot gathers into their individual
 components is called deblending. Whilst various firing strategies can be adopted, in this example
-we consider the continuos blending problem where a single source is fired sequentially at an interval
+we consider the continuous blending problem where a single source is fired sequentially at an interval
 shorter than the amount of time required for waves to travel into the Earth and come back.
 
 Simply stated the forward problem can be written as:
@@ -21,12 +21,12 @@ Here :math:`\mathbf{d} = [\mathbf{d}_1^T, \mathbf{d}_2^T,\ldots,
 \boldsymbol\Phi_N]` is the blending operator, :math:`\mathbf{d}^b` is the
 so-called supergather than contains all shots superimposed to each other.
 
-In order to successfully invert this severely underdetermined problem, two key
+In order to successfully invert this severely under-determined problem, two key
 ingredients must be introduced:
 
 - the firing time of each source (i.e., shifts of the blending operator) must be
   chosen to be dithered around a nominal regular, periodic firing interval.
-  In our case, we consider shots of duration :math:`T=4s`, regular firing time of :math:`T_s=2s`
+  In our case, we consider shots of duration :math:`T=4\,\text{s}`, regular firing time of :math:`T_s=2\,\text{s}`
   and a dithering code as follows :math:`\Delta t = U(-1,1)`;
 - prior information about the data to reconstruct, either in the form of regularization
   or preconditioning must be introduced. In our case we will use a patch-FK transform
@@ -48,22 +48,6 @@ import pylops
 
 np.random.seed(10)
 plt.close("all")
-
-
-###############################################################################
-# Let's start by defining a blending operator
-def Blending(nt, ns, dt, overlap, times, dtype="float64"):
-    """Blending operator"""
-    pad = int(overlap * nt)
-    OpShiftPad = []
-    for i in range(ns):
-        PadOp = pylops.Pad(nt, (pad * i, pad * (ns - 1 - i)), dtype=dtype)
-        ShiftOp = pylops.signalprocessing.Shift(
-            pad * (ns - 1) + nt, times[i], axis=0, sampling=dt, real=False, dtype=dtype
-        )
-        OpShiftPad.append(ShiftOp * PadOp)
-    return pylops.HStack(OpShiftPad)
-
 
 ###############################################################################
 # We can now load and display a small portion of the MobilAVO dataset composed
@@ -98,11 +82,15 @@ plt.tight_layout()
 # some burst like noise in the data. Deblending can hopefully fix this.
 
 overlap = 0.5
-pad = int(overlap * nt)
 ignition_times = 2.0 * np.random.rand(ns) - 1.0
-Bop = Blending(nt, ns, dt, overlap, ignition_times, dtype="complex128")
-data_blended = Bop * data.ravel()
-data_pseudo = Bop.H * data_blended.ravel()
+ignition_times = np.arange(0, overlap * nt * ns, overlap * nt) * dt + ignition_times
+ignition_times[0] = 0.0
+Bop = pylops.waveeqprocessing.BlendingContinuous(
+    nt, 1, ns, dt, ignition_times, dtype="complex128"
+)
+
+data_blended = Bop * data[:, np.newaxis]
+data_pseudo = Bop.H * data_blended
 data_pseudo = data_pseudo.reshape(ns, nt)
 
 fig, ax = plt.subplots(1, 1, figsize=(12, 8))
@@ -149,16 +137,15 @@ alpha = 1.0 / maxeig
 niter = 60
 decay = (np.exp(-0.05 * np.arange(niter)) + 0.2) / 1.2
 
-with pylops.disabled_ndarray_multiplication():
-    p_inv = pylops.optimization.sparsity.fista(
-        Op,
-        data_blended.ravel(),
-        niter=niter,
-        eps=5e0,
-        alpha=alpha,
-        decay=decay,
-        show=True,
-    )[0]
+p_inv = pylops.optimization.sparsity.fista(
+    Op,
+    data_blended.ravel(),
+    niter=niter,
+    eps=5e0,
+    alpha=alpha,
+    decay=decay,
+    show=True,
+)[0]
 data_inv = Sop * p_inv
 data_inv = data_inv.reshape(ns, nt)
 
