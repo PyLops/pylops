@@ -79,8 +79,10 @@ plot_formats = ["png"]
 
 # Sphinx project configuration
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
+exclude_patterns = ["_build", "**.ipynb_checkpoints", "**.ipynb", "**.md5"]
 source_suffix = ".rst"
+
+
 # The encoding of source files.
 source_encoding = "utf-8-sig"
 master_doc = "index"

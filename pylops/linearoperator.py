@@ -268,9 +268,11 @@ class LinearOperator(spLinearOperator):
     def _copy_attributes(
         self,
         dest: LinearOperator,
-        exclude: List[str] = ["name"],
+        exclude: Optional[List[str]] = None,
     ) -> None:
         """Copy attributes from one LinearOperator to another"""
+        if exclude is None:
+            exclude = ["name"]
         attrs = ["dims", "dimsd", "clinear", "explicit", "name"]
         if exclude is not None:
             for item in exclude:
@@ -1285,7 +1287,7 @@ class _PowerLinearOperator(spLinearOperator):
 
     def _power(self, fun: Callable, x: NDArray) -> NDArray:
         res = np.array(x, copy=True)
-        for i in range(self.args[1]):
+        for _ in range(self.args[1]):
             res = fun(res)
         return res
 

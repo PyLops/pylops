@@ -245,7 +245,7 @@ Version 1.11.1
 *Released on: 24/10/2020*
 
 * Fixed import of ``pyfttw`` when not available in
-  :py:class:``pylops.signalprocessing.ChirpRadon3D`
+  :py:class:`pylops.signalprocessing.ChirpRadon3D`
 
 
 Version 1.11.0

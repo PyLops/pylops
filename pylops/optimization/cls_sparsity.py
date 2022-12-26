@@ -507,7 +507,7 @@ class IRLS(Solver):
         x: NDArray,
         nouter: int = 10,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
         **kwargs_solver,
     ) -> NDArray:
         r"""Run solver
@@ -520,7 +520,7 @@ class IRLS(Solver):
             Number of outer iterations.
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -590,7 +590,7 @@ class IRLS(Solver):
         kind: str = "data",
         warm: bool = False,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
         **kwargs_solver,
     ) -> NDArray:
         r"""Run entire solver
@@ -621,7 +621,7 @@ class IRLS(Solver):
             Kind of solver (``data`` or ``model``)
         show : :obj:`bool`, optional
             Display setup log
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -873,7 +873,7 @@ class OMP(Solver):
         x: NDArray,
         cols: InputDimsLike,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, InputDimsLike]:
         r"""Run solver
 
@@ -885,7 +885,7 @@ class OMP(Solver):
             Current list of chosen elements of vector x to be updated by a step of OMP
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -955,7 +955,7 @@ class OMP(Solver):
         sigma: float = 1e-4,
         normalizecols: bool = False,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
         r"""Run entire solver
 
@@ -978,7 +978,7 @@ class OMP(Solver):
             operator are expected to have highly varying norms.
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -1119,7 +1119,6 @@ class ISTA(Solver):
             + f"{costdata:10.3e}   {costdata + costreg:9.3e}  {xupdate:10.3e}"
         )
         print(msg)
-        pass
 
     def setup(
         self,
@@ -1364,7 +1363,7 @@ class ISTA(Solver):
         x: NDArray,
         niter: Optional[int] = None,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> NDArray:
         r"""Run solver
 
@@ -1377,7 +1376,7 @@ class ISTA(Solver):
             provided in the setup call
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -1441,7 +1440,7 @@ class ISTA(Solver):
         decay: Optional[NDArray] = None,
         monitorres: bool = False,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
         r"""Run entire solver
 
@@ -1482,7 +1481,7 @@ class ISTA(Solver):
             Monitor that residual is decreasing
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -1647,7 +1646,7 @@ class FISTA(ISTA):
         x: NDArray,
         niter: Optional[int] = None,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> NDArray:
         r"""Run solver
 
@@ -1660,7 +1659,7 @@ class FISTA(ISTA):
             provided in the setup call
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -2287,7 +2286,7 @@ class SplitBregman(Solver):
         self,
         x: NDArray,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
         **kwargs_lsqr,
     ) -> NDArray:
@@ -2299,7 +2298,7 @@ class SplitBregman(Solver):
             Current model vector to be updated by multiple steps of IRLS
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
@@ -2372,7 +2371,7 @@ class SplitBregman(Solver):
         tau: float = 1.0,
         restart: bool = False,
         show: bool = False,
-        itershow: List[int] = [10, 10, 10],
+        itershow: Tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
         **kwargs_lsqr,
     ) -> Tuple[NDArray, int, NDArray]:
@@ -2421,7 +2420,7 @@ class SplitBregman(Solver):
             be used in all iterations.
         show : :obj:`bool`, optional
             Display logs
-        itershow : :obj:`list`, optional
+        itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.

@@ -34,7 +34,7 @@ After that we define our new object:
 
    class Diagonal(LinearOperator):
 
-followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html/>`_
+followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html>`__
 (starting with ``r"""`` and ending with ``"""``) containing the documentation of the operator. Such docstring should
 contain at least a short description of the operator, a ``Parameters`` section with a detailed description of the
 input parameters and a ``Notes`` section providing a mathematical explanation of the operator. Take a look at
@@ -172,7 +172,7 @@ adheres to the guidelines of PyLops:
 
 - the new class contains at least ``__init__``, ``_matvec`` and ``_matvec`` methods.
 
-- the new class (or function) has a `numpydoc docstring <https://numpydoc.readthedocs.io/>`_ documenting
+- the new class (or function) has a `numpydoc docstring <https://numpydoc.readthedocs.io/>`__ documenting
   at least the input ``Parameters`` and with a ``Notes`` section providing a mathematical explanation of the operator
 
 - a new test has been added to an existing ``test_*.py`` file within the ``pytests`` folder. The test should verify

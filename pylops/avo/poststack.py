@@ -44,9 +44,9 @@ def _PoststackLinearModelling(
     _MatrixMult=MatrixMult,
     _Convolve1D=Convolve1D,
     _FirstDerivative=FirstDerivative,
-    args_MatrixMult={},
-    args_Convolve1D={},
-    args_FirstDerivative={},
+    args_MatrixMult: Optional[dict] = None,
+    args_Convolve1D: Optional[dict] = None,
+    args_FirstDerivative: Optional[dict] = None,
 ):
     """Post-stack linearized seismic modelling operator.
 
@@ -57,6 +57,13 @@ def _PoststackLinearModelling(
     operator.
 
     """
+    if args_MatrixMult is None:
+        args_MatrixMult = {}
+    if args_Convolve1D is None:
+        args_Convolve1D = {}
+    if args_FirstDerivative is None:
+        args_FirstDerivative = {}
+
     ncp = get_array_module(wav)
 
     # check kind is correctly selected

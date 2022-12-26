@@ -171,7 +171,7 @@ class Convolve1D(LinearOperator):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
-        if type(self.h) != type(x):
+        if type(self.h) is not type(x):
             self.h = to_cupy_conditional(x, self.h)
             self.convfunc, self.method = _choose_convfunc(
                 self.h, self.method, self.dims
@@ -180,7 +180,7 @@ class Convolve1D(LinearOperator):
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
-        if type(self.hstar) != type(x):
+        if type(self.hstar) is not type(x):
             self.hstar = to_cupy_conditional(x, self.hstar)
             self.convfunc, self.method = _choose_convfunc(
                 self.hstar, self.method, self.dims

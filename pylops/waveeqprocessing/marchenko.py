@@ -90,18 +90,20 @@ def directwave(
     nr = len(trav)
     nfft = nt if nfft is None or nfft < nt else nfft
     W = np.abs(np.fft.rfft(wav, nfft)) * dt
-    f: NDArray = 2 * np.pi * ncp.arange(nfft) / (dt * nfft)
+    F: NDArray = 2 * np.pi * ncp.arange(nfft) / (dt * nfft)
     direct = ncp.zeros((nfft // 2 + 1, nr), dtype=np.complex128)
-    for it in range(len(W)):
+    for iw, (w, f) in enumerate(zip(W, F)):
         if kind == "2d":
-            # direct[it] = W[it] * np.exp(-1j * ((f[it] * trav) \
-            #             + np.sign(f[it]) * np.pi / 4)) / \
-            #             np.sqrt(8 * np.pi * np.abs(f[it]) * trav + 1e-10)
-            direct[it] = -W[it] * 1j * hankel2(0, f[it] * trav + 1e-10) / 4.0
+            # direct[iw] = (
+            #     w
+            #     * np.exp(-1j * (f * trav + np.sign(f) * np.pi / 4))
+            #     / np.sqrt(8 * np.pi * np.abs(f) * trav + 1e-10)
+            # )
+            direct[iw] = -w * 1j * hankel2(0, f * trav + 1e-10) / 4.0
         elif dist is not None:
-            direct[it] = W[it] * np.exp(-1j * f[it] * trav) / (4 * np.pi * dist)
+            direct[iw] = w * np.exp(-1j * f * trav) / (4 * np.pi * dist)
         if derivative:
-            direct[it] *= 1j * f[it]
+            direct[iw] *= 1j * f
     direct = np.fft.irfft(direct, nfft, axis=0) / dt
     direct = np.real(direct[:nt])
     return direct

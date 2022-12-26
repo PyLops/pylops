@@ -41,7 +41,7 @@ After that we define our new object:
 
     class CG(Solver):
 
-followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html/>`_
+followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html/>`__
 (starting with ``r"""`` and ending with ``"""``) containing the documentation of the solver. Such docstring should
 contain at least a short description of the solver, a ``Parameters`` section with a description of the
 input parameters of the associated ``_init__`` method and a ``Notes`` section providing a reference to the original
@@ -143,7 +143,7 @@ model and the same hyperparameters of the setup method and runs the entire optim
 
 .. code-block:: python
 
-    def solve(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10]):
+    def solve(self, y, x0=None, niter=10, tol=1e-4, show=False, itershow=(10, 10, 10)):
         x = self.setup(y=y, x0=x0, niter=niter, tol=tol, show=show)
         x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)
@@ -169,7 +169,7 @@ input and returns some of the most valuable properties of the class-based solver
 
 .. code-block:: python
 
-    def cg(Op, y, x0, niter=10, tol=1e-4, show=False, itershow=[10, 10, 10], callback=None):
+    def cg(Op, y, x0, niter=10, tol=1e-4, show=False, itershow=(10, 10, 10), callback=None):
         cgsolve = CG(Op)
         if callback is not None:
             cgsolve.callback = callback
@@ -239,7 +239,7 @@ adheres to the guidelines of PyLops:
 
 - the new class contains at least ``__init__``, ``setup``, ``step``, ``run``, ``finalize``, and ``solve`` methods.
 
-- each of the above methods have a `numpydoc docstring <https://numpydoc.readthedocs.io/>`_ documenting
+- each of the above methods have a `numpydoc docstring <https://numpydoc.readthedocs.io/>`__ documenting
   at least the input ``Parameters`` and the ``__init__`` method contains also a ``Notes`` section providing a
   mathematical explanation of the solver.
 

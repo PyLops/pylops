@@ -29,7 +29,7 @@ def irls(
     warm: bool = False,
     kind: str = "data",
     show: bool = False,
-    itershow: List[int] = [10, 10, 10],
+    itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
     **kwargs_solver,
 ) -> Tuple[NDArray, int]:
@@ -76,7 +76,7 @@ def irls(
         Kind of solver (``model``, ``data`` or ``datamodel``)
     show : :obj:`bool`, optional
         Display logs
-    itershow : :obj:`list`, optional
+    itershow : :obj:`tuple`, optional
         Display set log for the first N1 steps, last N2 steps,
         and every N3 steps in between where N1, N2, N3 are the
         three element of the list.
@@ -130,7 +130,7 @@ def omp(
     sigma: float = 1e-4,
     normalizecols: bool = False,
     show: bool = False,
-    itershow: List[int] = [10, 10, 10],
+    itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Orthogonal Matching Pursuit (OMP).
@@ -161,7 +161,7 @@ def omp(
         operator are expected to have highly varying norms.
     show : :obj:`bool`, optional
         Display iterations log
-    itershow : :obj:`list`, optional
+    itershow : :obj:`tuple`, optional
         Display set log for the first N1 steps, last N2 steps,
         and every N3 steps in between where N1, N2, N3 are the
         three element of the list.
@@ -220,7 +220,7 @@ def ista(
     decay: Optional[NDArray] = None,
     monitorres: bool = False,
     show: bool = False,
-    itershow: List[int] = [10, 10, 10],
+    itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
@@ -269,7 +269,7 @@ def ista(
         Monitor that residual is decreasing
     show : :obj:`bool`, optional
         Display logs
-    itershow : :obj:`list`, optional
+    itershow : :obj:`tuple`, optional
         Display set log for the first N1 steps, last N2 steps,
         and every N3 steps in between where N1, N2, N3 are the
         three element of the list.
@@ -346,7 +346,7 @@ def fista(
     decay: Optional[NDArray] = None,
     monitorres: bool = False,
     show: bool = False,
-    itershow: List[int] = [10, 10, 10],
+    itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
@@ -395,7 +395,7 @@ def fista(
             Monitor that residual is decreasing
     show : :obj:`bool`, optional
         Display iterations log
-    itershow : :obj:`list`, optional
+    itershow : :obj:`tuple`, optional
         Display set log for the first N1 steps, last N2 steps,
         and every N3 steps in between where N1, N2, N3 are the
         three element of the list.
@@ -588,7 +588,7 @@ def splitbregman(
     tau: float = 1.0,
     restart: bool = False,
     show: bool = False,
-    itershow: List[int] = [10, 10, 10],
+    itershow: Tuple[int, int, int] = (10, 10, 10),
     show_inner: bool = False,
     callback: Optional[Callable] = None,
     **kwargs_lsqr,
@@ -642,7 +642,7 @@ def splitbregman(
         the initial guess (``True``) or with the last estimate (``False``)
     show : :obj:`bool`, optional
         Display iterations log
-    itershow : :obj:`list`, optional
+    itershow : :obj:`tuple`, optional
             Display set log for the first N1 steps, last N2 steps,
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
