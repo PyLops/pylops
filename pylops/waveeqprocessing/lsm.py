@@ -1,7 +1,7 @@
 __all__ = ["LSM"]
 
 import logging
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
 from scipy.sparse.linalg import lsqr
 
