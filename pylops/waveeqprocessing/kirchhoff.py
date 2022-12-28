@@ -250,7 +250,7 @@ class Kirchhoff(LinearOperator):
         t: NDArray,
         srcs: NDArray,
         recs: NDArray,
-        vel: Union[float, NDArray],
+        vel: NDArray,
         wav: NDArray,
         wavcenter: int,
         y: Optional[NDArray] = None,
@@ -259,10 +259,10 @@ class Kirchhoff(LinearOperator):
         dynamic: bool = False,
         trav: Optional[NDArray] = None,
         amp: Optional[NDArray] = None,
-        aperture: Optional[Union[float, Tuple]] = None,
-        angleaperture: Union[float, Tuple] = 90,
+        aperture: Optional[Tuple[float, float]] = None,
+        angleaperture: Union[float, Tuple[float, float]] = 90.0,
         anglerefl: Optional[NDArray] = None,
-        snell: Optional[Union[float, Tuple]] = None,
+        snell: Optional[Tuple[float, float]] = None,
         engine: str = "numpy",
         dtype: DTypeLike = "float64",
         name: str = "K",
@@ -415,7 +415,7 @@ class Kirchhoff(LinearOperator):
         srcs: NDArray,
         recs: NDArray,
         y: Optional[NDArray] = None,
-    ) -> Union[
+    ) -> Tuple[
         int,
         int,
         NDArray,
@@ -459,10 +459,10 @@ class Kirchhoff(LinearOperator):
         x: NDArray,
         srcs: NDArray,
         recs: NDArray,
-        vel: NDArray,
+        vel: Union[float, NDArray],
         y: Optional[NDArray] = None,
         mode: str = "eikonal",
-    ) -> Union[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
+    ) -> Tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
         r"""Traveltime table
 
         Compute traveltimes along the source-subsurface-receivers triplet

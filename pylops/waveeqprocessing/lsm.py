@@ -118,7 +118,7 @@ class LSM:
         srcs: NDArray,
         recs: NDArray,
         vel: NDArray,
-        wav: Union[float, NDArray],
+        wav: NDArray,
         wavcenter: int,
         y: Optional[NDArray] = None,
         kind: str = "kirchhoff",
