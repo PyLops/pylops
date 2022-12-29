@@ -1,10 +1,12 @@
 __all__ = ["LSM"]
 
 import logging
+from typing import Callable, Optional
 
 from scipy.sparse.linalg import lsqr
 
 from pylops.utils import dottest as Dottest
+from pylops.utils.typing import NDArray
 from pylops.waveeqprocessing.kirchhoff import Kirchhoff
 from pylops.waveeqprocessing.twoway import AcousticWave2D
 
@@ -110,19 +112,19 @@ class LSM:
 
     def __init__(
         self,
-        z,
-        x,
-        t,
-        srcs,
-        recs,
-        vel,
-        wav,
-        wavcenter,
-        y=None,
-        kind="kirchhoff",
-        dottest=False,
+        z: NDArray,
+        x: NDArray,
+        t: NDArray,
+        srcs: NDArray,
+        recs: NDArray,
+        vel: NDArray,
+        wav: NDArray,
+        wavcenter: int,
+        y: Optional[NDArray] = None,
+        kind: str = "kirchhoff",
+        dottest: bool = False,
         **kwargs_mod,
-    ):
+    ) -> None:
         self.y, self.x, self.z = y, x, z
 
         if kind == "kirchhoff":
@@ -159,7 +161,7 @@ class LSM:
                 verb=True,
             )
 
-    def solve(self, d, solver=lsqr, **kwargs_solver):
+    def solve(self, d: NDArray, solver: Callable = lsqr, **kwargs_solver):
         r"""Solve least-squares migration equations with chosen ``solver``
 
         Parameters

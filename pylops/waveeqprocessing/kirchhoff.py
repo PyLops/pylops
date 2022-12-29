@@ -1,8 +1,10 @@
 __all__ = ["Kirchhoff"]
 
+
 import logging
 import os
 import warnings
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
@@ -11,6 +13,7 @@ from pylops.signalprocessing import Convolve1D
 from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper
+from pylops.utils.typing import DTypeLike, NDArray
 
 try:
     import skfmm
@@ -242,28 +245,28 @@ class Kirchhoff(LinearOperator):
 
     def __init__(
         self,
-        z,
-        x,
-        t,
-        srcs,
-        recs,
-        vel,
-        wav,
-        wavcenter,
-        y=None,
-        mode="eikonal",
-        wavfilter=False,
-        dynamic=False,
-        trav=None,
-        amp=None,
-        aperture=None,
-        angleaperture=90,
-        anglerefl=None,
-        snell=None,
-        engine="numpy",
-        dtype="float64",
-        name="D",
-    ):
+        z: NDArray,
+        x: NDArray,
+        t: NDArray,
+        srcs: NDArray,
+        recs: NDArray,
+        vel: NDArray,
+        wav: NDArray,
+        wavcenter: int,
+        y: Optional[NDArray] = None,
+        mode: str = "eikonal",
+        wavfilter: bool = False,
+        dynamic: bool = False,
+        trav: Optional[NDArray] = None,
+        amp: Optional[NDArray] = None,
+        aperture: Optional[Tuple[float, float]] = None,
+        angleaperture: Union[float, Tuple[float, float]] = 90.0,
+        anglerefl: Optional[NDArray] = None,
+        snell: Optional[Tuple[float, float]] = None,
+        engine: str = "numpy",
+        dtype: DTypeLike = "float64",
+        name: str = "K",
+    ) -> None:
         # identify geometry
         (
             self.ndims,
@@ -406,7 +409,27 @@ class Kirchhoff(LinearOperator):
         self._register_multiplications(engine)
 
     @staticmethod
-    def _identify_geometry(z, x, srcs, recs, y=None):
+    def _identify_geometry(
+        z: NDArray,
+        x: NDArray,
+        srcs: NDArray,
+        recs: NDArray,
+        y: Optional[NDArray] = None,
+    ) -> Tuple[
+        int,
+        int,
+        NDArray,
+        int,
+        int,
+        int,
+        int,
+        int,
+        float,
+        float,
+        float,
+        NDArray,
+        NDArray,
+    ]:
         """Identify geometry and acquisition size and sampling"""
         ns, nr = srcs.shape[1], recs.shape[1]
         nz, nx = len(z), len(x)
@@ -431,7 +454,15 @@ class Kirchhoff(LinearOperator):
         return ndims, shiftdim, dims, ny, nx, nz, ns, nr, dy, dx, dz, dsamp, origin
 
     @staticmethod
-    def _traveltime_table(z, x, srcs, recs, vel, y=None, mode="eikonal"):
+    def _traveltime_table(
+        z: NDArray,
+        x: NDArray,
+        srcs: NDArray,
+        recs: NDArray,
+        vel: Union[float, NDArray],
+        y: Optional[NDArray] = None,
+        mode: str = "eikonal",
+    ) -> Tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
         r"""Traveltime table
 
         Compute traveltimes along the source-subsurface-receivers triplet
@@ -583,7 +614,14 @@ class Kirchhoff(LinearOperator):
 
         return trav, trav_srcs, trav_recs, dist, trav_srcs_grad, trav_recs_grad
 
-    def _wavelet_reshaping(self, wav, dt, dimsrc, dimrec, dimv):
+    def _wavelet_reshaping(
+        self,
+        wav: NDArray,
+        dt: float,
+        dimsrc: int,
+        dimrec: int,
+        dimv: int,
+    ) -> NDArray:
         """Apply wavelet reshaping as from theory in [1]_"""
         f = np.fft.rfftfreq(len(wav), dt)
         W = np.fft.rfft(wav, n=len(wav))
@@ -600,7 +638,15 @@ class Kirchhoff(LinearOperator):
         return wavfilt
 
     @staticmethod
-    def _trav_kirch_matvec(x, y, nsnr, nt, ni, itrav, travd):
+    def _trav_kirch_matvec(
+        x: NDArray,
+        y: NDArray,
+        nsnr: int,
+        nt: int,
+        ni: int,
+        itrav: NDArray,
+        travd: NDArray,
+    ) -> NDArray:
         for isrcrec in prange(nsnr):
             itravisrcrec = itrav[:, isrcrec]
             travdisrcrec = travd[:, isrcrec]
@@ -613,7 +659,15 @@ class Kirchhoff(LinearOperator):
         return y
 
     @staticmethod
-    def _trav_kirch_rmatvec(x, y, nsnr, nt, ni, itrav, travd):
+    def _trav_kirch_rmatvec(
+        x: NDArray,
+        y: NDArray,
+        nsnr: int,
+        nt: int,
+        ni: int,
+        itrav: NDArray,
+        travd: NDArray,
+    ) -> NDArray:
         for ii in prange(ni):
             itravii = itrav[ii]
             travdii = travd[ii]
@@ -627,27 +681,27 @@ class Kirchhoff(LinearOperator):
 
     @staticmethod
     def _amp_kirch_matvec(
-        x,
-        y,
-        nsnr,
-        nt,
-        ni,
-        itrav,
-        travd,
-        amp,
-        aperturemin,
-        aperturemax,
-        aperturetap,
-        nz,
-        six,
-        rix,
-        angleaperturemin,
-        angleaperturemax,
-        angles_srcs,
-        angles_recs,
-        snellmin,
-        snellmax,
-    ):
+        x: NDArray,
+        y: NDArray,
+        nsnr: int,
+        nt: int,
+        ni: int,
+        itrav: NDArray,
+        travd: NDArray,
+        amp: NDArray,
+        aperturemin: float,
+        aperturemax: float,
+        aperturetap: NDArray,
+        nz: int,
+        six: NDArray,
+        rix: NDArray,
+        angleaperturemin: float,
+        angleaperturemax: float,
+        angles_srcs: NDArray,
+        angles_recs: NDArray,
+        snellmin: float,
+        snellmax: float,
+    ) -> NDArray:
         nr = angles_recs.shape[-1]
         daperture = aperturemax - aperturemin
         dangleaperture = angleaperturemax - angleaperturemin
@@ -735,27 +789,27 @@ class Kirchhoff(LinearOperator):
 
     @staticmethod
     def _amp_kirch_rmatvec(
-        x,
-        y,
-        nsnr,
-        nt,
-        ni,
-        itrav,
-        travd,
-        amp,
-        aperturemin,
-        aperturemax,
-        aperturetap,
-        nz,
-        six,
-        rix,
-        angleaperturemin,
-        angleaperturemax,
-        angles_srcs,
-        angles_recs,
-        snellmin,
-        snellmax,
-    ):
+        x: NDArray,
+        y: NDArray,
+        nsnr: int,
+        nt: int,
+        ni: int,
+        itrav: NDArray,
+        travd: NDArray,
+        amp: NDArray,
+        aperturemin: float,
+        aperturemax: float,
+        aperturetap: NDArray,
+        nz: int,
+        six: NDArray,
+        rix: NDArray,
+        angleaperturemin: float,
+        angleaperturemax: float,
+        angles_srcs: NDArray,
+        angles_recs: NDArray,
+        snellmin: float,
+        snellmax: float,
+    ) -> NDArray:
         nr = angles_recs.shape[-1]
         daperture = aperturemax - aperturemin
         dangleaperture = angleaperturemax - angleaperturemin
@@ -844,7 +898,7 @@ class Kirchhoff(LinearOperator):
                             )
         return y
 
-    def _register_multiplications(self, engine):
+    def _register_multiplications(self, engine: str) -> None:
         if engine not in ["numpy", "numba"]:
             raise KeyError("engine must be numpy or numba")
         if engine == "numba" and jit is not None:
@@ -869,7 +923,7 @@ class Kirchhoff(LinearOperator):
                 self._kirch_rmatvec = self._trav_kirch_rmatvec
 
     @reshaped
-    def _matvec(self, x):
+    def _matvec(self, x: NDArray) -> NDArray:
         y = np.zeros((self.nsnr, self.nt), dtype=self.dtype)
         if self.dynamic:
             inputs = (
@@ -901,7 +955,7 @@ class Kirchhoff(LinearOperator):
         return y
 
     @reshaped
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: NDArray) -> NDArray:
         x = self.cop._rmatvec(x.ravel())
         x = x.reshape(self.nsnr, self.nt)
         y = np.zeros(self.ni, dtype=self.dtype)
