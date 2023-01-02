@@ -40,7 +40,6 @@ using the :py:class:`pylops.signalprocessing.NonStationaryConvolve2D` operator.
 """
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.sparse.linalg import lsqr
 
 import pylops
 
