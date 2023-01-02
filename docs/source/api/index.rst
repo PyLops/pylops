@@ -89,6 +89,8 @@ Signal processing
     Convolve1D
     Convolve2D
     ConvolveND
+    NonStationaryConvolve1D
+    NonStationaryConvolve2D
     Interp
     Bilinear
     FFT

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
-from scipy.signal import triang
+from scipy.signal.windows import triang
 from scipy.sparse.linalg import lsqr
 
 from pylops.signalprocessing import Convolve1D, Convolve2D, ConvolveND
