@@ -1,12 +1,13 @@
 __all__ = ["NonStationaryConvolve2D"]
 
 import os
-from typing import Union
+from typing import Tuple, Union
 
 import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils import deps
+from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -14,6 +15,10 @@ jit_message = deps.numba_import("the nonstatconvolve2d module")
 
 if jit_message is None:
     from numba import jit, prange
+
+    from ._nonstatconvolve2d_cuda import (
+        _matvec_rmatvec_call as _matvec_rmatvec_cuda_call,
+    )
 
     # detect whether to use parallel or not
     numba_threads = int(os.getenv("NUMBA_NUM_THREADS", "1"))
@@ -45,8 +50,9 @@ class NonStationaryConvolve2D(LinearOperator):
         Indices of the z locations of the filters ``hs`` in the model (and data). Note
         that the filters must be regularly sampled, i.e. :math:`dh_z=diff(ihz)=const`
     engine : :obj:`str`, optional
-        Engine used for spread computation (``numpy`` or ``numba``). Note that
-        ``numba`` can only be used when providing a look-up table
+        Engine used for spread computation (``numpy``, ``numba``, or ``cuda``)
+    num_threads_per_blocks : :obj:`tuple`, optional
+        Number of threads in each block (only when ``engine=cuda``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -113,9 +119,12 @@ class NonStationaryConvolve2D(LinearOperator):
         ihx: InputDimsLike,
         ihz: InputDimsLike,
         engine: str = "numpy",
+        num_threads_per_blocks: Tuple[int, int] = (32, 32),
         dtype: DTypeLike = "float64",
         name: str = "C",
     ) -> LinearOperator:
+        if engine not in ["numpy", "numba", "cuda"]:
+            raise NotImplementedError("engine must be numpy or numba or cuda")
         if hs.shape[2] % 2 == 0 or hs.shape[3] % 2 == 0:
             raise ValueError("filters hs must have odd length")
         if len(np.unique(np.diff(ihx))) > 1 or len(np.unique(np.diff(ihz))) > 1:
@@ -131,6 +140,19 @@ class NonStationaryConvolve2D(LinearOperator):
         self.dims = dims
         self.engine = engine
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
+
+        # create additional input parameters for engine=cuda
+        self.kwargs_cuda = {}
+        if engine == "cuda":
+            self.kwargs_cuda["num_threads_per_blocks"] = num_threads_per_blocks
+            num_threads_per_blocks_x, num_threads_per_blocks_z = num_threads_per_blocks
+            num_blocks_x = (
+                self.dims[0] + num_threads_per_blocks_x - 1
+            ) // num_threads_per_blocks_x
+            num_blocks_z = (
+                self.dims[1] + num_threads_per_blocks_z - 1
+            ) // num_threads_per_blocks_z
+            self.kwargs_cuda["num_blocks"] = (num_blocks_x, num_blocks_z)
         self._register_multiplications(engine)
 
     @staticmethod
@@ -209,17 +231,18 @@ class NonStationaryConvolve2D(LinearOperator):
         return y
 
     def _register_multiplications(self, engine: str) -> None:
-        if engine not in ["numpy", "numba"]:
-            raise NotImplementedError("engine must be numpy or numba")
-        if engine == "numba" and jit is not None:
+        if engine == "numba":
             numba_opts = dict(nopython=True, fastmath=True, nogil=True, parallel=True)
             self._mvrmv = jit(**numba_opts)(self._matvec_rmatvec)
+        elif engine == "cuda":
+            self._mvrmv = _matvec_rmatvec_cuda_call
         else:
             self._mvrmv = self._matvec_rmatvec
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
-        y = np.zeros(self.dims)
+        ncp = get_array_module(x)
+        y = ncp.zeros(self.dims, dtype=self.dtype)
         y = self._mvrmv(
             x,
             y,
@@ -233,12 +256,14 @@ class NonStationaryConvolve2D(LinearOperator):
             self.nhx,
             self.nhz,
             rmatvec=False,
+            **self.kwargs_cuda
         )
         return y
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
-        y = np.zeros(self.dims)
+        ncp = get_array_module(x)
+        y = ncp.zeros(self.dims, dtype=self.dtype)
         y = self._mvrmv(
             x,
             y,
@@ -252,5 +277,6 @@ class NonStationaryConvolve2D(LinearOperator):
             self.nhx,
             self.nhz,
             rmatvec=True,
+            **self.kwargs_cuda
         )
         return y
