@@ -153,11 +153,11 @@ kopdyn = pylops.waveeqprocessing.Kirchhoff(
     engine="numba",
 )
 
-d = kop * refl
-mmig = kopdyn.H * d
+d = kop @ refl
+mmig = kopdyn.H @ d
 
-dpsf = kop * psfrefl
-mmigpsf = kopdyn.H * dpsf
+dpsf = kop @ psfrefl
+mmigpsf = kopdyn.H @ dpsf
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 6))
 axs[0].imshow(
@@ -215,8 +215,7 @@ Cop = pylops.signalprocessing.NonStationaryConvolve2D(
     hs=psfs, ihx=psfx, ihz=psfz, dims=(nx, nz), engine="numba"
 )
 
-mmigpsf = Cop * refl.ravel()
-mmigpsf = mmigpsf.reshape(nx, nz)
+mmigpsf = Cop @ refl
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 axs[0].imshow(
