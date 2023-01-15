@@ -7,6 +7,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils import deps
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
@@ -122,7 +123,7 @@ class NonStationaryConvolve2D(LinearOperator):
         num_threads_per_blocks: Tuple[int, int] = (32, 32),
         dtype: DTypeLike = "float64",
         name: str = "C",
-    ) -> LinearOperator:
+    ) -> None:
         if engine not in ["numpy", "numba", "cuda"]:
             raise NotImplementedError("engine must be numpy or numba or cuda")
         if hs.shape[2] % 2 == 0 or hs.shape[3] % 2 == 0:
@@ -154,6 +155,15 @@ class NonStationaryConvolve2D(LinearOperator):
             ) // num_threads_per_blocks_z
             self.kwargs_cuda["num_blocks"] = (num_blocks_x, num_blocks_z)
         self._register_multiplications(engine)
+
+    def _register_multiplications(self, engine: str) -> None:
+        if engine == "numba":
+            numba_opts = dict(nopython=True, fastmath=True, nogil=True, parallel=True)
+            self._mvrmv = staticmethod(jit(**numba_opts)(self._matvec_rmatvec))
+        elif engine == "cuda":
+            self._mvrmv = staticmethod(_matvec_rmatvec_cuda_call)
+        else:
+            self._mvrmv = self._matvec_rmatvec
 
     @staticmethod
     def _matvec_rmatvec(
@@ -229,15 +239,6 @@ class NonStationaryConvolve2D(LinearOperator):
                         * x[xextremes[0] : xextremes[1], zextremes[0] : zextremes[1]]
                     )
         return y
-
-    def _register_multiplications(self, engine: str) -> None:
-        if engine == "numba":
-            numba_opts = dict(nopython=True, fastmath=True, nogil=True, parallel=True)
-            self._mvrmv = jit(**numba_opts)(self._matvec_rmatvec)
-        elif engine == "cuda":
-            self._mvrmv = _matvec_rmatvec_cuda_call
-        else:
-            self._mvrmv = self._matvec_rmatvec
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
