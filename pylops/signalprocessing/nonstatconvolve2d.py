@@ -40,15 +40,15 @@ class NonStationaryConvolve2D(LinearOperator):
         Number of samples for each dimension
     hs : :obj:`numpy.ndarray`
         Bank of 2d compact filters of size
-        :math:`n_{filts,x} \times n_{filts,z} \times n_h \times n_{h,x} \times n_{h,z}`.
+        :math:`n_{\text{filts},x} \times n_{\text{filts},z} \times n_h \times n_{h,x} \times n_{h,z}`.
         Filters must have odd number of samples and are assumed to be
         centered in the middle of the filter support.
     ihx : :obj:`tuple`
         Indices of the x locations of the filters ``hs`` in the model (and data). Note
-        that the filters must be regularly sampled, i.e. :math:`dh_x=diff(ihx)=const`
+        that the filters must be regularly sampled, i.e. :math:`dh_x=\text{diff}(ihx)=\text{const.}`
     ihz : :obj:`tuple`
         Indices of the z locations of the filters ``hs`` in the model (and data). Note
-        that the filters must be regularly sampled, i.e. :math:`dh_z=diff(ihz)=const`
+        that the filters must be regularly sampled, i.e. :math:`dh_z=\text{diff}(ihz)=\text{const.}`
     engine : :obj:`str`, optional
         Engine used for spread computation (``numpy``, ``numba``, or ``cuda``)
     num_threads_per_blocks : :obj:`tuple`, optional
@@ -71,7 +71,7 @@ class NonStationaryConvolve2D(LinearOperator):
     ValueError
         If filters ``hs`` have even size
     ValueError
-        If ``ihx`` or `ihz`` is not regularly sampled
+        If ``ihx`` or ``ihz`` is not regularly sampled
     NotImplementedError
         If ``engine`` is neither ``numpy``, ``fftw``, nor ``scipy``.
 
@@ -87,22 +87,22 @@ class NonStationaryConvolve2D(LinearOperator):
     .. math::
         \mathbf{y} =
         \begin{bmatrix}
-           \hat{h}_{(0,0),(0,0)} & ... & h_{(1,1),(0,0)} & ... & \hat{h}_{(2,2),(0,0)} & ...  \\
-           \hat{h}_{(0,0),(0,1)} & ... & h_{(1,1),(0,1)} & ... & \hat{h}_{(2,2),(0,0)} & ...  \\
-           ...                   & ... &                 & ... & ...                   & ...  \\
-           \hat{h}_{(0,0),(4,3)} & ... & h_{(1,1),(4,3)} & ... & \hat{h}_{(2,2),(0,0)} & ...  \\
+           \hat{h}_{(0,0),(0,0)} & \cdots & h_{(1,1),(0,0)} & \cdots & \hat{h}_{(2,2),(0,0)} & \cdots  \\
+           \hat{h}_{(0,0),(0,1)} & \cdots & h_{(1,1),(0,1)} & \cdots & \hat{h}_{(2,2),(0,0)} & \cdots  \\
+           \vdots                & \ddots &                 & \ddots & \vdots                & \vdots  \\
+           \hat{h}_{(0,0),(4,3)} & \cdots & h_{(1,1),(4,3)} & \cdots & \hat{h}_{(2,2),(0,0)} & \cdots  \\
         \end{bmatrix}
         \begin{bmatrix}
-           x_{0,0} \\ ... \\ x_{0,N} \\ x_{1,0} \\ ... \\
-           x_{1,N} \\ x_{M,0} \\ ... \\ x_{M,N}
+           x_{0,0} \\ \vdots \\ x_{0,N} \\ x_{1,0} \\ \vdots \\
+           x_{1,N} \\ x_{M,0} \\ \vdots \\ x_{M,N}
         \end{bmatrix}
 
-    where :math:`\mathbf{h}_{(1,1)} = [h_{(1,1),(0,0)}, h_{(1,1),(0,1)}, ..., h_{(1,1),(4,3)}]`
+    where :math:`\mathbf{h}_{(1,1)} = [h_{(1,1),(0,0)}, h_{(1,1),(0,1)}, \ldots, h_{(1,1),(4,3)}]`
     (and :math:`\mathbf{h}_{(1,1)}`, :math:`\mathbf{h}_{(1,3)}`, :math:`\mathbf{h}_{(3,1)}`,
     :math:`\mathbf{h}_{(3,3)}`) are the provided filter, :math:`\hat{\mathbf{h}}_{(0,0)} =
     \mathbf{h}_{(1,1)}` and similar are the filters outside the range of the provided filters
     (which are extrapolated to be the same as the nearest provided filter) and
-    :math:`\hat{\mathbf{h}}_{(2,2)} = BiLinear(\mathbf{h}_{(1,1)}, \mathbf{h}_{(3,1)},
+    :math:`\hat{\mathbf{h}}_{(2,2)} = \text{bilinear}(\mathbf{h}_{(1,1)}, \mathbf{h}_{(3,1)},
     \mathbf{h}_{(1,3)},\mathbf{h}_{(3,3)})` is the filter within the range of the provided filters
     (which is bilinearly interpolated from the four nearest provided filter on either side
     of its location).
