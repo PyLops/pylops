@@ -138,7 +138,7 @@ class NonStationaryConvolve2D(LinearOperator):
         self.ohx, self.dhx, self.nhx = ihx[0], ihx[1] - ihx[0], len(ihx)
         self.ohz, self.dhz, self.nhz = ihz[0], ihz[1] - ihz[0], len(ihz)
         self.ehx, self.ehz = ihx[-1], ihz[-1]
-        self.dims = dims
+        self.dims = _value_or_sized_to_tuple(dims)
         self.engine = engine
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
