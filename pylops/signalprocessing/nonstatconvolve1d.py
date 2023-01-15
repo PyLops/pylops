@@ -93,7 +93,7 @@ class NonStationaryConvolve1D(LinearOperator):
         axis: int = -1,
         dtype: DTypeLike = "float64",
         name: str = "C",
-    ) -> LinearOperator:
+    ) -> None:
         if hs.shape[1] % 2 == 0:
             raise ValueError("filters hs must have odd length")
         if len(np.unique(np.diff(ih))) > 1:
@@ -111,11 +111,13 @@ class NonStationaryConvolve1D(LinearOperator):
     @property
     def hsinterp(self):
         ncp = get_array_module(self.hs)
-        _hsinterp = ncp.empty((self.dims[self.axis], self.hsize), dtype=self.dtype)
+        self._hsinterp = ncp.empty((self.dims[self.axis], self.hsize), dtype=self.dtype)
 
         for ix in range(self.dims[self.axis]):
-            _hsinterp[ix] = self._interpolate_h(self.hs, ix, self.oh, self.dh, self.nh)
-        return _hsinterp
+            self._hsinterp[ix] = self._interpolate_h(
+                self.hs, ix, self.oh, self.dh, self.nh
+            )
+        return self._hsinterp
 
     @hsinterp.deleter
     def hsinterp(self):
