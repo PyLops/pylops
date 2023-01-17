@@ -159,9 +159,9 @@ class NonStationaryConvolve2D(LinearOperator):
     def _register_multiplications(self, engine: str) -> None:
         if engine == "numba":
             numba_opts = dict(nopython=True, fastmath=True, nogil=True, parallel=True)
-            self._mvrmv = staticmethod(jit(**numba_opts)(self._matvec_rmatvec))
+            self._mvrmv = jit(**numba_opts)(self._matvec_rmatvec)
         elif engine == "cuda":
-            self._mvrmv = staticmethod(_matvec_rmatvec_cuda_call)
+            self._mvrmv = _matvec_rmatvec_cuda_call
         else:
             self._mvrmv = self._matvec_rmatvec
 
