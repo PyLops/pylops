@@ -21,10 +21,10 @@ plt.close("all")
 
 
 ###############################################################################
-# We will start by creating a zero signal of length :math:`nt` and we will
+# We will start by creating a zero signal of length `nt` and we will
 # place a comb of unitary spikes. We also create a non-stationary filter defined by
 # 5 equally spaced `Ricker wavelets <http://subsurfwiki.org/wiki/Ricker_wavelet>`_
-# with dominant frequencies of :math:`f = [10, 15, 20, 25, 30] Hz`.
+# with dominant frequencies of :math:`f = 10, 15, 20, 25` and :math:`30` Hz.
 nt = 601
 dt = 0.004
 t = np.arange(nt) * dt
@@ -38,8 +38,7 @@ Cop = pylops.signalprocessing.NonStationaryConvolve1D(
 )
 
 x = np.zeros(nt)
-for ix in range(64, nt - 64, 64):
-    x[ix] = 1.0
+x[64 : nt - 64 : 64] = 1.0
 
 y = Cop @ x
 
@@ -62,8 +61,8 @@ plt.xlim(0, t[-1])
 plt.tight_layout()
 
 # Spectra
-f = np.fft.rfftfreq(2**9, dt)
-Sh = np.abs(np.fft.rfft(Cop.hsinterp.T, n=2**9, axis=0))
+f = np.fft.rfftfreq(nt, dt)
+Sh = np.abs(np.fft.rfft(Cop.hsinterp.T, n=nt, axis=0))
 
 plt.figure(figsize=(10, 3))
 plt.pcolormesh(t, f, Sh, cmap="jet", vmax=5e0)
@@ -79,15 +78,15 @@ plt.tight_layout()
 # filter
 nx, nz = 601, 501
 
-wav1a, _, wav1c = ricker(t[:17], f0=12)
-wav1b = ricker(t[:17], f0=30)[0]
+wav1a, _, _ = ricker(t[:17], f0=12)
+wav1b, _, _ = ricker(t[:17], f0=30)
 wav2a = gaussian(35, 2.0)
 wav2b = gaussian(35, 4.0)
 
 wav11 = np.outer(wav1a, wav2a[np.newaxis]).T
 wav12 = np.outer(wav1b, wav2a[np.newaxis]).T
 wav21 = np.outer(wav1b, wav2b[np.newaxis]).T
-wav22 = np.outer(wav1b, wav2b[np.newaxis]).T
+wav22 = np.outer(wav1a, wav2b[np.newaxis]).T
 wavsize = wav11.shape
 
 hs = np.zeros((2, 2, *wavsize))
@@ -116,16 +115,18 @@ Cop = pylops.signalprocessing.NonStationaryConvolve2D(
 )
 
 x = np.zeros((nx, nz))
-x[:, 201] = 1.0
-x[:, 401] = -1.0
+line1 = (np.arange(nx) * np.tan(np.deg2rad(25))).astype(int) + (nz - 1) // 4
+line2 = (np.arange(nx) * np.tan(np.deg2rad(-25))).astype(int) + (3 * (nz - 1)) // 4
+x[np.arange(nx), np.clip(line1, 0, nz - 1)] = 1.0
+x[np.arange(nx), np.clip(line2, 0, nz - 1)] = -1.0
 
-y = Cop * x
+y = Cop @ x
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-axs[0].imshow(x.T, cmap="gray", vmin=-0.1, vmax=0.1)
+axs[0].imshow(x.T, cmap="gray", vmin=-1.0, vmax=1.0)
 axs[0].axis("tight")
 axs[0].set_title("Input")
-axs[1].imshow(y.T, cmap="gray", vmin=-0.1, vmax=0.1)
+axs[1].imshow(y.T, cmap="gray", vmin=-3.0, vmax=3.0)
 axs[1].axis("tight")
 axs[1].set_title("Output")
 plt.tight_layout()

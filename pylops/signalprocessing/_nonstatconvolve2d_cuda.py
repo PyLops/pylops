@@ -3,7 +3,7 @@ from math import floor
 from numba import cuda
 
 
-@cuda.jit
+@cuda.jit(max_registers=40)
 def _matvec_rmatvec(x, y, hs, hshape, xdims, ohx, ohz, dhx, dhz, nhx, nhz, rmatvec):
     """Cuda kernels for NonStationaryConvolve2D operator
 

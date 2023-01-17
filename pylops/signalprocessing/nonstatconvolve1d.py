@@ -23,12 +23,12 @@ class NonStationaryConvolve1D(LinearOperator):
     dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
     hs : :obj:`numpy.ndarray`
-        Bank of 1d compact filters of size :math:`n_{filts} \times n_h`.
+        Bank of 1d compact filters of size :math:`n_\text{filts} \times n_h`.
         Filters must have odd number of samples and are assumed to be
         centered in the middle of the filter support.
     ih : :obj:`tuple`
         Indices of the locations of the filters ``hs`` in the model (and data). Note
-        that the filters must be regularly sampled, i.e. :math:`dh=diff(ih)=const`
+        that the filters must be regularly sampled, i.e. :math:`dh=\text{diff}(ih)=\text{const.}`
     axis : :obj:`int`, optional
         Axis along which convolution is applied
     dtype : :obj:`str`, optional
@@ -64,18 +64,18 @@ class NonStationaryConvolve1D(LinearOperator):
         \begin{bmatrix}
            \hat{h}_{0,0} & h_{1,0} & \hat{h}_{2,0} & h_{3,0} & \hat{h}_{4,0} \\
            \hat{h}_{0,1} & h_{1,1} & \hat{h}_{2,1} & h_{3,1} & \hat{h}_{4,1} \\
-           ...           & ...     & ...           & ...     & ...           \\
+           \vdots        & \vdots  & \vdots        & \vdots  & \vdots        \\
            \hat{h}_{0,4} & h_{1,4} & \hat{h}_{2,4} & h_{3,4} & \hat{h}_{4,4} \\
         \end{bmatrix}
         \begin{bmatrix}
-           x_0 \\ x_1 \\ ... \\ x_4
+           x_0 \\ x_1 \\ \vdots \\ x_4
         \end{bmatrix}
 
-    where :math:`\mathbf{h}_1 = [h_{1,0}, h_{1,1}, ..., h_{1,N}]` and
-    :math:`\mathbf{h}_3 = [h_{3,0}, h_{3,1}, ..., h_{3,N}]` are the provided filter,
+    where :math:`\mathbf{h}_1 = [h_{1,0}, h_{1,1}, \ldots, h_{1,N}]` and
+    :math:`\mathbf{h}_3 = [h_{3,0}, h_{3,1}, \ldots, h_{3,N}]` are the provided filter,
     :math:`\hat{\mathbf{h}}_0 = \mathbf{h}_1` and :math:`\hat{\mathbf{h}}_4 = \mathbf{h}_3` are the
     filters outside the range of the provided filters (which are extrapolated to be the same as
-    the nearest provided filter) and :math:`\hat{\mathbf{h}}_2 = 0.5 * \mathbf{h}_1 + 0.5 * \mathbf{h}_3`
+    the nearest provided filter) and :math:`\hat{\mathbf{h}}_2 = 0.5 \mathbf{h}_1 + 0.5 \mathbf{h}_3`
     is the filter within the range of the provided filters (which is linearly interpolated from the two nearest
     provided filter on either side of its location).
 
@@ -93,7 +93,7 @@ class NonStationaryConvolve1D(LinearOperator):
         axis: int = -1,
         dtype: DTypeLike = "float64",
         name: str = "C",
-    ) -> LinearOperator:
+    ) -> None:
         if hs.shape[1] % 2 == 0:
             raise ValueError("filters hs must have odd length")
         if len(np.unique(np.diff(ih))) > 1:
@@ -111,11 +111,13 @@ class NonStationaryConvolve1D(LinearOperator):
     @property
     def hsinterp(self):
         ncp = get_array_module(self.hs)
-        _hsinterp = ncp.empty((self.dims[self.axis], self.hsize), dtype=self.dtype)
+        self._hsinterp = ncp.empty((self.dims[self.axis], self.hsize), dtype=self.dtype)
 
         for ix in range(self.dims[self.axis]):
-            _hsinterp[ix] = self._interpolate_h(self.hs, ix, self.oh, self.dh, self.nh)
-        return _hsinterp
+            self._hsinterp[ix] = self._interpolate_h(
+                self.hs, ix, self.oh, self.dh, self.nh
+            )
+        return self._hsinterp
 
     @hsinterp.deleter
     def hsinterp(self):

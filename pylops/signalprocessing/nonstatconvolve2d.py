@@ -7,6 +7,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils import deps
+from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
@@ -40,15 +41,15 @@ class NonStationaryConvolve2D(LinearOperator):
         Number of samples for each dimension
     hs : :obj:`numpy.ndarray`
         Bank of 2d compact filters of size
-        :math:`n_{filts,x} \times n_{filts,z} \times n_h \times n_{h,x} \times n_{h,z}`.
+        :math:`n_{\text{filts},x} \times n_{\text{filts},z} \times n_h \times n_{h,x} \times n_{h,z}`.
         Filters must have odd number of samples and are assumed to be
         centered in the middle of the filter support.
     ihx : :obj:`tuple`
         Indices of the x locations of the filters ``hs`` in the model (and data). Note
-        that the filters must be regularly sampled, i.e. :math:`dh_x=diff(ihx)=const`
+        that the filters must be regularly sampled, i.e. :math:`dh_x=\text{diff}(ihx)=\text{const.}`
     ihz : :obj:`tuple`
         Indices of the z locations of the filters ``hs`` in the model (and data). Note
-        that the filters must be regularly sampled, i.e. :math:`dh_z=diff(ihz)=const`
+        that the filters must be regularly sampled, i.e. :math:`dh_z=\text{diff}(ihz)=\text{const.}`
     engine : :obj:`str`, optional
         Engine used for spread computation (``numpy``, ``numba``, or ``cuda``)
     num_threads_per_blocks : :obj:`tuple`, optional
@@ -71,7 +72,7 @@ class NonStationaryConvolve2D(LinearOperator):
     ValueError
         If filters ``hs`` have even size
     ValueError
-        If ``ihx`` or `ihz`` is not regularly sampled
+        If ``ihx`` or ``ihz`` is not regularly sampled
     NotImplementedError
         If ``engine`` is neither ``numpy``, ``fftw``, nor ``scipy``.
 
@@ -87,22 +88,22 @@ class NonStationaryConvolve2D(LinearOperator):
     .. math::
         \mathbf{y} =
         \begin{bmatrix}
-           \hat{h}_{(0,0),(0,0)} & ... & h_{(1,1),(0,0)} & ... & \hat{h}_{(2,2),(0,0)} & ...  \\
-           \hat{h}_{(0,0),(0,1)} & ... & h_{(1,1),(0,1)} & ... & \hat{h}_{(2,2),(0,0)} & ...  \\
-           ...                   & ... &                 & ... & ...                   & ...  \\
-           \hat{h}_{(0,0),(4,3)} & ... & h_{(1,1),(4,3)} & ... & \hat{h}_{(2,2),(0,0)} & ...  \\
+           \hat{h}_{(0,0),(0,0)} & \cdots & h_{(1,1),(0,0)} & \cdots & \hat{h}_{(2,2),(0,0)} & \cdots  \\
+           \hat{h}_{(0,0),(0,1)} & \cdots & h_{(1,1),(0,1)} & \cdots & \hat{h}_{(2,2),(0,0)} & \cdots  \\
+           \vdots                & \ddots &                 & \ddots & \vdots                & \vdots  \\
+           \hat{h}_{(0,0),(4,3)} & \cdots & h_{(1,1),(4,3)} & \cdots & \hat{h}_{(2,2),(0,0)} & \cdots  \\
         \end{bmatrix}
         \begin{bmatrix}
-           x_{0,0} \\ ... \\ x_{0,N} \\ x_{1,0} \\ ... \\
-           x_{1,N} \\ x_{M,0} \\ ... \\ x_{M,N}
+           x_{0,0} \\ \vdots \\ x_{0,N} \\ x_{1,0} \\ \vdots \\
+           x_{1,N} \\ x_{M,0} \\ \vdots \\ x_{M,N}
         \end{bmatrix}
 
-    where :math:`\mathbf{h}_{(1,1)} = [h_{(1,1),(0,0)}, h_{(1,1),(0,1)}, ..., h_{(1,1),(4,3)}]`
+    where :math:`\mathbf{h}_{(1,1)} = [h_{(1,1),(0,0)}, h_{(1,1),(0,1)}, \ldots, h_{(1,1),(4,3)}]`
     (and :math:`\mathbf{h}_{(1,1)}`, :math:`\mathbf{h}_{(1,3)}`, :math:`\mathbf{h}_{(3,1)}`,
     :math:`\mathbf{h}_{(3,3)}`) are the provided filter, :math:`\hat{\mathbf{h}}_{(0,0)} =
     \mathbf{h}_{(1,1)}` and similar are the filters outside the range of the provided filters
     (which are extrapolated to be the same as the nearest provided filter) and
-    :math:`\hat{\mathbf{h}}_{(2,2)} = BiLinear(\mathbf{h}_{(1,1)}, \mathbf{h}_{(3,1)},
+    :math:`\hat{\mathbf{h}}_{(2,2)} = \text{bilinear}(\mathbf{h}_{(1,1)}, \mathbf{h}_{(3,1)},
     \mathbf{h}_{(1,3)},\mathbf{h}_{(3,3)})` is the filter within the range of the provided filters
     (which is bilinearly interpolated from the four nearest provided filter on either side
     of its location).
@@ -122,7 +123,7 @@ class NonStationaryConvolve2D(LinearOperator):
         num_threads_per_blocks: Tuple[int, int] = (32, 32),
         dtype: DTypeLike = "float64",
         name: str = "C",
-    ) -> LinearOperator:
+    ) -> None:
         if engine not in ["numpy", "numba", "cuda"]:
             raise NotImplementedError("engine must be numpy or numba or cuda")
         if hs.shape[2] % 2 == 0 or hs.shape[3] % 2 == 0:
@@ -137,7 +138,7 @@ class NonStationaryConvolve2D(LinearOperator):
         self.ohx, self.dhx, self.nhx = ihx[0], ihx[1] - ihx[0], len(ihx)
         self.ohz, self.dhz, self.nhz = ihz[0], ihz[1] - ihz[0], len(ihz)
         self.ehx, self.ehz = ihx[-1], ihz[-1]
-        self.dims = dims
+        self.dims = _value_or_sized_to_tuple(dims)
         self.engine = engine
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
@@ -154,6 +155,15 @@ class NonStationaryConvolve2D(LinearOperator):
             ) // num_threads_per_blocks_z
             self.kwargs_cuda["num_blocks"] = (num_blocks_x, num_blocks_z)
         self._register_multiplications(engine)
+
+    def _register_multiplications(self, engine: str) -> None:
+        if engine == "numba":
+            numba_opts = dict(nopython=True, fastmath=True, nogil=True, parallel=True)
+            self._mvrmv = staticmethod(jit(**numba_opts)(self._matvec_rmatvec))
+        elif engine == "cuda":
+            self._mvrmv = staticmethod(_matvec_rmatvec_cuda_call)
+        else:
+            self._mvrmv = self._matvec_rmatvec
 
     @staticmethod
     def _matvec_rmatvec(
@@ -229,15 +239,6 @@ class NonStationaryConvolve2D(LinearOperator):
                         * x[xextremes[0] : xextremes[1], zextremes[0] : zextremes[1]]
                     )
         return y
-
-    def _register_multiplications(self, engine: str) -> None:
-        if engine == "numba":
-            numba_opts = dict(nopython=True, fastmath=True, nogil=True, parallel=True)
-            self._mvrmv = jit(**numba_opts)(self._matvec_rmatvec)
-        elif engine == "cuda":
-            self._mvrmv = _matvec_rmatvec_cuda_call
-        else:
-            self._mvrmv = self._matvec_rmatvec
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
