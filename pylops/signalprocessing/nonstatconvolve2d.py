@@ -167,8 +167,19 @@ class NonStationaryConvolve2D(LinearOperator):
 
     @staticmethod
     def _matvec_rmatvec(
-        x, y, hs, hshape, xdims, ohx, ohz, dhx, dhz, nhx, nhz, rmatvec=False
-    ):
+        x: NDArray,
+        y: NDArray,
+        hs: NDArray,
+        hshape: Tuple[int, int],
+        xdims: Tuple[int, int],
+        ohx: float,
+        ohz: float,
+        dhx: float,
+        dhz: float,
+        nhx: int,
+        nhz: int,
+        rmatvec: bool = False,
+    ) -> NDArray:
         for ix in prange(xdims[0]):
             for iz in range(xdims[1]):
                 # find closest filters and interpolate h
