@@ -159,16 +159,27 @@ class NonStationaryConvolve2D(LinearOperator):
     def _register_multiplications(self, engine: str) -> None:
         if engine == "numba":
             numba_opts = dict(nopython=True, fastmath=True, nogil=True, parallel=True)
-            self._mvrmv = staticmethod(jit(**numba_opts)(self._matvec_rmatvec))
+            self._mvrmv = jit(**numba_opts)(self._matvec_rmatvec)
         elif engine == "cuda":
-            self._mvrmv = staticmethod(_matvec_rmatvec_cuda_call)
+            self._mvrmv = _matvec_rmatvec_cuda_call
         else:
             self._mvrmv = self._matvec_rmatvec
 
     @staticmethod
     def _matvec_rmatvec(
-        x, y, hs, hshape, xdims, ohx, ohz, dhx, dhz, nhx, nhz, rmatvec=False
-    ):
+        x: NDArray,
+        y: NDArray,
+        hs: NDArray,
+        hshape: Tuple[int, int],
+        xdims: Tuple[int, int],
+        ohx: float,
+        ohz: float,
+        dhx: float,
+        dhz: float,
+        nhx: int,
+        nhz: int,
+        rmatvec: bool = False,
+    ) -> NDArray:
         for ix in prange(xdims[0]):
             for iz in range(xdims[1]):
                 # find closest filters and interpolate h
