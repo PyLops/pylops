@@ -1,0 +1,17 @@
+# This workflow uploads PyLops coverage analysis on Codacy
+# For more information see: https://github.com/codacy/codacy-coverage-reporter-action
+name: PyLops-coverage
+
+on: [push, pull_request]
+
+jobs:
+  codacy-coverage-reporter:
+    runs-on: ubuntu-latest
+    name: codacy-coverage-reporter
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run codacy-coverage-reporter
+        uses: codacy/codacy-coverage-reporter-action@v1
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: ./
