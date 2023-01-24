@@ -26,7 +26,6 @@ sp_version = sp.__version__.split(".")
 if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
     from scipy.sparse.linalg.interface import _ProductLinearOperator
     from scipy.sparse.sputils import isintlike, isshape
-
 else:
     from scipy.sparse._sputils import isintlike, isshape
     from scipy.sparse.linalg._interface import _ProductLinearOperator
