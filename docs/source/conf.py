@@ -118,10 +118,14 @@ html_show_sphinx = True
 html_show_copyright = True
 
 # Theme config
-html_theme = "sphinx_rtd_theme"
+html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     "logo_only": True,
     "display_version": True,
+     "logo": {
+      "image_light": "_static/pylops.png",
+      "image_dark": "logo-_static/pylops.png",
+   }
 }
 html_context = {
     "menu_links_name": "Repository",
