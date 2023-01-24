@@ -1,7 +1,14 @@
 # .readthedocs.yml
 
-python:
-  version: 3.8
-  setup_py_install: true
+version: 2
 
-requirements_file: requirements-doc.txt
+build:
+  os: ubuntu-20.04
+  tools:
+    python: "3.9"
+
+python:
+  install:
+    - requirements: requirements-doc.txt
+    - method: setuptools
+      path: .
