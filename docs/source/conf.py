@@ -124,7 +124,7 @@ html_theme_options = {
     "display_version": True,
      "logo": {
       "image_light": "_static/pylops.png",
-      "image_dark": "logo-_static/pylops.png",
+      "image_dark": "_static/pylops.png",
    }
 }
 html_context = {
