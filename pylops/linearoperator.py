@@ -19,14 +19,16 @@ from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
 from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse.linalg import lsqr, spsolve
-from scipy.sparse.sputils import isintlike, isshape
 
 # need to check scipy version since the interface submodule changed into
 # _interface from scipy>=1.8.0
 sp_version = sp.__version__.split(".")
 if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
     from scipy.sparse.linalg.interface import _ProductLinearOperator
+    from scipy.sparse.sputils import isintlike, isshape
+
 else:
+    from scipy.sparse._sputils import isintlike, isshape
     from scipy.sparse.linalg._interface import _ProductLinearOperator
 
 from typing import Callable, List, Optional, Sequence, Union
