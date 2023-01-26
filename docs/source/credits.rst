@@ -17,3 +17,4 @@ Contributors
 *  `Nick Luiken <https://github.com/NickLuiken>`_, NickLuiken
 *  `Muhammad Izzatullah <https://github.com/izzatum>`_, izzatum
 *  `Juan Daniel Romero <https://github.com/jdromerom>`_, jdromerom
+*  `Aniket Singh Rawat <https://github.com/dikwickley>`_, dikwickley
