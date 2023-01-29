@@ -206,8 +206,6 @@ class NonStationaryFilters1D(LinearOperator):
     ih : :obj:`tuple`
         Indices of the locations of the filters ``hs`` in the model (and data). Note
         that the filters must be regularly sampled, i.e. :math:`dh=\text{diff}(ih)=\text{const.}`
-    axis : :obj:`int`, optional
-        Axis along which convolution is applied
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -282,7 +280,6 @@ class NonStationaryFilters1D(LinearOperator):
         inp: NDArray,
         hsize: int,
         ih: InputDimsLike,
-        axis: int = -1,
         dtype: DTypeLike = "float64",
         name: str = "C",
     ) -> None:
@@ -295,7 +292,6 @@ class NonStationaryFilters1D(LinearOperator):
         self.inp = inp
         self.hsize = hsize
         self.oh, self.dh, self.nh, self.eh = ih[0], ih[1] - ih[0], len(ih), ih[-1]
-        self.axis = axis
 
         super().__init__(
             dtype=np.dtype(dtype), dims=(len(ih), hsize), dimsd=inp.shape, name=name
@@ -318,35 +314,35 @@ class NonStationaryFilters1D(LinearOperator):
             hs[ih_closest + 1, hextremes[0] : hextremes[1]] += dh_closest * htmp
         return hs
 
-    @reshaped(swapaxis=True)
+    @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
         y = np.zeros(self.dimsd, dtype=self.dtype)
-        for ix in range(self.dimsd[self.axis]):
+        for ix in range(self.dimsd[0]):
             h = self._interpolate_h(x, ix, self.oh, self.dh, self.nh)
             xextremes = (
                 max(0, ix - self.hsize // 2),
-                min(ix + self.hsize // 2 + 1, self.dimsd[self.axis]),
+                min(ix + self.hsize // 2 + 1, self.dimsd[0]),
             )
             hextremes = (
                 max(0, -ix + self.hsize // 2),
-                min(self.hsize, self.hsize // 2 + (self.dimsd[self.axis] - ix)),
+                min(self.hsize, self.hsize // 2 + (self.dimsd[0] - ix)),
             )
             y[..., xextremes[0] : xextremes[1]] += (
                 self.inp[..., ix : ix + 1] * h[hextremes[0] : hextremes[1]]
             )
         return y
 
-    @reshaped(swapaxis=True)
+    @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
         hs = np.zeros(self.dims, dtype=self.dtype)
-        for ix in range(self.dimsd[self.axis]):
+        for ix in range(self.dimsd[0]):
             xextremes = (
                 max(0, ix - self.hsize // 2),
-                min(ix + self.hsize // 2 + 1, self.dimsd[self.axis]),
+                min(ix + self.hsize // 2 + 1, self.dimsd[0]),
             )
             hextremes = (
                 max(0, -ix + self.hsize // 2),
-                min(self.hsize, self.hsize // 2 + (self.dimsd[self.axis] - ix)),
+                min(self.hsize, self.hsize // 2 + (self.dimsd[0] - ix)),
             )
 
             htmp = self.inp[ix] * x[..., xextremes[0] : xextremes[1]]
