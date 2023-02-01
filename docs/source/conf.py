@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-import os
 import sys
+import os
 import datetime
-
 from sphinx_gallery.sorting import ExampleTitleSortKey
 from pylops import __version__
 
@@ -82,6 +81,8 @@ plot_formats = ["png"]
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "**.ipynb_checkpoints", "**.ipynb", "**.md5"]
 source_suffix = ".rst"
+
+
 # The encoding of source files.
 source_encoding = "utf-8-sig"
 master_doc = "index"
