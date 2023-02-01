@@ -98,7 +98,7 @@ class LinearOperator(spLinearOperator):
         dimsd: Optional[ShapeLike] = None,
         clinear: Optional[bool] = None,
         explicit: Optional[bool] = None,
-    name: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> None:
         if Op is not None:
             self.Op = Op
