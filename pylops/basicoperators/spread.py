@@ -5,10 +5,10 @@ from typing import Callable, Optional
 
 import numpy as np
 
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils import deps
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
-from ..optimization.base_linearoperator import BaseLinearOperator
 
 jit_message = deps.numba_import("the spread module")
 

@@ -1,8 +1,10 @@
 from abc import ABCMeta, abstractmethod
 from typing import Optional
+
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
+
+from pylops.linearoperator import LinearOperator
 from pylops.utils.typing import DTypeLike, ShapeLike, NDArray
-from ..linearoperator import LinearOperator
 
 
 class BaseLinearOperator(LinearOperator, metaclass=ABCMeta):

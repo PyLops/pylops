@@ -4,11 +4,11 @@ import logging
 
 import numpy as np
 
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils import deps
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
 from ._chirpradon3d import _chirp_radon_3d
-from ..optimization.base_linearoperator import BaseLinearOperator
 
 pyfftw_message = deps.pyfftw_import("the chirpradon3d module")
 
