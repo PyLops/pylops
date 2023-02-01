@@ -53,6 +53,8 @@ class NonStationaryConvolve1D(LinearOperator):
         If filters ``hs`` have even size
     ValueError
         If ``ih`` is not regularly sampled
+    ValueError
+        If ``ih`` is outside the bounds defined by ``dims[axis]``
 
     Notes
     -----
@@ -103,12 +105,16 @@ class NonStationaryConvolve1D(LinearOperator):
             raise ValueError(
                 "the indices of filters 'ih' are must be regularly sampled"
             )
+        dims = _value_or_sized_to_tuple(dims)
+        if min(ih) < 0 or max(ih) >= dims[axis]:
+            raise ValueError(
+                "the indices of filters 'ih' must be larger than 0 and smaller than `dims`"
+            )
         self.hs = hs
         self.hsize = hs.shape[1]
         self.oh, self.dh, self.nh, self.eh = ih[0], ih[1] - ih[0], len(ih), ih[-1]
         self.axis = axis
 
-        dims = _value_or_sized_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
     @property
@@ -225,6 +231,8 @@ class NonStationaryFilters1D(LinearOperator):
         If filters ``hsize`` is a even number
     ValueError
         If ``ih`` is not regularly sampled
+    ValueError
+        If ``ih`` is outside the bounds defined by ``dims[axis]``
 
     See Also
     --------
@@ -288,6 +296,10 @@ class NonStationaryFilters1D(LinearOperator):
         if len(np.unique(np.diff(ih))) > 1:
             raise ValueError(
                 "the indices of filters 'ih' are must be regularly sampled"
+            )
+        if min(ih) < 0 or max(ih) >= inp.size:
+            raise ValueError(
+                "the indices of filters 'ih' must be larger than 0 and smaller than `dims`"
             )
         self.inp = inp
         self.hsize = hsize

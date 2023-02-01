@@ -34,14 +34,14 @@ else:
 class NonStationaryConvolve2D(LinearOperator):
     r"""2D non-stationary convolution operator.
 
-    Apply non-stationary two-dimensional convolution. A varying compact filter
-    is provided on a coarser grid and on-the-fly interpolation is applied
-    in forward and adjoint modes.
+    Apply non-stationary two-dimensional convolution. A varying compact filter is provided on a
+    coarser grid and on-the-fly interpolation is applied in forward and adjoint modes.
+    Both input and output have size :math`n_x \time n_z`.
 
     Parameters
     ----------
     dims : :obj:`list` or :obj:`int`
-        Number of samples for each dimension
+        Number of samples for each dimension (which we refer to as :math`n_x \time n_z`).
     hs : :obj:`numpy.ndarray`
         Bank of 2d compact filters of size
         :math:`n_{\text{filts},x} \times n_{\text{filts},z} \times n_h \times n_{h,x} \times n_{h,z}`.
@@ -76,6 +76,8 @@ class NonStationaryConvolve2D(LinearOperator):
         If filters ``hs`` have even size
     ValueError
         If ``ihx`` or ``ihz`` is not regularly sampled
+    ValueError
+        If ``ihx`` or ``ihz`` are outside the bounds defined by ``dims``
     NotImplementedError
         If ``engine`` is neither ``numpy``, ``fftw``, nor ``scipy``.
 
@@ -135,7 +137,10 @@ class NonStationaryConvolve2D(LinearOperator):
             raise ValueError(
                 "the indices of filters 'ih' are must be regularly sampled"
             )
-
+        if min(ihx) < 0 or min(ihz) < 0 or max(ihx) >= dims[0] or max(ihz) >= dims[1]:
+            raise ValueError(
+                "the indices of filters 'ih' must be larger than 0 and smaller than `dims`"
+            )
         self.hs = hs
         self.hshape = hs.shape[2:]
         self.ohx, self.dhx, self.nhx = ihx[0], ihx[1] - ihx[0], len(ihx)
@@ -371,7 +376,15 @@ class NonStationaryFilters2D(LinearOperator):
             raise ValueError(
                 "the indices of filters 'ih' are must be regularly sampled"
             )
-
+        if (
+            min(ihx) < 0
+            or min(ihz) < 0
+            or max(ihx) >= inp.shape[0]
+            or max(ihz) >= inp.shape[1]
+        ):
+            raise ValueError(
+                "the indices of filters 'ih' must be larger than 0 and smaller than `dims`"
+            )
         self.inp = inp
         self.inpdims = inp.shape
         self.hshape = hshape
