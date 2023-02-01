@@ -1,5 +1,5 @@
-PIP = D:\pylops\tenenv\Scripts\pip
-PYTHON = D:\pylops\tenenv\Scripts\python
+PIP := $(shell command -v pip3 2> /dev/null || command which pip 2> /dev/null)
+PYTHON := $(shell command -v python3 2> /dev/null || command which python 2> /dev/null)
 
 .PHONY: install dev-install install_conda dev-install_conda tests doc docupdate
 
