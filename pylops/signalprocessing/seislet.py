@@ -6,7 +6,7 @@ from typing import Optional, Sequence
 import numpy as np
 
 from pylops.basicoperators import Pad
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.utils.typing import DTypeLike, NDArray
 
 

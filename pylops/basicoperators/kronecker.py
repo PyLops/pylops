@@ -3,7 +3,7 @@ __all__ = ["Kronecker"]
 import numpy as np
 
 from pylops import LinearOperator
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.utils.typing import DTypeLike, NDArray
 
 

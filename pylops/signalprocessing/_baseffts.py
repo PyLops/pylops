@@ -6,7 +6,7 @@ from typing import Optional, Sequence, Union
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.utils._internal import (
     _raise_on_wrong_dtype,
     _value_or_sized_to_array,

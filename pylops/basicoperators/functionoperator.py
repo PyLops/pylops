@@ -3,7 +3,7 @@ __all__ = ["FunctionOperator"]
 from numbers import Integral
 from typing import Callable
 
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.utils.typing import NDArray, ShapeLike
 
 

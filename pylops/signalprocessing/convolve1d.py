@@ -5,7 +5,7 @@ from typing import Callable, Tuple, Union
 import numpy as np
 import numpy.typing as npt
 
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import (
     get_convolve,

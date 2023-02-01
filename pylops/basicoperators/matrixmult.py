@@ -7,7 +7,7 @@ import numpy as np
 import scipy as sp
 from scipy.sparse.linalg import inv
 
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.backend import get_array_module
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray

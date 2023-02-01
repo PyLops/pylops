@@ -2,7 +2,7 @@ __all__ = ["Fredholm1"]
 
 import numpy as np
 
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray

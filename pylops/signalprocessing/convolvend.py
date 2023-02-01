@@ -5,7 +5,7 @@ from typing import Optional, Union
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import (
     get_array_module,

@@ -11,7 +11,7 @@ import numpy as np
 from scipy.sparse.linalg import lsqr
 
 from pylops import Diagonal, Identity, LinearOperator, Pad, aslinearoperator
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.signalprocessing import FFT
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import to_cupy_conditional

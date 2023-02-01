@@ -6,9 +6,10 @@ from math import ceil, log
 import numpy as np
 
 from pylops.basicoperators import Pad
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.utils import deps
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+
 from .dwt import _adjointwavelet, _checkwavelet
 
 pywt_message = deps.pywt_import("the dwt2d module")

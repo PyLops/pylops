@@ -2,6 +2,7 @@ from __future__ import annotations, division
 
 __all__ = [
     "LinearOperator",
+    "BaseLinearOperator",
     "aslinearoperator",
 ]
 
@@ -39,6 +40,8 @@ from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahut
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+
+from abc import ABCMeta, abstractmethod
 
 
 class LinearOperator(spLinearOperator):
@@ -1129,6 +1132,53 @@ class LinearOperator(spLinearOperator):
         self.rmatmat_count = 0
 
 
+class BaseLinearOperator(LinearOperator, metaclass=ABCMeta):
+    """Base class for LinearOperator.
+
+    This is the ABCMeta template class used as base class
+    for all operators. It enforces each operator to implement the
+    ``_matvec`` and ``_rmatvec`` methods.
+
+    """
+
+    def __init__(
+        self,
+        Op: Optional[spLinearOperator] = None,
+        dtype: Optional[DTypeLike] = None,
+        shape: Optional[ShapeLike] = None,
+        dims: Optional[ShapeLike] = None,
+        dimsd: Optional[ShapeLike] = None,
+        clinear: Optional[bool] = None,
+        explicit: Optional[bool] = None,
+        name: Optional[str] = None,
+    ) -> None:
+        super().__init__(Op, dtype, shape, dims, dimsd, clinear, explicit, name)
+
+    @abstractmethod
+    def _matvec(self, x: NDArray) -> NDArray:
+        """Template matvec
+
+        Parameters
+        ----------
+        x : :obj:`np.ndarray`
+            Input
+
+        """
+        pass
+
+    @abstractmethod
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        """Template rmatvec
+
+        Parameters
+        ----------
+        x : :obj:`np.ndarray`
+            Input
+
+        """
+        pass
+
+
 def _get_dtype(
     operators: Sequence[LinearOperator],
     dtypes: Optional[Sequence[DTypeLike]] = None,
@@ -1181,9 +1231,6 @@ class _ScaledLinearOperator(spLinearOperator):
     def _adjoint(self) -> LinearOperator:
         A, alpha = self.args
         return A.H * np.conj(alpha)
-
-
-from pylops.optimization.base_linearoperator import BaseLinearOperator
 
 
 class _ConjLinearOperator(BaseLinearOperator):

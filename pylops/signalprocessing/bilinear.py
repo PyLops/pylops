@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import numpy.typing as npt
 
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 from pylops.utils.backend import get_add_at, get_array_module, to_numpy
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray

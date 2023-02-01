@@ -16,12 +16,12 @@ Note that as the operator will be a class, we need to follow the UpperCaseCamelC
 and for the filename.
 
 Once we have created the file, we will start by importing the modules that will be needed by the operator.
-While this varies from operator to operator, you will always need to import the :py:class:`pylops.LinearOperator` class,
+While this varies from operator to operator, you will always need to import the :py:class:`pylops.BaseLinearOperator` class,
 which will be used as *parent* class for any of our operators:
 
 .. code-block:: python
 
-   from pylops import LinearOperator
+   from pylops import BaseLinearOperator
 
 This class is a child of the
 :py:class:`scipy.sparse.linalg.LinearOperator` class itself which implements the same methods of its parent class
@@ -32,7 +32,7 @@ After that we define our new object:
 
 .. code-block:: python
 
-   class Diagonal(LinearOperator):
+   class Diagonal(BaseLinearOperator):
 
 followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html>`__
 (starting with ``r"""`` and ending with ``"""``) containing the documentation of the operator. Such docstring should

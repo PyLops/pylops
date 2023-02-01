@@ -5,7 +5,7 @@ import multiprocessing as mp
 import numpy as np
 import scipy as sp
 
-from pylops.optimization.base_linearoperator import BaseLinearOperator
+from pylops.linearoperator import BaseLinearOperator
 
 # need to check scipy version since the interface submodule changed into
 # _interface from scipy>=1.8.0
