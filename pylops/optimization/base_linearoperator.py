@@ -13,7 +13,7 @@ class BaseLinearOperator(LinearOperator, metaclass=ABCMeta):
 
     @abstractmethod
     def _matvec(self, x: NDArray) -> NDArray:
-        """Matrix Multiplication Handler
+        """Matrix Vector Handler
 
         Parameters
         ----------
