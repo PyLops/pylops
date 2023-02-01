@@ -8,7 +8,7 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.signalprocessing import Convolve1D
 from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.decorators import reshaped
@@ -47,7 +47,7 @@ except Exception as e:
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class Kirchhoff(LinearOperator):
+class Kirchhoff(BaseLinearOperator):
     r"""Kirchhoff Demigration operator.
 
     Kirchhoff-based demigration/migration operator. Uses a high-frequency

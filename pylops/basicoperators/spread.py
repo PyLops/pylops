@@ -5,10 +5,10 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from pylops import LinearOperator
 from pylops.utils import deps
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from ..optimization.base_linearoperator import BaseLinearOperator
 
 jit_message = deps.numba_import("the spread module")
 
@@ -25,7 +25,7 @@ if jit_message is None:
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class Spread(LinearOperator):
+class Spread(BaseLinearOperator):
     r"""Spread operator.
 
     Spread values from the input model vector arranged as a 2-dimensional

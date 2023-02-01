@@ -5,12 +5,11 @@ from math import ceil, log
 
 import numpy as np
 
-from pylops import LinearOperator
 from pylops.basicoperators import Pad
 from pylops.utils import deps
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
-
 from .dwt import _adjointwavelet, _checkwavelet
+from ..optimization.base_linearoperator import BaseLinearOperator
 
 pywt_message = deps.pywt_import("the dwt2d module")
 
@@ -20,7 +19,7 @@ if pywt_message is None:
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class DWT2D(LinearOperator):
+class DWT2D(BaseLinearOperator):
     """Two dimensional Wavelet operator.
 
     Apply 2D-Wavelet Transform along two ``axes`` of a

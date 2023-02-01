@@ -4,12 +4,11 @@ import logging
 
 import numpy as np
 
-from pylops import LinearOperator
 from pylops.utils import deps
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
-
 from ._chirpradon3d import _chirp_radon_3d
+from ..optimization.base_linearoperator import BaseLinearOperator
 
 pyfftw_message = deps.pyfftw_import("the chirpradon3d module")
 
@@ -21,7 +20,7 @@ if pyfftw_message is None:
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class ChirpRadon3D(LinearOperator):
+class ChirpRadon3D(BaseLinearOperator):
     r"""3D Chirp Radon transform
 
     Apply Radon forward (and adjoint) transform using Fast Fourier Transform

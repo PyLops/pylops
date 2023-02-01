@@ -4,13 +4,13 @@ from typing import Union
 
 import numpy as np
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
-class CausalIntegration(LinearOperator):
+class CausalIntegration(BaseLinearOperator):
     r"""Causal integration.
 
     Apply causal integration to a multi-dimensional array along ``axis``.

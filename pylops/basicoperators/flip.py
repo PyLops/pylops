@@ -4,13 +4,13 @@ from typing import Union
 
 import numpy as np
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
-class Flip(LinearOperator):
+class Flip(BaseLinearOperator):
     r"""Flip along an axis.
 
     Flip a multi-dimensional array along ``axis``.

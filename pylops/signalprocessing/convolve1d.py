@@ -5,7 +5,7 @@ from typing import Callable, Tuple, Union
 import numpy as np
 import numpy.typing as npt
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import (
     get_convolve,
@@ -42,7 +42,7 @@ def _choose_convfunc(
     return convfunc, method
 
 
-class Convolve1D(LinearOperator):
+class Convolve1D(BaseLinearOperator):
     r"""1D convolution operator.
 
     Apply one-dimensional convolution with a compact filter to model (and data)

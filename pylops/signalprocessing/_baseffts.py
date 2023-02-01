@@ -6,7 +6,7 @@ from typing import Optional, Sequence, Union
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils._internal import (
     _raise_on_wrong_dtype,
     _value_or_sized_to_array,
@@ -24,7 +24,7 @@ class _FFTNorms(Enum):
     ONE_OVER_N = auto()
 
 
-class _BaseFFT(LinearOperator):
+class _BaseFFT(BaseLinearOperator):
     """Base class for one dimensional Fast-Fourier Transform"""
 
     def __init__(
@@ -130,7 +130,7 @@ class _BaseFFT(LinearOperator):
         )
 
 
-class _BaseFFTND(LinearOperator):
+class _BaseFFTND(BaseLinearOperator):
     """Base class for N-dimensional fast Fourier Transform"""
 
     def __init__(

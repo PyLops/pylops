@@ -2,13 +2,13 @@ __all__ = ["Fredholm1"]
 
 import numpy as np
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
 
 
-class Fredholm1(LinearOperator):
+class Fredholm1(BaseLinearOperator):
     r"""Fredholm integral of first kind.
 
     Implement a multi-dimensional Fredholm integral of first kind. Note that if

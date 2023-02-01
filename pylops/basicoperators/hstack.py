@@ -5,6 +5,8 @@ import multiprocessing as mp
 import numpy as np
 import scipy as sp
 
+from pylops.optimization.base_linearoperator import BaseLinearOperator
+
 # need to check scipy version since the interface submodule changed into
 # _interface from scipy>=1.8.0
 sp_version = sp.__version__.split(".")
@@ -30,7 +32,7 @@ def _matvec_rmatvec_map(op, x: NDArray) -> NDArray:
     return op(x).squeeze()
 
 
-class HStack(LinearOperator):
+class HStack(BaseLinearOperator):
     r"""Horizontal stacking.
 
     Stack a set of N linear operators horizontally.

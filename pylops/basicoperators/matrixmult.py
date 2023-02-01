@@ -7,7 +7,7 @@ import numpy as np
 import scipy as sp
 from scipy.sparse.linalg import inv
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.backend import get_array_module
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
@@ -15,7 +15,7 @@ from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class MatrixMult(LinearOperator):
+class MatrixMult(BaseLinearOperator):
     r"""Matrix multiplication.
 
     Simple wrapper to :py:func:`numpy.dot` and :py:func:`numpy.vdot` for

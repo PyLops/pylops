@@ -5,7 +5,6 @@ __all__ = [
     "aslinearoperator",
 ]
 
-
 import logging
 
 import numpy as np
@@ -91,15 +90,15 @@ class LinearOperator(spLinearOperator):
     T: Callable[[LinearOperator], LinearOperator]
 
     def __init__(
-        self,
-        Op: Optional[spLinearOperator] = None,
-        dtype: Optional[DTypeLike] = None,
-        shape: Optional[ShapeLike] = None,
-        dims: Optional[ShapeLike] = None,
-        dimsd: Optional[ShapeLike] = None,
-        clinear: Optional[bool] = None,
-        explicit: Optional[bool] = None,
-        name: Optional[str] = None,
+            self,
+            Op: Optional[spLinearOperator] = None,
+            dtype: Optional[DTypeLike] = None,
+            shape: Optional[ShapeLike] = None,
+            dims: Optional[ShapeLike] = None,
+            dimsd: Optional[ShapeLike] = None,
+            clinear: Optional[bool] = None,
+            explicit: Optional[bool] = None,
+            name: Optional[str] = None,
     ) -> None:
         if Op is not None:
             self.Op = Op
@@ -267,9 +266,9 @@ class LinearOperator(spLinearOperator):
         del self._name
 
     def _copy_attributes(
-        self,
-        dest: LinearOperator,
-        exclude: Optional[List[str]] = None,
+            self,
+            dest: LinearOperator,
+            exclude: Optional[List[str]] = None,
     ) -> None:
         """Copy attributes from one LinearOperator to another"""
         if exclude is None:
@@ -551,7 +550,7 @@ class LinearOperator(spLinearOperator):
             return Op
         else:
             if not get_ndarray_multiplication() and (
-                x.ndim > 2 or (x.ndim == 2 and x.shape[0] != self.shape[1])
+                    x.ndim > 2 or (x.ndim == 2 and x.shape[0] != self.shape[1])
             ):
                 raise ValueError(
                     "Operator can only be applied 1D vectors or 2D matrices. "
@@ -588,10 +587,10 @@ class LinearOperator(spLinearOperator):
                 )
 
     def div(
-        self,
-        y: NDArray,
-        niter: int = 100,
-        densesolver: str = "scipy",
+            self,
+            y: NDArray,
+            niter: int = 100,
+            densesolver: str = "scipy",
     ) -> NDArray:
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
 
@@ -617,10 +616,10 @@ class LinearOperator(spLinearOperator):
         return xest
 
     def __truediv__(
-        self,
-        y: NDArray,
-        niter: int = 100,
-        densesolver: str = "scipy",
+            self,
+            y: NDArray,
+            niter: int = 100,
+            densesolver: str = "scipy",
     ) -> NDArray:
         if self.explicit is True:
             if sp.sparse.issparse(self.A):
@@ -659,8 +658,8 @@ class LinearOperator(spLinearOperator):
         return xest
 
     def todense(
-        self,
-        backend: str = "numpy",
+            self,
+            backend: str = "numpy",
     ) -> NDArray:
         r"""Return dense matrix.
 
@@ -760,12 +759,12 @@ class LinearOperator(spLinearOperator):
         return matrix
 
     def eigs(
-        self,
-        neigs: Optional[int] = None,
-        symmetric: bool = False,
-        niter: Optional[int] = None,
-        uselobpcg: bool = False,
-        **kwargs_eig: Union[int, float, str],
+            self,
+            neigs: Optional[int] = None,
+            symmetric: bool = False,
+            niter: Optional[int] = None,
+            uselobpcg: bool = False,
+            **kwargs_eig: Union[int, float, str],
     ) -> NDArray:
         r"""Most significant eigenvalues of linear operator.
 
@@ -914,9 +913,9 @@ class LinearOperator(spLinearOperator):
         return -np.sort(-eigenvalues)
 
     def cond(
-        self,
-        uselobpcg: bool = False,
-        **kwargs_eig: Union[int, float, str],
+            self,
+            uselobpcg: bool = False,
+            **kwargs_eig: Union[int, float, str],
     ) -> NDArray:
         r"""Condition number of linear operator.
 
@@ -1049,11 +1048,11 @@ class LinearOperator(spLinearOperator):
         return imagop
 
     def trace(
-        self,
-        neval: Optional[int] = None,
-        method: Optional[str] = None,
-        backend: str = "numpy",
-        **kwargs_trace,
+            self,
+            neval: Optional[int] = None,
+            method: Optional[str] = None,
+            backend: str = "numpy",
+            **kwargs_trace,
     ) -> float:
         r"""Trace of linear operator.
 
@@ -1131,8 +1130,8 @@ class LinearOperator(spLinearOperator):
 
 
 def _get_dtype(
-    operators: Sequence[LinearOperator],
-    dtypes: Optional[Sequence[DTypeLike]] = None,
+        operators: Sequence[LinearOperator],
+        dtypes: Optional[Sequence[DTypeLike]] = None,
 ) -> DTypeLike:
     if dtypes is None:
         dtypes = []
@@ -1155,9 +1154,9 @@ class _ScaledLinearOperator(spLinearOperator):
     """
 
     def __init__(
-        self,
-        A: Union[spLinearOperator, LinearOperator],
-        alpha: float,
+            self,
+            A: Union[spLinearOperator, LinearOperator],
+            alpha: float,
     ) -> None:
         if not isinstance(A, spLinearOperator):
             raise ValueError("LinearOperator expected as A")
@@ -1184,7 +1183,10 @@ class _ScaledLinearOperator(spLinearOperator):
         return A.H * np.conj(alpha)
 
 
-class _ConjLinearOperator(LinearOperator):
+from pylops.optimization.base_linearoperator import BaseLinearOperator
+
+
+class _ConjLinearOperator(BaseLinearOperator):
     """Complex conjugate linear operator"""
 
     def __init__(self, Op: Union[spLinearOperator, LinearOperator]) -> None:
@@ -1203,7 +1205,7 @@ class _ConjLinearOperator(LinearOperator):
         return _ConjLinearOperator(self.Op.H)
 
 
-class _ColumnLinearOperator(LinearOperator):
+class _ColumnLinearOperator(BaseLinearOperator):
     """Column selector linear operator
 
     Produces the forward and adjoint passes with a subset of columns of the
@@ -1211,9 +1213,9 @@ class _ColumnLinearOperator(LinearOperator):
     """
 
     def __init__(
-        self,
-        Op: Union[spLinearOperator, LinearOperator],
-        cols: InputDimsLike,
+            self,
+            Op: Union[spLinearOperator, LinearOperator],
+            cols: InputDimsLike,
     ) -> None:
         if not isinstance(Op, spLinearOperator):
             raise TypeError("Op must be a LinearOperator")
@@ -1246,9 +1248,9 @@ class _ColumnLinearOperator(LinearOperator):
 
 class _SumLinearOperator(spLinearOperator):
     def __init__(
-        self,
-        A: Union[spLinearOperator, LinearOperator],
-        B: Union[spLinearOperator, LinearOperator],
+            self,
+            A: Union[spLinearOperator, LinearOperator],
+            B: Union[spLinearOperator, LinearOperator],
     ) -> None:
         if not isinstance(A, spLinearOperator) or not isinstance(B, spLinearOperator):
             raise ValueError("both operands have to be a LinearOperator")
@@ -1306,10 +1308,10 @@ class _PowerLinearOperator(spLinearOperator):
 
     def _adjoint(self) -> LinearOperator:
         A, p = self.args
-        return A.H**p
+        return A.H ** p
 
 
-class _RealImagLinearOperator(LinearOperator):
+class _RealImagLinearOperator(BaseLinearOperator):
     """Real-Imag linear operator
 
     Computes forward and adjoint passes of an operator Op and returns only
@@ -1319,11 +1321,11 @@ class _RealImagLinearOperator(LinearOperator):
     """
 
     def __init__(
-        self,
-        Op: Union[spLinearOperator, LinearOperator],
-        forw: bool = True,
-        adj: bool = True,
-        real: bool = True,
+            self,
+            Op: Union[spLinearOperator, LinearOperator],
+            forw: bool = True,
+            adj: bool = True,
+            real: bool = True,
     ) -> None:
         if not isinstance(Op, spLinearOperator):
             raise TypeError("Op must be a LinearOperator")

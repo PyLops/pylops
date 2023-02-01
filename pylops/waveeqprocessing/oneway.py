@@ -11,6 +11,7 @@ import numpy as np
 from scipy.sparse.linalg import lsqr
 
 from pylops import Diagonal, Identity, LinearOperator, Pad, aslinearoperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.signalprocessing import FFT
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import to_cupy_conditional
@@ -20,7 +21,7 @@ from pylops.utils.typing import DTypeLike, NDArray
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class _PhaseShift(LinearOperator):
+class _PhaseShift(BaseLinearOperator):
     """Phase shift operator in frequency-wavenumber domain
 
     Apply positive phase shift directly in frequency-wavenumber domain.

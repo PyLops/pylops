@@ -5,12 +5,12 @@ from typing import Union
 
 import numpy as np
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
-class Conj(LinearOperator):
+class Conj(BaseLinearOperator):
     r"""Complex conjugate operator.
 
     Return the complex conjugate of the input. It is self-adjoint.

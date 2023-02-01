@@ -5,14 +5,14 @@ import logging
 import numpy as np
 import numpy.typing as npt
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils.backend import get_array_module
 from pylops.utils.typing import DTypeLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class Regression(LinearOperator):
+class Regression(BaseLinearOperator):
     r"""Polynomial regression.
 
     Creates an operator that applies polynomial regression to a set of points.

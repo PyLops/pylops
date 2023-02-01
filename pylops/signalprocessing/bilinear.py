@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import numpy.typing as npt
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils.backend import get_add_at, get_array_module, to_numpy
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
@@ -20,7 +20,7 @@ def _checkunique(iava: npt.ArrayLike) -> None:
         raise ValueError("Repeated values in iava array")
 
 
-class Bilinear(LinearOperator):
+class Bilinear(BaseLinearOperator):
     r"""Bilinear interpolation operator.
 
     Apply bilinear interpolation onto fractionary positions ``iava``

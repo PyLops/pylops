@@ -3,10 +3,11 @@ __all__ = ["Kronecker"]
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils.typing import DTypeLike, NDArray
 
 
-class Kronecker(LinearOperator):
+class Kronecker(BaseLinearOperator):
     r"""Kronecker operator.
 
     Perform Kronecker product of two operators. Note that the combined operator

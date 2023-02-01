@@ -8,13 +8,14 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, Pad
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.signalprocessing import Shift
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
 
 
-class BlendingContinuous(LinearOperator):
+class BlendingContinuous(BaseLinearOperator):
     r"""Continuous blending operator
 
     Blend seismic shot gathers in continuous mode based on pre-defined sequence of firing times.

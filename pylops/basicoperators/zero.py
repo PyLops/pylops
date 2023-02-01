@@ -4,12 +4,12 @@ from typing import Optional
 
 import numpy as np
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils.backend import get_array_module
 from pylops.utils.typing import DTypeLike, NDArray
 
 
-class Zero(LinearOperator):
+class Zero(BaseLinearOperator):
     r"""Zero operator.
 
     Transform model into array of zeros of size :math:`N` in forward

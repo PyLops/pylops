@@ -5,7 +5,7 @@ from typing import Optional, Union
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import (
     get_array_module,
@@ -17,7 +17,7 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
-class ConvolveND(LinearOperator):
+class ConvolveND(BaseLinearOperator):
     r"""ND convolution operator.
 
     Apply n-dimensional convolution with a compact filter to model

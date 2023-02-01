@@ -5,12 +5,12 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from pylops import LinearOperator
 from pylops.utils import deps
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from ..optimization.base_linearoperator import BaseLinearOperator
 
 jit_message = deps.numba_import("the nonstatconvolve2d module")
 
@@ -28,7 +28,7 @@ else:
     prange = range
 
 
-class NonStationaryConvolve2D(LinearOperator):
+class NonStationaryConvolve2D(BaseLinearOperator):
     r"""2D non-stationary convolution operator.
 
     Apply non-stationary two-dimensional convolution. A varying compact filter

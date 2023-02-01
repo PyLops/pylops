@@ -6,7 +6,7 @@ import numpy as np
 import numpy.ma as np_ma
 from numpy.core.multiarray import normalize_axis_index
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
@@ -25,7 +25,7 @@ def _compute_iavamask(dims, axis, iava, ncp):
     return iavamask
 
 
-class Restriction(LinearOperator):
+class Restriction(BaseLinearOperator):
     r"""Restriction (or sampling) operator.
 
     Extract subset of values from input vector at locations ``iava``

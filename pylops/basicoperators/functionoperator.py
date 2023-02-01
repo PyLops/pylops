@@ -3,11 +3,11 @@ __all__ = ["FunctionOperator"]
 from numbers import Integral
 from typing import Callable
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils.typing import NDArray, ShapeLike
 
 
-class FunctionOperator(LinearOperator):
+class FunctionOperator(BaseLinearOperator):
     r"""Function Operator.
 
     Simple wrapper to functions for forward `f` and adjoint `f_c`

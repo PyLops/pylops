@@ -3,13 +3,13 @@ __all__ = ["Transpose"]
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
-class Transpose(LinearOperator):
+class Transpose(BaseLinearOperator):
     r"""Transpose operator.
 
     Transpose axes of a multi-dimensional array. This operator works with

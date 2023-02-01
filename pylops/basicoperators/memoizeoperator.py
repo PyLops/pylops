@@ -5,10 +5,11 @@ from typing import List, Tuple
 import numpy as np
 
 from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils.typing import NDArray
 
 
-class MemoizeOperator(LinearOperator):
+class MemoizeOperator(BaseLinearOperator):
     r"""Memoize Operator.
 
     This operator can be used to wrap any PyLops operator and add a memoize

@@ -4,16 +4,15 @@ import logging
 
 import numpy as np
 
-from pylops import LinearOperator
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
-
 from ._chirpradon2d import _chirp_radon_2d
+from ..optimization.base_linearoperator import BaseLinearOperator
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class ChirpRadon2D(LinearOperator):
+class ChirpRadon2D(BaseLinearOperator):
     r"""2D Chirp Radon transform
 
     Apply Radon forward (and adjoint) transform using Fast

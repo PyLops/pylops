@@ -4,7 +4,7 @@ from typing import Tuple
 
 import numpy as np
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils import deps
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, SamplingLike
@@ -16,7 +16,7 @@ if devito_message is None:
     from examples.seismic.acoustic import AcousticWaveSolver
 
 
-class AcousticWave2D(LinearOperator):
+class AcousticWave2D(BaseLinearOperator):
     """Devito Acoustic propagator.
 
     Parameters

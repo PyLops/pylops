@@ -4,13 +4,13 @@ from typing import Union
 
 import numpy as np
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
-class Roll(LinearOperator):
+class Roll(BaseLinearOperator):
     r"""Roll along an axis.
 
     Roll a multi-dimensional array along ``axis`` for

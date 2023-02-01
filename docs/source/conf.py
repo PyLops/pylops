@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-import sys
-import os
 import datetime
+import os
+import sys
+
 from sphinx_gallery.sorting import ExampleTitleSortKey
+
 from pylops import __version__
 
 # Sphinx needs to be able to import the package to use autodoc and get the version number
@@ -82,7 +84,6 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "**.ipynb_checkpoints", "**.ipynb", "**.md5"]
 source_suffix = ".rst"
 
-
 # The encoding of source files.
 source_encoding = "utf-8-sig"
 master_doc = "index"
@@ -122,8 +123,8 @@ html_theme_options = {
     "logo_only": True,
     "display_version": True,
     "logo": {
-      "image_light": "pylops_b.png",
-      "image_dark": "pylops.png",
+        "image_light": "pylops_b.png",
+        "image_dark": "pylops.png",
     }
 }
 html_context = {

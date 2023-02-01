@@ -5,12 +5,12 @@ from typing import Optional
 
 import numpy as np
 
-from pylops import LinearOperator
+from pylops.optimization.base_linearoperator import BaseLinearOperator
 from pylops.utils.backend import get_array_module
 from pylops.utils.typing import DTypeLike, NDArray
 
 
-class Identity(LinearOperator):
+class Identity(BaseLinearOperator):
     r"""Identity operator.
 
     Simply move model to data in forward model and viceversa in adjoint mode if
