@@ -290,10 +290,10 @@ class LinearOperator:
                 setattr(dest, attr, getattr(self, attr))
 
     def _matvec(self, x: NDArray) -> NDArray:
-        return self.Op._matvec(x)
+        return self.Op.matmat(x.reshape(-1, 1))
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        return self.Op._rmatvec(x)
+        return self.Op.H.matvec(x)
 
     def _matmat(self, X: NDArray) -> NDArray:
         """Matrix-matrix multiplication handler.
