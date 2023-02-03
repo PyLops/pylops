@@ -1306,6 +1306,7 @@ class _TransposeLinearOperator(LinearOperator):
 
 
 class _ProductLinearOperator(LinearOperator):
+    """ Product of Linear Operators """
     def __init__(self, A: LinearOperator, B: LinearOperator):
         if not isinstance(A, LinearOperator) or not isinstance(B, LinearOperator):
             raise ValueError(f"both operands have to be a LinearOperator{type(A)} {type(B)}")
