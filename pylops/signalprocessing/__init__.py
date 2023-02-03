@@ -29,6 +29,7 @@ A list of operators present in pylops.signalprocessing:
     Patch2D                         2D Patching transform operator.
     Patch3D                         3D Patching transform operator.
     Fredholm1                       Fredholm integral of first kind.
+    DCT                             Discrete Cosine Transform
 
 """
 
@@ -56,6 +57,7 @@ from .fredholm1 import *
 from .dwt import *
 from .dwt2d import *
 from .seislet import *
+from .dct import *
 
 __all__ = [
     "FFT",
@@ -82,4 +84,5 @@ __all__ = [
     "DWT",
     "DWT2D",
     "Seislet",
+    "DCT",
 ]

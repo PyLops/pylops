@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from pylops.transforms import DCT
+from pylops.signalprocessing import DCT
 from pylops.utils import dottest
 
 par1 = {"ny": 11, "nx": 11, "imag": 0, "dtype": "float64"}

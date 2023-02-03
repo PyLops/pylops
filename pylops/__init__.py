@@ -56,7 +56,6 @@ from . import (
     signalprocessing,
     utils,
     waveeqprocessing,
-    transforms,
 )
 from .avo.poststack import *
 from .avo.prestack import *
@@ -67,7 +66,6 @@ from .utils.seismicevents import *
 from .utils.tapers import *
 from .utils.utils import *
 from .utils.wavelets import *
-from .transforms.dct import *
 
 try:
     from .version import version as __version__
