@@ -1,4 +1,4 @@
-__all__ = ["DiscreetCosine"]
+__all__ = ["DCT"]
 
 from typing import Optional, Union
 
@@ -7,10 +7,11 @@ from scipy import fft
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 from pylops.utils.decorators import reshaped
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-class DiscreetCosine(LinearOperator):
+
+class DCT(LinearOperator):
     r"""Discreet Cosine Transform
 
     Performs discreet cosine transform on the given multi-dimensional
@@ -21,7 +22,7 @@ class DiscreetCosine(LinearOperator):
     dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
     axis : :obj:`int`, optional
-        Axes over which the DCT is computed. 
+        Axes over which the DCT is computed.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -41,7 +42,7 @@ class DiscreetCosine(LinearOperator):
     It is a type 2 DCT transform.
 
     To calculate the DCT we use the following
-    
+
     .. math::
        f = \begin{cases}
        \sqrt{\frac{1}{4N}} & \text{if }k=0, \\
@@ -51,11 +52,11 @@ class DiscreetCosine(LinearOperator):
     """
 
     def __init__(
-        self, 
-        dims: Union[int, InputDimsLike], 
+        self,
+        dims: Union[int, InputDimsLike],
         axes: int = None,
         dtype: DTypeLike = "float64",
-        name: str = "C"
+        name: str = "C",
     ) -> None:
         self.axes = axes
         dims = _value_or_sized_to_tuple(dims)
@@ -64,7 +65,6 @@ class DiscreetCosine(LinearOperator):
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
         return fft.dctn(x, axes=self.axes, norm="ortho")
-        
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:

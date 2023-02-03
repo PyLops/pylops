@@ -6,11 +6,9 @@ The subpackage tranforms provide various transforms.
 
 A list of available transforms present in pylops.transforms
 
-    DiscreetCosine                  Discreet Cosine Transform
+    DCT                  Discrete Cosine Transform
 """
 
-from .discreetcosine import *
+from .dct import *
 
-__all__ = [
-    "DiscreetCosine"
-]
+__all__ = ["DCT"]
