@@ -290,10 +290,12 @@ class LinearOperator:
                 setattr(dest, attr, getattr(self, attr))
 
     def _matvec(self, x: NDArray) -> NDArray:
-        return self.Op.matmat(x.reshape(-1, 1))
+        if self.Op is not None:
+            return self.Op.matmat(x.reshape(-1, 1))
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        return self.Op.H.matvec(x)
+        if self.Op is not None:
+            return self.Op.H.matvec(x)
 
     def _matmat(self, X: NDArray) -> NDArray:
         """Matrix-matrix multiplication handler.
@@ -351,7 +353,7 @@ class LinearOperator:
 
     def __pow__(self, p: int) -> LinearOperator:
         if np.isscalar(p):
-            Op = aslinearoperator(_PowerLinearOperator(self, p))
+            Op = LinearOperator(Op=_PowerLinearOperator(self, p))
             self._copy_attributes(
                 Op,
                 exclude=[
@@ -365,7 +367,7 @@ class LinearOperator:
 
     def __add__(self, x: LinearOperator) -> LinearOperator:
         if isinstance(x, LinearOperator):
-            Op = aslinearoperator(_SumLinearOperator(self, x))
+            Op = LinearOperator(Op=_SumLinearOperator(self, x))
             Opx = aslinearoperator(x)
             self._copy_attributes(
                 Op,
@@ -385,7 +387,7 @@ class LinearOperator:
             return NotImplemented
 
     def __neg__(self) -> LinearOperator:
-        Op = aslinearoperator(_ScaledLinearOperator(self, -1))
+        Op = LinearOperator(Op=_ScaledLinearOperator(self, -1))
         self._copy_attributes(
             Op,
             exclude=[
@@ -399,7 +401,7 @@ class LinearOperator:
         return self.__add__(-x)
 
     def _adjoint(self) -> LinearOperator:
-        Op = aslinearoperator(_AdjointLinearOperator(self))
+        Op = LinearOperator(Op=_AdjointLinearOperator(self))
         self._copy_attributes(Op, exclude=["dims", "dimsd", "explicit", "name"])
         Op.explicit = False
         Op.dims = self.dimsd
@@ -407,7 +409,7 @@ class LinearOperator:
         return Op
 
     def _transpose(self) -> LinearOperator:
-        Op = aslinearoperator(_TransposeLinearOperator(self))
+        Op = LinearOperator(Op=_TransposeLinearOperator(self))
         self._copy_attributes(Op, exclude=["dims", "dimsd", "explicit", "name"])
         Op.explicit = False
         Op.dims = self.dimsd
@@ -550,14 +552,14 @@ class LinearOperator:
 
         """
         if isinstance(x, LinearOperator):
-            Op = aslinearoperator(_ProductLinearOperator(self, x))
+            Op = LinearOperator(Op=_ProductLinearOperator(self, x))
             self._copy_attributes(Op, exclude=["dims", "explicit", "name"])
             Op.clinear = Op.clinear and x.clinear
             Op.explicit = False
             Op.dims = x.dims
             return Op
         elif np.isscalar(x):
-            Op = aslinearoperator(_ScaledLinearOperator(self, x))
+            Op = LinearOperator(Op=_ScaledLinearOperator(self, x))
             self._copy_attributes(
                 Op,
                 exclude=[
@@ -1269,17 +1271,17 @@ class _AdjointLinearOperator(LinearOperator):
         self.A = A
         self.args = (A,)
 
-    def _matvec(self, x):
+    def _matvec(self, x: NDArray) -> NDArray:
         return self.A._rmatvec(x)
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: NDArray) -> NDArray:
         return self.A._matvec(x)
 
-    def _matmat(self, x):
-        return self.A._rmatmat(x)
+    def _matmat(self, X: NDArray) -> NDArray:
+        return self.A._rmatmat(X)
 
-    def _rmatmat(self, x):
-        return self.A._matmat(x)
+    def _rmatmat(self, X: NDArray) -> NDArray:
+        return self.A._matmat(X)
 
 
 class _TransposeLinearOperator(LinearOperator):
@@ -1290,19 +1292,17 @@ class _TransposeLinearOperator(LinearOperator):
         self.A = A
         self.args = (A,)
 
-    def _matvec(self, x):
-        # NB. np.conj works also on sparse matrices
+    def _matvec(self, x: NDArray) -> NDArray:
         return np.conj(self.A._rmatvec(np.conj(x)))
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: NDArray) -> NDArray:
         return np.conj(self.A._matvec(np.conj(x)))
 
-    def _matmat(self, x):
-        # NB. np.conj works also on sparse matrices
-        return np.conj(self.A._rmatmat(np.conj(x)))
+    def _matmat(self, X: NDArray) -> NDArray:
+        return np.conj(self.A._rmatmat(np.conj(X)))
 
-    def _rmatmat(self, x):
-        return np.conj(self.A._matmat(np.conj(x)))
+    def _rmatmat(self, X: NDArray) -> NDArray:
+        return np.conj(self.A._matmat(np.conj(X)))
 
 
 class _ProductLinearOperator(LinearOperator):
@@ -1315,17 +1315,17 @@ class _ProductLinearOperator(LinearOperator):
         super().__init__(dtype=_get_dtype([A, B]), shape=(A.shape[0], B.shape[1]))
         self.args = (A, B)
 
-    def _matvec(self, x):
+    def _matvec(self, x: NDArray) -> NDArray:
         return self.args[0].matvec(self.args[1].matvec(x))
 
-    def _rmatvec(self, x):
+    def _rmatvec(self, x: NDArray) -> NDArray:
         return self.args[1].rmatvec(self.args[0].rmatvec(x))
 
-    def _rmatmat(self, x):
-        return self.args[1].rmatmat(self.args[0].rmatmat(x))
+    def _rmatmat(self, X: NDArray) -> NDArray:
+        return self.args[1].rmatmat(self.args[0].rmatmat(X))
 
-    def _matmat(self, x):
-        return self.args[0].matmat(self.args[1].matmat(x))
+    def _matmat(self, X: NDArray) -> NDArray:
+        return self.args[0].matmat(self.args[1].matmat(X))
 
     def _adjoint(self):
         A, B = self.args
