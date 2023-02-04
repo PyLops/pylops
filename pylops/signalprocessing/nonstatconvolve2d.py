@@ -417,10 +417,6 @@ class NonStationaryFilters2D(LinearOperator):
         if engine == "numba":
             numba_opts = dict(nopython=True, fastmath=True, nogil=True, parallel=True)
             self._mv = jit(**numba_opts)(self.__matvec)
-            # Currently a race condition seem to occur when updating parts of hs multiple times within
-            # the same loop (see https://numba.pydata.org/numba-doc/latest/user/parallel.html?highlight=njit).
-            # Until we understand why we disable parallel
-            numba_opts = dict(nopython=True, fastmath=True, nogil=True, parallel=False)
             self._rmv = jit(**numba_opts)(self.__rmatvec)
         elif engine == "cuda":
             raise NotImplementedError("engine=cuda is currently not available")
@@ -430,87 +426,6 @@ class NonStationaryFilters2D(LinearOperator):
 
     # use same matvec method as inNonStationaryConvolve2D
     __matvec = staticmethod(NonStationaryConvolve2D._matvec_rmatvec)
-    """
-    @staticmethod
-    def __matvec(
-        x: NDArray,
-        y: NDArray,
-        hs: NDArray,
-        hshape: Tuple[int, int],
-        xdims: Tuple[int, int],
-        ohx: float,
-        ohz: float,
-        dhx: float,
-        dhz: float,
-        nhx: int,
-        nhz: int,
-    ) -> NDArray:
-        for ix in prange(xdims[0]):
-            for iz in range(xdims[1]):
-                # find closest filters and interpolate h
-                ihx_l = int(np.floor((ix - ohx) / dhx))
-                ihz_t = int(np.floor((iz - ohz) / dhz))
-                dhx_r = (ix - ohx) / dhx - ihx_l
-                dhz_b = (iz - ohz) / dhz - ihz_t
-                if ihx_l < 0:
-                    ihx_l = ihx_r = 0
-                    dhx_l = dhx_r = 0.5
-                elif ihx_l >= nhx - 1:
-                    ihx_l = ihx_r = nhx - 1
-                    dhx_l = dhx_r = 0.5
-                else:
-                    ihx_r = ihx_l + 1
-                    dhx_l = 1.0 - dhx_r
-
-                if ihz_t < 0:
-                    ihz_t = ihz_b = 0
-                    dhz_t = dhz_b = 0.5
-                elif ihz_t >= nhz - 1:
-                    ihz_t = ihz_b = nhz - 1
-                    dhz_t = dhz_b = 0.5
-                else:
-                    ihz_b = ihz_t + 1
-                    dhz_t = 1.0 - dhz_b
-
-                h_tl = hs[ihx_l, ihz_t]
-                h_bl = hs[ihx_l, ihz_b]
-                h_tr = hs[ihx_r, ihz_t]
-                h_br = hs[ihx_r, ihz_b]
-
-                h = (
-                    dhz_t * dhx_l * h_tl
-                    + dhz_b * dhx_l * h_bl
-                    + dhz_t * dhx_r * h_tr
-                    + dhz_b * dhx_r * h_br
-                )
-
-                # find extremes of model where to apply h (in case h is going out of model)
-                xextremes = (
-                    max(0, ix - hshape[0] // 2),
-                    min(ix + hshape[0] // 2 + 1, xdims[0]),
-                )
-                zextremes = (
-                    max(0, iz - hshape[1] // 2),
-                    min(iz + hshape[1] // 2 + 1, xdims[1]),
-                )
-                # find extremes of h (in case h is going out of model)
-                hxextremes = (
-                    max(0, -ix + hshape[0] // 2),
-                    min(hshape[0], hshape[0] // 2 + (xdims[0] - ix)),
-                )
-                hzextremes = (
-                    max(0, -iz + hshape[1] // 2),
-                    min(hshape[1], hshape[1] // 2 + (xdims[1] - iz)),
-                )
-
-                y[xextremes[0] : xextremes[1], zextremes[0] : zextremes[1]] += (
-                    x[ix, iz]
-                    * h[
-                        hxextremes[0] : hxextremes[1], hzextremes[0] : hzextremes[1]
-                    ]
-                )
-        return y
-    """
 
     @staticmethod
     def __rmatvec(
@@ -526,6 +441,11 @@ class NonStationaryFilters2D(LinearOperator):
         nhx: int,
         nhz: int,
     ) -> NDArray:
+        # Currently a race condition seem to occur when updating parts of hs multiple times within
+        # the same loop (see https://numba.pydata.org/numba-doc/latest/user/parallel.html?highlight=njit).
+        # Until atomic operations are provided we create a temporary filter array and store intermediate
+        # results from each ix and reduce them at the end.
+        hstmp = np.zeros((xdims[0], *hs.shape))
         for ix in prange(xdims[0]):
             for iz in range(xdims[1]):
 
@@ -578,7 +498,8 @@ class NonStationaryFilters2D(LinearOperator):
                     ihz_b = ihz_t + 1
                     dhz_t = 1.0 - dhz_b
 
-                hs[
+                hstmp[
+                    ix,
                     ihx_l,
                     ihz_t,
                     hxextremes[0] : hxextremes[1],
@@ -586,7 +507,8 @@ class NonStationaryFilters2D(LinearOperator):
                 ] += (
                     dhz_t * dhx_l * htmp
                 )
-                hs[
+                hstmp[
+                    ix,
                     ihx_l,
                     ihz_b,
                     hxextremes[0] : hxextremes[1],
@@ -594,7 +516,8 @@ class NonStationaryFilters2D(LinearOperator):
                 ] += (
                     dhz_b * dhx_l * htmp
                 )
-                hs[
+                hstmp[
+                    ix,
                     ihx_r,
                     ihz_t,
                     hxextremes[0] : hxextremes[1],
@@ -602,7 +525,8 @@ class NonStationaryFilters2D(LinearOperator):
                 ] += (
                     dhz_t * dhx_r * htmp
                 )
-                hs[
+                hstmp[
+                    ix,
                     ihx_r,
                     ihz_b,
                     hxextremes[0] : hxextremes[1],
@@ -610,7 +534,7 @@ class NonStationaryFilters2D(LinearOperator):
                 ] += (
                     dhz_b * dhx_r * htmp
                 )
-
+        hs = hstmp.sum(axis=0)
         return hs
 
     @reshaped
