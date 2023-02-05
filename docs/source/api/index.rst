@@ -99,6 +99,7 @@ Signal processing
     Shift
     DWT
     DWT2D
+    DCT
     Seislet
     Radon2D
     Radon3D
@@ -110,7 +111,6 @@ Signal processing
     Patch2D
     Patch3D
     Fredholm1
-    DCT
 
 
 Wave-Equation processing

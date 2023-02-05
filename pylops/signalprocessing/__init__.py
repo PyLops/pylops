@@ -20,6 +20,7 @@ A list of operators present in pylops.signalprocessing:
     Shift                           Fractional Shift operator.
     DWT                             One dimensional Wavelet operator.
     DWT2D                           Two dimensional Wavelet operator.
+    DCT                             Discrete Cosine Transform.
     Seislet                         Two dimensional Seislet operator.
     Radon2D	                        Two dimensional Radon transform.
     Radon3D	                        Three dimensional Radon transform.
@@ -29,7 +30,6 @@ A list of operators present in pylops.signalprocessing:
     Patch2D                         2D Patching transform operator.
     Patch3D                         3D Patching transform operator.
     Fredholm1                       Fredholm integral of first kind.
-    DCT                             Discrete Cosine Transform
 
 """
 

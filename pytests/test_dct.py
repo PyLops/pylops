@@ -15,15 +15,12 @@ def test_DCT1D(par):
     """Dot test for Discrete Cosine Transform Operator 1D"""
 
     t = np.arange(par["ny"])
-    # testing for various types of dct
 
     for type in [1, 2, 3, 4]:
         Dct = DCT(dims=(par["ny"],), type=type, dtype=par["dtype"])
-
         assert dottest(Dct, par["ny"], par["ny"], rtol=1e-6, complexflag=0, verb=True)
 
         y = Dct.H * (Dct * t)
-
         assert_array_almost_equal(t, y, decimal=3)
 
 
@@ -36,7 +33,6 @@ def test_DCT2D(par):
     for type in [1, 2, 3, 4]:
         for axes in [0, 1]:
             Dct = DCT(dims=t.shape, type=type, axes=axes, dtype=par["dtype"])
-
             assert dottest(
                 Dct,
                 par["nx"] * par["ny"],
@@ -47,7 +43,6 @@ def test_DCT2D(par):
             )
 
             y = Dct.H * (Dct * t)
-
             assert_array_almost_equal(t, y, decimal=3)
 
 
@@ -60,7 +55,6 @@ def test_DCT3D(par):
     for type in [1, 2, 3, 4]:
         for axes in [0, 1, 2]:
             Dct = DCT(dims=t.shape, type=type, axes=axes, dtype=par["dtype"])
-
             assert dottest(
                 Dct,
                 par["nx"] * par["nx"] * par["nx"],
@@ -71,7 +65,6 @@ def test_DCT3D(par):
             )
 
             y = Dct.H * (Dct * t)
-
             assert_array_almost_equal(t, y, decimal=3)
 
 
@@ -81,9 +74,7 @@ def test_DCT_workers(par):
     t = np.arange(par["ny"])
 
     Dct = DCT(dims=(par["ny"],), type=1, dtype=par["dtype"], workers=2)
-
     assert dottest(Dct, par["ny"], par["ny"], rtol=1e-6, complexflag=0, verb=True)
 
     y = Dct.H * (Dct * t)
-
     assert_array_almost_equal(t, y, decimal=3)

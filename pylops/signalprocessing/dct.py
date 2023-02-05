@@ -12,23 +12,26 @@ from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 class DCT(LinearOperator):
-    r"""Discrete Cosine Transform
+    r"""Discrete Cosine Transform.
 
-    Performs Discrete cosine transform on the given multi-dimensional
-    array along the given axis.
-    It uses the ``scipy.fft.dctn`` for forward mode and ``scipy.fft.idctn`` for adjoint mode.
+    Apply 1D or ND-Cosine Transform along one or more ``axes`` of a multi-dimensional
+    array of size ``dims``.
+
+    This operator is an overload of :func:`scipy.fft.dctn` in forward mode and :func:`scipy.fft.idctn`
+    in adjoint mode.
 
     Parameters
     ----------
-    dims : :obj:`list` or :obj:`int`
+    dims : :obj:`int` or :obj:`tuple`
         Number of samples for each dimension
     type : :obj:`int`, optional
-        Type of the DCT (see Notes). Default type is 2.
-    axes : :obj:`list` or :obj:`int`, optional
-        Axes over which the DCT is computed. If not given, the last len(dims) axes are used,
-        or all axes if dims is also not specified.
+        Type of DCT (see scipy's documentation for more details). Default type is 2.
+    axes : :obj:`int` or :obj:`list`, optional
+        Axes over which the DCT is computed. If ``None``, the transform is applied
+        over all axes.
     workers :obj:`int`, optional
-        Maximum number of workers to use for parallel computation. If negative, the value wraps around from os.cpu_count().
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from os.cpu_count().
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -42,12 +45,21 @@ class DCT(LinearOperator):
         Operator contains a matrix that can be solved explicitly
         (``True``) or not (``False``)
 
+    Raises
+    ------
+    ValueError
+        If ``type`` is different from 1, 2, 3, or 4.
+
     Notes
     -----
-    The DCT is implemented in normalization mode = "ortho" to make the scaling symmetrical.
-    The cosines are normalized to express the real part of the orthonormal fourier transform.
-    This allows arbitrary functions to be expressed exactly. No information is lost by taking the DCT and
-    the energy is compacted into the top left corner of the transform.
+    The DCT operator applies the Discrete Cosine Transform in forward mode and the Inverse Discrete Cosine Transform
+    in adjoint mode. This transform expresses a signal as a sum of cosine functions oscillating at different
+    frequencies. By doing so, no information is lost and the energy is compacted into the top left corner of the
+    transform. When applied to multi-dimensional arrays, the DCT operator is simply a cascade of one-dimensional DCT
+    operators acting along the different axes,
+
+    Finally, note that the DCT operator is implemented with normalization mode ``norm="ortho"`` to ensure symmetric
+    scaling.
 
     """
 
@@ -62,7 +74,7 @@ class DCT(LinearOperator):
     ) -> None:
 
         if type > 4 or type < 1:
-            raise ValueError("wrong value of type it can only be 1, 2, 3 or 4")
+            raise ValueError("wrong type value, it can only be 1, 2, 3 or 4")
         self.type = type
         self.axes = axes
         self.workers = workers
