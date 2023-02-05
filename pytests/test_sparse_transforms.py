@@ -16,25 +16,15 @@ def test_DCT1D(par):
 
     t = np.arange(par["ny"])
     # testing for various types of dct
-    Dct = DCT(dims=(par["ny"],), type=1, dtype=par["dtype"])
 
-    assert dottest(Dct, par["ny"], par["ny"], rtol=1e-6, complexflag=0, verb=True)
+    for type in [1, 2, 3, 4]:
+        Dct = DCT(dims=(par["ny"],), type=type, dtype=par["dtype"])
 
-    Dct = DCT(dims=(par["ny"],), type=2, dtype=par["dtype"])
+        assert dottest(Dct, par["ny"], par["ny"], rtol=1e-6, complexflag=0, verb=True)
 
-    assert dottest(Dct, par["ny"], par["ny"], rtol=1e-6, complexflag=0, verb=True)
+        y = Dct.H * (Dct * t)
 
-    Dct = DCT(dims=(par["ny"],), type=3, dtype=par["dtype"])
-
-    assert dottest(Dct, par["ny"], par["ny"], rtol=1e-6, complexflag=0, verb=True)
-
-    Dct = DCT(dims=(par["ny"],), type=4, dtype=par["dtype"])
-
-    assert dottest(Dct, par["ny"], par["ny"], rtol=1e-6, complexflag=0, verb=True)
-
-    y = Dct.H * (Dct * t)
-
-    assert_array_almost_equal(t, y, decimal=3)
+        assert_array_almost_equal(t, y, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
@@ -43,75 +33,46 @@ def test_DCT2D(par):
 
     t = np.outer(np.arange(par["ny"]), np.arange(par["nx"]))
 
-    Dct = DCT(dims=t.shape, dtype=par["dtype"])
+    for type in [1, 2, 3, 4]:
+        for axes in [0, 1]:
+            Dct = DCT(dims=t.shape, type=type, axes=axes, dtype=par["dtype"])
 
-    assert dottest(
-        Dct,
-        par["nx"] * par["ny"],
-        par["nx"] * par["ny"],
-        rtol=1e-6,
-        complexflag=0,
-        verb=True,
-    )
+            assert dottest(
+                Dct,
+                par["nx"] * par["ny"],
+                par["nx"] * par["ny"],
+                rtol=1e-6,
+                complexflag=0,
+                verb=True,
+            )
 
-    Dct = DCT(dims=t.shape, dtype=par["dtype"], axes=1)
+            y = Dct.H * (Dct * t)
 
-    assert dottest(
-        Dct,
-        par["nx"] * par["ny"],
-        par["nx"] * par["ny"],
-        rtol=1e-6,
-        complexflag=0,
-        verb=True,
-    )
-
-    y = Dct.H * (Dct * t)
-
-    assert_array_almost_equal(t, y, decimal=3)
+            assert_array_almost_equal(t, y, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 def test_DCT3D(par):
-    """Dot test for Discrete Cosine Transform Operator 2D"""
+    """Dot test for Discrete Cosine Transform Operator 3D"""
 
     t = np.random.rand(par["nx"], par["nx"], par["nx"])
 
-    Dct = DCT(dims=t.shape, dtype=par["dtype"])
+    for type in [1, 2, 3, 4]:
+        for axes in [0, 1, 2]:
+            Dct = DCT(dims=t.shape, type=type, axes=axes, dtype=par["dtype"])
 
-    assert dottest(
-        Dct,
-        par["nx"] * par["nx"] * par["nx"],
-        par["nx"] * par["nx"] * par["nx"],
-        rtol=1e-6,
-        complexflag=0,
-        verb=True,
-    )
+            assert dottest(
+                Dct,
+                par["nx"] * par["nx"] * par["nx"],
+                par["nx"] * par["nx"] * par["nx"],
+                rtol=1e-6,
+                complexflag=0,
+                verb=True,
+            )
 
-    Dct = DCT(dims=t.shape, dtype=par["dtype"], axes=1)
+            y = Dct.H * (Dct * t)
 
-    assert dottest(
-        Dct,
-        par["nx"] * par["nx"] * par["nx"],
-        par["nx"] * par["nx"] * par["nx"],
-        rtol=1e-6,
-        complexflag=0,
-        verb=True,
-    )
-
-    Dct = DCT(dims=t.shape, dtype=par["dtype"], axes=2)
-
-    assert dottest(
-        Dct,
-        par["nx"] * par["nx"] * par["nx"],
-        par["nx"] * par["nx"] * par["nx"],
-        rtol=1e-6,
-        complexflag=0,
-        verb=True,
-    )
-
-    y = Dct.H * (Dct * t)
-
-    assert_array_almost_equal(t, y, decimal=3)
+            assert_array_almost_equal(t, y, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3)])
