@@ -110,6 +110,7 @@ Signal processing
     Patch2D
     Patch3D
     Fredholm1
+    DCT
 
 
 Wave-Equation processing
