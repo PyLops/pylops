@@ -6,6 +6,8 @@ from typing import Dict, Optional, Sequence, Union
 
 import numpy as np
 import scipy.fft
+from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
+from .fftnd import _FFTND_mklfft
 
 from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
@@ -215,6 +217,102 @@ class _FFT2D_scipy(_BaseFFTND):
         return self._rmatvec(y)
 
 
+class _FFT2D_mklfft(_BaseFFTND):
+    """Two-dimensional Fast-Fourier Transform using mkl_fft"""
+
+    def __init__(
+        self,
+        dims: InputDimsLike,
+        axes: InputDimsLike = (-2, -1),
+        nffts: Optional[Union[int, InputDimsLike]] = None,
+        sampling: Union[float, Sequence[float]] = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = False,
+        fftshift_after: bool = False,
+        dtype: DTypeLike = "complex128",
+    ) -> None:
+        super().__init__(
+            dims=dims,
+            axes=axes,
+            nffts=nffts,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+
+        # checks
+        if self.ndim < 2:
+            raise ValueError("FFT2D requires at least two input dimensions")
+        if self.naxes != 2:
+            raise ValueError("FFT2D must be applied along exactly two dimensions")
+
+        self.f1, self.f2 = self.fs
+        del self.fs
+
+        self._norm_kwargs: Dict[str, Union[None, str]] = {
+            "norm": None
+        }  # equivalent to "backward" in Numpy/Scipy
+        if self.norm is _FFTNorms.ORTHO:
+            self._norm_kwargs["norm"] = "ortho"
+            self._scale = np.sqrt(1 / np.prod(np.sqrt(self.nffts)))
+        elif self.norm is _FFTNorms.NONE:
+            self._scale = np.sqrt(np.prod(self.nffts))
+        elif self.norm is _FFTNorms.ONE_OVER_N:
+            self._scale = np.sqrt(1.0 / np.prod(self.nffts))
+
+    @reshaped
+    def _matvec(self, x):
+        if self.ifftshift_before.any():
+            x = mkl_iffshift(x, axes=self.axes[self.ifftshift_before])
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = _FFTND_mklfft.rfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.axes[-1])
+            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.axes[-1], -1)
+        else:
+            y = _FFTND_mklfft.fftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+        if self.norm is _FFTNorms.ONE_OVER_N:
+            y *= self._scale
+        if self.fftshift_after.any():
+            y = mkl_fftshift(y, axes=self.axes[self.fftshift_after])
+        return y
+
+    @reshaped
+    def _rmatvec(self, x):
+        if self.fftshift_after.any():
+            x = mkl_iffshift(x, axes=self.axes[self.fftshift_after])
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.axes[-1])
+            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.axes[-1], -1)
+            y = _FFTND_mklfft.irfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+        else:
+            y = _FFTND_mklfft.ifftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+        if self.norm is _FFTNorms.NONE:
+            y *= self._scale
+        y = np.take(y, range(self.dims[self.axes[0]]), axis=self.axes[0])
+        y = np.take(y, range(self.dims[self.axes[1]]), axis=self.axes[1])
+        if not self.clinear:
+            y = np.real(y)
+        if self.ifftshift_before.any():
+            y = mkl_fftshift(y, axes=self.axes[self.ifftshift_before])
+        return y
+
+    def __truediv__(self, y):
+        if self.norm is not _FFTNorms.ORTHO:
+            return self._rmatvec(y) / self._scale / self._scale
+        return self._rmatvec(y)
+
+
 def FFT2D(
     dims: InputDimsLike,
     axes: InputDimsLike = (-2, -1),
@@ -241,6 +339,10 @@ def FFT2D(
     :py:func:`scipy.fft.fft2` (or :py:func:`scipy.fft.rfft2` for real models) in
     forward mode, and to :py:func:`scipy.fft.ifft2` (or :py:func:`scipy.fft.irfft2`
     for real models) in adjoint mode.
+
+    When the mkl_fft engine is chosen, the overloads are of :py:func: 'mkl_fft._numpy_fft.fft2'
+    (or :py:func:`mkl_fft._numpy_fft.fft2` for real models) in forward mode and to :py:func:`mkl_fft._numpy_fft.ifft2`
+    (or :py:func:`mkl_fft._numpy_fft.irfft2`for real models) in adjoint mode.
 
     When using ``real=True``, the result of the forward is also multiplied by
     :math:`\sqrt{2}` for all frequency bins except zero and Nyquist, and the input of
@@ -310,7 +412,7 @@ def FFT2D(
     engine : :obj:`str`, optional
         .. versionadded:: 1.17.0
 
-        Engine used for fft computation (``numpy`` or ``scipy``).
+        Engine used for fft computation (``numpy`` or ``scipy`` or ``mkl_fft``).
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.
@@ -361,7 +463,7 @@ def FFT2D(
           two elements.
         - If ``norm`` is not one of "ortho", "none", or "1/n".
     NotImplementedError
-        If ``engine`` is neither ``numpy``, nor ``scipy``.
+        If ``engine`` is neither ``numpy``, ``scipy`` nor ``mkl_fft``.
 
     See Also
     --------
@@ -418,7 +520,19 @@ def FFT2D(
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
+    elif engine == "mkl_fft":
+        f = _FFT2D_mklfft(
+            dims=dims,
+            axes=axes,
+            nffts=nffts,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
     else:
-        raise NotImplementedError("engine must be numpy or scipy")
+        raise NotImplementedError("engine must be numpy, scipy or mkl_fft")
     f.name = name
     return f

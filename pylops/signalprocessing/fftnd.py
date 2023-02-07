@@ -6,6 +6,9 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 import numpy.typing as npt
+from mkl_fft import _numpy_fft as pymkl_fft
+from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
+from mkl_fft._numpy_fft import _cook_nd_args, asarray
 
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
 from pylops.utils.backend import get_sp_fft
@@ -197,6 +200,132 @@ class _FFTND_scipy(_BaseFFTND):
         return self._rmatvec(y)
 
 
+class _FFTND_mklfft(_BaseFFTND):
+    """N-dimensional Fast-Fourier Transform using mkl_fft"""
+
+    def __init__(
+        self,
+        dims: Union[int, InputDimsLike],
+        axes: Union[int, InputDimsLike] = (-3, -2, -1),
+        nffts: Optional[Union[int, InputDimsLike]] = None,
+        sampling: Union[float, Sequence[float]] = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = False,
+        fftshift_after: bool = False,
+        dtype: DTypeLike = "complex128",
+    ) -> None:
+        super().__init__(
+            dims=dims,
+            axes=axes,
+            nffts=nffts,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+
+        self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
+        if self.norm is _FFTNorms.ORTHO:
+            self._norm_kwargs["norm"] = "ortho"
+            self._scale = np.sqrt(1 / np.prod(self.nffts))
+        elif self.norm is _FFTNorms.NONE:
+            self._scale = np.prod(self.nffts)
+        elif self.norm is _FFTNorms.ONE_OVER_N:
+            self._scale = 1.0 / np.prod(self.nffts)
+
+    @reshaped
+    def _matvec(self, x: NDArray) -> NDArray:
+        if self.ifftshift_before.any():
+            x = mkl_iffshift(x, axes=self.axes[self.ifftshift_before])
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = self.rfftn(x, s=self.nffts, axes=tuple(self.axes), **self._norm_kwargs)
+            # Apply scaling to obtain a correct adjoint for this operator
+            y = np.swapaxes(y, -1, self.axes[-1])
+            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.axes[-1], -1)
+        else:
+            y = self.fftn(x, s=self.nffts, axes=tuple(self.axes), **self._norm_kwargs)
+        if self.norm is _FFTNorms.ONE_OVER_N:
+            y *= self._scale
+        if self.fftshift_after.any():
+            y = mkl_fftshift(y, axes=self.axes[self.fftshift_after])
+        return y
+
+    @reshaped
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        if self.fftshift_after.any():
+            x = mkl_iffshift(x, axes=self.axes[self.fftshift_after])
+        if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.axes[-1])
+            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.axes[-1], -1)
+            y = self.irfftn(x, s=self.nffts, axes=tuple(self.axes), **self._norm_kwargs)
+        else:
+            y = self.ifftn(x, s=self.nffts, axes=tuple(self.axes), **self._norm_kwargs)
+        if self.norm is _FFTNorms.NONE:
+            y *= self._scale
+        for ax, nfft in zip(self.axes, self.nffts):
+            if nfft > self.dims[ax]:
+                y = np.take(y, range(self.dims[ax]), axis=ax)
+        if self.doifftpad:
+            y = np.pad(y, self.ifftpad)
+        if not self.clinear:
+            y = np.real(y)
+        if self.ifftshift_before.any():
+            y = mkl_fftshift(y, axes=self.axes[self.ifftshift_before])
+        return y
+
+    @staticmethod
+    def rfftn(a, s=None, axes=None, norm=None):
+        a = asarray(a)
+        s, axes = _cook_nd_args(a, s, axes)
+        a = pymkl_fft.rfft(a, s[-1], axes[-1], norm)
+        for ii in range(len(axes) - 1):
+            a = pymkl_fft.fft(a, s[ii], axes[ii], norm)
+        return a
+
+    @staticmethod
+    def irfftn(a, s=None, axes=None, norm=None):
+        a = asarray(a)
+        s, axes = _cook_nd_args(a, s, axes, invreal=1)
+        for ii in range(len(axes) - 1):
+            a = pymkl_fft.ifft(a, s[ii], axes[ii], norm)
+        a = pymkl_fft.irfft(a, s[-1], axes[-1], norm)
+        return a
+
+    @staticmethod
+    def fftn(a, s=None, axes=None, norm=None):
+        a = asarray(a)
+        s, axes = _cook_nd_args(a, s, axes)
+        itl = list(range(len(axes)))
+        itl.reverse()
+        for ii in itl:
+            a = pymkl_fft.fft(a, n=s[ii], axis=axes[ii], norm=norm)
+        return a
+
+    @staticmethod
+    def ifftn(a, s=None, axes=None, norm=None):
+        a = asarray(a)
+        s, axes = _cook_nd_args(a, s, axes)
+        itl = list(range(len(axes)))
+        itl.reverse()
+        for ii in itl:
+            a = pymkl_fft.ifft(a, n=s[ii], axis=axes[ii], norm=norm)
+        return a
+
+    def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
+        if self.norm is not _FFTNorms.ORTHO:
+            return self._rmatvec(y) / self._scale
+        return self._rmatvec(y)
+
+
 def FFTND(
     dims: Union[int, InputDimsLike],
     axes: Union[int, InputDimsLike] = (-3, -2, -1),
@@ -223,6 +352,10 @@ def FFTND(
     :py:func:`scipy.fft.fftn` (or :py:func:`scipy.fft.rfftn` for real models) in
     forward mode, and to :py:func:`scipy.fft.ifftn` (or :py:func:`scipy.fft.irfftn`
     for real models) in adjoint mode.
+
+    When the mkl_fft engine is chosen, the overloads are of :py:func: `mkl_fft._numpy_fft.fftn`
+    (or :py:func:`mkl_fft._numpy_fft.rfftn` for real models) in forward mode and to :py:func:`mkl_fft._numpy_fft.ifftn`
+    (or :py:func:`mkl_fft._numpy_fft.irfftn`for real models) in adjoint mode.
 
     When using ``real=True``, the result of the forward is also multiplied by
     :math:`\sqrt{2}` for all frequency bins except zero and Nyquist along the last
@@ -297,7 +430,7 @@ def FFTND(
     engine : :obj:`str`, optional
         .. versionadded:: 1.17.0
 
-        Engine used for fft computation (``numpy`` or ``scipy``).
+        Engine used for fft computation (``numpy`` or ``scipy`` or ``mkl_fft``).
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.
@@ -350,7 +483,7 @@ def FFTND(
           the same dimension ``axes``.
         - If ``norm`` is not one of "ortho", "none", or "1/n".
     NotImplementedError
-        If ``engine`` is neither ``numpy``, nor ``scipy``.
+        If ``engine`` is neither ``numpy``, ``scipy`` nor ``mkl_fft``.
 
     Notes
     -----
@@ -399,6 +532,18 @@ def FFTND(
         )
     elif engine == "scipy":
         f = _FFTND_scipy(
+            dims=dims,
+            axes=axes,
+            nffts=nffts,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+    elif engine == "mkl_fft":
+        f = _FFTND_mklfft(
             dims=dims,
             axes=axes,
             nffts=nffts,
