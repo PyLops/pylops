@@ -215,7 +215,7 @@ par_lists_fft_small_real = dict(
         (np.float16, 1),
         (np.float32, 4),
         (np.float64, 11),
-        # (np.float128, 11),
+        (np.float128, 11),
     ],
     norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
@@ -287,7 +287,7 @@ par_lists_fft_random_real = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        # (np.float128, 11),
+        (np.float128, 11),
     ],
     ifftshift_before=[False, True],
     engine=["numpy", "fftw", "scipy", "mkl_fft"],
@@ -333,7 +333,7 @@ def test_FFT_random_real(par):
 
 
 par_lists_fft_small_cpx = dict(
-    dtype_precision=[(np.complex64, 4), (np.complex128, 11)],
+    dtype_precision=[(np.complex64, 4), (np.complex128, 11), (np.complex256, 11)],
     norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
@@ -397,10 +397,10 @@ par_lists_fft_random_cpx = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        # (np.float128, 11),
+        (np.float128, 11),
         (np.complex64, 3),
         (np.complex128, 11),
-        # (np.complex256, 11),
+        (np.complex256, 11),
     ],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
@@ -479,7 +479,7 @@ par_lists_fft2d_random_real = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        # (np.float128, 11),
+        (np.float128, 11),
     ],
     ifftshift_before=[False, True],
     engine=["numpy", "scipy", "mkl_fft"],
@@ -537,10 +537,10 @@ par_lists_fft2d_random_cpx = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        # (np.float128, 11),
+        (np.float128, 11),
         (np.complex64, 3),
         (np.complex128, 11),
-        # (np.complex256, 11),
+        (np.complex256, 11),
     ],
     ifftshift_before=itertools.product([False, True], [False, True]),
     fftshift_after=itertools.product([False, True], [False, True]),
@@ -619,7 +619,7 @@ par_lists_fftnd_random_real = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        # (np.float128, 11),
+        (np.float128, 11),
     ],
     engine=["numpy", "scipy", "mkl_fft"],
 )
@@ -678,10 +678,10 @@ par_lists_fftnd_random_cpx = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        # (np.float128, 11),
+        (np.float128, 11),
         (np.complex64, 3),
         (np.complex128, 11),
-        # (np.complex256, 11),
+        (np.complex256, 11),
     ],
     engine=["numpy", "scipy", "mkl_fft"],
 )
@@ -753,7 +753,7 @@ def test_FFTND_random_complex(par):
 
 
 par_lists_fft2dnd_small_cpx = dict(
-    dtype_precision=[(np.complex64, 5), (np.complex128, 11)],
+    dtype_precision=[(np.complex64, 5), (np.complex128, 11), (np.complex256, 11)],
     norm=["ortho", "none", "1/n"],
     engine=["numpy", "scipy", "mkl_fft"],
 )
