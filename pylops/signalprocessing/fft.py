@@ -7,7 +7,7 @@ from typing import Optional, Union
 import numpy as np
 import numpy.typing as npt
 import scipy.fft
-from mkl_fft import _numpy_fft
+from mkl_fft import _numpy_fft as pymkl_fft
 from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
 
 from pylops import LinearOperator
@@ -409,13 +409,13 @@ class _FFT_mklfft(_BaseFFT):
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = _numpy_fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = pymkl_fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.axis)
             y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.axis, -1)
         else:
-            y = _numpy_fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = pymkl_fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after:
@@ -432,9 +432,9 @@ class _FFT_mklfft(_BaseFFT):
             x = np.swapaxes(x, -1, self.axis)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.axis, -1)
-            y = _numpy_fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = pymkl_fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         else:
-            y = _numpy_fft.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = pymkl_fft.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
 
