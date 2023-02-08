@@ -11,8 +11,6 @@ from typing import Optional, Union
 import numpy as np
 import numpy.typing as npt
 import scipy.fft
-from mkl_fft import _numpy_fft as pymkl_fft
-from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
 
 from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFT, _FFTNorms
@@ -408,6 +406,8 @@ class _FFT_mklfft(_BaseFFT):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
+        from mkl_fft import _numpy_fft as pymkl_fft
+        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
         if self.ifftshift_before:
             x = mkl_iffshift(x, axes=self.axis)
         if not self.clinear:
@@ -428,6 +428,8 @@ class _FFT_mklfft(_BaseFFT):
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
+        from mkl_fft import _numpy_fft as pymkl_fft
+        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
         if self.fftshift_after:
             x = mkl_iffshift(x, axes=self.axis)
         if self.real:

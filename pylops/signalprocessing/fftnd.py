@@ -6,9 +6,6 @@ from typing import Optional, Sequence, Union
 
 import numpy as np
 import numpy.typing as npt
-from mkl_fft import _numpy_fft as pymkl_fft
-from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
-from mkl_fft._numpy_fft import _cook_nd_args, asarray
 
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
 from pylops.utils.backend import get_sp_fft
@@ -238,6 +235,8 @@ class _FFTND_mklfft(_BaseFFTND):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
+        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
+
         if self.ifftshift_before.any():
             x = mkl_iffshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
@@ -258,6 +257,8 @@ class _FFTND_mklfft(_BaseFFTND):
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
+        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
+
         if self.fftshift_after.any():
             x = mkl_iffshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
@@ -284,40 +285,44 @@ class _FFTND_mklfft(_BaseFFTND):
 
     @staticmethod
     def rfftn(a, s=None, axes=None, norm=None):
+        from mkl_fft._numpy_fft import rfft, fft, _cook_nd_args, asarray
         a = asarray(a)
         s, axes = _cook_nd_args(a, s, axes)
-        a = pymkl_fft.rfft(a, s[-1], axes[-1], norm)
+        a = rfft(a, s[-1], axes[-1], norm)
         for ii in range(len(axes) - 1):
-            a = pymkl_fft.fft(a, s[ii], axes[ii], norm)
+            a = fft(a, s[ii], axes[ii], norm)
         return a
 
     @staticmethod
     def irfftn(a, s=None, axes=None, norm=None):
+        from mkl_fft._numpy_fft import irfft, ifft, asarray, _cook_nd_args
         a = asarray(a)
         s, axes = _cook_nd_args(a, s, axes, invreal=1)
         for ii in range(len(axes) - 1):
-            a = pymkl_fft.ifft(a, s[ii], axes[ii], norm)
-        a = pymkl_fft.irfft(a, s[-1], axes[-1], norm)
+            a = ifft(a, s[ii], axes[ii], norm)
+        a = irfft(a, s[-1], axes[-1], norm)
         return a
 
     @staticmethod
     def fftn(a, s=None, axes=None, norm=None):
+        from mkl_fft._numpy_fft import fft, asarray, _cook_nd_args
         a = asarray(a)
         s, axes = _cook_nd_args(a, s, axes)
         itl = list(range(len(axes)))
         itl.reverse()
         for ii in itl:
-            a = pymkl_fft.fft(a, n=s[ii], axis=axes[ii], norm=norm)
+            a = fft(a, n=s[ii], axis=axes[ii], norm=norm)
         return a
 
     @staticmethod
     def ifftn(a, s=None, axes=None, norm=None):
+        from mkl_fft._numpy_fft import ifft, asarray, _cook_nd_args
         a = asarray(a)
         s, axes = _cook_nd_args(a, s, axes)
         itl = list(range(len(axes)))
         itl.reverse()
         for ii in itl:
-            a = pymkl_fft.ifft(a, n=s[ii], axis=axes[ii], norm=norm)
+            a = ifft(a, n=s[ii], axis=axes[ii], norm=norm)
         return a
 
     def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
