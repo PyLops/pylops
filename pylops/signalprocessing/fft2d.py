@@ -6,7 +6,7 @@ from typing import Dict, Optional, Sequence, Union
 
 import numpy as np
 import scipy.fft
-from .fftnd import _FFTND_mklfft
+from pylops.signalprocessing.fftnd import _FFTND_mklfft
 
 from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
