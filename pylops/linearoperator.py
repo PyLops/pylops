@@ -14,6 +14,7 @@ from numpy.linalg import solve as np_solve
 from scipy.linalg import eigvals, lstsq
 from scipy.linalg import solve as sp_solve
 from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import LinearOperator as spLinearOperator
 from scipy.sparse.linalg import eigs as sp_eigs
 from scipy.sparse.linalg import eigsh as sp_eigsh
 from scipy.sparse.linalg import lobpcg as sp_lobpcg
@@ -84,12 +85,9 @@ class LinearOperator:
 
     """
 
-    H: Callable[[LinearOperator], LinearOperator]
-    T: Callable[[LinearOperator], LinearOperator]
-
     def __init__(
         self,
-        Op=None,
+        Op: Optional[Union[spLinearOperator, LinearOperator]] = None,
         dtype: Optional[DTypeLike] = None,
         shape: Optional[ShapeLike] = None,
         dims: Optional[ShapeLike] = None,
@@ -133,16 +131,6 @@ class LinearOperator:
         self.rmatvec_count = 0
         self.matmat_count = 0
         self.rmatmat_count = 0
-
-    def adjoint(self):
-        return self._adjoint()
-
-    H = property(adjoint)
-
-    def transpose(self):
-        return self._transpose()
-
-    T = property(transpose)
 
     @property
     def shape(self):
@@ -273,6 +261,93 @@ class LinearOperator:
     def name(self):
         del self._name
 
+    def __mul__(self, x: Union[float, LinearOperator]) -> LinearOperator:
+        return self.dot(x)
+
+    def __matmul__(self, other):
+        if np.isscalar(other):
+            raise ValueError("Scalar not allowed, use * instead")
+        return self.__mul__(other)
+
+    def __rmul__(self, x: float) -> LinearOperator:
+        if np.isscalar(x):
+            Op = _ScaledLinearOperator(self, x)
+            self._copy_attributes(
+                Op,
+                exclude=[
+                    "explicit",
+                ],
+            )
+            Op.explicit = False
+            return Op
+        else:
+            return NotImplemented
+
+    def __rmatmul__(self, other):
+        if np.isscalar(other):
+            raise ValueError("Scalar not allowed, use * instead")
+        return self.__rmul__(other)
+
+    def __pow__(self, p: int) -> LinearOperator:
+        if np.isscalar(p):
+            Op = _PowerLinearOperator(self, p)
+            self._copy_attributes(
+                Op,
+                exclude=[
+                    "explicit",
+                ],
+            )
+            Op.explicit = False
+            return Op
+        else:
+            return NotImplemented
+
+    def __add__(self, x: LinearOperator) -> LinearOperator:
+        if isinstance(x, (LinearOperator, spLinearOperator)):
+            # cast x to pylops linear operator if not already (this is done
+            # to allow mixing pylops and scipy operators)
+            Opx = aslinearoperator(x)
+            Op = _SumLinearOperator(self, Opx)
+            self._copy_attributes(
+                Op,
+                exclude=[
+                    "explicit",
+                ],
+            )
+            Op.clinear = Op.clinear and Opx.clinear
+            Op.explicit = False
+            # Replace if shape-like
+            if len(self.dims) == 1:
+                Op.dims = Opx.dims
+            if len(self.dimsd) == 1:
+                Op.dimsd = Opx.dimsd
+            return Op
+        else:
+            return NotImplemented
+
+    def __neg__(self) -> LinearOperator:
+        Op = _ScaledLinearOperator(self, -1)
+        self._copy_attributes(
+            Op,
+            exclude=[
+                "explicit",
+            ],
+        )
+        Op.explicit = False
+        return Op
+
+    def __sub__(self, x):
+        return self.__add__(-x)
+
+    def __repr__(self):
+        M, N = self.shape
+        if self.dtype is None:
+            dt = "unspecified dtype"
+        else:
+            dt = "dtype=" + str(self.dtype)
+
+        return "<%dx%d %s with %s>" % (M, N, self.__class__.__name__, dt)
+
     def _copy_attributes(
         self,
         dest: LinearOperator,
@@ -290,12 +365,14 @@ class LinearOperator:
                 setattr(dest, attr, getattr(self, attr))
 
     def _matvec(self, x: NDArray) -> NDArray:
+        """Matrix-vector multiplication handler."""
         if self.Op is not None:
-            return self.Op.matmat(x.reshape(-1, 1))
+            return self.Op._matvec(x)
 
     def _rmatvec(self, x: NDArray) -> NDArray:
+        """Matrix-vector adjoint multiplication handler."""
         if self.Op is not None:
-            return self.Op.H.matvec(x)
+            return self.Op._rmatvec(x)
 
     def _matmat(self, X: NDArray) -> NDArray:
         """Matrix-matrix multiplication handler.
@@ -321,87 +398,8 @@ class LinearOperator:
             y = np.vstack([self.rmatvec(col.reshape(-1)) for col in X.T]).T
         return y
 
-    def __mul__(self, x: Union[float, LinearOperator]) -> LinearOperator:
-        y = self.dot(x)
-        if isinstance(y, LinearOperator):
-            y = aslinearoperator(y)
-        return y
-
-    def __matmul__(self, other):
-        if np.isscalar(other):
-            raise ValueError("Scalar not allowed, use * instead")
-        return self.__mul__(other)
-
-    def __rmul__(self, x: float) -> LinearOperator:
-        if np.isscalar(x):
-            Op = aslinearoperator(_ScaledLinearOperator(self, x))
-            self._copy_attributes(
-                Op,
-                exclude=[
-                    "explicit",
-                ],
-            )
-            Op.explicit = False
-            return Op
-        else:
-            return NotImplemented
-
-    def __rmatmul__(self, other):
-        if np.isscalar(other):
-            raise ValueError("Scalar not allowed, use * instead")
-        return self.__rmul__(other)
-
-    def __pow__(self, p: int) -> LinearOperator:
-        if np.isscalar(p):
-            Op = LinearOperator(Op=_PowerLinearOperator(self, p))
-            self._copy_attributes(
-                Op,
-                exclude=[
-                    "explicit",
-                ],
-            )
-            Op.explicit = False
-            return Op
-        else:
-            return NotImplemented
-
-    def __add__(self, x: LinearOperator) -> LinearOperator:
-        if isinstance(x, LinearOperator):
-            Op = LinearOperator(Op=_SumLinearOperator(self, x))
-            Opx = aslinearoperator(x)
-            self._copy_attributes(
-                Op,
-                exclude=[
-                    "explicit",
-                ],
-            )
-            Op.clinear = Op.clinear and Opx.clinear
-            Op.explicit = False
-            # Replace if shape-like
-            if len(self.dims) == 1:
-                Op.dims = Opx.dims
-            if len(self.dimsd) == 1:
-                Op.dimsd = Opx.dimsd
-            return Op
-        else:
-            return NotImplemented
-
-    def __neg__(self) -> LinearOperator:
-        Op = LinearOperator(Op=_ScaledLinearOperator(self, -1))
-        self._copy_attributes(
-            Op,
-            exclude=[
-                "explicit",
-            ],
-        )
-        Op.explicit = False
-        return Op
-
-    def __sub__(self, x):
-        return self.__add__(-x)
-
     def _adjoint(self) -> LinearOperator:
-        Op = LinearOperator(Op=_AdjointLinearOperator(self))
+        Op = _AdjointLinearOperator(self)
         self._copy_attributes(Op, exclude=["dims", "dimsd", "explicit", "name"])
         Op.explicit = False
         Op.dims = self.dimsd
@@ -409,12 +407,22 @@ class LinearOperator:
         return Op
 
     def _transpose(self) -> LinearOperator:
-        Op = LinearOperator(Op=_TransposeLinearOperator(self))
+        Op = _TransposeLinearOperator(self)
         self._copy_attributes(Op, exclude=["dims", "dimsd", "explicit", "name"])
         Op.explicit = False
         Op.dims = self.dimsd
         Op.dimsd = self.dims
         return Op
+
+    def adjoint(self):
+        return self._adjoint()
+
+    H: Callable[[LinearOperator], LinearOperator] = property(adjoint)
+
+    def transpose(self):
+        return self._transpose()
+
+    T: Callable[[LinearOperator], LinearOperator] = property(transpose)
 
     @count(forward=True)
     def matvec(self, x: NDArray) -> NDArray:
@@ -541,22 +549,25 @@ class LinearOperator:
 
         Parameters
         ----------
-        x : np.ndarray
+        x : :obj:`numpy.ndarray`
             Input array (or matrix)
 
         Returns
         -------
-        y : np.ndarray
+        y : :obj:`numpy.ndarray`
             Output array (or matrix) that represents
             the result of applying the linear operator on x.
 
         """
-        if isinstance(x, LinearOperator):
-            Op = LinearOperator(Op=_ProductLinearOperator(self, x))
+        if isinstance(x, (LinearOperator, spLinearOperator)):
+            # cast x to pylops linear operator if not already (this is done
+            # to allow mixing pylops and scipy operators)
+            Opx = aslinearoperator(x)
+            Op = LinearOperator(Op=_ProductLinearOperator(self, Opx))
             self._copy_attributes(Op, exclude=["dims", "explicit", "name"])
-            Op.clinear = Op.clinear and x.clinear
+            Op.clinear = Op.clinear and Opx.clinear
             Op.explicit = False
-            Op.dims = x.dims
+            Op.dims = Opx.dims
             return Op
         elif np.isscalar(x):
             Op = LinearOperator(Op=_ScaledLinearOperator(self, x))
@@ -709,11 +720,7 @@ class LinearOperator:
 
         """
         ncp = get_module(backend)
-
-        # Wrap self into a LinearOperator. This is done for cases where self
-        # is a _SumLinearOperator or _ProductLinearOperator, so that it regains
-        # the dense method
-        Op = aslinearoperator(self)
+        Op = self
 
         # Create identity matrix
         shapemin = min(Op.shape)
@@ -744,7 +751,7 @@ class LinearOperator:
             Sparse matrix.
 
         """
-        Op = aslinearoperator(self)
+        Op = self
         (_, n) = self.shape
 
         # stores non-zero data for the sparse matrix creation
@@ -1264,7 +1271,8 @@ class _ColumnLinearOperator(LinearOperator):
 
 
 class _AdjointLinearOperator(LinearOperator):
-    """ Adjoint of Linear Operator """
+    """Adjoint of Linear Operator"""
+
     def __init__(self, A: LinearOperator):
         shape = (A.shape[1], A.shape[0])
         super(_AdjointLinearOperator, self).__init__(shape=shape, dtype=A.dtype)
@@ -1285,7 +1293,8 @@ class _AdjointLinearOperator(LinearOperator):
 
 
 class _TransposeLinearOperator(LinearOperator):
-    """ Transposition of Linear Operator """
+    """Transposition of Linear Operator"""
+
     def __init__(self, A: LinearOperator):
         shape = (A.shape[1], A.shape[0])
         super(_TransposeLinearOperator, self).__init__(shape=shape, dtype=A.dtype)
@@ -1306,10 +1315,13 @@ class _TransposeLinearOperator(LinearOperator):
 
 
 class _ProductLinearOperator(LinearOperator):
-    """ Product of Linear Operators """
+    """Product of Linear Operators"""
+
     def __init__(self, A: LinearOperator, B: LinearOperator):
         if not isinstance(A, LinearOperator) or not isinstance(B, LinearOperator):
-            raise ValueError(f"both operands have to be a LinearOperator{type(A)} {type(B)}")
+            raise ValueError(
+                f"both operands have to be a LinearOperator{type(A)} {type(B)}"
+            )
         if A.shape[1] != B.shape[0]:
             raise ValueError("cannot add %r and %r: shape mismatch" % (A, B))
         super().__init__(dtype=_get_dtype([A, B]), shape=(A.shape[0], B.shape[1]))
@@ -1343,7 +1355,9 @@ class _SumLinearOperator(LinearOperator):
         if A.shape != B.shape:
             raise ValueError("cannot add %r and %r: shape mismatch" % (A, B))
         self.args = (A, B)
-        super(_SumLinearOperator, self).__init__(dtype=_get_dtype([A, B]), shape=A.shape)
+        super(_SumLinearOperator, self).__init__(
+            dtype=_get_dtype([A, B]), shape=A.shape
+        )
 
     def _matvec(self, x: NDArray) -> NDArray:
         return self.args[0].matvec(x) + self.args[1].matvec(x)
@@ -1443,12 +1457,12 @@ class _RealImagLinearOperator(LinearOperator):
         return y
 
 
-def aslinearoperator(Op: LinearOperator) -> LinearOperator:
+def aslinearoperator(Op: Union[spLinearOperator, LinearOperator]) -> LinearOperator:
     """Return Op as a LinearOperator.
 
-    Converts any operator into a LinearOperator. This can be used when `Op`
-    is a private operator to ensure that the return operator has all properties
-    and methods of the parent class.
+    Converts any operator compatible with pylops definition of LinearOperator into a pylops
+    LinearOperator. This can be used for example when `Op` is a scipy operator to ensure
+    that the returned operator has all properties and methods of the pylops class.
 
     Parameters
     ----------
