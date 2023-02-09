@@ -403,9 +403,9 @@ class _FFT_mklfft(_BaseFFT):
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
         from mkl_fft import _numpy_fft as pymkl_fft
-        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
+        # from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
         if self.ifftshift_before:
-            x = mkl_iffshift(x, axes=self.axis)
+            x = np.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
             x = np.real(x)
         if self.real:
@@ -419,15 +419,15 @@ class _FFT_mklfft(_BaseFFT):
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after:
-            y = mkl_fftshift(y, axes=self.axis)
+            y = np.fft.fftshift(y, axes=self.axis)
         return y
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
         from mkl_fft import _numpy_fft as pymkl_fft
-        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
+        # from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
         if self.fftshift_after:
-            x = mkl_iffshift(x, axes=self.axis)
+            x = np.fft.ifftshift(x, axes=self.axis)
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
@@ -448,7 +448,7 @@ class _FFT_mklfft(_BaseFFT):
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before:
-            y = mkl_fftshift(y, axes=self.axis)
+            y = np.fft.fftshift(y, axes=self.axis)
         return y
 
     def __truediv__(self, y):
