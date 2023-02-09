@@ -27,7 +27,6 @@ dependencies:
   - autopep8
   - isort
   - black
-  - nomkl
   - pip:
     - devito
     - scikit-fmm
