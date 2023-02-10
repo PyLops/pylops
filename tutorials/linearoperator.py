@@ -1,12 +1,10 @@
 """
-01. The LinearOpeator
+01. The LinearOperator
 =====================
 This first tutorial is aimed at easing the use of the PyLops
 library for both new users and developers.
 
-Since PyLops heavily relies  on the use of the
-:py:class:`scipy.sparse.linalg.LinearOperator` class of SciPy, we will start
-by looking at how to initialize a linear operator as well as
+We will start by looking at how to initialize a linear operator as well as
 different ways to apply the forward and adjoint operations. Finally we will
 investigate various *special methods*, also called *magic methods*
 (i.e., methods with the double underscores at the beginning and the end) that
@@ -96,7 +94,7 @@ plt.tight_layout()
 # * ``_rmatvec``: directly applies the method implemented for adjoint mode
 # * ``rmatvec``: performs some checks before and after applying ``_rmatvec``
 # * ``.H*``: first applies the adjoint ``.H`` which creates a new
-#   `scipy.sparse.linalg._CustomLinearOperator`` where ``_matvec``
+#   `pylops.linearoperator.LinearOperator`` where ``_matvec``
 #   and ``_rmatvec`` are swapped and then applies the new ``_matvec``.
 #
 # Once again, after timing these 3 different executions we can see
@@ -104,7 +102,7 @@ plt.tight_layout()
 # computation while ``.H*`` is very unefficient and slow. Note that if the
 # adjoint has to be applied multiple times it is at least advised to create
 # the adjoint operator by applying ``.H`` only once upfront.
-# Not surprisingly, the linear solvers in scipy as well as in PyLops
+# Not surprisingly, the linear solvers in PyLops
 # actually use ``matvec`` and ``rmatvec`` when dealing with linear operators.
 
 # _rmatvec
@@ -140,8 +138,7 @@ plt.tight_layout()
 # teaching purposes.
 #
 # We now go through some other *methods* and *special methods* that
-# are implemented in :py:class:`scipy.sparse.linalg.LinearOperator` (and
-# :py:class:`pylops.LinearOperator`):
+# are implemented in :py:class:`pylops.LinearOperator`):
 #
 # * ``Op1+Op2``: maps the special method ``__add__`` and
 #   performs summation between two operators and
@@ -217,9 +214,7 @@ plt.tight_layout()
 ###############################################################################
 # At this point it is worth reiterating that if two linear operators are
 # combined by means of the algebraical operations shown above, the resulting
-# operator is still a :py:class:`pylops.LinearOperator` operator. This means
-# that we can still apply any of the methods implemented in the original
-# scipy class definition like ``*``, as well as those in our class
+# operator is still a :py:class:`pylops.LinearOperator` operator.
 # definition like ``/``
 Dop1 = Dop - Dop.conj()
 
@@ -258,7 +253,6 @@ print(f"Adjoint evaluations: {Dop.rmatvec_count}")
 
 ###############################################################################
 # This first tutorial is completed. You have seen the basic operations that
-# can be performed using :py:class:`scipy.sparse.linalg.LinearOperator` and
-# our overload of such a class :py:class:`pylops.LinearOperator` and you
+# can be performed using :py:class:`pylops.LinearOperator` and you
 # should be able to get started combining various PyLops operators and
 # solving your own inverse problems.

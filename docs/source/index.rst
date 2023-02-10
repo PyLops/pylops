@@ -48,19 +48,17 @@ such as `Basic Earth Imaging <http://sepwww.stanford.edu/sep/prof/bei11.2010.pdf
 
 Implementation
 --------------
-PyLops is build on top of the `scipy <http://www.scipy.org/scipylib/index.html>`_ class :py:class:`scipy.sparse.linalg.LinearOperator`.
+PyLops is build on top of the class :py:class:`pylops.linearoperator.LinearOperator`.
 
 This class allows in fact for the creation of objects (or interfaces) for matrix-vector and matrix-matrix products
 that can ultimately be used to solve any inverse problem of the form :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
 
-As explained in the `scipy LinearOperator <https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.LinearOperator.html>`_
-official documentation, to construct a :py:class:`scipy.sparse.linalg.LinearOperator`, a user is required to pass appropriate callables
+To construct a :py:class:`pylops.linearoperator.LinearOperator`, a user is required to pass appropriate arguments
 to the constructor of this class, or subclass it. More specifically one of the methods ``_matvec`` and ``_matmat`` must be implemented for
 the *forward operator* and one of the methods ``_rmatvec`` or ``_adjoint`` may be implemented to apply the *Hermitian adjoint*.
-The attributes/properties ``shape`` (pair of integers) and ``dtype`` (may be None) must also be provided during ``__init__`` of this class.
 
 Any linear operator developed within the PyLops library follows this philosophy. As explained more in details in :ref:`addingoperator` section,
-a linear operator is created by subclassing the :py:class:`scipy.sparse.linalg.LinearOperator` class and ``_matvec`` and ``_rmatvec`` are implemented.
+a linear operator is created by subclassing the :py:class:`pylops.linearoperator.LinearOperator` class and ``_matvec`` and ``_rmatvec`` are implemented.
 
 
 History

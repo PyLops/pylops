@@ -43,11 +43,11 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 class LinearOperator:
     """Common interface for performing matrix-vector products.
 
-    This class is an overload of the
-    :py:class:`scipy.sparse.linalg.LinearOperator` class. It adds
-    functionalities by overloading standard operators such as ``__truediv__``
-    as well as creating convenience methods such as ``eigs``, ``cond``, and
-    ``conj``.
+    This class provides various iterative vector solvers, to solve a
+    linear system A*x=b.
+
+    To construct a concrete LinearOperator, either pass appropriate
+    arguments to the constructor of this class, or subclass it.
 
     .. note:: End users of PyLops should not use this class directly but simply
       use operators that are already implemented. This class is meant for
@@ -57,7 +57,7 @@ class LinearOperator:
 
     Parameters
     ----------
-    Op : :obj:`scipy.sparse.linalg.LinearOperator` or :obj:`scipy.sparse.linalg._ProductLinearOperator` or :obj:`scipy.sparse.linalg._SumLinearOperator`
+    Op : :obj:`scipy.sparse.linalg.LinearOperator` or :obj:`pylops.linearoperator.LinearOperator`
         Operator. If other arguments are provided, they will overwrite those obtained from ``Op``.
     dtype : :obj:`str`, optional
         Type of elements in input array.

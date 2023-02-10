@@ -23,10 +23,6 @@ which will be used as *parent* class for any of our operators:
 
    from pylops import LinearOperator
 
-This class is a child of the
-:py:class:`scipy.sparse.linalg.LinearOperator` class itself which implements the same methods of its parent class
-as well as an additional method for quick inversion: such method can be easily accessed by using ``\`` between the
-operator and the data (e.g., ``A \ y``).
 
 After that we define our new object:
 
