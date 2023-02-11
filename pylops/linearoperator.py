@@ -43,11 +43,9 @@ logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 class LinearOperator:
     """Common interface for performing matrix-vector products.
 
-    This class provides various iterative vector solvers, to solve a
-    linear system A*x=b.
-
-    To construct a concrete LinearOperator, either pass appropriate
-    arguments to the constructor of this class, or subclass it.
+    This class acts as an abstract interface between matrix-like
+    objects and iterative solvers, providing methods to perform
+    matrix-vector and adjoint matrix-vector products.
 
     .. note:: End users of PyLops should not use this class directly but simply
       use operators that are already implemented. This class is meant for
