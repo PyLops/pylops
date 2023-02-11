@@ -10,7 +10,7 @@ input array.
 import matplotlib.pyplot as plt
 import numpy as np
 
-from pylops.signalprocessing.dct import DCT
+import pylops
 
 plt.close("all")
 
@@ -27,7 +27,7 @@ x = np.arange(n) + 1
 # parameter, and we store the DCT coefficients in the array `y`. Finally, we
 # perform the inverse using the adjoint of the operator, and we obtain the
 # original input signal.
-DOp = DCT(dims=x.shape)
+DOp = pylops.signalprocessing.DCT(dims=x.shape)
 y = DOp @ x
 xadj = DOp.H @ y
 
@@ -47,7 +47,7 @@ resolution = 100
 
 length = np.pi * 2 * cycles
 s = np.sin(np.arange(0, length, length / resolution))
-DOp = DCT(dims=s.shape)
+DOp = pylops.signalprocessing.DCT(dims=s.shape)
 y = DOp @ s
 
 plt.figure(figsize=(8, 5))
@@ -66,7 +66,7 @@ plt.tight_layout()
 # results.
 
 img = np.load("../testdata/python.npy")[::5, ::5, 0]
-DOp = DCT(dims=img.shape)
+DOp = pylops.signalprocessing.DCT(dims=img.shape)
 dct_img = DOp @ img
 
 # Set a threshold for the DCT coefficients to zero out
