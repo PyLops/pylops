@@ -1,6 +1,6 @@
 """
 01. The LinearOperator
-=====================
+======================
 This first tutorial is aimed at easing the use of the PyLops
 library for both new users and developers.
 
@@ -42,7 +42,7 @@ Dop = pylops.Diagonal(d)
 #   checks whether the input ``x`` is a vector or matrix and applies ``_matvec``
 #   or ``_matmul`` accordingly.
 # * ``@``: operator used to map the special method ``__mul__`` which
-#   performs like the ``*`` opetator
+#   performs like the ``*`` operator
 #
 # We will time these 4 different executions and see how using ``_matvec``
 # (or ``matvec``) will result in the faster computation. It is thus advised to
@@ -94,15 +94,15 @@ plt.tight_layout()
 # * ``_rmatvec``: directly applies the method implemented for adjoint mode
 # * ``rmatvec``: performs some checks before and after applying ``_rmatvec``
 # * ``.H*``: first applies the adjoint ``.H`` which creates a new
-#   `pylops.linearoperator.LinearOperator`` where ``_matvec``
+#   `pylops.linearoperator._AdjointLinearOperator`` where ``_matvec``
 #   and ``_rmatvec`` are swapped and then applies the new ``_matvec``.
 #
-# Once again, after timing these 3 different executions we can see
+# Once again, after timing these 3 different executions we can
 # see how using ``_rmatvec`` (or ``rmatvec``) will result in the faster
 # computation while ``.H*`` is very unefficient and slow. Note that if the
 # adjoint has to be applied multiple times it is at least advised to create
 # the adjoint operator by applying ``.H`` only once upfront.
-# Not surprisingly, the linear solvers in PyLops
+# Not surprisingly, the linear solvers in scipy and PyLops
 # actually use ``matvec`` and ``rmatvec`` when dealing with linear operators.
 
 # _rmatvec
@@ -138,7 +138,7 @@ plt.tight_layout()
 # teaching purposes.
 #
 # We now go through some other *methods* and *special methods* that
-# are implemented in :py:class:`pylops.LinearOperator`):
+# are implemented in :py:class:`pylops.LinearOperator`:
 #
 # * ``Op1+Op2``: maps the special method ``__add__`` and
 #   performs summation between two operators and
@@ -214,8 +214,9 @@ plt.tight_layout()
 ###############################################################################
 # At this point it is worth reiterating that if two linear operators are
 # combined by means of the algebraical operations shown above, the resulting
-# operator is still a :py:class:`pylops.LinearOperator` operator.
-# definition like ``/``
+# operator is still a :py:class:`pylops.LinearOperator` operator. This means
+# that we can still apply any of the methods implemented in our class
+# like ``*`` or ``/``.
 Dop1 = Dop - Dop.conj()
 
 y = Dop1 * x
@@ -254,5 +255,5 @@ print(f"Adjoint evaluations: {Dop.rmatvec_count}")
 ###############################################################################
 # This first tutorial is completed. You have seen the basic operations that
 # can be performed using :py:class:`pylops.LinearOperator` and you
-# should be able to get started combining various PyLops operators and
+# should now be able to get started combining various PyLops operators and
 # solving your own inverse problems.

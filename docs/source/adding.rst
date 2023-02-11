@@ -23,6 +23,11 @@ which will be used as *parent* class for any of our operators:
 
    from pylops import LinearOperator
 
+This class was originally defined as a child of the :py:class:`scipy.sparse.linalg.LinearOperator`, implementing
+the same methods of its parent class as well as additional methods for quick inversion (e.g., ``A \ y``),
+eigenvalues computation, conversion to dense matrices, etc. From version ``v2.1`` onwards, our linear operator
+class has become stand-alone; however, by keeping the same naming structure of the original scipy class, we still
+allow inter-operability with scipy-native linear operators and solvers.
 
 After that we define our new object:
 

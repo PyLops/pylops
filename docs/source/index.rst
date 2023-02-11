@@ -14,7 +14,6 @@ PyLops offers such solvers for many different types of problems, in particular l
 Get started by :ref:`installing PyLops <Installation>` and following our quick tour.
 
 
-
 Terminology
 -----------
 A common *terminology* is used within the entire documentation of PyLops. Every linear operator and its application to
@@ -48,17 +47,22 @@ such as `Basic Earth Imaging <http://sepwww.stanford.edu/sep/prof/bei11.2010.pdf
 
 Implementation
 --------------
-PyLops is build on top of the class :py:class:`pylops.linearoperator.LinearOperator`.
+PyLops was originally build on top of the `scipy <http://www.scipy.org/scipylib/index.html>`_ class
+:py:class:`scipy.sparse.linalg.LinearOperator`.  From version ``v2.1`` onwards, whilst still being heavily inspired
+by its scipy counterpart, PyLops's :py:class:`pylops.linearoperator.LinearOperator` has become a stand-alone class.
 
-This class allows in fact for the creation of objects (or interfaces) for matrix-vector and matrix-matrix products
+This class allows for the creation of objects (or interfaces) for matrix-vector and matrix-matrix products
 that can ultimately be used to solve any inverse problem of the form :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
 
 To construct a :py:class:`pylops.linearoperator.LinearOperator`, a user is required to pass appropriate arguments
 to the constructor of this class, or subclass it. More specifically one of the methods ``_matvec`` and ``_matmat`` must be implemented for
 the *forward operator* and one of the methods ``_rmatvec`` or ``_adjoint`` may be implemented to apply the *Hermitian adjoint*.
+The attributes/properties ``dtype`` (may be None) and ``shape`` (pair of integers) -- or alternatively ``dims`` and ``dimsd`` --
+must also be provided during ``__init__`` of this class.
 
 Any linear operator developed within the PyLops library follows this philosophy. As explained more in details in :ref:`addingoperator` section,
-a linear operator is created by subclassing the :py:class:`pylops.linearoperator.LinearOperator` class and ``_matvec`` and ``_rmatvec`` are implemented.
+a linear operator is created by subclassing the :py:class:`pylops.linearoperator.LinearOperator` class and implementing the
+``_matvec`` and ``_rmatvec``.
 
 
 History
