@@ -33,4 +33,4 @@ jobs:
     #    coverage-reports: coverage.xml
     - name: Run codacy-coverage-reporter
       run: |
-        bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml -t ${{ secrets.CODACY_PROJECT_TOKEN }}
+        bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml -t ${{ secrets.PYPI_API_TOKEN }}
