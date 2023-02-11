@@ -4,7 +4,9 @@ import logging
 import random
 import string
 
+"""
 import scipy as sp
+
 
 # need to check scipy version since the interface submodule changed into
 # _interface from scipy>=1.8.0
@@ -21,12 +23,19 @@ else:
         _ProductLinearOperator,
         _TransposedLinearOperator,
     )
+"""
 
 from typing import List, Set, Union
 
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, VStack
-from pylops.linearoperator import _ScaledLinearOperator, _SumLinearOperator
+from pylops.linearoperator import (
+    _AdjointLinearOperator,
+    _ProductLinearOperator,
+    _ScaledLinearOperator,
+    _SumLinearOperator,
+    _TransposedLinearOperator,
+)
 from pylops.utils import deps
 
 sympy_message = deps.sympy_import("the describe module")
@@ -299,7 +308,6 @@ def describe(Op) -> None:
     """
     if sympy_message is not None:
         raise NotImplementedError(sympy_message)
-
     # Describe the operator
     Ops = {}
     names = set()

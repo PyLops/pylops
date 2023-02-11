@@ -276,6 +276,7 @@ class LinearOperator:
                 Op,
                 exclude=[
                     "explicit",
+                    "name",
                 ],
             )
             Op.explicit = False
@@ -295,6 +296,7 @@ class LinearOperator:
                 Op,
                 exclude=[
                     "explicit",
+                    "name",
                 ],
             )
             Op.explicit = False
@@ -312,6 +314,7 @@ class LinearOperator:
                 Op,
                 exclude=[
                     "explicit",
+                    "name",
                 ],
             )
             Op.clinear = Op.clinear and Opx.clinear
@@ -331,6 +334,7 @@ class LinearOperator:
             Op,
             exclude=[
                 "explicit",
+                "name",
             ],
         )
         Op.explicit = False
@@ -407,7 +411,7 @@ class LinearOperator:
         return Op
 
     def _transpose(self) -> LinearOperator:
-        Op = _TransposeLinearOperator(self)
+        Op = _TransposedLinearOperator(self)
         self._copy_attributes(Op, exclude=["dims", "dimsd", "explicit", "name"])
         Op.explicit = False
         Op.dims = self.dimsd
@@ -573,9 +577,7 @@ class LinearOperator:
             Op = LinearOperator(Op=_ScaledLinearOperator(self, x))
             self._copy_attributes(
                 Op,
-                exclude=[
-                    "explicit",
-                ],
+                exclude=["explicit", "name"],
             )
             Op.explicit = False
             return Op
@@ -1292,12 +1294,12 @@ class _AdjointLinearOperator(LinearOperator):
         return self.A._matmat(X)
 
 
-class _TransposeLinearOperator(LinearOperator):
+class _TransposedLinearOperator(LinearOperator):
     """Transposition of Linear Operator"""
 
     def __init__(self, A: LinearOperator):
         shape = (A.shape[1], A.shape[0])
-        super(_TransposeLinearOperator, self).__init__(shape=shape, dtype=A.dtype)
+        super(_TransposedLinearOperator, self).__init__(shape=shape, dtype=A.dtype)
         self.A = A
         self.args = (A,)
 
