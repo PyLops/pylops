@@ -48,3 +48,6 @@ lint:
 
 typeannot:
 	mypy pylops/
+
+coverage:
+	coverage run -m pytest && coverage xml && coverage html && $(PYTHON) -m http.server --directory htmlcov/
