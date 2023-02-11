@@ -45,7 +45,9 @@ class LinearOperator:
 
     This class acts as an abstract interface between matrix-like
     objects and iterative solvers, providing methods to perform
-    matrix-vector and adjoint matrix-vector products.
+    matrix-vector and adjoint matrix-vector products as as
+    well as convenience methods such as ``eigs``, ``cond``, and
+    ``conj``.
 
     .. note:: End users of PyLops should not use this class directly but simply
       use operators that are already implemented. This class is meant for
