@@ -238,7 +238,7 @@ class _FFTND_mklfft(_BaseFFTND):
         from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
 
         if self.ifftshift_before.any():
-            x = mkl_fftshift(x, axes=self.axes[self.ifftshift_before])
+            x = mkl_iffshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
             x = np.real(x)
         if self.real:
@@ -252,7 +252,7 @@ class _FFTND_mklfft(_BaseFFTND):
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after.any():
-            y = mkl_iffshift(y, axes=self.axes[self.fftshift_after])
+            y = mkl_fftshift(y, axes=self.axes[self.fftshift_after])
         return y
 
     @reshaped

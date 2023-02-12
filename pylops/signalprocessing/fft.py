@@ -3,9 +3,6 @@ __all__ = ["FFT"]
 import logging
 import warnings
 from typing import Optional, Union
-from mkl_fft import _numpy_fft as pymkl_fft
-from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
-
 
 import numpy as np
 import numpy.typing as npt
@@ -405,6 +402,9 @@ class _FFT_mklfft(_BaseFFT):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
+        from mkl_fft import _numpy_fft as pymkl_fft
+        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
+
         if self.ifftshift_before:
             x = mkl_ifftshift(x, axes=self.axis)
         if not self.clinear:
@@ -425,6 +425,9 @@ class _FFT_mklfft(_BaseFFT):
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
+        from mkl_fft import _numpy_fft as pymkl_fft
+        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
+
         if self.fftshift_after:
             x = mkl_ifftshift(x, axes=self.axis)
         if self.real:

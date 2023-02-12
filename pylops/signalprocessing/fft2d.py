@@ -5,7 +5,6 @@ import warnings
 from typing import Dict, Optional, Sequence, Union
 
 from pylops.signalprocessing.fftnd import _FFTND_mklfft
-from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
 import numpy as np
 import scipy.fft
 
@@ -266,6 +265,8 @@ class _FFT2D_mklfft(_BaseFFTND):
 
     @reshaped
     def _matvec(self, x):
+        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
+
         if self.ifftshift_before.any():
             x = mkl_ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
@@ -286,6 +287,8 @@ class _FFT2D_mklfft(_BaseFFTND):
 
     @reshaped
     def _rmatvec(self, x):
+        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
+
         if self.fftshift_after.any():
             x = mkl_ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
