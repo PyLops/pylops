@@ -4,9 +4,10 @@ import logging
 import warnings
 from typing import Dict, Optional, Sequence, Union
 
+from pylops.signalprocessing.fftnd import _FFTND_mklfft
+from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
 import numpy as np
 import scipy.fft
-from pylops.signalprocessing.fftnd import _FFTND_mklfft
 
 from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
@@ -265,9 +266,8 @@ class _FFT2D_mklfft(_BaseFFTND):
 
     @reshaped
     def _matvec(self, x):
-        # from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
         if self.ifftshift_before.any():
-            x = np.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
+            x = mkl_ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
             x = np.real(x)
         if self.real:
@@ -281,14 +281,13 @@ class _FFT2D_mklfft(_BaseFFTND):
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after.any():
-            y = np.fft.fftshift(y, axes=self.axes[self.fftshift_after])
+            y = mkl_fftshift(y, axes=self.axes[self.fftshift_after])
         return y
 
     @reshaped
     def _rmatvec(self, x):
-        # from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
         if self.fftshift_after.any():
-            x = np.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
+            x = mkl_ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
@@ -305,7 +304,7 @@ class _FFT2D_mklfft(_BaseFFTND):
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before.any():
-            y = np.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
+            y = mkl_fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
     def __truediv__(self, y):
