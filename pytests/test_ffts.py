@@ -269,7 +269,7 @@ def test_FFT_random_real(par):
 
     # Ensure inverse and adjoint recover x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, show=0)[0]
+    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xadj, decimal=decimal)
     assert_array_almost_equal(x, xinv, decimal=decimal)
 
@@ -403,7 +403,7 @@ def test_FFT_random_complex(par):
 
     # Ensure inverse and adjoint recover x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, show=0)[0]
+    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xadj, decimal=decimal)
     assert_array_almost_equal(x, xinv, decimal=decimal)
 
@@ -464,7 +464,7 @@ def test_FFT2D_random_real(par):
 
     # Ensure inverse and adjoint recover x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, show=0)[0]
+    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xadj, decimal=decimal)
     assert_array_almost_equal(x, xinv, decimal=decimal)
 
@@ -544,7 +544,7 @@ def test_FFT2D_random_complex(par):
 
     # Ensure inverse and adjoint recover x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, show=0)[0]
+    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xadj, decimal=decimal)
     assert_array_almost_equal(x, xinv, decimal=decimal)
 
@@ -606,7 +606,7 @@ def test_FFTND_random_real(par):
 
     # Ensure inverse and adjoint recover x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, show=0)[0]
+    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xadj, decimal=decimal)
     assert_array_almost_equal(x, xinv, decimal=decimal)
 
@@ -686,7 +686,7 @@ def test_FFTND_random_complex(par):
 
     # Ensure inverse and adjoint recover x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, show=0)[0]
+    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xadj, decimal=decimal)
     assert_array_almost_equal(x, xinv, decimal=decimal)
 
@@ -850,7 +850,7 @@ def test_FFT_1dsignal(par):
 
     y = FFTop * x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=1e-10, iter_lim=10, show=0)[0]
+    xinv = lsqr(FFTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     # check all signal if nt>nfft and only up to nfft if nfft<nt
     imax = par["nt"] if par["nfft"] is None else min([par["nt"], par["nfft"]])
@@ -874,7 +874,7 @@ def test_FFT_1dsignal(par):
         assert_array_almost_equal(y_fftshift, np.fft.fftshift(y))
 
         xadj = FFTop_fftshift.H * y_fftshift  # adjoint is same as inverse for fft
-        xinv = lsqr(FFTop_fftshift, y_fftshift, damp=1e-10, iter_lim=10, show=0)[0]
+        xinv = lsqr(FFTop_fftshift, y_fftshift, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
         assert_array_almost_equal(x[:imax], xadj[:imax], decimal=decimal)
         assert_array_almost_equal(x[:imax], xinv[:imax], decimal=decimal)
 
@@ -930,7 +930,7 @@ def test_FFT_2dsignal(par):
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is same as inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx))
     dinv = np.real(dinv.reshape(nt, nx))
@@ -958,7 +958,7 @@ def test_FFT_2dsignal(par):
         assert_array_almost_equal(D_fftshift, D2)
 
         dadj = FFTop_fftshift.H * D_fftshift  # adjoint is same as inverse for fft
-        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, show=0)[0]
+        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
         dadj = np.real(dadj.reshape(nt, nx))
         dinv = np.real(dinv.reshape(nt, nx))
@@ -988,7 +988,7 @@ def test_FFT_2dsignal(par):
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx))
     dinv = np.real(dinv.reshape(nt, nx))
@@ -1016,7 +1016,7 @@ def test_FFT_2dsignal(par):
         assert_array_almost_equal(D_fftshift, D2)
 
         dadj = FFTop_fftshift.H * D_fftshift  # adjoint is same as inverse for fft
-        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, show=0)[0]
+        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
         dadj = np.real(dadj.reshape(nt, nx))
         dinv = np.real(dinv.reshape(nt, nx))
@@ -1085,7 +1085,7 @@ def test_FFT_3dsignal(par):
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is same as inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx, ny))
     dinv = np.real(dinv.reshape(nt, nx, ny))
@@ -1125,7 +1125,7 @@ def test_FFT_3dsignal(par):
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx, ny))
     dinv = np.real(dinv.reshape(nt, nx, ny))
@@ -1165,7 +1165,7 @@ def test_FFT_3dsignal(par):
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx, ny))
     dinv = np.real(dinv.reshape(nt, nx, ny))
@@ -1193,7 +1193,7 @@ def test_FFT_3dsignal(par):
         assert_array_almost_equal(D_fftshift, D2)
 
         dadj = FFTop_fftshift.H * D_fftshift  # adjoint is same as inverse for fft
-        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, show=0)[0]
+        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
         dadj = np.real(dadj.reshape(nt, nx, ny))
         dinv = np.real(dinv.reshape(nt, nx, ny))
@@ -1250,7 +1250,7 @@ def test_FFT2D(par):
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj).reshape(par["nt"], par["nx"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"])
@@ -1296,7 +1296,7 @@ def test_FFT2D(par):
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj).reshape(par["nt"], par["nx"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"])
@@ -1356,7 +1356,7 @@ def test_FFT3D(par):
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj).reshape(par["nt"], par["nx"], par["ny"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"], par["ny"])
@@ -1407,7 +1407,7 @@ def test_FFT3D(par):
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj).reshape(par["nt"], par["nx"], par["ny"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"], par["ny"])
@@ -1454,7 +1454,7 @@ def test_FFT3D(par):
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj).reshape(par["nt"], par["nx"], par["ny"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"], par["ny"])
