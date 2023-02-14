@@ -120,7 +120,7 @@ def test_NonStationaryConvolve1D(par):
 
         x = np.zeros((par["nx"]))
         x[par["nx"] // 2] = 1.0
-        xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, show=0)[0]
+        xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 1D on 2D
@@ -140,7 +140,7 @@ def test_NonStationaryConvolve1D(par):
         int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
     ] = 1.0
     x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=400, show=0)[0]
+    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
@@ -184,7 +184,7 @@ def test_NonStationaryConvolve2D(par):
         int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
     ] = 1.0
     x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=400, show=0)[0]
+    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
