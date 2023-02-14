@@ -29,7 +29,7 @@ def test_Kroneker(par):
         Kop, par["ny"] ** 2, par["nx"] ** 2, complexflag=0 if par["imag"] == 0 else 3
     )
 
-    xlsqr = lsqr(Kop, Kop * x, damp=1e-20, iter_lim=300, show=0)[0]
+    xlsqr = lsqr(Kop, Kop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=2)
 
     # Comparison with numpy
