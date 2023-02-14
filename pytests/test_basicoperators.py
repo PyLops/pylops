@@ -63,7 +63,7 @@ def test_LinearRegression(par):
     assert dottest(LRop, par["ny"], 2)
 
     x = np.array([1.0, 2.0], dtype=np.float32)
-    xlsqr = lsqr(LRop, LRop * x, damp=1e-10, iter_lim=300, show=0)[0]
+    xlsqr = lsqr(LRop, LRop * x, damp=1e-10, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
     y = LRop * x
@@ -82,7 +82,7 @@ def test_MatrixMult(par):
     assert dottest(Gop, par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3)
 
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
-    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, show=0)[0]
+    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
@@ -100,7 +100,7 @@ def test_MatrixMult_sparse(par):
     assert dottest(Gop, par["ny"], par["nx"], complexflag=0 if par["imag"] == 1 else 3)
 
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
-    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, show=0)[0]
+    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
@@ -133,7 +133,7 @@ def test_MatrixMult_repeated(par):
     )
 
     x = (np.ones((par["nx"], 5)) + par["imag"] * np.ones((par["nx"], 5))).ravel()
-    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, show=0)[0]
+    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
