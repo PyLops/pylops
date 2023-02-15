@@ -51,6 +51,7 @@ jobs:
 
   variables:
     NUMBA_NUM_THREADS: 1
+    KMP_DUPLICATE_LIB_OK: TRUE
 
   steps:
   - task: UsePythonVersion@0
