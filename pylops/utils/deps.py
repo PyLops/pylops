@@ -9,6 +9,7 @@ __all__ = [
     "spgl1_enabled",
     "sympy_enabled",
     "torch_enabled",
+    "mkl_fft_enabled"
 ]
 
 import os
@@ -29,7 +30,7 @@ skfmm_enabled = util.find_spec("skfmm") is not None
 spgl1_enabled = util.find_spec("spgl1") is not None
 sympy_enabled = util.find_spec("sympy") is not None
 torch_enabled = util.find_spec("torch") is not None
-mkl_fft_enabled = util.find_spec("mkl-fft") is not None
+mkl_fft_enabled = util.find_spec("mkl_fft") is not None
 
 
 # error message at import of available package
