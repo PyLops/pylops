@@ -1,5 +1,6 @@
 __all__ = ["FFT2D"]
 
+import torch
 import logging
 import warnings
 from typing import Dict, Optional, Sequence, Union

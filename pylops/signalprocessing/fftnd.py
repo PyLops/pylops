@@ -1,5 +1,6 @@
 __all__ = ["FFTND"]
 
+import torch
 import logging
 import warnings
 from typing import Optional, Sequence, Union
