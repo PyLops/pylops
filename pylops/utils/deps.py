@@ -29,6 +29,7 @@ skfmm_enabled = util.find_spec("skfmm") is not None
 spgl1_enabled = util.find_spec("spgl1") is not None
 sympy_enabled = util.find_spec("sympy") is not None
 torch_enabled = util.find_spec("torch") is not None
+mkl_fft_enabled = util.find_spec("mkl-fft") is not None
 
 
 # error message at import of available package
@@ -85,6 +86,24 @@ def pyfftw_import(message):
             f'"conda install -c conda-forge pyfftw".'
         )
     return pyfftw_message
+
+
+def mkl_fft_import(message):
+    if pyfftw_enabled:
+        try:
+            import mkl_fft  # noqa: F401
+            mkl_fft_message = None
+        except Exception as e:
+            mkl_fft_message = f"Failed to import pyfftw (error:{e}), use numpy."
+    else:
+        mkl_fft_message = (
+            "Pyfftw not available, reverting to numpy. "
+            "In order to be able to use "
+            f"{message} run "
+            f'"pip install pyFFTW" or '
+            f'"conda install -c conda-forge pyfftw".'
+        )
+    return mkl_fft_message
 
 
 def pywt_import(message):

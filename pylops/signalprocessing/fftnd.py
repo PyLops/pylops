@@ -1,6 +1,5 @@
 __all__ = ["FFTND"]
 
-import torch
 import logging
 import warnings
 from typing import Optional, Sequence, Union
@@ -12,6 +11,13 @@ from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
 from pylops.utils.backend import get_sp_fft
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from pylops.utils import deps
+
+mkl_fft_message = deps.mkl_fft_import("the mkl fft module")
+
+if mkl_fft_message is None:
+    from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
+    from mkl_fft._numpy_fft import asarray, _cook_nd_args, fft, rfft, irfft, ifft
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -236,10 +242,8 @@ class _FFTND_mklfft(_BaseFFTND):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
-        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
-
         if self.ifftshift_before.any():
-            x = mkl_iffshift(x, axes=self.axes[self.ifftshift_before])
+            x = mkl_ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
             x = np.real(x)
         if self.real:
@@ -258,10 +262,8 @@ class _FFTND_mklfft(_BaseFFTND):
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
-        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_iffshift
-
         if self.fftshift_after.any():
-            x = mkl_iffshift(x, axes=self.axes[self.fftshift_after])
+            x = mkl_ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
@@ -286,8 +288,6 @@ class _FFTND_mklfft(_BaseFFTND):
 
     @staticmethod
     def rfftn(a, s=None, axes=None, norm=None):
-        from mkl_fft._numpy_fft import asarray, _cook_nd_args, fft, rfft
-
         a = asarray(a)
         s, axes = _cook_nd_args(a, s, axes)
         a = rfft(a, s[-1], axes[-1], norm)
@@ -297,8 +297,6 @@ class _FFTND_mklfft(_BaseFFTND):
 
     @staticmethod
     def irfftn(a, s=None, axes=None, norm=None):
-        from mkl_fft._numpy_fft import ifft, asarray, _cook_nd_args, irfft
-
         a = asarray(a)
         s, axes = _cook_nd_args(a, s, axes, invreal=1)
         for ii in range(len(axes) - 1):
@@ -308,8 +306,6 @@ class _FFTND_mklfft(_BaseFFTND):
 
     @staticmethod
     def fftn(a, s=None, axes=None, norm=None):
-        from mkl_fft._numpy_fft import asarray, _cook_nd_args, fft
-
         a = asarray(a)
         s, axes = _cook_nd_args(a, s, axes)
         itl = list(range(len(axes)))
@@ -320,8 +316,6 @@ class _FFTND_mklfft(_BaseFFTND):
 
     @staticmethod
     def ifftn(a, s=None, axes=None, norm=None):
-        from mkl_fft._numpy_fft import ifft, asarray, _cook_nd_args
-
         a = asarray(a)
         s, axes = _cook_nd_args(a, s, axes)
         itl = list(range(len(axes)))
@@ -528,7 +522,19 @@ def FFTND(
     for real input signals.
 
     """
-    if engine == "numpy":
+    if engine == "mkl_fft" and mkl_fft_message is None:
+        f = _FFTND_mklfft(
+            dims=dims,
+            axes=axes,
+            nffts=nffts,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+    elif engine == "numpy" or (engine == "mkl_fft" and mkl_fft_message is not None):
         f = _FFTND_numpy(
             dims=dims,
             axes=axes,
@@ -542,18 +548,6 @@ def FFTND(
         )
     elif engine == "scipy":
         f = _FFTND_scipy(
-            dims=dims,
-            axes=axes,
-            nffts=nffts,
-            sampling=sampling,
-            norm=norm,
-            real=real,
-            ifftshift_before=ifftshift_before,
-            fftshift_after=fftshift_after,
-            dtype=dtype,
-        )
-    elif engine == "mkl_fft":
-        f = _FFTND_mklfft(
             dims=dims,
             axes=axes,
             nffts=nffts,

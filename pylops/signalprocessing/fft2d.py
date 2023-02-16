@@ -1,11 +1,9 @@
 __all__ = ["FFT2D"]
 
-import torch
 import logging
 import warnings
 from typing import Dict, Optional, Sequence, Union
 
-from pylops.signalprocessing.fftnd import _FFTND_mklfft
 import numpy as np
 import scipy.fft
 
@@ -13,6 +11,12 @@ from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike
+from pylops.utils import deps
+mkl_fft_message = deps.mkl_fft_import("the mkl fft module")
+
+if mkl_fft_message is None:
+    from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
+    from pylops.signalprocessing.fftnd import _FFTND_mklfft
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -266,8 +270,6 @@ class _FFT2D_mklfft(_BaseFFTND):
 
     @reshaped
     def _matvec(self, x):
-        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
-
         if self.ifftshift_before.any():
             x = mkl_ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
@@ -288,8 +290,6 @@ class _FFT2D_mklfft(_BaseFFTND):
 
     @reshaped
     def _rmatvec(self, x):
-        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
-
         if self.fftshift_after.any():
             x = mkl_ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
@@ -500,7 +500,19 @@ def FFT2D(
     signals.
 
     """
-    if engine == "numpy":
+    if engine == "mkl_fft" and mkl_fft_message is None:
+        f = _FFT2D_mklfft(
+            dims=dims,
+            axes=axes,
+            nffts=nffts,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+    elif engine == "numpy" or (engine == "mkl_fft" and mkl_fft_message is not None):
         f = _FFT2D_numpy(
             dims=dims,
             axes=axes,
@@ -514,18 +526,6 @@ def FFT2D(
         )
     elif engine == "scipy":
         f = _FFT2D_scipy(
-            dims=dims,
-            axes=axes,
-            nffts=nffts,
-            sampling=sampling,
-            norm=norm,
-            real=real,
-            ifftshift_before=ifftshift_before,
-            fftshift_after=fftshift_after,
-            dtype=dtype,
-        )
-    elif engine == "mkl_fft":
-        f = _FFT2D_mklfft(
             dims=dims,
             axes=axes,
             nffts=nffts,

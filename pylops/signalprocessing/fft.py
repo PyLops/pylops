@@ -1,6 +1,5 @@
 __all__ = ["FFT"]
 
-import torch
 import logging
 import warnings
 from typing import Optional, Union
@@ -16,9 +15,14 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 pyfftw_message = deps.pyfftw_import("the fft module")
+mkl_fft_message = deps.mkl_fft_import("the mkl fft module")
 
 if pyfftw_message is None:
     import pyfftw
+
+if mkl_fft_message is None:
+    import mkl_fft._numpy_fft as pymkl_fft
+    from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -403,9 +407,6 @@ class _FFT_mklfft(_BaseFFT):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
-        from mkl_fft import _numpy_fft as pymkl_fft
-        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
-
         if self.ifftshift_before:
             x = mkl_ifftshift(x, axes=self.axis)
         if not self.clinear:
@@ -426,9 +427,6 @@ class _FFT_mklfft(_BaseFFT):
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
-        from mkl_fft import _numpy_fft as pymkl_fft
-        from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
-
         if self.fftshift_after:
             x = mkl_ifftshift(x, axes=self.axis)
         if self.real:
@@ -649,7 +647,19 @@ def FFT(
             dtype=dtype,
             **kwargs_fftw,
         )
-    elif engine == "numpy" or (engine == "fftw" and pyfftw_message is not None):
+    elif engine == "mkl_fft" and mkl_fft_message is None:
+        f = _FFT_mklfft(
+            dims,
+            axis=axis,
+            nfft=nfft,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+    elif engine == "numpy" or (engine == "fftw" and pyfftw_message is not None) or (engine == "mkl_fft" and mkl_fft_message is not None):
         if engine == "fftw" and pyfftw_message is not None:
             logging.warning(pyfftw_message)
         f = _FFT_numpy(
@@ -665,18 +675,6 @@ def FFT(
         )
     elif engine == "scipy":
         f = _FFT_scipy(
-            dims,
-            axis=axis,
-            nfft=nfft,
-            sampling=sampling,
-            norm=norm,
-            real=real,
-            ifftshift_before=ifftshift_before,
-            fftshift_after=fftshift_after,
-            dtype=dtype,
-        )
-    elif engine == "mkl_fft":
-        f = _FFT_mklfft(
             dims,
             axis=axis,
             nfft=nfft,

@@ -51,10 +51,6 @@ jobs:
 
   variables:
     NUMBA_NUM_THREADS: 1
-    KMP_DUPLICATE_LIB_OK: TRUE
-    MKL_THREADING_LAYER: GNU
-    MKL_INTERFACE_LAYER: GNU
-    OMP_NESTED: FALSE
 
   steps:
   - task: UsePythonVersion@0
@@ -84,9 +80,6 @@ jobs:
 
   variables:
     NUMBA_NUM_THREADS: 1
-    MKL_THREADING_LAYER: GNU
-    MKL_INTERFACE_LAYER: GNU
-    OMP_NESTED: FALSE
 
   steps:
   - task: UsePythonVersion@0
