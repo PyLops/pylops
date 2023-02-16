@@ -21,8 +21,8 @@ if pyfftw_message is None:
     import pyfftw
 
 if mkl_fft_message is None:
-    import mkl_fft._numpy_fft as pymkl_fft
-    from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
+    from mkl_fft import _numpy_fft
+    from mkl_fft import _scipy_fft_backend
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -408,36 +408,36 @@ class _FFT_mklfft(_BaseFFT):
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
         if self.ifftshift_before:
-            x = mkl_ifftshift(x, axes=self.axis)
+            x = _scipy_fft_backend.ifftshift(x, axes=self.axis)
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = pymkl_fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = _numpy_fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.axis)
             y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.axis, -1)
         else:
-            y = pymkl_fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = _numpy_fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after:
-            y = mkl_fftshift(y, axes=self.axis)
+            y = _scipy_fft_backend.fftshift(y, axes=self.axis)
         return y
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
         if self.fftshift_after:
-            x = mkl_ifftshift(x, axes=self.axis)
+            x = _scipy_fft_backend.ifftshift(x, axes=self.axis)
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
             x = np.swapaxes(x, -1, self.axis)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.axis, -1)
-            y = pymkl_fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = _numpy_fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         else:
-            y = pymkl_fft.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = _numpy_fft.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
 
@@ -449,7 +449,7 @@ class _FFT_mklfft(_BaseFFT):
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before:
-            y = mkl_fftshift(y, axes=self.axis)
+            y = _scipy_fft_backend.fftshift(y, axes=self.axis)
         return y
 
     def __truediv__(self, y):

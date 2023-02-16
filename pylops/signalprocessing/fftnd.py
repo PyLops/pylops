@@ -16,8 +16,8 @@ from pylops.utils import deps
 mkl_fft_message = deps.mkl_fft_import("the mkl fft module")
 
 if mkl_fft_message is None:
-    from mkl_fft._scipy_fft_backend import fftshift as mkl_fftshift, ifftshift as mkl_ifftshift
-    from mkl_fft._numpy_fft import asarray, _cook_nd_args, fft, rfft, irfft, ifft
+    from mkl_fft import _numpy_fft
+    from mkl_fft import _scipy_fft_backend
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -243,7 +243,7 @@ class _FFTND_mklfft(_BaseFFTND):
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
         if self.ifftshift_before.any():
-            x = mkl_ifftshift(x, axes=self.axes[self.ifftshift_before])
+            x = _scipy_fft_backend.ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
             x = np.real(x)
         if self.real:
@@ -257,13 +257,13 @@ class _FFTND_mklfft(_BaseFFTND):
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after.any():
-            y = mkl_fftshift(y, axes=self.axes[self.fftshift_after])
+            y = _scipy_fft_backend.fftshift(y, axes=self.axes[self.fftshift_after])
         return y
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
         if self.fftshift_after.any():
-            x = mkl_ifftshift(x, axes=self.axes[self.fftshift_after])
+            x = _scipy_fft_backend.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
@@ -283,45 +283,45 @@ class _FFTND_mklfft(_BaseFFTND):
         if not self.clinear:
             y = np.real(y)
         if self.ifftshift_before.any():
-            y = mkl_fftshift(y, axes=self.axes[self.ifftshift_before])
+            y = _scipy_fft_backend.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
     @staticmethod
     def rfftn(a, s=None, axes=None, norm=None):
-        a = asarray(a)
-        s, axes = _cook_nd_args(a, s, axes)
-        a = rfft(a, s[-1], axes[-1], norm)
+        a = np.asarray(a)
+        s, axes = _numpy_fft._cook_nd_args(a, s, axes)
+        a = _numpy_fft.rfft(a, s[-1], axes[-1], norm)
         for ii in range(len(axes) - 1):
-            a = fft(a, s[ii], axes[ii], norm)
+            a = _numpy_fft.fft(a, s[ii], axes[ii], norm)
         return a
 
     @staticmethod
     def irfftn(a, s=None, axes=None, norm=None):
-        a = asarray(a)
-        s, axes = _cook_nd_args(a, s, axes, invreal=1)
+        a = np.asarray(a)
+        s, axes = _numpy_fft._cook_nd_args(a, s, axes, invreal=1)
         for ii in range(len(axes) - 1):
-            a = ifft(a, s[ii], axes[ii], norm)
-        a = irfft(a, s[-1], axes[-1], norm)
+            a = _numpy_fft.ifft(a, s[ii], axes[ii], norm)
+        a = _numpy_fft.irfft(a, s[-1], axes[-1], norm)
         return a
 
     @staticmethod
     def fftn(a, s=None, axes=None, norm=None):
-        a = asarray(a)
-        s, axes = _cook_nd_args(a, s, axes)
+        a = np.asarray(a)
+        s, axes = _numpy_fft._cook_nd_args(a, s, axes)
         itl = list(range(len(axes)))
         itl.reverse()
         for ii in itl:
-            a = fft(a, n=s[ii], axis=axes[ii], norm=norm)
+            a = _numpy_fft.fft(a, n=s[ii], axis=axes[ii], norm=norm)
         return a
 
     @staticmethod
     def ifftn(a, s=None, axes=None, norm=None):
-        a = asarray(a)
-        s, axes = _cook_nd_args(a, s, axes)
+        a = np.asarray(a)
+        s, axes = _numpy_fft._cook_nd_args(a, s, axes)
         itl = list(range(len(axes)))
         itl.reverse()
         for ii in itl:
-            a = ifft(a, n=s[ii], axis=axes[ii], norm=norm)
+            a = _numpy_fft.ifft(a, n=s[ii], axis=axes[ii], norm=norm)
         return a
 
     def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:

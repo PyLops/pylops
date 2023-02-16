@@ -89,9 +89,10 @@ def pyfftw_import(message):
 
 
 def mkl_fft_import(message):
-    if pyfftw_enabled:
+    if mkl_fft_enabled:
         try:
-            import mkl_fft  # noqa: F401
+            from mkl_fft import _scipy_fft_backend  # noqa: F401
+            from mkl_fft import _numpy_fft  # noqa: F401
             mkl_fft_message = None
         except Exception as e:
             mkl_fft_message = f"Failed to import pyfftw (error:{e}), use numpy."
