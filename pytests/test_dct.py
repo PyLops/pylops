@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.signalprocessing import DCT
 from pylops.utils import dottest
@@ -21,7 +20,7 @@ def test_DCT1D(par):
         assert dottest(Dct, par["ny"], par["ny"], rtol=1e-6, complexflag=0, verb=True)
 
         y = Dct.H * (Dct * t)
-        assert_array_almost_equal(t, y, decimal=3)
+        np.allclose(t, y)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
@@ -43,7 +42,7 @@ def test_DCT2D(par):
             )
 
             y = Dct.H * (Dct * t)
-            assert_array_almost_equal(t, y, decimal=3)
+            np.allclose(t, y)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
@@ -65,7 +64,7 @@ def test_DCT3D(par):
             )
 
             y = Dct.H * (Dct * t)
-            assert_array_almost_equal(t, y, decimal=3)
+            np.allclose(t, y)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3)])
@@ -77,4 +76,4 @@ def test_DCT_workers(par):
     assert dottest(Dct, par["ny"], par["ny"], rtol=1e-6, complexflag=0, verb=True)
 
     y = Dct.H * (Dct * t)
-    assert_array_almost_equal(t, y, decimal=3)
+    np.allclose(t, y)
