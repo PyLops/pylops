@@ -82,7 +82,7 @@ axs[0].set_title("Signal")
 axs[1].plot(FFTop.f[: int(FFTop.nfft / 2)], np.abs(D[: int(FFTop.nfft / 2)]), "k", lw=2)
 axs[1].set_title("Fourier Transform with mkl_fft")
 axs[1].set_xlim([0, 3 * f0])
-plt.tight_layout()
+fig.tight_layout()
 
 ###############################################################################
 # We can also apply the one dimensional FFT to to a two-dimensional
