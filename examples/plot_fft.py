@@ -268,41 +268,41 @@ fig.tight_layout()
 
 ###############################################################################
 # Finally can apply the three-dimensional FFT to a three-dimensional signal using mkl_fft
-dt, dx, dy = 0.005, 5, 3
-nt, nx, ny = 30, 21, 11
-t = np.arange(nt) * dt
-x = np.arange(nx) * dx
-y = np.arange(nx) * dy
-f0 = 10
-nfft = 2**6
-nfftk = 2**5
-
-d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(nx) + 1)
-d = np.tile(d[:, :, np.newaxis], [1, 1, ny])
-
-FFTop = pylops.signalprocessing.FFTND(
-    dims=(nt, nx, ny), nffts=(nfft, nfftk, nfftk), sampling=(dt, dx, dy), engine="mkl_fft"
-)
-D = FFTop * d.ravel()
-
-dinv = FFTop.H * D
-dinv = FFTop / D
-dinv = np.real(dinv).reshape(nt, nx, ny)
-
-fig, axs = plt.subplots(2, 2, figsize=(10, 6))
-axs[0][0].imshow(d[:, :, ny // 2], vmin=-20, vmax=20, cmap="bwr")
-axs[0][0].set_title("Signal")
-axs[0][0].axis("tight")
-axs[0][1].imshow(
-    np.abs(np.fft.fftshift(D.reshape(nfft, nfftk, nfftk), axes=1)[:20, :, nfftk // 2]),
-    cmap="bwr",
-)
-axs[0][1].set_title("Fourier Transform 3D mkl fft")
-axs[0][1].axis("tight")
-axs[1][0].imshow(dinv[:, :, ny // 2], vmin=-20, vmax=20, cmap="bwr")
-axs[1][0].set_title("Inverted")
-axs[1][0].axis("tight")
-axs[1][1].imshow(d[:, :, ny // 2] - dinv[:, :, ny // 2], vmin=-20, vmax=20, cmap="bwr")
-axs[1][1].set_title("Error")
-axs[1][1].axis("tight")
-fig.tight_layout()
+# dt, dx, dy = 0.005, 5, 3
+# nt, nx, ny = 30, 21, 11
+# t = np.arange(nt) * dt
+# x = np.arange(nx) * dx
+# y = np.arange(nx) * dy
+# f0 = 10
+# nfft = 2**6
+# nfftk = 2**5
+#
+# d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(nx) + 1)
+# d = np.tile(d[:, :, np.newaxis], [1, 1, ny])
+#
+# FFTop = pylops.signalprocessing.FFTND(
+#     dims=(nt, nx, ny), nffts=(nfft, nfftk, nfftk), sampling=(dt, dx, dy), engine="mkl_fft"
+# )
+# D = FFTop * d.ravel()
+#
+# dinv = FFTop.H * D
+# dinv = FFTop / D
+# dinv = np.real(dinv).reshape(nt, nx, ny)
+#
+# fig, axs = plt.subplots(2, 2, figsize=(10, 6))
+# axs[0][0].imshow(d[:, :, ny // 2], vmin=-20, vmax=20, cmap="bwr")
+# axs[0][0].set_title("Signal")
+# axs[0][0].axis("tight")
+# axs[0][1].imshow(
+#     np.abs(np.fft.fftshift(D.reshape(nfft, nfftk, nfftk), axes=1)[:20, :, nfftk // 2]),
+#     cmap="bwr",
+# )
+# axs[0][1].set_title("Fourier Transform 3D mkl fft")
+# axs[0][1].axis("tight")
+# axs[1][0].imshow(dinv[:, :, ny // 2], vmin=-20, vmax=20, cmap="bwr")
+# axs[1][0].set_title("Inverted")
+# axs[1][0].axis("tight")
+# axs[1][1].imshow(d[:, :, ny // 2] - dinv[:, :, ny // 2], vmin=-20, vmax=20, cmap="bwr")
+# axs[1][1].set_title("Error")
+# axs[1][1].axis("tight")
+# fig.tight_layout()
