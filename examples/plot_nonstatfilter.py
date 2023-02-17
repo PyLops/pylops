@@ -77,7 +77,7 @@ x[:, 21] = 1.0
 x[:, 41] = -1.0
 
 Cop = pylops.signalprocessing.NonStationaryFilters2D(
-    inp=x, hshape=wavsize, ihx=(21, 41), ihz=(21, 41), engine="numba"
+    inp=x, hshape=wavsize, ihx=(21, 41), ihz=(21, 41), engine="numpy"
 )
 
 y = Cop @ hs
@@ -116,7 +116,6 @@ axs[1, 1].imshow(hsinv[1, 1], cmap="gray", vmin=-1, vmax=1)
 axs[1, 1].axis("tight")
 axs[1, 1].set_title(r"$H_{2,2}$")
 plt.tight_layout()
-
 
 fig, axs = plt.subplots(2, 2, figsize=(10, 5))
 fig.suptitle("Estimation error")
