@@ -67,8 +67,6 @@ axs[1].set_xlim([0, 3 * f0])
 plt.tight_layout()
 
 ###############################################################################
-# PyLops implements a third engine (``engine='mkl_fft'``) which uses the
-# well-known `IntelPython mkl_fft <https://github.com/IntelPython/mkl_fft>`
 FFTop = pylops.signalprocessing.FFT(dims=nt, nfft=nfft, sampling=dt, engine="mkl_fft")
 D = FFTop * d
 
@@ -306,3 +304,4 @@ fig.tight_layout()
 # axs[1][1].set_title("Error")
 # axs[1][1].axis("tight")
 # fig.tight_layout()
+plt.show()
