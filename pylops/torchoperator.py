@@ -10,6 +10,8 @@ from pylops import LinearOperator
 from pylops.utils import deps
 
 if deps.torch_enabled:
+    import torch
+    TensorTypeLike = torch.Tensor
     from pylops._torchoperator import _TorchOperator
 else:
     torch_message = (
@@ -17,7 +19,7 @@ else:
         'the twoway module run "pip install torch" or'
         '"conda install -c pytorch torch".'
     )
-from pylops.utils.typing import TensorTypeLike
+    TensorTypeLike = None
 
 
 class TorchOperator(LinearOperator):
