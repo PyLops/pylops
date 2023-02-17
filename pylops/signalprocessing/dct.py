@@ -17,7 +17,7 @@ class DCT(LinearOperator):
     Apply 1D or ND-Cosine Transform along one or more ``axes`` of a multi-dimensional
     array of size ``dims``.
 
-    This operator is an overload of :func:`scipy.fft.dctn` in forward mode and :func:`scipy.fft.idctn`
+    This operator is an overload of :py:func:`scipy.fft.dctn` in forward mode and :py:func:`scipy.fft.idctn`
     in adjoint mode.
 
     Parameters
@@ -32,7 +32,7 @@ class DCT(LinearOperator):
     workers :obj:`int`, optional
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from os.cpu_count().
-    dtype : :obj:`str`, optional
+    dtype : :obj:`DTypeLike`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
