@@ -283,7 +283,7 @@ class Kirchhoff(LinearOperator):
             _,
             _,
         ) = Kirchhoff._identify_geometry(z, x, srcs, recs, y=y)
-        dt = t[1] - t[0]
+        self.dt = t[1] - t[0]
         self.nt = len(t)
 
         # store ix-iy locations of sources and receivers
@@ -301,10 +301,10 @@ class Kirchhoff(LinearOperator):
             if mode in ["analytic", "eikonal"]:
                 # compute traveltime table
                 (
-                    self.trav,
-                    trav_srcs,
-                    trav_recs,
-                    dist,
+                    self.trav_srcs,
+                    self.trav_recs,
+                    self.dist_srcs,
+                    self.dist_recs,
                     trav_srcs_grad,
                     trav_recs_grad,
                 ) = Kirchhoff._traveltime_table(z, x, srcs, recs, vel, y=y, mode=mode)
@@ -357,13 +357,10 @@ class Kirchhoff(LinearOperator):
         else:
             raise NotImplementedError("method must be analytic, eikonal or byot")
 
-        self.itrav = (self.trav / dt).astype("int32")
-        self.travd = self.trav / dt - self.itrav
-
         # create wavelet operator
         if wavfilter:
             self.wav = self._wavelet_reshaping(
-                wav, dt, srcs.shape[0], recs.shape[0], self.ndims
+                wav, self.dt, srcs.shape[0], recs.shape[0], self.ndims
             )
         else:
             self.wav = wav
@@ -401,6 +398,7 @@ class Kirchhoff(LinearOperator):
             self.snell = np.array([0.8 * self.snell[0], self.snell[0]])
 
         # dimensions
+        self.ns, self.nr = ns, nr
         self.nsnr = ns * nr
         self.ni = np.prod(dims)
         dims = tuple(dims) if self.ndims == 2 else (dims[0] * dims[1], dims[2])
@@ -557,11 +555,8 @@ class Kirchhoff(LinearOperator):
             trav_srcs = np.sqrt(dist_srcs2) / vel
             trav_recs = np.sqrt(dist_recs2) / vel
 
-            trav = trav_srcs.reshape(ny * nx * nz, ns, 1) + trav_recs.reshape(
-                ny * nx * nz, 1, nr
-            )
-            trav = trav.reshape(ny * nx * nz, ns * nr)
-            dist = trav * vel
+            dist_srcs = trav_srcs * vel
+            dist_recs = trav_recs * vel
 
         elif mode == "eikonal":
             if skfmm is not None:
@@ -591,14 +586,6 @@ class Kirchhoff(LinearOperator):
                     trav_recs[:, irec] = (
                         skfmm.travel_time(phi=phi, speed=vel, dx=dsamp)
                     ).ravel()
-                dist = dist_srcs.reshape(ny * nx * nz, ns, 1) + dist_recs.reshape(
-                    ny * nx * nz, 1, nr
-                )
-                dist = dist.reshape(ny * nx * nz, ns * nr)
-                trav = trav_srcs.reshape(ny * nx * nz, ns, 1) + trav_recs.reshape(
-                    ny * nx * nz, 1, nr
-                )
-                trav = trav.reshape(ny * nx * nz, ns * nr)
             else:
                 raise NotImplementedError(skfmm_message)
         else:
@@ -612,7 +599,14 @@ class Kirchhoff(LinearOperator):
             trav_recs.reshape(*dims, nr), axis=np.arange(ndims)
         )
 
-        return trav, trav_srcs, trav_recs, dist, trav_srcs_grad, trav_recs_grad
+        return (
+            trav_srcs,
+            trav_recs,
+            dist_srcs,
+            dist_recs,
+            trav_srcs_grad,
+            trav_recs_grad,
+        )
 
     def _wavelet_reshaping(
         self,
@@ -641,42 +635,56 @@ class Kirchhoff(LinearOperator):
     def _trav_kirch_matvec(
         x: NDArray,
         y: NDArray,
-        nsnr: int,
+        ns: int,
+        nr: int,
         nt: int,
         ni: int,
-        itrav: NDArray,
-        travd: NDArray,
+        dt: float,
+        trav_srcs: NDArray,
+        trav_recs: NDArray,
     ) -> NDArray:
-        for isrcrec in prange(nsnr):
-            itravisrcrec = itrav[:, isrcrec]
-            travdisrcrec = travd[:, isrcrec]
-            for ii in range(ni):
-                index = itravisrcrec[ii]
-                dindex = travdisrcrec[ii]
-                if 0 <= index < nt - 1:
-                    y[isrcrec, index] += x[ii] * (1 - dindex)
-                    y[isrcrec, index + 1] += x[ii] * dindex
+        for isrc in prange(ns):
+            travisrc = trav_srcs[:, isrc]
+            for irec in range(nr):
+                travirec = trav_recs[:, irec]
+                trav = travisrc + travirec
+                itrav = (trav / dt).astype("int32")
+                travd = trav / dt - itrav
+                for ii in range(ni):
+                    index = itrav[ii]
+                    dindex = travd[ii]
+                    if 0 <= index < nt - 1:
+                        y[isrc * nr + irec, index] += x[ii] * (1 - dindex)
+                        y[isrc * nr + irec, index + 1] += x[ii] * dindex
         return y
 
     @staticmethod
     def _trav_kirch_rmatvec(
         x: NDArray,
         y: NDArray,
-        nsnr: int,
+        ns: int,
+        nr: int,
         nt: int,
         ni: int,
-        itrav: NDArray,
-        travd: NDArray,
+        dt: float,
+        trav_srcs: NDArray,
+        trav_recs: NDArray,
     ) -> NDArray:
         for ii in prange(ni):
-            itravii = itrav[ii]
-            travdii = travd[ii]
-            for isrcrec in range(nsnr):
-                if 0 <= itravii[isrcrec] < nt - 1:
-                    y[ii] += (
-                        x[isrcrec, itravii[isrcrec]] * (1 - travdii[isrcrec])
-                        + x[isrcrec, itravii[isrcrec] + 1] * travdii[isrcrec]
-                    )
+            trav_srcsii = trav_srcs[ii]
+            trav_recsii = trav_recs[ii]
+            for isrc in prange(ns):
+                trav_srcii = trav_srcsii[isrc]
+                for irec in range(nr):
+                    trav_recii = trav_recsii[irec]
+                    travii = trav_srcii + trav_recii
+                    itravii = int(travii / dt)
+                    travdii = travii / dt - itravii
+                    if 0 <= itravii < nt - 1:
+                        y[ii] += (
+                            x[isrc * nr + irec, itravii] * (1 - travdii)
+                            + x[isrc * nr + irec, itravii + 1] * travdii
+                        )
         return y
 
     @staticmethod
@@ -949,7 +957,17 @@ class Kirchhoff(LinearOperator):
                 self.snell[1],
             )
         else:
-            inputs = (x.ravel(), y, self.nsnr, self.nt, self.ni, self.itrav, self.travd)
+            inputs = (
+                x.ravel(),
+                y,
+                self.ns,
+                self.nr,
+                self.nt,
+                self.ni,
+                self.dt,
+                self.trav_srcs,
+                self.trav_recs,
+            )
         y = self._kirch_matvec(*inputs)
         y = self.cop._matvec(y.ravel())
         return y
@@ -983,6 +1001,16 @@ class Kirchhoff(LinearOperator):
                 self.snell[1],
             )
         else:
-            inputs = (x, y, self.nsnr, self.nt, self.ni, self.itrav, self.travd)
+            inputs = (
+                x,
+                y,
+                self.ns,
+                self.nr,
+                self.nt,
+                self.ni,
+                self.dt,
+                self.trav_srcs,
+                self.trav_recs,
+            )
         y = self._kirch_rmatvec(*inputs)
         return y
