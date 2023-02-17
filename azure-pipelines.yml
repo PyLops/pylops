@@ -51,9 +51,6 @@ jobs:
 
   variables:
     NUMBA_NUM_THREADS: 1
-    MKL_THREADING_LAYER: 'sequential'
-    MKL_ENABLE_INSTRUCTIONS: 'SSE4_2'
-
 
   steps:
   - task: UsePythonVersion@0
@@ -83,8 +80,6 @@ jobs:
 
   variables:
     NUMBA_NUM_THREADS: 1
-    MKL_THREADING_LAYER: 'sequential'
-    MKL_ENABLE_INSTRUCTIONS: 'SSE4_2'
 
   steps:
   - task: UsePythonVersion@0
