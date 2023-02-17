@@ -12,6 +12,8 @@ A list of operators present in pylops.signalprocessing:
     ConvolveND                      ND convolution operator.
     NonStationaryConvolve1D         1D nonstationary convolution operator.
     NonStationaryConvolve2D         2D nonstationary convolution operator.
+    NonStationaryFilters1D          1D nonstationary filter estimation operator.
+    NonStationaryFilters2D          2D nonstationary filter estimation operator.
     Interp                          Interpolation operator.
     Bilinear                        Bilinear interpolation operator.
     FFT                             One dimensional Fast-Fourier Transform.
@@ -67,6 +69,8 @@ __all__ = [
     "Convolve2D",
     "NonStationaryConvolve1D",
     "NonStationaryConvolve2D",
+    "NonStationaryFilters1D",
+    "NonStationaryFilters2D",
     "Interp",
     "Bilinear",
     "Radon2D",
