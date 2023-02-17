@@ -120,37 +120,37 @@ axs[1][1].axis("tight")
 fig.tight_layout()
 
 ###############################################################################
-# We can also apply the one dimensional FFT to a two-dimensional
-# signal (along one of the first axis) using intel mkl_fft
-dt = 0.005
-nt, nx = 100, 20
-t = np.arange(nt) * dt
-f0 = 10
-nfft = 2**10
-d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(nx) + 1)
-
-FFTop = pylops.signalprocessing.FFT(dims=(nt, nx), axis=0, nfft=nfft, sampling=dt, engine="mkl_fft")
-D = FFTop * d.ravel()
-
-# Adjoint = inverse for FFT
-dinv = FFTop.H * D
-dinv = FFTop / D
-dinv = np.real(dinv).reshape(nt, nx)
-
-fig, axs = plt.subplots(2, 2, figsize=(10, 6))
-axs[0][0].imshow(d, vmin=-20, vmax=20, cmap="bwr")
-axs[0][0].set_title("Signal")
-axs[0][0].axis("tight")
-axs[0][1].imshow(np.abs(D.reshape(nfft, nx)[:200, :]), cmap="bwr")
-axs[0][1].set_title("Fourier Transform using mkl_fft")
-axs[0][1].axis("tight")
-axs[1][0].imshow(dinv, vmin=-20, vmax=20, cmap="bwr")
-axs[1][0].set_title("Inverted")
-axs[1][0].axis("tight")
-axs[1][1].imshow(d - dinv, vmin=-20, vmax=20, cmap="bwr")
-axs[1][1].set_title("Error")
-axs[1][1].axis("tight")
-fig.tight_layout()
+# # We can also apply the one dimensional FFT to a two-dimensional
+# # signal (along one of the first axis) using intel mkl_fft
+# dt = 0.005
+# nt, nx = 100, 20
+# t = np.arange(nt) * dt
+# f0 = 10
+# nfft = 2**10
+# d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(nx) + 1)
+#
+# FFTop = pylops.signalprocessing.FFT(dims=(nt, nx), axis=0, nfft=nfft, sampling=dt, engine="mkl_fft")
+# D = FFTop * d.ravel()
+#
+# # Adjoint = inverse for FFT
+# dinv = FFTop.H * D
+# dinv = FFTop / D
+# dinv = np.real(dinv).reshape(nt, nx)
+#
+# fig, axs = plt.subplots(2, 2, figsize=(10, 6))
+# axs[0][0].imshow(d, vmin=-20, vmax=20, cmap="bwr")
+# axs[0][0].set_title("Signal")
+# axs[0][0].axis("tight")
+# axs[0][1].imshow(np.abs(D.reshape(nfft, nx)[:200, :]), cmap="bwr")
+# axs[0][1].set_title("Fourier Transform using mkl_fft")
+# axs[0][1].axis("tight")
+# axs[1][0].imshow(dinv, vmin=-20, vmax=20, cmap="bwr")
+# axs[1][0].set_title("Inverted")
+# axs[1][0].axis("tight")
+# axs[1][1].imshow(d - dinv, vmin=-20, vmax=20, cmap="bwr")
+# axs[1][1].set_title("Error")
+# axs[1][1].axis("tight")
+# fig.tight_layout()
 
 ###############################################################################
 # We can also apply the two dimensional FFT to to a two-dimensional signal
@@ -189,40 +189,40 @@ axs[1][1].axis("tight")
 fig.tight_layout()
 
 ###############################################################################
-# We can also apply the two-dimensional FFT to a two-dimensional signal using intel mkl_fft
-dt, dx = 0.005, 5
-nt, nx = 100, 201
-t = np.arange(nt) * dt
-x = np.arange(nx) * dx
-f0 = 10
-nfft = 2**10
-d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(nx) + 1)
-
-FFTop = pylops.signalprocessing.FFT2D(
-    dims=(nt, nx), nffts=(nfft, nfft), sampling=(dt, dx), engine='mkl_fft'
-)
-D = FFTop * d.ravel()
-
-dinv = FFTop.H * D
-dinv = FFTop / D
-dinv = np.real(dinv).reshape(nt, nx)
-
-fig, axs = plt.subplots(2, 2, figsize=(10, 6))
-axs[0][0].imshow(d, vmin=-100, vmax=100, cmap="bwr")
-axs[0][0].set_title("Signal")
-axs[0][0].axis("tight")
-axs[0][1].imshow(
-    np.abs(np.fft.fftshift(D.reshape(nfft, nfft), axes=1)[:200, :]), cmap="bwr"
-)
-axs[0][1].set_title("Fourier Transform 2D mkl_fft")
-axs[0][1].axis("tight")
-axs[1][0].imshow(dinv, vmin=-100, vmax=100, cmap="bwr")
-axs[1][0].set_title("Inverted")
-axs[1][0].axis("tight")
-axs[1][1].imshow(d - dinv, vmin=-100, vmax=100, cmap="bwr")
-axs[1][1].set_title("Error")
-axs[1][1].axis("tight")
-fig.tight_layout()
+# # We can also apply the two-dimensional FFT to a two-dimensional signal using intel mkl_fft
+# dt, dx = 0.005, 5
+# nt, nx = 100, 201
+# t = np.arange(nt) * dt
+# x = np.arange(nx) * dx
+# f0 = 10
+# nfft = 2**10
+# d = np.outer(np.sin(2 * np.pi * f0 * t), np.arange(nx) + 1)
+#
+# FFTop = pylops.signalprocessing.FFT2D(
+#     dims=(nt, nx), nffts=(nfft, nfft), sampling=(dt, dx), engine='mkl_fft'
+# )
+# D = FFTop * d.ravel()
+#
+# dinv = FFTop.H * D
+# dinv = FFTop / D
+# dinv = np.real(dinv).reshape(nt, nx)
+#
+# fig, axs = plt.subplots(2, 2, figsize=(10, 6))
+# axs[0][0].imshow(d, vmin=-100, vmax=100, cmap="bwr")
+# axs[0][0].set_title("Signal")
+# axs[0][0].axis("tight")
+# axs[0][1].imshow(
+#     np.abs(np.fft.fftshift(D.reshape(nfft, nfft), axes=1)[:200, :]), cmap="bwr"
+# )
+# axs[0][1].set_title("Fourier Transform 2D mkl_fft")
+# axs[0][1].axis("tight")
+# axs[1][0].imshow(dinv, vmin=-100, vmax=100, cmap="bwr")
+# axs[1][0].set_title("Inverted")
+# axs[1][0].axis("tight")
+# axs[1][1].imshow(d - dinv, vmin=-100, vmax=100, cmap="bwr")
+# axs[1][1].set_title("Error")
+# axs[1][1].axis("tight")
+# fig.tight_layout()
 
 
 ###############################################################################
