@@ -6,10 +6,11 @@ This example shows how to use the :py:class:`pylops.signalprocessing.FFT`,
 and :py:class:`pylops.signalprocessing.FFTND` operators to apply the Fourier
 Transform to the model and the inverse Fourier Transform to the data.
 """
-import matplotlib.pyplot as plt
+import pylops
 import numpy as np
 
-import pylops
+import matplotlib.pyplot as plt
+
 
 plt.close("all")
 
@@ -195,3 +196,4 @@ axs[1][1].imshow(d[:, :, ny // 2] - dinv[:, :, ny // 2], vmin=-20, vmax=20, cmap
 axs[1][1].set_title("Error")
 axs[1][1].axis("tight")
 fig.tight_layout()
+plt.show()
