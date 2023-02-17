@@ -24,13 +24,13 @@ cusignal_enabled = (
 )
 devito_enabled = util.find_spec("devito") is not None
 numba_enabled = util.find_spec("numba") is not None
+mkl_fft_enabled = util.find_spec("mkl_fft") is not None
 pyfftw_enabled = util.find_spec("pyfftw") is not None
 pywt_enabled = util.find_spec("pywt") is not None
 skfmm_enabled = util.find_spec("skfmm") is not None
 spgl1_enabled = util.find_spec("spgl1") is not None
 sympy_enabled = util.find_spec("sympy") is not None
 torch_enabled = util.find_spec("torch") is not None
-mkl_fft_enabled = util.find_spec("mkl_fft") is not None
 
 
 # error message at import of available package
@@ -96,7 +96,7 @@ def mkl_fft_import(message):
             from mkl_fft import _numpy_fft  # noqa: F401
             mkl_fft_message = None
         except Exception as e:
-            mkl_fft_message = f"Failed to import pyfftw (error:{e}), use numpy."
+            mkl_fft_message = f"Failed to import mkl_fft (error:{e}), use numpy."
     else:
         mkl_fft_message = (
             "mkl_fft not available, reverting to numpy. "
