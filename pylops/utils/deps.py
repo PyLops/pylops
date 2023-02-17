@@ -99,11 +99,11 @@ def mkl_fft_import(message):
             mkl_fft_message = f"Failed to import pyfftw (error:{e}), use numpy."
     else:
         mkl_fft_message = (
-            "Pyfftw not available, reverting to numpy. "
+            "mkl_fft not available, reverting to numpy. "
             "In order to be able to use "
             f"{message} run "
-            f'"pip install pyFFTW" or '
-            f'"conda install -c conda-forge pyfftw".'
+            f'"pip install mkl_fft" or '
+            f'"conda install -c conda-forge mkl_fft".'
         )
     return mkl_fft_message
 
