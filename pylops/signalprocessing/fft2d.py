@@ -260,7 +260,7 @@ class _FFT2D_mklfft(_BaseFFTND):
 
         self._norm_kwargs: Dict[str, Union[None, str]] = {
             "norm": None
-        }  # equivalent to "backward" in Numpy/Scipy
+        }
         if self.norm is _FFTNorms.ORTHO:
             self._norm_kwargs["norm"] = "ortho"
             self._scale = np.sqrt(1 / np.prod(np.sqrt(self.nffts)))
@@ -277,7 +277,6 @@ class _FFT2D_mklfft(_BaseFFTND):
             x = np.real(x)
         if self.real:
             y = _FFTND_mklfft.rfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
-            # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.axes[-1], -1)
@@ -294,7 +293,6 @@ class _FFT2D_mklfft(_BaseFFTND):
         if self.fftshift_after.any():
             x = _scipy_fft_backend.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
-            # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
             x = np.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)

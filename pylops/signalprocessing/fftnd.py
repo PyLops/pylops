@@ -159,7 +159,6 @@ class _FFTND_scipy(_BaseFFTND):
             x = np.real(x)
         if self.real:
             y = sp_fft.rfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
-            # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.axes[-1], -1)
@@ -177,7 +176,6 @@ class _FFTND_scipy(_BaseFFTND):
         if self.fftshift_after.any():
             x = sp_fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
-            # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
             x = np.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
@@ -231,7 +229,7 @@ class _FFTND_mklfft(_BaseFFTND):
             dtype=dtype,
         )
 
-        self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
+        self._norm_kwargs = {"norm": None}
         if self.norm is _FFTNorms.ORTHO:
             self._norm_kwargs["norm"] = "ortho"
             self._scale = np.sqrt(1 / np.prod(self.nffts))
@@ -248,7 +246,6 @@ class _FFTND_mklfft(_BaseFFTND):
             x = np.real(x)
         if self.real:
             y = self.rfftn(x, s=self.nffts, axes=tuple(self.axes), **self._norm_kwargs)
-            # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.axes[-1], -1)
@@ -265,7 +262,6 @@ class _FFTND_mklfft(_BaseFFTND):
         if self.fftshift_after.any():
             x = _scipy_fft_backend.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
-            # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
             x = np.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
