@@ -155,6 +155,7 @@ axs[1][1].set_title("Error")
 axs[1][1].axis("tight")
 fig.tight_layout()
 
+
 ###############################################################################
 # Finally can apply the three dimensional FFT to to a three-dimensional signal
 dt, dx, dy = 0.005, 5, 3
