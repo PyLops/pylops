@@ -19,10 +19,10 @@ import pylops
 # # lenght :math:`nt` and sampling :math:`dt`
 dt = 0.005
 nt = 100
-# t = np.arange(nt) * dt
+t = np.arange(nt) * dt
 f0 = 10
 nfft = 2**10
-# d = np.sin(2 * np.pi * f0 * t)
+d = np.sin(2 * np.pi * f0 * t)
 #
 # FFTop = pylops.FFT(dims=nt, nfft=nfft, sampling=dt, engine="numpy")
 # D = FFTop * d
@@ -70,7 +70,7 @@ nfft = 2**10
 # PyLops implements a third engine (``engine='mkl_fft'``) which uses the
 # well-known `mkl_fft <https://github.com/IntelPython/mkl_fft>`_ .
 FFTop = pylops.FFT(dims=nt, nfft=nfft, sampling=dt, engine="mkl_fft")
-# D = FFTop * d
+D = FFTop * d
 
 # Adjoint = inverse for FFT
 # dinv = FFTop.H * D
