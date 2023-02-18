@@ -57,6 +57,7 @@ from . import (
     waveeqprocessing,
 )
 from .torchoperator import *
+from .signalprocessing import *
 from .avo.poststack import *
 from .avo.prestack import *
 from .optimization.basic import *
