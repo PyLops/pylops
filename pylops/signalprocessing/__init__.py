@@ -22,6 +22,7 @@ A list of operators present in pylops.signalprocessing:
     Shift                           Fractional Shift operator.
     DWT                             One dimensional Wavelet operator.
     DWT2D                           Two dimensional Wavelet operator.
+    DCT                             Discrete Cosine Transform.
     Seislet                         Two dimensional Seislet operator.
     Radon2D	                        Two dimensional Radon transform.
     Radon3D	                        Three dimensional Radon transform.
@@ -58,6 +59,7 @@ from .fredholm1 import *
 from .dwt import *
 from .dwt2d import *
 from .seislet import *
+from .dct import *
 
 __all__ = [
     "FFT",
@@ -86,4 +88,5 @@ __all__ = [
     "DWT",
     "DWT2D",
     "Seislet",
+    "DCT",
 ]

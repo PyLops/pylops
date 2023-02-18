@@ -101,6 +101,7 @@ Signal processing
     Shift
     DWT
     DWT2D
+    DCT
     Seislet
     Radon2D
     Radon3D
