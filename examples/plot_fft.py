@@ -7,9 +7,10 @@ and :py:class:`pylops.signalprocessing.FFTND` operators to apply the Fourier
 Transform to the model and the inverse Fourier Transform to the data.
 """
 # import matplotlib.pyplot as plt
+import pylops
+
 import numpy as np
 #
-import pylops
 #
 # plt.close("all")
 #
