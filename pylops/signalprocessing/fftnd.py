@@ -159,6 +159,7 @@ class _FFTND_scipy(_BaseFFTND):
             x = np.real(x)
         if self.real:
             y = sp_fft.rfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.axes[-1], -1)
@@ -176,6 +177,7 @@ class _FFTND_scipy(_BaseFFTND):
         if self.fftshift_after.any():
             x = sp_fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
+            # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
             x = np.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
