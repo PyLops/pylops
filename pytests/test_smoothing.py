@@ -25,7 +25,7 @@ def test_Smoothing1D(par):
 
     x = np.random.normal(0, 1, par["nx"])
     y = D1op * x
-    xlsqr = lsqr(D1op, y, damp=1e-10, iter_lim=100, show=0)[0]
+    xlsqr = lsqr(D1op, y, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
     # 1d kernel on 2d signal
@@ -36,7 +36,7 @@ def test_Smoothing1D(par):
 
     x = np.random.normal(0, 1, (par["ny"], par["nx"])).ravel()
     y = D1op * x
-    xlsqr = lsqr(D1op, y, damp=1e-10, iter_lim=100, show=0)[0]
+    xlsqr = lsqr(D1op, y, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
     # 1d kernel on 3d signal
@@ -55,7 +55,7 @@ def test_Smoothing1D(par):
 
     x = np.random.normal(0, 1, (par["nz"], par["ny"], par["nx"])).ravel()
     y = D1op * x
-    xlsqr = lsqr(D1op, y, damp=1e-10, iter_lim=100, show=0)[0]
+    xlsqr = lsqr(D1op, y, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
 
@@ -81,7 +81,7 @@ def test_Smoothing2D(par):
             y[par["ny"] // 2, par["nx"] // 2 - 2 : par["nx"] // 2 + 3], np.ones(5) / 25
         )
         # inverse
-        xlsqr = lsqr(D2op, y.ravel(), damp=1e-10, iter_lim=400, show=0)[0]
+        xlsqr = lsqr(D2op, y.ravel(), damp=1e-10, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 2d kernel on 3d signal
@@ -133,5 +133,5 @@ def test_Smoothing2D(par):
         )
 
     # inverse
-    xlsqr = lsqr(D2op, y.ravel(), damp=1e-10, iter_lim=400, show=0)[0]
+    xlsqr = lsqr(D2op, y.ravel(), damp=1e-10, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)

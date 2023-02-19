@@ -46,7 +46,7 @@ def test_Shift1D(par):
     )
     assert dottest(Sop, par["nt"], par["nt"], complexflag=0 if par["imag"] == 0 else 3)
 
-    xlsqr = lsqr(Sop, Sop * x, damp=1e-20, iter_lim=200, show=0)[0]
+    xlsqr = lsqr(Sop, Sop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
@@ -75,7 +75,7 @@ def test_Shift2D(par):
         par["nt"] * par["nx"],
         complexflag=0 if par["imag"] == 0 else 3,
     )
-    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, show=0)[0]
+    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x.ravel(), xlsqr, decimal=1)
 
     # 2nd axis
@@ -97,7 +97,7 @@ def test_Shift2D(par):
         par["nt"] * par["nx"],
         complexflag=0 if par["imag"] == 0 else 3,
     )
-    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, show=0)[0]
+    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x.ravel(), xlsqr, decimal=1)
 
 
@@ -126,7 +126,7 @@ def test_Shift2Dvariable(par):
         par["nt"] * par["nx"],
         complexflag=0 if par["imag"] == 0 else 3,
     )
-    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, show=0)[0]
+    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x.ravel(), xlsqr, decimal=1)
 
     # 2nd axis
@@ -148,5 +148,5 @@ def test_Shift2Dvariable(par):
         par["nt"] * par["nx"],
         complexflag=0 if par["imag"] == 0 else 3,
     )
-    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, show=0)[0]
+    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
     assert_array_almost_equal(x.ravel(), xlsqr, decimal=1)

@@ -33,7 +33,7 @@ def test_DWT_1dsignal(par):
 
     y = DWTop * x
     xadj = DWTop.H * y  # adjoint is same as inverse for dwt
-    xinv = lsqr(DWTop, y, damp=1e-10, iter_lim=10, show=0)[0]
+    xinv = lsqr(DWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     assert_array_almost_equal(x, xadj, decimal=8)
     assert_array_almost_equal(x, xinv, decimal=8)
@@ -57,7 +57,7 @@ def test_DWT_2dsignal(par):
 
         y = DWTop * x.ravel()
         xadj = DWTop.H * y  # adjoint is same as inverse for dwt
-        xinv = lsqr(DWTop, y, damp=1e-10, iter_lim=10, show=0)[0]
+        xinv = lsqr(DWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
         assert_array_almost_equal(x.ravel(), xadj, decimal=8)
         assert_array_almost_equal(x.ravel(), xinv, decimal=8)
@@ -83,7 +83,7 @@ def test_DWT_3dsignal(par):
 
         y = DWTop * x.ravel()
         xadj = DWTop.H * y  # adjoint is same as inverse for dwt
-        xinv = lsqr(DWTop, y, damp=1e-10, iter_lim=10, show=0)[0]
+        xinv = lsqr(DWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
         assert_array_almost_equal(x.ravel(), xadj, decimal=8)
         assert_array_almost_equal(x.ravel(), xinv, decimal=8)
@@ -103,7 +103,7 @@ def test_DWT2D_2dsignal(par):
 
     y = DWTop * x.ravel()
     xadj = DWTop.H * y  # adjoint is same as inverse for dwt
-    xinv = lsqr(DWTop, y, damp=1e-10, iter_lim=10, show=0)[0]
+    xinv = lsqr(DWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     assert_array_almost_equal(x.ravel(), xadj, decimal=8)
     assert_array_almost_equal(x.ravel(), xinv, decimal=8)
@@ -129,7 +129,7 @@ def test_DWT2D_3dsignal(par):
 
         y = DWTop * x.ravel()
         xadj = DWTop.H * y  # adjoint is same as inverse for dwt
-        xinv = lsqr(DWTop, y, damp=1e-10, iter_lim=10, show=0)[0]
+        xinv = lsqr(DWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
         assert_array_almost_equal(x.ravel(), xadj, decimal=8)
         assert_array_almost_equal(x.ravel(), xinv, decimal=8)
