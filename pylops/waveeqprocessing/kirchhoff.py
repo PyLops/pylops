@@ -89,10 +89,12 @@ class Kirchhoff(LinearOperator):
         Include dynamic weights in computations (``True``) or not (``False``).
         Note that when ``mode=byot``, the user is required to provide such weights
         in ``amp``.
-    trav : :obj:`numpy.ndarray`, optional
+    trav : :obj:`numpy.ndarray` or :obj:`tuple`, optional
         Traveltime table of size
-        :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` (to be provided if
-        ``mode='byot'``)
+        :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` or pair of traveltime tables
+        of size :math:`\lbrack (n_y) n_x n_z \times n_s \rbrack` and :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack`
+        (to be provided if ``mode='byot'``). Note that the latter approach is reccomended as less memory demanding
+        than the former.
     amp : :obj:`numpy.ndarray`, optional
         .. versionadded:: 2.0.0
 
@@ -267,6 +269,17 @@ class Kirchhoff(LinearOperator):
         dtype: DTypeLike = "float64",
         name: str = "K",
     ) -> None:
+        warnings.warn(
+            "A new implementation of Kirchhoff is provided in v2.1.0. "
+            "This currently affects only the inner working of the "
+            "operator, end-users can continue using the operator in "
+            "the same way. Nevertheless, it is now recommended to provide"
+            "the variables trav (and amp) as a tuples containing the "
+            "traveltime (and amplitude) tables for sources and receivers "
+            "separately. This behaviour will eventually become default in "
+            "version v3.0.0.",
+            FutureWarning,
+        )
         # identify geometry
         (
             self.ndims,
@@ -297,6 +310,7 @@ class Kirchhoff(LinearOperator):
 
         # compute traveltime
         self.dynamic = dynamic
+        self.travsrcrec = True  # use separate tables for src and rec traveltimes
         if mode in ["analytic", "eikonal", "byot"]:
             if mode in ["analytic", "eikonal"]:
                 # compute traveltime table
@@ -309,13 +323,14 @@ class Kirchhoff(LinearOperator):
                     trav_recs_grad,
                 ) = Kirchhoff._traveltime_table(z, x, srcs, recs, vel, y=y, mode=mode)
                 if self.dynamic:
-                    # need to add a scalar in the denominator to avoid division by 0
-                    # currently set to 1/100 of max distance to avoid having to large
-                    # scaling around the source. This number may change in future or
-                    # left to the user to define
+                    # need to add a scalar in the denominator of amplitude term to avoid
+                    # division by 0, currently set to 1/100 of max distance to avoid having
+                    # to large scaling around the source. This number may change in future
+                    # or left to the user to define
                     epsdist = 1e-2
-                    self.amp = 1 / (dist + epsdist * np.max(dist))
-
+                    self.maxdist = epsdist * (
+                        np.max(self.dist_srcs) + np.max(self.dist_recs)
+                    )
                     # compute angles
                     if self.ndims == 2:
                         # 2d with vertical
@@ -326,36 +341,36 @@ class Kirchhoff(LinearOperator):
                             self.angle_recs = np.arctan2(
                                 trav_recs_grad[0], trav_recs_grad[1]
                             ).reshape(np.prod(dims), nr)
-                            self.cosangle = np.cos(self.angle_srcs).reshape(
-                                np.prod(dims), ns, 1
-                            ) + np.cos(self.angle_recs).reshape(np.prod(dims), 1, nr)
-                            self.cosangle = self.cosangle.reshape(
-                                np.prod(dims), ns * nr
-                            )
+                            self.cosangle_srcs = np.cos(self.angle_srcs)
+                            self.cosangle_recs = np.cos(self.angle_recs)
                         else:
                             # TODO: 2D with normal
                             raise NotImplementedError(
                                 "angle scaling with anglerefl currently not available"
                             )
-
-                        self.amp *= np.abs(self.cosangle)
-                        if mode == "analytic":
-                            self.amp /= vel
-                        else:
-                            self.amp /= vel.reshape(np.prod(dims), 1)
-
                     else:
                         # TODO: 3D
                         raise NotImplementedError(
                             "dynamic=True currently not available in 3D"
                         )
             else:
-                self.trav = trav
+                if isinstance(trav, tuple):
+                    self.trav_srcs, self.trav_recs = trav
+                else:
+                    self.travsrcrec = False
+                    self.trav = trav
                 if self.dynamic:
-                    self.amp = amp
-
+                    if isinstance(amp, tuple):
+                        self.amp_srcs, self.amp_recs = amp
+                    else:
+                        self.amp = amp
         else:
             raise NotImplementedError("method must be analytic, eikonal or byot")
+
+        # pre-compute traveltime indices if total traveltime is used
+        if not self.travsrcrec:
+            self.itrav = (self.trav / self.dt).astype("int32")
+            self.travd = self.trav / self.dt - self.itrav
 
         # create wavelet operator
         if wavfilter:
@@ -404,6 +419,13 @@ class Kirchhoff(LinearOperator):
         dims = tuple(dims) if self.ndims == 2 else (dims[0] * dims[1], dims[2])
         dimsd = (ns, nr, self.nt)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+        # save velocity if using dynamic to compute amplitudes
+        if self.dynamic:
+            self.vel = (
+                vel.flatten()
+                if not isinstance(vel, (float, int))
+                else vel * np.ones(np.prod(dims))
+            )
         self._register_multiplications(engine)
 
     @staticmethod
@@ -635,6 +657,48 @@ class Kirchhoff(LinearOperator):
     def _trav_kirch_matvec(
         x: NDArray,
         y: NDArray,
+        nsnr: int,
+        nt: int,
+        ni: int,
+        itrav: NDArray,
+        travd: NDArray,
+    ) -> NDArray:
+        for isrcrec in prange(nsnr):
+            itravisrcrec = itrav[:, isrcrec]
+            travdisrcrec = travd[:, isrcrec]
+            for ii in range(ni):
+                index = itravisrcrec[ii]
+                dindex = travdisrcrec[ii]
+                if 0 <= index < nt - 1:
+                    y[isrcrec, index] += x[ii] * (1 - dindex)
+                    y[isrcrec, index + 1] += x[ii] * dindex
+        return y
+
+    @staticmethod
+    def _trav_kirch_rmatvec(
+        x: NDArray,
+        y: NDArray,
+        nsnr: int,
+        nt: int,
+        ni: int,
+        itrav: NDArray,
+        travd: NDArray,
+    ) -> NDArray:
+        for ii in prange(ni):
+            itravii = itrav[ii]
+            travdii = travd[ii]
+            for isrcrec in range(nsnr):
+                if 0 <= itravii[isrcrec] < nt - 1:
+                    y[ii] += (
+                        x[isrcrec, itravii[isrcrec]] * (1 - travdii[isrcrec])
+                        + x[isrcrec, itravii[isrcrec] + 1] * travdii[isrcrec]
+                    )
+        return y
+
+    @staticmethod
+    def _travsrcrec_kirch_matvec(
+        x: NDArray,
+        y: NDArray,
         ns: int,
         nr: int,
         nt: int,
@@ -659,7 +723,7 @@ class Kirchhoff(LinearOperator):
         return y
 
     @staticmethod
-    def _trav_kirch_rmatvec(
+    def _travsrcrec_kirch_rmatvec(
         x: NDArray,
         y: NDArray,
         ns: int,
@@ -906,6 +970,238 @@ class Kirchhoff(LinearOperator):
                             )
         return y
 
+    @staticmethod
+    def _ampsrcrec_kirch_matvec(
+        x: NDArray,
+        y: NDArray,
+        ns: int,
+        nr: int,
+        nt: int,
+        ni: int,
+        dt: float,
+        vel: NDArray,
+        trav_srcs: NDArray,
+        trav_recs: NDArray,
+        dist_srcs: NDArray,
+        dist_recs: NDArray,
+        aperturemin: float,
+        aperturemax: float,
+        aperturetap: NDArray,
+        nz: int,
+        six: NDArray,
+        rix: NDArray,
+        angleaperturemin: float,
+        angleaperturemax: float,
+        angles_srcs: NDArray,
+        angles_recs: NDArray,
+        snellmin: float,
+        snellmax: float,
+        maxdist: float,
+    ) -> NDArray:
+        daperture = aperturemax - aperturemin
+        dangleaperture = angleaperturemax - angleaperturemin
+        dsnell = snellmax - snellmin
+        for isrc in prange(ns):
+            travisrc = trav_srcs[:, isrc]
+            distisrc = dist_srcs[:, isrc]
+            angleisrc = angles_srcs[:, isrc]
+            for irec in range(nr):
+                travirec = trav_recs[:, irec]
+                trav = travisrc + travirec
+                itrav = (trav / dt).astype("int32")
+                travd = trav / dt - itrav
+                distirec = dist_recs[:, irec]
+                angleirec = angles_recs[:, irec]
+                dist = distisrc + distirec
+                amp = np.abs(np.cos(angleisrc) + np.cos(angleirec)) / (dist + maxdist)
+                sixisrcrec = six[isrc * nr + irec]
+                rixisrcrec = rix[isrc * nr + irec]
+                for ii in range(ni):
+                    index = itrav[ii]
+                    dindex = travd[ii]
+                    damp = amp[ii] / vel[ii]
+                    # extract source and receiver angle at given image point
+                    angle_src = angleisrc[ii]
+                    angle_rec = angleirec[ii]
+                    abs_angle_src = abs(angle_src)
+                    abs_angle_rec = abs(angle_rec)
+                    abs_angle_src_rec = abs(angle_src + angle_rec)
+                    aptap = 1.0
+                    # angle apertures checks
+                    if (
+                        abs_angle_src < angleaperturemax
+                        and abs_angle_rec < angleaperturemax
+                        and abs_angle_src_rec < snellmax
+                    ):
+                        if abs_angle_src >= angleaperturemin:
+                            # extract source angle aperture taper value
+                            aptap = (
+                                aptap
+                                * aperturetap[
+                                    int(
+                                        20
+                                        * (abs_angle_src - angleaperturemin)
+                                        // dangleaperture
+                                    )
+                                ]
+                            )
+                        if abs_angle_rec >= angleaperturemin:
+                            # extract receiver angle aperture taper value
+                            aptap = (
+                                aptap
+                                * aperturetap[
+                                    int(
+                                        20
+                                        * (abs_angle_rec - angleaperturemin)
+                                        // dangleaperture
+                                    )
+                                ]
+                            )
+                        if abs_angle_src_rec >= snellmin:
+                            # extract snell taper value
+                            aptap = (
+                                aptap
+                                * aperturetap[
+                                    int(20 * (abs_angle_src_rec - snellmin) // dsnell)
+                                ]
+                            )
+
+                        # identify x-index of image point
+                        iz = ii % nz
+                        # aperture check
+                        aperture = abs(sixisrcrec - rixisrcrec) / iz
+                        if aperture < aperturemax:
+                            if aperture >= aperturemin:
+                                # extract aperture taper value
+                                aptap = (
+                                    aptap
+                                    * aperturetap[
+                                        int(
+                                            20 * ((aperture - aperturemin) // daperture)
+                                        )
+                                    ]
+                                )
+                            # time limit check
+                            if 0 <= index < nt - 1:
+                                y[isrc * nr + irec, index] += (
+                                    x[ii] * (1 - dindex) * damp * aptap
+                                )
+                                y[isrc * nr + irec, index + 1] += (
+                                    x[ii] * dindex * damp * aptap
+                                )
+        return y
+
+    @staticmethod
+    def _ampsrcrec_kirch_rmatvec(
+        x: NDArray,
+        y: NDArray,
+        nsnr: int,
+        nt: int,
+        ni: int,
+        itrav: NDArray,
+        travd: NDArray,
+        amp: NDArray,
+        aperturemin: float,
+        aperturemax: float,
+        aperturetap: NDArray,
+        nz: int,
+        six: NDArray,
+        rix: NDArray,
+        angleaperturemin: float,
+        angleaperturemax: float,
+        angles_srcs: NDArray,
+        angles_recs: NDArray,
+        snellmin: float,
+        snellmax: float,
+    ) -> NDArray:
+        nr = angles_recs.shape[-1]
+        daperture = aperturemax - aperturemin
+        dangleaperture = angleaperturemax - angleaperturemin
+        dsnell = snellmax - snellmin
+        for ii in prange(ni):
+            itravii = itrav[ii]
+            travdii = travd[ii]
+            ampii = amp[ii]
+            # extract source and receiver angles
+            angle_srcs = angles_srcs[ii]
+            angle_recs = angles_recs[ii]
+            # identify x-index of image point
+            iz = ii % nz
+            for isrcrec in range(nsnr):
+                index = itravii[isrcrec]
+                dindex = travdii[isrcrec]
+                sixisrcrec = six[isrcrec]
+                rixisrcrec = rix[isrcrec]
+                # extract source and receiver angle
+                angle_src = angle_srcs[isrcrec // nr]
+                angle_rec = angle_recs[isrcrec % nr]
+                abs_angle_src = abs(angle_src)
+                abs_angle_rec = abs(angle_rec)
+                abs_angle_src_rec = abs(angle_src + angle_rec)
+                aptap = 1.0
+                # angle apertures checks
+                if (
+                    abs_angle_src < angleaperturemax
+                    and abs_angle_rec < angleaperturemax
+                    and abs_angle_src_rec < snellmax
+                ):
+                    if abs_angle_src >= angleaperturemin:
+                        # extract source angle aperture taper value
+                        aptap = (
+                            aptap
+                            * aperturetap[
+                                int(
+                                    20
+                                    * (abs_angle_src - angleaperturemin)
+                                    // dangleaperture
+                                )
+                            ]
+                        )
+                    if abs_angle_rec >= angleaperturemin:
+                        # extract receiver angle aperture taper value
+                        aptap = (
+                            aptap
+                            * aperturetap[
+                                int(
+                                    20
+                                    * (abs_angle_rec - angleaperturemin)
+                                    // dangleaperture
+                                )
+                            ]
+                        )
+                    if abs_angle_src_rec >= snellmin:
+                        # extract snell taper value
+                        aptap = (
+                            aptap
+                            * aperturetap[
+                                int(20 * (abs_angle_src_rec - snellmin) // dsnell)
+                            ]
+                        )
+
+                    # aperture check
+                    aperture = abs(sixisrcrec - rixisrcrec) / iz
+                    if aperture < aperturemax:
+                        if aperture >= aperturemin:
+                            # extract aperture taper value
+                            aptap = (
+                                aptap
+                                * aperturetap[
+                                    int(20 * ((aperture - aperturemin) // daperture))
+                                ]
+                            )
+                        # time limit check
+                        if 0 <= index < nt - 1:
+                            # assign values
+                            y[ii] += (
+                                (
+                                    x[isrcrec, index] * (1 - dindex)
+                                    + x[isrcrec, index + 1] * dindex
+                                )
+                                * ampii[isrcrec]
+                                * aptap
+                            )
+        return y
+
     def _register_multiplications(self, engine: str) -> None:
         if engine not in ["numpy", "numba"]:
             raise KeyError("engine must be numpy or numba")
@@ -914,35 +1210,52 @@ class Kirchhoff(LinearOperator):
             numba_opts = dict(
                 nopython=True, nogil=True, parallel=parallel
             )  # fastmath=True,
-            if self.dynamic:
+            if self.dynamic and self.travsrcrec:
+                self._kirch_matvec = jit(**numba_opts)(self._ampsrcrec_kirch_matvec)
+                self._kirch_rmatvec = jit(**numba_opts)(self._ampsrcrec_kirch_rmatvec)
+            elif self.dynamic and not self.travsrcrec:
                 self._kirch_matvec = jit(**numba_opts)(self._amp_kirch_matvec)
                 self._kirch_rmatvec = jit(**numba_opts)(self._amp_kirch_rmatvec)
-            else:
+            elif self.travsrcrec:
+                self._kirch_matvec = jit(**numba_opts)(self._travsrcrec_kirch_matvec)
+                self._kirch_rmatvec = jit(**numba_opts)(self._travsrcrec_kirch_rmatvec)
+            elif not self.travsrcrec:
                 self._kirch_matvec = jit(**numba_opts)(self._trav_kirch_matvec)
                 self._kirch_rmatvec = jit(**numba_opts)(self._trav_kirch_rmatvec)
+
         else:
             if engine == "numba" and jit is None:
                 logging.warning(jit_message)
-            if self.dynamic:
+            if self.dynamic and self.travsrcrec:
+                self._kirch_matvec = self._ampsrcrec_kirch_matvec
+                self._kirch_rmatvec = self._ampsrcrec_kirch_rmatvec
+            elif self.dynamic and not self.travsrcrec:
                 self._kirch_matvec = self._amp_kirch_matvec
                 self._kirch_rmatvec = self._amp_kirch_rmatvec
-            else:
+            elif self.travsrcrec:
+                self._kirch_matvec = self._travsrcrec_kirch_matvec
+                self._kirch_rmatvec = self._travsrcrec_kirch_rmatvec
+            elif self.travsrcrec:
                 self._kirch_matvec = self._trav_kirch_matvec
                 self._kirch_rmatvec = self._trav_kirch_rmatvec
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
         y = np.zeros((self.nsnr, self.nt), dtype=self.dtype)
-        if self.dynamic:
+        if self.dynamic and self.travsrcrec:
             inputs = (
                 x.ravel(),
                 y,
-                self.nsnr,
+                self.ns,
+                self.nr,
                 self.nt,
                 self.ni,
-                self.itrav,
-                self.travd,
-                self.amp,
+                self.dt,
+                self.vel,
+                self.trav_srcs,
+                self.trav_recs,
+                self.dist_srcs,
+                self.dist_recs,
                 self.aperture[0],
                 self.aperture[1],
                 self.aperturetap,
@@ -955,8 +1268,9 @@ class Kirchhoff(LinearOperator):
                 self.angle_recs,
                 self.snell[0],
                 self.snell[1],
+                self.maxdist,
             )
-        else:
+        elif self.travsrcrec:
             inputs = (
                 x.ravel(),
                 y,
@@ -968,6 +1282,9 @@ class Kirchhoff(LinearOperator):
                 self.trav_srcs,
                 self.trav_recs,
             )
+        elif not self.travsrcrec:
+            inputs = (x.ravel(), y, self.nsnr, self.nt, self.ni, self.itrav, self.travd)
+
         y = self._kirch_matvec(*inputs)
         y = self.cop._matvec(y.ravel())
         return y
@@ -977,7 +1294,7 @@ class Kirchhoff(LinearOperator):
         x = self.cop._rmatvec(x.ravel())
         x = x.reshape(self.nsnr, self.nt)
         y = np.zeros(self.ni, dtype=self.dtype)
-        if self.dynamic:
+        if self.dynamic and self.travsrcrec:
             inputs = (
                 x,
                 y,
@@ -1000,7 +1317,7 @@ class Kirchhoff(LinearOperator):
                 self.snell[0],
                 self.snell[1],
             )
-        else:
+        elif self.travsrcrec:
             inputs = (
                 x,
                 y,
@@ -1012,5 +1329,8 @@ class Kirchhoff(LinearOperator):
                 self.trav_srcs,
                 self.trav_recs,
             )
+        elif not self.travsrcrec:
+            inputs = (x, y, self.nsnr, self.nt, self.ni, self.itrav, self.travd)
+
         y = self._kirch_rmatvec(*inputs)
         return y

@@ -123,10 +123,17 @@ def test_traveltime_ana():
     """
     src = np.array([100, 0])[:, np.newaxis]
 
-    _, trav_srcs_ana, trav_recs_ana, dist_ana, _, _ = Kirchhoff._traveltime_table(
+    (
+        trav_srcs_ana,
+        trav_recs_ana,
+        dist_srcs_ana,
+        dist_recs_ana,
+        _,
+        _,
+    ) = Kirchhoff._traveltime_table(
         np.arange(0, 200, 1), np.arange(0, 200, 1), src, src, v0, mode="analytic"
     )
-    assert dist_ana[0, 0] == 200
+    assert dist_srcs_ana[0, 0] + dist_recs_ana[0, 0] == 200
     assert trav_srcs_ana[0, 0] == 100 / v0
     assert trav_recs_ana[0, 0] == 100 / v0
 
@@ -161,19 +168,19 @@ def test_traveltime_table():
 
         # 3d
         (
-            trav_ana,
             trav_srcs_ana,
             trav_recs_ana,
-            dist_ana,
+            dist_srcs_ana,
+            dist_recs_ana,
             _,
             _,
         ) = Kirchhoff._traveltime_table(z, x, s3d, r3d, v0, y=y, mode="analytic")
 
         (
-            trav_eik,
             trav_srcs_eik,
             trav_recs_eik,
-            dist_eik,
+            dist_srcs_eik,
+            dist_recs_eik,
             _,
             _,
         ) = Kirchhoff._traveltime_table(
@@ -257,3 +264,60 @@ def test_kirchhoff3d(par):
             PAR["nsx"] * PAR["nrx"] * PAR["nsy"] * PAR["nry"] * PAR["nt"],
             PAR["nz"] * PAR["nx"] * PAR["ny"],
         )
+
+
+@pytest.mark.parametrize("par", [(par1), (par1d)])
+def test_kirchhoff2d_trav_vs_travsrcrec(par):
+    """Compare Kirchhoff operator forward and adjoint when using trav (original behavior)
+    or trav_src and trav_rec (new reccomended behaviour)"""
+    vel = v0 * np.ones((PAR["nx"], PAR["nz"]))
+
+    # new behaviour
+    Dop = Kirchhoff(
+        z,
+        x,
+        t,
+        s2d,
+        r2d,
+        vel if par["mode"] == "eikonal" else v0,
+        wav,
+        wavc,
+        y=None,
+        mode=par["mode"],
+    )
+
+    # old behaviour
+    trav = Dop.trav_srcs.reshape(
+        PAR["nx"] * PAR["nz"], PAR["nsx"], 1
+    ) + Dop.trav_recs.reshape(PAR["nx"] * PAR["nz"], 1, PAR["nrx"])
+    trav = trav.reshape(PAR["nx"] * PAR["nz"], PAR["nsx"] * PAR["nrx"])
+
+    amp = None
+    if par["dynamic"]:
+        amp = Dop.amp_srcs.reshape(
+            PAR["nx"] * PAR["nz"], PAR["nsx"], 1
+        ) + Dop.amp_recs.reshape(PAR["nx"] * PAR["nz"], 1, PAR["nrx"])
+        amp = amp.reshape(PAR["nx"] * PAR["nz"], PAR["nsx"] * PAR["nrx"])
+
+    D1op = Kirchhoff(
+        z,
+        x,
+        t,
+        s2d,
+        r2d,
+        vel if par["mode"] == "eikonal" else v0,
+        wav,
+        wavc,
+        y=None,
+        trav=trav,
+        amp=amp,
+        mode=par["mode"],
+    )
+
+    # forward
+    xx = np.random.normal(0, 1, PAR["nx"] * PAR["nz"])
+    assert_array_almost_equal(Dop @ xx, D1op @ xx, decimal=2)
+
+    # adjoint
+    yy = np.random.normal(0, 1, PAR["nrx"] * PAR["nsx"] * PAR["nt"])
+    assert_array_almost_equal(Dop.H @ yy, D1op.H @ yy, decimal=2)
