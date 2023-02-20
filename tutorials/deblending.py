@@ -128,9 +128,8 @@ Sop = pylops.signalprocessing.Patch2D(
 Op = Bop * Sop
 
 # Compute max eigenvalue (we do this explicitly to be able to run this fast)
-Op1 = pylops.LinearOperator(Op.H * Op, explicit=False)
-X = np.random.rand(Op1.shape[0], 1).astype(Op1.dtype)
-maxeig = sp_lobpcg(Op1, X=X, maxiter=5, tol=1e-10)[0][0]
+Op1 = Op.H * Op
+maxeig = np.abs(Op1.eigs(1, niter=5, ncv=5, tol=5e-2))[0]
 alpha = 1.0 / maxeig
 
 # Deblend
