@@ -99,7 +99,7 @@ def Sliding3D(
     tapertype: str = "hanning",
     nproc: int = 1,
     name: str = "P",
-) -> None:
+) -> LinearOperator:
     """3D Sliding transform operator.w
 
     Apply a transform operator ``Op`` repeatedly to patches of the model
@@ -224,4 +224,6 @@ def Sliding3D(
         dims[2],
     ), dimsd
     Sop.name = name
+    combining0.dimsd = Sop.dimsd
+    OOp.dims = Sop.dims
     return Sop

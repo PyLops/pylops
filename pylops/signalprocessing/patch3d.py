@@ -452,6 +452,7 @@ def Patch3D(
         int(dims[1] // nwins1),
         int(dims[2] // nwins2),
     ), dimsd
-
+    OOp.dims = Pop.dims
+    combining0.dimsd = Pop.dimsd
     Pop.name = name
     return Pop

@@ -183,4 +183,6 @@ def Sliding1D(
     Sop = aslinearoperator(combining * OOp)
     Sop.dims, Sop.dimsd = (nwins, int(dim[0] // nwins)), dimd
     Sop.name = name
+    OOp.dims = Sop.dims
+    combining.dimsd = Sop.dimsd
     return Sop

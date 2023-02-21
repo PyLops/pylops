@@ -271,5 +271,7 @@ def Patch2D(
         int(dims[0] // nwins0),
         int(dims[1] // nwins1),
     ), dimsd
+    OOp.dims = Pop.dims
+    combining0.dimsd = Pop.dimsd
     Pop.name = name
     return Pop

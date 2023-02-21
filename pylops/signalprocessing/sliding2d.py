@@ -216,5 +216,7 @@ def Sliding2D(
     )
     Sop = aslinearoperator(combining * OOp)
     Sop.dims, Sop.dimsd = (nwins, int(dims[0] // nwins), dims[1]), dimsd
+    OOp.dims = Sop.dims
+    combining.dimsd = Sop.dimsd
     Sop.name = name
     return Sop
