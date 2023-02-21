@@ -208,14 +208,14 @@ Sop1 = pylops.signalprocessing.Patch2D(
 p = Sop1.H * data.ravel()
 preshape = p.reshape(nwins[0], nwins[1], nop1[0], nop1[1])
 
-ix = 16
+it = 16  # index of window along time axis for plotting
 fig, axs = plt.subplots(2, 4, figsize=(12, 5))
 fig.suptitle("Data patches")
-for i in range(4):
-    axs[0][i].imshow(np.fft.fftshift(np.abs(preshape[i, ix]).T, axes=1))
+for i, ix in enumerate(range(4)):
+    axs[0][i].imshow(np.fft.fftshift(np.abs(preshape[ix, it]).T, axes=1))
     axs[0][i].axis("tight")
     axs[1][i].imshow(
-        np.real((Fop.H * preshape[i, ix].ravel()).reshape(nwin)).T,
+        np.real((Fop.H * preshape[ix, it].ravel()).reshape(nwin)).T,
         cmap="gray",
         vmin=-30,
         vmax=30,
@@ -228,14 +228,13 @@ plt.tight_layout()
 p_pseudo = Sop1.H * data_pseudo.ravel()
 p_pseudoreshape = p_pseudo.reshape(nwins[0], nwins[1], nop1[0], nop1[1])
 
-ix = 16
 fig, axs = plt.subplots(2, 4, figsize=(12, 5))
 fig.suptitle("Pseudo-deblended patches")
-for i in range(4):
-    axs[0][i].imshow(np.fft.fftshift(np.abs(p_pseudoreshape[i, ix]).T, axes=1))
+for i, ix in enumerate(range(4)):
+    axs[0][i].imshow(np.fft.fftshift(np.abs(p_pseudoreshape[ix, it]).T, axes=1))
     axs[0][i].axis("tight")
     axs[1][i].imshow(
-        np.real((Fop.H * p_pseudoreshape[i, ix].ravel()).reshape(nwin)).T,
+        np.real((Fop.H * p_pseudoreshape[ix, it].ravel()).reshape(nwin)).T,
         cmap="gray",
         vmin=-30,
         vmax=30,
@@ -248,14 +247,13 @@ plt.tight_layout()
 p_inv = Sop1.H * data_inv.ravel()
 p_invreshape = p_inv.reshape(nwins[0], nwins[1], nop1[0], nop1[1])
 
-ix = 16
 fig, axs = plt.subplots(2, 4, figsize=(12, 5))
 fig.suptitle("Deblended patches")
-for i in range(4):
-    axs[0][i].imshow(np.fft.fftshift(np.abs(p_invreshape[i, ix]).T, axes=1))
+for i, ix in enumerate(range(4)):
+    axs[0][i].imshow(np.fft.fftshift(np.abs(p_invreshape[ix, it]).T, axes=1))
     axs[0][i].axis("tight")
     axs[1][i].imshow(
-        np.real((Fop.H * p_invreshape[i, ix].ravel()).reshape(nwin)).T,
+        np.real((Fop.H * p_invreshape[ix, it].ravel()).reshape(nwin)).T,
         cmap="gray",
         vmin=-30,
         vmax=30,
