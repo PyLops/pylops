@@ -677,11 +677,11 @@ class Kirchhoff(LinearOperator):
             itravisrcrec = itrav[:, isrcrec]
             travdisrcrec = travd[:, isrcrec]
             for ii in range(ni):
-                index = itravisrcrec[ii]
-                dindex = travdisrcrec[ii]
-                if 0 <= index < nt - 1:
-                    y[isrcrec, index] += x[ii] * (1 - dindex)
-                    y[isrcrec, index + 1] += x[ii] * dindex
+                itravii = itravisrcrec[ii]
+                travdii = travdisrcrec[ii]
+                if 0 <= itravii < nt - 1:
+                    y[isrcrec, itravii] += x[ii] * (1 - travdii)
+                    y[isrcrec, itravii + 1] += x[ii] * travdii
         return y
 
     @staticmethod
@@ -698,10 +698,12 @@ class Kirchhoff(LinearOperator):
             itravii = itrav[ii]
             travdii = travd[ii]
             for isrcrec in range(nsnr):
-                if 0 <= itravii[isrcrec] < nt - 1:
+                itravisrcrecii = itravii[isrcrec]
+                travdisrcrecii = travdii[isrcrec]
+                if 0 <= itravisrcrecii < nt - 1:
                     y[ii] += (
-                        x[isrcrec, itravii[isrcrec]] * (1 - travdii[isrcrec])
-                        + x[isrcrec, itravii[isrcrec] + 1] * travdii[isrcrec]
+                        x[isrcrec, itravisrcrecii] * (1 - travdisrcrecii)
+                        + x[isrcrec, itravisrcrecii + 1] * travdisrcrecii
                     )
         return y
 
@@ -725,11 +727,11 @@ class Kirchhoff(LinearOperator):
                 itrav = (trav / dt).astype("int32")
                 travd = trav / dt - itrav
                 for ii in range(ni):
-                    index = itrav[ii]
-                    dindex = travd[ii]
-                    if 0 <= index < nt - 1:
-                        y[isrc * nr + irec, index] += x[ii] * (1 - dindex)
-                        y[isrc * nr + irec, index + 1] += x[ii] * dindex
+                    itravii = itrav[ii]
+                    travdii = travd[ii]
+                    if 0 <= itravii < nt - 1:
+                        y[isrc * nr + irec, itravii] += x[ii] * (1 - travdii)
+                        y[isrc * nr + irec, itravii + 1] += x[ii] * travdii
         return y
 
     @staticmethod
@@ -800,8 +802,8 @@ class Kirchhoff(LinearOperator):
             angles_rec = angles_recs[:, isrcrec % nr]
             for ii in range(ni):
                 # extract traveltime, amplitude at given image point
-                index = itravisrcrec[ii]
-                dindex = travdisrcrec[ii]
+                itravii = itravisrcrec[ii]
+                travdii = travdisrcrec[ii]
                 damp = ampisrcrec[ii]
                 # extract source and receiver angle
                 angle_src = angles_src[ii]
@@ -863,10 +865,10 @@ class Kirchhoff(LinearOperator):
                                 ]
                             )
                         # time limit check
-                        if 0 <= index < nt - 1:
+                        if 0 <= itravii < nt - 1:
                             # assign values
-                            y[isrcrec, index] += x[ii] * (1 - dindex) * damp * aptap
-                            y[isrcrec, index + 1] += x[ii] * dindex * damp * aptap
+                            y[isrcrec, itravii] += x[ii] * (1 - travdii) * damp * aptap
+                            y[isrcrec, itravii + 1] += x[ii] * travdii * damp * aptap
         return y
 
     @staticmethod
@@ -906,8 +908,8 @@ class Kirchhoff(LinearOperator):
             # identify x-index of image point
             iz = ii % nz
             for isrcrec in range(nsnr):
-                index = itravii[isrcrec]
-                dindex = travdii[isrcrec]
+                itravisrcrecii = itravii[isrcrec]
+                travdisrcrecii = travdii[isrcrec]
                 sixisrcrec = six[isrcrec]
                 rixisrcrec = rix[isrcrec]
                 # extract source and receiver angle
@@ -968,12 +970,12 @@ class Kirchhoff(LinearOperator):
                                 ]
                             )
                         # time limit check
-                        if 0 <= index < nt - 1:
+                        if 0 <= itravisrcrecii < nt - 1:
                             # assign values
                             y[ii] += (
                                 (
-                                    x[isrcrec, index] * (1 - dindex)
-                                    + x[isrcrec, index + 1] * dindex
+                                    x[isrcrec, itravisrcrecii] * (1 - travdisrcrecii)
+                                    + x[isrcrec, itravisrcrecii + 1] * travdisrcrecii
                                 )
                                 * ampii[isrcrec]
                                 * aptap
@@ -1027,8 +1029,8 @@ class Kirchhoff(LinearOperator):
                 sixisrcrec = six[isrc * nr + irec]
                 rixisrcrec = rix[isrc * nr + irec]
                 for ii in range(ni):
-                    index = itrav[ii]
-                    dindex = travd[ii]
+                    itravii = itrav[ii]
+                    travdii = travd[ii]
                     damp = amp[ii] / vel[ii]
                     # extract source and receiver angle at given image point
                     angle_src = angleisrc[ii]
@@ -1092,12 +1094,12 @@ class Kirchhoff(LinearOperator):
                                     ]
                                 )
                             # time limit check
-                            if 0 <= index < nt - 1:
-                                y[isrc * nr + irec, index] += (
-                                    x[ii] * (1 - dindex) * damp * aptap
+                            if 0 <= itravii < nt - 1:
+                                y[isrc * nr + irec, itravii] += (
+                                    x[ii] * (1 - travdii) * damp * aptap
                                 )
-                                y[isrc * nr + irec, index + 1] += (
-                                    x[ii] * dindex * damp * aptap
+                                y[isrc * nr + irec, itravii + 1] += (
+                                    x[ii] * travdii * damp * aptap
                                 )
         return y
 
@@ -1371,6 +1373,29 @@ class Kirchhoff(LinearOperator):
                 self.snell[0],
                 self.snell[1],
                 self.maxdist,
+            )
+        elif self.dynamic and not self.travsrcrec:
+            inputs = (
+                x,
+                y,
+                self.nsnr,
+                self.nt,
+                self.ni,
+                self.itrav,
+                self.travd,
+                self.amp,
+                self.aperture[0],
+                self.aperture[1],
+                self.aperturetap,
+                self.nz,
+                self.six,
+                self.rix,
+                self.angleaperture[0],
+                self.angleaperture[1],
+                self.angle_srcs,
+                self.angle_recs,
+                self.snell[0],
+                self.snell[1],
             )
         elif not self.dynamic and self.travsrcrec:
             inputs = (
