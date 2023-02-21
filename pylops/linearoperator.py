@@ -454,7 +454,9 @@ class LinearOperator(metaclass=ABCMeta):
 
         if x.shape != (N,) and x.shape != (N, 1):
             raise ValueError("dimension mismatch")
+
         y = self._matvec(x)
+
         if x.ndim == 1:
             y = y.reshape(M)
         elif x.ndim == 2:
@@ -486,6 +488,7 @@ class LinearOperator(metaclass=ABCMeta):
 
         if x.shape != (M,) and x.shape != (M, 1):
             raise ValueError("dimension mismatch")
+
         y = self._rmatvec(x)
 
         if x.ndim == 1:
@@ -563,7 +566,6 @@ class LinearOperator(metaclass=ABCMeta):
             the result of applying the linear operator on x.
 
         """
-
         if isinstance(x, (LinearOperator, spLinearOperator)):
             # cast x to pylops linear operator if not already (this is done
             # to allow mixing pylops and scipy operators)
@@ -1480,5 +1482,4 @@ def aslinearoperator(Op: Union[spLinearOperator, LinearOperator]) -> LinearOpera
     """
     if isinstance(Op, LinearOperator):
         return Op
-    else:
-        return LinearOperator(Op)
+

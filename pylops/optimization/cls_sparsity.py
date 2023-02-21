@@ -1239,7 +1239,6 @@ class ISTA(Solver):
         if alpha is not None:
             self.alpha = alpha
         elif not hasattr(self, "alpha"):
-            print(type(self.Op))
             # compute largest eigenvalues of Op^H * Op
             Op1 = self.Op.H * self.Op
             if get_module_name(self.ncp) == "numpy":
