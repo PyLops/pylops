@@ -7,7 +7,7 @@ from typing import Optional
 import numpy as np
 
 from pylops import LinearOperator
-from pylops.utils import deps
+from pylops.utils import deps, NDArray
 
 if deps.torch_enabled:
     from pylops._torchoperator import _TorchOperator
@@ -70,17 +70,23 @@ class TorchOperator(LinearOperator):
         # pylops forward and adjoint (this will call matmat and rmatmat)
         self.transpf = np.roll(np.arange(2 if flatten else len(self.dims) + 1), -1)
         self.transpb = np.roll(np.arange(2 if flatten else len(self.dims) + 1), 1)
-        if not batch:
-            self.matvec = lambda x: Op @ x
-            self.rmatvec = lambda x: Op.H @ x
-        else:
-            self.matvec = lambda x: (Op @ x.transpose(self.transpf)).transpose(
-                self.transpb
-            )
-            self.rmatvec = lambda x: (Op.H @ x.transpose(self.transpf)).transpose(
-                self.transpb
-            )
+        self.batch = batch
+        self.Op = Op
+        self.matvec = lambda x: self._matvec(x)
+        self.rmatvec = lambda x: self._rmatvec(x)
         self.Top = _TorchOperator.apply
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        if not self.batch:
+            return self.Op @ x
+        else:
+            return (self.Op @ x.transpose(self.transpf)).transpose(self.transpb)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        if not self.batch:
+            return self.Op.H @ x
+        else:
+            return (self.Op.H @ x.transpose(self.transpf)).transpose(self.transpb)
 
     def apply(self, x: TensorTypeLike) -> TensorTypeLike:
         """Apply forward pass to input vector
@@ -96,4 +102,4 @@ class TorchOperator(LinearOperator):
             Output array resulting from the application of the operator to ``x``.
 
         """
-        return self.Top(x, self.matvec, self.rmatvec, self.device, self.devicetorch)
+        return self.Top(x, self.matvec, selfrmatvec, self.device, self.devicetorch)

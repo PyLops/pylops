@@ -1,6 +1,6 @@
 __all__ = ["FirstDerivative"]
 
-from typing import Callable, Union
+from typing import Union
 
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
@@ -100,34 +100,39 @@ class FirstDerivative(LinearOperator):
         self.kind = kind
         self.edge = edge
         self.order = order
-        self._register_multiplications(self.kind, self.order)
 
-    def _register_multiplications(
-        self,
-        kind: str,
-        order: int,
-    ) -> None:
-        # choose _matvec and _rmatvec kind
-        self._matvec: Callable
-        self._rmatvec: Callable
-        if kind == "forward":
-            self._matvec = self._matvec_forward
-            self._rmatvec = self._rmatvec_forward
-        elif kind == "centered":
-            if order == 3:
-                self._matvec = self._matvec_centered3
-                self._rmatvec = self._rmatvec_centered3
-            elif order == 5:
-                self._matvec = self._matvec_centered5
-                self._rmatvec = self._rmatvec_centered5
+    def _matvec(self, x: NDArray) -> NDArray:
+        if self.kind == "forward":
+            return self._matvec_forward(x)
+        elif self.kind == "backward":
+            return self._matvec_backward(x)
+        elif self.kind == "centered":
+            if self.order == 3:
+                return self._matvec_centered3(x)
+            elif self.order == 5:
+                return self._matvec_centered5(x)
             else:
                 raise NotImplementedError("'order' must be '3, or '5'")
-        elif kind == "backward":
-            self._matvec = self._matvec_backward
-            self._rmatvec = self._rmatvec_backward
         else:
             raise NotImplementedError(
-                "'kind' must be 'forward', 'centered', or 'backward'"
+                "'kind' must be 'forward', 'centered' or 'backward'"
+            )
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        if self.kind == "forward":
+            return self._rmatvec_forward(x)
+        elif self.kind == "backward":
+            return self._rmatvec_backward(x)
+        elif self.kind == "centered":
+            if self.order == 3:
+                return self._rmatvec_centered3(x)
+            elif self.order == 5:
+                return self._rmatvec_centered5(x)
+            else:
+                raise NotImplementedError("'order' must be '3, or '5'")
+        else:
+            raise NotImplementedError(
+                "'kind' must be 'forward', 'centered' or 'backward'"
             )
 
     @reshaped(swapaxis=True)
