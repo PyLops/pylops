@@ -72,8 +72,8 @@ class TorchOperator(LinearOperator):
         self.transpb = np.roll(np.arange(2 if flatten else len(self.dims) + 1), 1)
         self.batch = batch
         self.Op = Op
-        self.matvec = lambda x: self._matvec(x)
-        self.rmatvec = lambda x: self._rmatvec(x)
+        self.matvec = self._matvec
+        self.rmatvec = self._rmatvec
         self.Top = _TorchOperator.apply
 
     def _matvec(self, x: NDArray) -> NDArray:
