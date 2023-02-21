@@ -102,4 +102,4 @@ class TorchOperator(LinearOperator):
             Output array resulting from the application of the operator to ``x``.
 
         """
-        return self.Top(x, self.matvec, selfrmatvec, self.device, self.devicetorch)
+        return self.Top(x, self.matvec, self.rmatvec, self.device, self.devicetorch)
