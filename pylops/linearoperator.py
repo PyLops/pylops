@@ -5,6 +5,7 @@ __all__ = [
     "aslinearoperator",
 ]
 
+from abc import ABCMeta, abstractmethod
 
 import logging
 
@@ -40,7 +41,7 @@ from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class LinearOperator:
+class LinearOperator(metaclass=ABCMeta):
     """Common interface for performing matrix-vector products.
 
     This class acts as an abstract interface between matrix-like
@@ -368,11 +369,13 @@ class LinearOperator:
             if hasattr(self, attr):
                 setattr(dest, attr, getattr(self, attr))
 
+    @abstractmethod
     def _matvec(self, x: NDArray) -> NDArray:
         """Matrix-vector multiplication handler."""
         if self.Op is not None:
             return self.Op._matvec(x)
 
+    @abstractmethod
     def _rmatvec(self, x: NDArray) -> NDArray:
         """Matrix-vector adjoint multiplication handler."""
         if self.Op is not None:
@@ -451,9 +454,7 @@ class LinearOperator:
 
         if x.shape != (N,) and x.shape != (N, 1):
             raise ValueError("dimension mismatch")
-
         y = self._matvec(x)
-
         if x.ndim == 1:
             y = y.reshape(M)
         elif x.ndim == 2:
@@ -485,7 +486,6 @@ class LinearOperator:
 
         if x.shape != (M,) and x.shape != (M, 1):
             raise ValueError("dimension mismatch")
-
         y = self._rmatvec(x)
 
         if x.ndim == 1:
@@ -563,18 +563,19 @@ class LinearOperator:
             the result of applying the linear operator on x.
 
         """
+
         if isinstance(x, (LinearOperator, spLinearOperator)):
             # cast x to pylops linear operator if not already (this is done
             # to allow mixing pylops and scipy operators)
             Opx = aslinearoperator(x)
-            Op = LinearOperator(Op=_ProductLinearOperator(self, Opx))
+            Op = _ProductLinearOperator(self, Opx)
             self._copy_attributes(Op, exclude=["dims", "explicit", "name"])
             Op.clinear = Op.clinear and Opx.clinear
             Op.explicit = False
             Op.dims = Opx.dims
             return Op
         elif np.isscalar(x):
-            Op = LinearOperator(Op=_ScaledLinearOperator(self, x))
+            Op = _ScaledLinearOperator(self, x)
             self._copy_attributes(
                 Op,
                 exclude=["explicit", "name"],
