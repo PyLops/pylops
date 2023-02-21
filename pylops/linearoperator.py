@@ -1482,4 +1482,3 @@ def aslinearoperator(Op: Union[spLinearOperator, LinearOperator]) -> LinearOpera
     """
     if isinstance(Op, LinearOperator):
         return Op
-
