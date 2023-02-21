@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
-from scipy.sparse.linalg import LinearOperator as spLinearOperator
 
 import pylops
 from pylops import LinearOperator
@@ -72,7 +71,7 @@ def test_scaled(par):
 def test_scipyop(par):
     """Verify interaction between pylops and scipy Linear operators"""
 
-    class spDiag(spLinearOperator):
+    class spDiag(LinearOperator):
         def __init__(self, x):
             self.x = x
             self.shape = (len(x), len(x))

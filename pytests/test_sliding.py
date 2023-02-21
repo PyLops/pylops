@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
 from pylops.signalprocessing import Sliding1D, Sliding2D, Sliding3D
 from pylops.signalprocessing.sliding1d import sliding1d_design
@@ -89,7 +88,7 @@ def test_Sliding1D(par):
     x = np.ones(par["ny"] * nwins)
     y = Slid * x.ravel()
 
-    xinv = LinearOperator(Slid) / y
+    xinv = Slid / y
     assert_array_almost_equal(x.ravel(), xinv)
 
 
@@ -113,7 +112,7 @@ def test_Sliding2D(par):
     x = np.ones((par["ny"] * nwins, par["nt"]))
     y = Slid * x.ravel()
 
-    xinv = LinearOperator(Slid) / y
+    xinv = Slid / y
     assert_array_almost_equal(x.ravel(), xinv)
 
 
@@ -150,5 +149,5 @@ def test_Sliding3D(par):
     x = np.ones((par["ny"] * par["nx"] * nwins[0] * nwins[1], par["nt"]))
     y = Slid * x.ravel()
 
-    xinv = LinearOperator(Slid) / y
+    xinv = Slid / y
     assert_array_almost_equal(x.ravel(), xinv)
