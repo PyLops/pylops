@@ -28,6 +28,8 @@ if jit_message is None:
     # detect whether to use parallel or not
     numba_threads = int(os.getenv("NUMBA_NUM_THREADS", "1"))
     parallel = True if numba_threads != 1 else False
+else:
+    prange = range
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
