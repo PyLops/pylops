@@ -18,3 +18,4 @@ Contributors
 *  `Muhammad Izzatullah <https://github.com/izzatum>`_, izzatum
 *  `Juan Daniel Romero <https://github.com/jdromerom>`_, jdromerom
 *  `Aniket Singh Rawat <https://github.com/dikwickley>`_, dikwickley
+*  `Rohan Babbar <https://github.com/rohanbabbar04>`_, rohanbabbar04
