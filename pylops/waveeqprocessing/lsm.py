@@ -10,20 +10,6 @@ from pylops.utils.typing import NDArray
 from pylops.waveeqprocessing.kirchhoff import Kirchhoff
 from pylops.waveeqprocessing.twoway import AcousticWave2D
 
-try:
-    import skfmm
-except ModuleNotFoundError:
-    skfmm = None
-    skfmm_message = (
-        "Skfmm package not installed. Choose method=analytical "
-        "if using constant velocity or run "
-        '"pip install scikit-fmm" or '
-        '"conda install -c conda-forge scikit-fmm".'
-    )
-except Exception as e:
-    skfmm = None
-    skfmm_message = f"Failed to import skfmm (error:{e})."
-
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
