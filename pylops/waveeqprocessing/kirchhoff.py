@@ -10,39 +10,24 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.signalprocessing import Convolve1D
+from pylops.utils import deps
 from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper
 from pylops.utils.typing import DTypeLike, NDArray
 
-try:
-    import skfmm
-except ModuleNotFoundError:
-    skfmm = None
-    skfmm_message = (
-        "Skfmm package not installed. Choose method=analytical "
-        "if using constant velocity or run "
-        '"pip install scikit-fmm" or '
-        '"conda install -c conda-forge scikit-fmm".'
-    )
-except Exception as e:
-    skfmm = None
-    skfmm_message = f"Failed to import skfmm (error:{e})."
+skfmm_message = deps.skfmm_import("the kirchhoff module")
+jit_message = deps.numba_import("the kirchhoff module")
 
-try:
+if skfmm_message is None:
+    import skfmm
+
+if jit_message is None:
     from numba import jit, prange
 
     # detect whether to use parallel or not
     numba_threads = int(os.getenv("NUMBA_NUM_THREADS", "1"))
     parallel = True if numba_threads != 1 else False
-except ModuleNotFoundError:
-    jit = None
-    prange = range
-    jit_message = "Numba not available, reverting to numpy."
-except Exception as e:
-    jit = None
-    jit_message = "Failed to import numba (error:%s), use numpy." % e
-
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
