@@ -506,21 +506,21 @@ class Kirchhoff(LinearOperator):
 
         Returns
         -------
-        trav : :obj:`numpy.ndarray`
-            Total traveltime table of size :math:`\lbrack (n_y) n_x n_z
-            \times n_s n_r \rbrack`
         trav_srcs : :obj:`numpy.ndarray`
             Source-to-subsurface traveltime table of size
-            :math:`\lbrack (n_y*) n_x n_z \times n_s \rbrack` (or constant)
+            :math:`\lbrack (n_y*) n_x n_z \times n_s \rbrack`
         trav_recs : :obj:`numpy.ndarray`
             Receiver-to-subsurface traveltime table of size
             :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack`
-        dist : :obj:`numpy.ndarray`
-            Total distance table of size
-            :math:`\lbrack (n_y*) n_x n_z \times n_s \rbrack` (or constant)
+        dist_srcs : :obj:`numpy.ndarray`
+            Source-to-subsurface distance table of size
+            :math:`\lbrack (n_y*) n_x n_z \times n_s \rbrack`
+        dist_recs : :obj:`numpy.ndarray`
+            Receiver-to-subsurface distance table of size
+            :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack`
         trav_srcs_gradient : :obj:`numpy.ndarray`
             Source-to-subsurface traveltime gradient table of size
-            :math:`\lbrack (n_y*) n_x n_z \times n_s \rbrack` (or constant)
+            :math:`\lbrack (n_y*) n_x n_z \times n_s \rbrack`
         trav_recs_gradient : :obj:`numpy.ndarray`
             Receiver-to-subsurface traveltime gradient table of size
             :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack`
