@@ -4,17 +4,13 @@ import logging
 
 import numpy.typing as npt
 
-from pylops import LinearOperator
 from pylops.basicoperators import Regression
 from pylops.utils.typing import DTypeLike
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-def LinearRegression(
-    taxis: npt.ArrayLike,
-    dtype: DTypeLike = "float64",
-) -> LinearOperator:
+class LinearRegression(Regression):
     r"""Linear regression.
 
     Creates an operator that applies linear regression to a set of points.
@@ -79,4 +75,6 @@ def LinearRegression(
     operator and it is in fact just a lazy call of that operator with
     ``order=1``.
     """
-    return Regression(taxis, order=1, dtype=dtype)
+
+    def __init__(self, taxis: npt.ArrayLike, dtype: DTypeLike = "float64"):
+        super().__init__(taxis=taxis, order=1, dtype=dtype)
