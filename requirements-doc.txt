@@ -27,3 +27,4 @@ black
 flake8
 mypy
 pydata-sphinx-theme
+dtcwt
