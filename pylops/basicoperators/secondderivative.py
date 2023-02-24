@@ -1,6 +1,6 @@
 __all__ = ["SecondDerivative"]
 
-from typing import Union
+from typing import Callable, Union
 
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
@@ -90,30 +90,34 @@ class SecondDerivative(LinearOperator):
         self.sampling = sampling
         self.kind = kind
         self.edge = edge
+        self._register_multiplications(self.kind)
+
+    def _register_multiplications(
+        self,
+        kind: str,
+    ) -> None:
+        # choose _matvec and _rmatvec kind
+        self._hmatvec: Callable
+        self._hrmatvec: Callable
+        if kind == "forward":
+            self._hmatvec = self._matvec_forward
+            self._hrmatvec = self._rmatvec_forward
+        elif kind == "centered":
+            self._hmatvec = self._matvec_centered
+            self._hrmatvec = self._rmatvec_centered
+        elif kind == "backward":
+            self._hmatvec = self._matvec_backward
+            self._hrmatvec = self._rmatvec_backward
+        else:
+            raise NotImplementedError(
+                "'kind' must be 'forward', 'centered' or 'backward'"
+            )
 
     def _matvec(self, x: NDArray) -> NDArray:
-        if self.kind == "forward":
-            return self._matvec_forward(x)
-        elif self.kind == "backward":
-            return self._matvec_backward(x)
-        elif self.kind == "centered":
-            return self._matvec_centered(x)
-        else:
-            raise NotImplementedError(
-                "'kind' must be 'forward', 'centered' or 'backward'"
-            )
+        return self._hmatvec(x)
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        if self.kind == "forward":
-            return self._rmatvec_forward(x)
-        elif self.kind == "backward":
-            return self._rmatvec_backward(x)
-        elif self.kind == "centered":
-            return self._rmatvec_centered(x)
-        else:
-            raise NotImplementedError(
-                "'kind' must be 'forward', 'centered' or 'backward'"
-            )
+        return self._hrmatvec(x)
 
     @reshaped(swapaxis=True)
     def _matvec_forward(self, x: NDArray) -> NDArray:

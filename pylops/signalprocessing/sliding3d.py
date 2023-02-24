@@ -215,7 +215,7 @@ def Sliding3D(
             for win_in, win_end in zip(dwin0_ins, dwin0_ends)
         ]
     )
-    Sop = aslinearoperator(combining0 * combining1 * OOp)
+    Sop = combining0 * combining1 * OOp
     Sop.dims, Sop.dimsd = (
         nwins0,
         nwins1,
@@ -224,6 +224,4 @@ def Sliding3D(
         dims[2],
     ), dimsd
     Sop.name = name
-    combining0.dimsd = Sop.dimsd
-    OOp.dims = Sop.dims
     return Sop

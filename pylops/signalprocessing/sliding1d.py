@@ -180,9 +180,7 @@ def Sliding1D(
             for win_in, win_end in zip(dwin_ins, dwin_ends)
         ]
     )
-    Sop = aslinearoperator(combining * OOp)
+    Sop = combining * OOp
     Sop.dims, Sop.dimsd = (nwins, int(dim[0] // nwins)), dimd
     Sop.name = name
-    OOp.dims = Sop.dims
-    combining.dimsd = Sop.dimsd
     return Sop

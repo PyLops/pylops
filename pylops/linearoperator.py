@@ -5,9 +5,8 @@ __all__ = [
     "aslinearoperator",
 ]
 
-from abc import ABCMeta, abstractmethod
-
 import logging
+from abc import ABC, abstractmethod
 
 import numpy as np
 import scipy as sp
@@ -41,7 +40,21 @@ from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class LinearOperator(metaclass=ABCMeta):
+class _LinearOperator(ABC):
+    """Meta-class for Linear operator"""
+
+    @abstractmethod
+    def _matvec(self, x: NDArray) -> NDArray:
+        """Matrix-vector multiplication handler."""
+        pass
+
+    @abstractmethod
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        """Matrix-vector adjoint multiplication handler."""
+        pass
+
+
+class LinearOperator(_LinearOperator):
     """Common interface for performing matrix-vector products.
 
     This class acts as an abstract interface between matrix-like
@@ -369,13 +382,11 @@ class LinearOperator(metaclass=ABCMeta):
             if hasattr(self, attr):
                 setattr(dest, attr, getattr(self, attr))
 
-    @abstractmethod
     def _matvec(self, x: NDArray) -> NDArray:
         """Matrix-vector multiplication handler."""
         if self.Op is not None:
             return self.Op._matvec(x)
 
-    @abstractmethod
     def _rmatvec(self, x: NDArray) -> NDArray:
         """Matrix-vector adjoint multiplication handler."""
         if self.Op is not None:
@@ -1482,3 +1493,5 @@ def aslinearoperator(Op: Union[spLinearOperator, LinearOperator]) -> LinearOpera
     """
     if isinstance(Op, LinearOperator):
         return Op
+    else:
+        return LinearOperator(Op)

@@ -71,7 +71,7 @@ def test_scaled(par):
 def test_scipyop(par):
     """Verify interaction between pylops and scipy Linear operators"""
 
-    class spDiag(LinearOperator):
+    class spDiag(spLinearOperator):
         def __init__(self, x):
             self.x = x
             self.shape = (len(x), len(x))

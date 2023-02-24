@@ -443,7 +443,7 @@ def Patch3D(
         ]
     )
 
-    Pop = aslinearoperator(combining0 * combining1 * combining2 * OOp)
+    Pop = combining0 * combining1 * combining2 * OOp
     Pop.dims, Pop.dimsd = (
         nwins0,
         nwins1,
@@ -452,7 +452,5 @@ def Patch3D(
         int(dims[1] // nwins1),
         int(dims[2] // nwins2),
     ), dimsd
-    OOp.dims = Pop.dims
-    combining0.dimsd = Pop.dimsd
     Pop.name = name
     return Pop
