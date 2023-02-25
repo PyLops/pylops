@@ -78,8 +78,7 @@ class TorchOperator(LinearOperator):
         # choose _matvec and _rmatvec
         self._hmatvec: Callable
         self._hrmatvec: Callable
-
-        if batch:
+        if not batch:
             self._hmatvec = lambda x: self.Op @ x
             self._hrmatvec = lambda x: self.Op.H @ x
         else:
