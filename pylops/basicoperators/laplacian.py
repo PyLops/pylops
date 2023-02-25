@@ -69,7 +69,7 @@ class Laplacian(LinearOperator):
                  sampling: Tuple[float, ...] = (1, 1),
                  edge: bool = False,
                  kind: str = "centered",
-                 dtype: DTypeLike = "float64"):
+                 dtype: DTypeLike = "float64", name: str = "L"):
         axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
         if not (len(axes) == len(weights) == len(sampling)):
             raise ValueError("axes, weights, and sampling have different size")
@@ -83,7 +83,7 @@ class Laplacian(LinearOperator):
         self.dtype = dtype
         self.l2op = self.calculate_l2op()
 
-        super().__init__(Op=self.l2op, dtype=dtype, name='L')
+        super().__init__(Op=self.l2op, dtype=dtype, name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)
