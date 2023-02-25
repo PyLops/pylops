@@ -13,7 +13,7 @@ class Gradient(VStack):
     Apply gradient operator to a multi-dimensional array.
 
     .. note:: At least 2 dimensions are required, use
-        :py:func:`pylops.FirstDerivative` for 1d arrays.
+      :py:func:`pylops.FirstDerivative` for 1d arrays.
 
     Parameters
     ----------
@@ -48,9 +48,9 @@ class Gradient(VStack):
     .. math::
         \mathbf{g}  =
         \begin{bmatrix}
-            \mathbf{df_1} \\
-            \mathbf{df_2} \\
-            \mathbf{df_3}
+           \mathbf{df_1} \\
+           \mathbf{df_2} \\
+           \mathbf{df_3}
         \end{bmatrix}
 
     In adjoint mode, the adjoints of the first derivatives along different

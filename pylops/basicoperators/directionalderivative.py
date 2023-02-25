@@ -101,7 +101,7 @@ class SecondDirectionalDerivative(LinearOperator):
     point of the array.
 
     .. note:: At least 2 dimensions are required, consider using
-        :py:func:`pylops.SecondDerivative` for 1d arrays.
+      :py:func:`pylops.SecondDerivative` for 1d arrays.
 
     Parameters
     ----------
@@ -126,7 +126,7 @@ class SecondDirectionalDerivative(LinearOperator):
 
     .. math::
         d^2f_\mathbf{v} =
-        - D_\mathbf{v}^T [D_\mathbf{v} f]
+            - D_\mathbf{v}^T [D_\mathbf{v} f]
 
     where :math:`D_\mathbf{v}` is the first-order directional derivative
     implemented by :func:`pylops.SecondDirectionalDerivative`.
