@@ -2,7 +2,7 @@ __all__ = [
     "TorchOperator",
 ]
 
-from typing import Optional
+from typing import Optional, Callable
 
 import numpy as np
 
@@ -72,21 +72,26 @@ class TorchOperator(LinearOperator):
         self.transpb = np.roll(np.arange(2 if flatten else len(self.dims) + 1), 1)
         self.batch = batch
         self.Op = Op
-        self.matvec = self._matvec
-        self.rmatvec = self._rmatvec
+        self._register_torchop()
         self.Top = _TorchOperator.apply
 
-    def _matvec(self, x: NDArray) -> NDArray:
+    def _register_torchop(self):
+        # choose _matvec and _rmatvec
+        self._hmatvec: Callable
+        self._hrmatvec: Callable
+
         if not self.batch:
-            return self.Op @ x
+            self._hmatvec = lambda x: self.Op @ x
+            self._hrmatvec = lambda x: self.Op.H @ x
         else:
-            return (self.Op @ x.transpose(self.transpf)).transpose(self.transpb)
+            self._hmatvec = lambda x: (self.Op @ x.transpose(self.transpf)).transpose(self.transpb)
+            self._hrmatvec = lambda x: (self.Op.H @ x.transpose(self.transpf)).transpose(self.transpb)
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return self._hmatvec(x)
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        if not self.batch:
-            return self.Op.H @ x
-        else:
-            return (self.Op.H @ x.transpose(self.transpf)).transpose(self.transpb)
+        return self._hrmatvec(x)
 
     def apply(self, x: TensorTypeLike) -> TensorTypeLike:
         """Apply forward pass to input vector
@@ -102,4 +107,4 @@ class TorchOperator(LinearOperator):
             Output array resulting from the application of the operator to ``x``.
 
         """
-        return self.Top(x, self.matvec, self.rmatvec, self.device, self.devicetorch)
+        return self.Top(x, self._hmatvec, self._hrmatvec, self.device, self.devicetorch)
