@@ -76,20 +76,20 @@ class TorchOperator(LinearOperator):
 
     def _register_torchop(self, batch: bool):
         # choose _matvec and _rmatvec
-        self._hmatvec: Callable
-        self._hrmatvec: Callable
+        self.matvec: Callable
+        self.rmatvec: Callable
         if not batch:
-            self._hmatvec = lambda x: self.Op @ x
-            self._hrmatvec = lambda x: self.Op.H @ x
+            self.matvec = lambda x: self.Op @ x
+            self.rmatvec = lambda x: self.Op.H @ x
         else:
-            self._hmatvec = lambda x: (self.Op @ x.transpose(self.transpf)).transpose(self.transpb)
-            self._hrmatvec = lambda x: (self.Op.H @ x.transpose(self.transpf)).transpose(self.transpb)
+            self.matvec = lambda x: (self.Op @ x.transpose(self.transpf)).transpose(self.transpb)
+            self.rmatvec = lambda x: (self.Op.H @ x.transpose(self.transpf)).transpose(self.transpb)
 
     def _matvec(self, x: NDArray) -> NDArray:
-        return self._hmatvec(x)
+        return self.matvec(x)
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        return self._hrmatvec(x)
+        return self.rmatvec(x)
 
     def apply(self, x: TensorTypeLike) -> TensorTypeLike:
         """Apply forward pass to input vector
@@ -105,4 +105,4 @@ class TorchOperator(LinearOperator):
             Output array resulting from the application of the operator to ``x``.
 
         """
-        return self.Top(x, self._hmatvec, self._hrmatvec, self.device, self.devicetorch)
+        return self.Top(x, self.matvec, self.rmatvec, self.device, self.devicetorch)
