@@ -70,17 +70,16 @@ class TorchOperator(LinearOperator):
         # pylops forward and adjoint (this will call matmat and rmatmat)
         self.transpf = np.roll(np.arange(2 if flatten else len(self.dims) + 1), -1)
         self.transpb = np.roll(np.arange(2 if flatten else len(self.dims) + 1), 1)
-        self.batch = batch
         self.Op = Op
-        self._register_torchop()
+        self._register_torchop(batch)
         self.Top = _TorchOperator.apply
 
-    def _register_torchop(self):
+    def _register_torchop(self, batch: bool):
         # choose _matvec and _rmatvec
-        self._hmatvec: Callable
-        self._hrmatvec: Callable
+        self._hmatvec = None
+        self._hrmatvec = None
 
-        if not self.batch:
+        if batch:
             self._hmatvec = lambda x: self.Op @ x
             self._hrmatvec = lambda x: self.Op.H @ x
         else:
