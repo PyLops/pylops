@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
+from scipy.sparse.linalg import LinearOperator as spLinearOperator
 
 import pylops
 from pylops import LinearOperator
