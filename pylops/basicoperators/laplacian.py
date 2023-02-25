@@ -14,54 +14,49 @@ from pylops.utils.typing import DTypeLike, InputDimsLike
 class Laplacian(LinearOperator):
     r"""Laplacian.
 
-        Apply second-order centered Laplacian operator to a multi-dimensional array.
+    Apply second-order centered Laplacian operator to a multi-dimensional array.
 
-        .. note:: At least 2 dimensions are required, use
-          :py:func:`pylops.SecondDerivative` for 1d arrays.
+    .. note:: At least 2 dimensions are required, use
+      :py:func:`pylops.SecondDerivative` for 1d arrays.
 
-        Parameters
-        ----------
-        dims : :obj:`tuple`
-            Number of samples for each dimension.
-        axes : :obj:`int`, optional
-            .. versionadded:: 2.0.0
+    Parameters
+    ----------
+    dims : :obj:`tuple`
+        Number of samples for each dimension.
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0.0
 
-            Axes along which the Laplacian is applied.
-        weights : :obj:`tuple`, optional
-            Weight to apply to each direction (real laplacian operator if
-            ``weights=(1, 1)``)
-        sampling : :obj:`tuple`, optional
-            Sampling steps for each direction
-        edge : :obj:`bool`, optional
-            Use reduced order derivative at edges (``True``) or
-            ignore them (``False``) for centered derivative
-        kind : :obj:`str`, optional
-            Derivative kind (``forward``, ``centered``, or ``backward``)
-        dtype : :obj:`str`, optional
-            Type of elements in input array.
+        Axes along which the Laplacian is applied.
+    weights : :obj:`tuple`, optional
+        Weight to apply to each direction (real laplacian operator if
+        ``weights=(1, 1)``)
+    sampling : :obj:`tuple`, optional
+        Sampling steps for each direction
+    edge : :obj:`bool`, optional
+        Use reduced order derivative at edges (``True``) or
+        ignore them (``False``) for centered derivative
+    kind : :obj:`str`, optional
+        Derivative kind (``forward``, ``centered``, or ``backward``)
+    dtype : :obj:`str`, optional
+        Type of elements in input array.
 
-        Returns
-        -------
-        l2op : :obj:`pylops.LinearOperator`
-            Laplacian linear operator
+    Raises
+    ------
+    ValueError
+        If ``axes``. ``weights``, and ``sampling`` do not have the same size
 
-        Raises
-        ------
-        ValueError
-            If ``axes``. ``weights``, and ``sampling`` do not have the same size
+    Notes
+    -----
+    The Laplacian operator applies a second derivative along two directions of
+    a multi-dimensional array.
 
-        Notes
-        -----
-        The Laplacian operator applies a second derivative along two directions of
-        a multi-dimensional array.
+    For simplicity, given a two dimensional array, the Laplacian is:
 
-        For simplicity, given a two dimensional array, the Laplacian is:
+    .. math::
+        y[i, j] = (x[i+1, j] + x[i-1, j] + x[i, j-1] +x[i, j+1] - 4x[i, j])
+                  / (\Delta x \Delta y)
 
-        .. math::
-            y[i, j] = (x[i+1, j] + x[i-1, j] + x[i, j-1] +x[i, j+1] - 4x[i, j])
-                      / (\Delta x \Delta y)
-
-        """
+    """
 
     def __init__(self, dims: InputDimsLike,
                  axes: InputDimsLike = (-2, -1),

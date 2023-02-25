@@ -11,51 +11,51 @@ from pylops.utils.typing import DTypeLike, InputDimsLike
 class Smoothing2D(Convolve2D):
     r"""2D Smoothing.
 
-        Apply smoothing to model (and data) along two ``axes`` of a
-        multi-dimensional array.
+    Apply smoothing to model (and data) along two ``axes`` of a
+    multi-dimensional array.
 
-        Parameters
-        ----------
-        nsmooth : :obj:`tuple` or :obj:`list`
-            Lenght of smoothing operator in 1st and 2nd dimensions (must be odd)
-        dims : :obj:`tuple`
-            Number of samples for each dimension
-        axes : :obj:`int`, optional
-            .. versionadded:: 2.0.0
+    Parameters
+    ----------
+    nsmooth : :obj:`tuple` or :obj:`list`
+        Length of smoothing operator in 1st and 2nd dimensions (must be odd)
+    dims : :obj:`tuple`
+        Number of samples for each dimension
+    axes : :obj:`int`, optional
+        .. versionadded:: 2.0.0
 
-            Axes along which model (and data) are smoothed.
-        dtype : :obj:`str`, optional
-            Type of elements in input array.
+        Axes along which model (and data) are smoothed.
+    dtype : :obj:`str`, optional
+        Type of elements in input array.
 
-        Attributes
-        ----------
-        shape : :obj:`tuple`
-            Operator shape
-        explicit : :obj:`bool`
-            Operator contains a matrix that can be solved explicitly (``True``) or
-            not (``False``)
+    Attributes
+    ----------
+    shape : :obj:`tuple`
+        Operator shape
+    explicit : :obj:`bool`
+        Operator contains a matrix that can be solved explicitly (``True``) or
+        not (``False``)
 
-        See Also
-        --------
-        pylops.signalprocessing.Convolve2D : 2D convolution
+    See Also
+    --------
+    pylops.signalprocessing.Convolve2D : 2D convolution
 
-        Notes
-        -----
-        The 2D Smoothing operator is a special type of convolutional operator that
-        convolves the input model (or data) with a constant 2d filter of size
-        :math:`n_{\text{smooth}, 1} \times n_{\text{smooth}, 2}`:
+    Notes
+    -----
+    The 2D Smoothing operator is a special type of convolutional operator that
+    convolves the input model (or data) with a constant 2d filter of size
+    :math:`n_{\text{smooth}, 1} \times n_{\text{smooth}, 2}`:
 
-        Its application to a two dimensional input signal is:
+    Its application to a two dimensional input signal is:
 
-        .. math::
-            y[i,j] = 1/(n_{\text{smooth}, 1}\cdot n_{\text{smooth}, 2})
-            \sum_{l=-(n_{\text{smooth},1}-1)/2}^{(n_{\text{smooth},1}-1)/2}
-            \sum_{m=-(n_{\text{smooth},2}-1)/2}^{(n_{\text{smooth},2}-1)/2} x[l,m]
+    .. math::
+        y[i,j] = 1/(n_{\text{smooth}, 1}\cdot n_{\text{smooth}, 2})
+        \sum_{l=-(n_{\text{smooth},1}-1)/2}^{(n_{\text{smooth},1}-1)/2}
+        \sum_{m=-(n_{\text{smooth},2}-1)/2}^{(n_{\text{smooth},2}-1)/2} x[l,m]
 
-        Note that since the filter is symmetrical, the *Smoothing2D* operator is
-        self-adjoint.
+    Note that since the filter is symmetrical, the *Smoothing2D* operator is
+    self-adjoint.
 
-        """
+    """
 
     def __init__(self, nsmooth: InputDimsLike,
                  dims: Union[int, InputDimsLike],
