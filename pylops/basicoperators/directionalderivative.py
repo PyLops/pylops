@@ -74,7 +74,7 @@ class FirstDirectionalDerivative(LinearOperator):
         self.dtype = dtype
         self.v = v
 
-        self.Sop = self.calc_first_directional_derivative()
+        self.Sop = self._calc_first_ddop()
         super().__init__(Op=self.Sop, dtype=dtype, name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
@@ -83,7 +83,7 @@ class FirstDirectionalDerivative(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return super()._rmatvec(x)
 
-    def calc_first_directional_derivative(self):
+    def _calc_first_ddop(self):
         Gop = Gradient(self.dims, sampling=self.sampling, edge=self.edge, kind=self.kind, dtype=self.dtype)
         if self.v.ndim == 1:
             Dop = Diagonal(self.v, dims=[len(self.dims)] + list(self.dims), axis=0, dtype=self.dtype)
@@ -142,7 +142,7 @@ class SecondDirectionalDerivative(LinearOperator):
         self.sampling = sampling
         self.edge = edge
         self.dtype = dtype
-        self.Sop = self.calc_second_directional_derivative()
+        self.Sop = self._calc_second_ddop()
 
         super().__init__(Op=self.Sop, dtype=dtype, name=name)
 
@@ -152,7 +152,7 @@ class SecondDirectionalDerivative(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return super()._rmatvec(x)
 
-    def calc_second_directional_derivative(self):
+    def _calc_second_ddop(self):
         Dop = FirstDirectionalDerivative(self.dims, self.v, sampling=self.sampling, edge=self.edge, dtype=self.dtype)
         ddop = -Dop.H * Dop
         return ddop

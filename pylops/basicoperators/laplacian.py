@@ -76,7 +76,7 @@ class Laplacian(LinearOperator):
         self.edge = edge
         self.kind = kind
         self.dtype = dtype
-        self.l2op = self.calculate_l2op()
+        self.l2op = self._calc_l2op()
 
         super().__init__(Op=self.l2op, dtype=dtype, name=name)
 
@@ -86,7 +86,7 @@ class Laplacian(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return super()._rmatvec(x)
 
-    def calculate_l2op(self):
+    def _calc_l2op(self):
         l2op = SecondDerivative(
             self.dims, axis=self.axes[0], sampling=self.sampling[0], edge=self.edge, kind=self.kind, dtype=self.dtype
         )
