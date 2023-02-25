@@ -76,8 +76,8 @@ class TorchOperator(LinearOperator):
 
     def _register_torchop(self, batch: bool):
         # choose _matvec and _rmatvec
-        self._hmatvec = None
-        self._hrmatvec = None
+        self._hmatvec: Callable
+        self._hrmatvec: Callable
 
         if batch:
             self._hmatvec = lambda x: self.Op @ x
