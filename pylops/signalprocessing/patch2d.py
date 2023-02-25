@@ -264,7 +264,7 @@ def Patch2D(
             for win_in, win_end in zip(dwin0_ins, dwin0_ends)
         ]
     )
-    Pop = combining0 * combining1 * OOp
+    Pop = LinearOperator(combining0 * combining1 * OOp)
     Pop.dims, Pop.dimsd = (
         nwins0,
         nwins1,
