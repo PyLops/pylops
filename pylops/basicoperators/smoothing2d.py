@@ -60,7 +60,7 @@ class Smoothing2D(Convolve2D):
     def __init__(self, nsmooth: InputDimsLike,
                  dims: Union[int, InputDimsLike],
                  axes: InputDimsLike = (-2, -1),
-                 dtype: DTypeLike = "float64", ):
+                 dtype: DTypeLike = "float64", name: str = 'S'):
         nsmooth = list(nsmooth)
         if nsmooth[0] % 2 == 0:
             nsmooth[0] += 1
@@ -68,4 +68,4 @@ class Smoothing2D(Convolve2D):
             nsmooth[1] += 1
         h = np.ones((nsmooth[0], nsmooth[1])) / float(nsmooth[0] * nsmooth[1])
         offset = [(nsmooth[0] - 1) // 2, (nsmooth[1] - 1) // 2]
-        super().__init__(dims, h=h, offset=offset, axes=axes, dtype=dtype)
+        super().__init__(dims, h=h, offset=offset, axes=axes, dtype=dtype, name=name)

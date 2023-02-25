@@ -76,5 +76,5 @@ class LinearRegression(Regression):
     ``order=1``.
     """
 
-    def __init__(self, taxis: npt.ArrayLike, dtype: DTypeLike = "float64"):
-        super().__init__(taxis=taxis, order=1, dtype=dtype)
+    def __init__(self, taxis: npt.ArrayLike, dtype: DTypeLike = "float64", name: str = 'L'):
+        super().__init__(taxis=taxis, order=1, dtype=dtype, name=name)

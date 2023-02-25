@@ -83,7 +83,7 @@ class Laplacian(LinearOperator):
         self.dtype = dtype
         self.l2op = self.calculate_l2op()
 
-        super().__init__(Op=self.l2op, dtype=dtype, name="laplace")
+        super().__init__(Op=self.l2op, dtype=dtype, name='L')
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)

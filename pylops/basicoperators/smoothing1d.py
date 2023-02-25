@@ -66,9 +66,10 @@ class Smoothing1D(Convolve1D):
         self-adjoint.
 
         """
-    def __init__(self, nsmooth: int, dims: Union[int, InputDimsLike], axis: int = -1, dtype: DTypeLike = "float64"):
+    def __init__(self, nsmooth: int, dims: Union[int, InputDimsLike], axis: int = -1,
+                 dtype: DTypeLike = "float64", name: str = 'S'):
         if nsmooth % 2 == 0:
             nsmooth += 1
         h = np.ones(nsmooth) / float(nsmooth)
         offset = (nsmooth - 1) // 2
-        super().__init__(dims, h, axis=axis, offset=offset, dtype=dtype)
+        super().__init__(dims, h, axis=axis, offset=offset, dtype=dtype, name=name)

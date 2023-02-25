@@ -70,7 +70,8 @@ class FirstDirectionalDerivative(LinearOperator):
                  sampling: int = 1,
                  edge: bool = False,
                  kind: str = "centered",
-                 dtype: DTypeLike = "float64"):
+                 dtype: DTypeLike = "float64",
+                 name: str = 'F'):
         self.dims = dims
         self.sampling = sampling
         self.edge = edge
@@ -79,7 +80,13 @@ class FirstDirectionalDerivative(LinearOperator):
         self.v = v
 
         self.Sop = self.calc_first_directional_derivative()
-        super().__init__(Op=self.Sop, dtype=dtype, name="first_dir_derivative")
+        super().__init__(Op=self.Sop, dtype=dtype, name=name)
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return super()._matvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return super()._rmatvec(x)
 
     def calc_first_directional_derivative(self):
         Gop = Gradient(self.dims, sampling=self.sampling, edge=self.edge, kind=self.kind, dtype=self.dtype)
@@ -139,7 +146,7 @@ class SecondDirectionalDerivative(LinearOperator):
         """
 
     def __init__(self, dims: InputDimsLike, v: NDArray, sampling: int = 1, edge: bool = False,
-                 dtype: DTypeLike = "float64"):
+                 dtype: DTypeLike = "float64", name: str = 'S'):
         self.dims = dims
         self.v = v
         self.sampling = sampling
@@ -147,7 +154,13 @@ class SecondDirectionalDerivative(LinearOperator):
         self.dtype = dtype
         self.Sop = self.calc_second_directional_derivative()
 
-        super().__init__(Op=self.Sop, dtype=dtype, name='second_dir_derivative')
+        super().__init__(Op=self.Sop, dtype=dtype, name=name)
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return super()._matvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return super()._rmatvec(x)
 
     def calc_second_directional_derivative(self):
         Dop = FirstDirectionalDerivative(self.dims, self.v, sampling=self.sampling, edge=self.edge, dtype=self.dtype)
