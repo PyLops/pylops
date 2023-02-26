@@ -73,7 +73,7 @@ class FirstDirectionalDerivative(LinearOperator):
         self.v = v
 
         super().__init__(Op=self._calc_first_ddop(dims=dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype, v=v),
-                         dims=dims, dtype=dtype, name=name)
+                         name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)
@@ -140,9 +140,8 @@ class SecondDirectionalDerivative(LinearOperator):
         self.v = v
         self.sampling = sampling
         self.edge = edge
-        self.dtype = dtype
         super().__init__(Op=self._calc_second_ddop(dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype),
-                         dtype=dtype, name=name)
+                         name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)

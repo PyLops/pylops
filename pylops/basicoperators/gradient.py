@@ -80,7 +80,7 @@ class Gradient(LinearOperator):
             dtype=dtype,
         )
             for iax in range(ndims)
-        ]), dims=dims, dimsd=(ndims, *dims), dtype=dtype, name=name)
+        ]), dims=dims, dimsd=(ndims, *dims), name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)
