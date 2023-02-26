@@ -71,9 +71,8 @@ class FirstDirectionalDerivative(LinearOperator):
         self.edge = edge
         self.kind = kind
         self.v = v
-
-        super().__init__(Op=self._calc_first_ddop(dims=dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype, v=v),
-                         name=name)
+        Op = self._calc_first_ddop(dims=dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype, v=v)
+        super().__init__(Op=Op, name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)

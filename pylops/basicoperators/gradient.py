@@ -71,7 +71,7 @@ class Gradient(LinearOperator):
         self.sampling = sampling
         self.edge = edge
         self.kind = kind
-        super().__init__(Op=VStack([FirstDerivative(
+        Op = VStack([FirstDerivative(
             dims=dims,
             axis=iax,
             sampling=sampling[iax],
@@ -80,7 +80,8 @@ class Gradient(LinearOperator):
             dtype=dtype,
         )
             for iax in range(ndims)
-        ]), dims=dims, dimsd=(ndims, *dims), name=name)
+        ])
+        super().__init__(Op=Op, dims=dims, dimsd=(ndims, *dims), name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)

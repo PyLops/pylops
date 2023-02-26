@@ -73,8 +73,9 @@ class Laplacian(LinearOperator):
         self.sampling = sampling
         self.edge = edge
         self.kind = kind
-        super().__init__(Op=self._calc_l2op(dims=dims, axes=axes, sampling=sampling, edge=edge, kind=kind, dtype=dtype,
-                                            weights=weights), name=name)
+        Op = self._calc_l2op(dims=dims, axes=axes, sampling=sampling, edge=edge, kind=kind, dtype=dtype,
+                             weights=weights)
+        super().__init__(Op=Op, name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)
