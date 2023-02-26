@@ -2,12 +2,13 @@ __all__ = ["Gradient"]
 
 from typing import Union
 
+from pylops import LinearOperator
 from pylops.basicoperators import FirstDerivative, VStack
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.typing import DTypeLike, InputDimsLike
 
 
-class Gradient(VStack):
+class Gradient(LinearOperator):
     r"""Gradient.
 
     Apply gradient operator to a multi-dimensional array.
@@ -63,21 +64,20 @@ class Gradient(VStack):
                  sampling: int = 1,
                  edge: bool = False,
                  kind: str = "centered",
-                 dtype: DTypeLike = "float64"):
+                 dtype: DTypeLike = "float64", name: str = 'G'):
         dims = _value_or_sized_to_tuple(dims)
         ndims = len(dims)
         sampling = _value_or_sized_to_tuple(sampling, repeat=ndims)
         self.sampling = sampling
         self.edge = edge
         self.kind = kind
-        super().__init__([
-            FirstDerivative(
-                dims=dims,
-                axis=iax,
-                sampling=sampling[iax],
-                edge=edge,
-                kind=kind,
-                dtype=dtype,
-            )
+        super().__init__(Op=VStack([FirstDerivative(
+            dims=dims,
+            axis=iax,
+            sampling=sampling[iax],
+            edge=edge,
+            kind=kind,
+            dtype=dtype,
+        )
             for iax in range(ndims)
-        ], dtype=dtype)
+        ]), dims=dims, dimsd=(ndims, *dims), dtype=dtype, name=name)
