@@ -1,13 +1,15 @@
 __all__ = ["Block"]
 
+import multiprocessing as mp
+
 from typing import Iterable, Optional
 
 from pylops import LinearOperator
 from pylops.basicoperators import HStack, VStack
-from pylops.utils.typing import DTypeLike
+from pylops.utils.typing import DTypeLike, NDArray
 
 
-class _Block(VStack):
+class _Block(LinearOperator):
     """Block operator.
 
     Used to be able to provide operators from different libraries to
@@ -18,7 +20,7 @@ class _Block(VStack):
                  _HStack=HStack,
                  _VStack=VStack,
                  args_HStack: Optional[dict] = None,
-                 args_VStack: Optional[dict] = None):
+                 args_VStack: Optional[dict] = None, name: str = 'B'):
         if args_HStack is None:
             self.args_HStack = {}
         else:
@@ -28,7 +30,13 @@ class _Block(VStack):
         else:
             self.args_VStack = args_VStack
         hblocks = [_HStack(hblock, dtype=dtype, **self.args_HStack) for hblock in ops]
-        super().__init__(hblocks, dtype=dtype, **self.args_VStack)
+        super().__init__(Op=_VStack(ops=hblocks, dtype=dtype, **self.args_VStack), name=name)
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return super()._matvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return super()._rmatvec(x)
 
 
 class Block(_Block):
@@ -118,4 +126,6 @@ class Block(_Block):
     def __init__(self, ops: Iterable[Iterable[LinearOperator]],
                  nproc: int = 1,
                  dtype: Optional[DTypeLike] = None):
-        super().__init__(ops, dtype=dtype, args_VStack={"nproc": nproc})
+        if nproc > 1:
+            self.pool = mp.Pool(processes=nproc)
+        super().__init__(ops=ops, dtype=dtype, args_VStack={"nproc": nproc})

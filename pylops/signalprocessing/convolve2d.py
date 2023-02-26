@@ -83,5 +83,4 @@ class Convolve2D(ConvolveND):
                  name: str = "C", ):
         if h.ndim != 2:
             raise ValueError("h must be 2-dimensional")
-        super().__init__(dims, h, offset, axes, method, dtype, name)
-        self.name = name
+        super().__init__(dims=dims, h=h, offset=offset, axes=axes, method=method, dtype=dtype, name=name)

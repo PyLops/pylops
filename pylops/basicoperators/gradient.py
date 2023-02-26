@@ -67,9 +67,12 @@ class Gradient(VStack):
         dims = _value_or_sized_to_tuple(dims)
         ndims = len(dims)
         sampling = _value_or_sized_to_tuple(sampling, repeat=ndims)
+        self.sampling = sampling
+        self.edge = edge
+        self.kind = kind
         super().__init__([
             FirstDerivative(
-                dims,
+                dims=dims,
                 axis=iax,
                 sampling=sampling[iax],
                 edge=edge,
@@ -78,8 +81,3 @@ class Gradient(VStack):
             )
             for iax in range(ndims)
         ], dtype=dtype)
-        self.dims = dims
-        self.dimsd = (ndims, *self.dims)
-        self.sampling = sampling
-        self.edge = edge
-        self.kind = kind

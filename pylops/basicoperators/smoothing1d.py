@@ -73,4 +73,4 @@ class Smoothing1D(Convolve1D):
             nsmooth += 1
         h = np.ones(nsmooth) / float(nsmooth)
         offset = (nsmooth - 1) // 2
-        super().__init__(dims, h, axis=axis, offset=offset, dtype=dtype, name=name)
+        super().__init__(dims=dims, h=h, axis=axis, offset=offset, dtype=dtype, name=name)
