@@ -5,7 +5,7 @@ from typing import Union
 from pylops import LinearOperator
 from pylops.basicoperators import FirstDerivative, VStack
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.typing import DTypeLike, InputDimsLike
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 class Gradient(LinearOperator):
@@ -81,3 +81,9 @@ class Gradient(LinearOperator):
         )
             for iax in range(ndims)
         ]), dims=dims, dimsd=(ndims, *dims), dtype=dtype, name=name)
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return super()._matvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return super()._rmatvec(x)
