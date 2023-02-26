@@ -67,15 +67,13 @@ class FirstDirectionalDerivative(LinearOperator):
                  kind: str = "centered",
                  dtype: DTypeLike = "float64",
                  name: str = 'F'):
-        self.dims = dims
         self.sampling = sampling
         self.edge = edge
         self.kind = kind
-        self.dtype = dtype
         self.v = v
 
-        self.Sop = self._calc_first_ddop()
-        super().__init__(Op=self.Sop, dtype=dtype, name=name)
+        super().__init__(Op=self._calc_first_ddop(dims=dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype, v=v),
+                         dims=dims, dtype=dtype, name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)
@@ -83,13 +81,14 @@ class FirstDirectionalDerivative(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return super()._rmatvec(x)
 
-    def _calc_first_ddop(self):
-        Gop = Gradient(self.dims, sampling=self.sampling, edge=self.edge, kind=self.kind, dtype=self.dtype)
-        if self.v.ndim == 1:
-            Dop = Diagonal(self.v, dims=[len(self.dims)] + list(self.dims), axis=0, dtype=self.dtype)
+    @staticmethod
+    def _calc_first_ddop(dims: InputDimsLike, v: NDArray, sampling: int, edge: bool, kind: str, dtype: DTypeLike):
+        Gop = Gradient(dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype)
+        if v.ndim == 1:
+            Dop = Diagonal(v, dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
         else:
-            Dop = Diagonal(self.v.ravel(), dtype=self.dtype)
-        Sop = Sum(dims=[len(self.dims)] + list(self.dims), axis=0, dtype=self.dtype)
+            Dop = Diagonal(v.ravel(), dtype=dtype)
+        Sop = Sum(dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
         return Sop * Dop * Gop
 
 
@@ -142,9 +141,8 @@ class SecondDirectionalDerivative(LinearOperator):
         self.sampling = sampling
         self.edge = edge
         self.dtype = dtype
-        self.Sop = self._calc_second_ddop()
-
-        super().__init__(Op=self.Sop, dtype=dtype, name=name)
+        super().__init__(Op=self._calc_second_ddop(dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype),
+                         dtype=dtype, name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)
@@ -152,7 +150,8 @@ class SecondDirectionalDerivative(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return super()._rmatvec(x)
 
-    def _calc_second_ddop(self):
-        Dop = FirstDirectionalDerivative(self.dims, self.v, sampling=self.sampling, edge=self.edge, dtype=self.dtype)
+    @staticmethod
+    def _calc_second_ddop(dims: InputDimsLike, v: NDArray, sampling: int, edge: bool, dtype: DTypeLike):
+        Dop = FirstDirectionalDerivative(dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype)
         ddop = -Dop.H * Dop
         return ddop
