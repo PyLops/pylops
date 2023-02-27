@@ -97,21 +97,27 @@ class SecondDerivative(LinearOperator):
         kind: str,
     ) -> None:
         # choose _matvec and _rmatvec kind
-        self._matvec: Callable
-        self._rmatvec: Callable
+        self._hmatvec: Callable
+        self._hrmatvec: Callable
         if kind == "forward":
-            self._matvec = self._matvec_forward
-            self._rmatvec = self._rmatvec_forward
+            self._hmatvec = self._matvec_forward
+            self._hrmatvec = self._rmatvec_forward
         elif kind == "centered":
-            self._matvec = self._matvec_centered
-            self._rmatvec = self._rmatvec_centered
+            self._hmatvec = self._matvec_centered
+            self._hrmatvec = self._rmatvec_centered
         elif kind == "backward":
-            self._matvec = self._matvec_backward
-            self._rmatvec = self._rmatvec_backward
+            self._hmatvec = self._matvec_backward
+            self._hrmatvec = self._rmatvec_backward
         else:
             raise NotImplementedError(
                 "'kind' must be 'forward', 'centered' or 'backward'"
             )
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return self._hmatvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return self._hrmatvec(x)
 
     @reshaped(swapaxis=True)
     def _matvec_forward(self, x: NDArray) -> NDArray:

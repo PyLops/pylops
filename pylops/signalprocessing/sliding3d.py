@@ -6,7 +6,7 @@ __all__ = [
 import logging
 from typing import Tuple
 
-from pylops import LinearOperator, aslinearoperator
+from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils.tapers import taper3d
@@ -99,7 +99,7 @@ def Sliding3D(
     tapertype: str = "hanning",
     nproc: int = 1,
     name: str = "P",
-) -> None:
+) -> LinearOperator:
     """3D Sliding transform operator.w
 
     Apply a transform operator ``Op`` repeatedly to patches of the model
@@ -215,7 +215,7 @@ def Sliding3D(
             for win_in, win_end in zip(dwin0_ins, dwin0_ends)
         ]
     )
-    Sop = aslinearoperator(combining0 * combining1 * OOp)
+    Sop = LinearOperator(combining0 * combining1 * OOp)
     Sop.dims, Sop.dimsd = (
         nwins0,
         nwins1,

@@ -77,7 +77,7 @@ def FirstDirectionalDerivative(
     else:
         Dop = Diagonal(v.ravel(), dtype=dtype)
     Sop = Sum(dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
-    ddop = LinearOperator(Sop * Dop * Gop)
+    ddop = Sop * Dop * Gop
     ddop.dims = ddop.dimsd = dims
     ddop.sampling = sampling
     return ddop
@@ -136,7 +136,7 @@ def SecondDirectionalDerivative(
     in the literature.
     """
     Dop = FirstDirectionalDerivative(dims, v, sampling=sampling, edge=edge, dtype=dtype)
-    ddop = LinearOperator(-Dop.H * Dop)
+    ddop = -Dop.H * Dop
     ddop.dims = ddop.dimsd = dims
     ddop.sampling = sampling
     return ddop

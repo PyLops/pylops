@@ -762,7 +762,6 @@ class OMP(Solver):
             Display setup log
 
         """
-        self.Op = LinearOperator(self.Op)
         self.y = y
         self.niter_outer = niter_outer
         self.niter_inner = niter_inner
@@ -1240,10 +1239,8 @@ class ISTA(Solver):
         if alpha is not None:
             self.alpha = alpha
         elif not hasattr(self, "alpha"):
-            if not isinstance(self.Op, LinearOperator):
-                self.Op = LinearOperator(self.Op, explicit=False)
             # compute largest eigenvalues of Op^H * Op
-            Op1 = LinearOperator(self.Op.H * self.Op, explicit=False)
+            Op1 = self.Op.H * self.Op
             if get_module_name(self.ncp) == "numpy":
                 maxeig: float = np.abs(
                     Op1.eigs(

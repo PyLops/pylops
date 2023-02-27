@@ -5,8 +5,8 @@ __all__ = [
     "aslinearoperator",
 ]
 
-
 import logging
+from abc import ABC, abstractmethod
 
 import numpy as np
 import scipy as sp
@@ -40,7 +40,21 @@ from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class LinearOperator:
+class _LinearOperator(ABC):
+    """Meta-class for Linear operator"""
+
+    @abstractmethod
+    def _matvec(self, x: NDArray) -> NDArray:
+        """Matrix-vector multiplication handler."""
+        pass
+
+    @abstractmethod
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        """Matrix-vector adjoint multiplication handler."""
+        pass
+
+
+class LinearOperator(_LinearOperator):
     """Common interface for performing matrix-vector products.
 
     This class acts as an abstract interface between matrix-like
@@ -567,14 +581,14 @@ class LinearOperator:
             # cast x to pylops linear operator if not already (this is done
             # to allow mixing pylops and scipy operators)
             Opx = aslinearoperator(x)
-            Op = LinearOperator(Op=_ProductLinearOperator(self, Opx))
+            Op = _ProductLinearOperator(self, Opx)
             self._copy_attributes(Op, exclude=["dims", "explicit", "name"])
             Op.clinear = Op.clinear and Opx.clinear
             Op.explicit = False
             Op.dims = Opx.dims
             return Op
         elif np.isscalar(x):
-            Op = LinearOperator(Op=_ScaledLinearOperator(self, x))
+            Op = _ScaledLinearOperator(self, x)
             self._copy_attributes(
                 Op,
                 exclude=["explicit", "name"],

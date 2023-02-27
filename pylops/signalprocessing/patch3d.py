@@ -8,7 +8,7 @@ from typing import Optional, Sequence, Tuple
 
 import numpy as np
 
-from pylops import LinearOperator, aslinearoperator
+from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils.tapers import tapernd
@@ -443,7 +443,7 @@ def Patch3D(
         ]
     )
 
-    Pop = aslinearoperator(combining0 * combining1 * combining2 * OOp)
+    Pop = LinearOperator(combining0 * combining1 * combining2 * OOp)
     Pop.dims, Pop.dimsd = (
         nwins0,
         nwins1,
@@ -452,6 +452,5 @@ def Patch3D(
         int(dims[1] // nwins1),
         int(dims[2] // nwins2),
     ), dimsd
-
     Pop.name = name
     return Pop
