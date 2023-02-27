@@ -82,6 +82,9 @@ class TorchOperator:
             )
         self.Top = _TorchOperator.apply
 
+    def __call__(self, x):
+        return self.apply(x)
+
     def apply(self, x: TensorTypeLike) -> TensorTypeLike:
         """Apply forward pass to input vector
 
