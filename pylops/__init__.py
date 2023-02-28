@@ -47,7 +47,6 @@ utils
 
 from .config import *
 from .linearoperator import *
-from .torchoperator import *
 from .basicoperators import *
 from . import (
     avo,
@@ -57,6 +56,8 @@ from . import (
     utils,
     waveeqprocessing,
 )
+from .torchoperator import *
+from .signalprocessing import *
 from .avo.poststack import *
 from .avo.prestack import *
 from .optimization.basic import *

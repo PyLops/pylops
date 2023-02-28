@@ -141,6 +141,59 @@ par5w = {
     "dtype": np.complex128,
 }  # nfft<nt, complex input, fftw engine
 
+par1t = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": None,
+    "real": False,
+    "engine": "mkl_fft",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+}
+
+par2t = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 64,
+    "real": False,
+    "engine": "mkl_fft",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+}  # nfft>nt, complex input, fftw engine
+par3t = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": None,
+    "real": True,
+    "engine": "mkl_fft",
+    "ifftshift_before": False,
+    "dtype": np.float64,
+}  # nfft=nt, real input, fftw engine
+par4t = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 64,
+    "real": True,
+    "engine": "mkl_fft",
+    "ifftshift_before": False,
+    "dtype": np.float32,
+}  # nfft>nt, real input, fftw engine
+par5t = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 16,
+    "real": False,
+    "engine": "mkl_fft",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+}  # nfft<nt, complex input, fftw engine
+
+
 np.random.seed(5)
 
 
@@ -166,7 +219,7 @@ par_lists_fft_small_real = dict(
     ],
     norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
-    engine=["numpy", "fftw", "scipy"],
+    engine=["numpy", "fftw", "scipy", "mkl_fft"],
 )
 # Generate all combinations of the above parameters
 pars_fft_small_real = [
@@ -237,7 +290,7 @@ par_lists_fft_random_real = dict(
         (np.float128, 11),
     ],
     ifftshift_before=[False, True],
-    engine=["numpy", "fftw", "scipy"],
+    engine=["numpy", "fftw", "scipy", "mkl_fft"],
 )
 pars_fft_random_real = [
     dict(zip(par_lists_fft_random_real.keys(), value))
@@ -284,7 +337,7 @@ par_lists_fft_small_cpx = dict(
     norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
-    engine=["numpy", "fftw", "scipy"],
+    engine=["numpy", "fftw", "scipy", "mkl_fft"],
 )
 pars_fft_small_cpx = [
     dict(zip(par_lists_fft_small_cpx.keys(), value))
@@ -351,7 +404,7 @@ par_lists_fft_random_cpx = dict(
     ],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
-    engine=["numpy", "fftw", "scipy"],
+    engine=["numpy", "fftw", "scipy", "mkl_fft"],
 )
 pars_fft_random_cpx = [
     dict(zip(par_lists_fft_random_cpx.keys(), value))
@@ -429,7 +482,7 @@ par_lists_fft2d_random_real = dict(
         (np.float128, 11),
     ],
     ifftshift_before=[False, True],
-    engine=["numpy", "scipy"],
+    engine=["numpy", "scipy", "mkl_fft"],
 )
 pars_fft2d_random_real = [
     dict(zip(par_lists_fft2d_random_real.keys(), value))
@@ -491,7 +544,7 @@ par_lists_fft2d_random_cpx = dict(
     ],
     ifftshift_before=itertools.product([False, True], [False, True]),
     fftshift_after=itertools.product([False, True], [False, True]),
-    engine=["numpy", "scipy"],
+    engine=["numpy", "scipy", "mkl_fft"],
 )
 # Generate all combinations of the above parameters
 pars_fft2d_random_cpx = [
@@ -511,7 +564,7 @@ def test_FFT2D_random_complex(par):
     x = np.random.randn(*shape).astype(dtype)
     if np.issubdtype(dtype, np.complexfloating):
         x += 1j * np.random.randn(*shape).astype(dtype)
-
+    print("engine=", engine)
     # Select an axis to apply FFT on. It can be any integer
     # in [0,..., ndim-1] but also in [-ndim, ..., -1]
     # However, dimensions cannot be repeated
@@ -568,7 +621,7 @@ par_lists_fftnd_random_real = dict(
         (np.float64, 11),
         (np.float128, 11),
     ],
-    engine=["numpy", "scipy"],
+    engine=["numpy", "scipy", "mkl_fft"],
 )
 pars_fftnd_random_real = [
     dict(zip(par_lists_fftnd_random_real.keys(), value))
@@ -630,7 +683,7 @@ par_lists_fftnd_random_cpx = dict(
         (np.complex128, 11),
         (np.complex256, 11),
     ],
-    engine=["numpy", "scipy"],
+    engine=["numpy", "scipy", "mkl_fft"],
 )
 # Generate all combinations of the above parameters
 pars_fftnd_random_cpx = [
@@ -702,7 +755,7 @@ def test_FFTND_random_complex(par):
 par_lists_fft2dnd_small_cpx = dict(
     dtype_precision=[(np.complex64, 5), (np.complex128, 11), (np.complex256, 11)],
     norm=["ortho", "none", "1/n"],
-    engine=["numpy", "scipy"],
+    engine=["numpy", "scipy", "mkl_fft"],
 )
 pars_fft2dnd_small_cpx = [
     dict(zip(par_lists_fft2dnd_small_cpx.keys(), value))
@@ -818,6 +871,12 @@ def test_FFTND_small_complex(par):
         (par3w),
         (par4w),
         (par5w),
+        (par1t),
+        (par2t),
+        (par3t),
+        (par4t),
+        (par5t),
+
     ],
 )
 def test_FFT_1dsignal(par):
@@ -893,6 +952,12 @@ def test_FFT_1dsignal(par):
         (par3w),
         (par4w),
         (par5w),
+        (par1t),
+        (par2t),
+        (par3t),
+        (par4t),
+        (par5t),
+
     ],
 )
 def test_FFT_2dsignal(par):
@@ -1039,6 +1104,12 @@ def test_FFT_2dsignal(par):
         (par3w),
         (par4w),
         (par5w),
+        (par1t),
+        (par2t),
+        (par3t),
+        (par4t),
+        (par5t),
+
     ],
 )
 def test_FFT_3dsignal(par):
@@ -1202,7 +1273,7 @@ def test_FFT_3dsignal(par):
         assert_array_almost_equal(d[..., :imax], dinv[..., :imax], decimal=decimal)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par6)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par6), (par1t), (par2t), (par3t), (par4t), (par5t)])
 def test_FFT2D(par):
     """Dot-test and inversion for FFT2D operator for 2d signal"""
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8
@@ -1306,7 +1377,7 @@ def test_FFT2D(par):
     assert_array_almost_equal(d[:imax1, :imax2], dinv[:imax1, :imax2], decimal=decimal)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par6)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par6), (par1t), (par2t), (par3t), (par4t), (par5t)])
 def test_FFT3D(par):
     """Dot-test and inversion for FFTND operator for 3d signal"""
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8

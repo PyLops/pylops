@@ -36,6 +36,9 @@ setup(
     extras_require={
         "advanced": [
             "llvmlite",
+            "mkl",
+            "mkl_fft",
+            "mkl-service"
             "numba",
             "pyfftw",
             "PyWavelets",

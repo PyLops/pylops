@@ -9,6 +9,7 @@ __all__ = [
     "spgl1_enabled",
     "sympy_enabled",
     "torch_enabled",
+    "mkl_fft_enabled"
 ]
 
 import os
@@ -23,6 +24,7 @@ cusignal_enabled = (
 )
 devito_enabled = util.find_spec("devito") is not None
 numba_enabled = util.find_spec("numba") is not None
+mkl_fft_enabled = util.find_spec("mkl_fft") is not None
 pyfftw_enabled = util.find_spec("pyfftw") is not None
 pywt_enabled = util.find_spec("pywt") is not None
 skfmm_enabled = util.find_spec("skfmm") is not None
@@ -85,6 +87,25 @@ def pyfftw_import(message):
             f'"conda install -c conda-forge pyfftw".'
         )
     return pyfftw_message
+
+
+def mkl_fft_import(message):
+    if mkl_fft_enabled:
+        try:
+            from mkl_fft import _scipy_fft_backend  # noqa: F401
+            from mkl_fft import _numpy_fft  # noqa: F401
+            mkl_fft_message = None
+        except Exception as e:
+            mkl_fft_message = f"Failed to import mkl_fft (error:{e}), use numpy."
+    else:
+        mkl_fft_message = (
+            "mkl_fft not available, reverting to numpy. "
+            "In order to be able to use "
+            f"{message} run "
+            f'"pip install mkl_fft" or '
+            f'"conda install -c conda-forge mkl_fft".'
+        )
+    return mkl_fft_message
 
 
 def pywt_import(message):
