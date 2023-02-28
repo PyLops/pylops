@@ -8,7 +8,7 @@ from typing import Tuple
 
 import numpy as np
 
-from pylops import LinearOperator, aslinearoperator
+from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.utils.tapers import taper2d
 from pylops.utils.typing import InputDimsLike, NDArray
@@ -214,7 +214,7 @@ def Sliding2D(
             for win_in, win_end in zip(dwin_ins, dwin_ends)
         ]
     )
-    Sop = aslinearoperator(combining * OOp)
+    Sop = LinearOperator(combining * OOp)
     Sop.dims, Sop.dimsd = (nwins, int(dims[0] // nwins), dims[1]), dimsd
     Sop.name = name
     return Sop

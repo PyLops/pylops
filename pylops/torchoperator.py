@@ -20,7 +20,7 @@ else:
 from pylops.utils.typing import TensorTypeLike
 
 
-class TorchOperator(LinearOperator):
+class TorchOperator:
     """Wrap a PyLops operator into a Torch function.
 
     This class can be used to wrap a pylops operator into a
@@ -63,9 +63,9 @@ class TorchOperator(LinearOperator):
             raise NotImplementedError(torch_message)
         self.device = device
         self.devicetorch = devicetorch
-        super().__init__(
-            dtype=np.dtype(Op.dtype), dims=Op.dims, dimsd=Op.dims, name=Op.name
-        )
+        self.dtype = np.dtype(Op.dtype)
+        self.dims, self.dimsd = Op.dims, Op.dimsd
+        self.name = Op.name
         # define transpose indices to bring batch to last dimension before applying
         # pylops forward and adjoint (this will call matmat and rmatmat)
         self.transpf = np.roll(np.arange(2 if flatten else len(self.dims) + 1), -1)
@@ -81,6 +81,9 @@ class TorchOperator(LinearOperator):
                 self.transpb
             )
         self.Top = _TorchOperator.apply
+
+    def __call__(self, x):
+        return self.apply(x)
 
     def apply(self, x: TensorTypeLike) -> TensorTypeLike:
         """Apply forward pass to input vector
