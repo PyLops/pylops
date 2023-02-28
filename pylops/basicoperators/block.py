@@ -1,38 +1,45 @@
 __all__ = ["Block"]
 
+import multiprocessing as mp
+
 from typing import Iterable, Optional
 
 from pylops import LinearOperator
 from pylops.basicoperators import HStack, VStack
-from pylops.utils.typing import DTypeLike
+from pylops.utils.typing import DTypeLike, NDArray
 
 
-def _Block(
-    ops: Iterable[Iterable[LinearOperator]],
-    dtype: Optional[DTypeLike] = None,
-    _HStack=HStack,
-    _VStack=VStack,
-    args_HStack: Optional[dict] = None,
-    args_VStack: Optional[dict] = None,
-) -> LinearOperator:
+class _Block(LinearOperator):
     """Block operator.
 
     Used to be able to provide operators from different libraries to
     Block.
     """
-    if args_HStack is None:
-        args_HStack = {}
-    if args_VStack is None:
-        args_VStack = {}
-    hblocks = [_HStack(hblock, dtype=dtype, **args_HStack) for hblock in ops]
-    return _VStack(hblocks, dtype=dtype, **args_VStack)
+    def __init__(self, ops: Iterable[Iterable[LinearOperator]],
+                 dtype: Optional[DTypeLike] = None,
+                 _HStack=HStack,
+                 _VStack=VStack,
+                 args_HStack: Optional[dict] = None,
+                 args_VStack: Optional[dict] = None, name: str = 'B'):
+        if args_HStack is None:
+            self.args_HStack = {}
+        else:
+            self.args_HStack = args_HStack
+        if args_VStack is None:
+            self.args_VStack = {}
+        else:
+            self.args_VStack = args_VStack
+        hblocks = [_HStack(hblock, dtype=dtype, **self.args_HStack) for hblock in ops]
+        super().__init__(Op=_VStack(ops=hblocks, dtype=dtype, **self.args_VStack), name=name)
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return super()._matvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return super()._rmatvec(x)
 
 
-def Block(
-    ops: Iterable[Iterable[LinearOperator]],
-    nproc: int = 1,
-    dtype: Optional[DTypeLike] = None,
-) -> LinearOperator:
+class Block(_Block):
     r"""Block operator.
 
     Create a block operator from N lists of M linear operators each.
@@ -116,4 +123,9 @@ def Block(
         \end{bmatrix}
 
     """
-    return _Block(ops, dtype=dtype, args_VStack={"nproc": nproc})
+    def __init__(self, ops: Iterable[Iterable[LinearOperator]],
+                 nproc: int = 1,
+                 dtype: Optional[DTypeLike] = None):
+        if nproc > 1:
+            self.pool = mp.Pool(processes=nproc)
+        super().__init__(ops=ops, dtype=dtype, args_VStack={"nproc": nproc})

@@ -8,12 +8,7 @@ from pylops.signalprocessing import Convolve2D
 from pylops.utils.typing import DTypeLike, InputDimsLike
 
 
-def Smoothing2D(
-    nsmooth: InputDimsLike,
-    dims: Union[int, InputDimsLike],
-    axes: InputDimsLike = (-2, -1),
-    dtype: DTypeLike = "float64",
-) -> None:
+class Smoothing2D(Convolve2D):
     r"""2D Smoothing.
 
     Apply smoothing to model (and data) along two ``axes`` of a
@@ -22,7 +17,7 @@ def Smoothing2D(
     Parameters
     ----------
     nsmooth : :obj:`tuple` or :obj:`list`
-        Lenght of smoothing operator in 1st and 2nd dimensions (must be odd)
+        Length of smoothing operator in 1st and 2nd dimensions (must be odd)
     dims : :obj:`tuple`
         Number of samples for each dimension
     axes : :obj:`int`, optional
@@ -61,11 +56,16 @@ def Smoothing2D(
     self-adjoint.
 
     """
-    nsmooth = list(nsmooth)
-    if nsmooth[0] % 2 == 0:
-        nsmooth[0] += 1
-    if nsmooth[1] % 2 == 0:
-        nsmooth[1] += 1
-    h = np.ones((nsmooth[0], nsmooth[1])) / float(nsmooth[0] * nsmooth[1])
-    offset = [(nsmooth[0] - 1) // 2, (nsmooth[1] - 1) // 2]
-    return Convolve2D(dims, h=h, offset=offset, axes=axes, dtype=dtype)
+
+    def __init__(self, nsmooth: InputDimsLike,
+                 dims: Union[int, InputDimsLike],
+                 axes: InputDimsLike = (-2, -1),
+                 dtype: DTypeLike = "float64", name: str = 'S'):
+        nsmooth = list(nsmooth)
+        if nsmooth[0] % 2 == 0:
+            nsmooth[0] += 1
+        if nsmooth[1] % 2 == 0:
+            nsmooth[1] += 1
+        h = np.ones((nsmooth[0], nsmooth[1])) / float(nsmooth[0] * nsmooth[1])
+        offset = [(nsmooth[0] - 1) // 2, (nsmooth[1] - 1) // 2]
+        super().__init__(dims=dims, h=h, offset=offset, axes=axes, dtype=dtype, name=name)

@@ -4,17 +4,11 @@ from typing import Union
 
 import numpy as np
 
-from pylops import LinearOperator
 from pylops.signalprocessing import Convolve1D
 from pylops.utils.typing import DTypeLike, InputDimsLike
 
 
-def Smoothing1D(
-    nsmooth: int,
-    dims: Union[int, InputDimsLike],
-    axis: int = -1,
-    dtype: DTypeLike = "float64",
-) -> LinearOperator:
+class Smoothing1D(Convolve1D):
     r"""1D Smoothing.
 
     Apply smoothing to model (and data) to a multi-dimensional array
@@ -72,8 +66,11 @@ def Smoothing1D(
     self-adjoint.
 
     """
-    if nsmooth % 2 == 0:
-        nsmooth += 1
-    h = np.ones(nsmooth) / float(nsmooth)
-    offset = (nsmooth - 1) // 2
-    return Convolve1D(dims, h, axis=axis, offset=offset, dtype=dtype)
+
+    def __init__(self, nsmooth: int, dims: Union[int, InputDimsLike], axis: int = -1,
+                 dtype: DTypeLike = "float64", name: str = 'S'):
+        if nsmooth % 2 == 0:
+            nsmooth += 1
+        h = np.ones(nsmooth) / float(nsmooth)
+        offset = (nsmooth - 1) // 2
+        super().__init__(dims=dims, h=h, axis=axis, offset=offset, dtype=dtype, name=name)

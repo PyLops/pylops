@@ -2,23 +2,16 @@ __all__ = ["Laplacian"]
 
 
 from typing import Tuple
+from pylops.utils.typing import NDArray
 
 from numpy.core.multiarray import normalize_axis_index
 
-from pylops import LinearOperator, aslinearoperator
+from pylops import LinearOperator
 from pylops.basicoperators import SecondDerivative
 from pylops.utils.typing import DTypeLike, InputDimsLike
 
 
-def Laplacian(
-    dims: InputDimsLike,
-    axes: InputDimsLike = (-2, -1),
-    weights: Tuple[float, ...] = (1, 1),
-    sampling: Tuple[float, ...] = (1, 1),
-    edge: bool = False,
-    kind: str = "centered",
-    dtype: DTypeLike = "float64",
-) -> LinearOperator:
+class Laplacian(LinearOperator):
     r"""Laplacian.
 
     Apply second-order centered Laplacian operator to a multi-dimensional array.
@@ -47,11 +40,6 @@ def Laplacian(
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
-    Returns
-    -------
-    l2op : :obj:`pylops.LinearOperator`
-        Laplacian linear operator
-
     Raises
     ------
     ValueError
@@ -69,27 +57,42 @@ def Laplacian(
                   / (\Delta x \Delta y)
 
     """
-    axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
-    if not (len(axes) == len(weights) == len(sampling)):
-        raise ValueError("axes, weights, and sampling have different size")
 
-    l2op = SecondDerivative(
-        dims, axis=axes[0], sampling=sampling[0], edge=edge, kind=kind, dtype=dtype
-    )
-    dims, dimsd = l2op.dims, l2op.dimsd
+    def __init__(self, dims: InputDimsLike,
+                 axes: InputDimsLike = (-2, -1),
+                 weights: Tuple[float, ...] = (1, 1),
+                 sampling: Tuple[float, ...] = (1, 1),
+                 edge: bool = False,
+                 kind: str = "centered",
+                 dtype: DTypeLike = "float64", name: str = "L"):
+        axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
+        if not (len(axes) == len(weights) == len(sampling)):
+            raise ValueError("axes, weights, and sampling have different size")
+        self.axes = axes
+        self.weights = weights
+        self.sampling = sampling
+        self.edge = edge
+        self.kind = kind
+        Op = self._calc_l2op(dims=dims, axes=axes, sampling=sampling, edge=edge, kind=kind, dtype=dtype,
+                             weights=weights)
+        super().__init__(Op=Op, name=name)
 
-    l2op *= weights[0]
-    for ax, samp, weight in zip(axes[1:], sampling[1:], weights[1:]):
-        l2op += weight * SecondDerivative(
-            dims, axis=ax, sampling=samp, edge=edge, dtype=dtype
+    def _matvec(self, x: NDArray) -> NDArray:
+        return super()._matvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return super()._rmatvec(x)
+
+    @staticmethod
+    def _calc_l2op(dims: InputDimsLike, axes: InputDimsLike, weights: Tuple[float, ...], sampling: Tuple[float, ...],
+                   edge: bool, kind: str, dtype: DTypeLike):
+        l2op = SecondDerivative(
+            dims, axis=axes[0], sampling=sampling[0], edge=edge, kind=kind, dtype=dtype
         )
-
-    l2op = aslinearoperator(l2op)
-    l2op.dims = dims
-    l2op.dimsd = dimsd
-    l2op.axes = axes
-    l2op.weights = weights
-    l2op.sampling = sampling
-    l2op.edge = edge
-    l2op.kind = kind
-    return l2op
+        dims = l2op.dims
+        l2op *= weights[0]
+        for ax, samp, weight in zip(axes[1:], sampling[1:], weights[1:]):
+            l2op += weight * SecondDerivative(
+                dims, axis=ax, sampling=samp, edge=edge, dtype=dtype
+            )
+        return l2op
