@@ -15,7 +15,7 @@ pytest-runner
 setuptools_scm
 docutils<0.18
 Sphinx
-sphinx-rtd-theme
+pydata-sphinx-theme
 sphinx-gallery
 numpydoc
 nbsphinx
