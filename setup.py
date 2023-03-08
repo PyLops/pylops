@@ -39,6 +39,7 @@ setup(
             "numba",
             "pyfftw",
             "PyWavelets",
+            "dtcwt",
             "scikit-fmm",
             "spgl1",
         ]

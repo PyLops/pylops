@@ -13,43 +13,53 @@ from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 class DTCWT(LinearOperator):
     r"""Dual-Tree Complex Wavelet Transform
-    Perform 1D Dual-Tree Complex Wavelet Transform on a given array.
 
-    This operator wraps around :py:func:`dtcwt` package.
+    Perform 1D Dual-Tree Complex Wavelet Transform along an ``axis`` of a
+    multi-dimensional array of size ``dims``.
+
+    Note that the DTCWT operator is an overload of the ``dtcwt``
+    implementation of the DT-CWT transform. Refer to
+    https://dtcwt.readthedocs.io for a detailed description of the
+    input parameters.
 
     Parameters
     ----------
-    dims: :obj:`int` or :obj:`tuple`
+    dims : :obj:`int` or :obj:`tuple`
         Number of samples for each dimension.
-    birot: :obj:`str`, optional
-        Level 1 wavelets to use. See :py:func:`dtcwt.coeffs.birot()`. Default is `"near_sym_a"`.
-    qshift: :obj:`str`, optional
-        Level >= 2 wavelets to use. See :py:func:`dtcwt.coeffs.qshift()`. Default is `"qshift_a"`
-    nlevels: :obj:`int`, optional
+    birot : :obj:`str`, optional
+        Level 1 wavelets to use. See :py:func:`dtcwt.coeffs.birot`. Default is `"near_sym_a"`.
+    qshift : :obj:`str`, optional
+        Level >= 2 wavelets to use. See :py:func:`dtcwt.coeffs.qshift`. Default is `"qshift_a"`
+    nlevels : :obj:`int`, optional
         Number of levels of wavelet decomposition. Default is 3.
-    include_scale: :obj:`bool`, optional
-        Include scales in pyramid. See :py:func:`dtcwt.Pyramid`. Default is False.
-    axis: :obj:`int`, optional
-        Axis on which the transform is performed. Default is -1.
+    include_scale : :obj:`bool`, optional
+        Include scales in pyramid. See :py:class:`dtcwt.Pyramid`. Default is False.
+    axis : :obj:`int`, optional
+        Axis on which the transform is performed.
     dtype : :obj:`DTypeLike`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
-
     Notes
     -----
-    The :py:func:`dtcwt` library uses a Pyramid object to represent the transformed domain signal.
-    It has
-        - `lowpass` (coarsest scale lowpass signal)
-        - `highpasses` (complex subband coefficients for corresponding scales)
-        - `scales` (lowpass signal for corresponding scales finest to coarsest)
+    The DTCWT operator applies the dual-tree complex wavelet transform
+    in forward mode and the dual-tree complex inverse wavelet transform in adjoint mode
+    from the ``dtcwt`` library.
 
-    To make the dtcwt forward() and inverse() functions compatible with pylops, the Pyramid object is
-    flattened out and all coefficents (high-pass and low pass coefficients) are appended into one array using the
-    `_coeff_to_array` method.
-    For inverse, the flattened array is used to reconstruct the Pyramid object using the `_array_to_coeff`
-    method and then inverse is performed.
+    The ``dtcwt`` library uses a Pyramid object to represent the signal in the transformed domain,
+    which is composed of:
+        - `lowpass` (coarsest scale lowpass signal);
+        - `highpasses` (complex subband coefficients for corresponding scales);
+        - `scales` (lowpass signal for corresponding scales finest to coarsest).
+
+    To make the dtcwt forward() and inverse() functions compatible with PyLops, in forward model
+    the Pyramid object is flattened out and all coefficients (high-pass and low pass coefficients)
+    are appended into one array using the `_coeff_to_array` method.
+
+    In adjoint mode, the input array is transformed back into a Pyramid object using the `_array_to_coeff`
+    method and then the inverse transform is performed.
+
     """
 
     def __init__(
@@ -68,6 +78,7 @@ class DTCWT(LinearOperator):
         self.nlevels = nlevels
         self.include_scale = include_scale
         self.axis = axis
+        # dry-run of transform to
         self._transform = dtcwt.Transform1d(biort=biort, qshift=qshift)
         self._interpret_coeffs()
         super().__init__(
@@ -78,13 +89,11 @@ class DTCWT(LinearOperator):
         )
 
     def _interpret_coeffs(self):
-        T = np.ones(self.dims)
-        T = T.swapaxes(self.axis, -1)
-        self.swapped_dims = T.shape
-        T = self._nd_to_2d(T)
-        pyr = self._transform.forward(
-            T , nlevels=self.nlevels, include_scale=True
-        )
+        x = np.ones(self.dims)
+        x = x.swapaxes(self.axis, -1)
+        self.swapped_dims = x.shape
+        x = self._nd_to_2d(x)
+        pyr = self._transform.forward(x, nlevels=self.nlevels, include_scale=True)
         self.coeff_array_size = 0
         self.lowpass_size = len(pyr.lowpass)
         self.slices = []
@@ -92,7 +101,7 @@ class DTCWT(LinearOperator):
             self.slices.append(len(_h))
             self.coeff_array_size += len(_h)
         self.coeff_array_size += self.lowpass_size
-        elements = np.prod(T.shape[1:])
+        elements = np.prod(x.shape[1:])
         self.coeff_array_size *= elements
         self.lowpass_size *= elements
         self.first_dim = elements
@@ -128,8 +137,7 @@ class DTCWT(LinearOperator):
         return dtcwt.Pyramid(lowpass, highpasses)
 
     def get_pyramid(self, X: NDArray) -> dtcwt.Pyramid:
-        """Return Pyramid object from transformed array
-        """
+        """Return Pyramid object from transformed array"""
         return self._array_to_coeff(X)
 
     @reshaped

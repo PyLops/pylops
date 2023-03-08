@@ -8,6 +8,7 @@ spgl1
 scikit-fmm
 sympy
 devito
+dtcwt
 matplotlib
 ipython
 pytest
@@ -26,4 +27,3 @@ isort
 black
 flake8
 mypy
-dtcwt

@@ -25,6 +25,7 @@ dependencies:
   - isort
   - black
   - pip:
+    - dtcwt
     - devito
     - scikit-fmm
     - spgl1
