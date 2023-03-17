@@ -1,3 +1,18 @@
+# 2.1.0
+* Added `pylops.signalprocessing.DCT`, `pylops.signalprocessing.NonStationaryConvolve1D`,
+  `pylops.signalprocessing.NonStationaryConvolve2D`, `pylops.signalprocessing.NonStationaryFilters1D`, and
+  `pylops.signalprocessing.NonStationaryFilters2D` operators
+* Added `pylops.waveeqprocessing.BlendingContinuous`, `pylops.waveeqprocessing.BlendingGroup`, and
+  `pylops.waveeqprocessing.BlendingHalf` operators
+* Added `kind='datamodel'` to `pylops.optimization.cls_sparsity.IRLS`
+* Improved inner working of `pylops.waveeqprocessing.Kirchhoff` operator significantly
+  reducing the memory usage related to storing traveltime, angle, and amplitude tables.
+* Improved handling of `haxes` in `pylops.signalprocessing.Radon2D` and `pylops.signalprocessing.Radon3D` operators
+* Added possibility to feed ND-arrays to `pylops.TorchOperator`
+* Removed `pylops.LinearOperator` inheritance and added `__call__` method to `pylops.TorchOperator`
+* Removed `scipy.sparse.linalg.LinearOperator` and added `abc.ABC` inheritance to `pylops.LinearOperator`
+* All operators are now classes of `pylops.LinearOperator` type
+
 # 2.0.0
 PyLops has undergone significant changes in this release, including new ``LinearOperator``s, more features, new examples and bugfixes.
 To aid users in navigating the breaking changes, we provide the following document [MIGRATION_V1_V2.md](https://github.com/PyLops/pylops/blob/dev/MIGRATION_V1_V2.md).
