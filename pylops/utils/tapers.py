@@ -80,6 +80,7 @@ def cosinetaper(
         taper
 
     """
+    ntap = 0 if ntap == 1 else ntap
     exponent = 1 if not square else 2
     cos_win = (
         0.5

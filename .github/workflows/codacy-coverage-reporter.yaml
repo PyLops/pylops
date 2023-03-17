@@ -1,0 +1,33 @@
+# This workflow uploads PyLops coverage analysis on Codacy
+# For more information see: https://github.com/codacy/codacy-coverage-reporter-action
+name: PyLops-coverage
+
+on: [push, pull_request_target]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest coverage
+        if [ -f requirements.txt ]; then pip install -r requirements-dev.txt; fi
+    - name: Install pylops
+      run: |
+        pip install .
+    - name: Code coverage with coverage
+      run: |
+        coverage run -m pytest
+        coverage xml
+    - name: Run codacy-coverage-reporter
+      uses: codacy/codacy-coverage-reporter-action@v1
+      with:
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: coverage.xml

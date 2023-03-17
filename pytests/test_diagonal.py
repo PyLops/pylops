@@ -23,7 +23,7 @@ def test_Diagonal_1dsignal(par):
         assert dottest(Dop, ddim, ddim, complexflag=0 if par["imag"] == 0 else 3)
 
         x = np.ones(ddim) + par["imag"] * np.ones(ddim)
-        xlsqr = sp_lsqr(Dop, Dop * x, damp=1e-20, iter_lim=300, show=0)[0]
+        xlsqr = sp_lsqr(Dop, Dop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
 
         assert_array_almost_equal(x, xlsqr, decimal=4)
 
@@ -45,7 +45,7 @@ def test_Diagonal_2dsignal(par):
         x = np.ones((par["nx"], par["nt"])) + par["imag"] * np.ones(
             (par["nx"], par["nt"])
         )
-        xlsqr = sp_lsqr(Dop, Dop * x.ravel(), damp=1e-20, iter_lim=300, show=0)[0]
+        xlsqr = sp_lsqr(Dop, Dop * x.ravel(), damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
 
         assert_array_almost_equal(x.ravel(), xlsqr.ravel(), decimal=4)
 
@@ -69,7 +69,7 @@ def test_Diagonal_3dsignal(par):
         x = np.ones((par["ny"], par["nx"], par["nt"])) + par["imag"] * np.ones(
             (par["ny"], par["nx"], par["nt"])
         )
-        xlsqr = sp_lsqr(Dop, Dop * x.ravel(), damp=1e-20, iter_lim=300, show=0)[0]
+        xlsqr = sp_lsqr(Dop, Dop * x.ravel(), damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
 
         assert_array_almost_equal(x.ravel(), xlsqr.ravel(), decimal=4)
 
@@ -91,7 +91,7 @@ def test_Diagonal_2dsignal_unflattened(par):
         x = np.ones((par["nx"], par["nt"])) + par["imag"] * np.ones(
             (par["nx"], par["nt"])
         )
-        xlsqr = lsqr(Dop, Dop * x, damp=1e-20, niter=300, show=0)[0]
+        xlsqr = lsqr(Dop, Dop * x, damp=1e-20, niter=300, atol=1e-8, btol=1e-8, show=0)[0]
 
         assert_array_almost_equal(x, xlsqr, decimal=4)
 
@@ -115,6 +115,6 @@ def test_Diagonal_3dsignal_unflattened(par):
         x = np.ones((par["ny"], par["nx"], par["nt"])) + par["imag"] * np.ones(
             (par["ny"], par["nx"], par["nt"])
         )
-        xlsqr = lsqr(Dop, Dop * x, damp=1e-20, niter=300, show=0)[0]
+        xlsqr = lsqr(Dop, Dop * x, damp=1e-20, niter=300, atol=1e-8, btol=1e-8, show=0)[0]
 
         assert_array_almost_equal(x, xlsqr, decimal=4)

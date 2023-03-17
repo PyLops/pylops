@@ -91,14 +91,14 @@ class Diagonal(LinearOperator):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
-        if type(self.diag) != type(x):
+        if type(self.diag) is not type(x):
             self.diag = to_cupy_conditional(x, self.diag)
         y = self.diag * x
         return y
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
-        if type(self.diag) != type(x):
+        if type(self.diag) is not type(x):
             self.diag = to_cupy_conditional(x, self.diag)
         if self.complex:
             diagadj = self.diag.conj()

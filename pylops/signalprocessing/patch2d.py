@@ -8,7 +8,7 @@ from typing import Optional, Sequence, Tuple
 
 import numpy as np
 
-from pylops import LinearOperator, aslinearoperator
+from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils.tapers import taper2d
@@ -264,7 +264,7 @@ def Patch2D(
             for win_in, win_end in zip(dwin0_ins, dwin0_ends)
         ]
     )
-    Pop = aslinearoperator(combining0 * combining1 * OOp)
+    Pop = LinearOperator(combining0 * combining1 * OOp)
     Pop.dims, Pop.dimsd = (
         nwins0,
         nwins1,

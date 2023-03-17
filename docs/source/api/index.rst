@@ -89,6 +89,10 @@ Signal processing
     Convolve1D
     Convolve2D
     ConvolveND
+    NonStationaryConvolve1D
+    NonStationaryConvolve2D
+    NonStationaryFilters1D
+    NonStationaryFilters2D
     Interp
     Bilinear
     FFT
@@ -97,6 +101,7 @@ Signal processing
     Shift
     DWT
     DWT2D
+    DCT
     Seislet
     Radon2D
     Radon3D
@@ -121,6 +126,9 @@ Wave-Equation processing
     PressureToVelocity
     UpDownComposition2D
     UpDownComposition3D
+    BlendingContinuous
+    BlendingGroup
+    BlendingHalf
     MDC
     PhaseShift
     Kirchhoff

@@ -5,16 +5,10 @@ from typing import Union
 from pylops import LinearOperator
 from pylops.basicoperators import FirstDerivative, VStack
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.typing import DTypeLike, InputDimsLike
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
-def Gradient(
-    dims: Union[int, InputDimsLike],
-    sampling: int = 1,
-    edge: bool = False,
-    kind: str = "centered",
-    dtype: DTypeLike = "float64",
-) -> LinearOperator:
+class Gradient(LinearOperator):
     r"""Gradient.
 
     Apply gradient operator to a multi-dimensional array.
@@ -35,11 +29,6 @@ def Gradient(
         Derivative kind (``forward``, ``centered``, or ``backward``).
     dtype : :obj:`str`, optional
         Type of elements in input array.
-
-    Returns
-    -------
-    l2op : :obj:`pylops.LinearOperator`
-        Gradient linear operator
 
     Notes
     -----
@@ -69,26 +58,33 @@ def Gradient(
     axes are instead summed together.
 
     """
-    dims = _value_or_sized_to_tuple(dims)
-    ndims = len(dims)
-    sampling = _value_or_sized_to_tuple(sampling, repeat=ndims)
 
-    gop = VStack(
-        [
-            FirstDerivative(
-                dims,
-                axis=iax,
-                sampling=sampling[iax],
-                edge=edge,
-                kind=kind,
-                dtype=dtype,
-            )
+    def __init__(self,
+                 dims: Union[int, InputDimsLike],
+                 sampling: int = 1,
+                 edge: bool = False,
+                 kind: str = "centered",
+                 dtype: DTypeLike = "float64", name: str = 'G'):
+        dims = _value_or_sized_to_tuple(dims)
+        ndims = len(dims)
+        sampling = _value_or_sized_to_tuple(sampling, repeat=ndims)
+        self.sampling = sampling
+        self.edge = edge
+        self.kind = kind
+        Op = VStack([FirstDerivative(
+            dims=dims,
+            axis=iax,
+            sampling=sampling[iax],
+            edge=edge,
+            kind=kind,
+            dtype=dtype,
+        )
             for iax in range(ndims)
-        ]
-    )
-    gop.dims = dims
-    gop.dimsd = (ndims, *gop.dims)
-    gop.sampling = sampling
-    gop.edge = edge
-    gop.kind = kind
-    return gop
+        ])
+        super().__init__(Op=Op, dims=dims, dimsd=(ndims, *dims), name=name)
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return super()._matvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return super()._rmatvec(x)

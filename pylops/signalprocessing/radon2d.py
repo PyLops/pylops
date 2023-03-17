@@ -266,9 +266,9 @@ def Radon2D(
     dpx = dh / dt
     pxaxis = pxaxis * dpx
     if not centeredh:
-        haxisunitless = haxis // dh
+        haxisunitless = haxis / dh
     else:
-        haxisunitless = np.arange(nh) - nh // 2
+        haxisunitless = np.arange(nh) - nh // 2 + ((nh + 1) % 2) / 2
     dims = (npx, nt)
     dimsd = (nh, nt)
 

@@ -97,7 +97,7 @@ def test_IRLS_data(par):
     # add outlier
     y[par["ny"] - 2] *= 5
 
-    # normal equations with regularization
+    # irls inversion
     xinv = irls(
         Gop,
         y,
@@ -108,6 +108,45 @@ def test_IRLS_data(par):
         epsI=0,
         tolIRLS=1e-3,
         kind="data",
+    )[0]
+    assert_array_almost_equal(x, xinv, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par3), (par4), (par3j), (par4j)])
+def test_IRLS_datamodel(par):
+    """Invert problem with outliers using data-model IRLS"""
+    np.random.seed(10)
+    G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32") + par[
+        "imag"
+    ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32")
+    Gop = MatrixMult(G, dtype=par["dtype"])
+
+    x = np.zeros(par["nx"]) + par["imag"] * np.ones(par["nx"])
+    x[par["nx"] // 2] = 1
+    x[3] = 1
+    x[par["nx"] - 4] = -1
+    x0 = (
+        np.random.normal(0, 10, par["nx"])
+        + par["imag"] * np.random.normal(0, 10, par["nx"])
+        if par["x0"]
+        else None
+    )
+    y = Gop * x
+
+    # add outlier
+    y[par["ny"] - 2] *= 5
+
+    # irls inversion
+    xinv = irls(
+        Gop,
+        y,
+        x0=x0,
+        nouter=10,
+        threshR=False,
+        epsR=1e-2,
+        epsI=0,
+        tolIRLS=1e-3,
+        kind="datamodel",
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
 

@@ -3,6 +3,26 @@
 Changelog
 =========
 
+Version 2.1.0
+-------------
+
+*Released on: 17/03/2023*
+
+* Added :class:`pylops.signalprocessing.DCT`, :class:`pylops.signalprocessing.NonStationaryConvolve1D`,
+  :class:`pylops.signalprocessing.NonStationaryConvolve2D`, :class:`pylops.signalprocessing.NonStationaryFilters1D`, and
+  :class:`pylops.signalprocessing.NonStationaryFilters2D` operators
+* Added :class:`pylops.waveeqprocessing.BlendingContinuous`, :class:`pylops.waveeqprocessing.BlendingGroup`, and
+  :class:`pylops.waveeqprocessing.BlendingHalf` operators
+* Added `kind='datamodel'` to :class:`pylops.optimization.cls_sparsity.IRLS`
+* Improved inner working of :class:`pylops.waveeqprocessing.Kirchhoff` operator significantly
+  reducing the memory usage related to storing traveltime, angle, and amplitude tables.
+* Improved handling of `haxes` in :class:`pylops.signalprocessing.Radon2D` and :class:`pylops.signalprocessing.Radon3D` operators
+* Added possibility to feed ND-arrays to :class:`pylops.TorchOperator`
+* Removed :class:`pylops.LinearOperator` inheritance and added `__call__` method to :class:`pylops.TorchOperator`
+* Removed `scipy.sparse.linalg.LinearOperator` and added :class:`abc.ABC` inheritance to :class:`pylops.LinearOperator`
+* All operators are now classes of `:class:`pylops.LinearOperator` type
+
+
 Version 2.0.0
 -------------
 
@@ -98,7 +118,7 @@ Version 1.18.0
 * Extended :py:func:`pylops.Laplacian` to N-dimensional arrays
 * Added `forward` kind to :py:class:`pylops.SecondDerivative` and
   :py:func:`pylops.Laplacian`
-* Added `chirp-sliding` kind to :py:func:`pylops.waveeqprocessing.seismicinterpolation.SeismicInterpolation`
+* Added `chirp-sliding` kind to :py:class:`pylops.waveeqprocessing.seismicinterpolation.SeismicInterpolation`
 * Fixed bug due to the new internal structure of `LinearOperator` submodule introduced in `scipy1.8.0`
 
 
@@ -245,7 +265,7 @@ Version 1.11.1
 *Released on: 24/10/2020*
 
 * Fixed import of ``pyfttw`` when not available in
-  :py:class:``pylops.signalprocessing.ChirpRadon3D`
+  :py:class:`pylops.signalprocessing.ChirpRadon3D`
 
 
 Version 1.11.0

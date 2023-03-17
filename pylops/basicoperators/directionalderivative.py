@@ -8,14 +8,7 @@ from pylops.basicoperators import Diagonal, Gradient, Sum
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
-def FirstDirectionalDerivative(
-    dims: InputDimsLike,
-    v: NDArray,
-    sampling: int = 1,
-    edge: bool = False,
-    kind: str = "centered",
-    dtype: DTypeLike = "float64",
-) -> LinearOperator:
+class FirstDirectionalDerivative(LinearOperator):
     r"""First Directional derivative.
 
     Apply a directional derivative operator to a multi-dimensional array
@@ -42,11 +35,6 @@ def FirstDirectionalDerivative(
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
-    Returns
-    -------
-    ddop : :obj:`pylops.LinearOperator`
-        First directional derivative linear operator
-
     Notes
     -----
     The FirstDirectionalDerivative applies a first-order derivative
@@ -71,25 +59,39 @@ def FirstDirectionalDerivative(
     operator with :math:`\mathbf{v}` along the main diagonal.
 
     """
-    Gop = Gradient(dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype)
-    if v.ndim == 1:
-        Dop = Diagonal(v, dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
-    else:
-        Dop = Diagonal(v.ravel(), dtype=dtype)
-    Sop = Sum(dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
-    ddop = LinearOperator(Sop * Dop * Gop)
-    ddop.dims = ddop.dimsd = dims
-    ddop.sampling = sampling
-    return ddop
+
+    def __init__(self, dims: InputDimsLike,
+                 v: NDArray,
+                 sampling: int = 1,
+                 edge: bool = False,
+                 kind: str = "centered",
+                 dtype: DTypeLike = "float64",
+                 name: str = 'F'):
+        self.sampling = sampling
+        self.edge = edge
+        self.kind = kind
+        self.v = v
+        Op = self._calc_first_ddop(dims=dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype, v=v)
+        super().__init__(Op=Op, name=name)
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return super()._matvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return super()._rmatvec(x)
+
+    @staticmethod
+    def _calc_first_ddop(dims: InputDimsLike, v: NDArray, sampling: int, edge: bool, kind: str, dtype: DTypeLike):
+        Gop = Gradient(dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype)
+        if v.ndim == 1:
+            Dop = Diagonal(v, dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
+        else:
+            Dop = Diagonal(v.ravel(), dtype=dtype)
+        Sop = Sum(dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
+        return Sop * Dop * Gop
 
 
-def SecondDirectionalDerivative(
-    dims: InputDimsLike,
-    v: NDArray,
-    sampling: int = 1,
-    edge: bool = False,
-    dtype: DTypeLike = "float64",
-) -> LinearOperator:
+class SecondDirectionalDerivative(LinearOperator):
     r"""Second Directional derivative.
 
     Apply a second directional derivative operator to a multi-dimensional array
@@ -114,11 +116,6 @@ def SecondDirectionalDerivative(
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
-    Returns
-    -------
-    ddop : :obj:`pylops.LinearOperator`
-        Second directional derivative linear operator
-
     Notes
     -----
     The SecondDirectionalDerivative applies a second-order derivative
@@ -135,8 +132,24 @@ def SecondDirectionalDerivative(
     This operator is sometimes also referred to as directional Laplacian
     in the literature.
     """
-    Dop = FirstDirectionalDerivative(dims, v, sampling=sampling, edge=edge, dtype=dtype)
-    ddop = LinearOperator(-Dop.H * Dop)
-    ddop.dims = ddop.dimsd = dims
-    ddop.sampling = sampling
-    return ddop
+
+    def __init__(self, dims: InputDimsLike, v: NDArray, sampling: int = 1, edge: bool = False,
+                 dtype: DTypeLike = "float64", name: str = 'S'):
+        self.dims = dims
+        self.v = v
+        self.sampling = sampling
+        self.edge = edge
+        Op = self._calc_second_ddop(dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype)
+        super().__init__(Op=Op, name=name)
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return super()._matvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return super()._rmatvec(x)
+
+    @staticmethod
+    def _calc_second_ddop(dims: InputDimsLike, v: NDArray, sampling: int, edge: bool, dtype: DTypeLike):
+        Dop = FirstDirectionalDerivative(dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype)
+        ddop = -Dop.H * Dop
+        return ddop

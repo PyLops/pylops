@@ -23,10 +23,11 @@ which will be used as *parent* class for any of our operators:
 
    from pylops import LinearOperator
 
-This class is a child of the
-:py:class:`scipy.sparse.linalg.LinearOperator` class itself which implements the same methods of its parent class
-as well as an additional method for quick inversion: such method can be easily accessed by using ``\`` between the
-operator and the data (e.g., ``A \ y``).
+This class was originally defined as a child of the :py:class:`scipy.sparse.linalg.LinearOperator`, implementing
+the same methods of its parent class as well as additional methods for quick inversion (e.g., ``A \ y``),
+eigenvalues computation, conversion to dense matrices, etc. From version ``v2.1`` onwards, our linear operator
+class has become stand-alone; however, by keeping the same naming structure of the original scipy class, we still
+allow inter-operability with scipy-native linear operators and solvers.
 
 After that we define our new object:
 
@@ -34,7 +35,7 @@ After that we define our new object:
 
    class Diagonal(LinearOperator):
 
-followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html/>`_
+followed by a `numpydoc docstring <https://numpydoc.readthedocs.io/en/latest/format.html>`__
 (starting with ``r"""`` and ending with ``"""``) containing the documentation of the operator. Such docstring should
 contain at least a short description of the operator, a ``Parameters`` section with a detailed description of the
 input parameters and a ``Notes`` section providing a mathematical explanation of the operator. Take a look at
@@ -172,7 +173,7 @@ adheres to the guidelines of PyLops:
 
 - the new class contains at least ``__init__``, ``_matvec`` and ``_matvec`` methods.
 
-- the new class (or function) has a `numpydoc docstring <https://numpydoc.readthedocs.io/>`_ documenting
+- the new class (or function) has a `numpydoc docstring <https://numpydoc.readthedocs.io/>`__ documenting
   at least the input ``Parameters`` and with a ``Notes`` section providing a mathematical explanation of the operator
 
 - a new test has been added to an existing ``test_*.py`` file within the ``pytests`` folder. The test should verify

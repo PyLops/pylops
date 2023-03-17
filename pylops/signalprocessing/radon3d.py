@@ -293,11 +293,11 @@ def Radon3D(
     dpx = dhx / dt
     pxaxis = pxaxis * dpx
     if not centeredh:
-        hyaxisunitless = hyaxis // dhy
-        hxaxisunitless = hxaxis // dhx
+        hyaxisunitless = hyaxis / dhy
+        hxaxisunitless = hxaxis / dhx
     else:
-        hyaxisunitless = np.arange(nhy) - nhy // 2
-        hxaxisunitless = np.arange(nhx) - nhx // 2
+        hyaxisunitless = np.arange(nhy) - nhy // 2 + ((nhy + 1) % 2) / 2
+        hxaxisunitless = np.arange(nhx) - nhx // 2 + ((nhx + 1) % 2) / 2
 
     # create grid for py and px axis
     hyaxisunitless, hxaxisunitless = np.meshgrid(

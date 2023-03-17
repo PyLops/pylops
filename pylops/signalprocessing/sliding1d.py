@@ -6,7 +6,7 @@ __all__ = [
 import logging
 from typing import Tuple, Union
 
-from pylops import LinearOperator, aslinearoperator
+from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils._internal import _value_or_sized_to_tuple
@@ -180,7 +180,7 @@ def Sliding1D(
             for win_in, win_end in zip(dwin_ins, dwin_ends)
         ]
     )
-    Sop = aslinearoperator(combining * OOp)
+    Sop = LinearOperator(combining * OOp)
     Sop.dims, Sop.dimsd = (nwins, int(dim[0] // nwins)), dimd
     Sop.name = name
     return Sop

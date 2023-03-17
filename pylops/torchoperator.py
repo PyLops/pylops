@@ -2,6 +2,8 @@ __all__ = [
     "TorchOperator",
 ]
 
+from typing import Optional
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -18,7 +20,7 @@ else:
 from pylops.utils.typing import TensorTypeLike
 
 
-class TorchOperator(LinearOperator):
+class TorchOperator:
     """Wrap a PyLops operator into a Torch function.
 
     This class can be used to wrap a pylops operator into a
@@ -36,9 +38,12 @@ class TorchOperator(LinearOperator):
         PyLops operator
     batch : :obj:`bool`, optional
         Input has single sample (``False``) or batch of samples (``True``).
-        If ``batch==False`` the input must be a 1-d Torch tensor,
-        if `batch==False`` the input must be a 2-d Torch tensor with
-        batches along the first dimension
+        If ``batch==False`` the input must be a 1-d Torch tensor or a tensor of
+        size equal to ``Op.dims``; if ``batch==True`` the input must be a 2-d Torch
+        tensor with batches along the first dimension or a tensor of size equal to
+        ``[nbatch, *Op.dims]`` where ``nbatch`` is the size of the batch
+    flatten : :obj:`bool`, optional
+        Input is flattened along ``Op.dims`` (``True``) or not (``False``)
     device : :obj:`str`, optional
         Device to be used when applying operator (``cpu`` or ``gpu``)
     devicetorch : :obj:`str`, optional
@@ -50,6 +55,7 @@ class TorchOperator(LinearOperator):
         self,
         Op: LinearOperator,
         batch: bool = False,
+        flatten: Optional[bool] = True,
         device: str = "cpu",
         devicetorch: str = "cpu",
     ) -> None:
@@ -57,16 +63,27 @@ class TorchOperator(LinearOperator):
             raise NotImplementedError(torch_message)
         self.device = device
         self.devicetorch = devicetorch
+        self.dtype = np.dtype(Op.dtype)
+        self.dims, self.dimsd = Op.dims, Op.dimsd
+        self.name = Op.name
+        # define transpose indices to bring batch to last dimension before applying
+        # pylops forward and adjoint (this will call matmat and rmatmat)
+        self.transpf = np.roll(np.arange(2 if flatten else len(self.dims) + 1), -1)
+        self.transpb = np.roll(np.arange(2 if flatten else len(self.dims) + 1), 1)
         if not batch:
-            self.matvec = Op.matvec
-            self.rmatvec = Op.rmatvec
+            self.matvec = lambda x: Op @ x
+            self.rmatvec = lambda x: Op.H @ x
         else:
-            self.matvec = lambda x: Op.matmat(x.T).T
-            self.rmatvec = lambda x: Op.rmatmat(x.T).T
+            self.matvec = lambda x: (Op @ x.transpose(self.transpf)).transpose(
+                self.transpb
+            )
+            self.rmatvec = lambda x: (Op.H @ x.transpose(self.transpf)).transpose(
+                self.transpb
+            )
         self.Top = _TorchOperator.apply
-        super().__init__(
-            dtype=np.dtype(Op.dtype), dims=Op.dims, dimsd=Op.dims, name=Op.name
-        )
+
+    def __call__(self, x):
+        return self.apply(x)
 
     def apply(self, x: TensorTypeLike) -> TensorTypeLike:
         """Apply forward pass to input vector

@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
+from scipy.sparse.linalg import LinearOperator as spLinearOperator
 
 import pylops
 from pylops import LinearOperator
@@ -65,6 +66,32 @@ def test_scaled(par):
         assert S1op.dtype == dtype
         assert S2op.dtype == dtype
         assert S3op.dtype == dtype
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_scipyop(par):
+    """Verify interaction between pylops and scipy Linear operators"""
+
+    class spDiag(spLinearOperator):
+        def __init__(self, x):
+            self.x = x
+            self.shape = (len(x), len(x))
+            self.dtype = x.dtype
+
+        def _matvec(self, x):
+            return x * self.x
+
+        def _rmatvec(self, x):
+            return x * self.x
+
+    Dop = Diagonal(np.ones(5))
+    Dspop = spDiag(2 * np.ones(5))
+
+    # sum pylops to scipy linear ops
+    assert isinstance(Dop + Dspop, LinearOperator)
+
+    # multiply pylops to scipy linear ops
+    assert isinstance(Dop * Dspop, LinearOperator)
 
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
@@ -329,9 +356,9 @@ def test_counts(par):
     _ = Aop.rmatmat(np.ones((par["ny"], 2)))
 
     assert Aop.matvec_count == 3
-    # assert Aop.rmatvec_count == 1
+    assert Aop.rmatvec_count == 1
     assert Aop.matmat_count == 1
-    # assert Aop.rmatmat_count == 2
+    assert Aop.rmatmat_count == 2
 
     # reset
     Aop.reset_count()

@@ -2,20 +2,11 @@ __all__ = ["Convolve2D"]
 
 from typing import Union
 
-from pylops import LinearOperator
 from pylops.signalprocessing import ConvolveND
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
-def Convolve2D(
-    dims: Union[int, InputDimsLike],
-    h: NDArray,
-    offset: InputDimsLike = (0, 0),
-    axes: InputDimsLike = (-2, -1),
-    method: str = "fft",
-    dtype: DTypeLike = "float64",
-    name: str = "C",
-) -> LinearOperator:
+class Convolve2D(ConvolveND):
     r"""2D convolution operator.
 
     Apply two-dimensional convolution with a compact filter to model
@@ -42,11 +33,6 @@ def Convolve2D(
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
-
-    Returns
-    -------
-    cop : :obj:`pylops.LinearOperator`
-        Convolve2D linear operator
 
     Notes
     -----
@@ -88,8 +74,13 @@ def Convolve2D(
         y(t, x) = \mathscr{F}^{-1} (H(f, k_x)^* * X(f, k_x))
 
     """
-    if h.ndim != 2:
-        raise ValueError("h must be 2-dimensional")
-    cop = ConvolveND(dims, h, offset=offset, axes=axes, method=method, dtype=dtype)
-    cop.name = name
-    return cop
+    def __init__(self, dims: Union[int, InputDimsLike],
+                 h: NDArray,
+                 offset: InputDimsLike = (0, 0),
+                 axes: InputDimsLike = (-2, -1),
+                 method: str = "fft",
+                 dtype: DTypeLike = "float64",
+                 name: str = "C", ):
+        if h.ndim != 2:
+            raise ValueError("h must be 2-dimensional")
+        super().__init__(dims=dims, h=h, offset=offset, axes=axes, method=method, dtype=dtype, name=name)

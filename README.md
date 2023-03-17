@@ -142,3 +142,8 @@ A list of video tutorials to learn more about PyLops:
 * Alan Richardson, ar4
 * BurningKarl, BurningKarl
 * Nick Luiken, NickLuiken
+* BurningKarl, BurningKarl
+* Muhammad Izzatullah, izzatum
+* Juan Daniel Romero, jdromerom
+* Aniket Singh Rawat, dikwickley
+* Rohan Babbar, rohanbabbar04

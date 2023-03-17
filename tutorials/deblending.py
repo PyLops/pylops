@@ -5,9 +5,9 @@ The cocktail party problem arises when sounds from different sources mix before 
 (or any recording device), requiring the brain (or any hardware in the recording device) to estimate
 individual sources from the received mixture. In seismic acquisition, an analog problem is present
 when multiple sources are fired simultaneously. This family of acquisition methods is usually referred to as
-simultaneous shooting and the problem of separating the blendend shot gathers into their individual
+simultaneous shooting and the problem of separating the blended shot gathers into their individual
 components is called deblending. Whilst various firing strategies can be adopted, in this example
-we consider the continuos blending problem where a single source is fired sequentially at an interval
+we consider the continuous blending problem where a single source is fired sequentially at an interval
 shorter than the amount of time required for waves to travel into the Earth and come back.
 
 Simply stated the forward problem can be written as:
@@ -21,12 +21,12 @@ Here :math:`\mathbf{d} = [\mathbf{d}_1^T, \mathbf{d}_2^T,\ldots,
 \boldsymbol\Phi_N]` is the blending operator, :math:`\mathbf{d}^b` is the
 so-called supergather than contains all shots superimposed to each other.
 
-In order to successfully invert this severely underdetermined problem, two key
+In order to successfully invert this severely under-determined problem, two key
 ingredients must be introduced:
 
 - the firing time of each source (i.e., shifts of the blending operator) must be
   chosen to be dithered around a nominal regular, periodic firing interval.
-  In our case, we consider shots of duration :math:`T=4s`, regular firing time of :math:`T_s=2s`
+  In our case, we consider shots of duration :math:`T=4\,\text{s}`, regular firing time of :math:`T_s=2\,\text{s}`
   and a dithering code as follows :math:`\Delta t = U(-1,1)`;
 - prior information about the data to reconstruct, either in the form of regularization
   or preconditioning must be introduced. In our case we will use a patch-FK transform
@@ -48,22 +48,6 @@ import pylops
 
 np.random.seed(10)
 plt.close("all")
-
-
-###############################################################################
-# Let's start by defining a blending operator
-def Blending(nt, ns, dt, overlap, times, dtype="float64"):
-    """Blending operator"""
-    pad = int(overlap * nt)
-    OpShiftPad = []
-    for i in range(ns):
-        PadOp = pylops.Pad(nt, (pad * i, pad * (ns - 1 - i)), dtype=dtype)
-        ShiftOp = pylops.signalprocessing.Shift(
-            pad * (ns - 1) + nt, times[i], axis=0, sampling=dt, real=False, dtype=dtype
-        )
-        OpShiftPad.append(ShiftOp * PadOp)
-    return pylops.HStack(OpShiftPad)
-
 
 ###############################################################################
 # We can now load and display a small portion of the MobilAVO dataset composed
@@ -98,11 +82,15 @@ plt.tight_layout()
 # some burst like noise in the data. Deblending can hopefully fix this.
 
 overlap = 0.5
-pad = int(overlap * nt)
 ignition_times = 2.0 * np.random.rand(ns) - 1.0
-Bop = Blending(nt, ns, dt, overlap, ignition_times, dtype="complex128")
-data_blended = Bop * data.ravel()
-data_pseudo = Bop.H * data_blended.ravel()
+ignition_times = np.arange(0, overlap * nt * ns, overlap * nt) * dt + ignition_times
+ignition_times[0] = 0.0
+Bop = pylops.waveeqprocessing.BlendingContinuous(
+    nt, 1, ns, dt, ignition_times, dtype="complex128"
+)
+
+data_blended = Bop * data[:, np.newaxis]
+data_pseudo = Bop.H * data_blended
 data_pseudo = data_pseudo.reshape(ns, nt)
 
 fig, ax = plt.subplots(1, 1, figsize=(12, 8))
@@ -140,25 +128,23 @@ Sop = pylops.signalprocessing.Patch2D(
 Op = Bop * Sop
 
 # Compute max eigenvalue (we do this explicitly to be able to run this fast)
-Op1 = pylops.LinearOperator(Op.H * Op, explicit=False)
-X = np.random.rand(Op1.shape[0], 1).astype(Op1.dtype)
-maxeig = sp_lobpcg(Op1, X=X, maxiter=5, tol=1e-10)[0][0]
+Op1 = Op.H * Op
+maxeig = np.abs(Op1.eigs(1, niter=5, ncv=5, tol=5e-2))[0]
 alpha = 1.0 / maxeig
 
 # Deblend
 niter = 60
 decay = (np.exp(-0.05 * np.arange(niter)) + 0.2) / 1.2
 
-with pylops.disabled_ndarray_multiplication():
-    p_inv = pylops.optimization.sparsity.fista(
-        Op,
-        data_blended.ravel(),
-        niter=niter,
-        eps=5e0,
-        alpha=alpha,
-        decay=decay,
-        show=True,
-    )[0]
+p_inv = pylops.optimization.sparsity.fista(
+    Op,
+    data_blended.ravel(),
+    niter=niter,
+    eps=5e0,
+    alpha=alpha,
+    decay=decay,
+    show=True,
+)[0]
 data_inv = Sop * p_inv
 data_inv = data_inv.reshape(ns, nt)
 
@@ -222,14 +208,14 @@ Sop1 = pylops.signalprocessing.Patch2D(
 p = Sop1.H * data.ravel()
 preshape = p.reshape(nwins[0], nwins[1], nop1[0], nop1[1])
 
-ix = 16
+it = 16  # index of window along time axis for plotting
 fig, axs = plt.subplots(2, 4, figsize=(12, 5))
 fig.suptitle("Data patches")
-for i in range(4):
-    axs[0][i].imshow(np.fft.fftshift(np.abs(preshape[i, ix]).T, axes=1))
+for i, ix in enumerate(range(4)):
+    axs[0][i].imshow(np.fft.fftshift(np.abs(preshape[ix, it]).T, axes=1))
     axs[0][i].axis("tight")
     axs[1][i].imshow(
-        np.real((Fop.H * preshape[i, ix].ravel()).reshape(nwin)).T,
+        np.real((Fop.H * preshape[ix, it].ravel()).reshape(nwin)).T,
         cmap="gray",
         vmin=-30,
         vmax=30,
@@ -242,14 +228,13 @@ plt.tight_layout()
 p_pseudo = Sop1.H * data_pseudo.ravel()
 p_pseudoreshape = p_pseudo.reshape(nwins[0], nwins[1], nop1[0], nop1[1])
 
-ix = 16
 fig, axs = plt.subplots(2, 4, figsize=(12, 5))
 fig.suptitle("Pseudo-deblended patches")
-for i in range(4):
-    axs[0][i].imshow(np.fft.fftshift(np.abs(p_pseudoreshape[i, ix]).T, axes=1))
+for i, ix in enumerate(range(4)):
+    axs[0][i].imshow(np.fft.fftshift(np.abs(p_pseudoreshape[ix, it]).T, axes=1))
     axs[0][i].axis("tight")
     axs[1][i].imshow(
-        np.real((Fop.H * p_pseudoreshape[i, ix].ravel()).reshape(nwin)).T,
+        np.real((Fop.H * p_pseudoreshape[ix, it].ravel()).reshape(nwin)).T,
         cmap="gray",
         vmin=-30,
         vmax=30,
@@ -262,14 +247,13 @@ plt.tight_layout()
 p_inv = Sop1.H * data_inv.ravel()
 p_invreshape = p_inv.reshape(nwins[0], nwins[1], nop1[0], nop1[1])
 
-ix = 16
 fig, axs = plt.subplots(2, 4, figsize=(12, 5))
 fig.suptitle("Deblended patches")
-for i in range(4):
-    axs[0][i].imshow(np.fft.fftshift(np.abs(p_invreshape[i, ix]).T, axes=1))
+for i, ix in enumerate(range(4)):
+    axs[0][i].imshow(np.fft.fftshift(np.abs(p_invreshape[ix, it]).T, axes=1))
     axs[0][i].axis("tight")
     axs[1][i].imshow(
-        np.real((Fop.H * p_invreshape[i, ix].ravel()).reshape(nwin)).T,
+        np.real((Fop.H * p_invreshape[ix, it].ravel()).reshape(nwin)).T,
         cmap="gray",
         vmin=-30,
         vmax=30,

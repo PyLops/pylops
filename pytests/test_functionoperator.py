@@ -77,7 +77,7 @@ def test_FunctionOperator(par):
 
     # Only test inversion for square or overdetermined systems
     if par["nc"] <= par["nr"]:
-        xlsqr = lsqr(Fop, F_x, damp=0, iter_lim=100, show=0)[0]
+        xlsqr = lsqr(Fop, F_x, damp=0, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
         assert_array_almost_equal(x, xlsqr, decimal=4)
 
 

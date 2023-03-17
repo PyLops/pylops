@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
 from pylops.signalprocessing import Patch2D, Patch3D
 from pylops.signalprocessing.patch2d import patch2d_design
@@ -111,7 +110,7 @@ def test_Patch2D(par):
     x = np.ones((par["ny"] * nwins[0], par["nt"] * nwins[1]))
     y = Pop * x.ravel()
 
-    xinv = LinearOperator(Pop) / y
+    xinv = Pop / y
     assert_array_almost_equal(x.ravel(), xinv)
 
 
@@ -145,7 +144,7 @@ def test_Patch2D_scalings(par):
     x = np.ones((par["ny"] * nwins[0], par["nt"] * nwins[1]))
     y = Pop * x.ravel()
 
-    xinv = LinearOperator(Pop) / y
+    xinv = Pop / y
     assert_array_almost_equal(x.ravel(), xinv)
 
 
@@ -189,5 +188,5 @@ def test_Patch3D(par):
     x = np.ones((par["ny"] * nwins[0], par["nx"] * nwins[1], par["nt"] * nwins[2]))
     y = Pop * x.ravel()
 
-    xinv = LinearOperator(Pop) / y
+    xinv = Pop / y
     assert_array_almost_equal(x.ravel(), xinv)

@@ -10,6 +10,10 @@ A list of operators present in pylops.signalprocessing:
     Convolve1D                      1D convolution operator.
     Convolve2D                      2D convolution operator.
     ConvolveND                      ND convolution operator.
+    NonStationaryConvolve1D         1D nonstationary convolution operator.
+    NonStationaryConvolve2D         2D nonstationary convolution operator.
+    NonStationaryFilters1D          1D nonstationary filter estimation operator.
+    NonStationaryFilters2D          2D nonstationary filter estimation operator.
     Interp                          Interpolation operator.
     Bilinear                        Bilinear interpolation operator.
     FFT                             One dimensional Fast-Fourier Transform.
@@ -18,6 +22,7 @@ A list of operators present in pylops.signalprocessing:
     Shift                           Fractional Shift operator.
     DWT                             One dimensional Wavelet operator.
     DWT2D                           Two dimensional Wavelet operator.
+    DCT                             Discrete Cosine Transform.
     Seislet                         Two dimensional Seislet operator.
     Radon2D	                        Two dimensional Radon transform.
     Radon3D	                        Three dimensional Radon transform.
@@ -36,6 +41,8 @@ from .fftnd import *
 from .convolve1d import *
 from .convolvend import *
 from .convolve2d import *
+from .nonstatconvolve1d import *
+from .nonstatconvolve2d import *
 from .shift import *
 from .interp import *
 from .bilinear import *
@@ -52,6 +59,7 @@ from .fredholm1 import *
 from .dwt import *
 from .dwt2d import *
 from .seislet import *
+from .dct import *
 
 __all__ = [
     "FFT",
@@ -61,6 +69,10 @@ __all__ = [
     "Convolve1D",
     "ConvolveND",
     "Convolve2D",
+    "NonStationaryConvolve1D",
+    "NonStationaryConvolve2D",
+    "NonStationaryFilters1D",
+    "NonStationaryFilters2D",
     "Interp",
     "Bilinear",
     "Radon2D",
@@ -76,4 +88,5 @@ __all__ = [
     "DWT",
     "DWT2D",
     "Seislet",
+    "DCT",
 ]

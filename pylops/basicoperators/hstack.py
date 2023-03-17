@@ -4,15 +4,18 @@ import multiprocessing as mp
 
 import numpy as np
 import scipy as sp
-from scipy.sparse.linalg.interface import LinearOperator as spLinearOperator
 
 # need to check scipy version since the interface submodule changed into
 # _interface from scipy>=1.8.0
 sp_version = sp.__version__.split(".")
 if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
+    from scipy.sparse.linalg.interface import LinearOperator as spLinearOperator
     from scipy.sparse.linalg.interface import _get_dtype
 else:
     from scipy.sparse.linalg._interface import _get_dtype
+    from scipy.sparse.linalg._interface import (
+        LinearOperator as spLinearOperator,
+    )
 
 from typing import Optional, Sequence
 

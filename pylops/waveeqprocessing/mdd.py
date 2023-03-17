@@ -4,7 +4,7 @@ __all__ = [
 ]
 
 import logging
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -38,11 +38,11 @@ def _MDC(
     _Transpose=Transpose,
     _FFT=FFT,
     _Fredholm1=Fredholm1,
-    args_Identity: Dict = {},
-    args_FFT: Dict = {},
-    args_Identity1: Dict = {},
-    args_FFT1: Dict = {},
-    args_Fredholm1: Dict = {},
+    args_Identity: Optional[dict] = None,
+    args_FFT: Optional[dict] = None,
+    args_Identity1: Optional[dict] = None,
+    args_FFT1: Optional[dict] = None,
+    args_Fredholm1: Optional[dict] = None,
 ) -> LinearOperator:
     r"""Multi-dimensional convolution.
 
@@ -53,6 +53,16 @@ def _MDC(
     operator.
 
     """
+    if args_Identity is None:
+        args_Identity = {}
+    if args_FFT is None:
+        args_FFT = {}
+    if args_Identity1 is None:
+        args_Identity1 = {}
+    if args_FFT1 is None:
+        args_FFT1 = {}
+    if args_Fredholm1 is None:
+        args_Fredholm1 = {}
 
     if twosided and nt % 2 == 0:
         raise ValueError("nt must be odd number")
