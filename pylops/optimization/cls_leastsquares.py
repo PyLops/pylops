@@ -16,7 +16,6 @@ from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.basesolver import Solver
 from pylops.optimization.basic import cg, cgls
 from pylops.utils.backend import get_array_module
-from pylops.utils.decorators import disable_ndarray_multiplication
 from pylops.utils.typing import NDArray
 
 if TYPE_CHECKING:
@@ -89,7 +88,6 @@ class NormalEquationsInversion(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 55 + "\n")
 
-    @disable_ndarray_multiplication
     def setup(
         self,
         y: NDArray,
@@ -157,13 +155,13 @@ class NormalEquationsInversion(Solver):
 
         # normal equations
         if Weight is not None:
-            self.y_normal = self.OpH * Weight * y
+            self.y_normal = self.Op.rmatvec(Weight.matvec(y))
         else:
-            self.y_normal = self.OpH * y
+            self.y_normal = self.Op.rmatvec(y)
         if Weight is not None:
-            self.Op_normal = self.OpH * Weight * self.Op
+            self.Op_normal = self.OpH @ Weight @ self.Op
         else:
-            self.Op_normal = self.OpH * self.Op
+            self.Op_normal = self.OpH @ self.Op
 
         # add regularization terms
         if epsI > 0:
@@ -178,9 +176,8 @@ class NormalEquationsInversion(Solver):
             and self.dataregs is not None
         ):
             for epsR, Reg, datareg in zip(self.epsRs, self.Regs, self.dataregs):
-                self.RegH = Reg.H
-                self.y_normal += epsR**2 * self.RegH * datareg
-                self.Op_normal += epsR**2 * self.RegH * Reg
+                self.y_normal += epsR**2 * Reg.rmatvec(datareg)
+                self.Op_normal += epsR**2 * Reg.H @ Reg
 
         if epsNRs is not None and NRegs is not None:
             for epsNR, NReg in zip(epsNRs, NRegs):
@@ -197,7 +194,6 @@ class NormalEquationsInversion(Solver):
             "step method is not implemented. Use directly run or solve."
         )
 
-    @disable_ndarray_multiplication
     def run(
         self,
         x: NDArray,
@@ -240,7 +236,7 @@ class NormalEquationsInversion(Solver):
 
         """
         if x is not None:
-            self.y_normal = self.y_normal - self.Op_normal * x
+            self.y_normal = self.y_normal - self.Op_normal.matvec(x)
         if engine == "scipy" and self.ncp == np:
             if "atol" not in kwargs_solver:
                 kwargs_solver["atol"] = "legacy"
@@ -451,7 +447,6 @@ class RegularizedInversion(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 65 + "\n")
 
-    @disable_ndarray_multiplication
     def setup(
         self,
         y: NDArray,
@@ -504,10 +499,10 @@ class RegularizedInversion(Solver):
         self.RegOp: LinearOperator
         if Weight is not None:
             if Regs is None:
-                self.RegOp = Weight * self.Op
+                self.RegOp = Weight @ self.Op
             else:
                 self.RegOp = RegularizedOperator(
-                    Weight * self.Op, Regs, epsRs=self.epsRs
+                    Weight @ self.Op, Regs, epsRs=self.epsRs
                 )
         else:
             if Regs is None:
@@ -517,7 +512,7 @@ class RegularizedInversion(Solver):
 
         # augumented data
         if Weight is not None:
-            self.datatot: NDArray = Weight * self.y.copy()
+            self.datatot: NDArray = Weight.matvec(self.y.copy())
         else:
             self.datatot = self.y.copy()
 
@@ -537,7 +532,6 @@ class RegularizedInversion(Solver):
             "step method is not implemented. Use directly run or solve."
         )
 
-    @disable_ndarray_multiplication
     def run(
         self,
         x: NDArray,
@@ -586,7 +580,7 @@ class RegularizedInversion(Solver):
 
         """
         if x is not None:
-            self.datatot = self.datatot - self.RegOp * x
+            self.datatot = self.datatot - self.RegOp.matvec(x)
         if engine == "scipy" and self.ncp == np:
             if show:
                 kwargs_solver["show"] = 1
@@ -722,7 +716,6 @@ class PreconditionedInversion(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 65 + "\n")
 
-    @disable_ndarray_multiplication
     def setup(
         self,
         y: NDArray,
@@ -746,7 +739,7 @@ class PreconditionedInversion(Solver):
         self.ncp = get_array_module(y)
 
         # preconditioned operator
-        self.POp = self.Op * P
+        self.POp = self.Op @ P
 
         # print setup
         if show:
@@ -759,7 +752,6 @@ class PreconditionedInversion(Solver):
             "step method is not implemented. Use directly run or solve."
         )
 
-    @disable_ndarray_multiplication
     def run(
         self,
         x: NDArray,
@@ -808,7 +800,7 @@ class PreconditionedInversion(Solver):
 
         """
         if x is not None:
-            self.y = self.y - self.Op * x
+            self.y = self.y - self.Op.matvec(x)
         if engine == "scipy" and self.ncp == np:
             if show:
                 kwargs_solver["show"] = 1
@@ -830,7 +822,7 @@ class PreconditionedInversion(Solver):
             pinv = pinv.ravel()
         else:
             raise NotImplementedError("Engine must be scipy or pylops")
-        xinv = self.P * pinv
+        xinv = self.P.matvec(pinv)
         if x is not None:
             xinv = x + xinv
         return xinv, istop, itn, r1norm, r2norm

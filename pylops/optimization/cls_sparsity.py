@@ -14,7 +14,6 @@ from pylops.optimization.eigs import power_iteration
 from pylops.optimization.leastsquares import regularized_inversion
 from pylops.utils import deps
 from pylops.utils.backend import get_array_module, get_module_name
-from pylops.utils.decorators import disable_ndarray_multiplication
 from pylops.utils.typing import InputDimsLike, NDArray, SamplingLike
 
 spgl1_message = deps.spgl1_import("the spgl1 solver")
@@ -422,18 +421,16 @@ class IRLS(Solver):
         if self.iiter == 0:
             # first iteration (unweighted least-squares)
             if self.ncp == np:
-                x = (
-                    self.Op.H
-                    @ lsqr(
+                x = self.Op.rmatvec(
+                    lsqr(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
                         self.y,
                         **kwargs_solver,
                     )[0]
                 )
             else:
-                x = (
-                    self.Op.H
-                    @ cgls(
+                x = self.Op.rmatvec(
+                    cgls(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
                         self.y,
                         self.ncp.zeros(int(self.Op.shape[0]), dtype=self.Op.dtype),
@@ -446,25 +443,25 @@ class IRLS(Solver):
             self.rw = self.rw / self.rw.max()
             R = Diagonal(self.rw, dtype=self.rw.dtype)
             if self.ncp == np:
-                x = (
-                    R
-                    @ self.Op.H
-                    @ lsqr(
-                        self.Op @ R @ self.Op.H + self.epsI**2 * self.Iop,
-                        self.y,
-                        **kwargs_solver,
-                    )[0]
+                x = R.matvec(
+                    self.Op.rmatvec(
+                        lsqr(
+                            self.Op @ R @ self.Op.H + self.epsI**2 * self.Iop,
+                            self.y,
+                            **kwargs_solver,
+                        )[0]
+                    )
                 )
             else:
-                x = (
-                    R
-                    @ self.Op.H
-                    @ cgls(
-                        self.Op @ R @ self.Op.H + self.epsI**2 * self.Iop,
-                        self.y,
-                        self.ncp.zeros(int(self.Op.shape[0]), dtype=self.Op.dtype),
-                        **kwargs_solver,
-                    )[0]
+                x = R.matvec(
+                    self.Op.rmatvec(
+                        cgls(
+                            self.Op @ R @ self.Op.H + self.epsI**2 * self.Iop,
+                            self.y,
+                            self.ncp.zeros(int(self.Op.shape[0]), dtype=self.Op.dtype),
+                            **kwargs_solver,
+                        )[0]
+                    )
                 )
         return x
 
@@ -1140,7 +1137,8 @@ class ISTA(Solver):
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Data of size :math:`[N \times 1]`
+            Data of size :math:`[N \times 1]` or :math:`[N \times R]` where for a solution for multiple right-hand-side
+            is found when ``R>1``.
         x0: :obj:`numpy.ndarray`, optional
             Initial guess
         niter : :obj:`int`
@@ -1330,10 +1328,10 @@ class ISTA(Solver):
             else:
                 self.normresold = self.normres
 
-        # compute gradient
+        # compute gradient (must use .H @ for the solver to work with either single or multiple rhs)
         grad: NDArray = self.alpha * (self.Op.H @ res)
 
-        # update inverted model
+        # update inverted model (must use @ / .H @ for the solver to work with either single or multiple rhs)
         x_unthesh: NDArray = x + grad
         if self.SOp is not None:
             x_unthesh = self.SOp.H @ x_unthesh
@@ -1578,7 +1576,7 @@ class FISTA(ISTA):
         ----------
         x : :obj:`np.ndarray`
             Current model vector to be updated by a step of ISTA
-        x : :obj:`np.ndarray`
+        z : :obj:`np.ndarray`
             Current auxiliary model vector to be updated by a step of ISTA
         show : :obj:`bool`, optional
             Display iteration log
@@ -1608,10 +1606,10 @@ class FISTA(ISTA):
             else:
                 self.normresold = self.normres
 
-        # compute gradient
+        # compute gradient (must use .H @ for the solver to work with either single or multiple rhs
         grad: NDArray = self.alpha * (self.Op.H @ resz)
 
-        # update inverted model
+        # update inverted model (must use @ / .H @ for the solver to work with either single or multiple rhs)
         x_unthesh: NDArray = z + grad
         if self.SOp is not None:
             x_unthesh = self.SOp.H @ x_unthesh
@@ -1753,7 +1751,6 @@ class SPGL1(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 80 + "\n")
 
-    @disable_ndarray_multiplication
     def setup(
         self,
         y: NDArray,
@@ -1800,7 +1797,6 @@ class SPGL1(Solver):
             "step method is not implemented. Use directly run or solve."
         )
 
-    @disable_ndarray_multiplication
     def run(
         self,
         x: NDArray,
@@ -1879,7 +1875,7 @@ class SPGL1(Solver):
             **kwargs_spgl1,
         )
 
-        xinv = pinv.copy() if self.SOp is None else self.SOp.H * pinv
+        xinv = pinv.copy() if self.SOp is None else self.SOp.rmatvec(pinv)
         return xinv, pinv, info
 
     def solve(

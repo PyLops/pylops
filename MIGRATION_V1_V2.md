@@ -10,7 +10,7 @@ should be used as a checklist when converting a piece of code using PyLops from 
   for every operator by default. While the change is mostly backwards compatible, there are some operators (e.g. the ``Bilinear``
   transpose/conjugate) which can output reshaped arrays instead of 1d-arrays. To ensure no breakage, you can entirely disable this
   feature either globally by setting ``pylops.set_ndarray_multiplication(False)``, or locally with the context manager
-  ``pylops.disabled_ndarray_multiplication()``. Both will revert to v1.x behavior. At this time, PyLops sparse solvers do
+  ``pylops.disabled_ndarray_multiplication()``. Both will revert to v1.x behavior. At this time, PyLops solvers do
   *not* support N-D array multiplication.
 
   See the table at the end of this document for support ndarray operations.
