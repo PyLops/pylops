@@ -24,6 +24,10 @@ class Sum(LinearOperator):
         .. versionadded:: 2.0.0
 
         Axis along which model is summed.
+    forceflat : :obj:`bool`, optional
+        .. versionadded:: 2.2.0
+
+        Force an array to be flattened after rmatvec.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -61,6 +65,7 @@ class Sum(LinearOperator):
         self,
         dims: InputDimsLike,
         axis: int = -1,
+        forceflat: bool = False,
         dtype: DTypeLike = "float64",
         name: str = "S",
     ) -> None:
@@ -71,7 +76,13 @@ class Sum(LinearOperator):
         # data dimensions
         dimsd = list(dims).copy()
         dimsd.pop(self.axis)
-        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+        super().__init__(
+            dtype=np.dtype(dtype),
+            dims=dims,
+            dimsd=dimsd,
+            forceflat=forceflat,
+            name=name,
+        )
 
         # array of ones with dims of model in self.axis for np.tile in adjoint mode
         self.tile = np.ones(len(self.dims), dtype=int)

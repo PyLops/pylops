@@ -37,6 +37,10 @@ class Bilinear(LinearOperator):
          for interpolation.
     dims : :obj:`list`
         Number of samples for each dimension
+    forceflat : :obj:`bool`, optional
+        .. versionadded:: 2.2.0
+
+        Force an array to be flattened after rmatvec.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -90,13 +94,20 @@ class Bilinear(LinearOperator):
         self,
         iava: IntNDArray,
         dims: InputDimsLike,
+        forceflat: bool = False,
         dtype: DTypeLike = "float64",
         name: str = "B",
     ) -> None:
         # define dimension of data
         ndims = len(dims)
         dimsd = [len(iava[1])] + list(dims[2:])
-        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+        super().__init__(
+            dtype=np.dtype(dtype),
+            dims=dims,
+            dimsd=dimsd,
+            forceflat=forceflat,
+            name=name,
+        )
 
         ncp = get_array_module(iava)
         # check non-unique pairs (works only with numpy arrays)
