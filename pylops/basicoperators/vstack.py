@@ -44,6 +44,10 @@ class VStack(LinearOperator):
     nproc : :obj:`int`, optional
         Number of processes used to evaluate the N operators in parallel using
         ``multiprocessing``. If ``nproc=1``, work in serial mode.
+    forceflat : :obj:`bool`, optional
+        .. versionadded:: 2.2.0
+
+        Force an array to be flattened after rmatvec.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -107,6 +111,7 @@ class VStack(LinearOperator):
         self,
         ops: Sequence[LinearOperator],
         nproc: int = 1,
+        forceflat: bool = None,
         dtype: Optional[DTypeLike] = None,
     ) -> None:
         self.ops = ops
@@ -129,7 +134,13 @@ class VStack(LinearOperator):
 
         dtype = _get_dtype(self.ops) if dtype is None else np.dtype(dtype)
         clinear = all([getattr(oper, "clinear", True) for oper in self.ops])
-        super().__init__(dtype=dtype, shape=(self.nops, self.mops), clinear=clinear)
+        super().__init__(
+            dtype=dtype,
+            shape=(self.nops, self.mops),
+            dims=ops[0].dims,
+            clinear=clinear,
+            forceflat=forceflat,
+        )
 
     @property
     def nproc(self) -> int:
