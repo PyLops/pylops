@@ -281,7 +281,10 @@ class LinearOperator(_LinearOperator):
 
     @forceflat.setter
     def forceflat(self, new_forceflat: bool) -> None:
-        self._forceflat = bool(new_forceflat)
+        # note that this can also be None so we check before forcing bool
+        self._forceflat = (
+            new_forceflat if new_forceflat is None else bool(new_forceflat)
+        )
 
     @forceflat.deleter
     def forceflat(self):
