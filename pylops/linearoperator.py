@@ -362,7 +362,7 @@ class LinearOperator(_LinearOperator):
             if isinstance(self.forceflat, bool) and isinstance(Opx.forceflat, bool):
                 if self.forceflat != Opx.forceflat:
                     raise ValueError(
-                        f"the two operators have contrasting forceflat {Op.forceflat}-{Opx.forceflatx}"
+                        f"the two operators have contrasting forceflat {Op.forceflat}-{Opx.forceflat}"
                     )
                 else:
                     Op.forceflat = self.forceflat
@@ -628,7 +628,7 @@ class LinearOperator(_LinearOperator):
             if isinstance(self.forceflat, bool) and isinstance(Opx.forceflat, bool):
                 if self.forceflat != Opx.forceflat:
                     raise ValueError(
-                        f"the two operators have contrasting forceflat {Op.forceflat}-{Opx.forceflatx}"
+                        f"the two operators have contrasting forceflat {Op.forceflat}-{Opx.forceflat}"
                     )
                 else:
                     Op.forceflat = self.forceflat
