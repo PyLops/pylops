@@ -1,5 +1,7 @@
 __all__ = ["Sum"]
 
+import logging
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -7,6 +9,8 @@ from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class Sum(LinearOperator):
@@ -27,7 +31,9 @@ class Sum(LinearOperator):
     forceflat : :obj:`bool`, optional
         .. versionadded:: 2.2.0
 
-        Force an array to be flattened after rmatvec.
+        Force an array to be flattened after rmatvec. Note that this is only
+        required when `len(dims)=2`, otherwise pylops will detect whether to
+        return a 1d or nd array.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -65,7 +71,7 @@ class Sum(LinearOperator):
         self,
         dims: InputDimsLike,
         axis: int = -1,
-        forceflat: bool = False,
+        forceflat: bool = None,
         dtype: DTypeLike = "float64",
         name: str = "S",
     ) -> None:
@@ -76,6 +82,16 @@ class Sum(LinearOperator):
         # data dimensions
         dimsd = list(dims).copy()
         dimsd.pop(self.axis)
+        # check if forceflat is needed and set it back to None otherwise
+        if len(dims) > 2:
+            if forceflat is not None:
+                logging.warning(
+                    f"setting forceflat=None since len(dims)={len(dims)}>2. "
+                    f"PyLops will automatically detect whether to return "
+                    f"a 1d or nd array based on the shape of the input"
+                    f"array."
+                )
+                forceflat = None
         super().__init__(
             dtype=np.dtype(dtype),
             dims=dims,

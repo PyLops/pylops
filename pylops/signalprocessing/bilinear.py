@@ -40,7 +40,9 @@ class Bilinear(LinearOperator):
     forceflat : :obj:`bool`, optional
         .. versionadded:: 2.2.0
 
-        Force an array to be flattened after rmatvec.
+        Force an array to be flattened after rmatvec. Note that this is only
+        required when `len(dims)=2`, otherwise pylops will detect whether to
+        return a 1d or nd array.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -94,13 +96,23 @@ class Bilinear(LinearOperator):
         self,
         iava: IntNDArray,
         dims: InputDimsLike,
-        forceflat: bool = False,
+        forceflat: bool = None,
         dtype: DTypeLike = "float64",
         name: str = "B",
     ) -> None:
         # define dimension of data
         ndims = len(dims)
         dimsd = [len(iava[1])] + list(dims[2:])
+        # check if forceflat is needed and set it back to None otherwise
+        if ndims > 2:
+            if forceflat is not None:
+                logging.warning(
+                    f"setting forceflat=None since len(dims)={len(dims)}>2. "
+                    f"PyLops will automatically detect whether to return "
+                    f"a 1d or nd array based on the shape of the input"
+                    f"array."
+                )
+                forceflat = None
         super().__init__(
             dtype=np.dtype(dtype),
             dims=dims,
