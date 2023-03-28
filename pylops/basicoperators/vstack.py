@@ -126,6 +126,14 @@ class VStack(LinearOperator):
             raise ValueError("operators have different number of columns")
         self.mops = int(mops[0])
         self.nnops = np.insert(np.cumsum(nops), 0, 0)
+        # define dims (check if all operators have the same,
+        # otherwise make same as self.mops and forceflat=True)
+        dims = [op.dims for op in self.ops]
+        if len(set(dims)) == 1:
+            dims = dims[0]
+        else:
+            dims = (self.mops,)
+            forceflat = True
         # create pool for multiprocessing
         self._nproc = nproc
         self.pool = None
@@ -136,7 +144,7 @@ class VStack(LinearOperator):
         super().__init__(
             dtype=dtype,
             shape=(self.nops, self.mops),
-            dims=ops[0].dims,
+            dims=dims,
             clinear=clinear,
             forceflat=forceflat,
         )

@@ -126,18 +126,25 @@ class HStack(LinearOperator):
             raise ValueError("operators have different number of rows")
         self.nops = int(nops[0])
         self.mmops = np.insert(np.cumsum(mops), 0, 0)
+        # define dimsd (check if all operators have the same,
+        # otherwise make same as self.nops and forceflat=True)
+        dimsd = [op.dimsd for op in self.ops]
+        if len(set(dimsd)) == 1:
+            dimsd = dimsd[0]
+        else:
+            dimsd = (self.nops,)
+            forceflat = True
         # create pool for multiprocessing
         self._nproc = nproc
         self.pool = None
         if self.nproc > 1:
             self.pool = mp.Pool(processes=nproc)
-
         dtype = _get_dtype(self.ops) if dtype is None else np.dtype(dtype)
         clinear = all([getattr(oper, "clinear", True) for oper in self.ops])
         super().__init__(
             dtype=dtype,
             shape=(self.nops, self.mops),
-            dimsd=ops[0].dimsd,
+            dimsd=dimsd,
             clinear=clinear,
             forceflat=forceflat,
         )
