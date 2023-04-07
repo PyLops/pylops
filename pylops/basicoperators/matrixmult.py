@@ -29,6 +29,12 @@ class MatrixMult(LinearOperator):
         Number of samples for each other dimension of model
         (model/data will be reshaped and ``A`` applied multiple times
         to each column of the model/data).
+    forceflat : :obj:`bool`, optional
+         .. versionadded:: 2.2.0
+
+         Force an array to be flattened after matvec and rmatvec. Note that this is only
+         required when `otherdims=None`, otherwise pylops will detect whether to
+         return a 1d or nd array.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -56,6 +62,7 @@ class MatrixMult(LinearOperator):
         self,
         A: NDArray,
         otherdims: Optional[Union[int, InputDimsLike]] = None,
+        forceflat: bool = None,
         dtype: DTypeLike = "float64",
         name: str = "M",
     ) -> None:
@@ -81,12 +88,26 @@ class MatrixMult(LinearOperator):
             self.reshape = True
             explicit = False
 
+        # Check if forceflat is needed and set it back to None otherwise
+        if otherdims is not None and forceflat is not None:
+            logging.warning(
+                f"setting forceflat=None since otherdims!=None. "
+                f"PyLops will automatically detect whether to return "
+                f"a 1d or nd array based on the shape of the input"
+                f"array."
+            )
+            forceflat = None
         # Check dtype for correctness (upcast to complex when A is complex)
         if np.iscomplexobj(A) and not np.iscomplexobj(np.ones(1, dtype=dtype)):
             dtype = A.dtype
             logging.warning("Matrix A is a complex object, dtype cast to %s" % dtype)
         super().__init__(
-            dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, explicit=explicit, name=name
+            dtype=np.dtype(dtype),
+            dims=dims,
+            dimsd=dimsd,
+            explicit=explicit,
+            forceflat=forceflat,
+            name=name,
         )
 
     def _matvec(self, x: NDArray) -> NDArray:

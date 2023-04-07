@@ -127,6 +127,22 @@ class BlockDiag(LinearOperator):
         self.mops = int(mops.sum())
         self.nnops = np.insert(np.cumsum(nops), 0, 0)
         self.mmops = np.insert(np.cumsum(mops), 0, 0)
+        # define dims (check if all operators have the same,
+        # otherwise make same as self.mops and forceflat=True)
+        dims = [op.dims for op in self.ops]
+        if len(set(dims)) == 1:
+            dims = (len(ops), *dims[0])
+        else:
+            dims = (self.mops,)
+            forceflat = True
+        # define dimsd (check if all operators have the same,
+        # otherwise make same as self.nops and forceflat=True)
+        dimsd = [op.dimsd for op in self.ops]
+        if len(set(dimsd)) == 1:
+            dimsd = (len(ops), *dimsd[0])
+        else:
+            dimsd = (self.nops,)
+            forceflat = True
         # create pool for multiprocessing
         self._nproc = nproc
         self.pool: Optional[mp.pool.Pool] = None
@@ -137,10 +153,12 @@ class BlockDiag(LinearOperator):
         clinear = all([getattr(oper, "clinear", True) for oper in self.ops])
         super().__init__(
             dtype=dtype,
-            shape=(self.nops, self.mops),
+            dims=dims,
+            dimsd=dimsd,
             clinear=clinear,
             forceflat=forceflat,
         )
+        print(dims, dimsd)
 
     @property
     def nproc(self) -> int:

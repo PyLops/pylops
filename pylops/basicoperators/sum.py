@@ -83,15 +83,14 @@ class Sum(LinearOperator):
         dimsd = list(dims).copy()
         dimsd.pop(self.axis)
         # check if forceflat is needed and set it back to None otherwise
-        if len(dims) > 2:
-            if forceflat is not None:
-                logging.warning(
-                    f"setting forceflat=None since len(dims)={len(dims)}>2. "
-                    f"PyLops will automatically detect whether to return "
-                    f"a 1d or nd array based on the shape of the input"
-                    f"array."
-                )
-                forceflat = None
+        if len(dims) > 2 and forceflat is not None:
+            logging.warning(
+                f"setting forceflat=None since len(dims)={len(dims)}>2. "
+                f"PyLops will automatically detect whether to return "
+                f"a 1d or nd array based on the shape of the input"
+                f"array."
+            )
+            forceflat = None
         super().__init__(
             dtype=np.dtype(dtype),
             dims=dims,
