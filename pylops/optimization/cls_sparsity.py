@@ -1137,8 +1137,8 @@ class ISTA(Solver):
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Data of size :math:`[N \times 1]` or :math:`[N \times R]` where for a solution for multiple right-hand-side
-            is found when ``R>1``.
+            Data of size :math:`[N \times 1]` or :math:`[N \times R]` where
+            a solution for multiple right-hand-side is found when ``R>1``.
         x0: :obj:`numpy.ndarray`, optional
             Initial guess
         niter : :obj:`int`
@@ -1192,6 +1192,21 @@ class ISTA(Solver):
 
         self.ncp = get_array_module(y)
 
+        # choose matvec/rmatvec or matmat/rmatmat based on R
+        if y.ndim > 1 and y.shape[1] > 1:
+            self.Opmatvec = self.Op.matmat
+            self.Oprmatvec = self.Op.rmatmat
+            if self.SOp is not None:
+                self.SOpmatvec = self.SOp.matmat
+                self.SOprmatvec = self.SOp.rmatmat
+        else:
+            self.Opmatvec = self.Op.matvec
+            self.Oprmatvec = self.Op.rmatvec
+            if self.SOp is not None:
+                self.SOpmatvec = self.SOp.matvec
+                self.SOprmatvec = self.SOp.rmatvec
+
+        # choose thresholding function
         if threshkind not in [
             "hard",
             "soft",
@@ -1214,7 +1229,6 @@ class ISTA(Solver):
                 "soft-percentile, or half-percentile thresholding"
             )
 
-        # choose thresholding function
         self.threshf: Callable[[NDArray, float], NDArray]
         if threshkind == "soft":
             self.threshf = _softthreshold
@@ -1238,7 +1252,7 @@ class ISTA(Solver):
             self.alpha = alpha
         elif not hasattr(self, "alpha"):
             # compute largest eigenvalues of Op^H * Op
-            Op1 = self.Op.H * self.Op
+            Op1 = self.Op.H @ self.Op
             if get_module_name(self.ncp) == "numpy":
                 maxeig: float = np.abs(
                     Op1.eigs(
@@ -1316,7 +1330,7 @@ class ISTA(Solver):
         # store old vector
         xold = x.copy()
         # compute residual
-        res: NDArray = self.y - self.Op @ x
+        res: NDArray = self.y - self.Opmatvec(x)
         if self.monitorres:
             self.normres = np.linalg.norm(res)
             if self.normres > self.normresold:
@@ -1328,19 +1342,19 @@ class ISTA(Solver):
             else:
                 self.normresold = self.normres
 
-        # compute gradient (must use .H @ for the solver to work with either single or multiple rhs)
-        grad: NDArray = self.alpha * (self.Op.H @ res)
+        # compute gradient
+        grad: NDArray = self.alpha * (self.Oprmatvec(res))
 
-        # update inverted model (must use @ / .H @ for the solver to work with either single or multiple rhs)
+        # update inverted model
         x_unthesh: NDArray = x + grad
         if self.SOp is not None:
-            x_unthesh = self.SOp.H @ x_unthesh
+            x_unthesh = self.SOprmatvec(x_unthesh)
         if self.perc is None and self.decay is not None:
             x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
         elif self.perc is not None:
             x = self.threshf(x_unthesh, 100 - self.perc)
         if self.SOp is not None:
-            x = self.SOp @ x
+            x = self.SOpmatvec(x)
 
         # model update
         xupdate = np.linalg.norm(x - xold)
@@ -1594,7 +1608,7 @@ class FISTA(ISTA):
         # store old vector
         xold = x.copy()
         # compute residual
-        resz: NDArray = self.y - self.Op @ z
+        resz: NDArray = self.y - self.Opmatvec(z)
         if self.monitorres:
             self.normres = np.linalg.norm(resz)
             if self.normres > self.normresold:
@@ -1606,19 +1620,19 @@ class FISTA(ISTA):
             else:
                 self.normresold = self.normres
 
-        # compute gradient (must use .H @ for the solver to work with either single or multiple rhs
-        grad: NDArray = self.alpha * (self.Op.H @ resz)
+        # compute gradient
+        grad: NDArray = self.alpha * (self.Oprmatvec(resz))
 
-        # update inverted model (must use @ / .H @ for the solver to work with either single or multiple rhs)
+        # update inverted model
         x_unthesh: NDArray = z + grad
         if self.SOp is not None:
-            x_unthesh = self.SOp.H @ x_unthesh
+            x_unthesh = self.SOprmatvec(x_unthesh)
         if self.perc is None and self.decay is not None:
             x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
         elif self.perc is not None:
             x = self.threshf(x_unthesh, 100 - self.perc)
         if self.SOp is not None:
-            x = self.SOp @ x
+            x = self.SOpmatvec(x)
 
         # update auxiliary coefficients
         told = self.t
