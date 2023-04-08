@@ -91,10 +91,10 @@ class MatrixMult(LinearOperator):
         # Check if forceflat is needed and set it back to None otherwise
         if otherdims is not None and forceflat is not None:
             logging.warning(
-                f"setting forceflat=None since otherdims!=None. "
-                f"PyLops will automatically detect whether to return "
-                f"a 1d or nd array based on the shape of the input"
-                f"array."
+                "setting forceflat=None since otherdims!=None. "
+                "PyLops will automatically detect whether to return "
+                "a 1d or nd array based on the shape of the input "
+                "array."
             )
             forceflat = None
         # Check dtype for correctness (upcast to complex when A is complex)
