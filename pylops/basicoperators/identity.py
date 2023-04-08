@@ -64,7 +64,7 @@ class Identity(LinearOperator):
         - If ``M`` is a tuple with different number of elements of ``N``
         - If ``N`` ``M`` are non-identical tuples and some values are largers
           in ``N`` and some in ``M``
-    NotImplemented
+    NotImplementedError
         If ``N`` or ``M`` have type different from int or tuple/list
 
     Notes
@@ -163,7 +163,7 @@ class Identity(LinearOperator):
                 dtype=np.dtype(dtype), dims=M, dimsd=N, forceflat=forceflat, name=name
             )
         else:
-            raise NotImplemented(
+            raise NotImplementedError(
                 f"N and M must have same type and equal to "
                 f"int, tuple, or list, instead their types"
                 f" are type(N)={type(N)} and type(M)={type(M)}"
