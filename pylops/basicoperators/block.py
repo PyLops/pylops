@@ -1,7 +1,6 @@
 __all__ = ["Block"]
 
 import multiprocessing as mp
-
 from typing import Iterable, Optional
 
 from pylops import LinearOperator
@@ -15,12 +14,18 @@ class _Block(LinearOperator):
     Used to be able to provide operators from different libraries to
     Block.
     """
-    def __init__(self, ops: Iterable[Iterable[LinearOperator]],
-                 dtype: Optional[DTypeLike] = None,
-                 _HStack=HStack,
-                 _VStack=VStack,
-                 args_HStack: Optional[dict] = None,
-                 args_VStack: Optional[dict] = None, name: str = 'B'):
+
+    def __init__(
+        self,
+        ops: Iterable[Iterable[LinearOperator]],
+        forceflat: bool = None,
+        dtype: Optional[DTypeLike] = None,
+        _HStack=HStack,
+        _VStack=VStack,
+        args_HStack: Optional[dict] = None,
+        args_VStack: Optional[dict] = None,
+        name: str = "B",
+    ):
         if args_HStack is None:
             self.args_HStack = {}
         else:
@@ -30,7 +35,12 @@ class _Block(LinearOperator):
         else:
             self.args_VStack = args_VStack
         hblocks = [_HStack(hblock, dtype=dtype, **self.args_HStack) for hblock in ops]
-        super().__init__(Op=_VStack(ops=hblocks, dtype=dtype, **self.args_VStack), name=name)
+        super().__init__(
+            Op=_VStack(
+                ops=hblocks, forceflat=forceflat, dtype=dtype, **self.args_VStack
+            ),
+            name=name,
+        )
 
     def _matvec(self, x: NDArray) -> NDArray:
         return super()._matvec(x)
@@ -53,6 +63,10 @@ class Block(_Block):
     nproc : :obj:`int`, optional
         Number of processes used to evaluate the N operators in parallel using
         ``multiprocessing``. If ``nproc=1``, work in serial mode.
+    forceflat : :obj:`bool`, optional
+        .. versionadded:: 2.2.0
+
+        Force an array to be flattened after rmatvec.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -123,9 +137,16 @@ class Block(_Block):
         \end{bmatrix}
 
     """
-    def __init__(self, ops: Iterable[Iterable[LinearOperator]],
-                 nproc: int = 1,
-                 dtype: Optional[DTypeLike] = None):
+
+    def __init__(
+        self,
+        ops: Iterable[Iterable[LinearOperator]],
+        nproc: int = 1,
+        forceflat: bool = None,
+        dtype: Optional[DTypeLike] = None,
+    ):
         if nproc > 1:
             self.pool = mp.Pool(processes=nproc)
-        super().__init__(ops=ops, dtype=dtype, args_VStack={"nproc": nproc})
+        super().__init__(
+            ops=ops, forceflat=forceflat, dtype=dtype, args_VStack={"nproc": nproc}
+        )
