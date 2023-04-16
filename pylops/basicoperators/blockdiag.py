@@ -158,7 +158,6 @@ class BlockDiag(LinearOperator):
             clinear=clinear,
             forceflat=forceflat,
         )
-        print(dims, dimsd)
 
     @property
     def nproc(self) -> int:
