@@ -25,6 +25,11 @@ class Zero(LinearOperator):
         Number of samples in model. If a tuple is provided, this is interpreted
         as the model is an nd-array. Note that when `M` is a tuple, `N` must be
         also a tuple with the same number of elements.
+    forceflat : :obj:`bool`, optional
+         .. versionadded:: 2.2.0
+
+         Force an array to be flattened after matvec and rmatvec. Note that this is only
+         required when `N` and `M` are tuples (input and output arrays are nd-arrays).
     dtype : :obj:`str`, optional
        Type of elements in input array.
     name : :obj:`str`, optional
