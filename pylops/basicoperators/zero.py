@@ -68,24 +68,23 @@ class Zero(LinearOperator):
         M = N if M is None else M
         if isinstance(N, int) and isinstance(M, int):
             # N and M are scalars (1d-arrays)
-            super().__init__(
-                dtype=np.dtype(dtype),
-                dims=(M,),
-                dimsd=(N,),
-                forceflat=forceflat,
-                name=name,
-            )
+            dims, dimsd = (M,), (N,)
         elif isinstance(N, (tuple, list)) and isinstance(M, (tuple, list)):
             # N and M are tuples (nd-arrays)
-            super().__init__(
-                dtype=np.dtype(dtype), dims=M, dimsd=N, forceflat=forceflat, name=name
-            )
+            dims, dimsd = M, N
         else:
             raise NotImplementedError(
                 f"N and M must have same type and equal to "
                 f"int, tuple, or list, instead their types"
                 f" are type(N)={type(N)} and type(M)={type(M)}"
             )
+        super().__init__(
+            dtype=np.dtype(dtype),
+            dims=dims,
+            dimsd=dimsd,
+            forceflat=forceflat,
+            name=name,
+        )
 
     def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
