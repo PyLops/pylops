@@ -49,7 +49,7 @@ ryy, rxx = np.meshgrid(ry, rx, indexing="ij")
 r2d = np.vstack((rx, 2 * np.ones(PAR["nrx"])))
 r3d = np.vstack((ryy.ravel(), rxx.ravel(), 2 * np.ones(PAR["nrx"] * PAR["nry"])))
 
-wav, _, wavc = ricker(t[:41], f0=40)
+wav, _, wavc = ricker(t[:21], f0=40)
 
 par1 = {"mode": "analytic", "dynamic": False}
 par2 = {"mode": "eikonal", "dynamic": False}
