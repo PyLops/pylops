@@ -205,15 +205,7 @@ class _Convolve1Dlong(LinearOperator):
         return y
 
 
-def Convolve1D(
-    dims: Union[int, InputDimsLike],
-    h: NDArray,
-    offset: int = 0,
-    axis: int = -1,
-    method: str = None,
-    dtype: DTypeLike = "float64",
-    name: str = "C",
-) -> LinearOperator:
+class Convolve1D(LinearOperator):
     r"""1D convolution operator.
 
     Apply one-dimensional convolution with a compact filter to model (and data)
@@ -297,12 +289,34 @@ def Convolve1D(
         y(t) = \mathscr{F}^{-1} (H(f)^* * X(f))
 
     """
-    nh = h.size if h.ndim == 1 else h.shape[axis]
-    if nh <= _value_or_sized_to_tuple(dims)[axis]:
-        convop = _Convolve1Dshort
-    else:
-        convop = _Convolve1Dlong
-    c = convop(
-        dims=dims, h=h, offset=offset, axis=axis, method=method, dtype=dtype, name=name
-    )
-    return c
+
+    def __init__(
+        self,
+        dims: Union[int, InputDimsLike],
+        h: NDArray,
+        offset: int = 0,
+        axis: int = -1,
+        method: str = None,
+        dtype: DTypeLike = "float64",
+        name: str = "C",
+    ) -> None:
+        nh = h.size if h.ndim == 1 else h.shape[axis]
+        if nh <= _value_or_sized_to_tuple(dims)[axis]:
+            convop = _Convolve1Dshort
+        else:
+            convop = _Convolve1Dlong
+        Op = convop(
+            dims=dims,
+            h=h,
+            offset=offset,
+            axis=axis,
+            method=method,
+            dtype=dtype,
+        )
+        super().__init__(Op=Op, name=name)
+
+    def _matvec(self, x: NDArray) -> NDArray:
+        return super()._matvec(x)
+
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        return super()._rmatvec(x)
