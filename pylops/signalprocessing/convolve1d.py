@@ -208,17 +208,18 @@ class _Convolve1Dlong(LinearOperator):
 class Convolve1D(LinearOperator):
     r"""1D convolution operator.
 
-    Apply one-dimensional convolution with a compact filter to model (and data)
-    along an ``axis`` of a multi-dimensional array.
+    Apply one-dimensional convolution with i) a compact filter (shorter than input signal) or
+    ii) an extended filter (larger than input signal) to model (and data) along an ``axis``
+    of a multi-dimensional array.
 
     Parameters
     ----------
     dims : :obj:`list` or :obj:`int`
-        Number of samples for each dimension
+        Number of samples for each dimension of the model
     h : :obj:`numpy.ndarray`
-        1d compact filter to be convolved to input signal
+        1d filter to be convolved to input signal
     offset : :obj:`int`
-        Index of the center of the compact filter
+        Index of the center of the filter
     axis : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
@@ -253,7 +254,7 @@ class Convolve1D(LinearOperator):
     Notes
     -----
     The Convolve1D operator applies convolution between the input signal
-    :math:`x(t)` and a compact filter kernel :math:`h(t)` in forward model:
+    :math:`x(t)` and a filter kernel :math:`h(t)` in forward model:
 
     .. math::
         y(t) = \int\limits_{-\infty}^{\infty} h(t-\tau) x(\tau) \,\mathrm{d}\tau
