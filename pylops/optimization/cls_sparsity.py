@@ -491,7 +491,7 @@ class IRLS(Solver):
         x = self._step(x, **kwargs_solver)
 
         # compute residual
-        self.r: NDArray = self.y - self.Op * x
+        self.r: NDArray = self.y - self.Op.matvec(x)
         self.rnorm = self.ncp.linalg.norm(self.r)
 
         self.iiter += 1
@@ -537,7 +537,7 @@ class IRLS(Solver):
         nouter = nouter if self.nouter is None else self.nouter
         if x is not None:
             self.x0 = x.copy()
-            self.y = self.y - self.Op * x
+            self.y = self.y - self.Op.matvec(x)
         # choose xold to ensure tolerance test is passed initially
         xold = x.copy() + np.inf
         while self.iiter < nouter and self.ncp.linalg.norm(x - xold) >= self.tolIRLS:
@@ -1881,7 +1881,7 @@ class SPGL1(Solver):
 
         """
         pinv, _, _, info = ext_spgl1(
-            self.Op if self.SOp is None else self.Op * self.SOp.H,
+            self.Op if self.SOp is None else self.Op @ self.SOp.H,
             self.y,
             tau=self.tau,
             sigma=self.sigma,
@@ -2248,13 +2248,15 @@ class SplitBregman(Solver):
             )[0]
             # Shrinkage
             self.d = [
-                _softthreshold(self.RegsL1[ireg] * x + self.b[ireg], self.epsRL1s[ireg])
+                _softthreshold(
+                    self.RegsL1[ireg].matvec(x) + self.b[ireg], self.epsRL1s[ireg]
+                )
                 for ireg in range(self.nregsL1)
             ]
 
         # Bregman update
         self.b = [
-            self.b[ireg] + self.tau * (self.RegsL1[ireg] * x - self.d[ireg])
+            self.b[ireg] + self.tau * (self.RegsL1[ireg].matvec(x) - self.d[ireg])
             for ireg in range(self.nregsL1)
         ]
 
