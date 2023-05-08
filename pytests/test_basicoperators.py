@@ -469,7 +469,18 @@ def test_Roll3D(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Sum2D(par):
+    """Dot-test for Sum operator on 2d signal"""
+    for axis in [0, 1]:
+        dim_d = [par["ny"], par["nx"]]
+        dim_d.pop(axis)
+        Sop = Sum(dims=(par["ny"], par["nx"]), axis=axis, dtype=par["dtype"])
+        assert dottest(Sop, np.prod(dim_d), par["ny"] * par["nx"])
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
 def test_Sum2D_forceflat(par):
+    """Dot-test for Sum operator on 2d signal with forceflat"""
     np.random.seed(10)
     flat_dimsd = par["ny"]
     flat_dims = par["ny"] * par["nx"]
@@ -504,16 +515,6 @@ def test_Sum2D_forceflat(par):
 
     Sop = Sop_None * Sop_None.H
     assert Sop.forceflat is None
-
-
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
-def test_Sum2D(par):
-    """Dot-test for Sum operator on 2d signal"""
-    for axis in [0, 1]:
-        dim_d = [par["ny"], par["nx"]]
-        dim_d.pop(axis)
-        Sop = Sum(dims=(par["ny"], par["nx"]), axis=axis, dtype=par["dtype"])
-        assert dottest(Sop, np.prod(dim_d), par["ny"] * par["nx"])
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])

@@ -406,6 +406,30 @@ def test_Bilinear_2dsignal(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
+def test_Bilinear_2dsignal_flatten(par):
+    """Dot-test and forward for Interp operator for 2d signal with forceflat"""
+    np.random.seed(1)
+    flat_dimsd = par["ny"]
+    flat_dims = par["nx"] * par["nt"]
+    dims = (par["nx"], par["nt"])
+
+    x = np.random.normal(0, 1, dims) + par["imag"] * np.random.normal(0, 1, dims)
+
+    iava = np.vstack((np.arange(0, 10), np.arange(0, 10)))
+    Iop_True = Bilinear(iava, dims=dims, dtype=par["dtype"], forceflat=True)
+    y = Iop_True @ x
+    xadj = Iop_True.H @ y
+    assert y.shape == (flat_dimsd,)
+    assert xadj.shape == (flat_dims,)
+
+    Iop_None = Bilinear(iava, dims=dims, dtype=par["dtype"])
+    y = Iop_None @ x
+    xadj = Iop_None.H @ y
+    assert y.shape == (par["ny"],)
+    assert xadj.shape == dims
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
 def test_Bilinear_3dsignal(par):
     """Dot-test and forward for Interp operator for 3d signal"""
     np.random.seed(1)
