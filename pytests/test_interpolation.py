@@ -409,23 +409,23 @@ def test_Bilinear_2dsignal(par):
 def test_Bilinear_2dsignal_flatten(par):
     """Dot-test and forward for Interp operator for 2d signal with forceflat"""
     np.random.seed(1)
-    flat_dimsd = par["ny"]
-    flat_dims = par["nx"] * par["nt"]
     dims = (par["nx"], par["nt"])
+    flat_dims = par["nx"] * par["nt"]
+    dimsd = 10
 
     x = np.random.normal(0, 1, dims) + par["imag"] * np.random.normal(0, 1, dims)
 
-    iava = np.vstack((np.arange(0, 10), np.arange(0, 10)))
+    iava = np.vstack((np.arange(0, dimsd), np.arange(0, dimsd)))
     Iop_True = Bilinear(iava, dims=dims, dtype=par["dtype"], forceflat=True)
     y = Iop_True @ x
     xadj = Iop_True.H @ y
-    assert y.shape == (flat_dimsd,)
+    assert y.shape == (dimsd,)
     assert xadj.shape == (flat_dims,)
 
     Iop_None = Bilinear(iava, dims=dims, dtype=par["dtype"])
     y = Iop_None @ x
     xadj = Iop_None.H @ y
-    assert y.shape == (par["ny"],)
+    assert y.shape == (dimsd,)
     assert xadj.shape == dims
 
 
