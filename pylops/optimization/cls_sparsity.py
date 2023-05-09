@@ -14,7 +14,6 @@ from pylops.optimization.eigs import power_iteration
 from pylops.optimization.leastsquares import regularized_inversion
 from pylops.utils import deps
 from pylops.utils.backend import get_array_module, get_module_name
-from pylops.utils.decorators import disable_ndarray_multiplication
 from pylops.utils.typing import InputDimsLike, NDArray, SamplingLike
 
 spgl1_message = deps.spgl1_import("the spgl1 solver")
@@ -422,18 +421,16 @@ class IRLS(Solver):
         if self.iiter == 0:
             # first iteration (unweighted least-squares)
             if self.ncp == np:
-                x = (
-                    self.Op.H
-                    @ lsqr(
+                x = self.Op.rmatvec(
+                    lsqr(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
                         self.y,
                         **kwargs_solver,
                     )[0]
                 )
             else:
-                x = (
-                    self.Op.H
-                    @ cgls(
+                x = self.Op.rmatvec(
+                    cgls(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
                         self.y,
                         self.ncp.zeros(int(self.Op.shape[0]), dtype=self.Op.dtype),
@@ -446,25 +443,25 @@ class IRLS(Solver):
             self.rw = self.rw / self.rw.max()
             R = Diagonal(self.rw, dtype=self.rw.dtype)
             if self.ncp == np:
-                x = (
-                    R
-                    @ self.Op.H
-                    @ lsqr(
-                        self.Op @ R @ self.Op.H + self.epsI**2 * self.Iop,
-                        self.y,
-                        **kwargs_solver,
-                    )[0]
+                x = R.matvec(
+                    self.Op.rmatvec(
+                        lsqr(
+                            self.Op @ R @ self.Op.H + self.epsI**2 * self.Iop,
+                            self.y,
+                            **kwargs_solver,
+                        )[0]
+                    )
                 )
             else:
-                x = (
-                    R
-                    @ self.Op.H
-                    @ cgls(
-                        self.Op @ R @ self.Op.H + self.epsI**2 * self.Iop,
-                        self.y,
-                        self.ncp.zeros(int(self.Op.shape[0]), dtype=self.Op.dtype),
-                        **kwargs_solver,
-                    )[0]
+                x = R.matvec(
+                    self.Op.rmatvec(
+                        cgls(
+                            self.Op @ R @ self.Op.H + self.epsI**2 * self.Iop,
+                            self.y,
+                            self.ncp.zeros(int(self.Op.shape[0]), dtype=self.Op.dtype),
+                            **kwargs_solver,
+                        )[0]
+                    )
                 )
         return x
 
@@ -494,7 +491,7 @@ class IRLS(Solver):
         x = self._step(x, **kwargs_solver)
 
         # compute residual
-        self.r: NDArray = self.y - self.Op * x
+        self.r: NDArray = self.y - self.Op.matvec(x)
         self.rnorm = self.ncp.linalg.norm(self.r)
 
         self.iiter += 1
@@ -540,7 +537,7 @@ class IRLS(Solver):
         nouter = nouter if self.nouter is None else self.nouter
         if x is not None:
             self.x0 = x.copy()
-            self.y = self.y - self.Op * x
+            self.y = self.y - self.Op.matvec(x)
         # choose xold to ensure tolerance test is passed initially
         xold = x.copy() + np.inf
         while self.iiter < nouter and self.ncp.linalg.norm(x - xold) >= self.tolIRLS:
@@ -1140,7 +1137,8 @@ class ISTA(Solver):
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Data of size :math:`[N \times 1]`
+            Data of size :math:`[N \times 1]` or :math:`[N \times R]` where
+            a solution for multiple right-hand-side is found when ``R>1``.
         x0: :obj:`numpy.ndarray`, optional
             Initial guess
         niter : :obj:`int`
@@ -1194,6 +1192,21 @@ class ISTA(Solver):
 
         self.ncp = get_array_module(y)
 
+        # choose matvec/rmatvec or matmat/rmatmat based on R
+        if y.ndim > 1 and y.shape[1] > 1:
+            self.Opmatvec = self.Op.matmat
+            self.Oprmatvec = self.Op.rmatmat
+            if self.SOp is not None:
+                self.SOpmatvec = self.SOp.matmat
+                self.SOprmatvec = self.SOp.rmatmat
+        else:
+            self.Opmatvec = self.Op.matvec
+            self.Oprmatvec = self.Op.rmatvec
+            if self.SOp is not None:
+                self.SOpmatvec = self.SOp.matvec
+                self.SOprmatvec = self.SOp.rmatvec
+
+        # choose thresholding function
         if threshkind not in [
             "hard",
             "soft",
@@ -1216,7 +1229,6 @@ class ISTA(Solver):
                 "soft-percentile, or half-percentile thresholding"
             )
 
-        # choose thresholding function
         self.threshf: Callable[[NDArray, float], NDArray]
         if threshkind == "soft":
             self.threshf = _softthreshold
@@ -1240,7 +1252,7 @@ class ISTA(Solver):
             self.alpha = alpha
         elif not hasattr(self, "alpha"):
             # compute largest eigenvalues of Op^H * Op
-            Op1 = self.Op.H * self.Op
+            Op1 = self.Op.H @ self.Op
             if get_module_name(self.ncp) == "numpy":
                 maxeig: float = np.abs(
                     Op1.eigs(
@@ -1318,7 +1330,7 @@ class ISTA(Solver):
         # store old vector
         xold = x.copy()
         # compute residual
-        res: NDArray = self.y - self.Op @ x
+        res: NDArray = self.y - self.Opmatvec(x)
         if self.monitorres:
             self.normres = np.linalg.norm(res)
             if self.normres > self.normresold:
@@ -1331,18 +1343,18 @@ class ISTA(Solver):
                 self.normresold = self.normres
 
         # compute gradient
-        grad: NDArray = self.alpha * (self.Op.H @ res)
+        grad: NDArray = self.alpha * (self.Oprmatvec(res))
 
         # update inverted model
         x_unthesh: NDArray = x + grad
         if self.SOp is not None:
-            x_unthesh = self.SOp.H @ x_unthesh
+            x_unthesh = self.SOprmatvec(x_unthesh)
         if self.perc is None and self.decay is not None:
             x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
         elif self.perc is not None:
             x = self.threshf(x_unthesh, 100 - self.perc)
         if self.SOp is not None:
-            x = self.SOp @ x
+            x = self.SOpmatvec(x)
 
         # model update
         xupdate = np.linalg.norm(x - xold)
@@ -1578,7 +1590,7 @@ class FISTA(ISTA):
         ----------
         x : :obj:`np.ndarray`
             Current model vector to be updated by a step of ISTA
-        x : :obj:`np.ndarray`
+        z : :obj:`np.ndarray`
             Current auxiliary model vector to be updated by a step of ISTA
         show : :obj:`bool`, optional
             Display iteration log
@@ -1596,7 +1608,7 @@ class FISTA(ISTA):
         # store old vector
         xold = x.copy()
         # compute residual
-        resz: NDArray = self.y - self.Op @ z
+        resz: NDArray = self.y - self.Opmatvec(z)
         if self.monitorres:
             self.normres = np.linalg.norm(resz)
             if self.normres > self.normresold:
@@ -1609,18 +1621,18 @@ class FISTA(ISTA):
                 self.normresold = self.normres
 
         # compute gradient
-        grad: NDArray = self.alpha * (self.Op.H @ resz)
+        grad: NDArray = self.alpha * (self.Oprmatvec(resz))
 
         # update inverted model
         x_unthesh: NDArray = z + grad
         if self.SOp is not None:
-            x_unthesh = self.SOp.H @ x_unthesh
+            x_unthesh = self.SOprmatvec(x_unthesh)
         if self.perc is None and self.decay is not None:
             x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
         elif self.perc is not None:
             x = self.threshf(x_unthesh, 100 - self.perc)
         if self.SOp is not None:
-            x = self.SOp @ x
+            x = self.SOpmatvec(x)
 
         # update auxiliary coefficients
         told = self.t
@@ -1753,7 +1765,6 @@ class SPGL1(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 80 + "\n")
 
-    @disable_ndarray_multiplication
     def setup(
         self,
         y: NDArray,
@@ -1800,7 +1811,6 @@ class SPGL1(Solver):
             "step method is not implemented. Use directly run or solve."
         )
 
-    @disable_ndarray_multiplication
     def run(
         self,
         x: NDArray,
@@ -1871,7 +1881,7 @@ class SPGL1(Solver):
 
         """
         pinv, _, _, info = ext_spgl1(
-            self.Op if self.SOp is None else self.Op * self.SOp.H,
+            self.Op if self.SOp is None else self.Op @ self.SOp.H,
             self.y,
             tau=self.tau,
             sigma=self.sigma,
@@ -1879,7 +1889,7 @@ class SPGL1(Solver):
             **kwargs_spgl1,
         )
 
-        xinv = pinv.copy() if self.SOp is None else self.SOp.H * pinv
+        xinv = pinv.copy() if self.SOp is None else self.SOp.rmatvec(pinv)
         return xinv, pinv, info
 
     def solve(
@@ -2238,13 +2248,15 @@ class SplitBregman(Solver):
             )[0]
             # Shrinkage
             self.d = [
-                _softthreshold(self.RegsL1[ireg] * x + self.b[ireg], self.epsRL1s[ireg])
+                _softthreshold(
+                    self.RegsL1[ireg].matvec(x) + self.b[ireg], self.epsRL1s[ireg]
+                )
                 for ireg in range(self.nregsL1)
             ]
 
         # Bregman update
         self.b = [
-            self.b[ireg] + self.tau * (self.RegsL1[ireg] * x - self.d[ireg])
+            self.b[ireg] + self.tau * (self.RegsL1[ireg].matvec(x) - self.d[ireg])
             for ireg in range(self.nregsL1)
         ]
 

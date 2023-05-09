@@ -63,7 +63,9 @@ def test_LinearRegression(par):
     assert dottest(LRop, par["ny"], 2)
 
     x = np.array([1.0, 2.0], dtype=np.float32)
-    xlsqr = lsqr(LRop, LRop * x, damp=1e-10, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(
+        LRop, LRop * x, damp=1e-10, iter_lim=300, atol=1e-8, btol=1e-8, show=0
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
     y = LRop * x
@@ -82,7 +84,9 @@ def test_MatrixMult(par):
     assert dottest(Gop, par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3)
 
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
-    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[
+        0
+    ]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
@@ -100,7 +104,9 @@ def test_MatrixMult_sparse(par):
     assert dottest(Gop, par["ny"], par["nx"], complexflag=0 if par["imag"] == 1 else 3)
 
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
-    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[
+        0
+    ]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
@@ -133,7 +139,9 @@ def test_MatrixMult_repeated(par):
     )
 
     x = (np.ones((par["nx"], 5)) + par["imag"] * np.ones((par["nx"], 5))).ravel()
-    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[
+        0
+    ]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
@@ -468,6 +476,45 @@ def test_Sum2D(par):
         dim_d.pop(axis)
         Sop = Sum(dims=(par["ny"], par["nx"]), axis=axis, dtype=par["dtype"])
         assert dottest(Sop, np.prod(dim_d), par["ny"] * par["nx"])
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_Sum2D_forceflat(par):
+    """Dot-test for Sum operator on 2d signal with forceflat"""
+    np.random.seed(10)
+    flat_dimsd = par["ny"]
+    flat_dims = par["ny"] * par["nx"]
+    x = np.random.randn(flat_dims) + par["imag"] * np.random.randn(flat_dims)
+
+    Sop_True = Sum((par["ny"], par["nx"]), axis=-1, forceflat=True)
+    y = Sop_True @ x
+    xadj = Sop_True.H @ y
+    assert y.shape == (flat_dimsd,)
+    assert xadj.shape == (flat_dims,)
+
+    Sop_None = Sum((par["ny"], par["nx"]), axis=-1)
+    y = Sop_None @ x
+    xadj = Sop_None.H @ y
+    assert y.shape == (par["ny"],)
+    assert xadj.shape == (par["ny"], par["nx"])
+
+    Sop_False = Sum((par["ny"], par["nx"]), axis=-1, forceflat=False)
+    y = Sop_False @ x
+    xadj = Sop_False.H @ y
+    assert y.shape == (par["ny"],)
+    assert xadj.shape == (par["ny"], par["nx"])
+
+    with pytest.raises(ValueError):
+        Sop_True * Sop_False.H
+
+    Sop = Sop_True * Sop_None.H
+    assert Sop.forceflat is True
+
+    Sop = Sop_False * Sop_None.H
+    assert Sop.forceflat is False
+
+    Sop = Sop_None * Sop_None.H
+    assert Sop.forceflat is None
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
