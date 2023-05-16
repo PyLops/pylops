@@ -487,7 +487,7 @@ or via ``pip`` with
 
 Torch
 -----
-`Torch <http://pytorch.org>`_ used to allow seamless integration between PyLops and PyTorch operators.
+`Torch <http://pytorch.org>`_ is used to allow seamless integration between PyLops and PyTorch operators.
 
 Install it via ``conda`` with:
 
