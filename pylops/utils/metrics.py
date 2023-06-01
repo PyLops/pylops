@@ -75,10 +75,10 @@ def snr(xref, xcmp):
     return snr
 
 
-def psnr(xref, xcmp, xmax=None):
+def psnr(xref, xcmp, xmax=None, xmin=0.0):
     """Peak Signal to Noise Ratio (PSNR)
 
-    Compute Peak Signal to Noise Ratio between two vectors.
+    Compute Peak Signal to Noise Ratio between two vectors
 
     Parameters
     ----------
@@ -89,6 +89,10 @@ def psnr(xref, xcmp, xmax=None):
     xmax : :obj:`float`, optional
       Maximum value to use. If ``None``, the actual maximum of
       the reference vector is used
+    xmin : :obj:`float`, optional
+      Minimum value to use. If ``None``, the actual minimum of
+      the reference vector is used (``0`` is default for
+      backward compatibility)
 
     Returns
     -------
@@ -98,5 +102,8 @@ def psnr(xref, xcmp, xmax=None):
     """
     if xmax is None:
         xmax = xref.max()
-    psrn = 10.0 * np.log10(xmax**2 / mse(xref, xcmp))
-    return psrn
+    if xmin is None:
+        xmin = xref.min()
+    xrange = xmax - xmin
+    psnr = 10.0 * np.log10(xrange**2 / mse(xref, xcmp))
+    return psnr
