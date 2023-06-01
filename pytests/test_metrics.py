@@ -49,7 +49,7 @@ def test_psnr(par):
     xref = np.ones(par["nx"])
     xcmp = np.zeros(par["nx"])
 
-    psnrsame = psnr(xref, xref, xmax=1.0)
-    psnrcmp = psnr(xref, xcmp, xmax=1.0)
+    psnrsame = psnr(xref, xref, xmax=1.0, xmin=0.0)
+    psnrcmp = psnr(xref, xcmp, xmax=1.0, xmin=0.0)
     assert psnrsame == np.inf
     assert psnrcmp == 0.0
