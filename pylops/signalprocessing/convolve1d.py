@@ -80,10 +80,7 @@ class _Convolve1Dshort(LinearOperator):
         if self.offset != 0:
             self.h = _pad_along_axis(
                 self.h,
-                (
-                    self.offset if self.offset > 0 else 0,
-                    -self.offset if self.offset < 0 else 0,
-                ),
+                (max(self.offset, 0), -min(self.offset, 0)),
                 axis=-1 if h.ndim == 1 else axis,
             )
         self.hstar = np.flip(self.h, axis=-1)
@@ -146,12 +143,12 @@ class _Convolve1Dlong(LinearOperator):
         self.hstar = np.flip(self.h, axis=-1)
 
         self.pad = np.zeros((len(dims), 2), dtype=int)
-        self.pad[self.axis, 0] = self.offset if self.offset > 0 else 0
-        self.pad[self.axis, 1] = -self.offset if self.offset < 0 else 0
+        self.pad[self.axis, 0] = max(self.offset, 0)
+        self.pad[self.axis, 1] = -min(self.offset, 0)
 
         self.padd = np.zeros((len(dims), 2), dtype=int)
-        self.padd[self.axis, 1] = self.offset if self.offset > 0 else 0
-        self.padd[self.axis, 0] = -self.offset if self.offset < 0 else 0
+        self.padd[self.axis, 1] = max(self.offset, 0)
+        self.padd[self.axis, 0] = -min(self.offset, 0)
 
         # add dimensions to filter to match dimensions of model and data
         if self.h.ndim == 1:
