@@ -1221,7 +1221,7 @@ class Kirchhoff(LinearOperator):
     def _register_multiplications(self, engine: str) -> None:
         if engine not in ["numpy", "numba"]:
             raise KeyError("engine must be numpy or numba")
-        if engine == "numba" and jit is not None:
+        if engine == "numba" and jit_message is None:
             # numba
             numba_opts = dict(
                 nopython=True, nogil=True, parallel=parallel
@@ -1240,7 +1240,7 @@ class Kirchhoff(LinearOperator):
                 self._kirch_rmatvec = jit(**numba_opts)(self._trav_kirch_rmatvec)
 
         else:
-            if engine == "numba" and jit is None:
+            if engine == "numba" and jit_message is not None:
                 logging.warning(jit_message)
             if self.dynamic and self.travsrcrec:
                 self._kirch_matvec = self._ampsrcrec_kirch_matvec
