@@ -578,7 +578,7 @@ class Kirchhoff(LinearOperator):
             dist_recs = trav_recs * vel
 
         elif mode == "eikonal":
-            if skfmm is not None:
+            if skfmm_message is None:
                 dist_srcs = np.zeros((ny * nx * nz, ns))
                 dist_recs = np.zeros((ny * nx * nz, nr))
                 trav_srcs = np.zeros((ny * nx * nz, ns))
