@@ -13,11 +13,13 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 jit_message = deps.numba_import("the nonstatconvolve3d module")
-# jit_message = None
+
 if jit_message is None:
     from numba import jit, prange
 
-    from _nonstatconvolve3d_cuda import  _matvec_rmatvec_call as _Convolve3D_kernel
+    from ._nonstatconvolve2d_cuda import (
+        _matvec_rmatvec_call as _matvec_rmatvec_cuda_call,
+    )
 
     # detect whether to use parallel or not
     numba_threads = int(os.getenv("NUMBA_NUM_THREADS", "1"))
@@ -26,22 +28,20 @@ else:
     prange = range
 
 
-
-
 class NonStationaryConvolve3D(LinearOperator):
     r"""3D non-stationary convolution operator.
 
     Apply non-stationary three-dimensional convolution. A varying compact filter
     is provided on a coarser grid and on-the-fly interpolation is applied
-    in forward and adjoint modes.
+    in forward and adjoint modes. Both input and output have size :math`n_x \times n_y \times n_z`.
 
     Parameters
     ----------
     dims : :obj:`list` or :obj:`int`
-        Number of samples for each dimension
+        Number of samples for each dimension (which we refer to as :math`n_x \times n_y \times n_z`).
     hs : :obj:`numpy.ndarray`
         Bank of 3d compact filters of size
-        :math:`n_{\text{filts},x} \times n_{\text{filts},y} \times n_{\text{filts},z} \times n_h \times n_{h,x} \times n_{h,y} \times n_{h,z}`.
+        :math:`n_{\text{filts},x} \times n_{\text{filts},y} \times n_{\text{filts},z} \times n_{h,x} \times n_{h,y} \times n_{h,z}`.
         Filters must have odd number of samples and are assumed to be
         centered in the middle of the filter support.
     ihx : :obj:`tuple`
@@ -55,7 +55,7 @@ class NonStationaryConvolve3D(LinearOperator):
         that the filters must be regularly sampled, i.e. :math:`dh_z=\text{diff}(ihz)=\text{const.}`
     engine : :obj:`str`, optional
         Engine used for spread computation (``numpy``, ``numba``, or ``cuda``)
-    dim_block : :obj:`tuple`, optional
+    num_threads_per_blocks : :obj:`tuple`, optional
         Number of threads in each block (only when ``engine=cuda``)
     dtype : :obj:`str`, optional
         Type of elements in input array.
@@ -78,49 +78,54 @@ class NonStationaryConvolve3D(LinearOperator):
         If ``ihx``, ``ihy`` or ``ihz`` is not regularly sampled
     NotImplementedError
         If ``engine`` is neither ``numpy``, ``fftw``, nor ``scipy``.
+
+    Notes
+    -----
+    See :class:`pylops.signalprocessing.NonStationaryConvolve2D`.
+
     """    
     def __init__(
-    self,
-    dims: Union[int, InputDimsLike],
-    hs: NDArray,
-    ihx: InputDimsLike,
-    ihy: InputDimsLike,
-    ihz: InputDimsLike,
-    engine: str = "numpy",
-    dim_block: Tuple[int, int] = (2, 16, 16),
-    dtype: DTypeLike = "float64",
-    name: str = "C") -> None:
+        self,
+        dims: Union[int, InputDimsLike],
+        hs: NDArray,
+        ihx: InputDimsLike,
+        ihy: InputDimsLike,
+        ihz: InputDimsLike,
+        engine: str = "numpy",
+        num_threads_per_blocks: Tuple[int, int, int] = (2, 16, 16),
+        dtype: DTypeLike = "float64",
+        name: str = "C",
+    ) -> None:
         if engine not in ["numpy", "numba", "cuda"]:
             raise NotImplementedError("engine must be numpy or numba or cuda")
         if hs.shape[3] % 2 == 0 or hs.shape[4] % 2 == 0 or hs.shape[5] % 2 == 0:
             raise ValueError("filters hs must have odd length")
-        #init
+        if len(np.unique(np.diff(ihx))) > 1 or len(np.unique(np.diff(ihy))) > 1 or len(np.unique(np.diff(ihz))) > 1:
+            raise ValueError(
+                "the indices of filters 'ih' are must be regularly sampled"
+            )
+        if min(ihx) < 0 or min(ihy) < 0 or min(ihz) < 0 or max(ihx) >= dims[0] or max(ihy) >= dims[1] or max(ihz) >= dims[2]:
+            raise ValueError(
+                "the indices of filters 'ih' must be larger than 0 and smaller than `dims`"
+            )
         self.hs = hs
         self.hshape = hs.shape[3:]
         self.ohx, self.dhx, self.nhx = ihx[0], ihx[1] - ihx[0], len(ihx) 
         self.ohy, self.dhy, self.nhy = ihy[0], ihy[1] - ihy[0], len(ihy) 
         self.ohz, self.dhz, self.nhz = ihz[0], ihz[1] - ihz[0], len(ihz) 
         self.ehx, self.ehx, self.ehz = ihx[-1], ihy[-1], ihz[-1]
-        # self.dims = tuple(dims)
         self.dims = _value_or_sized_to_tuple(dims)
         self.engine = engine
-        # self.dtype = dtype
-        # self.shape = dims
-        
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
-        
         
         # create additional input parameters for engine=cuda
         self.kwargs_cuda = {}
         if engine == "cuda":
-            self.kwargs_cuda["dim_block"] = dim_block
-            
-            gridx = (self.dims[0] + dim_block[0] - 1)//dim_block[0]
-            gridy = (self.dims[1] + dim_block[1] - 1)//dim_block[1]
-            gridz = (self.dims[2] + dim_block[2] - 1)//dim_block[2]
-            
-            self.kwargs_cuda["dim_grid"] = (gridx, gridy, gridz)
-        
+            self.kwargs_cuda["num_threads_per_blocks"] = num_threads_per_blocks
+            num_blocks_x = (self.dims[0] + num_threads_per_blocks[0] - 1) // num_threads_per_blocks[0]
+            num_blocks_y = (self.dims[1] + num_threads_per_blocks[1] - 1) // num_threads_per_blocks[1]
+            num_blocks_z = (self.dims[2] + num_threads_per_blocks[2] - 1) // num_threads_per_blocks[2]
+            self.kwargs_cuda["num_blocks"] = (num_blocks_x, num_blocks_y, num_blocks_z)
         self._register_multiplications(engine)
         
     def _register_multiplications(self, engine: str) -> None:
@@ -128,7 +133,7 @@ class NonStationaryConvolve3D(LinearOperator):
             numba_opts = dict(nopython=True, fastmath=True, nogil=True, parallel=True)
             self._mvrmv = jit(**numba_opts)(self._matvec_rmatvec)
         elif engine == "cuda":
-            self._mvrmv = _Convolve3D_kernel
+            self._mvrmv = _matvec_rmatvec_cuda_call
         else:
             self._mvrmv = self._matvec_rmatvec
     
@@ -154,13 +159,13 @@ class NonStationaryConvolve3D(LinearOperator):
             for iy in range(xdims[1]):
                 for iz in range(xdims[2]):
                     # find closest filters and interpolate h
-                    ihx_l = int(np.floor((ix - ohx) / dhx)) #id number of left for hs_arr
-                    ihy_b = int(np.floor((iy - ohy) / dhy)) #id number of back for hs_arr  
-                    ihz_t = int(np.floor((iz - ohz) / dhz)) #id number of top  for hs_arr
+                    ihx_l = int(np.floor((ix - ohx) / dhx)) # id number of left for hs_arr
+                    ihy_b = int(np.floor((iy - ohy) / dhy)) # id number of back for hs_arr
+                    ihz_t = int(np.floor((iz - ohz) / dhz)) # id number of top  for hs_arr
                     
-                    dhx_r = (ix - ohx) / dhx - ihx_l #weight for right psfs, left 1-ihz_t
-                    dhy_f = (iy - ohy) / dhy - ihy_b #weight for front psfs, left 1-ihz_t
-                    dhz_d = (iz - ohz) / dhz - ihz_t #weight for down psfs,  top 1-dhz_d
+                    dhx_r = (ix - ohx) / dhx - ihx_l # weight for right psfs, left 1-ihz_t
+                    dhy_f = (iy - ohy) / dhy - ihy_b # weight for front psfs, left 1-ihz_t
+                    dhz_d = (iz - ohz) / dhz - ihz_t # weight for down psfs,  top 1-dhz_d
                     
                     if ihx_l < 0:
                         ihx_l = ihx_r = 0
@@ -226,8 +231,7 @@ class NonStationaryConvolve3D(LinearOperator):
                         max(0, iz - hshape[2] // 2),
                         min(iz + hshape[2] // 2 + 1, xdims[2]),
                     )
-                    
-                    
+
                     # find extremes of h (in case h is going out of model)
                     hxextremes = (
                         max(0, -ix + hshape[0] // 2),
@@ -254,12 +258,9 @@ class NonStationaryConvolve3D(LinearOperator):
                         )
         return y 
     
-    # def _forward(self, x):
-    @reshaped  #reshape to 1D array
+    @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
-        # ncp = cp.get_array_module(x)
-        # y = ncp.zeros(self.dims, dtype=x.dtype)
         y = ncp.zeros(self.dims, dtype=self.dtype)
         y = self._mvrmv(
             x,
@@ -281,13 +282,9 @@ class NonStationaryConvolve3D(LinearOperator):
         )
         return y
 
-
-    # def _adjoint(self, x):
-    @reshaped  #reshape to 1D array
+    @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
-        # ncp = cp.get_array_module(x)
-        # y = ncp.zeros(self.dims, dtype=x.dtype)
         y = ncp.zeros(self.dims, dtype=self.dtype)
         y = self._mvrmv(
             x,

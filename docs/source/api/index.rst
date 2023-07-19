@@ -91,6 +91,7 @@ Signal processing
     ConvolveND
     NonStationaryConvolve1D
     NonStationaryConvolve2D
+    NonStationaryConvolve3D
     NonStationaryFilters1D
     NonStationaryFilters2D
     Interp

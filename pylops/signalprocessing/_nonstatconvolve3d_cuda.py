@@ -137,8 +137,8 @@ def _matvec_rmatvec_call(
     nhy,
     nhz,
     rmatvec= False,
-    dim_block=(1,32,16),
-    dim_grid=(24,24,24),
+    num_blocks=(1,32,16),
+    num_threads_per_blocks=(24,24,24),
 ):
     """Caller for NonStationaryConvolve3D operator
 
@@ -147,7 +147,7 @@ def _matvec_rmatvec_call(
      input parameters.
 
     """
-    _matvec_rmatvec[dim_grid, dim_block](
+    _matvec_rmatvec[num_blocks, num_threads_per_blocks](
         x, y, hs, hshape, xdims, ohx, ohy, ohz, dhx, dhy, dhz, nhx, nhy, nhz, rmatvec
     )
     return y

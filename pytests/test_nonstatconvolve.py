@@ -7,8 +7,10 @@ from scipy.sparse.linalg import lsqr
 from pylops.signalprocessing import (
     Convolve1D,
     Convolve2D,
+    ConvolveND,
     NonStationaryConvolve1D,
     NonStationaryConvolve2D,
+    NonStationaryConvolve3D,
     NonStationaryFilters1D,
     NonStationaryFilters2D,
 )
@@ -16,10 +18,15 @@ from pylops.utils import dottest
 
 # filters
 nfilts = (5, 7)
+nfilts3 = (5, 5, 7)
+
 h1 = triang(nfilts[0], sym=True)
 h2 = np.outer(triang(nfilts[0], sym=True), triang(nfilts[1], sym=True))
+h3 = np.outer(triang(nfilts[0], sym=True), np.outer(triang(nfilts[0], sym=True), triang(nfilts[1], sym=True)[np.newaxis]).T).reshape(nfilts3)
+
 h1stat = np.vstack([h1, h1, h1])
 h1ns = np.vstack([h1, -h1, 2 * h1])
+
 h2stat = np.vstack(
     [
         h2.ravel(),
@@ -40,6 +47,25 @@ h2ns = np.vstack(
         2 * h2.ravel(),
     ]
 ).reshape(3, 2, nfilts[0], nfilts[1])
+
+h3stat = np.vstack(
+    [
+        h3.ravel(),
+    ] * 8
+).reshape(2, 2, 2, nfilts[0], nfilts[0], nfilts[1])
+h3ns = np.vstack(
+    [
+        2 * h3.ravel(),
+        h3.ravel(),
+        h3.ravel(),
+        h3.ravel(),
+        h3.ravel(),
+        h3.ravel(),
+        -h3.ravel(),
+        2 * h3.ravel(),
+    ]
+).reshape(2, 2, 2, nfilts[0], nfilts[0], nfilts[1])
+
 
 par1_1d = {
     "nz": 21,
@@ -275,3 +301,51 @@ def test_NonStationaryFilters2D(par):
 
     h2lsqr = lsqr(Cop, Cop * h2ns.ravel(), damp=1e-20, iter_lim=400, show=0)[0]
     assert_array_almost_equal(h2ns.ravel(), h2lsqr, decimal=1)
+
+
+@pytest.mark.parametrize("par", [(par_2d)])
+def test_NonStationaryConvolve3D(par):
+    """Dot-test and inversion for NonStationaryConvolve3D operator"""
+    Cop = NonStationaryConvolve3D(
+        dims=(par["nx"], par["nx"], par["nz"]),
+        hs=h3ns,
+        ihx=(int(par["nx"] // 4), int(3 * par["nx"] // 4)),
+        ihy=(int(par["nx"] // 4), int(3 * par["nx"] // 4)),
+        ihz=(int(par["nz"] // 4), int(3 * par["nz"] // 4)),
+        dtype="float64",
+    )
+    assert dottest(Cop, par["nx"] * par["nx"] * par["nz"], par["nx"] * par["nx"] * par["nz"])
+
+    x = np.zeros((par["nx"], par["nx"], par["nz"]))
+    x[
+        int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
+        int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
+        int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
+    ] = 1.0
+    x = x.ravel()
+    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=40, atol=1e-8, btol=1e-8, show=0)[0]
+    # given the size of the problem, we can only run few iterations and test accuracy up to 30%
+    assert np.linalg.norm(x - xlsqr) / np.linalg.norm(x) < 0.3
+
+
+@pytest.mark.parametrize("par", [(par_2d)])
+def test_StationaryConvolve3D(par):
+    """Check that Convolve3D and NonStationaryConvolve3D return same result for
+    stationary filter"""
+    Cop = NonStationaryConvolve3D(
+        dims=(par["nx"], par["nx"], par["nz"]),
+        hs=h3stat,
+        ihx=(int(par["nx"] // 4), int(3 * par["nx"] // 4)),
+        ihy=(int(par["nx"] // 4), int(3 * par["nx"] // 4)),
+        ihz=(int(par["nz"] // 4), int(3 * par["nz"] // 4)),
+        dtype="float64",
+    )
+    Cop_stat = ConvolveND(
+        dims=(par["nx"], par["nx"], par["nz"]),
+        h=h3,
+        offset=(nfilts[0] // 2, nfilts[0] // 2, nfilts[1] // 2),
+        dtype="float64",
+    )
+    x = np.random.normal(0, 1, (par["nx"], par["nx"], par["nz"]))
+
+    assert_array_almost_equal(Cop_stat * x, Cop * x, decimal=10)

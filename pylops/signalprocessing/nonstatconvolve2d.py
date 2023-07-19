@@ -36,15 +36,15 @@ class NonStationaryConvolve2D(LinearOperator):
 
     Apply non-stationary two-dimensional convolution. A varying compact filter is provided on a
     coarser grid and on-the-fly interpolation is applied in forward and adjoint modes.
-    Both input and output have size :math`n_x \time n_z`.
+    Both input and output have size :math`n_x \times n_z`.
 
     Parameters
     ----------
     dims : :obj:`list` or :obj:`int`
-        Number of samples for each dimension (which we refer to as :math`n_x \time n_z`).
+        Number of samples for each dimension (which we refer to as :math`n_x \times n_z`).
     hs : :obj:`numpy.ndarray`
         Bank of 2d compact filters of size
-        :math:`n_{\text{filts},x} \times n_{\text{filts},z} \times n_h \times n_{h,x} \times n_{h,z}`.
+        :math:`n_{\text{filts},x} \times n_{\text{filts},z} \times n_{h,x} \times n_{h,z}`.
         Filters must have odd number of samples and are assumed to be
         centered in the middle of the filter support.
     ihx : :obj:`tuple`
