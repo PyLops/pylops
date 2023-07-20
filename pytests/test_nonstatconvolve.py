@@ -22,7 +22,10 @@ nfilts3 = (5, 5, 7)
 
 h1 = triang(nfilts[0], sym=True)
 h2 = np.outer(triang(nfilts[0], sym=True), triang(nfilts[1], sym=True))
-h3 = np.outer(triang(nfilts[0], sym=True), np.outer(triang(nfilts[0], sym=True), triang(nfilts[1], sym=True)[np.newaxis]).T).reshape(nfilts3)
+h3 = np.outer(
+    triang(nfilts[0], sym=True),
+    np.outer(triang(nfilts[0], sym=True), triang(nfilts[1], sym=True)[np.newaxis]).T,
+).reshape(nfilts3)
 
 h1stat = np.vstack([h1, h1, h1])
 h1ns = np.vstack([h1, -h1, 2 * h1])
@@ -51,7 +54,8 @@ h2ns = np.vstack(
 h3stat = np.vstack(
     [
         h3.ravel(),
-    ] * 8
+    ]
+    * 8
 ).reshape(2, 2, 2, nfilts[0], nfilts[0], nfilts[1])
 h3ns = np.vstack(
     [
@@ -170,7 +174,9 @@ def test_NonStationaryConvolve1D(par):
 
         x = np.zeros((par["nx"]))
         x[par["nx"] // 2] = 1.0
-        xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
+        xlsqr = lsqr(
+            Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0
+        )[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 1D on 2D
@@ -190,7 +196,9 @@ def test_NonStationaryConvolve1D(par):
         int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
     ] = 1.0
     x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[
+        0
+    ]
     assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
@@ -234,7 +242,9 @@ def test_NonStationaryConvolve2D(par):
         int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
     ] = 1.0
     x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[
+        0
+    ]
     assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
@@ -266,7 +276,7 @@ def test_StationaryConvolve2D(par):
         (par1_1d),
     ],
 )
-def test_NonStationaryFilters2D(par):
+def test_NonStationaryFilters1D(par):
     """Dot-test and inversion for NonStationaryFilters2D operator"""
     x = np.zeros((par["nx"]))
     x[par["nx"] // 4], x[par["nx"] // 2], x[3 * par["nx"] // 4] = 1.0, 1.0, 1.0
@@ -314,7 +324,9 @@ def test_NonStationaryConvolve3D(par):
         ihz=(int(par["nz"] // 4), int(3 * par["nz"] // 4)),
         dtype="float64",
     )
-    assert dottest(Cop, par["nx"] * par["nx"] * par["nz"], par["nx"] * par["nx"] * par["nz"])
+    assert dottest(
+        Cop, par["nx"] * par["nx"] * par["nz"], par["nx"] * par["nx"] * par["nz"]
+    )
 
     x = np.zeros((par["nx"], par["nx"], par["nz"]))
     x[

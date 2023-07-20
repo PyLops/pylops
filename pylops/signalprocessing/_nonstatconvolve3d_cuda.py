@@ -17,7 +17,7 @@ def _matvec_rmatvec(
 
     if ix < xdims[0] and iy < xdims[1] and iz < xdims[2]:
 
-        ## find closest filters and interpolate h
+        # find closest filters and interpolate h
         ihx_l = int(floor((ix - ohx) / dhx))  # id number of left for hs_arr
         ihy_b = int(floor((iy - ohy) / dhy))  # id number of back for hs_arr
         ihz_t = int(floor((iz - ohz) / dhz))  # id number of top  for hs_arr
@@ -66,7 +66,7 @@ def _matvec_rmatvec(
         h_rft = hs[ihx_r, ihy_f, ihz_t]
         h_rfd = hs[ihx_r, ihy_f, ihz_d]
 
-        ## find extremes of model where to apply h (in case h is going out of model)
+        # find extremes of model where to apply h (in case h is going out of model)
         xextremes = (
             max(0, ix - hshape[0] // 2),
             min(ix + hshape[0] // 2 + 1, xdims[0]),
@@ -80,7 +80,7 @@ def _matvec_rmatvec(
             min(iz + hshape[2] // 2 + 1, xdims[2]),
         )
 
-        ## find extremes of h (in case h is going out of model)
+        # find extremes of h (in case h is going out of model)
         hxextremes = (
             max(0, -ix + hshape[0] // 2),
             min(hshape[0], hshape[0] // 2 + (xdims[0] - ix)),
