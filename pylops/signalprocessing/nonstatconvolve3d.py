@@ -17,7 +17,7 @@ jit_message = deps.numba_import("the nonstatconvolve3d module")
 if jit_message is None:
     from numba import jit, prange
 
-    from ._nonstatconvolve2d_cuda import (
+    from ._nonstatconvolve3d_cuda import (
         _matvec_rmatvec_call as _matvec_rmatvec_cuda_call,
     )
 
@@ -110,6 +110,7 @@ class NonStationaryConvolve3D(LinearOperator):
             raise ValueError(
                 "the indices of filters 'ih' are must be regularly sampled"
             )
+
         if (
             min(ihx) < 0
             or min(ihy) < 0
