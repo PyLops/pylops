@@ -1,5 +1,7 @@
 __all__ = ["Restriction"]
 
+import logging
+
 from typing import Sequence, Union
 
 import numpy as np
@@ -10,6 +12,8 @@ from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module, to_cupy_conditional
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
+
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _compute_iavamask(dims, axis, iava, ncp):
@@ -46,6 +50,12 @@ class Restriction(LinearOperator):
         Work inplace (``True``) or make a new copy (``False``). By default,
         data is a reference to the model (in forward) and model is a reference
         to the data (in adjoint).
+    forceflat : :obj:`bool`, optional
+        .. versionadded:: 2.2.0
+
+        Force an array to be flattened after rmatvec. Note that this is only
+        required when `len(dims)=2`, otherwise pylops will detect whether to
+        return a 1d or nd array.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -97,6 +107,7 @@ class Restriction(LinearOperator):
         iava: Union[IntNDArray, Sequence[int]],
         axis: int = -1,
         inplace: bool = True,
+        forceflat: bool = None,
         dtype: DTypeLike = "float64",
         name: str = "R",
     ) -> None:
@@ -105,7 +116,20 @@ class Restriction(LinearOperator):
         axis = normalize_axis_index(axis, len(dims))
         dimsd = list(dims)  # data dimensions
         dimsd[axis] = len(iava)
-        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+
+        # check if forceflat is needed and set it back to None otherwise
+        if len(dims) > 2:
+            if forceflat is not None:
+                logging.warning(
+                    f"setting forceflat=None since len(dims)={len(dims)}>2. "
+                    f"PyLops will automatically detect whether to return "
+                    f"a 1d or nd array based on the shape of the input"
+                    f"array."
+                )
+                forceflat = None
+
+        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd,
+                         forceflat=forceflat, name=name)
 
         iavareshape = np.ones(len(self.dims), dtype=int)
         iavareshape[axis] = len(iava)
