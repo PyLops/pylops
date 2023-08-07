@@ -97,7 +97,7 @@ class LinearOperator(_LinearOperator):
 
         Force an array to be flattened after matvec/rmatvec if the input is ambiguous
         (i.e., is a 1D array both when operating with ND arrays and with 1D arrays).
-        Defaults to ``None`` for operators that have no ambiguity or to ``False``
+        Defaults to ``None`` for operators that have no ambiguity or to ``True``
         for those with ambiguity.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
