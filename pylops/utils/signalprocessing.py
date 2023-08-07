@@ -5,6 +5,7 @@ __all__ = [
     "dip_estimate",
 ]
 
+import warnings
 from typing import Tuple
 
 import numpy as np
@@ -15,39 +16,56 @@ from pylops.utils.backend import get_array_module, get_toeplitz
 from pylops.utils.typing import NDArray
 
 
-def convmtx(h: npt.ArrayLike, n: int) -> NDArray:
+def convmtx(h: npt.ArrayLike, n: int, offset: int = 0) -> NDArray:
     r"""Convolution matrix
 
-    Equivalent of `MATLAB's convmtx function
-    <http://www.mathworks.com/help/signal/ref/convmtx.html>`_ .
     Makes a dense convolution matrix :math:`\mathbf{C}`
     such that the dot product ``np.dot(C, x)`` is the convolution of
-    the filter :math:`h` and the input signal :math:`x`.
+    the filter :math:`h` centered on `offset` and the input signal :math:`x`.
+
+    Equivalent of `MATLAB's convmtx function
+    <http://www.mathworks.com/help/signal/ref/convmtx.html>`_ for
+    ``offset=0``.
 
     Parameters
     ----------
     h : :obj:`np.ndarray`
         Convolution filter (1D array)
     n : :obj:`int`
-        Number of columns (if :math:`\text{len}(h) < n`) or rows
-        (if :math:`\text{len}(h) \geq n`) of convolution matrix
+        Number of columns of convolution matrix
+    offset : :obj:`int`
+        Index of the center of the filter
 
     Returns
     -------
     C : :obj:`np.ndarray`
         Convolution matrix of size :math:`\text{len}(h)+n-1 \times n`
-        (if :math:`\text{len}(h) < n`) or :math:`n \times \text{len}(h)+n-1`
-        (if :math:`\text{len}(h) \geq n`)
 
     """
+    warnings.warn(
+        "A new implementation of convmtx is provided in v2.2.0 to match "
+        "MATLAB's convmtx method as stated in the docstring. Prior to v2.2.0,"
+        "The implementation of convmtx provided prior to v2.2.0 was instead "
+        "not consistent with the documentation. Users are highly encouraged "
+        "to modify their codes accordingly.",
+        FutureWarning,
+    )
+
     ncp = get_array_module(h)
-    if len(h) < n:
-        col_1 = ncp.r_[h[0], ncp.zeros(n - 1, dtype=h.dtype)]
+    nh = len(h)
+    if nh < n:
+        h = np.flipud(h)
+        col_1 = ncp.r_[h[0], ncp.zeros(n + nh - 2, dtype=h.dtype)]
         row_1 = ncp.r_[h, ncp.zeros(n - 1, dtype=h.dtype)]
+        C = get_toeplitz(h)(col_1, row_1)
+        # apply offset
+        C = C[:, offset : offset + n]
     else:
+        col_1 = ncp.r_[h, ncp.zeros(n + nh - 2, dtype=h.dtype)]
         row_1 = ncp.r_[h[0], ncp.zeros(n - 1, dtype=h.dtype)]
-        col_1 = ncp.r_[h, ncp.zeros(n - 1, dtype=h.dtype)]
-    C = get_toeplitz(h)(col_1, row_1)
+        C = get_toeplitz(h)(col_1, row_1)
+        # apply offset
+        C = C[offset : offset + nh + n - 1]
     return C
 
 

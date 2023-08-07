@@ -102,7 +102,7 @@ def _PoststackLinearModelling(
 
         # Create wavelet operator
         if len(wav.shape) == 1:
-            C = convmtx(wav, nt0)[:, len(wav) // 2 : -len(wav) // 2 + 1]
+            C = convmtx(wav, nt0, len(wav) // 2)[:nt0]
         else:
             C = nonstationary_convmtx(wav, nt0, hc=wav.shape[1] // 2, pad=(nt0, nt0))
         # Combine operators
