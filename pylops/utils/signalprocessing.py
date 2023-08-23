@@ -24,8 +24,9 @@ def convmtx(h: npt.ArrayLike, n: int, offset: int = 0) -> NDArray:
     the filter :math:`h` centered on `offset` and the input signal :math:`x`.
 
     Equivalent of `MATLAB's convmtx function
-    <http://www.mathworks.com/help/signal/ref/convmtx.html>`_ for
-    ``offset=0``.
+    <http://www.mathworks.com/help/signal/ref/convmtx.html>`_ for:
+    - ``mode='full'`` when used with ``offset=0``.
+    - ``mode='same'`` when used with ``offset=len(h)//2`` (after truncating the rows as ``C[:n]``)
 
     Parameters
     ----------
@@ -44,28 +45,20 @@ def convmtx(h: npt.ArrayLike, n: int, offset: int = 0) -> NDArray:
     """
     warnings.warn(
         "A new implementation of convmtx is provided in v2.2.0 to match "
-        "MATLAB's convmtx method as stated in the docstring. Prior to v2.2.0,"
-        "The implementation of convmtx provided prior to v2.2.0 was instead "
-        "not consistent with the documentation. Users are highly encouraged "
+        "MATLAB's convmtx method as stated in the docstring. The implementation "
+        "of convmtx provided prior to v2.2.0 was instead not consistent "
+        "with the documentation. Users are highly encouraged "
         "to modify their codes accordingly.",
         FutureWarning,
     )
 
     ncp = get_array_module(h)
     nh = len(h)
-    if nh < n:
-        h = np.flipud(h)
-        col_1 = ncp.r_[h[0], ncp.zeros(n + nh - 2, dtype=h.dtype)]
-        row_1 = ncp.r_[h, ncp.zeros(n - 1, dtype=h.dtype)]
-        C = get_toeplitz(h)(col_1, row_1)
-        # apply offset
-        C = C[:, offset : offset + n]
-    else:
-        col_1 = ncp.r_[h, ncp.zeros(n + nh - 2, dtype=h.dtype)]
-        row_1 = ncp.r_[h[0], ncp.zeros(n - 1, dtype=h.dtype)]
-        C = get_toeplitz(h)(col_1, row_1)
-        # apply offset
-        C = C[offset : offset + nh + n - 1]
+    col_1 = ncp.r_[h, ncp.zeros(n + nh - 2, dtype=h.dtype)]
+    row_1 = ncp.r_[h[0], ncp.zeros(n - 1, dtype=h.dtype)]
+    C = get_toeplitz(h)(col_1, row_1)
+    # apply offset
+    C = C[offset : offset + nh + n - 1]
     return C
 
 
