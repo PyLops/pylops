@@ -23,13 +23,14 @@ classifiers = [
         "Programming Language :: Python :: 3.9",
         "Topic :: Scientific/Engineering :: Mathematics",
     ]
-dynamic = ["version", ]
+dynamic = ["version"]
 dependencies = [
         "numpy >= 1.21.0",
         "scipy >= 1.4.0",
         "pylops >= 1.17.0",
         "setuptools >= 61.2.0",
     ]
+
 [project.optional-dependencies]
 advanced = ["llvmlite",
             "numba",
@@ -41,6 +42,7 @@ advanced = ["llvmlite",
 
 [tool.setuptools.packages.find]
 where = ["pylops"]
+exclude = ["pytests"]
 namespaces = false
 
 [tool.setuptools_scm]
