@@ -12,7 +12,7 @@ matplotlib
 ipython
 pytest
 pytest-runner
-setuptools_scm
+setuptools_scm<8.0.0
 docutils<0.18
 Sphinx
 pydata-sphinx-theme
