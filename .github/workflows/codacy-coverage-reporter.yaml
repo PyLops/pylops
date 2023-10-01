@@ -27,3 +27,12 @@ jobs:
       run: |
         pip install .
         pip install coverage
+    - name: Code coverage with coverage
+      run: |
+        coverage run -m pytest
+        coverage xml
+    - name: Run codacy-coverage-reporter
+      uses: codacy/codacy-coverage-reporter-action@v1
+      with:
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        coverage-reports: coverage.xml
