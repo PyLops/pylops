@@ -65,7 +65,7 @@ jobs:
     displayName: 'Install prerequisites and library'
 
   - script: |
-      python setup.py test
+      pytest
     condition: succeededOrFailed()
     displayName: 'Run tests'
 
@@ -94,6 +94,6 @@ jobs:
     displayName: 'Install prerequisites and library'
 
   - script: |
-      python setup.py test
+      pytest
     condition: succeededOrFailed()
     displayName: 'Run tests'
