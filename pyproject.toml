@@ -25,8 +25,6 @@ classifiers = [
 dependencies = [
         "numpy >= 1.21.0",
         "scipy >= 1.4.0",
-        "pylops >= 1.17.0",
-        "setuptools >= 61.2.0",
     ]
 dynamic = ["version", ]
 
