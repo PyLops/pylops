@@ -1,16 +1,15 @@
 [build-system]
-requires = [
-    "setuptools>=60",
-    "setuptools-scm>=8.0"]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "pylops"
 authors = [
     {name = "Matteo Ravasi", email = "matteoravasi@gmail.com"},
 ]
-description = "Python library implementing linear operators to allow solving large-scale optimization problems without requiring to explicitly create a dense (or sparse) matrix."
+description = "Python library implementing linear operators to allow solving large-scale optimization problems."
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = ["algebra", "inverse problems", "large-scale optimization"]
 license.file = "LICENSE.md"
 classifiers = [
@@ -23,13 +22,13 @@ classifiers = [
         "Programming Language :: Python :: 3.9",
         "Topic :: Scientific/Engineering :: Mathematics",
     ]
-dynamic = ["version"]
 dependencies = [
         "numpy >= 1.21.0",
         "scipy >= 1.4.0",
         "pylops >= 1.17.0",
         "setuptools >= 61.2.0",
     ]
+dynamic = ["version"]
 
 [project.optional-dependencies]
 advanced = ["llvmlite",
@@ -39,11 +38,3 @@ advanced = ["llvmlite",
             "scikit-fmm",
             "spgl1",
 ]
-
-[tool.setuptools.packages.find]
-where = ["pylops"]
-exclude = ["pytests"]
-namespaces = false
-
-[tool.setuptools_scm]
-version_file = "pylops/version.py"
