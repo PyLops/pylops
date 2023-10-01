@@ -55,7 +55,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.7'
+      versionSpec: '3.8'
       architecture: 'x64'
 
   - script: |
@@ -65,7 +65,7 @@ jobs:
     displayName: 'Install prerequisites and library'
 
   - script: |
-      python setup.py test
+      pytest
     condition: succeededOrFailed()
     displayName: 'Run tests'
 
@@ -84,7 +84,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.7'
+      versionSpec: '3.8'
       architecture: 'x64'
 
   - script: |
@@ -94,6 +94,6 @@ jobs:
     displayName: 'Install prerequisites and library'
 
   - script: |
-      python setup.py test
+      pytest
     condition: succeededOrFailed()
     displayName: 'Run tests'
