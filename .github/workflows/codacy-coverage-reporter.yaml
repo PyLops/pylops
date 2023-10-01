@@ -8,8 +8,8 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ ubuntu-latest, macos-latest ]
-        python-version: ["3.8", "3.9", "3.10"]
+        platform: [ ubuntu-latest, ]
+        python-version: ["3.8", ]
 
     runs-on: ${{ matrix.platform }}
     steps:
