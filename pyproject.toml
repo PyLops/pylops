@@ -28,7 +28,7 @@ dependencies = [
         "pylops >= 1.17.0",
         "setuptools >= 61.2.0",
     ]
-dynamic = ["version"]
+dynamic = ["version", ]
 
 [project.optional-dependencies]
 advanced = ["llvmlite",
@@ -38,3 +38,10 @@ advanced = ["llvmlite",
             "scikit-fmm",
             "spgl1",
 ]
+
+[tool.setuptools.packages.find]
+exclude = ["pytests"]
+namespaces = false
+
+[tool.setuptools_scm]
+version_file = "pylops/version.py"
