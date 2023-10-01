@@ -287,7 +287,7 @@ def test_kirchhoff3d(par):
 )
 def test_kirchhoff2d_trav_vs_travsrcrec(par):
     """Compare 2D Kirchhoff operator forward and adjoint when using trav (original behavior)
-    or trav_src and trav_rec (new reccomended behaviour)"""
+    or trav_src and trav_rec (new reccommended behaviour)"""
 
     # new behaviour
     Dop = Kirchhoff(
@@ -311,21 +311,7 @@ def test_kirchhoff2d_trav_vs_travsrcrec(par):
     ) + Dop.trav_recs.reshape(PAR["nx"] * PAR["nz"], 1, PAR["nrx"])
     trav = trav.reshape(PAR["nx"] * PAR["nz"], PAR["nsx"] * PAR["nrx"])
     if par["dynamic"]:
-        dist = Dop.dist_srcs.reshape(
-            PAR["nx"] * PAR["nz"], PAR["nsx"], 1
-        ) + Dop.dist_recs.reshape(PAR["nx"] * PAR["nz"], 1, PAR["nrx"])
-        dist = dist.reshape(PAR["nx"] * PAR["nz"], PAR["nsx"] * PAR["nrx"])
-
-        cosangle = np.cos(Dop.angle_srcs).reshape(
-            PAR["nx"] * PAR["nz"], PAR["nsx"], 1
-        ) + np.cos(Dop.angle_recs).reshape(PAR["nx"] * PAR["nz"], 1, PAR["nrx"])
-        cosangle = cosangle.reshape(PAR["nx"] * PAR["nz"], PAR["nsx"] * PAR["nrx"])
-
-        epsdist = 1e-2
-        amp = 1 / (dist + epsdist * np.max(dist))
-
-        amp *= np.abs(cosangle)
-        amp /= v0
+        amp = (Dop.amp_srcs, Dop.amp_recs)
 
     D1op = Kirchhoff(
         z,
