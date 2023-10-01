@@ -2,14 +2,14 @@
 # For more information see: https://github.com/codacy/codacy-coverage-reporter-action
 name: PyLops-coverage
 
-on: [push, pull_request_target]
+on: [push, pull_request]
 
 jobs:
   build:
     strategy:
       matrix:
-        platform: [ ubuntu-latest, ]
-        python-version: ["3.8", ]
+        platform: [ ubuntu-latest, macos-latest ]
+        python-version: ["3.8", "3.9", "3.10"]
 
     runs-on: ${{ matrix.platform }}
     steps:
