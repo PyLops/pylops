@@ -1,3 +1,48 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pylops"
+description = "Python library implementing linear operators to allow solving large-scale optimization problems"
+readme = "README.md"
+authors = [
+    {name = "Matteo Ravasi", email = "matteoravasi@gmail.com"},
+]
+license = {file = "LICENSE.md"}
+keywords = ["algebra", "inverse problems", "large-scale optimization"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering : Mathematics",
+]
+dependencies = [
+    "numpy >= 1.21.0",
+    "scipy >= 1.4.0",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+advanced = [
+    "llvmlite",
+    "numba",
+    "pyfftw",
+    "PyWavelets",
+    "scikit-fmm",
+    "spgl1",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["pytests"]
+
+[tool.setuptools_scm]
+version_file = "pylops/version.py"
