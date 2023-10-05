@@ -23,7 +23,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements-dev.txt; fi
     - name: Install pylops
       run: |
-        git pull --tags
+        git fetch --tags
         python -m setuptools_scm
         pip install .
     - name: Test with pytest
