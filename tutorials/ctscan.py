@@ -32,7 +32,7 @@ np.random.seed(10)
 #
 # where :math:`\theta` is the angle between the x-axis (:math:`x`) and
 # the perpendicular to the summation line and :math:`r` is the distance
-# from the origin of the summation line. Radon transform in CT 
+# from the origin of the summation line. Radon transform in CT
 # corresponds to the integral of the input image along the straight line above.
 # To implement the integration in PyLops we simply need to express
 # :math:`t(r,\theta;x)` which is given by:
@@ -49,9 +49,10 @@ def radoncurve(x, r, theta):
         + ny // 2
     )
 
+
 ###############################################################################
 # Note that in the above implementation we added centering :math:`t \mapsto t - n_y/2` and
-# :math:`r \mapsto r - n_y/2` so that origin of integration lines is exactly in the
+# :math:`r \mapsto r - n_y/2` so that the origin of the integration lines is exactly in the
 # center of the image (centering for :math:`x` is not needed because we will use
 # ``centeredh=True`` in the constructor of ``Radon2D``).
 
@@ -106,7 +107,9 @@ fig.tight_layout()
 # classical sinogram we have to divide data by the jacobian
 # :math:`j(x,l) = \left\vert dx/dl \right\vert = |\sin(\theta)|`.
 
-sinogram = np.divide(y.T, np.abs(np.sin(theta) + 1e-15))  # small shift to avoid zero-division
+sinogram = np.divide(
+    y.T, np.abs(np.sin(theta) + 1e-15)
+)  # small shift to avoid zero-division
 fig, axs = plt.subplots(1, 2, figsize=(10, 4))
 axs[0].imshow(y.T, cmap="gray")
 axs[0].set_title("Data")
@@ -117,8 +120,8 @@ axs[1].axis("tight")
 fig.tight_layout()
 
 ###############################################################################
-# We will not pursue further working with the "true sinogram", but will
-# reconstruct the original phantom directly from ``y``. For this we take advantage
+# From now on, we will not pursue further working with the "true sinogram", instead
+# we will reconstruct the original phantom directly from ``y``. For this we take advantage
 # of our different solvers and try to invert the modelling operator both in a
 # least-squares sense and using TV-reg.
 Dop = [
