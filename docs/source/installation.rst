@@ -318,9 +318,20 @@ of GPUs should install it prior to installing PyLops as described in :ref:`Optio
 In alphabetic order:
 
 
+dtcwt
+-----
+`dtcwt <https://dtcwt.readthedocs.io/en/0.12.0/>`_ is a library used to implement the DT-CWT operators.
+
+Install it via ``pip`` with:
+
+.. code-block:: bash
+
+   >> pip install dtcwt
+
+
 Devito
 ------
-`Devito <https://github.com/devitocodes/devito>`_ is library used to solve PDEs via
+`Devito <https://github.com/devitocodes/devito>`_ is a library used to solve PDEs via
 the finite-difference method. It is used in PyLops to compute wavefields
 :py:class:`pylops.waveeqprocessing.AcousticWave2D`
 

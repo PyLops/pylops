@@ -24,7 +24,7 @@ A list of operators present in pylops.signalprocessing:
     DWT                             One dimensional Wavelet operator.
     DWT2D                           Two dimensional Wavelet operator.
     DCT                             Discrete Cosine Transform.
-    Seislet                         Two dimensional Seislet operator.
+    DTCWT                           Dual-Tree Complex Wavelet TransformsSeislet                         Two dimensional Seislet operator.
     Radon2D	                        Two dimensional Radon transform.
     Radon3D	                        Three dimensional Radon transform.
     Sliding1D                       1D Sliding transform operator.
@@ -62,6 +62,8 @@ from .dwt import *
 from .dwt2d import *
 from .seislet import *
 from .dct import *
+from .dtcwt import *
+
 
 __all__ = [
     "FFT",
@@ -92,4 +94,5 @@ __all__ = [
     "DWT2D",
     "Seislet",
     "DCT",
+    "DTCWT",
 ]

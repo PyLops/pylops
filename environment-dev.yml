@@ -26,6 +26,7 @@ dependencies:
   - black
   - pip:
     - devito
+    - dtcwt
     - scikit-fmm
     - spgl1
     - pytest-runner
