@@ -287,7 +287,7 @@ def test_kirchhoff3d(par):
 )
 def test_kirchhoff2d_trav_vs_travsrcrec(par):
     """Compare 2D Kirchhoff operator forward and adjoint when using trav (original behavior)
-    or trav_src and trav_rec (new reccommended behaviour)"""
+    or trav_src and trav_rec (new recommended behaviour)"""
 
     # new behaviour
     Dop = Kirchhoff(

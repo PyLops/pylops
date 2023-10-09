@@ -137,18 +137,18 @@ class Kirchhoff(LinearOperator):
 
     .. math::
         d(\mathbf{x_r}, \mathbf{x_s}, t) =
-        \widetilde{w}(t) * \int_V \frac{2 cos(\theta)} {v(\mathbf{x})}
+        \widetilde{w}(t) * \int_V \frac{2 \cos\theta} {v(\mathbf{x})}
         G(\mathbf{x_r}, \mathbf{x}, t) G(\mathbf{x}, \mathbf{x_s}, t)
         m(\mathbf{x})  \,\mathrm{d}\mathbf{x}
 
     where :math:`G(\mathbf{x}, \mathbf{x_s}, t)` and :math:`G(\mathbf{x_r}, \mathbf{x}, t)`
     are the Green's functions from source-to-subsurface-to-receiver and finally
-    :math:`\widetilde{w}(t)` is a filtered version of the wavelet :math:`w(t)`
-    as explained below (or the wavelet itself when ``wavfilter=False``).
+    :math:`\widetilde{w}(t)` is either a filtered version of the wavelet :math:`w(t)`
+    as explained below (``wavfilter=True``) or the wavelet itself when (``wavfilter=False``).
     Moreover, an angle scaling is included in the modelling operator,
-    where :math:`\theta=(\theta_s-\theta_r)/2` is half of the opening angle,
-    where :math:`\theta_s` and :math:`\theta_r` are the angles between the source-side
-    and receiver-side rays and the vertical at the image point.
+    where the reflection angle :math:`\theta=(\theta_s-\theta_r)/2` is half of the opening angle,
+    with :math:`\theta_s` and :math:`\theta_r` representing the angles between the source-side
+    and receiver-side rays and the vertical at the image point, respectively.
 
     In our implementation, the following high-frequency approximation of the
     Green's functions is adopted:
@@ -168,14 +168,14 @@ class Kirchhoff(LinearOperator):
 
     On the  other hand, when ``dynamic=True``, the amplitude scaling is defined as
 
-    * ``2D``: :math:`a(\mathbf{x}, \mathbf{y})=\frac{1}{\sqrt{dist(\mathbf{x}, \mathbf{y})}}`
-    * ``3D``: :math:`a(\mathbf{x}, \mathbf{y})=\frac{1}{dist(\mathbf{x}, \mathbf{y})}`
+    * ``2D``: :math:`a(\mathbf{x}, \mathbf{y})=\frac{1}{\sqrt{\text{dist}(\mathbf{x}, \mathbf{y})}}`
+    * ``3D``: :math:`a(\mathbf{x}, \mathbf{y})=\frac{1}{\text{dist}(\mathbf{x}, \mathbf{y})}`
 
     approximating the geometrical spreading of the wavefront. For ``mode=analytic``,
-    :math:`dist(\mathbf{x}, \mathbf{y})=\|\mathbf{x} - \mathbf{y}\|`, whilst for
-    ``mode=eikonal``, this is instead computed internally by the eikonal solver.
+    :math:`\text{dist}(\mathbf{x}, \mathbf{y})=\|\mathbf{x} - \mathbf{y}\|`, whilst for
+    ``mode=eikonal``, this is computed internally by the Eikonal solver.
 
-    The wavelet filtering is applied as follows:
+    The wavelet filtering is applied as follows [3]_:
 
     * ``2D``: :math:`\tilde{W}(f)=\sqrt{j\omega} \cdot W(f)`
     * ``3D``: :math:`\tilde{W}(f)=j\omega \cdot W(f)`
