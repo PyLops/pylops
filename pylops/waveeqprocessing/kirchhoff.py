@@ -133,7 +133,7 @@ class Kirchhoff(LinearOperator):
     -----
     The Kirchhoff demigration operator synthesizes seismic data given a
     propagation velocity model :math:`v(\mathbf{x})` and a
-    reflectivity model :math:`m(\mathbf{x})`. In forward mode [1]_, [2]_:
+    reflectivity model :math:`m(\mathbf{x})`. In forward mode [1]_, [2]_, [3]_:
 
     .. math::
         d(\mathbf{x_r}, \mathbf{x_s}, t) =
@@ -175,7 +175,7 @@ class Kirchhoff(LinearOperator):
     :math:`\text{dist}(\mathbf{x}, \mathbf{y})=\|\mathbf{x} - \mathbf{y}\|`, whilst for
     ``mode=eikonal``, this is computed internally by the Eikonal solver.
 
-    The wavelet filtering is applied as follows [3]_:
+    The wavelet filtering is applied as follows [4]_:
 
     * ``2D``: :math:`\tilde{W}(f)=\sqrt{j\omega} \cdot W(f)`
     * ``3D``: :math:`\tilde{W}(f)=j\omega \cdot W(f)`
@@ -209,14 +209,18 @@ class Kirchhoff(LinearOperator):
     projects data in the model domain creating an image of the subsurface
     reflectivity.
 
-    .. [1] Bleistein, N., Cohen, J.K., and Stockwell, J.W..
+    .. [1] Bleistein, N., Cohen, J.K., and Stockwell, J.W.
        "Mathematics of Multidimensional Seismic Imaging, Migration and
        Inversion", 2000.
 
     .. [2] Santos, L.T., Schleicher, J., Tygel, M., and Hubral, P.
        "Seismic modeling by demigration", Geophysics, 65(4), pp. 1281-1289, 2000.
 
-    .. [3] Safron, L. "Multicomponent least-squares Kirchhoff depth migration",
+    .. [3] Yang, K., and Zhang, J. "Comparison between Born and Kirchhoff operators for
+       least-squares reverse time migration and the constraint of the propagation of the
+       background wavefield", Geophysics, 84(5), pp. R725-R739, 2019.
+
+    .. [4] Safron, L. "Multicomponent least-squares Kirchhoff depth migration",
        MSc Thesis, 2018.
 
     """
@@ -302,7 +306,7 @@ class Kirchhoff(LinearOperator):
                 ) = Kirchhoff._traveltime_table(z, x, srcs, recs, vel, y=y, mode=mode)
                 if self.dynamic:
                     # need to add a scalar in the denominator of amplitude term to avoid
-                    # division by 0, currently set to 1e-4 of max distance to avoid having
+                    # division by 0, currently set to 1e-2 of max distance to avoid having
                     # too large scaling around the source. This number may change in future
                     # or left to the user to define
                     epsdist = 1e-2
@@ -639,7 +643,7 @@ class Kirchhoff(LinearOperator):
             raise NotImplementedError("2.D wavelet currently not available")
         elif dimsrc == 3 and dimrec == 3 and dimv == 3:
             # 3D
-            Wfilt = W * (1j * 2 * np.pi * f)
+            Wfilt = W * (-1j * 2 * np.pi * f)
         wavfilt = np.fft.irfft(Wfilt, n=len(wav))
         return wavfilt
 
