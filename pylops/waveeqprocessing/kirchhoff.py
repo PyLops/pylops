@@ -178,7 +178,7 @@ class Kirchhoff(LinearOperator):
     The wavelet filtering is applied as follows [4]_:
 
     * ``2D``: :math:`\tilde{W}(f)=\sqrt{j\omega} \cdot W(f)`
-    * ``3D``: :math:`\tilde{W}(f)=j\omega \cdot W(f)`
+    * ``3D``: :math:`\tilde{W}(f)=-j\omega \cdot W(f)`
 
     Depending on the choice of ``mode`` the traveltime and amplitude of the Green's
     function will be also computed differently:
