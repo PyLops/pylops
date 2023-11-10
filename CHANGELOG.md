@@ -1,3 +1,18 @@
+# 2.2.0
+
+* Added `pylops.signalprocessing.NonStationaryConvolve3D` operator
+* Added nd-array capabilities to `pylops.basicoperators.Identity` and `pylops.basicoperators.Zero`
+* Added second implementation in `pylops.waveeqprocessing.BlendingContinuous` which is more
+  performant when dealing with small number of receivers
+* Added `forceflat` property to operators with ambiguous `rmatvec` (`pylops.basicoperators.Block`,
+  `pylops.basicoperators.Bilinear`, `pylops.basicoperators.BlockDiag`, `pylops.basicoperators.HStack`,
+  `pylops.basicoperators.MatrixMult`, `pylops.basicoperators.VStack`, and `pylops.basicoperators.Zero`)
+* Improved `dynamic` mode of `pylops.waveeqprocessing.Kirchhoff` operator
+* Modified `pylops.signalprocessing.Convolve1D` to allow both filters that are both shorter and longer of the
+  input vector
+* Modified all solvers to use `matvec/rmatvec` instead of `@/.H @` to improve performance
+
+
 # 2.1.0
 * Added `pylops.signalprocessing.DCT`, `pylops.signalprocessing.NonStationaryConvolve1D`,
   `pylops.signalprocessing.NonStationaryConvolve2D`, `pylops.signalprocessing.NonStationaryFilters1D`, and
