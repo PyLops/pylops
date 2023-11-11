@@ -106,7 +106,7 @@ x[10] = -0.4
 x[int(nt / 2)] = 1
 x[nt - 20] = 0.5
 
-h, th, hcenter = pylops.utils.wavelets.ricker(t[:101], f0=20)
+h, th, hcenter = pylops.utils.wavelets.ricker(t[:21], f0=20)
 
 Cop = pylops.signalprocessing.Convolve1D(nt, h=h, offset=hcenter, dtype="float32")
 y = Cop * x

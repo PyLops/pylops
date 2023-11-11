@@ -147,3 +147,5 @@ A list of video tutorials to learn more about PyLops:
 * Juan Daniel Romero, jdromerom
 * Aniket Singh Rawat, dikwickley
 * Rohan Babbar, rohanbabbar04
+* Wei Zhang, ZhangWeiGeo
+* Fedor Goncharov, fedor-goncharov

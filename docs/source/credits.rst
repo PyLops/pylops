@@ -19,3 +19,5 @@ Contributors
 *  `Juan Daniel Romero <https://github.com/jdromerom>`_, jdromerom
 *  `Aniket Singh Rawat <https://github.com/dikwickley>`_, dikwickley
 *  `Rohan Babbar <https://github.com/rohanbabbar04>`_, rohanbabbar04
+*  `Wei Zhang <https://github.com/ZhangWeiGeo>`_, ZhangWeiGeo
+*  `Fedor Goncharov <https://github.com/fedor-goncharov>`_, fedor-goncharov

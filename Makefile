@@ -31,7 +31,7 @@ dev-install_conda:
 
 tests:
 	make pythoncheck
-	$(PYTHON) setup.py test
+	pytest
 
 doc:
 	cd docs  && rm -rf source/api/generated && rm -rf source/gallery &&\

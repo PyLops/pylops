@@ -15,7 +15,8 @@ for academic purposes.
 
 Spin-off projects that aim at extending the capabilities of PyLops are:
 
-* `PyLops-GPU <https://github.com/PyLops/pylops-gpu>`_ : PyLops for GPU arrays (incorporated into PyLops).
-* `PyLops-Distributed <https://github.com/PyLops/pylops-distributed>`_: PyLops for distributed systems with many computing nodes.
+* `PyLops-MPI <https://github.com/PyLops/pylops-mpi>`_: PyLops for distributed systems with many computing nodes using MPI
 * `PyProximal <https://github.com/PyLops/pyproximal>`_: Proximal solvers which integrate with PyLops Linear Operators.
 * `Curvelops <https://github.com/PyLops/curvelops>`_: Python wrapper for the Curvelab 2D and 3D digital curvelet transforms.
+* `PyLops-GPU <https://github.com/PyLops/pylops-gpu>`_ : PyLops for GPU arrays (unmantained! the core features are now incorporated into PyLops).
+* `PyLops-Distributed <https://github.com/PyLops/pylops-distributed>`_ : PyLops for distributed systems with many computing nodes using Dask (unmantained!).

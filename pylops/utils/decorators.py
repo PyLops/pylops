@@ -54,10 +54,16 @@ def add_ndarray_support_to_solver(func: Callable) -> Callable:
 
     @wraps(func)
     def wrapper(A, b, *args, **kwargs):  # SciPy-type signature
+        x0flat = False
         if "x0" in kwargs and kwargs["x0"] is not None:
+            if kwargs["x0"].ndim == 1:
+                x0flat = True
             kwargs["x0"] = kwargs["x0"].ravel()
         with disabled_ndarray_multiplication():
             res = list(func(A, b.ravel(), *args, **kwargs))
+        # reshape if x0 was provided unflattened
+        # (unless the operator has forceflat=True)
+        if not x0flat and not getattr(A, "forceflat", None):
             res[0] = res[0].reshape(getattr(A, "dims", (A.shape[1],)))
         return tuple(res)
 

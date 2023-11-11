@@ -178,8 +178,8 @@ plt.tight_layout()
 # derivative operator
 #
 #   .. math::
-#       \mathbf{x} = (\mathbf{R^TR}+\epsilon_\nabla^2\nabla^T\nabla)^{-1}
-#                    \mathbf{R^Ty}
+#       \mathbf{x} = (\mathbf{R}^T\mathbf{R}+\epsilon_\nabla^2\nabla^T\nabla)^{-1}
+#                    \mathbf{R}^T\mathbf{y}
 
 # Create regularization operator
 D2op = pylops.SecondDerivative(N, dtype="float64")

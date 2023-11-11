@@ -5,11 +5,17 @@ This first tutorial is aimed at easing the use of the PyLops
 library for both new users and developers.
 
 We will start by looking at how to initialize a linear operator as well as
-different ways to apply the forward and adjoint operations. Finally we will
+different ways to apply the forward and adjoint operations. We will then
 investigate various *special methods*, also called *magic methods*
 (i.e., methods with the double underscores at the beginning and the end) that
-have been implemented for such a class and will allow summing, subtractring,
+have been implemented for such a class and will allow summing, subtracting,
 chaining, etc. multiple operators in very easy and expressive way.
+
+Finally, we will consider a scenario where the input and output vectors of an
+operator are naturally represented by nd-arrays. Since pylops V2, we can both
+pass to the operator a flattened array (original behaviour) as well as the
+nd-array with shape `dims` (new behaviour); according to input, the output
+will be either a vector or a nd-array with shape `dimsd`.
 """
 
 ###############################################################################
@@ -112,10 +118,10 @@ cmd1 = "Dop._rmatvec(x)"
 cmd2 = "Dop.rmatvec(x)"
 
 # .H* (pre-computed H)
-cmd3 = "DopH*x"
+cmd3 = "DopH@x"
 
 # .H*
-cmd4 = "Dop.H*x"
+cmd4 = "Dop.H@x"
 
 # timing
 t1 = 1.0e3 * np.array(timeit.repeat(cmd1, setup=cmd_setup, number=500, repeat=5))
@@ -171,7 +177,7 @@ print(Dop - 0.5 * Dop)
 print(Dop**3)
 
 # * and /
-y = Dop * x
+y = Dop @ x
 print(Dop / y)
 
 # eigs
@@ -194,14 +200,14 @@ d = 1j * (np.arange(n) + 1.0)
 x = np.ones(n)
 Dop = pylops.Diagonal(d)
 
-print(f"y = Dx = {Dop * x}")
-print(f"y = conj(D)x = {Dop.conj() * x}")
+print(f"y = Dx = {Dop @ x}")
+print(f"y = conj(D)x = {Dop.conj() @ x}")
 
 ###############################################################################
-# At this point, the concept of linear operator may sound abstract.
-# The convinience method :func:`pylops.LinearOperator.todense` can be used to
-# create the equivalent dense matrix of any operator. In this case for example
-# we expect to see a diagonal matrix with ``d`` values along the main diagonal
+# The concept of linear operator may sound abstract. The convenience method
+# :func:`pylops.LinearOperator.todense` can be used to create the equivalent
+# dense matrix of any operator. In this case for example we expect to see a
+# diagonal matrix with ``d`` values along the main diagonal
 D = Dop.todense()
 
 plt.figure(figsize=(5, 5))
@@ -212,14 +218,14 @@ plt.colorbar()
 plt.tight_layout()
 
 ###############################################################################
-# At this point it is worth reiterating that if two linear operators are
+# At this point, it is worth reiterating that if two linear operators are
 # combined by means of the algebraical operations shown above, the resulting
 # operator is still a :py:class:`pylops.LinearOperator` operator. This means
 # that we can still apply any of the methods implemented in our class
 # like ``*`` or ``/``.
 Dop1 = Dop - Dop.conj()
 
-y = Dop1 * x
+y = Dop1 @ x
 print(f"x = (Dop - conj(Dop))/y = {Dop1 / y}")
 
 D1 = Dop1.todense()
@@ -232,7 +238,7 @@ plt.colorbar()
 plt.tight_layout()
 
 ###############################################################################
-# Finally, another important feature of PyLops linear operators is that we can
+# Another important feature of PyLops linear operators is that we can
 # always keep track of how many times the forward and adjoint passes have been
 # applied (and reset when needed). This is particularly useful when running a
 # third party solver to see how many evaluations of our operator are performed
@@ -251,6 +257,27 @@ print(f"Adjoint evaluations: {Dop.rmatvec_count}")
 Dop.reset_count()
 print(f"Forward evaluations: {Dop.matvec_count}")
 print(f"Adjoint evaluations: {Dop.rmatvec_count}")
+
+
+########################################################################
+# Finally, let's consider a case where the :py:class:`pylops.basicoperators.Diagonal`
+# operator acts on one dimension of a 2d-array. We will see how in this case the forward
+# and adjoint passes can be applied on the flattened array as well as on the 2d-array directly
+
+#
+m, n = 10, 5
+d = np.arange(n) + 1.0
+x = np.ones((m, n))
+Dop = pylops.Diagonal(d, dims=(m, n), axis=-1)
+
+yflat = Dop @ x.ravel()
+y = Dop @ x
+
+xadjflat = Dop.H @ yflat
+xadj = Dop.H @ y
+
+print(f"yflat shape = {yflat.shape}, y shape = {y.shape}")
+print(f"xadjflat shape = {xadjflat.shape}, xadj shape = {xadj.shape}")
 
 ###############################################################################
 # This first tutorial is completed. You have seen the basic operations that

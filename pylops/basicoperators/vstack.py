@@ -44,6 +44,10 @@ class VStack(LinearOperator):
     nproc : :obj:`int`, optional
         Number of processes used to evaluate the N operators in parallel using
         ``multiprocessing``. If ``nproc=1``, work in serial mode.
+    forceflat : :obj:`bool`, optional
+        .. versionadded:: 2.2.0
+
+        Force an array to be flattened after rmatvec.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -107,6 +111,7 @@ class VStack(LinearOperator):
         self,
         ops: Sequence[LinearOperator],
         nproc: int = 1,
+        forceflat: bool = None,
         dtype: Optional[DTypeLike] = None,
     ) -> None:
         self.ops = ops
@@ -121,15 +126,28 @@ class VStack(LinearOperator):
             raise ValueError("operators have different number of columns")
         self.mops = int(mops[0])
         self.nnops = np.insert(np.cumsum(nops), 0, 0)
+        # define dims (check if all operators have the same,
+        # otherwise make same as self.mops and forceflat=True)
+        dims = [op.dims for op in self.ops]
+        if len(set(dims)) == 1:
+            dims = dims[0]
+        else:
+            dims = (self.mops,)
+            forceflat = True
         # create pool for multiprocessing
         self._nproc = nproc
         self.pool = None
         if self.nproc > 1:
             self.pool = mp.Pool(processes=nproc)
-
         dtype = _get_dtype(self.ops) if dtype is None else np.dtype(dtype)
         clinear = all([getattr(oper, "clinear", True) for oper in self.ops])
-        super().__init__(dtype=dtype, shape=(self.nops, self.mops), clinear=clinear)
+        super().__init__(
+            dtype=dtype,
+            shape=(self.nops, self.mops),
+            dims=dims,
+            clinear=clinear,
+            forceflat=forceflat,
+        )
 
     @property
     def nproc(self) -> int:

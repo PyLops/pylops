@@ -94,7 +94,7 @@ def test_cg(par):
     "par", [(par1), (par2), (par3), (par4), (par1j), (par2j), (par3j), (par3j)]
 )
 def test_cg_ndarray(par):
-    """CG with linear operator"""
+    """CG with linear operator (and ndarray as input and output)"""
     np.random.seed(10)
 
     dims = dimsd = (par["nx"], par["ny"])
@@ -117,6 +117,35 @@ def test_cg_ndarray(par):
     xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=1e-5, show=True)[0]
     assert xinv.shape == x.shape
     assert_array_almost_equal(x, xinv, decimal=4)
+
+
+@pytest.mark.parametrize(
+    "par", [(par1), (par2), (par3), (par4), (par1j), (par2j), (par3j), (par3j)]
+)
+def test_cg_forceflat(par):
+    """CG with linear operator (and forced 1darray as input and output)"""
+    np.random.seed(10)
+
+    dims = dimsd = (par["nx"], par["ny"])
+    x = np.ones(dims) + par["imag"] * np.ones(dims)
+
+    A = np.random.normal(0, 10, (x.size, x.size)) + par["imag"] * np.random.normal(
+        0, 10, (x.size, x.size)
+    )
+    A = np.conj(A).T @ A  # to ensure definite positive matrix
+    Aop = MatrixMult(A, dtype=par["dtype"], forceflat=True)
+    Aop.dims = dims
+    Aop.dimsd = dimsd
+
+    if par["x0"]:
+        x0 = np.random.normal(0, 10, dims) + par["imag"] * np.random.normal(0, 10, dims)
+    else:
+        x0 = None
+
+    y = Aop * x
+    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=1e-5, show=True)[0]
+    assert xinv.shape == x.ravel().shape
+    assert_array_almost_equal(x.ravel(), xinv, decimal=4)
 
 
 @pytest.mark.parametrize(

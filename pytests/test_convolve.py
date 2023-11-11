@@ -133,7 +133,9 @@ def test_Convolve1D(par):
 
         x = np.zeros((par["nx"]))
         x[par["nx"] // 2] = 1.0
-        xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
+        xlsqr = lsqr(
+            Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0
+        )[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 1D on 2D
@@ -153,7 +155,9 @@ def test_Convolve1D(par):
             int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
         ] = 1.0
         x = x.ravel()
-        xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
+        xlsqr = lsqr(
+            Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0
+        )[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 1D on 3D
@@ -175,8 +179,29 @@ def test_Convolve1D(par):
         int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
     ] = 1.0
     x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[
+        0
+    ]
     assert_array_almost_equal(x, xlsqr, decimal=1)
+
+
+@pytest.mark.parametrize(
+    "par", [(par1_1d), (par2_1d), (par3_1d), (par4_1d), (par5_1d), (par6_1d)]
+)
+def test_Convolve1D_long(par):
+    """Dot-test and inversion for Convolve1D operator with long filter"""
+    np.random.seed(10)
+    # 1D
+    if par["axis"] == 0:
+        x = np.zeros((par["nx"]))
+        x[par["nx"] // 2] = 1.0
+        Xop = Convolve1D(nfilt[0], h=x, offset=nfilt[0] // 2, dtype="float64")
+        assert dottest(Xop, par["nx"], nfilt[0])
+
+        h1lsqr = lsqr(
+            Xop, Xop * h1, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0
+        )[0]
+        assert_array_almost_equal(h1, h1lsqr, decimal=1)
 
 
 @pytest.mark.parametrize(
@@ -200,7 +225,9 @@ def test_Convolve2D(par):
             int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
         ] = 1.0
         x = x.ravel()
-        xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
+        xlsqr = lsqr(
+            Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0
+        )[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 2D on 3D
@@ -224,7 +251,9 @@ def test_Convolve2D(par):
         int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
     ] = 1.0
     x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[
+        0
+    ]
     # due to ringing in solution we cannot use assert_array_almost_equal
     assert np.linalg.norm(xlsqr - x) / np.linalg.norm(xlsqr) < 2e-1
 

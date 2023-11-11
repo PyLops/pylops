@@ -191,7 +191,7 @@ def PrestackLinearModelling(
         D = get_block_diag(theta)(*([D] * nG))
 
         # Create wavelet operator
-        C = ncp.asarray(convmtx(wav, nt0))[:, len(wav) // 2 : -len(wav) // 2 + 1]
+        C = ncp.asarray(convmtx(wav, nt0, len(wav) // 2)[:nt0])
         C = [C] * ntheta
         C = get_block_diag(theta)(*C)
 
@@ -346,7 +346,7 @@ def PrestackWaveletModelling(
     M = ncp.dot(G, ncp.dot(D, m.T.ravel())).reshape(ntheta, nt0)
     Mconv = VStack(
         [
-            MatrixMult(convmtx(M[itheta], nwav)[wavc : -nwav + wavc + 1], dtype=dtype)
+            MatrixMult(convmtx(M[itheta], nwav, wavc)[:nt0], dtype=dtype)
             for itheta in range(ntheta)
         ]
     )

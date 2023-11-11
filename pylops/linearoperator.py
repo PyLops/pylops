@@ -85,13 +85,20 @@ class LinearOperator(_LinearOperator):
         .. versionadded:: 2.0.0
 
         Dimensions of data. If not provided, ``(self.shape[0],)`` is used.
-    explicit : :obj:`bool`, optional
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``). Defaults to ``False``.
     clinear : :obj:`bool`, optional
         .. versionadded:: 1.17.0
 
         Operator is complex-linear. Defaults to ``True``.
+    explicit : :obj:`bool`, optional
+        Operator contains a matrix that can be solved explicitly
+        (``True``) or not (``False``). Defaults to ``False``.
+    forceflat : :obj:`bool`, optional
+        .. versionadded:: 2.2.0
+
+        Force an array to be flattened after matvec/rmatvec if the input is ambiguous
+        (i.e., is a 1D array both when operating with ND arrays and with 1D arrays).
+        Defaults to ``None`` for operators that have no ambiguity or to ``True``
+        for those with ambiguity.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -108,6 +115,7 @@ class LinearOperator(_LinearOperator):
         dimsd: Optional[ShapeLike] = None,
         clinear: Optional[bool] = None,
         explicit: Optional[bool] = None,
+        forceflat: Optional[bool] = None,
         name: Optional[str] = None,
     ) -> None:
         if Op is not None:
@@ -124,6 +132,9 @@ class LinearOperator(_LinearOperator):
             )
             if explicit and hasattr(Op, "A"):
                 self.A = Op.A
+            forceflat = (
+                getattr(self.Op, "forceflat", None) if forceflat is None else forceflat
+            )
             name = getattr(Op, "name", None) if name is None else name
 
         if dtype is not None:
@@ -138,6 +149,8 @@ class LinearOperator(_LinearOperator):
             self.clinear = clinear
         if explicit is not None:
             self.explicit = explicit
+        if forceflat is not None:
+            self.forceflat = forceflat
         self.name = name
 
         # counters
@@ -264,6 +277,21 @@ class LinearOperator(_LinearOperator):
         del self._explicit
 
     @property
+    def forceflat(self):
+        return getattr(self, "_forceflat", None)
+
+    @forceflat.setter
+    def forceflat(self, new_forceflat: bool) -> None:
+        # note that this can also be None so we check before forcing bool
+        self._forceflat = (
+            new_forceflat if new_forceflat is None else bool(new_forceflat)
+        )
+
+    @forceflat.deleter
+    def forceflat(self):
+        del self._forceflat
+
+    @property
     def name(self):
         return getattr(self, "_name", None)
 
@@ -328,16 +356,32 @@ class LinearOperator(_LinearOperator):
                 Op,
                 exclude=[
                     "explicit",
+                    "forceflat",
                     "name",
                 ],
             )
             Op.clinear = Op.clinear and Opx.clinear
             Op.explicit = False
+            if self.forceflat is None and Opx.forceflat is None:
+                Op.forceflat = None
+            elif self.forceflat is not None and Opx.forceflat is not None:
+                # Define forceflat only if differing, otherwise raise error
+                if self.forceflat != Opx.forceflat:
+                    raise ValueError(
+                        f"Operators have conflicting forceflat {Op.forceflat} != {Opx.forceflat}"
+                    )
+                Op.forceflat = self.forceflat
+            else:  # Only one of them is None
+                Op.forceflat = (
+                    self.forceflat if self.forceflat is not None else Opx.forceflat
+                )
+
             # Replace if shape-like
             if len(self.dims) == 1:
                 Op.dims = Opx.dims
             if len(self.dimsd) == 1:
                 Op.dimsd = Opx.dimsd
+
             return Op
         else:
             return NotImplemented
@@ -374,7 +418,7 @@ class LinearOperator(_LinearOperator):
         """Copy attributes from one LinearOperator to another"""
         if exclude is None:
             exclude = ["name"]
-        attrs = ["dims", "dimsd", "clinear", "explicit", "name"]
+        attrs = ["dims", "dimsd", "clinear", "explicit", "forceflat", "name"]
         if exclude is not None:
             for item in exclude:
                 attrs.remove(item)
@@ -582,9 +626,22 @@ class LinearOperator(_LinearOperator):
             # to allow mixing pylops and scipy operators)
             Opx = aslinearoperator(x)
             Op = _ProductLinearOperator(self, Opx)
-            self._copy_attributes(Op, exclude=["dims", "explicit", "name"])
+            self._copy_attributes(Op, exclude=["dims", "explicit", "forceflat", "name"])
             Op.clinear = Op.clinear and Opx.clinear
             Op.explicit = False
+            if self.forceflat is None and Opx.forceflat is None:
+                Op.forceflat = None
+            elif self.forceflat is not None and Opx.forceflat is not None:
+                # Define forceflat only if differing, otherwise raise error
+                if self.forceflat != Opx.forceflat:
+                    raise ValueError(
+                        f"Operators have conflicting forceflat {Op.forceflat} != {Opx.forceflat}"
+                    )
+                Op.forceflat = self.forceflat
+            else:  # Only one of them is None
+                Op.forceflat = (
+                    self.forceflat if self.forceflat is not None else Opx.forceflat
+                )
             Op.dims = Opx.dims
             return Op
         elif np.isscalar(x):
@@ -608,17 +665,25 @@ class LinearOperator(_LinearOperator):
             if is_dims_shaped:
                 # (dims1, ..., dimsK) => (dims1 * ... * dimsK,) == self.shape
                 x = x.ravel()
-            if is_dims_shaped_matrix:
+            if is_dims_shaped_matrix and not self.forceflat:
                 # (dims1, ..., dimsK, P) => (dims1 * ... * dimsK, P)
                 x = x.reshape((-1, x.shape[-1]))
             if x.ndim == 1:
                 y = self.matvec(x)
-                if is_dims_shaped and get_ndarray_multiplication():
+                if (
+                    is_dims_shaped
+                    and not self.forceflat
+                    and get_ndarray_multiplication()
+                ):
                     y = y.reshape(self.dimsd)
                 return y
             elif x.ndim == 2:
                 y = self.matmat(x)
-                if is_dims_shaped_matrix and get_ndarray_multiplication():
+                if (
+                    is_dims_shaped_matrix
+                    and not self.forceflat
+                    and get_ndarray_multiplication()
+                ):
                     y = y.reshape((*self.dimsd, -1))
                 return y
             else:
@@ -776,7 +841,6 @@ class LinearOperator(_LinearOperator):
 
         # loop through columns of self
         for i in range(n):
-
             # make a unit vector for the ith column
             unit_i = np.zeros(n)
             unit_i[i] = 1

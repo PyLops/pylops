@@ -12,6 +12,7 @@ A list of operators present in pylops.signalprocessing:
     ConvolveND                      ND convolution operator.
     NonStationaryConvolve1D         1D nonstationary convolution operator.
     NonStationaryConvolve2D         2D nonstationary convolution operator.
+    NonStationaryConvolve3D         3D nonstationary convolution operator.
     NonStationaryFilters1D          1D nonstationary filter estimation operator.
     NonStationaryFilters2D          2D nonstationary filter estimation operator.
     Interp                          Interpolation operator.
@@ -43,6 +44,7 @@ from .convolvend import *
 from .convolve2d import *
 from .nonstatconvolve1d import *
 from .nonstatconvolve2d import *
+from .nonstatconvolve3d import *
 from .shift import *
 from .interp import *
 from .bilinear import *
@@ -71,6 +73,7 @@ __all__ = [
     "Convolve2D",
     "NonStationaryConvolve1D",
     "NonStationaryConvolve2D",
+    "NonStationaryConvolve3D",
     "NonStationaryFilters1D",
     "NonStationaryFilters2D",
     "Interp",
