@@ -160,7 +160,11 @@ class BlendingContinuous(LinearOperator):
             if self.ShiftOps[i] is None:
                 blended_data[:, shift_int : shift_int + self.nt] += x[i, :, :]
             else:
-                shifted_data = self.ShiftOps[i] * self.PadOp * x[i, :, :]
+                shifted_data = (
+                    self.ShiftOps[i]
+                    .matvec(self.PadOp.matvec(x[i, :, :].ravel()))
+                    .reshape(self.ShiftOps[i].dimsd)
+                )
                 blended_data[:, shift_int : shift_int + self.nt + 1] += shifted_data
         return blended_data
 
@@ -172,11 +176,11 @@ class BlendingContinuous(LinearOperator):
             if self.ShiftOps[i] is None:
                 deblended_data[i, :, :] = x[:, shift_int : shift_int + self.nt]
             else:
-                shifted_data = (
-                    self.PadOp.H
-                    * self.ShiftOps[i].H
-                    * x[:, shift_int : shift_int + self.nt + 1]
-                )
+                shifted_data = self.PadOp.rmatvec(
+                    self.ShiftOps[i].rmatvec(
+                        x[:, shift_int : shift_int + self.nt + 1].ravel()
+                    )
+                ).reshape(self.PadOp.dims)
                 deblended_data[i, :, :] = shifted_data
         return deblended_data
 
