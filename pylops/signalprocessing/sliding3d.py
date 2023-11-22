@@ -183,13 +183,16 @@ def Sliding3D(
 
     # create tapers
     if tapertype is not None:
-        tap = taper3d(dimsd[2], nwin, nover, tapertype=tapertype)
+        tap = taper3d(dimsd[2], nwin, nover, tapertype=tapertype).astype(Op.dtype)
 
     # transform to apply
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)], nproc=nproc)
     else:
-        OOp = BlockDiag([Diagonal(tap.ravel()) * Op for _ in range(nwins)], nproc=nproc)
+        OOp = BlockDiag(
+            [Diagonal(tap.ravel(), dtype=Op.dtype) * Op for _ in range(nwins)],
+            nproc=nproc,
+        )
 
     hstack = HStack(
         [

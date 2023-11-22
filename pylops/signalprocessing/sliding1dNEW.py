@@ -6,10 +6,18 @@ __all__ = [
 import logging
 from typing import Tuple, Union
 
+import numpy as np
+from numpy.lib.stride_tricks import sliding_window_view
+
 from pylops import LinearOperator
-from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
 from pylops.signalprocessing.sliding2d import _slidingsteps
 from pylops.utils._internal import _value_or_sized_to_tuple
+from pylops.utils.backend import (
+    get_array_module,
+    get_sliding_window_view,
+    to_cupy_conditional,
+)
+from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper
 from pylops.utils.typing import InputDimsLike, NDArray
 
@@ -77,15 +85,7 @@ def sliding1d_design(
     return nwins, dim, mwins_inends, dwins_inends
 
 
-def Sliding1D(
-    Op: LinearOperator,
-    dim: Union[int, InputDimsLike],
-    dimd: Union[int, InputDimsLike],
-    nwin: int,
-    nover: int,
-    tapertype: str = "hanning",
-    name: str = "S",
-) -> LinearOperator:
+class Sliding1D(LinearOperator):
     r"""1D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to slices of the model
@@ -127,11 +127,6 @@ def Sliding1D(
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
-    Returns
-    -------
-    Sop : :obj:`pylops.LinearOperator`
-        Sliding operator
-
     Raises
     ------
     ValueError
@@ -139,50 +134,104 @@ def Sliding1D(
         shape (``dims``).
 
     """
-    dim: Tuple[int, ...] = _value_or_sized_to_tuple(dim)
-    dimd: Tuple[int, ...] = _value_or_sized_to_tuple(dimd)
 
-    # data windows
-    dwin_ins, dwin_ends = _slidingsteps(dimd[0], nwin, nover)
-    nwins = len(dwin_ins)
+    def __init__(
+        self,
+        Op: LinearOperator,
+        dim: Union[int, InputDimsLike],
+        dimd: Union[int, InputDimsLike],
+        nwin: int,
+        nover: int,
+        tapertype: str = "hanning",
+        name: str = "S",
+    ) -> None:
 
-    # check windows
-    if nwins * Op.shape[1] != dim[0]:
-        raise ValueError(
-            f"Model shape (dim={dim}) is not consistent with chosen "
-            f"number of windows. Run sliding1d_design to identify the "
-            f"correct number of windows for the current "
-            "model size..."
+        dim: Tuple[int, ...] = _value_or_sized_to_tuple(dim)
+        dimd: Tuple[int, ...] = _value_or_sized_to_tuple(dimd)
+
+        # data windows
+        dwin_ins, dwin_ends = _slidingsteps(dimd[0], nwin, nover)
+        self.dwin_inends = (dwin_ins, dwin_ends)
+        nwins = len(dwin_ins)
+        self.nwin = nwin
+        self.nover = nover
+
+        # check windows
+        if nwins * Op.shape[1] != dim[0] and Op.shape[1] != dim[0]:
+            raise ValueError(
+                f"Model shape (dim={dim}) is not consistent with chosen "
+                f"number of windows. Run sliding1d_design to identify the "
+                f"correct number of windows for the current "
+                "model size..."
+            )
+
+        # create tapers
+        self.tapertype = tapertype
+        if self.tapertype is not None:
+            tap = taper(nwin, nover, tapertype=self.tapertype)
+            tapin = tap.copy()
+            tapin[:nover] = 1
+            tapend = tap.copy()
+            tapend[-nover:] = 1
+            self.taps = [
+                tapin,
+            ]
+            for i in range(1, nwins - 1):
+                self.taps.append(tap)
+            self.taps.append(tapend)
+            self.taps = np.vstack(self.taps)
+
+        # check if operator is applied to all windows simultaneously
+        self.simOp = False
+        if Op.shape[1] == dim[0]:
+            self.simOp = True
+        self.Op = Op
+
+        # create temporary shape and strides for cpy
+        self.shape_wins = None
+        self.strides_wins = None
+
+        super().__init__(
+            dtype=Op.dtype,
+            dims=(nwins, int(dim[0] // nwins)),
+            dimsd=dimd,
+            clinear=False,
+            name=name,
         )
 
-    # create tapers
-    if tapertype is not None:
-        tap = taper(nwin, nover, tapertype=tapertype).astype(Op.dtype)
-        tapin = tap.copy()
-        tapin[:nover] = 1
-        tapend = tap.copy()
-        tapend[-nover:] = 1
-        taps = {}
-        taps[0] = tapin
-        for i in range(1, nwins - 1):
-            taps[i] = tap
-        taps[nwins - 1] = tapend
+    @reshaped
+    def _matvec(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
+        if self.tapertype is not None:
+            self.taps = to_cupy_conditional(x, self.taps)
+        y = ncp.zeros(self.dimsd, dtype=self.dtype)
+        if self.simOp:
+            x = self.Op @ x
+        for iwin0 in range(self.dims[0]):
+            if self.simOp:
+                xx = x[iwin0]
+            else:
+                xx = self.Op.matvec(x[iwin0])
+            if self.tapertype is not None:
+                xxwin = self.taps[iwin0] * xx
+            else:
+                xxwin = xx
+            y[self.dwin_inends[0][iwin0] : self.dwin_inends[1][iwin0]] += xxwin
+        return y
 
-    # transform to apply
-    if tapertype is None:
-        OOp = BlockDiag([Op for _ in range(nwins)])
-    else:
-        OOp = BlockDiag(
-            [Diagonal(taps[itap].ravel(), dtype=Op.dtype) * Op for itap in range(nwins)]
-        )
-
-    combining = HStack(
-        [
-            Restriction(dimd, range(win_in, win_end), dtype=Op.dtype).H
-            for win_in, win_end in zip(dwin_ins, dwin_ends)
-        ]
-    )
-    Sop = LinearOperator(combining * OOp)
-    Sop.dims, Sop.dimsd = (nwins, int(dim[0] // nwins)), dimd
-    Sop.name = name
-    return Sop
+    @reshaped
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
+        ncp_sliding_window_view = get_sliding_window_view(x)
+        if self.tapertype is not None:
+            self.taps = to_cupy_conditional(x, self.taps)
+        ywins = ncp_sliding_window_view(x, self.nwin)[:: self.nwin - self.nover]
+        if self.tapertype is not None:
+            ywins = ywins * self.taps
+        if self.simOp:
+            y = self.Op.H @ ywins
+        else:
+            y = ncp.zeros(self.dims, dtype=self.dtype)
+            for iwin0 in range(self.dims[0]):
+                y[iwin0] = self.Op.rmatvec(ywins[iwin0])
+        return y
