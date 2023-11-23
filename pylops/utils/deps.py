@@ -37,7 +37,7 @@ def check_module_enabled(
 ) -> bool:
 
     try:
-        import_module("module")
+        import_module(module)
 
         if envrionment_str is not None:
             return os.environ[envrionment_str] == envrionment_val
