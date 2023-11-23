@@ -12,32 +12,8 @@ __all__ = [
 ]
 
 import os
-from importlib import import_module  # , util
+from importlib import import_module
 from typing import Optional
-
-# check package availability
-# cupy_enabled = (
-#     util.find_spec("cupy") is not None and int(os.getenv("CUPY_PYLOPS", 1)) == 1
-# )
-# cusignal_enabled = (
-#     util.find_spec("cusignal") is not None and int(os.getenv("CUSIGNAL_PYLOPS", 1)) == 1
-# )
-# try:
-#     import_module("cupy")
-#     # if can succesfully import cupy, check envrionment
-#     cupy_enabled = int(os.getenv("CUPY_PYLOPS", 1)) == 1
-# except (ImportError, ModuleNotFoundError):
-#     cupy_enabled = False
-# except Exception as e:
-#     raise UserWarning("Unexpceted Exception when importing cupy") from e
-# devito_enabled = util.find_spec("devito") is not None
-# numba_enabled = util.find_spec("numba") is not None
-# pyfftw_enabled = util.find_spec("pyfftw") is not None
-# pywt_enabled = util.find_spec("pywt") is not None
-# skfmm_enabled = util.find_spec("skfmm") is not None
-# spgl1_enabled = util.find_spec("spgl1") is not None
-# sympy_enabled = util.find_spec("sympy") is not None
-# torch_enabled = util.find_spec("torch") is not None
 
 
 def check_module_enabled(
@@ -60,7 +36,7 @@ def check_module_enabled(
     """
     # try to import the module
     try:
-        import_module(module)
+        _ = import_module(module)  # noqa: F401
         # run envrionment check if needed
         if envrionment_str is not None:
             # return True if the value matches expected value
