@@ -13,21 +13,43 @@ __all__ = [
 
 import os
 from importlib import import_module, util
+from typing import Optional
 
 # check package availability
 # cupy_enabled = (
 #     util.find_spec("cupy") is not None and int(os.getenv("CUPY_PYLOPS", 1)) == 1
 # )
 
-try:
-    import_module("cupy")
-    # if can succesfully import cupy, check envrionment
-    cupy_enabled = int(os.getenv("CUPY_PYLOPS", 1)) == 1
-except (ImportError, ModuleNotFoundError):
-    cupy_enabled = False
-except Exception as e:
-    raise UserWarning("Unexpceted Exception when importing cupy") from e
+# try:
+#     import_module("cupy")
+#     # if can succesfully import cupy, check envrionment
+#     cupy_enabled = int(os.getenv("CUPY_PYLOPS", 1)) == 1
+# except (ImportError, ModuleNotFoundError):
+#     cupy_enabled = False
+# except Exception as e:
+#     raise UserWarning("Unexpceted Exception when importing cupy") from e
 
+
+def check_module_enabled(
+    module: str,
+    envrionment_str: Optional[str] = None,
+    envrionment_val: Optional[str] = "1",
+) -> bool:
+
+    try:
+        import_module("module")
+
+        if envrionment_str is not None:
+            return os.environ[envrionment_str] == envrionment_val
+        else:
+            return True
+    except (ImportError, ModuleNotFoundError):
+        return False
+    except Exception as e:
+        raise UserWarning("Unexpceted Exception when importing cupy") from e
+
+
+cupy_enabled = check_module_enabled("cupy", "CUPY_PYLOPS")
 
 cusignal_enabled = (
     util.find_spec("cusignal") is not None and int(os.getenv("CUSIGNAL_PYLOPS", 1)) == 1
