@@ -12,12 +12,23 @@ __all__ = [
 ]
 
 import os
-from importlib import util
+from importlib import import_module, util
 
 # check package availability
-cupy_enabled = (
-    util.find_spec("cupy") is not None and int(os.getenv("CUPY_PYLOPS", 1)) == 1
-)
+# cupy_enabled = (
+#     util.find_spec("cupy") is not None and int(os.getenv("CUPY_PYLOPS", 1)) == 1
+# )
+
+try:
+    import_module("cupy")
+    # if can succesfully import cupy, check envrionment
+    cupy_enabled = int(os.getenv("CUPY_PYLOPS", 1)) == 1
+except (ImportError, ModuleNotFoundError):
+    cupy_enabled = False
+except Exception as e:
+    raise UserWarning("Unexpceted Exception when importing cupy") from e
+
+
 cusignal_enabled = (
     util.find_spec("cusignal") is not None and int(os.getenv("CUSIGNAL_PYLOPS", 1)) == 1
 )
