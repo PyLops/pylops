@@ -22,17 +22,22 @@ def check_module_enabled(
     envrionment_val: Optional[int] = 1,
 ) -> bool:
     """
-    Checks whether a specific module can be imported in the current Python environment.
+    Check whether a specific module can be imported in the current Python environment.
 
-    Args:
-        module (str): The name of the module to check import state for.
-        envrionment_str (Optional[str]): An optional environment variable name to check for. If provided,
-            the function will return True only if the environment variable is set to the specified value.
-            Defaults to None.
-        envrionment_val (Optional[str]): The value to compare the environment variable against. Defaults to "1".
+    Parameters
+    ----------
+    module : str
+        The name of the module to check import state for.
+    environment_str : str, optional
+        An optional environment variable name to check for. If provided, the function will return True
+        only if the environment variable is set to the specified value. Defaults to None.
+    environment_val : str, optional
+        The value to compare the environment variable against. Defaults to "1".
 
-    Returns:
-        bool: True if the module is available, False otherwise.
+    Returns
+    -------
+    bool
+        True if the module is available, False otherwise.
     """
     # try to import the module
     try:
