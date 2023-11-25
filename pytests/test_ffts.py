@@ -162,7 +162,7 @@ par_lists_fft_small_real = dict(
         (np.float16, 1),
         (np.float32, 4),
         (np.float64, 11),
-        (np.longdouble, 11),
+        (np.float128, 11),
     ],
     norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
@@ -234,7 +234,7 @@ par_lists_fft_random_real = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        (np.longdouble, 11),
+        (np.float128, 11),
     ],
     ifftshift_before=[False, True],
     engine=["numpy", "fftw", "scipy"],
@@ -280,7 +280,7 @@ def test_FFT_random_real(par):
 
 
 par_lists_fft_small_cpx = dict(
-    dtype_precision=[(np.complex64, 4), (np.complex128, 11), (np.clongdouble, 11)],
+    dtype_precision=[(np.complex64, 4), (np.complex128, 11), (np.complex256, 11)],
     norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
@@ -344,10 +344,10 @@ par_lists_fft_random_cpx = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        (np.longdouble, 11),
+        (np.float128, 11),
         (np.complex64, 3),
         (np.complex128, 11),
-        (np.clongdouble, 11),
+        (np.complex256, 11),
     ],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
@@ -426,7 +426,7 @@ par_lists_fft2d_random_real = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        (np.longdouble, 11),
+        (np.float128, 11),
     ],
     ifftshift_before=[False, True],
     engine=["numpy", "scipy"],
@@ -484,10 +484,10 @@ par_lists_fft2d_random_cpx = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        (np.longdouble, 11),
+        (np.float128, 11),
         (np.complex64, 3),
         (np.complex128, 11),
-        (np.clongdouble, 11),
+        (np.complex256, 11),
     ],
     ifftshift_before=itertools.product([False, True], [False, True]),
     fftshift_after=itertools.product([False, True], [False, True]),
@@ -566,7 +566,7 @@ par_lists_fftnd_random_real = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        (np.longdouble, 11),
+        (np.float128, 11),
     ],
     engine=["numpy", "scipy"],
 )
@@ -625,10 +625,10 @@ par_lists_fftnd_random_cpx = dict(
         (np.float16, 1),
         (np.float32, 3),
         (np.float64, 11),
-        (np.longdouble, 11),
+        (np.float128, 11),
         (np.complex64, 3),
         (np.complex128, 11),
-        (np.clongdouble, 11),
+        (np.complex256, 11),
     ],
     engine=["numpy", "scipy"],
 )
@@ -700,7 +700,7 @@ def test_FFTND_random_complex(par):
 
 
 par_lists_fft2dnd_small_cpx = dict(
-    dtype_precision=[(np.complex64, 5), (np.complex128, 11), (np.clongdouble, 11)],
+    dtype_precision=[(np.complex64, 5), (np.complex128, 11), (np.complex256, 11)],
     norm=["ortho", "none", "1/n"],
     engine=["numpy", "scipy"],
 )
@@ -874,15 +874,7 @@ def test_FFT_1dsignal(par):
         assert_array_almost_equal(y_fftshift, np.fft.fftshift(y))
 
         xadj = FFTop_fftshift.H * y_fftshift  # adjoint is same as inverse for fft
-        xinv = lsqr(
-            FFTop_fftshift,
-            y_fftshift,
-            damp=1e-10,
-            iter_lim=10,
-            atol=1e-8,
-            btol=1e-8,
-            show=0,
-        )[0]
+        xinv = lsqr(FFTop_fftshift, y_fftshift, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
         assert_array_almost_equal(x[:imax], xadj[:imax], decimal=decimal)
         assert_array_almost_equal(x[:imax], xinv[:imax], decimal=decimal)
 
@@ -966,15 +958,7 @@ def test_FFT_2dsignal(par):
         assert_array_almost_equal(D_fftshift, D2)
 
         dadj = FFTop_fftshift.H * D_fftshift  # adjoint is same as inverse for fft
-        dinv = lsqr(
-            FFTop_fftshift,
-            D_fftshift,
-            damp=1e-10,
-            iter_lim=10,
-            atol=1e-8,
-            btol=1e-8,
-            show=0,
-        )[0]
+        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
         dadj = np.real(dadj.reshape(nt, nx))
         dinv = np.real(dinv.reshape(nt, nx))
@@ -1032,15 +1016,7 @@ def test_FFT_2dsignal(par):
         assert_array_almost_equal(D_fftshift, D2)
 
         dadj = FFTop_fftshift.H * D_fftshift  # adjoint is same as inverse for fft
-        dinv = lsqr(
-            FFTop_fftshift,
-            D_fftshift,
-            damp=1e-10,
-            iter_lim=10,
-            atol=1e-8,
-            btol=1e-8,
-            show=0,
-        )[0]
+        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
         dadj = np.real(dadj.reshape(nt, nx))
         dinv = np.real(dinv.reshape(nt, nx))
@@ -1217,15 +1193,7 @@ def test_FFT_3dsignal(par):
         assert_array_almost_equal(D_fftshift, D2)
 
         dadj = FFTop_fftshift.H * D_fftshift  # adjoint is same as inverse for fft
-        dinv = lsqr(
-            FFTop_fftshift,
-            D_fftshift,
-            damp=1e-10,
-            iter_lim=10,
-            atol=1e-8,
-            btol=1e-8,
-            show=0,
-        )[0]
+        dinv = lsqr(FFTop_fftshift, D_fftshift, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
 
         dadj = np.real(dadj.reshape(nt, nx, ny))
         dinv = np.real(dinv.reshape(nt, nx, ny))
