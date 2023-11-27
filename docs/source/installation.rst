@@ -99,7 +99,8 @@ For a ``conda`` environment, run
 
 .. code-block:: bash
 
-   >> make dev-install_conda
+   >> make dev-install_conda # for x86 (Intel or AMD CPUs)
+   >> make dev-install_conda_arm # for arm (M-series macbook)
 
 This will create and activate an environment called ``pylops``, with all required and optional dependencies.
 
