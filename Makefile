@@ -29,7 +29,7 @@ install_conda:
 dev-install_conda:
 	conda env create -f environment-dev.yml && conda activate pylops && pip install -e .
 
-dev-intsall_conda_arm:
+dev-install_conda_arm:
 	conda env create -f environment-dev-arm.yml && conda activate pylops && pip install -e .
 
 tests:
