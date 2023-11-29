@@ -47,7 +47,7 @@ print(f"Dot-test {np.abs((yy - xx) / ((yy + xx + 1e-15) / 2)):.2e}")
 
 ###############################################################################
 # And here is a visual intepretation of what a dot-test is
-gs = pltgs.GridSpec(1, 9)
+gs = plt.GridSpec(1, 9)
 fig = plt.figure(figsize=(7, 3))
 ax = plt.subplot(gs[0, 0:2])
 ax.imshow(Op.A, cmap="rainbow")
