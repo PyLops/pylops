@@ -111,7 +111,7 @@ class BlendingContinuous(LinearOperator):
             # Define shift operator
             self.shifts = (times // self.dt).astype(np.int32)
             diff = (times / self.dt - self.shifts) * self.dt
-            diff = np.repeat(diff[:, np.newaxis], self.nr, axis=1)
+            diff = np.repeat(diff[:, np.newaxis], self.nr, axis=1).astype(self.dtype)
             self.ShiftOp = Shift(
                 (self.ns, self.nr, self.nt + 1),
                 diff,
