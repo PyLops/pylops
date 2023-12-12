@@ -15,9 +15,7 @@ import os
 
 # from importlib import import_module
 from importlib import util
-
-# from typing import Optional
-
+from typing import Optional
 
 # def check_module_enabled(
 #     module: str,
@@ -187,7 +185,7 @@ def sympy_import(message):
     return sympy_message
 
 
-def cupy_import(message):
+def cupy_import(message: Optional[str] = None):
     # detect if cupy should be importable
     cupy_test = (
         util.find_spec("cupy") is not None and int(os.getenv("CUPY_PYLOPS", 1)) == 1
@@ -221,7 +219,7 @@ def cupy_import(message):
     return cupy_message
 
 
-def cusignal_import(message):
+def cusignal_import(message: Optional[str] = None):
     # detect if cupy should be importable
     cusignal_test = (
         util.find_spec("cusignal") is not None
