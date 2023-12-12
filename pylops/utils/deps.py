@@ -159,18 +159,19 @@ def cupy_import(message: Optional[str] = None):
         # if unable to import but it is installed
         except (ImportError, ModuleNotFoundError) as e:
             cupy_message = (
-                f"Failed to import cupy. Falling back to CPU (error: {e}) ."
-                f"{message} run"
-                "Please ensure your CUDA envrionment is set up correctly"
+                f"Failed to import cupy. Falling back to CPU (error: {e}). "
+                f"{message} run "
+                "Please ensure your CUDA envrionment is set up correctly "
                 "for more details visit 'https://docs.cupy.dev/en/stable/install.html'"
             )
+            print(cupy_message)
     # if cupy_test is False it means not installed or envrionment variable set to 0
     else:
         cupy_message = (
             f"cupy package not installed or os.getenv('CUPY_PYLOPS') == 0. In order to be able to use "
             f"{message} "
-            "ensure 'os.getenv('CUPY_PYLOPS') == 1' and run"
-            "'pip install cupy'."
+            "ensure 'os.getenv('CUPY_PYLOPS') == 1' and run "
+            "'pip install cupy'. "
             "for more details visit 'https://docs.cupy.dev/en/stable/install.html'"
         )
 
@@ -194,18 +195,19 @@ def cusignal_import(message: Optional[str] = None):
         # if unable to import but it is installed
         except (ImportError, ModuleNotFoundError) as e:
             cusignal_message = (
-                f"Failed to import cusignal. Falling back to CPU (error: {e}) ."
-                f"{message} run"
-                "Please ensure your CUDA envrionment is set up correctly"
+                f"Failed to import cusignal. Falling back to CPU (error: {e}) . "
+                f"{message} run "
+                "Please ensure your CUDA envrionment is set up correctly "
                 "for more details visit 'https://github.com/rapidsai/cusignal#installation'"
             )
+            print(cusignal_message)
     # if cupy_test is False it means not installed or envrionment variable set to 0
     else:
         cusignal_message = (
             f"cusignal package not installed or os.getenv('CUSIGNAL_PYLOPS') == 0. In order to be able to use "
             f"{message} "
-            "ensure 'os.getenv('CUSIGNAL_PYLOPS') == 1' and run"
-            "'conda install cusignal'."
+            "ensure 'os.getenv('CUSIGNAL_PYLOPS') == 1' and run "
+            "'conda install cusignal'. "
             "for more details visit ''https://github.com/rapidsai/cusignal#installation''"
         )
 
