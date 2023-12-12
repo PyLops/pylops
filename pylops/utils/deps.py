@@ -12,50 +12,8 @@ __all__ = [
 ]
 
 import os
-
-# from importlib import import_module
 from importlib import util
 from typing import Optional
-
-# def check_module_enabled(
-#     module: str,
-#     envrionment_str: Optional[str] = None,
-#     envrionment_val: Optional[int] = 1,
-# ) -> bool:
-#     """
-#     Check whether a specific module can be imported in the current Python environment.
-
-#     Parameters
-#     ----------
-#     module : str
-#         The name of the module to check import state for.
-#     environment_str : str, optional
-#         An optional environment variable name to check for. If provided, the function will return True
-#         only if the environment variable is set to the specified value. Defaults to None.
-#     environment_val : str, optional
-#         The value to compare the environment variable against. Defaults to "1".
-
-#     Returns
-#     -------
-#     bool
-#         True if the module is available, False otherwise.
-#     """
-#     # try to import the module
-#     try:
-#         _ = import_module(module)  # noqa: F401
-#         # run envrionment check if needed
-#         if envrionment_str is not None:
-#             # return True if the value matches expected value
-#             return int(os.getenv(envrionment_str, envrionment_val)) == envrionment_val
-#         # if no environment check return True as import_module worked
-#         else:
-#             return True
-#     # if cannot import and provides expected Exceptions, return False
-#     except (ImportError, ModuleNotFoundError):
-#         return False
-#     # raise warning if anyother exception raised in import
-#     except Exception as e:
-#         raise UserWarning(f"Unexpceted Exception when importing {module}") from e
 
 
 # error message at import of available package
@@ -211,7 +169,7 @@ def cupy_import(message: Optional[str] = None):
         cupy_message = (
             f"cupy package not installed or os.getenv('CUPY_PYLOPS') == 0. In order to be able to use "
             f"{message} "
-            "os.getenv('CUPY_PYLOPS') == 1  and run"
+            "ensure 'os.getenv('CUPY_PYLOPS') == 1' and run"
             "'pip install cupy'."
             "for more details visit 'https://docs.cupy.dev/en/stable/install.html'"
         )
@@ -246,23 +204,23 @@ def cusignal_import(message: Optional[str] = None):
         cusignal_message = (
             f"cusignal package not installed or os.getenv('CUSIGNAL_PYLOPS') == 0. In order to be able to use "
             f"{message} "
-            "os.getenv('CUSIGNAL_PYLOPS') == 1  and run"
-            "'pip install cupy'."
+            "ensure 'os.getenv('CUSIGNAL_PYLOPS') == 1' and run"
+            "'conda install cusignal'."
             "for more details visit ''https://github.com/rapidsai/cusignal#installation''"
         )
 
     return cusignal_message
 
 
-cupy_enabled = (
+# Set package avlaiblity booleans
+cupy_enabled: bool = (
     True if (cupy_import() is None and int(os.getenv("CUPY_PYLOPS", 1)) == 1) else False
 )
-cusignal_enabled = (
+cusignal_enabled: bool = (
     True
     if (cusignal_import() is None and int(os.getenv("CUSIGNAL_PYLOPS", 1)) == 1)
     else False
 )
-# cusignal_enabled = check_module_enabled("cusignal", "CUSIGNAL_PYLOPS")
 devito_enabled = util.find_spec("devito") is not None
 numba_enabled = util.find_spec("numba") is not None
 pyfftw_enabled = util.find_spec("pyfftw") is not None
