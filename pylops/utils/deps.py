@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 import os
-from importlib import util
+from importlib import import_module, util
 from typing import Optional
 
 
@@ -152,14 +152,14 @@ def cupy_import(message: Optional[str] = None):
     if cupy_test:
         # try importing it
         try:
-            import cupy  # noqa: F401
+            import_module("cupy")  # noqa: F401
 
             # if successful set the message to None.
             cupy_message = None
         # if unable to import but it is installed
         except (ImportError, ModuleNotFoundError) as e:
             cupy_message = (
-                f"Failed to import cupy. Falling back to CPU (error: {e}). "
+                f"Failed to import cupy, Falling back to CPU (error: {e}). "
                 f""
                 "Please ensure your CUDA envrionment is set up correctly "
                 "for more details visit 'https://docs.cupy.dev/en/stable/install.html'"
@@ -188,7 +188,7 @@ def cusignal_import(message: Optional[str] = None):
     if cusignal_test:
         # try importing it
         try:
-            import cusignal  # noqa: F401
+            import_module("cusignal")  # noqa: F401
 
             # if successful set the message to None.
             cusignal_message = None
