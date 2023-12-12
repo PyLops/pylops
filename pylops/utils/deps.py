@@ -255,14 +255,12 @@ def cusignal_import(message: Optional[str] = None):
 
 
 cupy_enabled = (
-    True
-    if (cupy_import() is not None and int(os.getenv("CUPY_PYLOPS", 1)) == 1)
-    else False  # noqa:F821,E501
+    True if (cupy_import() is None and int(os.getenv("CUPY_PYLOPS", 1)) == 1) else False
 )
 cusignal_enabled = (
     True
-    if (cusignal_import() is not None and int(os.getenv("CUSIGNAL_PYLOPS", 1)) == 1)
-    else False  # noqa:F821,E501
+    if (cusignal_import() is None and int(os.getenv("CUSIGNAL_PYLOPS", 1)) == 1)
+    else False
 )
 # cusignal_enabled = check_module_enabled("cusignal", "CUSIGNAL_PYLOPS")
 devito_enabled = util.find_spec("devito") is not None
