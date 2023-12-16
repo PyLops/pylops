@@ -4,9 +4,9 @@ Implementing new operators
 ==========================
 Users are welcome to create new operators and add them to the PyLops library.
 
-In this tutorial, we will go through the key steps in the definition of an operator, using the
-:py:class:`pylops.Diagonal` as an example. This is a very simple operator that applies a diagonal matrix to the model
-in forward mode and to the data in adjoint mode.
+In this tutorial, we will go through the key steps in the definition of an operator, using a simplified version of the
+:py:class:`pylops.Diagonal` operator as an example. This is a very simple operator that applies a diagonal matrix
+to the model in forward mode and to the data in adjoint mode.
 
 
 Creating the operator
@@ -45,14 +45,17 @@ Initialization (``__init__``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We then need to create the ``__init__`` where the input parameters are passed and saved as members of our class.
-While the input parameters change from operator to operator, it is always required to create three members, the first
-called ``shape`` with a tuple containing the dimensions of the operator in the data and model space, the second
-called ``dtype`` with the data type object (:obj:`np.dtype`) of the model and data, and the third
-called ``explicit`` with a boolean (``True`` or ``False``) identifying if the operator can be inverted by a direct
-solver or requires an iterative solver. This member is ``True`` if the operator has also a member ``A`` that contains
-the matrix to be inverted like for example in the :py:class:`pylops.MatrixMult` operator, and it will be ``False`` otherwise.
-In this case we have another member called ``d`` which is equal to the input vector containing the diagonal elements
-of the matrix we want to multiply to the model and data.
+While the input parameters change from operator to operator, it is always required to create three members:
+
+- ``dtype``: data type object (of type :obj:`str` or :obj:`np.dtype`) of the model and data;
+- ``shape``: a tuple containing the dimensions of the operator in the data and model space;
+- ``explicit``: a boolean (``True`` or ``False``) identifying if the operator can be inverted by a direct solver or
+  requires an iterative solver. This member is ``True`` if the operator has also a member ``A`` that contains
+  the matrix to be inverted like for example in the :py:class:`pylops.MatrixMult` operator, and it will be
+  ``False`` otherwise.
+
+In this specific case, we have another member called ``d`` which is equal to the input vector containing the diagonal
+elements of the matrix we want to multiply to the model and data.
 
 .. code-block:: python
 
@@ -62,7 +65,7 @@ of the matrix we want to multiply to the model and data.
         self.dtype = np.dtype(dtype)
         self.explicit = False
 
-Alternatively, since version 2.0.0, the recommended way of initializing operators derived from the base
+Alternatively, since version ``v2.0.0``, the recommended way of initializing operators derived from the base
 :py:class:`pylops.LinearOperator` class is to invoke ``super`` to assign the required attributes:
 
 .. code-block:: python
@@ -72,8 +75,14 @@ Alternatively, since version 2.0.0, the recommended way of initializing operator
         super().__init__(dtype=np.dtype(dtype), shape=(len(self.d), len(self.d)))
 
 In this case, there is no need to declare ``explicit`` as it already defaults to ``False``.
-Since version 2.0.0, every :py:class:`pylops.LinearOperator` class is imbued with ``dims``,
-``dimsd``, ``clinear`` and ``explicit``, in addition to the required ``dtype`` and ``shape``.
+
+Moreover, since version ``v2.0.0``, every :py:class:`pylops.LinearOperator` class is imbued with ``dims``,
+``dimsd``, and ``clinear`` in addition to the required ``dtype``, ``shape``, and ``explicit``. Note that
+``dims`` and ``dimsd`` can be defined in spite of ``shape``, which will be automatically assigned within the
+``super`` method: the main difference between ``dims``/``dimsd`` and ``shape`` is the the former variables can be
+used the define the n-dimensional nature of the input of an operator, whilst the latter variable refers to their overall
+shape when the input is flattened.
+
 See the docs of :py:class:`pylops.LinearOperator` for more information about what these
 attributes mean.
 
@@ -91,6 +100,10 @@ We will finally need to ``return`` the result of this operation:
     def _matvec(self, x):
         return self.d * x
 
+Note that since version ``v2.0.0``, this method can be decorated by the decorator ``@reshaped``. As discussed in
+more details in the decorator documentation, by adding such decorator the input ``x`` is initially reshaped into
+a nd-array of shape ``dims``, fed to the actual code in ``_matvec`` and then flattened.
+
 Adjoint mode (``_rmatvec``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Finally we need to implement the *adjoint mode* in the method ``_rmatvec``. In other words, we will need to write
@@ -105,6 +118,10 @@ different from operator to operator):
         return self.d * x
 
 And that's it, we have implemented our first linear operator!
+
+Similar to ``_matvec``, since version ``v2.0.0``, this method can also be decorated by the decorator ``@reshaped``.
+When doing so, the input ``x`` is initially reshaped into
+a nd-array of shape ``dimsd``, fed to the actual code in ``_rmatvec`` and then flattened.
 
 Testing the operator
 --------------------
