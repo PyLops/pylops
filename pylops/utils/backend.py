@@ -49,6 +49,8 @@ cusignal_message = (
     "cusignal package not installed. Use numpy arrays of" "install cusignal."
 )
 
+import jax.numpy as jnp
+
 
 def get_module(backend: str = "numpy") -> ModuleType:
     """Returns correct numerical module based on backend string
@@ -69,8 +71,10 @@ def get_module(backend: str = "numpy") -> ModuleType:
         ncp = np
     elif backend == "cupy":
         ncp = cp
+    elif backend == "jax":
+        ncp = jnp
     else:
-        raise ValueError("backend must be numpy or cupy")
+        raise ValueError("backend must be numpy, cupy, or jax")
     return ncp
 
 
@@ -93,8 +97,10 @@ def get_module_name(mod: ModuleType) -> str:
         backend = "numpy"
     elif mod == cp:
         backend = "cupy"
+    elif mod == jnp:
+        backend = "jax"
     else:
-        raise ValueError("module must be numpy or cupy")
+        raise ValueError("module must be numpy, cupy, or jax")
     return backend
 
 
@@ -112,6 +118,10 @@ def get_array_module(x: npt.ArrayLike) -> ModuleType:
         Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
 
     """
+    import os
+
+    if int(os.getenv("JAX_PYLOPS", 0)):
+        return jnp
     if deps.cupy_enabled:
         return cp.get_array_module(x)
     else:

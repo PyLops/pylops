@@ -11,6 +11,7 @@ import scipy.fft
 from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFT, _FFTNorms
 from pylops.utils import deps
+from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -63,6 +64,7 @@ class _FFT_numpy(_BaseFFT):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
+        np = get_array_module(x)
         if self.ifftshift_before:
             x = np.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
@@ -84,6 +86,7 @@ class _FFT_numpy(_BaseFFT):
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
+        np = get_array_module(x)
         if self.fftshift_after:
             x = np.fft.ifftshift(x, axes=self.axis)
         if self.real:
