@@ -48,6 +48,7 @@ utils
 from .config import *
 from .linearoperator import *
 from .torchoperator import *
+from .jaxoperator import *
 from .basicoperators import *
 from . import (
     avo,
