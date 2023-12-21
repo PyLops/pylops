@@ -120,10 +120,14 @@ def get_array_module(x: npt.ArrayLike) -> ModuleType:
     """
     import os
 
-    if int(os.getenv("JAX_PYLOPS", 0)):
-        return jnp
     if deps.cupy_enabled:
-        return cp.get_array_module(x)
+        ncjp = cp.get_array_module(x)
+        if ncjp == np and int(os.getenv("JAX_PYLOPS", 0)):
+            return jnp
+        else:
+            return ncjp
+    elif int(os.getenv("JAX_PYLOPS", 0)):
+        return jnp
     else:
         return np
 
