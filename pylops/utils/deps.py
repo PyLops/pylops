@@ -1,6 +1,5 @@
 __all__ = [
     "cupy_enabled",
-    "cusignal_enabled",
     "jax_enabled",
     "devito_enabled",
     "numba_enabled",
@@ -50,35 +49,6 @@ def cupy_import(message: Optional[str] = None) -> str:
         )
 
     return cupy_message
-
-
-def cusignal_import(message: Optional[str] = None) -> str:
-    cusignal_test = (
-        util.find_spec("cusignal") is not None
-        and int(os.getenv("CUSIGNAL_PYLOPS", 1)) == 1
-    )
-    if cusignal_test:
-        try:
-            import_module("cusignal")  # noqa: F401
-
-            cusignal_message = None
-        except (ImportError, ModuleNotFoundError) as e:
-            cusignal_message = (
-                f"Failed to import cusignal. Falling back to CPU (error: {e}) . "
-                "Please ensure your CUDA environment is set up correctly; "
-                "for more details visit 'https://github.com/rapidsai/cusignal#installation'"
-            )
-            print(UserWarning(cusignal_message))
-    else:
-        cusignal_message = (
-            "Cusignal not installed or os.getenv('CUSIGNAL_PYLOPS') == 0. "
-            f"In order to be able to use {message} "
-            "ensure 'os.getenv('CUSIGNAL_PYLOPS') == 1' and run "
-            "'conda install cusignal'; "
-            "for more details visit ''https://github.com/rapidsai/cusignal#installation''"
-        )
-
-    return cusignal_message
 
 
 def jax_import(message: Optional[str] = None) -> str:
@@ -236,7 +206,7 @@ def sympy_import(message: Optional[str] = None) -> str:
 
 
 # Set package availability booleans
-# cupy, cusignal, and jax: the package is imported to check everything is working correctly,
+# cupy and jax: the package is imported to check everything is working correctly,
 # if not the package is disabled. We do this here as these libraries are used as drop-in
 # replacement for many numpy and scipy routines when cupy/jax arrays are provided.
 # all other libraries: we simply check if the package is available and postpone its import
@@ -245,11 +215,7 @@ def sympy_import(message: Optional[str] = None) -> str:
 cupy_enabled: bool = (
     True if (cupy_import() is None and int(os.getenv("CUPY_PYLOPS", 1)) == 1) else False
 )
-cusignal_enabled: bool = (
-    True
-    if (cusignal_import() is None and int(os.getenv("CUSIGNAL_PYLOPS", 1)) == 1)
-    else False
-)
+
 jax_enabled: bool = (
     True if (jax_import() is None and int(os.getenv("JAX_PYLOPS", 1)) == 1) else False
 )

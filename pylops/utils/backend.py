@@ -38,11 +38,12 @@ if deps.cupy_enabled:
     import cupyx.scipy.fft as cp_fft
     from cupyx.scipy.linalg import block_diag as cp_block_diag
     from cupyx.scipy.linalg import toeplitz as cp_toeplitz
+    from cupyx.scipy.signal import convolve as cp_convolve
+    from cupyx.scipy.signal import correlate as cp_correlate
+    from cupyx.scipy.signal import fftconvolve as cp_fftconvolve
+    from cupyx.scipy.signal import oaconvolve as cp_oaconvolve
     from cupyx.scipy.sparse import csc_matrix as cp_csc_matrix
     from cupyx.scipy.sparse import eye as cp_eye
-
-if deps.cusignal_enabled:
-    import cusignal
 
 if deps.jax_enabled:
     import jax
@@ -142,11 +143,11 @@ def get_convolve(x: npt.ArrayLike) -> Callable:
         Function to be used to process array
 
     """
-    if deps.cusignal_enabled or deps.jax_enabled:
+    if deps.cupy_enabled or deps.jax_enabled:
         if isinstance(x, jnp.ndarray):
             return jax.scipy.signal.convolve
-        elif deps.cusignal_enabled and cp.get_array_module(x) == cp:
-            return cusignal.convolution.convolve
+        elif deps.cupy_enabled and cp.get_array_module(x) == cp:
+            return cp_convolve
         else:
             return convolve
     else:
@@ -167,11 +168,11 @@ def get_fftconvolve(x: npt.ArrayLike) -> Callable:
         Function to be used to process array
 
     """
-    if deps.cusignal_enabled or deps.jax_enabled:
+    if deps.cupy_enabled or deps.jax_enabled:
         if isinstance(x, jnp.ndarray):
             return jax.scipy.signal.fftconvolve
-        elif deps.cusignal_enabled and cp.get_array_module(x) == cp:
-            return cusignal.convolution.fftconvolve
+        elif deps.cupy_enabled and cp.get_array_module(x) == cp:
+            return cp_fftconvolve
         else:
             return fftconvolve
     else:
@@ -200,11 +201,7 @@ def get_oaconvolve(x: npt.ArrayLike) -> Callable:
                 "option..."
             )
         elif deps.cupy_enabled and cp.get_array_module(x) == cp:
-            raise NotImplementedError(
-                "oaconvolve not implemented in "
-                "cupy/cusignal. Consider using a different"
-                "option..."
-            )
+            return cp_oaconvolve
         else:
             return oaconvolve
     else:
@@ -225,11 +222,11 @@ def get_correlate(x: npt.ArrayLike) -> Callable:
         Function to be used to process array
 
     """
-    if deps.cusignal_enabled or deps.jax_enabled:
+    if deps.cupy_enabled or deps.jax_enabled:
         if isinstance(x, jnp.ndarray):
             return jax.scipy.signal.correlate
-        elif deps.cusignal_enabled and cp.get_array_module(x) == cp:
-            return cusignal.convolution.correlate
+        elif deps.cupy_enabled and cp.get_array_module(x) == cp:
+            return cp_correlate
         else:
             return correlate
     else:
