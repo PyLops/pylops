@@ -48,10 +48,10 @@ def _choose_convfunc(
 
 
 def _pad_along_axis(array: np.ndarray, pad_size: tuple, axis: int = 0) -> np.ndarray:
-
+    ncp = get_array_module(array)
     npad = [(0, 0)] * array.ndim
     npad[axis] = pad_size
-    return np.pad(array, pad_width=npad)
+    return ncp.pad(array, pad_width=npad)
 
 
 class _Convolve1Dshort(LinearOperator):
@@ -67,12 +67,14 @@ class _Convolve1Dshort(LinearOperator):
         dtype: DTypeLike = "float64",
         name: str = "C",
     ) -> None:
+        ncp = get_array_module(h)
         dims = _value_or_sized_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
         self.axis = axis
         self.nh = h.size if h.ndim == 1 else h.shape[axis]
         if offset > self.nh - 1:
             raise ValueError("offset must be smaller than h.shape[axis] - 1")
+        print("h", ncp, type(h))
         self.h = h
         self.offset = 2 * (self.nh // 2 - int(offset))
         if self.nh % 2 == 0:
@@ -83,7 +85,7 @@ class _Convolve1Dshort(LinearOperator):
                 (max(self.offset, 0), -min(self.offset, 0)),
                 axis=-1 if h.ndim == 1 else axis,
             )
-        self.hstar = np.flip(self.h, axis=-1)
+        self.hstar = ncp.flip(self.h, axis=-1)
 
         # add dimensions to filter to match dimensions of model and data
         if self.h.ndim == 1:
@@ -102,6 +104,7 @@ class _Convolve1Dshort(LinearOperator):
             self.convfunc, self.method = _choose_convfunc(
                 self.h, self.method, self.dims
             )
+        print(type(x), type(self.h))
         return self.convfunc(x, self.h, mode="same")
 
     @reshaped
@@ -127,6 +130,7 @@ class _Convolve1Dlong(LinearOperator):
         dtype: DTypeLike = "float64",
         name: str = "C",
     ) -> None:
+        ncp = get_array_module(h)
         dims = _value_or_sized_to_tuple(dims)
         dimsd = h.shape
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
@@ -140,13 +144,13 @@ class _Convolve1Dlong(LinearOperator):
         self.offset = 2 * (self.dims[self.axis] // 2 - int(offset))
         if self.dims[self.axis] % 2 == 0:
             self.offset -= 1
-        self.hstar = np.flip(self.h, axis=-1)
+        self.hstar = ncp.flip(self.h, axis=-1)
 
-        self.pad = np.zeros((len(dims), 2), dtype=int)
+        self.pad = ncp.zeros((len(dims), 2), dtype=int)
         self.pad[self.axis, 0] = max(self.offset, 0)
         self.pad[self.axis, 1] = -min(self.offset, 0)
 
-        self.padd = np.zeros((len(dims), 2), dtype=int)
+        self.padd = ncp.zeros((len(dims), 2), dtype=int)
         self.padd[self.axis, 1] = max(self.offset, 0)
         self.padd[self.axis, 0] = -min(self.offset, 0)
 
@@ -162,12 +166,13 @@ class _Convolve1Dlong(LinearOperator):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
         if type(self.h) is not type(x):
             self.h = to_cupy_conditional(x, self.h)
             self.convfunc, self.method = _choose_convfunc(
                 self.h, self.method, self.dims
             )
-        x = np.pad(x, self.pad)
+        x = ncp.pad(x, self.pad)
         y = self.convfunc(self.h, x, mode="same")
         return y
 
@@ -179,7 +184,7 @@ class _Convolve1Dlong(LinearOperator):
             self.convfunc, self.method = _choose_convfunc(
                 self.hstar, self.method, self.dims
             )
-        x = np.pad(x, self.padd)
+        x = ncp.pad(x, self.padd)
         y = self.convfunc(self.hstar, x)
         if self.dims[self.axis] % 2 == 0:
             y = ncp.take(
