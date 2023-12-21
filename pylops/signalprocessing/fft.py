@@ -64,52 +64,52 @@ class _FFT_numpy(_BaseFFT):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
-        np = get_array_module(x)
+        ncp = get_array_module(x)
         if self.ifftshift_before:
-            x = np.fft.ifftshift(x, axes=self.axis)
+            x = ncp.fft.ifftshift(x, axes=self.axis)
         if not self.clinear:
-            x = np.real(x)
+            x = ncp.real(x)
         if self.real:
-            y = np.fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = ncp.fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
-            y = np.swapaxes(y, -1, self.axis)
-            y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
-            y = np.swapaxes(y, self.axis, -1)
+            y = ncp.swapaxes(y, -1, self.axis)
+            y[..., 1 : 1 + (self.nfft - 1) // 2] *= ncp.sqrt(2)
+            y = ncp.swapaxes(y, self.axis, -1)
         else:
-            y = np.fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = ncp.fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after:
-            y = np.fft.fftshift(y, axes=self.axis)
+            y = ncp.fft.fftshift(y, axes=self.axis)
         y = y.astype(self.cdtype)
         return y
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
-        np = get_array_module(x)
+        ncp = get_array_module(x)
         if self.fftshift_after:
-            x = np.fft.ifftshift(x, axes=self.axis)
+            x = ncp.fft.ifftshift(x, axes=self.axis)
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
-            x = np.swapaxes(x, -1, self.axis)
-            x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
-            x = np.swapaxes(x, self.axis, -1)
-            y = np.fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            x = ncp.swapaxes(x, -1, self.axis)
+            x[..., 1 : 1 + (self.nfft - 1) // 2] /= ncp.sqrt(2)
+            x = ncp.swapaxes(x, self.axis, -1)
+            y = ncp.fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         else:
-            y = np.fft.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = ncp.fft.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
 
         if self.nfft > self.dims[self.axis]:
-            y = np.take(y, range(0, self.dims[self.axis]), axis=self.axis)
+            y = ncp.take(y, range(0, self.dims[self.axis]), axis=self.axis)
         elif self.nfft < self.dims[self.axis]:
-            y = np.pad(y, self.ifftpad)
+            y = ncp.pad(y, self.ifftpad)
 
         if not self.clinear:
-            y = np.real(y)
+            y = ncp.real(y)
         if self.ifftshift_before:
-            y = np.fft.fftshift(y, axes=self.axis)
+            y = ncp.fft.fftshift(y, axes=self.axis)
         y = y.astype(self.rdtype)
         return y
 
