@@ -74,7 +74,6 @@ class _Convolve1Dshort(LinearOperator):
         self.nh = h.size if h.ndim == 1 else h.shape[axis]
         if offset > self.nh - 1:
             raise ValueError("offset must be smaller than h.shape[axis] - 1")
-        print("h", ncp, type(h))
         self.h = h
         self.offset = 2 * (self.nh // 2 - int(offset))
         if self.nh % 2 == 0:
@@ -104,7 +103,6 @@ class _Convolve1Dshort(LinearOperator):
             self.convfunc, self.method = _choose_convfunc(
                 self.h, self.method, self.dims
             )
-        print(type(x), type(self.h))
         return self.convfunc(x, self.h, mode="same")
 
     @reshaped
