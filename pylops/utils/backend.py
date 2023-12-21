@@ -18,6 +18,7 @@ __all__ = [
     "to_cupy_conditional",
 ]
 
+import os
 from types import ModuleType
 from typing import Callable
 
@@ -43,13 +44,10 @@ if deps.cupy_enabled:
 if deps.cusignal_enabled:
     import cusignal
 
-cu_message = "cupy package not installed. Use numpy arrays of " "install cupy."
-
-cusignal_message = (
-    "cusignal package not installed. Use numpy arrays of" "install cusignal."
-)
-
-import jax.numpy as jnp
+if deps.jax_enabled:
+    import jax
+    import jax.numpy as jnp
+    from jax.scipy.linalg import block_diag as jnp_block_diag
 
 
 def get_module(backend: str = "numpy") -> ModuleType:
@@ -115,19 +113,17 @@ def get_array_module(x: npt.ArrayLike) -> ModuleType:
     Returns
     -------
     mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+        Module to be used to process array
+        (:mod:`numpy`, :mod:`cupy`, or , :mod:`jax`)
 
     """
-    import os
-
-    if deps.cupy_enabled:
-        ncjp = cp.get_array_module(x)
-        if ncjp == np and int(os.getenv("JAX_PYLOPS", 0)):
+    if deps.cupy_enabled or deps.jax_enabled:
+        if isinstance(x, jnp.ndarray):
             return jnp
+        elif deps.cupy_enabled:
+            return cp.get_array_module(x)
         else:
-            return ncjp
-    elif int(os.getenv("JAX_PYLOPS", 0)):
-        return jnp
+            return np
     else:
         return np
 
@@ -142,20 +138,19 @@ def get_convolve(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
-    if not deps.cupy_enabled:
-        return convolve
-
-    if cp.get_array_module(x) == np:
-        return convolve
-    else:
-        if deps.cusignal_enabled:
+    if deps.cusignal_enabled or deps.jax_enabled:
+        if isinstance(x, jnp.ndarray):
+            return jax.scipy.signal.convolve
+        elif deps.cusignal_enabled and cp.get_array_module(x) == cp:
             return cusignal.convolution.convolve
         else:
-            raise ModuleNotFoundError(cusignal_message)
+            return convolve
+    else:
+        return convolve
 
 
 def get_fftconvolve(x: npt.ArrayLike) -> Callable:
@@ -168,20 +163,19 @@ def get_fftconvolve(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
-    if not deps.cupy_enabled:
-        return fftconvolve
-
-    if cp.get_array_module(x) == np:
-        return fftconvolve
-    else:
-        if deps.cusignal_enabled:
+    if deps.cusignal_enabled or deps.jax_enabled:
+        if isinstance(x, jnp.ndarray):
+            return jax.scipy.signal.fftconvolve
+        elif deps.cusignal_enabled and cp.get_array_module(x) == cp:
             return cusignal.convolution.fftconvolve
         else:
-            raise ModuleNotFoundError(cusignal_message)
+            return fftconvolve
+    else:
+        return fftconvolve
 
 
 def get_oaconvolve(x: npt.ArrayLike) -> Callable:
@@ -194,21 +188,27 @@ def get_oaconvolve(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
-    if not deps.cupy_enabled:
-        return oaconvolve
-
-    if cp.get_array_module(x) == np:
-        return oaconvolve
+    if deps.cupy_enabled or deps.jax_enabled:
+        if isinstance(x, jnp.ndarray):
+            raise NotImplementedError(
+                "oaconvolve not implemented in "
+                "jax. Consider using a different"
+                "option..."
+            )
+        elif deps.cupy_enabled and cp.get_array_module(x) == cp:
+            raise NotImplementedError(
+                "oaconvolve not implemented in "
+                "cupy/cusignal. Consider using a different"
+                "option..."
+            )
+        else:
+            return oaconvolve
     else:
-        raise NotImplementedError(
-            "oaconvolve not implemented in "
-            "cupy/cusignal. Consider using a different"
-            "option..."
-        )
+        return oaconvolve
 
 
 def get_correlate(x: npt.ArrayLike) -> Callable:
@@ -221,20 +221,19 @@ def get_correlate(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
-    if not deps.cupy_enabled:
-        return correlate
-
-    if cp.get_array_module(x) == np:
-        return correlate
-    else:
-        if deps.cusignal_enabled:
+    if deps.cusignal_enabled or deps.jax_enabled:
+        if isinstance(x, jnp.ndarray):
+            return jax.scipy.signal.correlate
+        elif deps.cusignal_enabled and cp.get_array_module(x) == cp:
             return cusignal.convolution.correlate
         else:
-            raise ModuleNotFoundError(cusignal_message)
+            return correlate
+    else:
+        return correlate
 
 
 def get_add_at(x: npt.ArrayLike) -> Callable:
@@ -247,8 +246,8 @@ def get_add_at(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
     if not deps.cupy_enabled:
@@ -270,14 +269,16 @@ def get_block_diag(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
-    if not deps.cupy_enabled:
+    if not deps.cupy_enabled and not deps.jax_enabled:
         return block_diag
 
-    if cp.get_array_module(x) == np:
+    if deps.jax_enabled and isinstance(x, jnp.ndarray):
+        return jax.scipy.linalg.block_diag
+    elif cp.get_array_module(x) == np:
         return block_diag
     else:
         return cp_block_diag
@@ -293,8 +294,8 @@ def get_toeplitz(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
     if not deps.cupy_enabled:
@@ -316,8 +317,8 @@ def get_csc_matrix(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
     if not deps.cupy_enabled:
@@ -339,8 +340,8 @@ def get_sparse_eye(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
     if not deps.cupy_enabled:
@@ -362,8 +363,8 @@ def get_lstsq(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
     if not deps.cupy_enabled:
@@ -385,8 +386,8 @@ def get_sp_fft(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    mod : :obj:`func`
-        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+    f : :obj:`func`
+        Function to be used to process array
 
     """
     if not deps.cupy_enabled:

@@ -1,6 +1,7 @@
 __all__ = [
     "cupy_enabled",
     "cusignal_enabled",
+    "jax_enabled",
     "devito_enabled",
     "numba_enabled",
     "pyfftw_enabled",
@@ -78,6 +79,34 @@ def cusignal_import(message: Optional[str] = None) -> str:
         )
 
     return cusignal_message
+
+
+def jax_import(message: Optional[str] = None) -> str:
+    jax_test = (
+        util.find_spec("jax") is not None and int(os.getenv("JAX_PYLOPS", 1)) == 1
+    )
+    if jax_test:
+        try:
+            import_module("jax")  # noqa: F401
+
+            jax_message = None
+        except (ImportError, ModuleNotFoundError) as e:
+            jax_message = (
+                f"Failed to import jax, Falling back to numpy (error: {e}). "
+                "Please ensure your environment is set up correctly "
+                "for more details visit 'https://jax.readthedocs.io/en/latest/installation.html'"
+            )
+            print(UserWarning(jax_message))
+    else:
+        jax_message = (
+            "Jax package not installed or os.getenv('JAX_PYLOPS') == 0. "
+            f"In order to be able to use {message} "
+            "ensure 'os.getenv('JAX_PYLOPS') == 1' and run "
+            "'pip install jax'; "
+            "for more details visit 'https://jax.readthedocs.io/en/latest/installation.html'"
+        )
+
+    return jax_message
 
 
 def devito_import(message: Optional[str] = None) -> str:
@@ -207,9 +236,9 @@ def sympy_import(message: Optional[str] = None) -> str:
 
 
 # Set package availability booleans
-# cupy and cusignal: the package is imported to check everything is working correctly,
-# if not the package is disabled. We do this here as both libraries are used as drop-in
-# replacement for many numpy and scipy routines when cupy arrays are provided.
+# cupy, cusignal, and jax: the package is imported to check everything is working correctly,
+# if not the package is disabled. We do this here as these libraries are used as drop-in
+# replacement for many numpy and scipy routines when cupy/jax arrays are provided.
 # all other libraries: we simply check if the package is available and postpone its import
 # to check everything is working correctly when a user tries to create an operator that requires
 # such a package
@@ -220,6 +249,9 @@ cusignal_enabled: bool = (
     True
     if (cusignal_import() is None and int(os.getenv("CUSIGNAL_PYLOPS", 1)) == 1)
     else False
+)
+jax_enabled: bool = (
+    True if (jax_import() is None and int(os.getenv("JAX_PYLOPS", 1)) == 1) else False
 )
 devito_enabled = util.find_spec("devito") is not None
 numba_enabled = util.find_spec("numba") is not None
