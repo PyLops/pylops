@@ -197,10 +197,10 @@ def Sliding2D(
         tapend = tap.copy()
         tapend[-nover:] = 1
         taps = {}
-        taps[0] = tapin
+        taps[0] = tapin if nwins > 1 else tap
         for i in range(1, nwins - 1):
             taps[i] = tap
-        taps[nwins - 1] = tapend
+        taps[nwins - 1] = tapend if nwins > 1 else tap
 
     # transform to apply
     if tapertype is None:
