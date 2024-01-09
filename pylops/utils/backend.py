@@ -133,8 +133,6 @@ def get_convolve(x: npt.ArrayLike) -> Callable:
     if cp.get_array_module(x) == np:
         return convolve
     else:
-        # import cusignal
-        # return cusignal.convolution.convolve
         return cp_convolve
 
 
