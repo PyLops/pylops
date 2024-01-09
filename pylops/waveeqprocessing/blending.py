@@ -76,7 +76,12 @@ class BlendingContinuous(LinearOperator):
         self.dt = dt
         self.times = times
         self.shiftall = shiftall
-        self.nttot = int(np.max(self.times) / self.dt + self.nt + 1)
+        if np.max(self.times) // dt == np.max(self.times) / dt:
+            # do not add extra sample as no shift will be applied
+            self.nttot = int(np.max(self.times) / self.dt + self.nt)
+        else:
+            # add 1 extra sample at the end
+            self.nttot = int(np.max(self.times) / self.dt + self.nt + 1)
         if not self.shiftall:
             # original implementation, where each source is shifted indipendently
             self.PadOp = Pad((self.nr, self.nt), ((0, 0), (0, 1)), dtype=self.dtype)
