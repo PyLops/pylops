@@ -40,9 +40,23 @@ par6 = {
     "ntap": (4, 6),
     "tapertype": "cosinesquare",
 }  # cosinesquare, even samples and taper
+par7 = {
+    "nt": 21,
+    "nspat": (11, 13),
+    "ntap": (3, 5),
+    "tapertype": "cosinesqrt",
+}  # cosinesqrt, odd samples and taper
+par8 = {
+    "nt": 20,
+    "nspat": (12, 16),
+    "ntap": (4, 6),
+    "tapertype": "cosinesqrt",
+}  # cosinesqrt, even samples and taper
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5), (par6)])
+@pytest.mark.parametrize(
+    "par", [(par1), (par2), (par3), (par4), (par5), (par6), (par7), (par8)]
+)
 def test_taper2d(par):
     """Create taper wavelet and check size and values"""
     tap = taper2d(par["nt"], par["nspat"][0], par["ntap"][0], par["tapertype"])
@@ -54,7 +68,9 @@ def test_taper2d(par):
     assert_array_equal(tap[par["nspat"][0] // 2], np.ones(par["nt"]))
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5), (par6)])
+@pytest.mark.parametrize(
+    "par", [(par1), (par2), (par3), (par4), (par5), (par6), (par7), (par8)]
+)
 def test_taper3d(par):
     """Create taper wavelet and check size and values"""
     tap = taper3d(par["nt"], par["nspat"], par["ntap"], par["tapertype"])
