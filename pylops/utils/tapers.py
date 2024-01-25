@@ -7,7 +7,7 @@ __all__ = [
     "tapernd",
 ]
 
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -59,6 +59,7 @@ def cosinetaper(
     nmask: int,
     ntap: int,
     square: bool = False,
+    exponent: Optional[float] = None,
 ) -> npt.ArrayLike:
     r"""1D Cosine or Cosine square taper
 
@@ -71,8 +72,10 @@ def cosinetaper(
         Number of samples of mask
     ntap : :obj:`int`
         Number of samples of hanning tapering at edges
-    square : :obj:`bool`
-        Cosine square taper (``True``)or Cosine taper (``False``)
+    square : :obj:`bool`, optional
+        Cosine square taper (``True``) or Cosine taper (``False``)
+    exponent : :obj:`float`, optional
+        Exponent to apply to Cosine taper. If provided, takes precedence over ``square``
 
     Returns
     -------
@@ -81,7 +84,8 @@ def cosinetaper(
 
     """
     ntap = 0 if ntap == 1 else ntap
-    exponent = 1 if not square else 2
+    if exponent is None:
+        exponent = 1 if not square else 2
     cos_win = (
         0.5
         * (
@@ -123,7 +127,8 @@ def taper(
     ntap : :obj:`int`
         Number of samples of hanning tapering at edges
     tapertype : :obj:`str`, optional
-        Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
+        Type of taper (``hanning``, ``cosine``,
+        ``cosinesquare``, ``cosinesqrt`` or ``None``)
 
     Returns
     -------
@@ -137,6 +142,8 @@ def taper(
         tpr_1d = cosinetaper(nmask, ntap, False)
     elif tapertype == "cosinesquare":
         tpr_1d = cosinetaper(nmask, ntap, True)
+    elif tapertype == "cosinesqrt":
+        tpr_1d = cosinetaper(nmask, ntap, False, 0.5)
     else:
         tpr_1d = np.ones(nmask)
     return tpr_1d
@@ -214,7 +221,7 @@ def taper3d(
         Number of samples of tapering at edges of first and second dimensions
     tapertype : :obj:`int`
         Type of taper (``hanning``, ``cosine``,
-        ``cosinesquare`` or ``None``)
+        ``cosinesquare``, ``cosinesqrt`` or ``None``)
 
     Returns
     -------
@@ -236,6 +243,9 @@ def taper3d(
     elif tapertype == "cosinesquare":
         tpr_y = cosinetaper(nmasky, ntapy, True)
         tpr_x = cosinetaper(nmaskx, ntapx, True)
+    elif tapertype == "cosinesqrt":
+        tpr_y = cosinetaper(nmasky, ntapy, False, 0.5)
+        tpr_x = cosinetaper(nmaskx, ntapx, False, 0.5)
     else:
         tpr_y = np.ones(nmasky)
         tpr_x = np.ones(nmaskx)
@@ -266,7 +276,7 @@ def tapernd(
         Number of samples of tapering at edges of every dimension
     tapertype : :obj:`int`
         Type of taper (``hanning``, ``cosine``,
-        ``cosinesquare`` or ``None``)
+        ``cosinesquare``, ``cosinesqrt`` or ``None``)
 
     Returns
     -------
@@ -282,6 +292,8 @@ def tapernd(
         tpr = [cosinetaper(nm, nt, False) for nm, nt in zip(nmask, ntap)]
     elif tapertype == "cosinesquare":
         tpr = [cosinetaper(nm, nt, True) for nm, nt in zip(nmask, ntap)]
+    elif tapertype == "cosinesqrt":
+        tpr = [cosinetaper(nm, nt, False, 0.5) for nm, nt in zip(nmask, ntap)]
     else:
         tpr = [np.ones(nm) for nm in nmask]
 
