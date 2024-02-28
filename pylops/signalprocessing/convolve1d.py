@@ -100,7 +100,7 @@ class _Convolve1Dshort(LinearOperator):
         if type(self.h) is not type(x):
             self.h = to_cupy_conditional(x, self.h)
             self.convfunc, self.method = _choose_convfunc(
-                self.h, self.method, self.dims
+                self.h, self.method, self.dims, self.axis
             )
         return self.convfunc(x, self.h, mode="same")
 
@@ -109,7 +109,7 @@ class _Convolve1Dshort(LinearOperator):
         if type(self.hstar) is not type(x):
             self.hstar = to_cupy_conditional(x, self.hstar)
             self.convfunc, self.method = _choose_convfunc(
-                self.hstar, self.method, self.dims
+                self.hstar, self.method, self.dims, self.axis
             )
         return self.convfunc(x, self.hstar, mode="same")
 
@@ -165,7 +165,7 @@ class _Convolve1Dlong(LinearOperator):
         if type(self.h) is not type(x):
             self.h = to_cupy_conditional(x, self.h)
             self.convfunc, self.method = _choose_convfunc(
-                self.h, self.method, self.dims
+                self.h, self.method, self.dims, self.axis
             )
         x = np.pad(x, self.pad)
         y = self.convfunc(self.h, x, mode="same")
@@ -177,7 +177,7 @@ class _Convolve1Dlong(LinearOperator):
         if type(self.h) is not type(x):
             self.hstar = to_cupy_conditional(x, self.hstar)
             self.convfunc, self.method = _choose_convfunc(
-                self.hstar, self.method, self.dims
+                self.hstar, self.method, self.dims, self.axis
             )
         x = np.pad(x, self.padd)
         y = self.convfunc(self.hstar, x)

@@ -76,7 +76,12 @@ class BlendingContinuous(LinearOperator):
         self.dt = dt
         self.times = times
         self.shiftall = shiftall
-        self.nttot = int(np.max(self.times) / self.dt + self.nt + 1)
+        if np.max(self.times) // dt == np.max(self.times) / dt:
+            # do not add extra sample as no shift will be applied
+            self.nttot = int(np.max(self.times) / self.dt + self.nt)
+        else:
+            # add 1 extra sample at the end
+            self.nttot = int(np.max(self.times) / self.dt + self.nt + 1)
         if not self.shiftall:
             # original implementation, where each source is shifted indipendently
             self.PadOp = Pad((self.nr, self.nt), ((0, 0), (0, 1)), dtype=self.dtype)
@@ -111,7 +116,7 @@ class BlendingContinuous(LinearOperator):
             # Define shift operator
             self.shifts = (times // self.dt).astype(np.int32)
             diff = (times / self.dt - self.shifts) * self.dt
-            diff = np.repeat(diff[:, np.newaxis], self.nr, axis=1)
+            diff = np.repeat(diff[:, np.newaxis], self.nr, axis=1).astype(self.dtype)
             self.ShiftOp = Shift(
                 (self.ns, self.nr, self.nt + 1),
                 diff,
@@ -160,7 +165,11 @@ class BlendingContinuous(LinearOperator):
             if self.ShiftOps[i] is None:
                 blended_data[:, shift_int : shift_int + self.nt] += x[i, :, :]
             else:
-                shifted_data = self.ShiftOps[i] * self.PadOp * x[i, :, :]
+                shifted_data = (
+                    self.ShiftOps[i]
+                    .matvec(self.PadOp.matvec(x[i, :, :].ravel()))
+                    .reshape(self.ShiftOps[i].dimsd)
+                )
                 blended_data[:, shift_int : shift_int + self.nt + 1] += shifted_data
         return blended_data
 
@@ -172,11 +181,11 @@ class BlendingContinuous(LinearOperator):
             if self.ShiftOps[i] is None:
                 deblended_data[i, :, :] = x[:, shift_int : shift_int + self.nt]
             else:
-                shifted_data = (
-                    self.PadOp.H
-                    * self.ShiftOps[i].H
-                    * x[:, shift_int : shift_int + self.nt + 1]
-                )
+                shifted_data = self.PadOp.rmatvec(
+                    self.ShiftOps[i].rmatvec(
+                        x[:, shift_int : shift_int + self.nt + 1].ravel()
+                    )
+                ).reshape(self.PadOp.dims)
                 deblended_data[i, :, :] = shifted_data
         return deblended_data
 

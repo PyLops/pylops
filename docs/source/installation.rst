@@ -99,7 +99,8 @@ For a ``conda`` environment, run
 
 .. code-block:: bash
 
-   >> make dev-install_conda
+   >> make dev-install_conda # for x86 (Intel or AMD CPUs)
+   >> make dev-install_conda_arm # for arm (M-series Mac)
 
 This will create and activate an environment called ``pylops``, with all required and optional dependencies.
 
@@ -524,16 +525,8 @@ disable this option. For more details of GPU-accelerated PyLops read :ref:`gpu`.
 
 CuPy
 ----
-`CuPy <https://cupy.dev/>`_ is a library used as a drop-in replacement to NumPy
-for GPU-accelerated
-computations. Since many different versions of CuPy exist (based on the
+`CuPy <https://cupy.dev/>`_ is a library used as a drop-in replacement to NumPy and some parts of SciPy
+for GPU-accelerated computations. Since many different versions of CuPy exist (based on the
 CUDA drivers of the GPU), users must install CuPy prior to installing
 PyLops. To do so, follow their
 `installation instructions <https://docs.cupy.dev/en/stable/install.html>`__.
-
-cuSignal
---------
-`cuSignal <https://docs.rapids.ai/api/cusignal/stable/>`_ is a library is used as a drop-in replacement to `SciPy Signal <https://docs.scipy.org/doc/scipy/reference/signal.html>`_ for
-GPU-accelerated computations. Similar to CuPy, users must install
-cuSignal prior to installing PyLops. To do so, follow their
-`installation instructions <https://github.com/rapidsai/cusignal#installation>`__.

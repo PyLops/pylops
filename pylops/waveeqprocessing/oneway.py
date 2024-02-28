@@ -193,6 +193,7 @@ def Deghosting(
     dr: Sequence[float],
     vel: float,
     zrec: float,
+    kind: Optional[str] = "p",
     pd: Optional[NDArray] = None,
     win: Optional[NDArray] = None,
     npad: Union[Tuple[int], Tuple[int, int]] = (11, 11),
@@ -206,13 +207,15 @@ def Deghosting(
 ) -> Tuple[NDArray, NDArray]:
     r"""Wavefield deghosting.
 
-    Apply seismic wavefield decomposition from single-component (pressure)
-    data. This process is also generally referred to as model-based deghosting.
+    Apply seismic wavefield decomposition from single-component (pressure or
+    vertical velocity) data. This process is also generally referred to as
+    model-based deghosting.
 
     Parameters
     ----------
     p : :obj:`np.ndarray`
-        Pressure data of of size :math:`\lbrack n_{r_x}\,(\times n_{r_y})
+        Pressure (or vertical velocity) data of of size
+        :math:`\lbrack n_{r_x}\,(\times n_{r_y})
         \times n_t \rbrack` (or :math:`\lbrack n_{r_{x,\text{sub}}}\,
         (\times n_{r_{y,\text{sub}}}) \times n_t \rbrack`
         in case a ``restriction`` operator is provided. Note that
@@ -231,6 +234,8 @@ def Deghosting(
         Velocity along the receiver array (must be constant)
     zrec : :obj:`float`
         Depth of receiver array
+    kind : :obj:`str`, optional
+        Type of data (``p`` or ``vz``)
     pd : :obj:`np.ndarray`, optional
         Direct arrival to be subtracted from ``p``
     win : :obj:`np.ndarray`, optional
@@ -260,14 +265,19 @@ def Deghosting(
     Returns
     -------
     pup : :obj:`np.ndarray`
-        Up-going wavefield
+        Up-going pressure (or particle velocity) wavefield
     pdown : :obj:`np.ndarray`
-        Down-going wavefield
+        Down-going (or particle velocity) wavefield
+
+    Raises
+    ------
+    ValueError
+        If ``kind`` is not "p" or "vz".
 
     Notes
     -----
-    Up- and down-going components of seismic data :math:`p^-(x, t)`
-    and :math:`p^+(x, t)` can be estimated from single-component data
+    The up- and down-going components of a seismic data (:math:`p^-(x, t)`
+    and :math:`p^+(x, t)`) can be estimated from single-component data
     :math:`p(x, t)` using a ghost model.
 
     The basic idea [1]_ is that of using a one-way propagator in the f-k domain
@@ -284,16 +294,22 @@ def Deghosting(
     In a matrix form we can thus write the total wavefield as:
 
     .. math::
-        \mathbf{p} - \mathbf{p_d} = (\mathbf{I} + \Phi) \mathbf{p}^-
+        \mathbf{p} - \mathbf{p_d} = (\mathbf{I} \pm \Phi) \mathbf{p}^-
 
     where :math:`\Phi` is one-way propagator implemented via the
-    :class:`pylops.waveeqprocessing.PhaseShift` operator.
+    :class:`pylops.waveeqprocessing.PhaseShift` operator. Note that :math:`+` is
+    used for the pressure data, whilst :math:`-` is used for the vertical velocity
+    data.
 
     .. [1] Amundsen, L., 1993, Wavenumber-based filtering of marine point-source
        data: GEOPHYSICS, 58, 1335–1348.
 
-
     """
+    # Check kind
+    if kind not in ["p", "vz"]:
+        raise ValueError("kind must be p or vz")
+
+    # Identify dimensions
     ndims = p.ndim
     if ndims == 2:
         dims = (nt, nr)
@@ -328,7 +344,11 @@ def Deghosting(
     )
 
     # Decomposition operator
-    Dupop = Identity(nt * nrs, dtype=p.dtype) + Pop
+    if kind == "p":
+        Dupop = Identity(nt * nrs, dtype=p.dtype) + Pop
+    else:
+        Dupop = Identity(nt * nrs, dtype=p.dtype) - Pop
+
     if dottest:
         Dottest(Dupop, nt * nrs, nt * nrs, verb=True)
 

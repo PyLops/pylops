@@ -37,17 +37,12 @@ if deps.cupy_enabled:
     import cupyx.scipy.fft as cp_fft
     from cupyx.scipy.linalg import block_diag as cp_block_diag
     from cupyx.scipy.linalg import toeplitz as cp_toeplitz
+    from cupyx.scipy.signal import convolve as cp_convolve
+    from cupyx.scipy.signal import correlate as cp_correlate
+    from cupyx.scipy.signal import fftconvolve as cp_fftconvolve
+    from cupyx.scipy.signal import oaconvolve as cp_oaconvolve
     from cupyx.scipy.sparse import csc_matrix as cp_csc_matrix
     from cupyx.scipy.sparse import eye as cp_eye
-
-if deps.cusignal_enabled:
-    import cusignal
-
-cu_message = "cupy package not installed. Use numpy arrays of " "install cupy."
-
-cusignal_message = (
-    "cusignal package not installed. Use numpy arrays of" "install cusignal."
-)
 
 
 def get_module(backend: str = "numpy") -> ModuleType:
@@ -138,10 +133,7 @@ def get_convolve(x: npt.ArrayLike) -> Callable:
     if cp.get_array_module(x) == np:
         return convolve
     else:
-        if deps.cusignal_enabled:
-            return cusignal.convolution.convolve
-        else:
-            raise ModuleNotFoundError(cusignal_message)
+        return cp_convolve
 
 
 def get_fftconvolve(x: npt.ArrayLike) -> Callable:
@@ -164,10 +156,7 @@ def get_fftconvolve(x: npt.ArrayLike) -> Callable:
     if cp.get_array_module(x) == np:
         return fftconvolve
     else:
-        if deps.cusignal_enabled:
-            return cusignal.convolution.fftconvolve
-        else:
-            raise ModuleNotFoundError(cusignal_message)
+        return cp_fftconvolve
 
 
 def get_oaconvolve(x: npt.ArrayLike) -> Callable:
@@ -190,11 +179,7 @@ def get_oaconvolve(x: npt.ArrayLike) -> Callable:
     if cp.get_array_module(x) == np:
         return oaconvolve
     else:
-        raise NotImplementedError(
-            "oaconvolve not implemented in "
-            "cupy/cusignal. Consider using a different"
-            "option..."
-        )
+        return cp_oaconvolve
 
 
 def get_correlate(x: npt.ArrayLike) -> Callable:
@@ -217,10 +202,7 @@ def get_correlate(x: npt.ArrayLike) -> Callable:
     if cp.get_array_module(x) == np:
         return correlate
     else:
-        if deps.cusignal_enabled:
-            return cusignal.convolution.correlate
-        else:
-            raise ModuleNotFoundError(cusignal_message)
+        return cp_correlate
 
 
 def get_add_at(x: npt.ArrayLike) -> Callable:

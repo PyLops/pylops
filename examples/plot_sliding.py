@@ -29,12 +29,14 @@ plt.close("all")
 ###############################################################################
 # Let's start by creating a 1-dimensional array of size :math:`n_t` and create
 # a sliding operator to compute its transformed representation.
-nwins = 4
+
+# sliding window parameters
 nwin = 26
 nover = 3
 nop = 64
-dimd = nwin * nwins - 3 * nover
 
+# length of input signal (chosen to ensure perfect match with sliding windows)
+dimd = 95
 t = np.arange(dimd) * 0.004
 data = np.sin(2 * np.pi * 20 * t)
 

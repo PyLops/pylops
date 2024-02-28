@@ -157,7 +157,7 @@ def Sliding1D(
 
     # create tapers
     if tapertype is not None:
-        tap = taper(nwin, nover, tapertype=tapertype)
+        tap = taper(nwin, nover, tapertype=tapertype).astype(Op.dtype)
         tapin = tap.copy()
         tapin[:nover] = 1
         tapend = tap.copy()
@@ -172,7 +172,9 @@ def Sliding1D(
     if tapertype is None:
         OOp = BlockDiag([Op for _ in range(nwins)])
     else:
-        OOp = BlockDiag([Diagonal(taps[itap].ravel()) * Op for itap in range(nwins)])
+        OOp = BlockDiag(
+            [Diagonal(taps[itap].ravel(), dtype=Op.dtype) * Op for itap in range(nwins)]
+        )
 
     combining = HStack(
         [

@@ -3,6 +3,24 @@
 Changelog
 =========
 
+Version 2.2.0
+-------------
+
+*Released on: 11/11/2023*
+
+* Added :class:`pylops.signalprocessing.NonStationaryConvolve3D` operator
+* Added nd-array capabilities to :class:`pylops.basicoperators.Identity` and :class:`pylops.basicoperators.Zero`
+* Added second implementation in :class:`pylops.waveeqprocessing.BlendingContinuous` which is more
+  performant when dealing with small number of receivers
+* Added `forceflat` property to operators with ambiguous `rmatvec` (:class:`pylops.basicoperators.Block`,
+  :class:`pylops.basicoperators.Bilinear`, :class:`pylops.basicoperators.BlockDiag`, :class:`pylops.basicoperators.HStack`,
+  :class:`pylops.basicoperators.MatrixMult`, :class:`pylops.basicoperators.VStack`, and :class:`pylops.basicoperators.Zero`)
+* Improved `dynamic` mode of :class:`pylops.waveeqprocessing.Kirchhoff` operator
+* Modified :class:`pylops.signalprocessing.Convolve1D` to allow both filters that are both shorter and longer of the
+  input vector
+* Modified all solvers to use `matvec/rmatvec` instead of `@/.H @` to improve performance
+
+
 Version 2.1.0
 -------------
 

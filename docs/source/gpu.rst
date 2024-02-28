@@ -5,15 +5,14 @@ GPU Support
 
 Overview
 --------
-From ``v1.12.0``, PyLops supports computations on GPUs powered by
-`CuPy <https://cupy.dev/>`_ (``cupy-cudaXX>=8.1.0``) and `cuSignal <https://docs.rapids.ai/api/cusignal/stable/>`_ (``cusignal>=0.16.0``).
-They must be installed *before* PyLops is installed.
+PyLops supports computations on GPUs powered by `CuPy <https://cupy.dev/>`_ (``cupy-cudaXX>=10.6.0``).
+This library must be installed *before* PyLops is installed.
 
 .. note::
 
-   Set environment variables ``CUPY_PYLOPS=0`` and/or ``CUSIGNAL_PYLOPS=0`` to force PyLops to ignore
-   ``cupy`` and ``cusignal`` backends.
-   This can be also used if a previous version of ``cupy`` or ``cusignal`` is installed in your system, otherwise you will get an error when importing PyLops.
+   Set environment variable ``CUPY_PYLOPS=0`` to force PyLops to ignore the ``cupy`` backend.
+   This can be also used if a previous (or faulty) version of ``cupy`` is installed in your system,
+   otherwise you will get an error when importing PyLops.
 
 
 

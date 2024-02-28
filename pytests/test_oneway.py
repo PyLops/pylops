@@ -22,8 +22,10 @@ parmod = {
     "f0": 40,
 }
 
-par1 = {"ny": 8, "nx": 10, "nt": 20, "dtype": "float32"}  # even
-par2 = {"ny": 9, "nx": 11, "nt": 21, "dtype": "float32"}  # odd
+par1 = {"ny": 8, "nx": 10, "nt": 20, "kind": "p", "dtype": "float32"}  # even, p
+par2 = {"ny": 9, "nx": 11, "nt": 21, "kind": "p", "dtype": "float32"}  # odd, p
+par1v = {"ny": 8, "nx": 10, "nt": 20, "kind": "vz", "dtype": "float32"}  # even, vz
+par2v = {"ny": 9, "nx": 11, "nt": 21, "kind": "vz", "dtype": "float32"}  # odd, vz
 
 # deghosting params
 vel_sep = 1000.0  # velocity at separation level
@@ -34,27 +36,31 @@ t, t2, x, y = makeaxis(parmod)
 wav = ricker(t[:41], f0=parmod["f0"])[0]
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def create_data2D():
     """Create 2d dataset"""
-    t0_plus = np.array([0.02, 0.08])
-    t0_minus = t0_plus + 0.04
-    vrms = np.array([1400.0, 1800.0])
-    amp = np.array([1.0, -0.6])
 
-    p2d_minus = hyperbolic2d(x, t, t0_minus, vrms, amp, wav)[1].T
+    def core(datakind):
+        t0_plus = np.array([0.02, 0.08])
+        t0_minus = t0_plus + 0.04
+        vrms = np.array([1400.0, 1800.0])
+        amp = np.array([1.0, -0.6])
 
-    kx = np.fft.ifftshift(np.fft.fftfreq(parmod["nx"], parmod["dx"]))
-    freq = np.fft.rfftfreq(parmod["nt"], parmod["dt"])
+        p2d_minus = hyperbolic2d(x, t, t0_minus, vrms, amp, wav)[1].T
 
-    Pop = -PhaseShift(vel_sep, 2 * zrec, parmod["nt"], freq, kx)
+        kx = np.fft.ifftshift(np.fft.fftfreq(parmod["nx"], parmod["dx"]))
+        freq = np.fft.rfftfreq(parmod["nt"], parmod["dt"])
 
-    # Decomposition operator
-    Dupop = Identity(parmod["nt"] * parmod["nx"]) + Pop
+        Pop = -PhaseShift(vel_sep, 2 * zrec, parmod["nt"], freq, kx)
 
-    p2d = Dupop * p2d_minus.ravel()
-    p2d = p2d.reshape(parmod["nt"], parmod["nx"])
-    return p2d, p2d_minus
+        # Decomposition operator
+        Dupop = Identity(parmod["nt"] * parmod["nx"]) + datakind * Pop
+
+        p2d = Dupop * p2d_minus.ravel()
+        p2d = p2d.reshape(parmod["nt"], parmod["nx"])
+        return p2d, p2d_minus
+
+    return core
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
@@ -87,10 +93,10 @@ def test_PhaseShift_3dsignal(par):
     )
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par1v), (par2v)])
 def test_Deghosting_2dsignal(par, create_data2D):
     """Deghosting of 2d data"""
-    p2d, p2d_minus = create_data2D
+    p2d, p2d_minus = create_data2D(1 if par["kind"] is "p" else -1)
 
     p2d_minus_inv, p2d_plus_inv = Deghosting(
         p2d,
@@ -100,6 +106,7 @@ def test_Deghosting_2dsignal(par, create_data2D):
         parmod["dx"],
         vel_sep,
         zrec,
+        kind=par["kind"],
         win=np.ones_like(p2d),
         npad=0,
         ntaper=0,
