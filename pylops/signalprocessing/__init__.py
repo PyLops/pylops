@@ -27,6 +27,7 @@ A list of operators present in pylops.signalprocessing:
     DTCWT                           Dual-Tree Complex Wavelet TransformsSeislet                         Two dimensional Seislet operator.
     Radon2D	                        Two dimensional Radon transform.
     Radon3D	                        Three dimensional Radon transform.
+    Seislet                         Two dimensional Seislet operator.
     Sliding1D                       1D Sliding transform operator.
     Sliding2D                       2D Sliding transform operator.
     Sliding3D                       3D Sliding transform operator.
