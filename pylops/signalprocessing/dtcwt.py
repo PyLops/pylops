@@ -10,7 +10,7 @@ from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-dtcwt_message = deps.devito_import("the dtcwt module")
+dtcwt_message = deps.dtcwt_import("the dtcwt module")
 
 if dtcwt_message is None:
     import dtcwt

@@ -63,7 +63,7 @@ def dtcwt_import(message):
         dtcwt_message = (
             f"Dtcwt not available. "
             f"In order to be able to use "
-            f'{message} run "pip install devito".'
+            f'{message} run "pip install dtcwt".'
         )
     return dtcwt_message
 
