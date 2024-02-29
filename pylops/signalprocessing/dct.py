@@ -29,7 +29,7 @@ class DCT(LinearOperator):
     axes : :obj:`int` or :obj:`list`, optional
         Axes over which the DCT is computed. If ``None``, the transform is applied
         over all axes.
-    workers :obj:`int`, optional
+    workers : :obj:`int`, optional
         Maximum number of workers to use for parallel computation. If negative,
         the value wraps around from os.cpu_count().
     dtype : :obj:`DTypeLike`, optional
