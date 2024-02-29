@@ -1,6 +1,7 @@
 __all__ = [
     "cupy_enabled",
     "devito_enabled",
+    "dtcwt_enabled",
     "numba_enabled",
     "pyfftw_enabled",
     "pywt_enabled",
@@ -65,6 +66,23 @@ def devito_import(message: Optional[str] = None) -> str:
             f'{message} run "pip install devito".'
         )
     return devito_message
+
+
+def dtcwt_import(message: Optional[str] = None) -> str:
+    if dtcwt_enabled:
+        try:
+            import dtcwt  # noqa: F401
+
+            dtcwt_message = None
+        except Exception as e:
+            dtcwt_message = f"Failed to import dtcwt (error:{e})."
+    else:
+        dtcwt_message = (
+            f"Dtcwt not available. "
+            f"In order to be able to use "
+            f'{message} run "pip install dtcwt".'
+        )
+    return dtcwt_message
 
 
 def numba_import(message: Optional[str] = None) -> str:
@@ -187,6 +205,7 @@ cupy_enabled: bool = (
     True if (cupy_import() is None and int(os.getenv("CUPY_PYLOPS", 1)) == 1) else False
 )
 devito_enabled = util.find_spec("devito") is not None
+dtcwt_enabled = util.find_spec("dtcwt") is not None
 numba_enabled = util.find_spec("numba") is not None
 pyfftw_enabled = util.find_spec("pyfftw") is not None
 pywt_enabled = util.find_spec("pywt") is not None

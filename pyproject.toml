@@ -43,6 +43,7 @@ advanced = [
     "PyWavelets",
     "scikit-fmm",
     "spgl1",
+    "dtcwt",
 ]
 
 [tool.setuptools.packages.find]
