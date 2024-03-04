@@ -138,12 +138,12 @@ class DTCWT(LinearOperator):
         arr_2d = arr_nd.reshape(self.dims[self.axis], -1).squeeze()
         return arr_2d
 
-    def _coeff_to_array(self, pyr: dtcwt.Pyramid) -> NDArray:
+    def _coeff_to_array(self, pyr):  # cannot use dtcwt types as it may not be installed
         highpass_coeffs = np.vstack([h for h in pyr.highpasses])
         coeffs = np.concatenate((highpass_coeffs, pyr.lowpass), axis=0)
         return coeffs
 
-    def _array_to_coeff(self, X: NDArray) -> dtcwt.Pyramid:
+    def _array_to_coeff(self, X):  # cannot use dtcwt types as it may not be installed
         lowpass = (X[-self.lowpass_size :].real).reshape((-1, self.otherdims))
         _ptr = 0
         highpasses = ()
@@ -154,7 +154,7 @@ class DTCWT(LinearOperator):
             highpasses += (_h,)
         return dtcwt.Pyramid(lowpass, highpasses)
 
-    def get_pyramid(self, x: NDArray) -> dtcwt.Pyramid:
+    def get_pyramid(self, x):  # cannot use dtcwt types as it may not be installed
         """Return Pyramid object from flat real-valued array"""
         return self._array_to_coeff(x[0] + 1j * x[1])
 
