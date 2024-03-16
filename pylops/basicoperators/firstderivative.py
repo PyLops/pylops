@@ -7,7 +7,7 @@ from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_add
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -100,6 +100,24 @@ class FirstDerivative(LinearOperator):
         self.kind = kind
         self.edge = edge
         self.order = order
+        self.slice_1 = tuple(
+            [
+                slice(None, None),
+            ]
+            * (len(dims) - 1)
+            + [
+                slice(None, -1),
+            ]
+        )
+        self.slice1 = tuple(
+            [
+                slice(None, None),
+            ]
+            * (len(dims) - 1)
+            + [
+                slice(1, None),
+            ]
+        )
         self._register_multiplications(self.kind, self.order)
 
     def _register_multiplications(
@@ -140,15 +158,18 @@ class FirstDerivative(LinearOperator):
     def _matvec_forward(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
-        y[..., :-1] = (x[..., 1:] - x[..., :-1]) / self.sampling
+        # y[..., :-1] = (x[..., 1:] - x[..., :-1]) / self.sampling
+        y = inplace_add((x[..., 1:] - x[..., :-1]) / self.sampling, y, self.slice_1)
         return y
 
     @reshaped(swapaxis=True)
     def _rmatvec_forward(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
-        y[..., :-1] -= x[..., :-1]
-        y[..., 1:] += x[..., :-1]
+        # y[..., :-1] -= x[..., :-1]
+        # y[..., 1:] += x[..., :-1]
+        y = inplace_add(-x[..., :-1], y, self.slice_1)
+        y = inplace_add(x[..., :-1], y, self.slice1)
         y /= self.sampling
         return y
 

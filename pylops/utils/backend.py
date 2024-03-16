@@ -12,15 +12,19 @@ __all__ = [
     "get_csc_matrix",
     "get_sparse_eye",
     "get_lstsq",
+    "get_sp_fft",
     "get_complex_dtype",
     "get_real_dtype",
     "to_numpy",
     "to_cupy_conditional",
+    "inplace_set",
+    "inplace_add",
+    "randn",
 ]
 
 import os
 from types import ModuleType
-from typing import Callable
+from typing import Callable, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -49,6 +53,8 @@ if deps.jax_enabled:
     import jax
     import jax.numpy as jnp
     from jax.scipy.linalg import block_diag as jnp_block_diag
+    from jax.scipy.signal import convolve as j_convolve
+    from jax.scipy.signal import fftconvolve as j_fftconvolve
 
 
 def get_module(backend: str = "numpy") -> ModuleType:
@@ -108,7 +114,7 @@ def get_array_module(x: npt.ArrayLike) -> ModuleType:
 
     Parameters
     ----------
-    x : :obj:`numpy.ndarray`
+    x : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
         Array
 
     Returns
@@ -134,7 +140,7 @@ def get_convolve(x: npt.ArrayLike) -> Callable:
 
     Parameters
     ----------
-    x : :obj:`numpy.ndarray`
+    x : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
         Array
 
     Returns
@@ -145,7 +151,7 @@ def get_convolve(x: npt.ArrayLike) -> Callable:
     """
     if deps.cupy_enabled or deps.jax_enabled:
         if isinstance(x, jnp.ndarray):
-            return jax.scipy.signal.convolve
+            return j_convolve
         elif deps.cupy_enabled and cp.get_array_module(x) == cp:
             return cp_convolve
         else:
@@ -159,7 +165,7 @@ def get_fftconvolve(x: npt.ArrayLike) -> Callable:
 
     Parameters
     ----------
-    x : :obj:`numpy.ndarray`
+    x : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
         Array
 
     Returns
@@ -170,7 +176,7 @@ def get_fftconvolve(x: npt.ArrayLike) -> Callable:
     """
     if deps.cupy_enabled or deps.jax_enabled:
         if isinstance(x, jnp.ndarray):
-            return jax.scipy.signal.fftconvolve
+            return j_fftconvolve
         elif deps.cupy_enabled and cp.get_array_module(x) == cp:
             return cp_fftconvolve
         else:
@@ -184,7 +190,7 @@ def get_oaconvolve(x: npt.ArrayLike) -> Callable:
 
     Parameters
     ----------
-    x : :obj:`numpy.ndarray`
+    x : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
         Array
 
     Returns
@@ -243,8 +249,8 @@ def get_add_at(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
-        Function to be used to process array
+    mod : :obj:`func`
+        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
 
     """
     if not deps.cupy_enabled:
@@ -469,3 +475,83 @@ def to_cupy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> NDArray:
         if cp.get_array_module(x) == cp and cp.get_array_module(y) == np:
             y = cp.asarray(y)
     return y
+
+
+def inplace_set(x: npt.ArrayLike, y: npt.ArrayLike, idx: list) -> Callable:
+    """Perform inplace set based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Array to sum
+    y : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Output array
+    idx : :obj:`list`
+        Indices to sum at
+
+    Returns
+    -------
+    y : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Output array
+
+    """
+    if deps.jax_enabled and isinstance(x, jnp.ndarray):
+        y = y.at[idx].set(x)
+        return y
+    else:
+        y[idx] = x
+        return y
+
+
+def inplace_add(x: npt.ArrayLike, y: npt.ArrayLike, idx: list) -> Callable:
+    """Perform inplace add based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Array to sum
+    y : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Output array
+    idx : :obj:`list`
+        Indices to sum at
+
+    Returns
+    -------
+    y : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Output array
+
+    """
+    if deps.jax_enabled and isinstance(x, jnp.ndarray):
+        y = y.at[idx].add(x)
+        return y
+    else:
+        y[idx] += x
+        return y
+
+
+def randn(n: Union[int, tuple], backend: str = "numpy") -> Callable:
+    """Returns randomly generated number
+
+    Parameters
+    ----------
+    n : :obj:`int` or :obj:`tuple`
+        Number of samples to generate
+    backend : :obj:`str`, optional
+        Backend used for dot test computations (``numpy`` or ``cupy``). This
+        parameter will be used to choose how to create the random vectors.
+
+    Returns
+    -------
+    x : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Generated array
+
+    """
+    if backend == "numpy":
+        x = np.random.randn(n)
+    elif backend == "cupy":
+        x = cp.random.randn(n)
+    elif backend == "jax":
+        x = jnp.array(np.random.randn(n))
+    else:
+        raise ValueError("backend must be numpy, cupy, or jax")
+    return x

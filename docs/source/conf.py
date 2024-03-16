@@ -21,6 +21,7 @@ extensions = [
     "numpydoc",
     "nbsphinx",
     "sphinx_gallery.gen_gallery",
+    "sphinxemoji.sphinxemoji",
     # 'sphinx.ext.napoleon',
 ]
 
@@ -29,6 +30,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "numpy": ("https://docs.scipy.org/doc/numpy/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    "jax": ("https://jax.readthedocs.io/en/latest", None),
     "sklearn": ("http://scikit-learn.org/stable/", None),
     "pandas": ("http://pandas.pydata.org/pandas-docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/", None),

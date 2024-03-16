@@ -1,33 +1,58 @@
 .. _gpu:
 
-GPU Support
-===========
+GPU and TPU Support
+===================
 
 Overview
 --------
 From ``v1.12.0``, PyLops supports computations on GPUs powered by
-`CuPy <https://cupy.dev/>`_ (``cupy-cudaXX>=8.1.0``) and `cuSignal <https://docs.rapids.ai/api/cusignal/stable/>`_ (``cusignal>=0.16.0``).
-They must be installed *before* PyLops is installed.
+`CuPy <https://cupy.dev/>`_ (``cupy-cudaXX>=8.1.0``).
+This library must be installed *before* PyLops is installed.
+
+From ``v2.3.0``, PyLops supports also computations on GPUs/TPUs powered by
+`JAX <https://jax.readthedocs.io/en/latest/>`_.
+This library must be installed *before* PyLops is installed.
 
 .. note::
 
-   Set environment variables ``CUPY_PYLOPS=0`` and/or ``CUSIGNAL_PYLOPS=0`` to force PyLops to ignore
-   ``cupy`` and ``cusignal`` backends.
-   This can be also used if a previous version of ``cupy`` or ``cusignal`` is installed in your system, otherwise you will get an error when importing PyLops.
-
-
+   Set environment variables ``CUPY_PYLOPS=0`` and/or ``JAX_PYLOPS=0`` to force PyLops to ignore
+   ``cupy`` and ``jax`` backends.
+   This can be also used if a previous version of ``cupy`` or ``jax`` is installed in your system, otherwise you will get an error when importing PyLops.
 
 
 Apart from a few exceptions, all operators and solvers in PyLops can
-seamlessly work with ``numpy`` arrays on CPU as well as with ``cupy`` arrays
-on GPU. Users do simply need to consistently create operators and
+seamlessly work with ``numpy`` arrays on CPU as well as with ``cupy/jax`` arrays
+on GPU. For CuPy, users simply need to consistently create operators and
 provide data vectors to the solvers, e.g., when using
 :class:`pylops.MatrixMult` the input matrix must be a
 ``cupy`` array if the data provided to a solver is also ``cupy`` array.
+For JAX, apart from following the procedure described for CuPy, a PyLops operator must also
+be wrapped into a ``JaxOperator``.
+
+In the following, we provide a list of operators and methods with their current status (available on CPU,
+GPU with CuPy, and GPU with JAX.
+
+.. list-table::
+   :widths: 50 25 25 25
+   :header-rows: 1
+
+   * - Operator/method
+     - CPU
+     - GPU with CuPy
+     - GPU with JAX
+   * - :meth:`pylops.LinearOperator.eigs`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :meth:`pylops.LinearOperator.cond`
+     - V
+     - X
+     - X
+
 
 .. warning::
 
-   Some :class:`pylops.LinearOperator` methods are currently on GPU:
+   Some :class:`pylops.LinearOperator` methods are currently not available on GPU:
 
    - :meth:`pylops.LinearOperator.eigs`
    - :meth:`pylops.LinearOperator.cond`

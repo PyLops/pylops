@@ -32,6 +32,7 @@ dependencies:
     - pydata-sphinx-theme
     - sphinx-gallery
     - nbsphinx
+    - sphinxemoji
     - image
     - flake8
     - mypy
