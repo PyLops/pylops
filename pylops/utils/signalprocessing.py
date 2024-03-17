@@ -246,7 +246,7 @@ def slope_estimate(
     regdata = l1 > eps
     anisos[regdata] = 1 - l2[regdata] / l1[regdata]
 
-    if not dips:
+    if dips:
         slopes = 0.5 * np.arctan2(2 * gzx, gzz - gxx)
     else:
         regdata = np.abs(gzx) > eps
