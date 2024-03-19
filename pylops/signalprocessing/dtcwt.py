@@ -1,6 +1,6 @@
 __all__ = ["DTCWT"]
 
-from typing import Union
+from typing import Any, NewType, Union
 
 import numpy as np
 
@@ -14,6 +14,12 @@ dtcwt_message = deps.dtcwt_import("the dtcwt module")
 
 if dtcwt_message is None:
     import dtcwt
+
+    pyramid_type = dtcwt.numpy.common.Pyramid
+else:
+    pyramid_type = Any
+
+PyramidType = NewType("PyramidType", pyramid_type)
 
 
 class DTCWT(LinearOperator):
@@ -122,7 +128,11 @@ class DTCWT(LinearOperator):
             name=name,
         )
 
-    def _interpret_coeffs(self, dims, axis):
+    def _interpret_coeffs(
+        self,
+        dims: Union[int, InputDimsLike],
+        axis: int,
+    ) -> None:
         x = np.ones(dims[axis])
         pyr = self._transform.forward(
             x, nlevels=self.level, include_scale=self.include_scale
@@ -134,16 +144,16 @@ class DTCWT(LinearOperator):
             self.highpass_sizes.append(_h.size)
             self.coeff_array_size += _h.size
 
-    def _nd_to_2d(self, arr_nd):
+    def _nd_to_2d(self, arr_nd: NDArray) -> NDArray:
         arr_2d = arr_nd.reshape(self.dims[self.axis], -1).squeeze()
         return arr_2d
 
-    def _coeff_to_array(self, pyr):  # cannot use dtcwt types as it may not be installed
+    def _coeff_to_array(self, pyr: PyramidType) -> NDArray:
         highpass_coeffs = np.vstack([h for h in pyr.highpasses])
         coeffs = np.concatenate((highpass_coeffs, pyr.lowpass), axis=0)
         return coeffs
 
-    def _array_to_coeff(self, X):  # cannot use dtcwt types as it may not be installed
+    def _array_to_coeff(self, X: NDArray) -> PyramidType:
         lowpass = (X[-self.lowpass_size :].real).reshape((-1, self.otherdims))
         _ptr = 0
         highpasses = ()
@@ -154,7 +164,7 @@ class DTCWT(LinearOperator):
             highpasses += (_h,)
         return dtcwt.Pyramid(lowpass, highpasses)
 
-    def get_pyramid(self, x):  # cannot use dtcwt types as it may not be installed
+    def get_pyramid(self, x: NDArray) -> PyramidType:
         """Return Pyramid object from flat real-valued array"""
         return self._array_to_coeff(x[0] + 1j * x[1])
 
