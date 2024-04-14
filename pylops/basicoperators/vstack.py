@@ -21,7 +21,7 @@ from typing import Callable, Optional, Sequence
 
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_add, inplace_set
 from pylops.utils.typing import DTypeLike, NDArray
 
 
@@ -165,14 +165,22 @@ class VStack(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            y[self.nnops[iop] : self.nnops[iop + 1]] = oper.matvec(x).squeeze()
+            # y[self.nnops[iop] : self.nnops[iop + 1]] = oper.matvec(x).squeeze()
+            y = inplace_set(
+                oper.matvec(x).squeeze(), y, slice(self.nnops[iop], self.nnops[iop + 1])
+            )
         return y
 
     def _rmatvec_serial(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            y += oper.rmatvec(x[self.nnops[iop] : self.nnops[iop + 1]]).squeeze()
+            # y += oper.rmatvec(x[self.nnops[iop] : self.nnops[iop + 1]]).squeeze()
+            y = inplace_add(
+                oper.rmatvec(x[self.nnops[iop] : self.nnops[iop + 1]]).squeeze(),
+                y,
+                slice(None, None),
+            )
         return y
 
     def _matvec_multiproc(self, x: NDArray) -> NDArray:

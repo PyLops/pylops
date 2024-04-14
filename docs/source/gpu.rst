@@ -29,7 +29,7 @@ provide data vectors to the solvers, e.g., when using
 For JAX, apart from following the procedure described for CuPy, a PyLops operator must also
 be wrapped into a ``JaxOperator``.
 
-In the following, we provide a list of operators and methods with their current status (available on CPU,
+In the following, we provide a list of methods in :class:`pylops.LinearOperator` with their current status (available on CPU,
 GPU with CuPy, and GPU with JAX.
 
 .. list-table::
@@ -48,7 +48,33 @@ GPU with CuPy, and GPU with JAX.
      - V
      - X
      - X
+   * - :meth:`pylops.LinearOperator.cond`
+     - V
+     - X
+     - X
 
+and operators:
+
+.. list-table::
+   :widths: 50 25 25 25
+   :header-rows: 1
+
+   * - Operator/method
+     - CPU
+     - GPU with CuPy
+     - GPU with JAX
+   * - :meth:`pylops.basicoperators.Diagonal`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Identity`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.MatrixMult`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
 
 .. warning::
 

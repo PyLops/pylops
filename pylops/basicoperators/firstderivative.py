@@ -7,7 +7,7 @@ from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.backend import get_array_module, inplace_add
+from pylops.utils.backend import get_array_module, inplace_add, inplace_set
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -118,6 +118,71 @@ class FirstDerivative(LinearOperator):
                 slice(1, None),
             ]
         )
+        self.slice1_1 = tuple(
+            [
+                slice(None, None),
+            ]
+            * (len(dims) - 1)
+            + [
+                slice(1, -1),
+            ]
+        )
+        self.slice_2 = tuple(
+            [
+                slice(None, None),
+            ]
+            * (len(dims) - 1)
+            + [
+                slice(None, -2),
+            ]
+        )
+        self.slice2 = tuple(
+            [
+                slice(None, None),
+            ]
+            * (len(dims) - 1)
+            + [
+                slice(2, None),
+            ]
+        )
+        self.sample0 = tuple(
+            [
+                slice(None, None),
+            ]
+            * (len(dims) - 1)
+            + [
+                slice(0, 1),
+            ]
+        )
+        self.sample1 = tuple(
+            [
+                slice(None, None),
+            ]
+            * (len(dims) - 1)
+            + [
+                slice(1, 2),
+            ]
+        )
+
+        self.sample_2 = tuple(
+            [
+                slice(None, None),
+            ]
+            * (len(dims) - 1)
+            + [
+                slice(-2, -1),
+            ]
+        )
+
+        self.sample_1 = tuple(
+            [
+                slice(None, None),
+            ]
+            * (len(dims) - 1)
+            + [
+                slice(-1, None),
+            ]
+        )
         self._register_multiplications(self.kind, self.order)
 
     def _register_multiplications(
@@ -159,7 +224,7 @@ class FirstDerivative(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         # y[..., :-1] = (x[..., 1:] - x[..., :-1]) / self.sampling
-        y = inplace_add((x[..., 1:] - x[..., :-1]) / self.sampling, y, self.slice_1)
+        y = inplace_set((x[..., 1:] - x[..., :-1]) / self.sampling, y, self.slice_1)
         return y
 
     @reshaped(swapaxis=True)
@@ -177,10 +242,14 @@ class FirstDerivative(LinearOperator):
     def _matvec_centered3(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
-        y[..., 1:-1] = 0.5 * (x[..., 2:] - x[..., :-2])
+        # y[..., 1:-1] = 0.5 * (x[..., 2:] - x[..., :-2])
+        y = inplace_set(0.5 * (x[..., 2:] - x[..., :-2]), y, self.slice1_1)
+
         if self.edge:
-            y[..., 0] = x[..., 1] - x[..., 0]
-            y[..., -1] = x[..., -1] - x[..., -2]
+            # y[..., 0] = x[..., 1] - x[..., 0]
+            y = inplace_set(x[..., 1] - x[..., 0], y, self.sample0)
+            # y[..., -1] = x[..., -1] - x[..., -2]
+            y = inplace_set(x[..., -1] - x[..., -2], y, self.sample_1)
         y /= self.sampling
         return y
 
@@ -188,13 +257,19 @@ class FirstDerivative(LinearOperator):
     def _rmatvec_centered3(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
-        y[..., :-2] -= 0.5 * x[..., 1:-1]
-        y[..., 2:] += 0.5 * x[..., 1:-1]
+        # y[..., :-2] -= 0.5 * x[..., 1:-1]
+        y = inplace_add(-0.5 * x[..., 1:-1], y, self.slice_2)
+        # y[..., 2:] += 0.5 * x[..., 1:-1]
+        y = inplace_add(0.5 * x[..., 1:-1], y, self.slice2)
         if self.edge:
-            y[..., 0] -= x[..., 0]
-            y[..., 1] += x[..., 0]
-            y[..., -2] -= x[..., -1]
-            y[..., -1] += x[..., -1]
+            # y[..., 0] -= x[..., 0]
+            y = inplace_add(-x[..., 0], y, self.sample0)
+            # y[..., 1] += x[..., 0]
+            y = inplace_add(x[..., 0], y, self.sample1)
+            # y[..., -2] -= x[..., -1]
+            y = inplace_add(-x[..., -1], y, self.sample_2)
+            # y[..., -1] += x[..., -1]
+            y = inplace_add(x[..., -1], y, self.sample_1)
         y /= self.sampling
         return y
 
