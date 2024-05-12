@@ -7,7 +7,6 @@ import logging
 from typing import Tuple, Union
 
 import numpy as np
-from numpy.lib.stride_tricks import sliding_window_view
 
 from pylops import LinearOperator
 from pylops.signalprocessing.sliding2d import _slidingsteps
@@ -192,10 +191,6 @@ class Sliding1D(LinearOperator):
         if Op.shape[1] == dim[0]:
             self.simOp = True
         self.Op = Op
-
-        # create temporary shape and strides for cpy
-        self.shape_wins = None
-        self.strides_wins = None
 
         super().__init__(
             dtype=Op.dtype,

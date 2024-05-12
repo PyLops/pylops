@@ -9,7 +9,13 @@ from typing import Tuple
 import numpy as np
 
 from pylops import LinearOperator
-from pylops.basicoperators import BlockDiag, Diagonal, HStack, Restriction
+from pylops.utils._internal import _value_or_sized_to_tuple
+from pylops.utils.backend import (
+    get_array_module,
+    get_sliding_window_view,
+    to_cupy_conditional,
+)
+from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper2d
 from pylops.utils.typing import InputDimsLike, NDArray
 
@@ -110,15 +116,7 @@ def sliding2d_design(
     return nwins, dims, mwins_inends, dwins_inends
 
 
-def Sliding2D(
-    Op: LinearOperator,
-    dims: InputDimsLike,
-    dimsd: InputDimsLike,
-    nwin: int,
-    nover: int,
-    tapertype: str = "hanning",
-    name: str = "S",
-) -> LinearOperator:
+class Sliding2D(LinearOperator):
     """2D Sliding transform operator.
 
     Apply a transform operator ``Op`` repeatedly to slices of the model
@@ -138,6 +136,12 @@ def Sliding2D(
        number of windows depends directly on the choice of ``nwin`` and
        ``nover``, it is recommended to first run ``sliding2d_design`` to obtain
        the corresponding ``dims`` and number of windows.
+
+    .. note:: Two kind of operators ``Op`` can be provided: the first
+       applies a single transformation to each window separately; the second
+       applies the transformation to all of the windows at the same time. This
+       is directly inferred during initialization when the following condition
+       holds ``Op.shape[1] == np.prod(dims)``.
 
     .. warning:: Depending on the choice of `nwin` and `nover` as well as the
        size of the data, sliding windows may not cover the entire data.
@@ -176,47 +180,104 @@ def Sliding2D(
         shape (``dims``).
 
     """
-    # data windows
-    dwin_ins, dwin_ends = _slidingsteps(dimsd[0], nwin, nover)
-    nwins = len(dwin_ins)
 
-    # check patching
-    if nwins * Op.shape[1] // dims[1] != dims[0]:
-        raise ValueError(
-            f"Model shape (dims={dims}) is not consistent with chosen "
-            f"number of windows. Run sliding2d_design to identify the "
-            f"correct number of windows for the current "
-            "model size..."
+    def __init__(
+        self,
+        Op: LinearOperator,
+        dims: InputDimsLike,
+        dimsd: InputDimsLike,
+        nwin: int,
+        nover: int,
+        tapertype: str = "hanning",
+        name: str = "S",
+    ) -> None:
+
+        dims: Tuple[int, ...] = _value_or_sized_to_tuple(dims)
+        dimsd: Tuple[int, ...] = _value_or_sized_to_tuple(dimsd)
+
+        # data windows
+        dwin_ins, dwin_ends = _slidingsteps(dimsd[0], nwin, nover)
+        self.dwin_inends = (dwin_ins, dwin_ends)
+        nwins = len(dwin_ins)
+        self.nwin = nwin
+        self.nover = nover
+
+        # check patching
+        if nwins * Op.shape[1] // dims[1] != dims[0] and Op.shape[1] != np.prod(dims):
+            raise ValueError(
+                f"Model shape (dims={dims}) is not consistent with chosen "
+                f"number of windows. Run sliding2d_design to identify the "
+                f"correct number of windows for the current "
+                "model size..."
+            )
+
+        # create tapers
+        self.tapertype = tapertype
+        if self.tapertype is not None:
+            tap = taper2d(dimsd[1], nwin, nover, tapertype=self.tapertype)
+            tapin = tap.copy()
+            tapin[:nover] = 1
+            tapend = tap.copy()
+            tapend[-nover:] = 1
+            self.taps = [
+                tapin[np.newaxis, :],
+            ]
+            for i in range(1, nwins - 1):
+                self.taps.append(tap[np.newaxis, :])
+            self.taps.append(tapend[np.newaxis, :])
+            self.taps = np.concatenate(self.taps, axis=0)
+
+        # check if operator is applied to all windows simultaneously
+        self.simOp = False
+        if Op.shape[1] == np.prod(dims):
+            self.simOp = True
+        self.Op = Op
+
+        super().__init__(
+            dtype=Op.dtype,
+            dims=(nwins, int(dims[0] // nwins), dims[1]),
+            dimsd=dimsd,
+            clinear=False,
+            name=name,
         )
 
-    # create tapers
-    if tapertype is not None:
-        tap = taper2d(dimsd[1], nwin, nover, tapertype=tapertype).astype(Op.dtype)
-        tapin = tap.copy()
-        tapin[:nover] = 1
-        tapend = tap.copy()
-        tapend[-nover:] = 1
-        taps = {}
-        taps[0] = tapin
-        for i in range(1, nwins - 1):
-            taps[i] = tap
-        taps[nwins - 1] = tapend
+    @reshaped
+    def _matvec(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
+        if self.tapertype is not None:
+            self.taps = to_cupy_conditional(x, self.taps)
+        y = ncp.zeros(self.dimsd, dtype=self.dtype)
+        if self.simOp:
+            x = self.Op @ x
+        for iwin0 in range(self.dims[0]):
+            if self.simOp:
+                xx = x[iwin0].reshape(self.nwin, self.dimsd[-1])
+            else:
+                xx = self.Op.matvec(x[iwin0].ravel()).reshape(self.nwin, self.dimsd[-1])
+            if self.tapertype is not None:
+                xxwin = self.taps[iwin0] * xx
+            else:
+                xxwin = xx
+            y[self.dwin_inends[0][iwin0] : self.dwin_inends[1][iwin0]] += xxwin
+        return y
 
-    # transform to apply
-    if tapertype is None:
-        OOp = BlockDiag([Op for _ in range(nwins)])
-    else:
-        OOp = BlockDiag(
-            [Diagonal(taps[itap].ravel(), dtype=Op.dtype) * Op for itap in range(nwins)]
-        )
-
-    combining = HStack(
-        [
-            Restriction(dimsd, range(win_in, win_end), axis=0, dtype=Op.dtype).H
-            for win_in, win_end in zip(dwin_ins, dwin_ends)
-        ]
-    )
-    Sop = LinearOperator(combining * OOp)
-    Sop.dims, Sop.dimsd = (nwins, int(dims[0] // nwins), dims[1]), dimsd
-    Sop.name = name
-    return Sop
+    @reshaped
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
+        ncp_sliding_window_view = get_sliding_window_view(x)
+        if self.tapertype is not None:
+            self.taps = to_cupy_conditional(x, self.taps)
+        ywins = ncp_sliding_window_view(x, self.nwin, axis=0)[
+            :: self.nwin - self.nover
+        ].transpose(0, 2, 1)
+        if self.tapertype is not None:
+            ywins = ywins * self.taps
+        if self.simOp:
+            y = self.Op.H @ ywins
+        else:
+            y = ncp.zeros(self.dims, dtype=self.dtype)
+            for iwin0 in range(self.dims[0]):
+                y[iwin0] = self.Op.rmatvec(ywins[iwin0].ravel()).reshape(
+                    self.dims[1], self.dims[2]
+                )
+        return y
