@@ -218,7 +218,7 @@ class Sliding3D(LinearOperator):
             tap = taper3d(dimsd[2], nwin, nover, tapertype=tapertype).astype(Op.dtype)
             taps = [
                 tap,
-            ] * nwins  # {itap: tap for itap in range(nwins)}
+            ] * nwins
 
             # topmost tapers
             taptop = tap.copy()
