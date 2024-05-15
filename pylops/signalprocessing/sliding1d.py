@@ -127,6 +127,9 @@ class Sliding1D(LinearOperator):
         Number of samples of overlapping part of window
     tapertype : :obj:`str`, optional
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
+    savetaper: :obj:`bool`, optional
+        Save all tapers and apply them in one go (``True``) or save unique tapers and apply them one by one (``False``).
+        The first option is more computationally efficient, whilst the second is more memory efficient.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -148,6 +151,7 @@ class Sliding1D(LinearOperator):
         nwin: int,
         nover: int,
         tapertype: str = "hanning",
+        savetaper: bool = True,
         name: str = "S",
     ) -> None:
 
@@ -172,19 +176,23 @@ class Sliding1D(LinearOperator):
 
         # create tapers
         self.tapertype = tapertype
+        self.savetaper = savetaper
         if self.tapertype is not None:
             tap = taper(nwin, nover, tapertype=self.tapertype)
             tapin = tap.copy()
             tapin[:nover] = 1
             tapend = tap.copy()
             tapend[-nover:] = 1
-            self.taps = [
-                tapin,
-            ]
-            for i in range(1, nwins - 1):
-                self.taps.append(tap)
-            self.taps.append(tapend)
-            self.taps = np.vstack(self.taps)
+            if self.savetaper:
+                self.taps = [
+                    tapin,
+                ]
+                for i in range(1, nwins - 1):
+                    self.taps.append(tap)
+                self.taps.append(tapend)
+                self.taps = np.vstack(self.taps)
+            else:
+                self.taps = np.vstack([tapin, tap, tapend])
 
         # check if operator is applied to all windows simultaneously
         self.simOp = False
@@ -200,28 +208,30 @@ class Sliding1D(LinearOperator):
             name=name,
         )
 
+        self._register_multiplications(self.savetaper)
+
     @reshaped
-    def _matvec(self, x: NDArray) -> NDArray:
+    def _matvec_savetaper(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         if self.tapertype is not None:
             self.taps = to_cupy_conditional(x, self.taps)
         y = ncp.zeros(self.dimsd, dtype=self.dtype)
         if self.simOp:
             x = self.Op @ x
+            if self.tapertype is not None:
+                x = self.taps * x
         for iwin0 in range(self.dims[0]):
             if self.simOp:
-                xx = x[iwin0]
+                xxwin = x[iwin0]
             else:
-                xx = self.Op.matvec(x[iwin0])
-            if self.tapertype is not None:
-                xxwin = self.taps[iwin0] * xx
-            else:
-                xxwin = xx
+                xxwin = self.Op.matvec(x[iwin0])
+                if self.tapertype is not None:
+                    xxwin = self.taps[iwin0] * xxwin
             y[self.dwin_inends[0][iwin0] : self.dwin_inends[1][iwin0]] += xxwin
         return y
 
     @reshaped
-    def _rmatvec(self, x: NDArray) -> NDArray:
+    def _rmatvec_savetaper(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         ncp_sliding_window_view = get_sliding_window_view(x)
         if self.tapertype is not None:
@@ -236,3 +246,68 @@ class Sliding1D(LinearOperator):
             for iwin0 in range(self.dims[0]):
                 y[iwin0] = self.Op.rmatvec(ywins[iwin0])
         return y
+
+    @reshaped
+    def _matvec_nosavetaper(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
+        if self.tapertype is not None:
+            self.taps = to_cupy_conditional(x, self.taps)
+        y = ncp.zeros(self.dimsd, dtype=self.dtype)
+        if self.simOp:
+            x = self.Op @ x
+        for iwin0 in range(self.dims[0]):
+            if self.simOp:
+                xxwin = x[iwin0]
+            else:
+                xxwin = self.Op.matvec(x[iwin0])
+            if self.tapertype is not None:
+                if iwin0 == 0:
+                    xxwin = self.taps[0] * xxwin
+                elif iwin0 == self.dims[0] - 1:
+                    xxwin = self.taps[-1] * xxwin
+                else:
+                    xxwin = self.taps[1] * xxwin
+            y[self.dwin_inends[0][iwin0] : self.dwin_inends[1][iwin0]] += xxwin
+        return y
+
+    @reshaped
+    def _rmatvec_nosavetaper(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
+        ncp_sliding_window_view = get_sliding_window_view(x)
+        if self.tapertype is not None:
+            self.taps = to_cupy_conditional(x, self.taps)
+        ywins = ncp_sliding_window_view(x, self.nwin)[:: self.nwin - self.nover].copy()
+        if self.simOp:
+            if self.tapertype is not None:
+                for iwin0 in range(self.dims[0]):
+                    if iwin0 == 0:
+                        ywins[0] = ywins[0] * self.taps[0]
+                    elif iwin0 == self.dims[0] - 1:
+                        ywins[-1] = ywins[-1] * self.taps[-1]
+                    else:
+                        ywins[iwin0] = ywins[iwin0] * self.taps[1]
+            y = self.Op.H @ ywins
+        else:
+            y = ncp.zeros(self.dims, dtype=self.dtype)
+            for iwin0 in range(self.dims[0]):
+                if iwin0 == 0:
+                    if self.tapertype is not None:
+                        ywins[0] = ywins[0] * self.taps[0]
+                    y[0] = self.Op.rmatvec(ywins[0])
+                elif iwin0 == self.dims[0] - 1:
+                    if self.tapertype is not None:
+                        ywins[-1] = ywins[-1] * self.taps[-1]
+                    y[-1] = self.Op.rmatvec(ywins[-1])
+                else:
+                    if self.tapertype is not None:
+                        ywins[iwin0] = ywins[iwin0] * self.taps[1]
+                    y[iwin0] = self.Op.rmatvec(ywins[iwin0])
+        return y
+
+    def _register_multiplications(self, savetaper: bool) -> None:
+        if savetaper:
+            self._matvec = self._matvec_savetaper
+            self._rmatvec = self._rmatvec_savetaper
+        else:
+            self._matvec = self._matvec_nosavetaper
+            self._rmatvec = self._rmatvec_nosavetaper
