@@ -343,24 +343,16 @@ class Sliding2D(LinearOperator):
         else:
             y = ncp.zeros(self.dims, dtype=self.dtype)
             for iwin0 in range(self.dims[0]):
-                if iwin0 == 0:
-                    if self.tapertype is not None:
+                if self.tapertype is not None:
+                    if iwin0 == 0:
                         ywins[0] = ywins[0] * self.taps[0]
-                    y[0] = self.Op.rmatvec(ywins[0].ravel()).reshape(
-                        self.dims[1], self.dims[2]
-                    )
-                elif iwin0 == self.dims[0] - 1:
-                    if self.tapertype is not None:
+                    elif iwin0 == self.dims[0] - 1:
                         ywins[-1] = ywins[-1] * self.taps[-1]
-                    y[-1] = self.Op.rmatvec(ywins[-1].ravel()).reshape(
-                        self.dims[1], self.dims[2]
-                    )
-                else:
-                    if self.tapertype is not None:
+                    else:
                         ywins[iwin0] = ywins[iwin0] * self.taps[1]
-                    y[iwin0] = self.Op.rmatvec(ywins[iwin0].ravel()).reshape(
-                        self.dims[1], self.dims[2]
-                    )
+                y[iwin0] = self.Op.rmatvec(ywins[iwin0].ravel()).reshape(
+                    self.dims[1], self.dims[2]
+                )
         return y
 
     def _register_multiplications(self, savetaper: bool) -> None:

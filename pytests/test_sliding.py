@@ -152,7 +152,7 @@ def test_Sliding2D(par):
     assert_array_almost_equal(x.ravel(), xinv)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par5)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5), (par6)])
 def test_Sliding3D(par):
     """Dot-test and inverse for Sliding3D operator"""
     Op = MatrixMult(
@@ -176,6 +176,7 @@ def test_Sliding3D(par):
         nover=(par["novery"], par["noverx"]),
         nop=(par["ny"], par["nx"]),
         tapertype=par["tapertype"],
+        savetaper=par["savetaper"],
     )
     assert dottest(
         Slid,
