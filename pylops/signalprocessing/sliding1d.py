@@ -212,6 +212,15 @@ class Sliding1D(LinearOperator):
 
         self._register_multiplications(self.savetaper)
 
+    def _apply_taper(self, ywins, iwin0):
+        if iwin0 == 0:
+            ywins[0] = ywins[0] * self.taps[0]
+        elif iwin0 == self.dims[0] - 1:
+            ywins[-1] = ywins[-1] * self.taps[-1]
+        else:
+            ywins[iwin0] = ywins[iwin0] * self.taps[1]
+        return ywins
+
     @reshaped
     def _matvec_savetaper(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
@@ -282,23 +291,13 @@ class Sliding1D(LinearOperator):
         if self.simOp:
             if self.tapertype is not None:
                 for iwin0 in range(self.dims[0]):
-                    if iwin0 == 0:
-                        ywins[0] = ywins[0] * self.taps[0]
-                    elif iwin0 == self.dims[0] - 1:
-                        ywins[-1] = ywins[-1] * self.taps[-1]
-                    else:
-                        ywins[iwin0] = ywins[iwin0] * self.taps[1]
+                    ywins = self._apply_taper(ywins, iwin0)
             y = self.Op.H @ ywins
         else:
             y = ncp.zeros(self.dims, dtype=self.dtype)
             for iwin0 in range(self.dims[0]):
                 if self.tapertype is not None:
-                    if iwin0 == 0:
-                        ywins[0] = ywins[0] * self.taps[0]
-                    elif iwin0 == self.dims[0] - 1:
-                        ywins[-1] = ywins[-1] * self.taps[-1]
-                    else:
-                        ywins[iwin0] = ywins[iwin0] * self.taps[1]
+                    ywins = self._apply_taper(ywins, iwin0)
                 y[iwin0] = self.Op.rmatvec(ywins[iwin0])
         return y
 

@@ -513,6 +513,69 @@ class Patch3D(LinearOperator):
 
         self._register_multiplications(self.savetaper)
 
+    def _apply_taper(self, ywins, iwin0, iwin1, iwin2):
+        if iwin0 == 0 and iwin1 == 0 and iwin2 == 0:
+            ywins[0, 0, 0] = self.taps[0, 0, 0] * ywins[0, 0, 0]
+        elif iwin0 == 0 and iwin1 == 0 and iwin2 == self.dims[2] - 1:
+            ywins[0, 0, -1] = self.taps[0, 0, -1] * ywins[0, 0, -1]
+        elif iwin0 == 0 and iwin1 == self.dims[1] - 1 and iwin2 == self.dims[2] - 1:
+            ywins[0, -1, -1] = self.taps[0, -1, -1] * ywins[0, -1, -1]
+        elif iwin0 == 0 and iwin1 == self.dims[1] - 1 and iwin2 == 0:
+            ywins[0, -1, 0] = self.taps[0, -1, 0] * ywins[0, -1, 0]
+        elif iwin0 == 0 and iwin1 == 0:
+            ywins[0, 0, iwin2] = self.taps[0, 0, 1] * ywins[0, 0, iwin2]
+        elif iwin0 == 0 and iwin1 == self.dims[1] - 1:
+            ywins[0, -1, iwin2] = self.taps[0, -1, 1] * ywins[0, -1, iwin2]
+        elif iwin0 == 0 and iwin2 == 0:
+            ywins[0, iwin1, 0] = self.taps[0, 1, 0] * ywins[0, iwin1, 0]
+        elif iwin0 == 0 and iwin2 == self.dims[2] - 1:
+            ywins[0, iwin1, -1] = self.taps[0, 1, -1] * ywins[0, iwin1, -1]
+        elif iwin0 == 0:
+            ywins[0, iwin1, iwin2] = self.taps[0, 1, 1] * ywins[0, iwin1, iwin2]
+
+        elif iwin0 == self.dims[0] - 1 and iwin1 == 0 and iwin2 == 0:
+            ywins[-1, 0, 0] = self.taps[-1, 0, 0] * ywins[-1, 0, 0]
+        elif iwin0 == self.dims[0] - 1 and iwin1 == 0 and iwin2 == self.dims[2] - 1:
+            ywins[-1, 0, -1] = self.taps[-1, 0, -1] * ywins[-1, 0, -1]
+        elif (
+            iwin0 == self.dims[0] - 1
+            and iwin1 == self.dims[1] - 1
+            and iwin2 == self.dims[2] - 1
+        ):
+            ywins[-1, -1, -1] = self.taps[-1, -1, -1] * ywins[-1, -1, -1]
+        elif iwin0 == self.dims[0] - 1 and iwin1 == self.dims[1] - 1 and iwin2 == 0:
+            ywins[-1, -1, 0] = self.taps[-1, -1, 0] * ywins[-1, -1, 0]
+        elif iwin0 == self.dims[0] - 1 and iwin1 == 0:
+            ywins[-1, 0, iwin2] = self.taps[-1, 0, 1] * ywins[-1, 0, iwin2]
+        elif iwin0 == self.dims[0] - 1 and iwin1 == self.dims[1] - 1:
+            ywins[-1, -1, iwin2] = self.taps[-1, -1, 1] * ywins[-1, -1, iwin2]
+        elif iwin0 == self.dims[0] - 1 and iwin2 == 0:
+            ywins[-1, iwin1, 0] = self.taps[-1, 1, 0] * ywins[-1, iwin1, 0]
+        elif iwin0 == self.dims[0] - 1 and iwin2 == self.dims[2] - 1:
+            ywins[-1, iwin1, -1] = self.taps[-1, 1, -1] * ywins[-1, iwin1, -1]
+        elif iwin0 == self.dims[0] - 1:
+            ywins[-1, iwin1, iwin2] = self.taps[-1, 1, 1] * ywins[-1, iwin1, iwin2]
+
+        elif iwin1 == 0 and iwin2 == 0:
+            ywins[iwin0, 0, 0] = self.taps[1, 0, 0] * ywins[iwin0, 0, 0]
+        elif iwin1 == 0 and iwin2 == self.dims[2] - 1:
+            ywins[iwin0, 0, -1] = self.taps[1, 0, -1] * ywins[iwin0, 0, -1]
+        elif iwin1 == self.dims[1] - 1 and iwin2 == self.dims[2] - 1:
+            ywins[iwin0, -1, -1] = self.taps[1, -1, -1] * ywins[iwin0, -1, -1]
+        elif iwin1 == self.dims[1] - 1 and iwin2 == 0:
+            ywins[iwin0, -1, 0] = self.taps[1, -1, 0] * ywins[iwin0, -1, 0]
+        elif iwin1 == 0:
+            ywins[iwin0, 0, iwin2] = self.taps[1, 0, 1] * ywins[iwin0, 0, iwin2]
+        elif iwin1 == self.dims[1] - 1:
+            ywins[iwin0, -1, iwin2] = self.taps[1, -1, 1] * ywins[iwin0, -1, iwin2]
+        elif iwin2 == 0:
+            ywins[iwin0, iwin1, 0] = self.taps[1, 1, 0] * ywins[iwin0, iwin1, 0]
+        elif iwin2 == self.dims[2] - 1:
+            ywins[iwin0, iwin1, -1] = self.taps[1, 1, -1] * ywins[iwin0, iwin1, -1]
+        else:
+            ywins[iwin0, iwin1, iwin2] = self.taps[1, 1, 1] * ywins[iwin0, iwin1, iwin2]
+        return ywins
+
     @reshaped()
     def _matvec_savetaper(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
@@ -680,136 +743,7 @@ class Patch3D(LinearOperator):
                 for iwin0 in range(self.dims[0]):
                     for iwin1 in range(self.dims[1]):
                         for iwin2 in range(self.dims[2]):
-                            if iwin0 == 0 and iwin1 == 0 and iwin2 == 0:
-                                ywins[0, 0, 0] = self.taps[0, 0, 0] * ywins[0, 0, 0]
-                            elif (
-                                iwin0 == 0 and iwin1 == 0 and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[0, 0, -1] = self.taps[0, 0, -1] * ywins[0, 0, -1]
-                            elif (
-                                iwin0 == 0
-                                and iwin1 == self.dims[1] - 1
-                                and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[0, -1, -1] = (
-                                    self.taps[0, -1, -1] * ywins[0, -1, -1]
-                                )
-                            elif (
-                                iwin0 == 0 and iwin1 == self.dims[1] - 1 and iwin2 == 0
-                            ):
-                                ywins[0, -1, 0] = self.taps[0, -1, 0] * ywins[0, -1, 0]
-                            elif iwin0 == 0 and iwin1 == 0:
-                                ywins[0, 0, iwin2] = (
-                                    self.taps[0, 0, 1] * ywins[0, 0, iwin2]
-                                )
-                            elif iwin0 == 0 and iwin1 == self.dims[1] - 1:
-                                ywins[0, -1, iwin2] = (
-                                    self.taps[0, -1, 1] * ywins[0, -1, iwin2]
-                                )
-                            elif iwin0 == 0 and iwin2 == 0:
-                                ywins[0, iwin1, 0] = (
-                                    self.taps[0, 1, 0] * ywins[0, iwin1, 0]
-                                )
-                            elif iwin0 == 0 and iwin2 == self.dims[2] - 1:
-                                ywins[0, iwin1, -1] = (
-                                    self.taps[0, 1, -1] * ywins[0, iwin1, -1]
-                                )
-                            elif iwin0 == 0:
-                                ywins[0, iwin1, iwin2] = (
-                                    self.taps[0, 1, 1] * ywins[0, iwin1, iwin2]
-                                )
-
-                            elif (
-                                iwin0 == self.dims[0] - 1 and iwin1 == 0 and iwin2 == 0
-                            ):
-                                ywins[-1, 0, 0] = self.taps[-1, 0, 0] * ywins[-1, 0, 0]
-                            elif (
-                                iwin0 == self.dims[0] - 1
-                                and iwin1 == 0
-                                and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[-1, 0, -1] = (
-                                    self.taps[-1, 0, -1] * ywins[-1, 0, -1]
-                                )
-                            elif (
-                                iwin0 == self.dims[0] - 1
-                                and iwin1 == self.dims[1] - 1
-                                and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[-1, -1, -1] = (
-                                    self.taps[-1, -1, -1] * ywins[-1, -1, -1]
-                                )
-                            elif (
-                                iwin0 == self.dims[0] - 1
-                                and iwin1 == self.dims[1] - 1
-                                and iwin2 == 0
-                            ):
-                                ywins[-1, -1, 0] = (
-                                    self.taps[-1, -1, 0] * ywins[-1, -1, 0]
-                                )
-                            elif iwin0 == self.dims[0] - 1 and iwin1 == 0:
-                                ywins[-1, 0, iwin2] = (
-                                    self.taps[-1, 0, 1] * ywins[-1, 0, iwin2]
-                                )
-                            elif (
-                                iwin0 == self.dims[0] - 1 and iwin1 == self.dims[1] - 1
-                            ):
-                                ywins[-1, -1, iwin2] = (
-                                    self.taps[-1, -1, 1] * ywins[-1, -1, iwin2]
-                                )
-                            elif iwin0 == self.dims[0] - 1 and iwin2 == 0:
-                                ywins[-1, iwin1, 0] = (
-                                    self.taps[-1, 1, 0] * ywins[-1, iwin1, 0]
-                                )
-                            elif (
-                                iwin0 == self.dims[0] - 1 and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[-1, iwin1, -1] = (
-                                    self.taps[-1, 1, -1] * ywins[-1, iwin1, -1]
-                                )
-                            elif iwin0 == self.dims[0] - 1:
-                                ywins[-1, iwin1, iwin2] = (
-                                    self.taps[-1, 1, 1] * ywins[-1, iwin1, iwin2]
-                                )
-
-                            elif iwin1 == 0 and iwin2 == 0:
-                                ywins[iwin0, 0, 0] = (
-                                    self.taps[1, 0, 0] * ywins[iwin0, 0, 0]
-                                )
-                            elif iwin1 == 0 and iwin2 == self.dims[2] - 1:
-                                ywins[iwin0, 0, -1] = (
-                                    self.taps[1, 0, -1] * ywins[iwin0, 0, -1]
-                                )
-                            elif (
-                                iwin1 == self.dims[1] - 1 and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[iwin0, -1, -1] = (
-                                    self.taps[1, -1, -1] * ywins[iwin0, -1, -1]
-                                )
-                            elif iwin1 == self.dims[1] - 1 and iwin2 == 0:
-                                ywins[iwin0, -1, 0] = (
-                                    self.taps[1, -1, 0] * ywins[iwin0, -1, 0]
-                                )
-                            elif iwin1 == 0:
-                                ywins[iwin0, 0, iwin2] = (
-                                    self.taps[1, 0, 1] * ywins[iwin0, 0, iwin2]
-                                )
-                            elif iwin1 == self.dims[1] - 1:
-                                ywins[iwin0, -1, iwin2] = (
-                                    self.taps[1, -1, 1] * ywins[iwin0, -1, iwin2]
-                                )
-                            elif iwin2 == 0:
-                                ywins[iwin0, iwin1, 0] = (
-                                    self.taps[1, 1, 0] * ywins[iwin0, iwin1, 0]
-                                )
-                            elif iwin2 == self.dims[2] - 1:
-                                ywins[iwin0, iwin1, -1] = (
-                                    self.taps[1, 1, -1] * ywins[iwin0, iwin1, -1]
-                                )
-                            else:
-                                ywins[iwin0, iwin1, iwin2] = (
-                                    self.taps[1, 1, 1] * ywins[iwin0, iwin1, iwin2]
-                                )
+                            ywins = self._apply_taper(ywins, iwin0, iwin1, iwin2)
             y = self.Op.H @ ywins
         else:
             y = ncp.zeros(self.dims, dtype=self.dtype)
@@ -817,136 +751,7 @@ class Patch3D(LinearOperator):
                 for iwin1 in range(self.dims[1]):
                     for iwin2 in range(self.dims[2]):
                         if self.tapertype is not None:
-                            if iwin0 == 0 and iwin1 == 0 and iwin2 == 0:
-                                ywins[0, 0, 0] = self.taps[0, 0, 0] * ywins[0, 0, 0]
-                            elif (
-                                iwin0 == 0 and iwin1 == 0 and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[0, 0, -1] = self.taps[0, 0, -1] * ywins[0, 0, -1]
-                            elif (
-                                iwin0 == 0
-                                and iwin1 == self.dims[1] - 1
-                                and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[0, -1, -1] = (
-                                    self.taps[0, -1, -1] * ywins[0, -1, -1]
-                                )
-                            elif (
-                                iwin0 == 0 and iwin1 == self.dims[1] - 1 and iwin2 == 0
-                            ):
-                                ywins[0, -1, 0] = self.taps[0, -1, 0] * ywins[0, -1, 0]
-                            elif iwin0 == 0 and iwin1 == 0:
-                                ywins[0, 0, iwin2] = (
-                                    self.taps[0, 0, 1] * ywins[0, 0, iwin2]
-                                )
-                            elif iwin0 == 0 and iwin1 == self.dims[1] - 1:
-                                ywins[0, -1, iwin2] = (
-                                    self.taps[0, -1, 1] * ywins[0, -1, iwin2]
-                                )
-                            elif iwin0 == 0 and iwin2 == 0:
-                                ywins[0, iwin1, 0] = (
-                                    self.taps[0, 1, 0] * ywins[0, iwin1, 0]
-                                )
-                            elif iwin0 == 0 and iwin2 == self.dims[2] - 1:
-                                ywins[0, iwin1, -1] = (
-                                    self.taps[0, 1, -1] * ywins[0, iwin1, -1]
-                                )
-                            elif iwin0 == 0:
-                                ywins[0, iwin1, iwin2] = (
-                                    self.taps[0, 1, 1] * ywins[0, iwin1, iwin2]
-                                )
-
-                            elif (
-                                iwin0 == self.dims[0] - 1 and iwin1 == 0 and iwin2 == 0
-                            ):
-                                ywins[-1, 0, 0] = self.taps[-1, 0, 0] * ywins[-1, 0, 0]
-                            elif (
-                                iwin0 == self.dims[0] - 1
-                                and iwin1 == 0
-                                and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[-1, 0, -1] = (
-                                    self.taps[-1, 0, -1] * ywins[-1, 0, -1]
-                                )
-                            elif (
-                                iwin0 == self.dims[0] - 1
-                                and iwin1 == self.dims[1] - 1
-                                and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[-1, -1, -1] = (
-                                    self.taps[-1, -1, -1] * ywins[-1, -1, -1]
-                                )
-                            elif (
-                                iwin0 == self.dims[0] - 1
-                                and iwin1 == self.dims[1] - 1
-                                and iwin2 == 0
-                            ):
-                                ywins[-1, -1, 0] = (
-                                    self.taps[-1, -1, 0] * ywins[-1, -1, 0]
-                                )
-                            elif iwin0 == self.dims[0] - 1 and iwin1 == 0:
-                                ywins[-1, 0, iwin2] = (
-                                    self.taps[-1, 0, 1] * ywins[-1, 0, iwin2]
-                                )
-                            elif (
-                                iwin0 == self.dims[0] - 1 and iwin1 == self.dims[1] - 1
-                            ):
-                                ywins[-1, -1, iwin2] = (
-                                    self.taps[-1, -1, 1] * ywins[-1, -1, iwin2]
-                                )
-                            elif iwin0 == self.dims[0] - 1 and iwin2 == 0:
-                                ywins[-1, iwin1, 0] = (
-                                    self.taps[-1, 1, 0] * ywins[-1, iwin1, 0]
-                                )
-                            elif (
-                                iwin0 == self.dims[0] - 1 and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[-1, iwin1, -1] = (
-                                    self.taps[-1, 1, -1] * ywins[-1, iwin1, -1]
-                                )
-                            elif iwin0 == self.dims[0] - 1:
-                                ywins[-1, iwin1, iwin2] = (
-                                    self.taps[-1, 1, 1] * ywins[-1, iwin1, iwin2]
-                                )
-
-                            elif iwin1 == 0 and iwin2 == 0:
-                                ywins[iwin0, 0, 0] = (
-                                    self.taps[1, 0, 0] * ywins[iwin0, 0, 0]
-                                )
-                            elif iwin1 == 0 and iwin2 == self.dims[2] - 1:
-                                ywins[iwin0, 0, -1] = (
-                                    self.taps[1, 0, -1] * ywins[iwin0, 0, -1]
-                                )
-                            elif (
-                                iwin1 == self.dims[1] - 1 and iwin2 == self.dims[2] - 1
-                            ):
-                                ywins[iwin0, -1, -1] = (
-                                    self.taps[1, -1, -1] * ywins[iwin0, -1, -1]
-                                )
-                            elif iwin1 == self.dims[1] - 1 and iwin2 == 0:
-                                ywins[iwin0, -1, 0] = (
-                                    self.taps[1, -1, 0] * ywins[iwin0, -1, 0]
-                                )
-                            elif iwin1 == 0:
-                                ywins[iwin0, 0, iwin2] = (
-                                    self.taps[1, 0, 1] * ywins[iwin0, 0, iwin2]
-                                )
-                            elif iwin1 == self.dims[1] - 1:
-                                ywins[iwin0, -1, iwin2] = (
-                                    self.taps[1, -1, 1] * ywins[iwin0, -1, iwin2]
-                                )
-                            elif iwin2 == 0:
-                                ywins[iwin0, iwin1, 0] = (
-                                    self.taps[1, 1, 0] * ywins[iwin0, iwin1, 0]
-                                )
-                            elif iwin2 == self.dims[2] - 1:
-                                ywins[iwin0, iwin1, -1] = (
-                                    self.taps[1, 1, -1] * ywins[iwin0, iwin1, -1]
-                                )
-                            else:
-                                ywins[iwin0, iwin1, iwin2] = (
-                                    self.taps[1, 1, 1] * ywins[iwin0, iwin1, iwin2]
-                                )
+                            ywins = self._apply_taper(ywins, iwin0, iwin1, iwin2)
                         y[iwin0, iwin1, iwin2] = self.Op.rmatvec(
                             ywins[iwin0, iwin1, iwin2].ravel()
                         ).reshape(self.dims[3], self.dims[4], self.dims[5])

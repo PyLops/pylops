@@ -297,6 +297,27 @@ class Patch2D(LinearOperator):
 
         self._register_multiplications(self.savetaper)
 
+    def _apply_taper(self, ywins, iwin0, iwin1):
+        if iwin0 == 0 and iwin1 == 0:
+            ywins[0, 0] = self.taps[0, 0] * ywins[0, 0]
+        elif iwin0 == 0 and iwin1 == self.dims[1] - 1:
+            ywins[0, -1] = self.taps[0, -1] * ywins[0, -1]
+        elif iwin0 == 0:
+            ywins[0, iwin1] = self.taps[0, 1] * ywins[0, iwin1]
+        elif iwin0 == self.dims[0] - 1 and iwin1 == 0:
+            ywins[-1, 0] = self.taps[-1, 0] * ywins[-1, 0]
+        elif iwin0 == self.dims[0] - 1 and iwin1 == self.dims[1] - 1:
+            ywins[-1, -1] = self.taps[-1, -1] * ywins[-1, -1]
+        elif iwin0 == self.dims[0] - 1:
+            ywins[-1, iwin1] = self.taps[-1, 1] * ywins[-1, iwin1]
+        elif iwin1 == 0:
+            ywins[iwin0, 0] = self.taps[1, 0] * ywins[iwin0, 0]
+        elif iwin1 == self.dims[1] - 1:
+            ywins[iwin0, -1] = self.taps[1, -1] * ywins[iwin0, -1]
+        else:
+            ywins[iwin0, iwin1] = self.taps[1, 1] * ywins[iwin0, iwin1]
+        return ywins
+
     @reshaped()
     def _matvec_savetaper(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
@@ -397,48 +418,14 @@ class Patch2D(LinearOperator):
             if self.tapertype is not None:
                 for iwin0 in range(self.dims[0]):
                     for iwin1 in range(self.dims[1]):
-                        if iwin0 == 0 and iwin1 == 0:
-                            ywins[0, 0] = self.taps[0, 0] * ywins[0, 0]
-                        elif iwin0 == 0 and iwin1 == self.dims[1] - 1:
-                            ywins[0, -1] = self.taps[0, -1] * ywins[0, -1]
-                        elif iwin0 == 0:
-                            ywins[0, iwin1] = self.taps[0, 1] * ywins[0, iwin1]
-                        elif iwin0 == self.dims[0] - 1 and iwin1 == 0:
-                            ywins[-1, 0] = self.taps[-1, 0] * ywins[-1, 0]
-                        elif iwin0 == self.dims[0] - 1 and iwin1 == self.dims[1] - 1:
-                            ywins[-1, -1] = self.taps[-1, -1] * ywins[-1, -1]
-                        elif iwin0 == self.dims[0] - 1:
-                            ywins[-1, iwin1] = self.taps[-1, 1] * ywins[-1, iwin1]
-                        elif iwin1 == 0:
-                            ywins[iwin0, 0] = self.taps[1, 0] * ywins[iwin0, 0]
-                        elif iwin1 == self.dims[1] - 1:
-                            ywins[iwin0, -1] = self.taps[1, -1] * ywins[iwin0, -1]
-                        else:
-                            ywins[iwin0, iwin1] = self.taps[1, 1] * ywins[iwin0, iwin1]
+                        ywins = self._apply_taper(ywins, iwin0, iwin1)
             y = self.Op.H @ ywins
         else:
             y = ncp.zeros(self.dims, dtype=self.dtype)
             for iwin0 in range(self.dims[0]):
                 for iwin1 in range(self.dims[1]):
                     if self.tapertype is not None:
-                        if iwin0 == 0 and iwin1 == 0:
-                            ywins[0, 0] = self.taps[0, 0] * ywins[0, 0]
-                        elif iwin0 == 0 and iwin1 == self.dims[1] - 1:
-                            ywins[0, -1] = self.taps[0, -1] * ywins[0, -1]
-                        elif iwin0 == 0:
-                            ywins[0, iwin1] = self.taps[0, 1] * ywins[0, iwin1]
-                        elif iwin0 == self.dims[0] - 1 and iwin1 == 0:
-                            ywins[-1, 0] = self.taps[-1, 0] * ywins[-1, 0]
-                        elif iwin0 == self.dims[0] - 1 and iwin1 == self.dims[1] - 1:
-                            ywins[-1, -1] = self.taps[-1, -1] * ywins[-1, -1]
-                        elif iwin0 == self.dims[0] - 1:
-                            ywins[-1, iwin1] = self.taps[-1, 1] * ywins[-1, iwin1]
-                        elif iwin1 == 0:
-                            ywins[iwin0, 0] = self.taps[1, 0] * ywins[iwin0, 0]
-                        elif iwin1 == self.dims[1] - 1:
-                            ywins[iwin0, -1] = self.taps[1, -1] * ywins[iwin0, -1]
-                        else:
-                            ywins[iwin0, iwin1] = self.taps[1, 1] * ywins[iwin0, iwin1]
+                        ywins = self._apply_taper(ywins, iwin0, iwin1)
                     y[iwin0, iwin1] = self.Op.rmatvec(
                         ywins[iwin0, iwin1].ravel()
                     ).reshape(self.dims[2], self.dims[3])
