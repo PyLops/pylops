@@ -230,7 +230,7 @@ class Sliding2D(LinearOperator):
                 self.taps = [
                     tapin[np.newaxis, :],
                 ]
-                for i in range(1, nwins - 1):
+                for _ in range(1, nwins - 1):
                     self.taps.append(tap[np.newaxis, :])
                 self.taps.append(tapend[np.newaxis, :])
                 self.taps = np.concatenate(self.taps, axis=0)

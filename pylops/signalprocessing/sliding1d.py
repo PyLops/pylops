@@ -189,7 +189,7 @@ class Sliding1D(LinearOperator):
                 self.taps = [
                     tapin,
                 ]
-                for i in range(1, nwins - 1):
+                for _ in range(1, nwins - 1):
                     self.taps.append(tap)
                 self.taps.append(tapend)
                 self.taps = np.vstack(self.taps)
