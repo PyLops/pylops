@@ -157,6 +157,8 @@ class Patch3D(LinearOperator):
     tapertype : :obj:`str`, optional
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
     savetaper: :obj:`bool`, optional
+        .. versionadded:: 2.3.0
+
         Save all tapers and apply them in one go (``True``) or save unique tapers and apply them one by one (``False``).
         The first option is more computationally efficient, whilst the second is more memory efficient.
     scalings : :obj:`tuple` or :obj:`list`, optional
