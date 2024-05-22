@@ -7,6 +7,7 @@ __all__ = [
     "get_oaconvolve",
     "get_correlate",
     "get_add_at",
+    "get_sliding_window_view",
     "get_block_diag",
     "get_toeplitz",
     "get_csc_matrix",
@@ -226,6 +227,29 @@ def get_add_at(x: npt.ArrayLike) -> Callable:
         return np.add.at
     else:
         return cupyx.scatter_add
+
+
+def get_sliding_window_view(x: npt.ArrayLike) -> Callable:
+    """Returns correct sliding_window_view module based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Array
+
+    Returns
+    -------
+    mod : :obj:`func`
+        Module to be used to process array (:mod:`numpy` or :mod:`cupy`)
+
+    """
+    if not deps.cupy_enabled:
+        return np.lib.stride_tricks.sliding_window_view
+
+    if cp.get_array_module(x) == np:
+        return np.lib.stride_tricks.sliding_window_view
+    else:
+        return cp.lib.stride_tricks.sliding_window_view
 
 
 def get_block_diag(x: npt.ArrayLike) -> Callable:
