@@ -154,7 +154,7 @@ class Sliding3D(LinearOperator):
         to spatial axes in the data
     tapertype : :obj:`str`, optional
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
-    savetaper: :obj:`bool`, optional
+    savetaper : :obj:`bool`, optional
         .. versionadded:: 2.3.0
 
         Save all tapers and apply them in one go (``True``) or save unique tapers and apply them one by one (``False``).
