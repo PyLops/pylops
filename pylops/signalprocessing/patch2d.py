@@ -28,6 +28,7 @@ def patch2d_design(
     nwin: Tuple[int, int],
     nover: Tuple[int, int],
     nop: Tuple[int, int],
+    verb: bool = True,
 ) -> Tuple[
     Tuple[int, int],
     Tuple[int, int],
@@ -51,6 +52,9 @@ def patch2d_design(
         Number of samples of overlapping part of window.
     nop : :obj:`tuple`
         Size of model in the transformed domain.
+    verb : :obj:`bool`, optional
+        Verbosity flag. If ``verb==True``, print the data
+        and model windows start-end indices
 
     Returns
     -------
@@ -79,21 +83,22 @@ def patch2d_design(
     mwins_inends = ((mwin0_ins, mwin0_ends), (mwin1_ins, mwin1_ends))
 
     # print information about patching
-    logging.warning("%d-%d windows required...", nwins0, nwins1)
-    logging.warning(
-        "data wins - start:%s, end:%s / start:%s, end:%s",
-        dwin0_ins,
-        dwin0_ends,
-        dwin1_ins,
-        dwin1_ends,
-    )
-    logging.warning(
-        "model wins - start:%s, end:%s / start:%s, end:%s",
-        mwin0_ins,
-        mwin0_ends,
-        mwin1_ins,
-        mwin1_ends,
-    )
+    if verb:
+        logging.warning("%d-%d windows required...", nwins0, nwins1)
+        logging.warning(
+            "data wins - start:%s, end:%s / start:%s, end:%s",
+            dwin0_ins,
+            dwin0_ends,
+            dwin1_ins,
+            dwin1_ends,
+        )
+        logging.warning(
+            "model wins - start:%s, end:%s / start:%s, end:%s",
+            mwin0_ins,
+            mwin0_ends,
+            mwin1_ins,
+            mwin1_ends,
+        )
     return nwins, dims, mwins_inends, dwins_inends
 
 
@@ -276,10 +281,7 @@ class Patch2D(LinearOperator):
                 self.taps = np.vstack(taps).reshape(3, 3, nwin[0], nwin[1])
 
         # define scalings
-        if scalings is None:
-            self.scalings = [1.0] * nwins
-        else:
-            self.scalings = scalings
+        self.scalings = [1.0] * nwins if scalings is None else scalings
 
         # check if operator is applied to all windows simultaneously
         self.simOp = False
@@ -318,7 +320,7 @@ class Patch2D(LinearOperator):
             ywins[iwin0, iwin1] = self.taps[1, 1] * ywins[iwin0, iwin1]
         return ywins
 
-    @reshaped()
+    @reshaped
     def _matvec_savetaper(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         if self.tapertype is not None:
@@ -365,7 +367,7 @@ class Patch2D(LinearOperator):
                     ).reshape(self.dims[2], self.dims[3])
         return y
 
-    @reshaped()
+    @reshaped
     def _matvec_nosavetaper(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         if self.tapertype is not None:

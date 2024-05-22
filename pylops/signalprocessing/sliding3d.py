@@ -28,6 +28,7 @@ def sliding3d_design(
     nwin: Tuple[int, int],
     nover: Tuple[int, int],
     nop: Tuple[int, int, int],
+    verb: bool = True,
 ) -> Tuple[
     Tuple[int, int],
     Tuple[int, int, int],
@@ -51,6 +52,9 @@ def sliding3d_design(
         Number of samples of overlapping part of window.
     nop : :obj:`tuple`
         Size of model in the transformed domain.
+    verb : :obj:`bool`, optional
+        Verbosity flag. If ``verb==True``, print the data
+        and model windows start-end indices
 
     Returns
     -------
@@ -79,21 +83,22 @@ def sliding3d_design(
     mwins_inends = ((mwin0_ins, mwin0_ends), (mwin1_ins, mwin1_ends))
 
     # print information about patching
-    logging.warning("%d-%d windows required...", nwins0, nwins1)
-    logging.warning(
-        "data wins - start:%s, end:%s / start:%s, end:%s",
-        dwin0_ins,
-        dwin0_ends,
-        dwin1_ins,
-        dwin1_ends,
-    )
-    logging.warning(
-        "model wins - start:%s, end:%s / start:%s, end:%s",
-        mwin0_ins,
-        mwin0_ends,
-        mwin1_ins,
-        mwin1_ends,
-    )
+    if verb:
+        logging.warning("%d-%d windows required...", nwins0, nwins1)
+        logging.warning(
+            "data wins - start:%s, end:%s / start:%s, end:%s",
+            dwin0_ins,
+            dwin0_ends,
+            dwin1_ins,
+            dwin1_ends,
+        )
+        logging.warning(
+            "model wins - start:%s, end:%s / start:%s, end:%s",
+            mwin0_ins,
+            mwin0_ends,
+            mwin1_ins,
+            mwin1_ends,
+        )
     return nwins, dims, mwins_inends, dwins_inends
 
 

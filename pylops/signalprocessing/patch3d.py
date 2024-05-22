@@ -28,6 +28,7 @@ def patch3d_design(
     nwin: Tuple[int, int, int],
     nover: Tuple[int, int, int],
     nop: Tuple[int, int, int],
+    verb: bool = True,
 ) -> Tuple[
     Tuple[int, int, int],
     Tuple[int, int, int],
@@ -51,6 +52,9 @@ def patch3d_design(
         Number of samples of overlapping part of window.
     nop : :obj:`tuple`
         Size of model in the transformed domain.
+    verb : :obj:`bool`, optional
+        Verbosity flag. If ``verb==True``, print the data
+        and model windows start-end indices
 
     Returns
     -------
@@ -90,25 +94,26 @@ def patch3d_design(
     )
 
     # print information about patching
-    logging.warning("%d-%d-%d windows required...", nwins0, nwins1, nwins2)
-    logging.warning(
-        "data wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
-        dwin0_ins,
-        dwin0_ends,
-        dwin1_ins,
-        dwin1_ends,
-        dwin2_ins,
-        dwin2_ends,
-    )
-    logging.warning(
-        "model wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
-        mwin0_ins,
-        mwin0_ends,
-        mwin1_ins,
-        mwin1_ends,
-        mwin2_ins,
-        mwin2_ends,
-    )
+    if verb:
+        logging.warning("%d-%d-%d windows required...", nwins0, nwins1, nwins2)
+        logging.warning(
+            "data wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
+            dwin0_ins,
+            dwin0_ends,
+            dwin1_ins,
+            dwin1_ends,
+            dwin2_ins,
+            dwin2_ends,
+        )
+        logging.warning(
+            "model wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
+            mwin0_ins,
+            mwin0_ends,
+            mwin1_ins,
+            mwin1_ends,
+            mwin2_ins,
+            mwin2_ends,
+        )
     return nwins, dims, mwins_inends, dwins_inends
 
 
@@ -485,10 +490,7 @@ class Patch3D(LinearOperator):
                 self.taps[-1, -1, -1] = taprightbottomback
 
         # define scalings
-        if scalings is None:
-            self.scalings = [1.0] * nwins
-        else:
-            self.scalings = scalings
+        self.scalings = [1.0] * nwins if scalings is None else scalings
 
         # check if operator is applied to all windows simultaneously
         self.simOp = False
@@ -576,7 +578,7 @@ class Patch3D(LinearOperator):
             ywins[iwin0, iwin1, iwin2] = self.taps[1, 1, 1] * ywins[iwin0, iwin1, iwin2]
         return ywins
 
-    @reshaped()
+    @reshaped
     def _matvec_savetaper(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         if self.tapertype is not None:
@@ -630,7 +632,7 @@ class Patch3D(LinearOperator):
                         ).reshape(self.dims[3], self.dims[4], self.dims[5])
         return y
 
-    @reshaped()
+    @reshaped
     def _matvec_nosavetaper(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         if self.tapertype is not None:
@@ -727,7 +729,7 @@ class Patch3D(LinearOperator):
                     ] += xxwin
         return y
 
-    @reshaped()
+    @reshaped
     def _rmatvec_nosavetaper(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         ncp_sliding_window_view = get_sliding_window_view(x)

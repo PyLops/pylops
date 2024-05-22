@@ -60,6 +60,7 @@ def sliding2d_design(
     nwin: int,
     nover: int,
     nop: Tuple[int, int],
+    verb: bool = True,
 ) -> Tuple[int, Tuple[int, int], Tuple[NDArray, NDArray], Tuple[NDArray, NDArray]]:
     """Design Sliding2D operator
 
@@ -78,6 +79,9 @@ def sliding2d_design(
         Number of samples of overlapping part of window.
     nop : :obj:`tuple`
         Size of model in the transformed domain.
+    verb : :obj:`bool`, optional
+        Verbosity flag. If ``verb==True``, print the data
+        and model windows start-end indices
 
     Returns
     -------
@@ -102,17 +106,18 @@ def sliding2d_design(
     mwins_inends = (mwin_ins, mwin_ends)
 
     # print information about patching
-    logging.warning("%d windows required...", nwins)
-    logging.warning(
-        "data wins - start:%s, end:%s",
-        dwin_ins,
-        dwin_ends,
-    )
-    logging.warning(
-        "model wins - start:%s, end:%s",
-        mwin_ins,
-        mwin_ends,
-    )
+    if verb:
+        logging.warning("%d windows required...", nwins)
+        logging.warning(
+            "data wins - start:%s, end:%s",
+            dwin_ins,
+            dwin_ends,
+        )
+        logging.warning(
+            "model wins - start:%s, end:%s",
+            mwin_ins,
+            mwin_ends,
+        )
     return nwins, dims, mwins_inends, dwins_inends
 
 
