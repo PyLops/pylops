@@ -461,5 +461,6 @@ def to_cupy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> NDArray:
     """
     if deps.cupy_enabled:
         if cp.get_array_module(x) == cp and cp.get_array_module(y) == np:
-            y = cp.asarray(y)
+            with cp.cuda.Device(x.device):
+                y = cp.asarray(y)
     return y
