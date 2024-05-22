@@ -168,7 +168,7 @@ class Sliding2D(LinearOperator):
         Number of samples of overlapping part of window
     tapertype : :obj:`str`, optional
         Type of taper (``hanning``, ``cosine``, ``cosinesquare`` or ``None``)
-    savetaper: :obj:`bool`, optional
+    savetaper : :obj:`bool`, optional
         .. versionadded:: 2.3.0
 
         Save all tapers and apply them in one go (``True``) or save unique tapers and apply them one by one (``False``).
