@@ -146,4 +146,4 @@ class Fredholm1(LinearOperator):
                 for isl in range(self.nsl):
                     # y[isl] = ncp.dot(self.G[isl].conj().T, x[isl])
                     y[isl] = ncp.dot(x[isl].T.conj(), self.G[isl]).T.conj()
-        return y.ravel()
+        return y
