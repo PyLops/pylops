@@ -102,6 +102,7 @@ Signal processing
     Shift
     DWT
     DWT2D
+    DWTND
     DCT
     DTCWT
     Seislet

@@ -67,3 +67,50 @@ axs[1, 1].imshow(yf, cmap="gray_r", vmin=-1e2, vmax=1e2)
 axs[1, 1].set_title("DWT2 coefficients (zeroed)")
 axs[1, 1].axis("tight")
 plt.tight_layout()
+
+###############################################################################
+# Let us now try the same with a 3D volumetric model, where we use the
+# N-dimensional DWT. Again, we only retain a quarter of the coefficients of
+# the DWT.
+
+nx = 128
+ny = 256
+nz = 128
+
+x = np.arange(nx)
+y = np.arange(ny)
+z = np.arange(nz)
+
+xx, yy, zz = np.meshgrid(x, y, z, indexing="ij")
+# Generate a 3D model with two block anomalies
+m = np.ones_like(xx, dtype=float)
+block1 = (xx > 10) & (xx < 60) & (yy > 100) & (yy < 150) & (zz > 20) & (zz < 70)
+block2 = (xx > 70) & (xx < 80) & (yy > 100) & (yy < 200) & (zz > 10) & (zz < 50)
+m[block1] = 1.2
+m[block2] = 0.8
+Wop = pylops.signalprocessing.DWTND((nx, ny, nz), wavelet="haar", level=3)
+y = Wop * m
+
+yf = y.copy()
+yf.flat[y.size // 4 :] = 0
+iminv = Wop.H * yf
+
+ratio = 0.1
+yf = y.copy()
+yf.flat[int(ratio * y.size) :] = 0
+iminv = Wop.H * yf
+
+fig, axs = plt.subplots(2, 2, figsize=(6, 6))
+axs[0, 0].imshow(m[:, :, 30], cmap="gray")
+axs[0, 0].set_title("Model (Slice at z=30)")
+axs[0, 0].axis("tight")
+axs[0, 1].imshow(y[:, :, 90], cmap="gray_r")
+axs[0, 1].set_title("DWTNT coefficients")
+axs[0, 1].axis("tight")
+axs[1, 0].imshow(iminv[:, :, 30], cmap="gray")
+axs[1, 0].set_title("Reconstructed model (Slice at z=30)")
+axs[1, 0].axis("tight")
+axs[1, 1].imshow(yf[:, :, 90], cmap="gray_r")
+axs[1, 1].set_title("DWTNT coefficients (zeroed)")
+axs[1, 1].axis("tight")
+plt.tight_layout()
