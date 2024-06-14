@@ -38,8 +38,6 @@ class DWTND(LinearOperator):
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension
-    N : :obj:`int`, optional
-
     axes : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
