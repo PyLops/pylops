@@ -298,8 +298,8 @@ def dip_estimate(
 
     Notes
     -----
-    Thin wrapper around ``pylops.utils.signalprocessing.dip_estimate`` with ``slopes==True``.
-    See the Notes of ``pylops.utils.signalprocessing.dip_estimate`` for details.
+    Thin wrapper around ``pylops.utils.signalprocessing.slope_estimate`` with ``dips=True``.
+    See the Notes of ``pylops.utils.signalprocessing.slope_estimate`` for details.
 
     .. [1] Van Vliet, L. J.,  Verbeek, P. W., "Estimators for orientation and
         anisotropy in digitized images", Journal ASCI Imaging Workshop. 1995.
