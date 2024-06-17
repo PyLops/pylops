@@ -1,8 +1,9 @@
 """
 Wavelet transform
 =================
-This example shows how to use the :py:class:`pylops.DWT` and
-:py:class:`pylops.DWT2D` operators to perform 1- and 2-dimensional DWT.
+This example shows how to use the :py:class:`pylops.DWT`,
+:py:class:`pylops.DWT2D`, and :py:class:`pylops.DWTND` operators
+to perform 1-, 2-, and N-dimensional DWT.
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -70,8 +71,8 @@ plt.tight_layout()
 
 ###############################################################################
 # Let us now try the same with a 3D volumetric model, where we use the
-# N-dimensional DWT. Again, we only retain a quarter of the coefficients of
-# the DWT.
+# N-dimensional DWT. This time, we only retain 10 percent of the coefficients
+# of the DWT.
 
 nx = 128
 ny = 256
@@ -90,10 +91,6 @@ m[block1] = 1.2
 m[block2] = 0.8
 Wop = pylops.signalprocessing.DWTND((nx, ny, nz), wavelet="haar", level=3)
 y = Wop * m
-
-yf = y.copy()
-yf.flat[y.size // 4 :] = 0
-iminv = Wop.H * yf
 
 ratio = 0.1
 yf = y.copy()

@@ -39,8 +39,6 @@ class DWTND(LinearOperator):
     dims : :obj:`tuple`
         Number of samples for each dimension
     axes : :obj:`int`, optional
-        .. versionadded:: 2.0.0
-
         Axis along which DWTND is applied
     wavelet : :obj:`str`, optional
         Name of wavelet type. Use :func:`pywt.wavelist(kind='discrete')` for
@@ -50,8 +48,6 @@ class DWTND(LinearOperator):
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
-        .. versionadded:: 2.0.0
-
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes

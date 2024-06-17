@@ -146,7 +146,7 @@ def test_DWT2D_3dsignal(par):
 
 @pytest.mark.parametrize("par", [(par3), (par4)])
 def test_DWTND_3dsignal(par):
-    """Dot-test and inversion for DWT2D operator for 3d signal"""
+    """Dot-test and inversion for DWTND operator for 3d signal"""
     DWTop = DWTND(
         dims=(par["nt"], par["nx"], par["ny"]), axes=(0, 1, 2), wavelet="haar", level=3
     )
@@ -168,7 +168,7 @@ def test_DWTND_3dsignal(par):
 
 @pytest.mark.parametrize("par", [(par3), (par4)])
 def test_DWTND_4dsignal(par):
-    """Dot-test and inversion for DWT operator for 4d signal"""
+    """Dot-test and inversion for DWTND operator for 4d signal"""
     for axes in [(0, 1, 2), (0, 2, 3), (1, 2, 3), (0, 1, 3), (0, 1, 2, 3)]:
         DWTop = DWTND(
             dims=(par["nt"], par["nx"], par["ny"], par["nz"]),
