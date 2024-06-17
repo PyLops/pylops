@@ -150,3 +150,4 @@ A list of video tutorials to learn more about PyLops:
 * Wei Zhang, ZhangWeiGeo
 * Fedor Goncharov, fedor-goncharov
 * Alex Rakowski, alex-rakowski
+* David Sollberger, solldavid

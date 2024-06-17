@@ -22,3 +22,4 @@ Contributors
 *  `Wei Zhang <https://github.com/ZhangWeiGeo>`_, ZhangWeiGeo
 *  `Fedor Goncharov <https://github.com/fedor-goncharov>`_, fedor-goncharov
 *  `Alex Rakowski <https://github.com/alex-rakowski>`_, alex-rakowski
+*  `David Sollberger <https://github.com/solldavid>`_, solldavid
