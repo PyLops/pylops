@@ -1,5 +1,6 @@
 numpy>=1.21.0
 scipy>=1.4.0
+--extra-index-url https://download.pytorch.org/whl/cpu
 torch>=1.2.0
 numba
 pyfftw
