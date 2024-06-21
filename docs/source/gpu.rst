@@ -45,13 +45,13 @@ GPU with CuPy, and GPU with JAX.
      - |:red_circle:|
      - |:red_circle:|
    * - :meth:`pylops.LinearOperator.cond`
-     - V
-     - X
-     - X
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
    * - :meth:`pylops.LinearOperator.cond`
-     - V
-     - X
-     - X
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
 
 and operators:
 
@@ -63,7 +63,7 @@ and operators:
      - CPU
      - GPU with CuPy
      - GPU with JAX
-   * - :meth:`pylops.basicoperators.Diagonal`
+   * - :meth:`pylops.basicoperators.MatrixMult`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
@@ -71,37 +71,78 @@ and operators:
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.MatrixMult`
+   * - :meth:`pylops.basicoperators.Zero`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Diagonal`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Transpose`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Flip`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Roll`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Pad`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Sum`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Symmetrize`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Restriction`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Regression`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.LinearRegression`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.CausalIntegration`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Spread`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :meth:`pylops.basicoperators.VStack`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.HStack`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Block`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.BlockDiag`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
 
-.. warning::
 
-   Some :class:`pylops.LinearOperator` methods are currently not available on GPU:
 
-   - :meth:`pylops.LinearOperator.eigs`
-   - :meth:`pylops.LinearOperator.cond`
-   - :meth:`pylops.LinearOperator.tosparse`
-   - :meth:`pylops.LinearOperator.estimate_spectral_norm`
 
-.. warning::
-
-   Some operators are currently not available on GPU:
-
-   - :class:`pylops.Spread`
-   - :class:`pylops.signalprocessing.Radon2D`
-   - :class:`pylops.signalprocessing.Radon3D`
-   - :class:`pylops.signalprocessing.DWT`
-   - :class:`pylops.signalprocessing.DWT2D`
-   - :class:`pylops.signalprocessing.Seislet`
-   - :class:`pylops.waveeqprocessing.Demigration`
-   - :class:`pylops.waveeqprocessing.LSM`
-
-.. warning::
-   Some solvers are currently not available on GPU:
-
-   - :class:`pylops.optimization.sparsity.SPGL1`
 
 
 Example
