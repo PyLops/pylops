@@ -53,7 +53,7 @@ GPU with CuPy, and GPU with JAX.
      - |:red_circle:|
      - |:red_circle:|
 
-and operators:
+Basic operators:
 
 .. list-table::
    :widths: 50 25 25 25
@@ -141,8 +141,20 @@ and operators:
      - |:white_check_mark:|
 
 
+Smoothing and derivatives:
 
+.. list-table::
+   :widths: 50 25 25 25
+   :header-rows: 1
 
+   * - Operator/method
+     - CPU
+     - GPU with CuPy
+     - GPU with JAX
+   * - :meth:`pylops.basicoperators.FirstDerivative`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
 
 
 Example
