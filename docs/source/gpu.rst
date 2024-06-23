@@ -39,7 +39,7 @@ GPU with CuPy, and GPU with JAX.
    * - Operator/method
      - CPU
      - GPU with CuPy
-     - GPU with JAX
+     - GPU/TPU with JAX
    * - :meth:`pylops.LinearOperator.eigs`
      - |:white_check_mark:|
      - |:red_circle:|
@@ -62,7 +62,7 @@ Basic operators:
    * - Operator/method
      - CPU
      - GPU with CuPy
-     - GPU with JAX
+     - GPU/TPU with JAX
    * - :meth:`pylops.basicoperators.MatrixMult`
      - |:white_check_mark:|
      - |:white_check_mark:|
@@ -150,8 +150,28 @@ Smoothing and derivatives:
    * - Operator/method
      - CPU
      - GPU with CuPy
-     - GPU with JAX
+     - GPU/TPU with JAX
    * - :meth:`pylops.basicoperators.FirstDerivative`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.SecondDerivative`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Laplacian`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.Gradient`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.FirstDirectionalDerivative`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.basicoperators.SecondDirectionalDerivative`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|

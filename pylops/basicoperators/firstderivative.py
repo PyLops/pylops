@@ -100,152 +100,33 @@ class FirstDerivative(LinearOperator):
         self.kind = kind
         self.edge = edge
         self.order = order
-        self.slice_1 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(None, -1),
-            ]
-        )
-        self.slice1 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(1, None),
-            ]
-        )
-        self.slice1_1 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(1, -1),
-            ]
-        )
-        self.slice1_3 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(1, -3),
-            ]
-        )
-        self.slice_2 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(None, -2),
-            ]
-        )
-        self.slice2 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(2, None),
-            ]
-        )
-        self.slice2_2 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(2, -2),
-            ]
-        )
-        self.slice3_1 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(3, -1),
-            ]
-        )
-        self.slice4 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(4, None),
-            ]
-        )
-        self.slice_4 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(None, -4),
-            ]
-        )
-
-        self.sample0 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(0, 1),
-            ]
-        )
-        self.sample1 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(1, 2),
-            ]
-        )
-        self.sample2 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(2, 3),
-            ]
-        )
-        self.sample3 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(3, 4),
-            ]
-        )
-        self.sample_2 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(-2, -1),
-            ]
-        )
-
-        self.sample_1 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(-1, None),
-            ]
-        )
+        self.slice = {
+            i: {
+                j: tuple(
+                    [
+                        slice(None, None),
+                    ]
+                    * (len(dims) - 1)
+                    + [
+                        slice(i, j),
+                    ]
+                )
+                for j in (None, -1, -2, -3, -4)
+            }
+            for i in (None, 1, 2, 3, 4)
+        }
+        self.sample = {
+            i: tuple(
+                [
+                    slice(None, None),
+                ]
+                * (len(dims) - 1)
+                + [
+                    i,
+                ]
+            )
+            for i in range(-3, 4)
+        }
         self._register_multiplications(self.kind, self.order)
 
     def _register_multiplications(
@@ -287,7 +168,9 @@ class FirstDerivative(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         # y[..., :-1] = (x[..., 1:] - x[..., :-1]) / self.sampling
-        y = inplace_set((x[..., 1:] - x[..., :-1]) / self.sampling, y, self.slice_1)
+        y = inplace_set(
+            (x[..., 1:] - x[..., :-1]) / self.sampling, y, self.slice[None][-1]
+        )
         return y
 
     @reshaped(swapaxis=True)
@@ -295,9 +178,9 @@ class FirstDerivative(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         # y[..., :-1] -= x[..., :-1]
+        y = inplace_add(-x[..., :-1], y, self.slice[None][-1])
         # y[..., 1:] += x[..., :-1]
-        y = inplace_add(-x[..., :-1], y, self.slice_1)
-        y = inplace_add(x[..., :-1], y, self.slice1)
+        y = inplace_add(x[..., :-1], y, self.slice[1][None])
         y /= self.sampling
         return y
 
@@ -306,13 +189,12 @@ class FirstDerivative(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         # y[..., 1:-1] = 0.5 * (x[..., 2:] - x[..., :-2])
-        y = inplace_set(0.5 * (x[..., 2:] - x[..., :-2]), y, self.slice1_1)
-
+        y = inplace_set(0.5 * (x[..., 2:] - x[..., :-2]), y, self.slice[1][-1])
         if self.edge:
             # y[..., 0] = x[..., 1] - x[..., 0]
-            y = inplace_set(x[..., 1] - x[..., 0], y, self.sample0)
+            y = inplace_set(x[..., 1] - x[..., 0], y, self.sample[0])
             # y[..., -1] = x[..., -1] - x[..., -2]
-            y = inplace_set(x[..., -1] - x[..., -2], y, self.sample_1)
+            y = inplace_set(x[..., -1] - x[..., -2], y, self.sample[-1])
         y /= self.sampling
         return y
 
@@ -321,18 +203,18 @@ class FirstDerivative(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         # y[..., :-2] -= 0.5 * x[..., 1:-1]
-        y = inplace_add(-0.5 * x[..., 1:-1], y, self.slice_2)
+        y = inplace_add(-0.5 * x[..., 1:-1], y, self.slice[None][-2])
         # y[..., 2:] += 0.5 * x[..., 1:-1]
-        y = inplace_add(0.5 * x[..., 1:-1], y, self.slice2)
+        y = inplace_add(0.5 * x[..., 1:-1], y, self.slice[2][None])
         if self.edge:
             # y[..., 0] -= x[..., 0]
-            y = inplace_add(-x[..., 0], y, self.sample0)
+            y = inplace_add(-x[..., 0], y, self.sample[0])
             # y[..., 1] += x[..., 0]
-            y = inplace_add(x[..., 0], y, self.sample1)
+            y = inplace_add(x[..., 0], y, self.sample[1])
             # y[..., -2] -= x[..., -1]
-            y = inplace_add(-x[..., -1], y, self.sample_2)
+            y = inplace_add(-x[..., -1], y, self.sample[-2])
             # y[..., -1] += x[..., -1]
-            y = inplace_add(x[..., -1], y, self.sample_1)
+            y = inplace_add(x[..., -1], y, self.sample[-1])
         y /= self.sampling
         return y
 
@@ -354,18 +236,17 @@ class FirstDerivative(LinearOperator):
                 - x[..., 4:] / 12.0
             ),
             y,
-            self.slice2_2,
+            self.slice[2][-2],
         )
-
         if self.edge:
             # y[..., 0] = x[..., 1] - x[..., 0]
-            y = inplace_set(x[..., 1] - x[..., 0], y, self.sample0)
+            y = inplace_set(x[..., 1] - x[..., 0], y, self.sample[0])
             # y[..., 1] = 0.5 * (x[..., 2] - x[..., 0])
-            y = inplace_set(0.5 * (x[..., 2] - x[..., 0]), y, self.sample1)
+            y = inplace_set(0.5 * (x[..., 2] - x[..., 0]), y, self.sample[1])
             # y[..., -2] = 0.5 * (x[..., -1] - x[..., -3])
-            y = inplace_set(0.5 * (x[..., -1] - x[..., -3]), y, self.sample_2)
+            y = inplace_set(0.5 * (x[..., -1] - x[..., -3]), y, self.sample[-2])
             # y[..., -1] = x[..., -1] - x[..., -2]
-            y = inplace_set(x[..., -1] - x[..., -2], y, self.sample_1)
+            y = inplace_set(x[..., -1] - x[..., -2], y, self.sample[-1])
         y /= self.sampling
         return y
 
@@ -374,26 +255,26 @@ class FirstDerivative(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         # y[..., :-4] += x[..., 2:-2] / 12.0
-        y = inplace_add(x[..., 2:-2] / 12.0, y, self.slice_4)
+        y = inplace_add(x[..., 2:-2] / 12.0, y, self.slice[None][-4])
         # y[..., 1:-3] -= 2.0 * x[..., 2:-2] / 3.0
-        y = inplace_add(-2.0 * x[..., 2:-2] / 3.0, y, self.slice1_3)
+        y = inplace_add(-2.0 * x[..., 2:-2] / 3.0, y, self.slice[1][-3])
         # y[..., 3:-1] += 2.0 * x[..., 2:-2] / 3.0
-        y = inplace_add(2.0 * x[..., 2:-2] / 3.0, y, self.slice3_1)
+        y = inplace_add(2.0 * x[..., 2:-2] / 3.0, y, self.slice[3][-1])
         # y[..., 4:] -= x[..., 2:-2] / 12.0
-        y = inplace_add(-x[..., 2:-2] / 12.0, y, self.slice4)
+        y = inplace_add(-x[..., 2:-2] / 12.0, y, self.slice[4][None])
         if self.edge:
             # y[..., 0] -= x[..., 0] + 0.5 * x[..., 1]
-            y = inplace_add(-x[..., 0] + 0.5 * x[..., 1], y, self.sample0)
+            y = inplace_add(-(x[..., 0] + 0.5 * x[..., 1]), y, self.sample[0])
             # y[..., 1] += x[..., 0]
-            y = inplace_add(x[..., 0], y, self.sample1)
+            y = inplace_add(x[..., 0], y, self.sample[1])
             # y[..., 2] += 0.5 * x[..., 1]
-            y = inplace_add(0.5 * x[..., 1], y, self.sample2)
+            y = inplace_add(0.5 * x[..., 1], y, self.sample[2])
             # y[..., -3] -= 0.5 * x[..., -2]
-            y = inplace_add(-0.5 * x[..., -2], y, self.sample_3)
+            y = inplace_add(-0.5 * x[..., -2], y, self.sample[-3])
             # y[..., -2] -= x[..., -1]
-            y = inplace_add(-x[..., -1], y, self.sample_2)
+            y = inplace_add(-x[..., -1], y, self.sample[-2])
             # y[..., -1] += 0.5 * x[..., -2] + x[..., -1]
-            y = inplace_add(0.5 * x[..., -2] + x[..., -1], y, self.sample_1)
+            y = inplace_add(0.5 * x[..., -2] + x[..., -1], y, self.sample[-1])
         y /= self.sampling
         return y
 
@@ -402,7 +283,9 @@ class FirstDerivative(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         # y[..., 1:] = (x[..., 1:] - x[..., :-1]) / self.sampling
-        y = inplace_set((x[..., 1:] - x[..., :-1]) / self.sampling, y, self.slice1)
+        y = inplace_set(
+            (x[..., 1:] - x[..., :-1]) / self.sampling, y, self.slice[1][None]
+        )
         return y
 
     @reshaped(swapaxis=True)
@@ -410,8 +293,8 @@ class FirstDerivative(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
         # y[..., :-1] -= x[..., 1:]
+        y = inplace_add(-x[..., 1:], y, self.slice[None][-1])
         # y[..., 1:] += x[..., 1:]
-        y = inplace_add(-x[..., 1:], y, self.slice_1)
-        y = inplace_add(x[..., 1:], y, self.slice1)
+        y = inplace_add(x[..., 1:], y, self.slice[1][None])
         y /= self.sampling
         return y
