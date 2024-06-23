@@ -280,7 +280,7 @@ def get_block_diag(x: npt.ArrayLike) -> Callable:
         return block_diag
 
     if deps.jax_enabled and isinstance(x, jnp.ndarray):
-        return jax.scipy.linalg.block_diag
+        return jnp_block_diag
     elif cp.get_array_module(x) == np:
         return block_diag
     else:

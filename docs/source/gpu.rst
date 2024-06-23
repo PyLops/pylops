@@ -63,19 +63,19 @@ Basic operators:
      - CPU
      - GPU with CuPy
      - GPU/TPU with JAX
-   * - :meth:`pylops.basicoperators.MatrixMult`
+   * - :class:`pylops.basicoperators.MatrixMult`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Identity`
+   * - :class:`pylops.basicoperators.Identity`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Zero`
+   * - :class:`pylops.basicoperators.Zero`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Diagonal`
+   * - :class:`pylops.basicoperators.Diagonal`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
@@ -83,59 +83,59 @@ Basic operators:
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Flip`
+   * - :class:`pylops.basicoperators.Flip`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Roll`
+   * - :class:`pylops.basicoperators.Roll`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Pad`
+   * - :class:`pylops.basicoperators.Pad`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Sum`
+   * - :class:`pylops.basicoperators.Sum`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Symmetrize`
+   * - :class:`pylops.basicoperators.Symmetrize`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Restriction`
+   * - :class:`pylops.basicoperators.Restriction`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Regression`
+   * - :class:`pylops.basicoperators.Regression`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.LinearRegression`
+   * - :class:`pylops.basicoperators.LinearRegression`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.CausalIntegration`
+   * - :class:`pylops.basicoperators.CausalIntegration`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Spread`
+   * - :class:`pylops.basicoperators.Spread`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
-   * - :meth:`pylops.basicoperators.VStack`
+   * - :class:`pylops.basicoperators.VStack`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.HStack`
+   * - :class:`pylops.basicoperators.HStack`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Block`
+   * - :class:`pylops.basicoperators.Block`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.BlockDiag`
+   * - :class:`pylops.basicoperators.BlockDiag`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
@@ -151,30 +151,62 @@ Smoothing and derivatives:
      - CPU
      - GPU with CuPy
      - GPU/TPU with JAX
-   * - :meth:`pylops.basicoperators.FirstDerivative`
+   * - :class:`pylops.basicoperators.FirstDerivative`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.SecondDerivative`
+   * - :class:`pylops.basicoperators.SecondDerivative`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Laplacian`
+   * - :class:`pylops.basicoperators.Laplacian`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.Gradient`
+   * - :class:`pylops.basicoperators.Gradient`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.FirstDirectionalDerivative`
+   * - :class:`pylops.basicoperators.FirstDirectionalDerivative`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :meth:`pylops.basicoperators.SecondDirectionalDerivative`
+   * - :class:`pylops.basicoperators.SecondDirectionalDerivative`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
+
+Signal processing:
+
+.. list-table::
+   :widths: 50 25 25 25
+   :header-rows: 1
+
+   * - Operator/method
+     - CPU
+     - GPU with CuPy
+     - GPU/TPU with JAX
+   * - :class:`pylops.basicoperators.Convolve1D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:warning:|
+
+
+.. warning::
+
+   The JAX backend of the :class:`pylops.basicoperators.Convolve1D` operator
+   currently works only with 1d-arrays due to a different behaviour of
+   :meth:`scipy.signal.convolve` and :meth:`jax.scipy.signal.convolve` with
+   nd-arrays.
+
+   - :class:`pylops.Spread`
+   - :class:`pylops.signalprocessing.Radon2D`
+   - :class:`pylops.signalprocessing.Radon3D`
+   - :class:`pylops.signalprocessing.DWT`
+   - :class:`pylops.signalprocessing.DWT2D`
+   - :class:`pylops.signalprocessing.Seislet`
+   - :class:`pylops.waveeqprocessing.Demigration`
+   - :class:`pylops.waveeqprocessing.LSM`
 
 
 Example
