@@ -190,6 +190,14 @@ Signal processing:
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:warning:|
+   * - :class:`pylops.basicoperators.Convolve2D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.basicoperators.ConvolveND`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
 
 
 .. warning::
@@ -198,15 +206,6 @@ Signal processing:
    currently works only with 1d-arrays due to a different behaviour of
    :meth:`scipy.signal.convolve` and :meth:`jax.scipy.signal.convolve` with
    nd-arrays.
-
-   - :class:`pylops.Spread`
-   - :class:`pylops.signalprocessing.Radon2D`
-   - :class:`pylops.signalprocessing.Radon3D`
-   - :class:`pylops.signalprocessing.DWT`
-   - :class:`pylops.signalprocessing.DWT2D`
-   - :class:`pylops.signalprocessing.Seislet`
-   - :class:`pylops.waveeqprocessing.Demigration`
-   - :class:`pylops.waveeqprocessing.LSM`
 
 
 Example
@@ -225,7 +224,6 @@ Finally, let's briefly look at an example. First we write a code snippet using
    y = Gop * x
    xest = Gop / y
 
-
 Now we write a code snippet using ``cupy`` arrays which PyLops will run on 
 your GPU:
 
@@ -240,9 +238,24 @@ your GPU:
    xest = Gop / y
 
 The code is almost unchanged apart from the fact that we now use ``cupy`` arrays,
-PyLops will figure this out!
+PyLops will figure this out.
+
+Similarly, we write a code snippet using ``jax`` arrays which PyLops will run on
+your GPU/TPU:
+
+.. code-block:: python
+
+   ny, nx = 400, 400
+   G = jnp.array(np.random.normal(0, 1, (ny, nx)).astype(np.float32))
+   x = jnp.ones(nx, dtype=np.float32)
+
+   Gop = MatrixMult(G, dtype='float32')
+   y = Gop * x
+   xest = Gop / y
+
+Again, the code is almost unchanged apart from the fact that we now use ``jax`` arrays,
 
 .. note::
 
-   The CuPy backend is in active development, with many examples not yet in the docs.
-   You can find many `other examples <https://github.com/PyLops/pylops_notebooks/tree/master/developement-cupy>`_ from the `PyLops Notebooks repository <https://github.com/PyLops/pylops_notebooks>`_.
+   More examples for the CuPy and JAX backends be found `here <https://github.com/PyLops/pylops_notebooks/tree/master/developement-cupy>`_
+   and `here <https://github.com/PyLops/pylops_notebooks/tree/master/developement/Basic_JAX.ipynb>`_.
