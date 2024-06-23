@@ -198,6 +198,14 @@ Signal processing:
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
+   * - :class:`pylops.basicoperators.NonStationaryConvolve1D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.basicoperators.NonStationaryFilters1D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
 
 
 .. warning::
