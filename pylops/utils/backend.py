@@ -278,15 +278,15 @@ def get_block_diag(x: npt.ArrayLike) -> Callable:
         Function to be used to process array
 
     """
-    if not deps.cupy_enabled and not deps.jax_enabled:
-        return block_diag
-
-    if deps.jax_enabled and isinstance(x, jnp.ndarray):
-        return jnp_block_diag
-    elif cp.get_array_module(x) == np:
-        return block_diag
+    if deps.cupy_enabled or deps.jax_enabled:
+        if isinstance(x, jnp.ndarray):
+            return jnp_block_diag
+        elif deps.cupy_enabled and cp.get_array_module(x) == cp:
+            return cp_block_diag
+        else:
+            return block_diag
     else:
-        return cp_block_diag
+        return block_diag
 
 
 def get_toeplitz(x: npt.ArrayLike) -> Callable:
