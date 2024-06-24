@@ -20,7 +20,15 @@ JaxType = NewType("JaxType", jaxarray_type)
 
 class JaxOperator(LinearOperator):
     def __init__(self, Op: LinearOperator) -> None:
-        super().__init__(dtype=Op.dtype, dims=Op.dims, dimsd=Op.dimsd, name=Op.name)
+        super().__init__(
+            dtype=Op.dtype,
+            dims=Op.dims,
+            dimsd=Op.dimsd,
+            clinear=Op.clinear,
+            explicit=Op.explicit,
+            forceflat=Op.forceflat,
+            name=Op.name,
+        )
         self._matvec = jax.jit(Op._matvec)
         self._rmatvec = jax.jit(Op._rmatvec)
 

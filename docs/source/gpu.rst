@@ -1,7 +1,7 @@
 .. _gpu:
 
-GPU and TPU Support
-===================
+GPU / TPU Support
+=================
 
 Overview
 --------
@@ -238,6 +238,43 @@ Signal processing:
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
+   * - :class:`pylops.signalprocessing.DWT`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.DWT2D`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.DCT`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.Seislet`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.Radon2D`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.Radon3D`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.ChirpRadon2D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.ChirpRadon3D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.Sliding1D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+
 
 
 .. warning::
