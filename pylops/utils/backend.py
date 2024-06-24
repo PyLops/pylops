@@ -19,6 +19,8 @@ __all__ = [
     "to_cupy_conditional",
     "inplace_set",
     "inplace_add",
+    "inplace_multiply",
+    "inplace_divide",
     "randn",
 ]
 
@@ -526,6 +528,58 @@ def inplace_add(x: npt.ArrayLike, y: npt.ArrayLike, idx: list) -> Callable:
         return y
     else:
         y[idx] += x
+        return y
+
+
+def inplace_multiply(x: npt.ArrayLike, y: npt.ArrayLike, idx: list) -> Callable:
+    """Perform inplace multiplication based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Array to sum
+    y : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Output array
+    idx : :obj:`list`
+        Indices to multiply at
+
+    Returns
+    -------
+    y : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Output array
+
+    """
+    if deps.jax_enabled and isinstance(x, jnp.ndarray):
+        y = y.at[idx].multiply(x)
+        return y
+    else:
+        y[idx] *= x
+        return y
+
+
+def inplace_divide(x: npt.ArrayLike, y: npt.ArrayLike, idx: list) -> Callable:
+    """Perform inplace division based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Array to sum
+    y : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Output array
+    idx : :obj:`list`
+        Indices to divide at
+
+    Returns
+    -------
+    y : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+        Output array
+
+    """
+    if deps.jax_enabled and isinstance(x, jnp.ndarray):
+        y = y.at[idx].divide(x)
+        return y
+    else:
+        y[idx] /= x
         return y
 
 

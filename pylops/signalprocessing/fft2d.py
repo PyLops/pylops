@@ -313,7 +313,8 @@ def FFT2D(
     engine : :obj:`str`, optional
         .. versionadded:: 1.17.0
 
-        Engine used for fft computation (``numpy`` or ``scipy``).
+        Engine used for fft computation (``numpy`` or ``scipy``). Choose
+        ``numpy`` when working with cupy and jax arrays.
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.

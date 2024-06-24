@@ -186,23 +186,55 @@ Signal processing:
      - CPU
      - GPU with CuPy
      - GPU/TPU with JAX
-   * - :class:`pylops.basicoperators.Convolve1D`
+   * - :class:`pylops.signalprocessing.Convolve1D`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:warning:|
-   * - :class:`pylops.basicoperators.Convolve2D`
+   * - :class:`pylops.signalprocessing.Convolve2D`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.basicoperators.ConvolveND`
+   * - :class:`pylops.signalprocessing.ConvolveND`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.basicoperators.NonStationaryConvolve1D`
+   * - :class:`pylops.signalprocessing.NonStationaryConvolve1D`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.basicoperators.NonStationaryFilters1D`
+   * - :class:`pylops.signalprocessing.NonStationaryFilters1D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.signalprocessing.NonStationaryConvolve2D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.NonStationaryFilters2D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.Interp`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.signalprocessing.Bilinear`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.FFT`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.signalprocessing.FFT2D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.signalprocessing.FFTND`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.signalprocessing.Shift`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|

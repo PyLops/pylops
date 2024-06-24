@@ -11,7 +11,7 @@ import scipy.fft
 from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFT, _FFTNorms
 from pylops.utils import deps
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_divide, inplace_multiply
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -61,6 +61,15 @@ class _FFT_numpy(_BaseFFT):
             self._scale = self.nfft
         elif self.norm is _FFTNorms.ONE_OVER_N:
             self._scale = 1.0 / self.nfft
+        self.slice = tuple(
+            [
+                slice(None, None),
+            ]
+            * (len(self.dims) - 1)
+            + [
+                slice(1, 1 + (self.nfft - 1) // 2),
+            ]
+        )
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
@@ -73,7 +82,8 @@ class _FFT_numpy(_BaseFFT):
             y = ncp.fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
             y = ncp.swapaxes(y, -1, self.axis)
-            y[..., 1 : 1 + (self.nfft - 1) // 2] *= ncp.sqrt(2)
+            # y[..., 1 : 1 + (self.nfft - 1) // 2] *= ncp.sqrt(2)
+            y = inplace_multiply(ncp.sqrt(2), y, self.slice)
             y = ncp.swapaxes(y, self.axis, -1)
         else:
             y = ncp.fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
@@ -93,7 +103,8 @@ class _FFT_numpy(_BaseFFT):
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
             x = ncp.swapaxes(x, -1, self.axis)
-            x[..., 1 : 1 + (self.nfft - 1) // 2] /= ncp.sqrt(2)
+            # x[..., 1 : 1 + (self.nfft - 1) // 2] /= ncp.sqrt(2)
+            x = inplace_divide(ncp.sqrt(2), x, self.slice)
             x = ncp.swapaxes(x, self.axis, -1)
             y = ncp.fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
         else:
@@ -456,7 +467,7 @@ def FFT(
         Nyquist to the frequency bin before zero.
     engine : :obj:`str`, optional
         Engine used for fft computation (``numpy``, ``fftw``, or ``scipy``). Choose
-        ``numpy`` when working with cupy arrays.
+        ``numpy`` when working with cupy and jax arrays.
 
         .. note:: Since version 1.17.0, accepts "scipy".
 
