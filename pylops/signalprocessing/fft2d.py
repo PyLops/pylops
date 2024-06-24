@@ -105,9 +105,9 @@ class _FFT2D_numpy(_BaseFFTND):
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
         if self.nffts[0] > self.dims[self.axes[0]]:
-            y = ncp.take(y, range(self.dims[self.axes[0]]), axis=self.axes[0])
+            y = ncp.take(y, ncp.arange(self.dims[self.axes[0]]), axis=self.axes[0])
         if self.nffts[1] > self.dims[self.axes[1]]:
-            y = ncp.take(y, range(self.dims[self.axes[1]]), axis=self.axes[1])
+            y = ncp.take(y, ncp.arange(self.dims[self.axes[1]]), axis=self.axes[1])
         if self.doifftpad:
             y = ncp.pad(y, self.ifftpad)
         if not self.clinear:
