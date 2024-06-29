@@ -94,7 +94,7 @@ class _FFTND_numpy(_BaseFFTND):
             y *= self._scale
         for ax, nfft in zip(self.axes, self.nffts):
             if nfft > self.dims[ax]:
-                y = ncp.take(y, range(self.dims[ax]), axis=ax)
+                y = ncp.take(y, np.arange(self.dims[ax]), axis=ax)
         if self.doifftpad:
             y = ncp.pad(y, self.ifftpad)
         if not self.clinear:

@@ -55,6 +55,7 @@ if deps.jax_enabled:
     import jax
     import jax.numpy as jnp
     from jax.scipy.linalg import block_diag as jnp_block_diag
+    from jax.scipy.linalg import toeplitz as jnp_toeplitz
     from jax.scipy.signal import convolve as j_convolve
     from jax.scipy.signal import fftconvolve as j_fftconvolve
 
@@ -303,13 +304,15 @@ def get_toeplitz(x: npt.ArrayLike) -> Callable:
         Function to be used to process array
 
     """
-    if not deps.cupy_enabled:
-        return toeplitz
-
-    if cp.get_array_module(x) == np:
-        return toeplitz
+    if deps.cupy_enabled or deps.jax_enabled:
+        if isinstance(x, jnp.ndarray):
+            return jnp_toeplitz
+        elif deps.cupy_enabled and cp.get_array_module(x) == cp:
+            return cp_toeplitz
+        else:
+            return toeplitz
     else:
-        return cp_toeplitz
+        return toeplitz
 
 
 def get_csc_matrix(x: npt.ArrayLike) -> Callable:
