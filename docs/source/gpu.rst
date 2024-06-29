@@ -295,14 +295,91 @@ Signal processing:
      - |:white_check_mark:|
      - |:white_check_mark:|
 
+Wave-Equation processing
 
+.. list-table::
+   :widths: 50 25 25 25
+   :header-rows: 1
+
+   * - Operator/method
+     - CPU
+     - GPU with CuPy
+     - GPU/TPU with JAX
+   * - :class:`pylops.avo.avo.PressureToVelocity`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.avo.avo.UpDownComposition2D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.avo.avo.UpDownComposition3D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.avo.avo.BlendingContinuous`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.avo.avo.BlendingGroup`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.avo.avo.BlendingHalf`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.avo.avo.MDC`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.avo.avo.Kirchhoff`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.avo.avo.AcousticWave2D`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+
+Geophysical subsurface characterization:
+
+.. list-table::
+   :widths: 50 25 25 25
+   :header-rows: 1
+
+   * - Operator/method
+     - CPU
+     - GPU with CuPy
+     - GPU/TPU with JAX
+   * - :class:`pylops.avo.avo.AVOLinearModelling`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.avo.poststack.PoststackLinearModelling`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :class:`pylops.avo.prestack.PrestackLinearModelling`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:warning:|
+   * - :class:`pylops.avo.prestack.PrestackWaveletModelling`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:warning:|
 
 .. warning::
 
-   The JAX backend of the :class:`pylops.basicoperators.Convolve1D` operator
+   1. The JAX backend of the :class:`pylops.basicoperators.Convolve1D` operator
    currently works only with 1d-arrays due to a different behaviour of
    :meth:`scipy.signal.convolve` and :meth:`jax.scipy.signal.convolve` with
    nd-arrays.
+
+   2. The JAX backend of the :class:`pylops.avo.prestack.PrestackLinearModelling`
+   operator currently works only with ``explicit=True`` due to the same issue as
+    in point 1 for the :class:`pylops.basicoperators.Convolve1D` operator employed
+    when ``explicit=False``.
 
 
 Example
@@ -346,9 +423,13 @@ your GPU/TPU:
    G = jnp.array(np.random.normal(0, 1, (ny, nx)).astype(np.float32))
    x = jnp.ones(nx, dtype=np.float32)
 
-   Gop = MatrixMult(G, dtype='float32')
+   Gop = JaxOperator(MatrixMult(G, dtype='float32'))
    y = Gop * x
    xest = Gop / y
+
+   # Adjoint via AD
+   xadj = Gop.rmatvecad(x, y)
+
 
 Again, the code is almost unchanged apart from the fact that we now use ``jax`` arrays,
 
