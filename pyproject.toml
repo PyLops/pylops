@@ -30,8 +30,8 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
-    "numpy >= 1.21.0",
-    "scipy >= 1.4.0",
+    "numpy >= 1.21.0 , < 2.0.0",
+    "scipy >= 1.4.0 , <= 1.13.0",
 ]
 dynamic = ["version"]
 
