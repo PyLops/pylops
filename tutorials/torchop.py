@@ -1,6 +1,6 @@
 r"""
-19. Automatic Differentiation
-=============================
+20. Torch Operator
+==================
 This tutorial focuses on the use of :class:`pylops.TorchOperator` to allow performing
 Automatic Differentiation (AD) on chains of operators which can be:
 
