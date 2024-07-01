@@ -1,0 +1,9 @@
+name: pylops_v1
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python>=3.6.4
+  - numpy>=1.21.0
+  - scipy>=1.4.0
+  - pylops==1.18.3
