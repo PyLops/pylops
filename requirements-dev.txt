@@ -1,6 +1,7 @@
 numpy>=1.21.0,<2.0.0
 scipy>=1.4.0,<=1.13.0
 torch>=1.2.0
+jax
 numba
 pyfftw
 PyWavelets

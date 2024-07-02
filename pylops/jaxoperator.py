@@ -13,6 +13,11 @@ if deps.jax_enabled:
 
     jaxarray_type = jaxlib.xla_extension.ArrayImpl
 else:
+    jax_message = (
+        "JAX package not installed. In order to be able to use"
+        'the jaxoperator module run "pip install jax" or'
+        '"conda install -c conda-forge jax".'
+    )
     jaxarray_type = Any
 
 JaxType = NewType("JaxType", jaxarray_type)
@@ -20,6 +25,8 @@ JaxType = NewType("JaxType", jaxarray_type)
 
 class JaxOperator(LinearOperator):
     def __init__(self, Op: LinearOperator) -> None:
+        if not deps.jax_enabled:
+            raise NotImplementedError(jax_message)
         super().__init__(
             dtype=Op.dtype,
             dims=Op.dims,
