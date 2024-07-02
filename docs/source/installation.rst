@@ -9,7 +9,7 @@ The PyLops project strives to create a library that is easy to install in
 any environment and has a very limited number of dependencies.
 Required dependencies are limited to:
 
-* Python 3.8 or greater
+* Python 3.9 or greater
 * `NumPy <http://www.numpy.org>`_
 * `SciPy <http://www.scipy.org/scipylib/index.html>`_
 
