@@ -86,7 +86,7 @@ def test_cg(par):
         x0 = None
 
     y = Aop * x
-    xinv = cg(Aop, y, x0=x0, niter=par["nx"], atol=1e-5, show=True)[0]
+    xinv = cg(Aop, y, x0=x0, niter=par["nx"], tol=1e-5, show=True)[0]
     assert_array_almost_equal(x, xinv, decimal=4)
 
 
@@ -114,7 +114,7 @@ def test_cg_ndarray(par):
         x0 = None
 
     y = Aop * x
-    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, atol=1e-5, show=True)[0]
+    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=1e-5, show=True)[0]
     assert xinv.shape == x.shape
     assert_array_almost_equal(x, xinv, decimal=4)
 
@@ -143,7 +143,7 @@ def test_cg_forceflat(par):
         x0 = None
 
     y = Aop * x
-    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, atol=1e-5, show=True)[0]
+    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=1e-5, show=True)[0]
     assert xinv.shape == x.ravel().shape
     assert_array_almost_equal(x.ravel(), xinv, decimal=4)
 
@@ -169,7 +169,7 @@ def test_cgls(par):
         x0 = None
 
     y = Aop * x
-    xinv = cgls(Aop, y, x0=x0, niter=par["nx"], atol=1e-5, show=True)[0]
+    xinv = cgls(Aop, y, x0=x0, niter=par["nx"], tol=1e-5, show=True)[0]
     assert_array_almost_equal(x, xinv, decimal=4)
 
 
