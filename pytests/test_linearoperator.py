@@ -122,7 +122,7 @@ def test_sparse(par):
     D = np.diag(diag)
     Dop = Diagonal(diag, dtype=par["dtype"])
     S = Dop.tosparse()
-    assert_array_equal(S.A, D)
+    assert_array_equal(S.toarray(), D)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
