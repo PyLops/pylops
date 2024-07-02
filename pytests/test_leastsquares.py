@@ -93,12 +93,12 @@ def test_NormalEquationsInversion(par):
 
     # normal equations with regularization
     xinv = normal_equations_inversion(
-        Gop, y, [Reg], epsI=1e-5, epsRs=[1e-8], x0=x0, **dict(maxiter=200, tol=1e-10)
+        Gop, y, [Reg], epsI=1e-5, epsRs=[1e-8], x0=x0, **dict(maxiter=200, atol=1e-10)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
     # normal equations with weight
     xinv = normal_equations_inversion(
-        Gop, y, None, Weight=Weigth, epsI=1e-5, x0=x0, **dict(maxiter=200, tol=1e-10)
+        Gop, y, None, Weight=Weigth, epsI=1e-5, x0=x0, **dict(maxiter=200, atol=1e-10)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
     # normal equations with weight and small regularization
@@ -110,7 +110,7 @@ def test_NormalEquationsInversion(par):
         epsI=1e-5,
         epsRs=[1e-8],
         x0=x0,
-        **dict(maxiter=200, tol=1e-10)
+        **dict(maxiter=200, atol=1e-10)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
     # normal equations with weight and small normal regularization
@@ -123,7 +123,7 @@ def test_NormalEquationsInversion(par):
         epsI=1e-5,
         epsNRs=[1e-8],
         x0=x0,
-        **dict(maxiter=200, tol=1e-10)
+        **dict(maxiter=200, atol=1e-10)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
 
@@ -192,7 +192,7 @@ def test_WeightedInversion(par):
     y = Gop * x
 
     xne = normal_equations_inversion(
-        Gop, y, None, Weight=Weigth, **dict(maxiter=5, tol=1e-10)
+        Gop, y, None, Weight=Weigth, **dict(maxiter=5, atol=1e-10)
     )[0]
     xreg = regularized_inversion(
         Gop, y, None, Weight=Weigth1, **dict(damp=0, iter_lim=5, show=0)
