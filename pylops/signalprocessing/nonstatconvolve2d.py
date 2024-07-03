@@ -53,6 +53,14 @@ class NonStationaryConvolve2D(LinearOperator):
     ihz : :obj:`tuple`
         Indices of the z locations of the filters ``hs`` in the model (and data). Note
         that the filters must be regularly sampled, i.e. :math:`dh_z=\text{diff}(ihz)=\text{const.}`
+    edge: :obj:`bool`, optional
+        .. versionadded:: 2.3.0
+
+        Extend nearest filter without (``False``) or with (``True``) tapering at the top and bottom sides
+    edgeside: :obj:`bool`, optional
+        .. versionadded:: 2.3.0
+
+        Extend nearest filter without (``False``) or with (``True``) tapering at the left and right sides
     engine : :obj:`str`, optional
         Engine used for spread computation (``numpy``, ``numba``, or ``cuda``)
     num_threads_per_blocks : :obj:`tuple`, optional
@@ -124,6 +132,8 @@ class NonStationaryConvolve2D(LinearOperator):
         hs: NDArray,
         ihx: InputDimsLike,
         ihz: InputDimsLike,
+        edge: bool = False,
+        edgeside: bool = False,
         engine: str = "numpy",
         num_threads_per_blocks: Tuple[int, int] = (32, 32),
         dtype: DTypeLike = "float64",
@@ -147,6 +157,7 @@ class NonStationaryConvolve2D(LinearOperator):
         self.ohz, self.dhz, self.nhz = ihz[0], ihz[1] - ihz[0], len(ihz)
         self.ehx, self.ehz = ihx[-1], ihz[-1]
         self.dims = _value_or_sized_to_tuple(dims)
+        self.edge, self.edgeside = edge, edgeside
         self.engine = engine
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
@@ -186,6 +197,8 @@ class NonStationaryConvolve2D(LinearOperator):
         dhz: float,
         nhx: int,
         nhz: int,
+        edge: bool,
+        edgeside: bool,
         rmatvec: bool = False,
     ) -> NDArray:
         for ix in prange(xdims[0]):
@@ -197,20 +210,36 @@ class NonStationaryConvolve2D(LinearOperator):
                 dhz_b = (iz - ohz) / dhz - ihz_t
                 if ihx_l < 0:
                     ihx_l = ihx_r = 0
-                    dhx_l = dhx_r = 0.5
+                    if edgeside:
+                        dhx_l = dhx_r = 0.5 * (ix / ohx)
+                    else:
+                        dhx_l = dhx_r = 0.5
                 elif ihx_l >= nhx - 1:
                     ihx_l = ihx_r = nhx - 1
-                    dhx_l = dhx_r = 0.5
+                    if edgeside:
+                        dhx_l = dhx_r = 0.5 * (
+                            (xdims[0] - ix) / (xdims[0] - (ohx + dhx * (nhx - 1)))
+                        )
+                    else:
+                        dhx_l = dhx_r = 0.5
                 else:
                     ihx_r = ihx_l + 1
                     dhx_l = 1.0 - dhx_r
 
                 if ihz_t < 0:
                     ihz_t = ihz_b = 0
-                    dhz_t = dhz_b = 0.5
+                    if edge:
+                        dhz_t = dhz_b = 0.5 * (iz / ohz)
+                    else:
+                        dhz_t = dhz_b = 0.5
                 elif ihz_t >= nhz - 1:
                     ihz_t = ihz_b = nhz - 1
-                    dhz_t = dhz_b = 0.5
+                    if edge:
+                        dhz_t = dhz_b = 0.5 * (
+                            (xdims[1] - iz) / (xdims[1] - (ohz + dhz * (nhz - 1)))
+                        )
+                    else:
+                        dhz_t = dhz_b = 0.5
                 else:
                     ihz_b = ihz_t + 1
                     dhz_t = 1.0 - dhz_b
@@ -275,6 +304,8 @@ class NonStationaryConvolve2D(LinearOperator):
             self.dhz,
             self.nhx,
             self.nhz,
+            self.edge,
+            self.edgeside,
             rmatvec=False,
             **self.kwargs_cuda
         )
@@ -296,6 +327,8 @@ class NonStationaryConvolve2D(LinearOperator):
             self.dhz,
             self.nhx,
             self.nhz,
+            self.edge,
+            self.edgeside,
             rmatvec=True,
             **self.kwargs_cuda
         )
