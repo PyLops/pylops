@@ -20,6 +20,7 @@ docutils<0.18
 Sphinx
 pydata-sphinx-theme
 sphinx-gallery
+sphinxemoji
 numpydoc
 nbsphinx
 image
