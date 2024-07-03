@@ -1,5 +1,5 @@
 r"""
-20. Image Domain Least-squares migration
+19. Image Domain Least-squares migration
 ========================================
 Seismic migration is the process by which seismic data are manipulated to create
 an image of the subsurface reflectivity.
