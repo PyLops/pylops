@@ -277,23 +277,23 @@ Signal processing:
    * - :class:`pylops.signalprocessing.Sliding1D`
      - |:white_check_mark:|
      - |:white_check_mark:|
-     - |:white_check_mark:|
+     - |:red_circle:|
    * - :class:`pylops.signalprocessing.Sliding2D`
      - |:white_check_mark:|
      - |:white_check_mark:|
-     - |:white_check_mark:|
+     - |:red_circle:|
    * - :class:`pylops.signalprocessing.Sliding3D`
      - |:white_check_mark:|
      - |:white_check_mark:|
-     - |:white_check_mark:|
+     - |:red_circle:|
    * - :class:`pylops.signalprocessing.Patch2D`
      - |:white_check_mark:|
      - |:white_check_mark:|
-     - |:white_check_mark:|
+     - |:red_circle:|
    * - :class:`pylops.signalprocessing.Patch3D`
      - |:white_check_mark:|
      - |:white_check_mark:|
-     - |:white_check_mark:|
+     - |:red_circle:|
    * - :class:`pylops.signalprocessing.Fredholm1`
      - |:white_check_mark:|
      - |:white_check_mark:|
