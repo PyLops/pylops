@@ -6,6 +6,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
+from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -64,8 +65,10 @@ class Roll(LinearOperator):
 
     @reshaped(swapaxis=True)
     def _matvec(self, x: NDArray) -> NDArray:
-        return np.roll(x, shift=self.shift, axis=-1)
+        ncp = get_array_module(x)
+        return ncp.roll(x, shift=self.shift, axis=-1)
 
     @reshaped(swapaxis=True)
     def _rmatvec(self, x: NDArray) -> NDArray:
-        return np.roll(x, shift=-self.shift, axis=-1)
+        ncp = get_array_module(x)
+        return ncp.roll(x, shift=-self.shift, axis=-1)
