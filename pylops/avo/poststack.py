@@ -27,6 +27,7 @@ from pylops.utils.backend import (
     get_csc_matrix,
     get_lstsq,
     get_module_name,
+    inplace_set,
 )
 from pylops.utils.signalprocessing import convmtx, nonstationary_convmtx
 from pylops.utils.typing import NDArray, ShapeLike
@@ -93,12 +94,15 @@ def _PoststackLinearModelling(
             D = ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=1) - ncp.diag(
                 0.5 * ncp.ones(nt0 - 1, dtype=dtype), -1
             )
-            D[0] = D[-1] = 0
+            # D[0] = D[-1] = 0.
+            D = inplace_set(ncp.array(0.0), D, 0)
+            D = inplace_set(ncp.array(0.0), D, -1)
         else:
             D = ncp.diag(ncp.ones(nt0 - 1, dtype=dtype), k=1) - ncp.diag(
                 ncp.ones(nt0, dtype=dtype), k=0
             )
-            D[-1] = 0
+            # D[-1] = 0.
+            D = inplace_set(ncp.array(0.0), D, -1)
 
         # Create wavelet operator
         if len(wav.shape) == 1:
