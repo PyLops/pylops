@@ -183,14 +183,12 @@ def PrestackLinearModelling(
             D = ncp.diag(0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=1) - ncp.diag(
                 0.5 * ncp.ones(nt0 - 1, dtype=dtype), k=-1
             )
-            # D[0] = D[-1] = 0.
             D = inplace_set(ncp.array(0.0), D, 0)
             D = inplace_set(ncp.array(0.0), D, -1)
         else:
             D = ncp.diag(ncp.ones(nt0 - 1, dtype=dtype), k=1) - ncp.diag(
                 ncp.ones(nt0, dtype=dtype), k=0
             )
-            # D[-1] = 0.
             D = inplace_set(ncp.array(0.0), D, -1)
         D = get_block_diag(theta)(*([D] * nG))
 
@@ -343,7 +341,6 @@ def PrestackWaveletModelling(
     D = ncp.diag(0.5 * np.ones(nt0 - 1, dtype=dtype), k=1) - ncp.diag(
         0.5 * np.ones(nt0 - 1, dtype=dtype), k=-1
     )
-    # D[0] = D[-1] = 0.
     D = inplace_set(ncp.array(0.0), D, 0)
     D = inplace_set(ncp.array(0.0), D, -1)
     D = get_block_diag(theta)(*([D] * nG))
