@@ -593,7 +593,7 @@ class RegularizedInversion(Solver):
             xinv, istop, itn, r1norm, r2norm = cgls(
                 self.RegOp,
                 self.datatot,
-                self.ncp.zeros(self.RegOp.dims, dtype=self.RegOp.dtype),
+                self.ncp.zeros(self.RegOp.shape[1], dtype=self.RegOp.dtype),
                 **kwargs_solver,
             )[0:5]
         else:
