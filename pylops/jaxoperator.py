@@ -50,19 +50,19 @@ class JaxOperator(LinearOperator):
         Parameters
         ----------
         x : :obj:`jaxlib.xla_extension.ArrayImpl`
-            Input array
+            Input array for forward
         y : :obj:`jaxlib.xla_extension.ArrayImpl`
-            Output array (where to store the
-            Vector-Jacobian product)
+            Input array for adjoint
 
         Returns
-        ----------
-        y : :obj:`jaxlib.xla_extension.ArrayImpl`
+        -------
+        xadj : :obj:`jaxlib.xla_extension.ArrayImpl`
             Output array
 
         """
         _, f_vjp = jax.vjp(self._matvec, x)
-        return jax.jit(f_vjp)(y)[0]
+        xadj = jax.jit(f_vjp)(y)[0]
+        return xadj
 
     def rmatvecad(self, x: JaxType, y: JaxType) -> JaxType:
         """Adjoint matrix-vector multiplication with AD
@@ -84,7 +84,9 @@ class JaxOperator(LinearOperator):
         M, N = self.shape
 
         if x.shape != (M,) and x.shape != (M, 1):
-            raise ValueError("dimension mismatch")
+            raise ValueError(
+                f"Dimension mismatch. Got {x.shape}, but expected {(M, 1)} or {(M,)}."
+            )
 
         y = self._rmatvecad(x, y)
 
@@ -93,5 +95,8 @@ class JaxOperator(LinearOperator):
         elif x.ndim == 2:
             y = y.reshape(N, 1)
         else:
-            raise ValueError("invalid shape returned by user-defined rmatvecad()")
+            raise ValueError(
+                f"Invalid shape returned by user-defined rmatvecad(). "
+                f"Expected 2-d ndarray or matrix, not {x.ndim}-d ndarray"
+            )
         return y

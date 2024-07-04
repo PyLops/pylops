@@ -508,7 +508,9 @@ class LinearOperator(_LinearOperator):
         M, N = self.shape
 
         if x.shape != (N,) and x.shape != (N, 1):
-            raise ValueError("dimension mismatch")
+            raise ValueError(
+                f"Dimension mismatch. Got {x.shape}, but expected {(M, 1)} or {(M,)}."
+            )
 
         y = self._matvec(x)
 
@@ -517,7 +519,7 @@ class LinearOperator(_LinearOperator):
         elif x.ndim == 2:
             y = y.reshape(M, 1)
         else:
-            raise ValueError("invalid shape returned by user-defined matvec()")
+            raise ValueError("Invalid shape returned by user-defined matvec()")
         return y
 
     @count(forward=False)
@@ -542,7 +544,9 @@ class LinearOperator(_LinearOperator):
         M, N = self.shape
 
         if x.shape != (M,) and x.shape != (M, 1):
-            raise ValueError("dimension mismatch")
+            raise ValueError(
+                f"Dimension mismatch. Got {x.shape}, but expected {(M, 1)} or {(M,)}."
+            )
 
         y = self._rmatvec(x)
 
@@ -551,7 +555,7 @@ class LinearOperator(_LinearOperator):
         elif x.ndim == 2:
             y = y.reshape(N, 1)
         else:
-            raise ValueError("invalid shape returned by user-defined rmatvec()")
+            raise ValueError("Invalid shape returned by user-defined rmatvec()")
         return y
 
     @count(forward=True, matmat=True)
@@ -574,9 +578,9 @@ class LinearOperator(_LinearOperator):
 
         """
         if X.ndim != 2:
-            raise ValueError("expected 2-d ndarray or matrix, " "not %d-d" % X.ndim)
+            raise ValueError(f"Expected 2-d ndarray or matrix, not {X.ndim}-d ndarray")
         if X.shape[0] != self.shape[1]:
-            raise ValueError("dimension mismatch: %r, %r" % (self.shape, X.shape))
+            raise ValueError(f"Dimension mismatch: {self.shape}, {X.shape}")
         Y = self._matmat(X)
         return Y
 
@@ -600,9 +604,9 @@ class LinearOperator(_LinearOperator):
 
         """
         if X.ndim != 2:
-            raise ValueError("expected 2-d ndarray or matrix, " "not %d-d" % X.ndim)
+            raise ValueError(f"Expected 2-d ndarray or matrix, not {X.ndim}-d ndarray")
         if X.shape[0] != self.shape[0]:
-            raise ValueError("dimension mismatch: %r, %r" % (self.shape, X.shape))
+            raise ValueError(f"Dimension mismatch: {self.shape}, {X.shape}")
         Y = self._rmatmat(X)
         return Y
 
