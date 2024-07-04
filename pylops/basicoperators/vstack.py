@@ -165,7 +165,6 @@ class VStack(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            # y[self.nnops[iop] : self.nnops[iop + 1]] = oper.matvec(x).squeeze()
             y = inplace_set(
                 oper.matvec(x).squeeze(), y, slice(self.nnops[iop], self.nnops[iop + 1])
             )
@@ -175,7 +174,6 @@ class VStack(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            # y += oper.rmatvec(x[self.nnops[iop] : self.nnops[iop + 1]]).squeeze()
             y = inplace_add(
                 oper.rmatvec(x[self.nnops[iop] : self.nnops[iop + 1]]).squeeze(),
                 y,

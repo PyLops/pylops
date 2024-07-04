@@ -165,7 +165,6 @@ class HStack(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            # y += oper.matvec(x[self.mmops[iop] : self.mmops[iop + 1]]).squeeze()
             y = inplace_add(
                 oper.matvec(x[self.mmops[iop] : self.mmops[iop + 1]]).squeeze(),
                 y,
@@ -177,7 +176,6 @@ class HStack(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            # y[self.mmops[iop] : self.mmops[iop + 1]] = oper.rmatvec(x).squeeze()
             y = inplace_set(
                 oper.rmatvec(x).squeeze(),
                 y,

@@ -181,7 +181,6 @@ class Identity(LinearOperator):
             y = x[self.sliceN]
         else:
             y = ncp.zeros(self.dimsd, dtype=self.dtype)
-            # y[self.sliceM] = x
             y = inplace_set(x, y, self.sliceM)
         return y
 
@@ -194,7 +193,6 @@ class Identity(LinearOperator):
             y = x
         elif self.mode == "model":
             y = ncp.zeros(self.dims, dtype=self.dtype)
-            # y[self.sliceN] = x
             y = inplace_set(x, y, self.sliceN)
         else:
             y = x[self.sliceM]

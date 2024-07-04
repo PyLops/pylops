@@ -115,15 +115,12 @@ class Symmetrize(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.dimsd, dtype=self.dtype)
         y = y.swapaxes(self.axis, -1)
-        # y[..., self.nsym - 1 :] = x
         y = inplace_set(x, y, self.slicensym_1)
-        # y[..., : self.nsym - 1] = x[..., -1:0:-1]
         y = inplace_set(x[..., -1:0:-1], y, self.slice_nsym_1)
         return y
 
     @reshaped(swapaxis=True)
     def _rmatvec(self, x: NDArray) -> NDArray:
         y = x[..., self.nsym - 1 :].copy()
-        # y[..., 1:] += x[..., self.nsym - 2 :: -1]
         y = inplace_add(x[..., self.nsym - 2 :: -1], y, self.slice1)
         return y

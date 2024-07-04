@@ -172,7 +172,6 @@ class Restriction(LinearOperator):
                 self.iava = to_cupy_conditional(x, self.iava)
                 self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
             y = ncp.zeros(int(self.shape[-1]), dtype=self.dtype)
-            # y[self.iavamask] = x.ravel()
             y = inplace_set(x.ravel(), y, self.iavamask)
         y = y.ravel()
         return y
