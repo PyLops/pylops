@@ -13,9 +13,6 @@ From ``v2.3.0``, PyLops supports also computations on GPUs/TPUs powered by
 `JAX <https://jax.readthedocs.io/en/latest/>`_.
 This library must be installed *before* PyLops is installed.
 
-PyLops supports computations on GPUs powered by `CuPy <https://cupy.dev/>`_ (``cupy-cudaXX>=v13.0.0``).
-This library must be installed *before* PyLops is installed.
-
 .. note::
 
    Set environment variables ``CUPY_PYLOPS=0`` and/or ``JAX_PYLOPS=0`` to force PyLops to ignore
@@ -29,12 +26,12 @@ on GPU. For CuPy, users simply need to consistently create operators and
 provide data vectors to the solvers, e.g., when using
 :class:`pylops.MatrixMult` the input matrix must be a
 ``cupy`` array if the data provided to a solver is also ``cupy`` array.
-For JAX, apart from following the procedure described for CuPy, a PyLops operator must also
-be wrapped into a ``JaxOperator``.
+For JAX, apart from following the same procedure described for CuPy, the PyLops operator must
+be also wrapped into a :class:`pylops.JaxOperator`.
 
 
 In the following, we provide a list of methods in :class:`pylops.LinearOperator` with their current status (available on CPU,
-GPU with CuPy, and GPU with JAX.
+GPU with CuPy, and GPU with JAX):
 
 .. list-table::
    :widths: 50 25 25 25
@@ -44,18 +41,36 @@ GPU with CuPy, and GPU with JAX.
      - CPU
      - GPU with CuPy
      - GPU/TPU with JAX
+   * - :meth:`pylops.LinearOperator.cond`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :meth:`pylops.LinearOperator.conj`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.LinearOperator.div`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
    * - :meth:`pylops.LinearOperator.eigs`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
-   * - :meth:`pylops.LinearOperator.cond`
+   * - :meth:`pylops.LinearOperator.todense`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+   * - :meth:`pylops.LinearOperator.tosparse`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
-   * - :meth:`pylops.LinearOperator.cond`
+   * - :meth:`pylops.LinearOperator.trace`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
+
+Similarly, we provide a list of operators with their current status.
 
 Basic operators:
 
@@ -375,15 +390,15 @@ Geophysical subsurface characterization:
 
 .. warning::
 
-   1. The JAX backend of the :class:`pylops.basicoperators.Convolve1D` operator
+   1. The JAX backend of the :class:`pylops.signalprocessing.Convolve1D` operator
    currently works only with 1d-arrays due to a different behaviour of
    :meth:`scipy.signal.convolve` and :meth:`jax.scipy.signal.convolve` with
    nd-arrays.
 
    2. The JAX backend of the :class:`pylops.avo.prestack.PrestackLinearModelling`
    operator currently works only with ``explicit=True`` due to the same issue as
-    in point 1 for the :class:`pylops.basicoperators.Convolve1D` operator employed
-    when ``explicit=False``.
+   in point 1 for the :class:`pylops.signalprocessing.Convolve1D` operator employed
+   when ``explicit=False``.
 
 
 Example
