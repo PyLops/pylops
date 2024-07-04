@@ -24,6 +24,22 @@ JaxType = NewType("JaxType", jaxarray_type)
 
 
 class JaxOperator(LinearOperator):
+    """Enable JAX backend for PyLops operator.
+
+    This class can be used to wrap a pylops operator to enable the JAX
+    backend. Doing so, users can run all of the methods of a pylops
+    operator with JAX arrays. Moreover, the forward and adjoint
+    are internally just-in-time compiled, and other JAX functionalities
+    such as automatic differentiation and automatic vectorization
+    are enabled.
+
+    Parameters
+    ----------
+    Op : :obj:`pylops.LinearOperator`
+        PyLops operator
+
+    """
+
     def __init__(self, Op: LinearOperator) -> None:
         if not deps.jax_enabled:
             raise NotImplementedError(jax_message)
@@ -43,7 +59,12 @@ class JaxOperator(LinearOperator):
         return self._matvec(x)
 
     def _rmatvecad(self, x: JaxType, y: JaxType) -> JaxType:
-        """Vector-Jacobian products
+        _, f_vjp = jax.vjp(self._matvec, x)
+        xadj = jax.jit(f_vjp)(y)[0]
+        return xadj
+
+    def rmatvecad(self, x: JaxType, y: JaxType) -> JaxType:
+        """Vector-Jacobian product
 
         JIT-compiled Vector-Jacobian product
 
@@ -60,32 +81,11 @@ class JaxOperator(LinearOperator):
             Output array
 
         """
-        _, f_vjp = jax.vjp(self._matvec, x)
-        xadj = jax.jit(f_vjp)(y)[0]
-        return xadj
-
-    def rmatvecad(self, x: JaxType, y: JaxType) -> JaxType:
-        """Adjoint matrix-vector multiplication with AD
-
-        Parameters
-        ----------
-        x : :obj:`jaxlib.xla_extension.ArrayImpl`
-            Input array
-        y : :obj:`jaxlib.xla_extension.ArrayImpl`
-            Output array (where to store the
-            Vector-Jacobian product)
-
-        Returns
-        -------
-        x : :obj:`numpy.ndarray`
-            Output array of shape (N,) or (N,1)
-
-        """
         M, N = self.shape
 
         if x.shape != (M,) and x.shape != (M, 1):
             raise ValueError(
-                f"Dimension mismatch. Got {x.shape}, but expected {(M, 1)} or {(M,)}."
+                f"Dimension mismatch. Got {x.shape}, but expected  ({M},) or ({M}, 1)."
             )
 
         y = self._rmatvecad(x, y)

@@ -442,10 +442,11 @@ class LinearOperator(_LinearOperator):
         Modified version of scipy _matmat to avoid having trailing dimension
         in col when provided to matvec
         """
+        ncp = get_array_module(X)
         if sp.sparse.issparse(X):
-            y = np.vstack([self.matvec(col.toarray().reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self.matvec(col.toarray().reshape(-1)) for col in X.T]).T
         else:
-            y = np.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
         return y
 
     def _rmatmat(self, X: NDArray) -> NDArray:
@@ -454,10 +455,11 @@ class LinearOperator(_LinearOperator):
         Modified version of scipy _rmatmat to avoid having trailing dimension
         in col when provided to rmatvec
         """
+        ncp = get_array_module(X)
         if sp.sparse.issparse(X):
-            y = np.vstack([self.rmatvec(col.toarray().reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self.rmatvec(col.toarray().reshape(-1)) for col in X.T]).T
         else:
-            y = np.vstack([self.rmatvec(col.reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self.rmatvec(col.reshape(-1)) for col in X.T]).T
         return y
 
     def _adjoint(self) -> LinearOperator:
@@ -509,7 +511,7 @@ class LinearOperator(_LinearOperator):
 
         if x.shape != (N,) and x.shape != (N, 1):
             raise ValueError(
-                f"Dimension mismatch. Got {x.shape}, but expected {(M, 1)} or {(M,)}."
+                f"Dimension mismatch. Got {x.shape}, but expected ({N},) or ({N}, 1)."
             )
 
         y = self._matvec(x)
@@ -545,7 +547,7 @@ class LinearOperator(_LinearOperator):
 
         if x.shape != (M,) and x.shape != (M, 1):
             raise ValueError(
-                f"Dimension mismatch. Got {x.shape}, but expected {(M, 1)} or {(M,)}."
+                f"Dimension mismatch. Got {x.shape}, but expected ({M},) or ({M}, 1)."
             )
 
         y = self._rmatvec(x)
@@ -795,7 +797,7 @@ class LinearOperator(_LinearOperator):
         Parameters
         ----------
         backend : :obj:`str`, optional
-            Backend used to densify matrix (``numpy`` or ``cupy``). Note that
+            Backend used to densify matrix (``numpy`` or ``cupy`` or ``jax``). Note that
             this must be consistent with how the operator has been created.
 
         Returns
@@ -820,7 +822,7 @@ class LinearOperator(_LinearOperator):
         if Op.shape[1] == shapemin:
             matrix = Op.matmat(identity)
         else:
-            matrix = np.conj(Op.rmatmat(identity)).T
+            matrix = ncp.conj(Op.rmatmat(identity)).T
         return matrix
 
     def tosparse(self) -> NDArray:
