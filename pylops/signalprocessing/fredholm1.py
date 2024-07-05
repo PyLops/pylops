@@ -61,7 +61,7 @@ class Fredholm1(LinearOperator):
         d(k, x, z) = \int{G(k, x, y) m(k, y, z) \,\mathrm{d}y}
         \quad \forall k=1,\ldots,n_{slice}
 
-    on the other hand its adjoin is expressed as
+    on the other hand its adjoint is expressed as
 
     .. math::
 
