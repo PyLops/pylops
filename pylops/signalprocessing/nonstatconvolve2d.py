@@ -586,6 +586,8 @@ class NonStationaryFilters2D(LinearOperator):
             self.dhz,
             self.nhx,
             self.nhz,
+            None,
+            None,
             **self.kwargs_cuda
         )
         return y
