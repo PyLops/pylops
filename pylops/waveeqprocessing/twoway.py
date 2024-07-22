@@ -14,6 +14,49 @@ devito_message = deps.devito_import("the twoway module")
 if devito_message is None:
     from examples.seismic import AcquisitionGeometry, Model
     from examples.seismic.acoustic import AcousticWaveSolver
+    from examples.seismic.utils import PointSource
+
+
+class _CustomSource(PointSource):
+    """Custom source
+
+    This class creates a Devito symbolic object that encapsulates a set of
+    sources with a user defined source signal wavelet ``wav``
+
+    Parameters
+    ----------
+    name : :obj:`str`
+        Name for the resulting symbol.
+    grid : :obj:`devito.types.grid.Grid`
+        The computational domain.
+    time_range : :obj:`examples.seismic.source.TimeAxis`
+        TimeAxis(start, step, num) object.
+    wav : :obj:`numpy.ndarray`
+        Wavelet of size
+
+    """
+
+    __rkwargs__ = PointSource.__rkwargs__ + ["wav"]
+
+    @classmethod
+    def __args_setup__(cls, *args, **kwargs):
+        kwargs.setdefault("npoint", 1)
+
+        return super().__args_setup__(*args, **kwargs)
+
+    def __init_finalize__(self, *args, **kwargs):
+        super().__init_finalize__(*args, **kwargs)
+
+        self.wav = kwargs.get("wav")
+
+        if not self.alias:
+            for p in range(kwargs["npoint"]):
+                self.data[:, p] = self.wavelet
+
+    @property
+    def wavelet(self):
+        """Return user-provided wavelet"""
+        return self.wav
 
 
 class AcousticWave2D(LinearOperator):
@@ -38,9 +81,9 @@ class AcousticWave2D(LinearOperator):
     rec_z : :obj:`numpy.ndarray` or :obj:`float`
         Receiver z-coordinates in m
     t0 : :obj:`float`
-        Initial time
+        Initial time in ms
     tn : :obj:`int`
-        Number of time samples
+        Final time in ms
     src_type : :obj:`str`
         Source type
     space_order : :obj:`int`, optional
@@ -79,7 +122,7 @@ class AcousticWave2D(LinearOperator):
         rec_x: NDArray,
         rec_z: NDArray,
         t0: float,
-        tn: int,
+        tn: float,
         src_type: str = "Ricker",
         space_order: int = 6,
         nbl: int = 20,
@@ -155,7 +198,7 @@ class AcousticWave2D(LinearOperator):
         rec_x: NDArray,
         rec_z: NDArray,
         t0: float,
-        tn: int,
+        tn: float,
         src_type: str,
         f0: float = 20.0,
     ) -> None:
@@ -174,7 +217,7 @@ class AcousticWave2D(LinearOperator):
         t0 : :obj:`float`
             Initial time
         tn : :obj:`int`
-            Number of time samples
+            Final time in ms
         src_type : :obj:`str`
             Source type
         f0 : :obj:`float`, optional
@@ -199,6 +242,28 @@ class AcousticWave2D(LinearOperator):
             tn,
             src_type=src_type,
             f0=None if f0 is None else f0 * 1e-3,
+        )
+
+    def updatesrc(self, wav):
+        """Update source wavelet
+
+        This routines is used to allow users to pass a custom source
+        wavelet to replace the source wavelet generated when the
+        object is initialized
+
+        Parameters
+        ----------
+        wav : :obj:`numpy.ndarray`
+            Wavelet
+
+        """
+        wav_padded = np.pad(wav, (0, self.geometry.nt - len(wav)))
+
+        self.wav = _CustomSource(
+            name="src",
+            grid=self.model.grid,
+            wav=wav_padded,
+            time_range=self.geometry.time_axis,
         )
 
     def _srcillumination_oneshot(self, isrc: int) -> Tuple[NDArray, NDArray]:
@@ -229,8 +294,15 @@ class AcousticWave2D(LinearOperator):
         )
         solver = AcousticWaveSolver(self.model, geometry, space_order=self.space_order)
 
+        # assign source location to source object with custom wavelet
+        if hasattr(self, "wav"):
+            self.wav.coordinates.data[0, :] = self.geometry.src_positions[isrc, :]
+
         # source wavefield
-        u0 = solver.forward(save=True)[1]
+        u0 = solver.forward(
+            save=True, src=None if not hasattr(self, "wav") else self.wav
+        )[1]
+
         # source illumination
         src_ill = self._crop_model((u0.data**2).sum(axis=0), self.model.nbl)
         return u0, src_ill
@@ -286,9 +358,15 @@ class AcousticWave2D(LinearOperator):
         dmext = np.zeros(self.model.grid.shape, dtype=np.float32)
         dmext[self.model.nbl : -self.model.nbl, self.model.nbl : -self.model.nbl] = dm
 
+        # assign source location to source object with custom wavelet
+        if hasattr(self, "wav"):
+            self.wav.coordinates.data[0, :] = self.geometry.src_positions[isrc, :]
+
         # solve
         solver = AcousticWaveSolver(self.model, geometry, space_order=self.space_order)
-        d = solver.jacobian(dmext)[0]
+        d = solver.jacobian(dmext, src=None if not hasattr(self, "wav") else self.wav)[
+            0
+        ]
         d = d.resample(geometry.dt).data[:][: geometry.nt].T
         return d
 
@@ -347,11 +425,18 @@ class AcousticWave2D(LinearOperator):
 
         solver = AcousticWaveSolver(self.model, geometry, space_order=self.space_order)
 
+        # assign source location to source object with custom wavelet
+        if hasattr(self, "wav"):
+            self.wav.coordinates.data[0, :] = self.geometry.src_positions[isrc, :]
+
         # source wavefield
         if hasattr(self, "src_wavefield"):
             u0 = self.src_wavefield[isrc]
         else:
-            u0 = solver.forward(save=True)[1]
+            u0 = solver.forward(
+                save=True, src=None if not hasattr(self, "wav") else self.wav
+            )[1]
+
         # adjoint modelling (reverse wavefield plus imaging condition)
         model = solver.jacobian_adjoint(
             rec=recs, u=u0, checkpointing=self.checkpointing
