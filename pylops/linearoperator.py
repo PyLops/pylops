@@ -1242,24 +1242,14 @@ def _get_dtype(
 ) -> DTypeLike:
     if dtypes is None:
         dtypes = []
-    opdtypes = []
     for obj in operators:
         if obj is not None and hasattr(obj, "dtype"):
-            opdtypes.append(obj.dtype)
-    alldtypes = opdtypes + dtypes
-    return np.result_type(*alldtypes)
+            dtypes.append(obj.dtype)
+    return np.result_type(*dtypes)
 
 
 class _ScaledLinearOperator(LinearOperator):
-    """
-    Sum Linear Operator
-
-    Modified version of scipy _ScaledLinearOperator which uses a modified
-    _get_dtype where the scalar and operator types are passed separately to
-    np.find_common_type. Passing them together does lead to problems when using
-    np.float32 operators which are cast to np.float64
-
-    """
+    """Scaled Linear Operator"""
 
     def __init__(
         self,
@@ -1270,7 +1260,13 @@ class _ScaledLinearOperator(LinearOperator):
             raise ValueError("LinearOperator expected as A")
         if not np.isscalar(alpha):
             raise ValueError("scalar expected as alpha")
-        dtype = _get_dtype([A], [type(alpha)])
+        if type(alpha) is complex and not np.iscomplexobj(np.ones(1, dtype=A.dtype)):
+            # if the scalar is of complex type but not the operator, find out type
+            dtype = _get_dtype([A], [type(alpha)])
+        else:
+            # if both the scalar and operator are of real or complex type, use type
+            # of the operator
+            dtype = A.dtype
         super(_ScaledLinearOperator, self).__init__(dtype=dtype, shape=A.shape)
         self.args = (A, alpha)
 
@@ -1466,7 +1462,7 @@ class _PowerLinearOperator(LinearOperator):
         if not isintlike(p) or p < 0:
             raise ValueError("non-negative integer expected as p")
 
-        super(_PowerLinearOperator, self).__init__(dtype=_get_dtype([A]), shape=A.shape)
+        super(_PowerLinearOperator, self).__init__(dtype=A.dtype, shape=A.shape)
         self.args = (A, p)
 
     def _power(self, fun: Callable, x: NDArray) -> NDArray:
