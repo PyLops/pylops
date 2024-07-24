@@ -1246,7 +1246,8 @@ def _get_dtype(
     for obj in operators:
         if obj is not None and hasattr(obj, "dtype"):
             opdtypes.append(obj.dtype)
-    return np.result_type(opdtypes + dtypes)
+    alldtypes = opdtypes + dtypes
+    return np.result_type(*alldtypes)
 
 
 class _ScaledLinearOperator(LinearOperator):
