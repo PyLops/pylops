@@ -327,13 +327,13 @@ class AcousticWave2D(LinearOperator):
                 self.src_wavefield.append(src_wav)
             self.src_illumination += src_ill
 
-    def _born_oneshot(self, isrc: int, dm: NDArray) -> NDArray:
+    def _born_oneshot(self, solver: AcousticWaveSolver, dm: NDArray) -> NDArray:
         """Born modelling for one shot
 
         Parameters
         ----------
-        isrc : :obj:`int`
-            Index of source to model
+        solver : :obj:`AcousticWaveSolver`
+            Devito's solver object.
         dm : :obj:`np.ndarray`
             Model perturbation
 
@@ -343,16 +343,6 @@ class AcousticWave2D(LinearOperator):
             Data
 
         """
-        # create geometry for single source
-        geometry = AcquisitionGeometry(
-            self.model,
-            self.geometry.rec_positions,
-            self.geometry.src_positions[isrc, :],
-            self.geometry.t0,
-            self.geometry.tn,
-            f0=self.geometry.f0,
-            src_type=self.geometry.src_type,
-        )
 
         # set perturbation
         dmext = np.zeros(self.model.grid.shape, dtype=np.float32)
@@ -360,14 +350,12 @@ class AcousticWave2D(LinearOperator):
 
         # assign source location to source object with custom wavelet
         if hasattr(self, "wav"):
-            self.wav.coordinates.data[0, :] = self.geometry.src_positions[isrc, :]
+            self.wav.coordinates.data[0, :] = solver.geometry.src_positions[:]
 
-        # solve
-        solver = AcousticWaveSolver(self.model, geometry, space_order=self.space_order)
         d = solver.jacobian(dmext, src=None if not hasattr(self, "wav") else self.wav)[
             0
         ]
-        d = d.resample(geometry.dt).data[:][: geometry.nt].T
+        d = d.resample(solver.geometry.dt).data[:][: solver.geometry.nt].T
         return d
 
     def _born_allshots(self, dm: NDArray) -> NDArray:
@@ -384,11 +372,26 @@ class AcousticWave2D(LinearOperator):
             Data for all shots
 
         """
+        # create geometry for single source
+        geometry = AcquisitionGeometry(
+            self.model,
+            self.geometry.rec_positions,
+            self.geometry.src_positions[0, :],
+            self.geometry.t0,
+            self.geometry.tn,
+            f0=self.geometry.f0,
+            src_type=self.geometry.src_type,
+        )
+
+        # solve
+        solver = AcousticWaveSolver(self.model, geometry, space_order=self.space_order)
+
         nsrc = self.geometry.src_positions.shape[0]
         dtot = []
 
         for isrc in range(nsrc):
-            d = self._born_oneshot(isrc, dm)
+            solver.geometry.src_positions = self.geometry.src_positions[isrc, :]
+            d = self._born_oneshot(solver, dm)
             dtot.append(d)
         dtot = np.array(dtot).reshape(nsrc, d.shape[0], d.shape[1])
         return dtot
