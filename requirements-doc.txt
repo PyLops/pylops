@@ -1,0 +1,31 @@
+# Currently we force rdt to use numpy<2.0.0 to build the documentation
+# since the dtcwt and spgl1 are not yet compatible with numpy=2.0.0
+numpy>=1.21.0,<2.0.0
+scipy>=1.4.0
+torch>=1.2.0
+numba
+pyfftw
+PyWavelets
+spgl1
+scikit-fmm
+sympy
+devito
+dtcwt
+matplotlib
+ipython
+pytest
+pytest-runner
+setuptools_scm
+docutils<0.18
+Sphinx
+pydata-sphinx-theme
+sphinx-gallery
+numpydoc
+nbsphinx
+image
+pre-commit
+autopep8
+isort
+black
+flake8
+mypy
