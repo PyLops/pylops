@@ -5,6 +5,9 @@ from numpy.testing import assert_array_almost_equal
 from pylops.basicoperators import FirstDerivative, Identity, MatrixMult
 from pylops.optimization.sparsity import fista, irls, ista, omp, spgl1, splitbregman
 
+# currently test spgl1 only if numpy<2.0.0 is installed...
+np_version = np.__version__.split(".")
+
 par1 = {
     "ny": 11,
     "nx": 11,
@@ -359,24 +362,25 @@ def test_ISTA_FISTA_multiplerhs(par):
 )
 def test_SPGL1(par):
     """Invert problem with SPGL1"""
-    np.random.seed(42)
-    Aop = MatrixMult(np.random.randn(par["ny"], par["nx"]))
+    if int(np_version[0]) < 2:
+        np.random.seed(42)
+        Aop = MatrixMult(np.random.randn(par["ny"], par["nx"]))
 
-    x = np.zeros(par["nx"])
-    x[par["nx"] // 2] = 1
-    x[3] = 1
-    x[par["nx"] - 4] = -1
+        x = np.zeros(par["nx"])
+        x[par["nx"] // 2] = 1
+        x[3] = 1
+        x[par["nx"] - 4] = -1
 
-    x0 = (
-        np.random.normal(0, 10, par["nx"])
-        + par["imag"] * np.random.normal(0, 10, par["nx"])
-        if par["x0"]
-        else None
-    )
-    y = Aop * x
-    xinv = spgl1(Aop, y, x0=x0, iter_lim=5000)[0]
+        x0 = (
+            np.random.normal(0, 10, par["nx"])
+            + par["imag"] * np.random.normal(0, 10, par["nx"])
+            if par["x0"]
+            else None
+        )
+        y = Aop * x
+        xinv = spgl1(Aop, y, x0=x0, iter_lim=5000)[0]
 
-    assert_array_almost_equal(x, xinv, decimal=1)
+        assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
