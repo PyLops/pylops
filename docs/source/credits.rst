@@ -23,3 +23,4 @@ Contributors
 *  `Fedor Goncharov <https://github.com/fedor-goncharov>`_, fedor-goncharov
 *  `Alex Rakowski <https://github.com/alex-rakowski>`_, alex-rakowski
 *  `David Sollberger <https://github.com/solldavid>`_, solldavid
+*  `Gustavo Coelho <https://github.com/guaacoelho>`_, guaacoelho
