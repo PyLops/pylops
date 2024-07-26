@@ -7,7 +7,7 @@ channels:
 dependencies:
   - python>=3.6.4
   - pip
-  - numpy>=1.21.0,<2.0.0
+  - numpy>=1.21.0
   - scipy>=1.11.0
   - pytorch>=1.2.0
   - cpuonly
