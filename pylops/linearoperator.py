@@ -1260,7 +1260,9 @@ class _ScaledLinearOperator(LinearOperator):
             raise ValueError("LinearOperator expected as A")
         if not np.isscalar(alpha):
             raise ValueError("scalar expected as alpha")
-        if type(alpha) is complex and not np.iscomplexobj(np.ones(1, dtype=A.dtype)):
+        if isinstance(alpha, complex) and not np.iscomplexobj(
+            np.ones(1, dtype=A.dtype)
+        ):
             # if the scalar is of complex type but not the operator, find out type
             dtype = _get_dtype([A], [type(alpha)])
         else:
