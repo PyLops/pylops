@@ -21,7 +21,7 @@ def test_TorchOperator(par):
     """
     # temporarily, skip tests on mac as torch seems not to recognized
     # numpy when v2 is installed
-    if platform.system is not "Darwin":
+    if platform.system() != "Darwin":
         Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])))
         Top = TorchOperator(Dop, batch=False)
 
@@ -47,7 +47,7 @@ def test_TorchOperator_batch(par):
     """Apply forward for input with multiple samples (= batch) and flattened arrays"""
     # temporarily, skip tests on mac as torch seems not to recognized
     # numpy when v2 is installed
-    if platform.system is not "Darwin":
+    if platform.system() != "Darwin":
         Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])))
         Top = TorchOperator(Dop, batch=True)
 
@@ -66,7 +66,7 @@ def test_TorchOperator_batch_nd(par):
     """Apply forward for input with multiple samples (= batch) and nd-arrays"""
     # temporarily, skip tests on mac as torch seems not to recognized
     # numpy when v2 is installed
-    if platform.system is not "Darwin":
+    if platform.system() != "Darwin":
         Dop = MatrixMult(
             np.random.normal(0.0, 1.0, (par["ny"], par["nx"])), otherdims=(2,)
         )

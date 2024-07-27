@@ -1,12 +1,11 @@
 __all__ = ["Restriction"]
 
 import logging
-
 from typing import Sequence, Union
 
 import numpy as np
 import numpy.ma as np_ma
-from numpy.core.multiarray import normalize_axis_index
+from numpy.lib.array_utils import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
@@ -128,8 +127,13 @@ class Restriction(LinearOperator):
                 )
                 forceflat = None
 
-        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd,
-                         forceflat=forceflat, name=name)
+        super().__init__(
+            dtype=np.dtype(dtype),
+            dims=dims,
+            dimsd=dimsd,
+            forceflat=forceflat,
+            name=name,
+        )
 
         iavareshape = np.ones(len(self.dims), dtype=int)
         iavareshape[axis] = len(iava)
