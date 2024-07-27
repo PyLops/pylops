@@ -5,7 +5,14 @@ from typing import Sequence, Union
 
 import numpy as np
 import numpy.ma as np_ma
-from numpy.lib.array_utils import normalize_axis_index
+
+# need to check numpy version since normalize_axis_index will be
+# soon moved from numpy.core.multiarray to from numpy.lib.array_utils
+np_version = np.__version__.split(".")
+if int(np_version[0]) < 2:
+    from numpy.core.multiarray import normalize_axis_index
+else:
+    from numpy.lib.array_utils import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
