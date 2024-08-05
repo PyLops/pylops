@@ -21,25 +21,27 @@ def test_TorchOperator(par):
     """
     # temporarily, skip tests on mac as torch seems not to recognized
     # numpy when v2 is installed
-    if platform.system() != "Darwin":
-        Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])))
-        Top = TorchOperator(Dop, batch=False)
+    if platform.system() == "Darwin":
+        return
 
-        x = np.random.normal(0.0, 1.0, par["nx"])
-        xt = torch.from_numpy(x).view(-1)
-        xt.requires_grad = True
-        v = torch.randn(par["ny"])
+    Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])))
+    Top = TorchOperator(Dop, batch=False)
 
-        # pylops operator
-        y = Dop * x
-        xadj = Dop.H * v
+    x = np.random.normal(0.0, 1.0, par["nx"])
+    xt = torch.from_numpy(x).view(-1)
+    xt.requires_grad = True
+    v = torch.randn(par["ny"])
 
-        # torch operator
-        yt = Top.apply(xt)
-        yt.backward(v, retain_graph=True)
+    # pylops operator
+    y = Dop * x
+    xadj = Dop.H * v
 
-        assert_array_equal(y, yt.detach().cpu().numpy())
-        assert_array_equal(xadj, xt.grad.cpu().numpy())
+    # torch operator
+    yt = Top.apply(xt)
+    yt.backward(v, retain_graph=True)
+
+    assert_array_equal(y, yt.detach().cpu().numpy())
+    assert_array_equal(xadj, xt.grad.cpu().numpy())
 
 
 @pytest.mark.parametrize("par", [(par1)])
@@ -47,18 +49,20 @@ def test_TorchOperator_batch(par):
     """Apply forward for input with multiple samples (= batch) and flattened arrays"""
     # temporarily, skip tests on mac as torch seems not to recognized
     # numpy when v2 is installed
-    if platform.system() != "Darwin":
-        Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])))
-        Top = TorchOperator(Dop, batch=True)
+    if platform.system() == "Darwin":
+        return
 
-        x = np.random.normal(0.0, 1.0, (4, par["nx"]))
-        xt = torch.from_numpy(x)
-        xt.requires_grad = True
+    Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])))
+    Top = TorchOperator(Dop, batch=True)
 
-        y = Dop.matmat(x.T).T
-        yt = Top.apply(xt)
+    x = np.random.normal(0.0, 1.0, (4, par["nx"]))
+    xt = torch.from_numpy(x)
+    xt.requires_grad = True
 
-        assert_array_equal(y, yt.detach().cpu().numpy())
+    y = Dop.matmat(x.T).T
+    yt = Top.apply(xt)
+
+    assert_array_equal(y, yt.detach().cpu().numpy())
 
 
 @pytest.mark.parametrize("par", [(par1)])
@@ -66,17 +70,17 @@ def test_TorchOperator_batch_nd(par):
     """Apply forward for input with multiple samples (= batch) and nd-arrays"""
     # temporarily, skip tests on mac as torch seems not to recognized
     # numpy when v2 is installed
-    if platform.system() != "Darwin":
-        Dop = MatrixMult(
-            np.random.normal(0.0, 1.0, (par["ny"], par["nx"])), otherdims=(2,)
-        )
-        Top = TorchOperator(Dop, batch=True, flatten=False)
+    if platform.system() == "Darwin":
+        return
 
-        x = np.random.normal(0.0, 1.0, (4, par["nx"], 2))
-        xt = torch.from_numpy(x)
-        xt.requires_grad = True
+    Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])), otherdims=(2,))
+    Top = TorchOperator(Dop, batch=True, flatten=False)
 
-        y = (Dop @ x.transpose(1, 2, 0)).transpose(2, 0, 1)
-        yt = Top.apply(xt)
+    x = np.random.normal(0.0, 1.0, (4, par["nx"], 2))
+    xt = torch.from_numpy(x)
+    xt.requires_grad = True
 
-        assert_array_equal(y, yt.detach().cpu().numpy())
+    y = (Dop @ x.transpose(1, 2, 0)).transpose(2, 0, 1)
+    yt = Top.apply(xt)
+
+    assert_array_equal(y, yt.detach().cpu().numpy())
