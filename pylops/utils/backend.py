@@ -610,29 +610,29 @@ def inplace_divide(x: npt.ArrayLike, y: npt.ArrayLike, idx: list) -> NDArray:
         return y
 
 
-def randn(n: Union[int, tuple], backend: str = "numpy") -> Callable:
+def randn(*n: int, backend: str = "numpy") -> NDArray:
     """Returns randomly generated number
 
     Parameters
     ----------
-    n : :obj:`int` or :obj:`tuple`
-        Number of samples to generate
+    *n : :obj:`int`
+        Number of samples to generate in each dimension
     backend : :obj:`str`, optional
         Backend used for dot test computations (``numpy`` or ``cupy``). This
         parameter will be used to choose how to create the random vectors.
 
     Returns
     -------
-    x : :obj:`numpy.ndarray` or :obj:`jax.numpy.ndarray`
+    x : :obj:`numpy.ndarray` or :obj:`jax.Array`
         Generated array
 
     """
     if backend == "numpy":
-        x = np.random.randn(n)
+        x = np.random.randn(*n)
     elif backend == "cupy":
-        x = cp.random.randn(n)
+        x = cp.random.randn(*n)
     elif backend == "jax":
-        x = jnp.array(np.random.randn(n))
+        x = jnp.array(np.random.randn(*n))
     else:
         raise ValueError("backend must be numpy, cupy, or jax")
     return x

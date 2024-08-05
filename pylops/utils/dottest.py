@@ -93,13 +93,13 @@ def dottest(
     # make u and v vectors
     rdtype = np.ones(1, Op.dtype).real.dtype
 
-    u = randn(nc, backend).astype(rdtype)
+    u = randn(nc, backend=backend).astype(rdtype)
     if complexflag not in (0, 2):
-        u = u + 1j * randn(nc, backend).astype(rdtype)
+        u = u + 1j * randn(nc, backend=backend).astype(rdtype)
 
-    v = randn(nr, backend).astype(rdtype)
+    v = randn(nr, backend=backend).astype(rdtype)
     if complexflag not in (0, 1):
-        v = v + 1j * randn(nr, backend).astype(rdtype)
+        v = v + 1j * randn(nr, backend=backend).astype(rdtype)
 
     y = Op.matvec(u)  # Op * u
     x = Op.rmatvec(v)  # Op'* v
