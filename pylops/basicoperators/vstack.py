@@ -12,10 +12,10 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
     from scipy.sparse.linalg.interface import LinearOperator as spLinearOperator
     from scipy.sparse.linalg.interface import _get_dtype
 else:
-    from scipy.sparse.linalg._interface import _get_dtype
     from scipy.sparse.linalg._interface import (
         LinearOperator as spLinearOperator,
     )
+    from scipy.sparse.linalg._interface import _get_dtype
 
 from typing import Callable, Optional, Sequence
 
