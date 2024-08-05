@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 from types import ModuleType
-from typing import Callable, Union
+from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
