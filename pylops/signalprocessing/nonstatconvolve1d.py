@@ -163,13 +163,8 @@ class NonStationaryConvolve1D(LinearOperator):
             #     x[..., ix : ix + 1] * h[hextremes[0] : hextremes[1]]
             # )
             sl = tuple(
-                [
-                    slice(None, None),
-                ]
-                * (len(self.dimsd) - 1)
-                + [
-                    slice(xextremes[0], xextremes[1]),
-                ]
+                [slice(None, None)] * (len(self.dimsd) - 1)
+                + [slice(xextremes[0], xextremes[1])]
             )
             y = inplace_add(x[..., ix : ix + 1] * h[hextremes[0] : hextremes[1]], y, sl)
         return y
@@ -192,15 +187,7 @@ class NonStationaryConvolve1D(LinearOperator):
             #     h[hextremes[0] : hextremes[1]] * x[..., xextremes[0] : xextremes[1]],
             #     axis=-1,
             # )
-            sl = tuple(
-                [
-                    slice(None, None),
-                ]
-                * (len(self.dimsd) - 1)
-                + [
-                    ix,
-                ]
-            )
+            sl = tuple([slice(None, None)] * (len(self.dimsd) - 1) + [ix])
             y = inplace_set(
                 ncp.sum(
                     h[hextremes[0] : hextremes[1]]
@@ -350,47 +337,19 @@ class NonStationaryFilters1D(LinearOperator):
         ih_closest = int(np.floor((ix - oh) / dh))
         if ih_closest < 0:
             # hs[0, hextremes[0] : hextremes[1]] += htmp
-            sl = tuple(
-                [
-                    0,
-                ]
-                + [
-                    slice(hextremes[0], hextremes[1]),
-                ]
-            )
+            sl = tuple([0] + [slice(hextremes[0], hextremes[1])])
             hs = inplace_add(htmp, hs, sl)
         elif ih_closest >= nh - 1:
             # hs[nh - 1, hextremes[0] : hextremes[1]] += htmp
-            sl = tuple(
-                [
-                    nh - 1,
-                ]
-                + [
-                    slice(hextremes[0], hextremes[1]),
-                ]
-            )
+            sl = tuple([nh - 1] + [slice(hextremes[0], hextremes[1])])
             hs = inplace_add(htmp, hs, sl)
         else:
             dh_closest = (ix - oh) / dh - ih_closest
             # hs[ih_closest, hextremes[0] : hextremes[1]] += (1 - dh_closest) * htmp
-            sl = tuple(
-                [
-                    ih_closest,
-                ]
-                + [
-                    slice(hextremes[0], hextremes[1]),
-                ]
-            )
+            sl = tuple([ih_closest] + [slice(hextremes[0], hextremes[1])])
             hs = inplace_add((1 - dh_closest) * htmp, hs, sl)
             # hs[ih_closest + 1, hextremes[0] : hextremes[1]] += dh_closest * htmp
-            sl = tuple(
-                [
-                    ih_closest + 1,
-                ]
-                + [
-                    slice(hextremes[0], hextremes[1]),
-                ]
-            )
+            sl = tuple([ih_closest + 1] + [slice(hextremes[0], hextremes[1])])
             hs = inplace_add(dh_closest * htmp, hs, sl)
         return hs
 
@@ -412,13 +371,8 @@ class NonStationaryFilters1D(LinearOperator):
             #     self.inp[..., ix : ix + 1] * h[hextremes[0] : hextremes[1]]
             # )
             sl = tuple(
-                [
-                    slice(None, None),
-                ]
-                * (len(self.dimsd) - 1)
-                + [
-                    slice(xextremes[0], xextremes[1]),
-                ]
+                [slice(None, None)] * (len(self.dimsd) - 1)
+                + [slice(xextremes[0], xextremes[1])]
             )
             y = inplace_add(
                 self.inp[..., ix : ix + 1] * h[hextremes[0] : hextremes[1]], y, sl

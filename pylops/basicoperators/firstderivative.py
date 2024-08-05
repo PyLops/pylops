@@ -102,30 +102,13 @@ class FirstDerivative(LinearOperator):
         self.order = order
         self.slice = {
             i: {
-                j: tuple(
-                    [
-                        slice(None, None),
-                    ]
-                    * (len(dims) - 1)
-                    + [
-                        slice(i, j),
-                    ]
-                )
+                j: tuple([slice(None, None)] * (len(dims) - 1) + [slice(i, j)])
                 for j in (None, -1, -2, -3, -4)
             }
             for i in (None, 1, 2, 3, 4)
         }
         self.sample = {
-            i: tuple(
-                [
-                    slice(None, None),
-                ]
-                * (len(dims) - 1)
-                + [
-                    i,
-                ]
-            )
-            for i in range(-3, 4)
+            i: tuple([slice(None, None)] * (len(dims) - 1) + [i]) for i in range(-3, 4)
         }
         self._register_multiplications(self.kind, self.order)
 

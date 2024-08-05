@@ -80,32 +80,12 @@ class Symmetrize(LinearOperator):
         self.nsym = dims[self.axis]
         dimsd = list(dims)
         dimsd[self.axis] = 2 * dims[self.axis] - 1
-        self.slice1 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(1, None),
-            ]
-        )
+        self.slice1 = tuple([slice(None, None)] * (len(dims) - 1) + [slice(1, None)])
         self.slicensym_1 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(self.nsym - 1, None),
-            ]
+            [slice(None, None)] * (len(dims) - 1) + [slice(self.nsym - 1, None)]
         )
         self.slice_nsym_1 = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(dims) - 1)
-            + [
-                slice(None, self.nsym - 1),
-            ]
+            [slice(None, None)] * (len(dims) - 1) + [slice(None, self.nsym - 1)]
         )
 
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
