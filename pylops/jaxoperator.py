@@ -9,9 +9,8 @@ from pylops.utils import deps
 
 if deps.jax_enabled:
     import jax
-    import jaxlib
 
-    jaxarray_type = jaxlib.xla_extension.ArrayImpl
+    jaxarray_type = jax.Array
 else:
     jax_message = (
         "JAX package not installed. In order to be able to use"
@@ -70,14 +69,14 @@ class JaxOperator(LinearOperator):
 
         Parameters
         ----------
-        x : :obj:`jaxlib.xla_extension.ArrayImpl`
+        x : :obj:`jax.Array`
             Input array for forward
-        y : :obj:`jaxlib.xla_extension.ArrayImpl`
+        y : :obj:`jax.Array`
             Input array for adjoint
 
         Returns
         -------
-        xadj : :obj:`jaxlib.xla_extension.ArrayImpl`
+        xadj : :obj:`jax.Array`
             Output array
 
         """
