@@ -5,6 +5,9 @@ from numpy.testing import assert_array_almost_equal
 from pylops.basicoperators import FirstDerivative, Identity, MatrixMult
 from pylops.optimization.sparsity import fista, irls, ista, omp, spgl1, splitbregman
 
+# currently test spgl1 only if numpy<2.0.0 is installed...
+np_version = np.__version__.split(".")
+
 par1 = {
     "ny": 11,
     "nx": 11,
@@ -359,6 +362,9 @@ def test_ISTA_FISTA_multiplerhs(par):
 )
 def test_SPGL1(par):
     """Invert problem with SPGL1"""
+    if int(np_version[0]) >= 2:
+        return
+
     np.random.seed(42)
     Aop = MatrixMult(np.random.randn(par["ny"], par["nx"]))
 
@@ -412,6 +418,6 @@ def test_SplitBregman(par):
         x0=x0 if par["x0"] else None,
         restart=False,
         show=False,
-        **dict(iter_lim=5, damp=1e-3)
+        **dict(iter_lim=5, damp=1e-3),
     )
     assert (np.linalg.norm(x - xinv) / np.linalg.norm(x)) < 1e-1

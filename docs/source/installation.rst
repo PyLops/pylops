@@ -321,6 +321,11 @@ In alphabetic order:
 
 dtcwt
 -----
+
+.. warning::
+
+   ``dtcwt`` is not yet supported with Numpy 2.
+
 `dtcwt <https://dtcwt.readthedocs.io/en/0.12.0/>`_ is a library used to implement the DT-CWT operators.
 
 Install it via ``pip`` with:
@@ -328,6 +333,7 @@ Install it via ``pip`` with:
 .. code-block:: bash
 
    >> pip install dtcwt
+
 
 
 Devito
@@ -468,6 +474,11 @@ or with ``pip`` via
 
 SPGL1
 -----
+
+.. warning::
+   
+   ``SPGL1`` is not yet supported with Numpy 2.
+
 `SPGL1 <https://spgl1.readthedocs.io/en/latest/>`_ is used to solve sparsity-promoting
 basis pursuit, basis pursuit denoise, and Lasso problems
 in :py:func:`pylops.optimization.sparsity.SPGL1` solver.
