@@ -18,8 +18,8 @@ else:
         'the jaxoperator module run "pip install jax" or'
         '"conda install -c conda-forge jax".'
     )
-    jaxarrayin_type = None
-    jaxarrayout_type = None
+    jaxarrayin_type = Any
+    jaxarrayout_type = Any
 
 JaxTypeIn = NewType("JaxTypeIn", jaxarrayin_type)
 JaxTypeOut = NewType("JaxTypeOut", jaxarrayout_type)
