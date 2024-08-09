@@ -6,7 +6,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_add, inplace_set
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -80,6 +80,13 @@ class Symmetrize(LinearOperator):
         self.nsym = dims[self.axis]
         dimsd = list(dims)
         dimsd[self.axis] = 2 * dims[self.axis] - 1
+        self.slice1 = tuple([slice(None, None)] * (len(dims) - 1) + [slice(1, None)])
+        self.slicensym_1 = tuple(
+            [slice(None, None)] * (len(dims) - 1) + [slice(self.nsym - 1, None)]
+        )
+        self.slice_nsym_1 = tuple(
+            [slice(None, None)] * (len(dims) - 1) + [slice(None, self.nsym - 1)]
+        )
 
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
@@ -88,12 +95,12 @@ class Symmetrize(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.dimsd, dtype=self.dtype)
         y = y.swapaxes(self.axis, -1)
-        y[..., self.nsym - 1 :] = x
-        y[..., : self.nsym - 1] = x[..., -1:0:-1]
+        y = inplace_set(x, y, self.slicensym_1)
+        y = inplace_set(x[..., -1:0:-1], y, self.slice_nsym_1)
         return y
 
     @reshaped(swapaxis=True)
     def _rmatvec(self, x: NDArray) -> NDArray:
         y = x[..., self.nsym - 1 :].copy()
-        y[..., 1:] += x[..., self.nsym - 2 :: -1]
+        y = inplace_add(x[..., self.nsym - 2 :: -1], y, self.slice1)
         return y

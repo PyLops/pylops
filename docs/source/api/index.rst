@@ -29,6 +29,7 @@ Templates
     FunctionOperator
     MemoizeOperator
     TorchOperator
+    JaxOperator
 
 Basic operators
 ~~~~~~~~~~~~~~~

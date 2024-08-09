@@ -6,7 +6,7 @@ from typing import Optional, Union
 import numpy as np
 
 from pylops import LinearOperator
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_set
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -181,7 +181,7 @@ class Identity(LinearOperator):
             y = x[self.sliceN]
         else:
             y = ncp.zeros(self.dimsd, dtype=self.dtype)
-            y[self.sliceM] = x
+            y = inplace_set(x, y, self.sliceM)
         return y
 
     @reshaped
@@ -193,7 +193,7 @@ class Identity(LinearOperator):
             y = x
         elif self.mode == "model":
             y = ncp.zeros(self.dims, dtype=self.dtype)
-            y[self.sliceN] = x
+            y = inplace_set(x, y, self.sliceN)
         else:
             y = x[self.sliceM]
         return y

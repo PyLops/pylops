@@ -11,6 +11,7 @@ dependencies:
   - scipy>=1.11.0
   - pytorch>=1.2.0
   - cpuonly
+  - jax
   - pyfftw
   - pywavelets
   - sympy
@@ -35,6 +36,7 @@ dependencies:
     - pydata-sphinx-theme
     - sphinx-gallery
     - nbsphinx
+    - sphinxemoji
     - image
     - flake8
     - mypy

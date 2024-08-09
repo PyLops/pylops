@@ -16,7 +16,7 @@ else:
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.backend import get_array_module, to_cupy_conditional
+from pylops.utils.backend import get_array_module, inplace_set, to_cupy_conditional
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -26,13 +26,13 @@ def _compute_iavamask(dims, axis, iava, ncp):
     """Compute restriction mask when using cupy arrays"""
     otherdims = np.array(dims)
     otherdims = np.delete(otherdims, axis)
-    iavamask = ncp.zeros(int(dims[axis]), dtype=int)
+    iavamask = np.zeros(int(dims[axis]), dtype=int)
     iavamask[iava] = 1
-    iavamask = ncp.moveaxis(
-        ncp.broadcast_to(iavamask, list(otherdims) + [dims[axis]]), -1, axis
+    iavamask = np.moveaxis(
+        np.broadcast_to(iavamask, list(otherdims) + [dims[axis]]), -1, axis
     )
-    iavamask = ncp.where(iavamask.ravel() == 1)[0]
-    return iavamask
+    iavamask = np.where(iavamask.ravel() == 1)[0]
+    return ncp.asarray(iavamask)
 
 
 class Restriction(LinearOperator):
@@ -179,7 +179,7 @@ class Restriction(LinearOperator):
                 self.iava = to_cupy_conditional(x, self.iava)
                 self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
             y = ncp.zeros(int(self.shape[-1]), dtype=self.dtype)
-            y[self.iavamask] = x.ravel()
+            y = inplace_set(x.ravel(), y, self.iavamask)
         y = y.ravel()
         return y
 

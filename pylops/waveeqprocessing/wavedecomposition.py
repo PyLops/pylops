@@ -156,6 +156,7 @@ def _obliquity3D(
     critical: float = 100.0,
     ntaper: int = 10,
     composition: bool = True,
+    fftengine: str = "scipy",
     backend: str = "numpy",
     dtype: DTypeLike = "complex128",
 ) -> Tuple[LinearOperator, LinearOperator]:
@@ -187,6 +188,9 @@ def _obliquity3D(
     composition : :obj:`bool`, optional
         Create obliquity factor for composition (``True``) or
         decomposition (``False``)
+    fftengine : :obj:`str`, optional
+        Engine used for fft computation (``numpy`` or ``scipy``). Choose
+        ``numpy`` when working with cupy and jax arrays.
     backend : :obj:`str`, optional
         Backend used for creation of obliquity factor operator
         (``numpy`` or ``cupy``)
@@ -203,7 +207,11 @@ def _obliquity3D(
     """
     # create Fourier operator
     FFTop = FFTND(
-        dims=[nr[0], nr[1], nt], nffts=nffts, sampling=[dr[0], dr[1], dt], dtype=dtype
+        dims=[nr[0], nr[1], nt],
+        nffts=nffts,
+        sampling=[dr[0], dr[1], dt],
+        engine=fftengine,
+        dtype=dtype,
     )
 
     # create obliquity operator
@@ -547,6 +555,7 @@ def UpDownComposition3D(
     critical: float = 100.0,
     ntaper: int = 10,
     scaling: float = 1.0,
+    fftengine: str = "scipy",
     backend: str = "numpy",
     dtype: DTypeLike = "complex128",
     name: str = "U",
@@ -588,6 +597,11 @@ def UpDownComposition3D(
         angle
     scaling : :obj:`float`, optional
         Scaling to apply to the operator (see Notes for more details)
+    fftengine : :obj:`str`, optional
+        .. versionadded:: 2.3.0
+
+        Engine used for fft computation (``numpy`` or ``scipy``). Choose
+        ``numpy`` when working with cupy and jax arrays.
     backend : :obj:`str`, optional
         Backend used for creation of obliquity factor operator
         (``numpy`` or ``cupy``)
@@ -638,6 +652,7 @@ def UpDownComposition3D(
         critical=critical,
         ntaper=ntaper,
         composition=True,
+        fftengine=fftengine,
         backend=backend,
         dtype=dtype,
     )
