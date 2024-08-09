@@ -62,13 +62,8 @@ class _FFT_numpy(_BaseFFT):
         elif self.norm is _FFTNorms.ONE_OVER_N:
             self._scale = 1.0 / self.nfft
         self.slice = tuple(
-            [
-                slice(None, None),
-            ]
-            * (len(self.dims) - 1)
-            + [
-                slice(1, 1 + (self.nfft - 1) // 2),
-            ]
+            [slice(None, None)] * (len(self.dims) - 1)
+            + [slice(1, 1 + (self.nfft - 1) // 2)]
         )
 
     @reshaped
