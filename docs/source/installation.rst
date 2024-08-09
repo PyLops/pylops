@@ -541,3 +541,13 @@ for GPU-accelerated computations. Since many different versions of CuPy exist (b
 CUDA drivers of the GPU), users must install CuPy prior to installing
 PyLops. To do so, follow their
 `installation instructions <https://docs.cupy.dev/en/stable/install.html>`__.
+
+
+JAX
+---
+`JAX <http://JAX.readthedocs.io>`_ is another library that can be used as a drop-in replacement
+to NumPy and some parts of SciPy. It provides seamless support for multiple accelerators (e.g., GPUs, TPUs),
+Just-In-Time (JIT) compilation via Open XLA, and Automatic Differentiation. Similar to CuPy, since many
+different versions of JAX exist (based on the CUDA drivers of the GPU), users must install JAX prior
+to installing PyLops. To do so, follow their
+`installation instructions <https://jax.readthedocs.io/en/latest/installation.html#install-cpu>`__.
