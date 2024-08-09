@@ -2,6 +2,7 @@
 # since the dtcwt and spgl1 are not yet compatible with numpy=2.0.0
 numpy>=1.21.0,<2.0.0
 scipy>=1.11.0
+jax
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch>=1.2.0
 numba
