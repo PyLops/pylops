@@ -10,16 +10,19 @@ from pylops.utils import deps
 if deps.jax_enabled:
     import jax
 
-    jaxarray_type = jax.Array
+    jaxarrayin_type = jax.typing.ArrayLike
+    jaxarrayout_type = jax.Array
 else:
     jax_message = (
         "JAX package not installed. In order to be able to use"
         'the jaxoperator module run "pip install jax" or'
         '"conda install -c conda-forge jax".'
     )
-    jaxarray_type = Any
+    jaxarrayin_type = None
+    jaxarrayout_type = None
 
-JaxType = NewType("JaxType", jaxarray_type)
+JaxTypeIn = NewType("JaxTypeIn", jaxarrayin_type)
+JaxTypeOut = NewType("JaxTypeOut", jaxarrayout_type)
 
 
 class JaxOperator(LinearOperator):
@@ -57,12 +60,12 @@ class JaxOperator(LinearOperator):
     def __call__(self, x, *args, **kwargs):
         return self._matvec(x)
 
-    def _rmatvecad(self, x: JaxType, y: JaxType) -> JaxType:
+    def _rmatvecad(self, x: JaxTypeIn, y: JaxTypeIn) -> JaxTypeOut:
         _, f_vjp = jax.vjp(self._matvec, x)
         xadj = jax.jit(f_vjp)(y)[0]
         return xadj
 
-    def rmatvecad(self, x: JaxType, y: JaxType) -> JaxType:
+    def rmatvecad(self, x: JaxTypeIn, y: JaxTypeIn) -> JaxTypeOut:
         """Vector-Jacobian product
 
         JIT-compiled Vector-Jacobian product
@@ -76,7 +79,7 @@ class JaxOperator(LinearOperator):
 
         Returns
         -------
-        xadj : :obj:`jax.Array`
+        xadj : :obj:`jax.typing.ArrayLike`
             Output array
 
         """
