@@ -6,7 +6,7 @@ GPU / TPU Support
 Overview
 --------
 From ``v1.12.0``, PyLops supports computations on GPUs powered by
-`CuPy <https://cupy.dev/>`_ (``cupy-cudaXX>=8.1.0``).
+`CuPy <https://cupy.dev/>`_ (``cupy-cudaXX>=13.0.0``).
 This library must be installed *before* PyLops is installed.
 
 From ``v2.3.0``, PyLops supports also computations on GPUs/TPUs powered by
