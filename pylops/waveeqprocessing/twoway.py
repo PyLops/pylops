@@ -14,7 +14,8 @@ devito_message = deps.devito_import("the twoway module")
 if devito_message is None:
     from examples.seismic import AcquisitionGeometry, Model
     from examples.seismic.acoustic import AcousticWaveSolver
-    from examples.seismic.utils import _CustomSource
+
+    from ._twoway import _CustomSource
 else:
     AcousticWaveSolver = Any
 
