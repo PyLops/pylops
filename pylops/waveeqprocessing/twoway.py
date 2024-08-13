@@ -1,6 +1,6 @@
 __all__ = ["AcousticWave2D"]
 
-from typing import Tuple
+from typing import Any, NewType, Tuple
 
 import numpy as np
 
@@ -15,6 +15,10 @@ if devito_message is None:
     from examples.seismic import AcquisitionGeometry, Model
     from examples.seismic.acoustic import AcousticWaveSolver
     from examples.seismic.utils import _CustomSource
+else:
+    AcousticWaveSolver = Any
+
+AcousticWaveSolverType = NewType("AcousticWaveSolver", AcousticWaveSolver)
 
 
 class AcousticWave2D(LinearOperator):
@@ -285,7 +289,7 @@ class AcousticWave2D(LinearOperator):
                 self.src_wavefield.append(src_wav)
             self.src_illumination += src_ill
 
-    def _born_oneshot(self, solver: AcousticWaveSolver, dm: NDArray) -> NDArray:
+    def _born_oneshot(self, solver: AcousticWaveSolverType, dm: NDArray) -> NDArray:
         """Born modelling for one shot
 
         Parameters
