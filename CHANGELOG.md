@@ -3,17 +3,18 @@ Changelog
 
 # 2.3.0
 
-ADD THOSE TO CHECK IN changelog.rst
-
 * Added `pylops.JaxOperator`, `pylops.signalprocessing.DWTND`, and `pylops.signalprocessing.DTCWT` operators.
 * Added `updatesrc` method to `pylops.waveeqprocessing.AcousticWave2D`.
 * Added `verb` to `pylops.signalprocessing.Sliding1D.sliding1d_design`, `pylops.signalprocessing.Sliding2D.sliding2d_design`, `pylops.signalprocessing.Sliding3D.sliding3d_design`, `pylops.signalprocessing.Patch2D.patch2d_design`, and `pylops.signalprocessing.Patch3D.patch3d_design`.
 * Added `kwargs_fft` to `pylops.signalprocessing.FFTND`.
 * Added `cosinetaper` to `pylops.utils.tapers.cosinetaper`.
+* Added `kind` to `pylops.waveeqprocessing.Deghosting`.
 * Modified all methods in `pylops.utils.backend` to enable jax integration.
 * Modified implementations of `pylops.signalprocessing.Sliding1D`, `pylops.signalprocessing.Sliding2D`,
 `pylops.signalprocessing.Sliding3D`, `pylops.signalprocessing.Patch2D`, and
 `pylops.signalprocessing.Patch3D` to being directly implemented instead of relying on other PyLops operators. Added also `savetaper` parameter and an option to apply the operator `Op` simultaneously to all windows.
+* Modified `pylops.waveeqprocessing.AcousticWave2D._born_oneshot` and
+`pylops.waveeqprocessing.AcousticWave2D._born_allshots` to avoid recreating the devito solver for each shot (and enabling internal caching...)
 * Modified `dtype` of `pylops.signalprocessing.Shift` to be that of the input vector.
 * Modified `pylops.waveeqprocessing.BlendingContinuous` to use `matvec/rmatvec` instead of `@/.H @` for compatibility with pylops solvers.
 * Removed `cusignal` as optional dependency and `cupy`'s equivalent methods (since the library
