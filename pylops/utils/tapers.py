@@ -75,6 +75,8 @@ def cosinetaper(
     square : :obj:`bool`, optional
         Cosine square taper (``True``) or Cosine taper (``False``)
     exponent : :obj:`float`, optional
+        .. versionadded:: 2.3.0
+
         Exponent to apply to Cosine taper. If provided, takes precedence over ``square``
 
     Returns

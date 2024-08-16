@@ -362,9 +362,6 @@ def test_ISTA_FISTA_multiplerhs(par):
 )
 def test_SPGL1(par):
     """Invert problem with SPGL1"""
-    if int(np_version[0]) >= 2:
-        return
-
     np.random.seed(42)
     Aop = MatrixMult(np.random.randn(par["ny"], par["nx"]))
 
