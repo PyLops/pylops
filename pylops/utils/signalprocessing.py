@@ -246,7 +246,7 @@ def slope_estimate(
     regdata = l1 > eps
     anisos[regdata] = 1 - l2[regdata] / l1[regdata]
 
-    if not dips:
+    if dips:
         slopes = 0.5 * np.arctan2(2 * gzx, gzz - gxx)
     else:
         regdata = np.abs(gzx) > eps
@@ -298,8 +298,8 @@ def dip_estimate(
 
     Notes
     -----
-    Thin wrapper around ``pylops.utils.signalprocessing.dip_estimate`` with ``slopes==True``.
-    See the Notes of ``pylops.utils.signalprocessing.dip_estimate`` for details.
+    Thin wrapper around ``pylops.utils.signalprocessing.slope_estimate`` with ``dips=True``.
+    See the Notes of ``pylops.utils.signalprocessing.slope_estimate`` for details.
 
     .. [1] Van Vliet, L. J.,  Verbeek, P. W., "Estimators for orientation and
         anisotropy in digitized images", Journal ASCI Imaging Workshop. 1995.

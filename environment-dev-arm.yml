@@ -21,7 +21,6 @@ dependencies:
   - Sphinx
   - numpydoc
   - numba
-  - icc_rt
   - pre-commit
   - autopep8
   - isort

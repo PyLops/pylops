@@ -29,6 +29,7 @@ Templates
     FunctionOperator
     MemoizeOperator
     TorchOperator
+    JaxOperator
 
 Basic operators
 ~~~~~~~~~~~~~~~
@@ -102,7 +103,9 @@ Signal processing
     Shift
     DWT
     DWT2D
+    DWTND
     DCT
+    DTCWT
     Seislet
     Radon2D
     Radon3D

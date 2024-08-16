@@ -9,7 +9,7 @@ import numpy as np
 from pylops import LinearOperator
 from pylops.basicoperators import BlockDiag, HStack, Pad
 from pylops.signalprocessing import Shift
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_add, inplace_set
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
 
@@ -111,7 +111,7 @@ class BlendingContinuous(LinearOperator):
             # Define shift operator
             self.shifts = (times // self.dt).astype(np.int32)
             diff = (times / self.dt - self.shifts) * self.dt
-            diff = np.repeat(diff[:, np.newaxis], self.nr, axis=1)
+            diff = np.repeat(diff[:, np.newaxis], self.nr, axis=1).astype(self.dtype)
             self.ShiftOp = Shift(
                 (self.ns, self.nr, self.nt + 1),
                 diff,
@@ -138,7 +138,11 @@ class BlendingContinuous(LinearOperator):
             self.ns, self.nr, self.nt + 1
         )
         for i, shift_int in enumerate(self.shifts):
-            blended_data[:, shift_int : shift_int + self.nt + 1] += shifted_data[i]
+            blended_data = inplace_add(
+                shifted_data[i],
+                blended_data,
+                (slice(None, None), slice(shift_int, shift_int + self.nt + 1)),
+            )
         return blended_data
 
     @reshaped
@@ -146,7 +150,11 @@ class BlendingContinuous(LinearOperator):
         ncp = get_array_module(x)
         shifted_data = ncp.zeros((self.ns, self.nr, self.nt + 1), dtype=self.dtype)
         for i, shift_int in enumerate(self.shifts):
-            shifted_data[i, :, :] = x[:, shift_int : shift_int + self.nt + 1]
+            shifted_data = inplace_set(
+                x[:, shift_int : shift_int + self.nt + 1],
+                shifted_data,
+                (i, slice(None, None), slice(None, None)),
+            )
         deblended_data = self.PadOp._rmatvec(
             self.ShiftOp._rmatvec(shifted_data.ravel())
         ).reshape(self.dims)
@@ -160,8 +168,16 @@ class BlendingContinuous(LinearOperator):
             if self.ShiftOps[i] is None:
                 blended_data[:, shift_int : shift_int + self.nt] += x[i, :, :]
             else:
-                shifted_data = self.ShiftOps[i] * self.PadOp * x[i, :, :]
-                blended_data[:, shift_int : shift_int + self.nt + 1] += shifted_data
+                shifted_data = (
+                    self.ShiftOps[i]
+                    .matvec(self.PadOp.matvec(x[i, :, :].ravel()))
+                    .reshape(self.ShiftOps[i].dimsd)
+                )
+                blended_data = inplace_add(
+                    shifted_data,
+                    blended_data,
+                    (slice(None, None), slice(shift_int, shift_int + self.nt + 1)),
+                )
         return blended_data
 
     @reshaped
@@ -172,12 +188,16 @@ class BlendingContinuous(LinearOperator):
             if self.ShiftOps[i] is None:
                 deblended_data[i, :, :] = x[:, shift_int : shift_int + self.nt]
             else:
-                shifted_data = (
-                    self.PadOp.H
-                    * self.ShiftOps[i].H
-                    * x[:, shift_int : shift_int + self.nt + 1]
+                shifted_data = self.PadOp.rmatvec(
+                    self.ShiftOps[i].rmatvec(
+                        x[:, shift_int : shift_int + self.nt + 1].ravel()
+                    )
+                ).reshape(self.PadOp.dims)
+                deblended_data = inplace_set(
+                    shifted_data,
+                    deblended_data,
+                    (i, slice(None, None), slice(None, None)),
                 )
-                deblended_data[i, :, :] = shifted_data
         return deblended_data
 
     def _register_multiplications(self) -> None:

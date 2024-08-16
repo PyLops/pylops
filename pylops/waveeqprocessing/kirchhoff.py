@@ -288,8 +288,11 @@ class Kirchhoff(LinearOperator):
                 )
                 self.rix = np.tile((recs[0] - x[0]) // dx, (ns, 1)).astype(int).ravel()
             elif self.ndims == 3:
-                # TODO: 3D normalized distances
-                raise NotImplementedError("dynamic=True currently not available in 3D")
+                # TODO: compute 3D indices for aperture filter
+                # currently no aperture filter in 3D... just make indices 0
+                # so check if always passed
+                self.six = np.zeros(nr * ns)
+                self.rix = np.zeros(nr * ns)
 
         # compute traveltime and distances
         self.travsrcrec = True  # use separate tables for src and rec traveltimes
@@ -362,8 +365,26 @@ class Kirchhoff(LinearOperator):
                     trav_recs_grad[0], trav_recs_grad[1]
                 ).reshape(np.prod(dims), nr)
             else:
-                # TODO: 3D
-                raise NotImplementedError("dynamic=True currently not available in 3D")
+                trav_srcs_grad = np.concatenate(
+                    [trav_srcs_grad[i][np.newaxis] for i in range(3)]
+                )
+                trav_recs_grad = np.concatenate(
+                    [trav_recs_grad[i][np.newaxis] for i in range(3)]
+                )
+                self.angle_srcs = (
+                    np.sign(trav_srcs_grad[1])
+                    * np.arccos(
+                        trav_srcs_grad[-1]
+                        / np.sqrt(np.sum(trav_srcs_grad**2, axis=0))
+                    )
+                ).reshape(np.prod(dims), ns)
+                self.angle_recs = (
+                    np.sign(trav_srcs_grad[1])
+                    * np.arccos(
+                        trav_recs_grad[-1]
+                        / np.sqrt(np.sum(trav_recs_grad**2, axis=0))
+                    )
+                ).reshape(np.prod(dims), nr)
 
         # pre-compute traveltime indices if total traveltime is used
         if not self.travsrcrec:
@@ -386,6 +407,12 @@ class Kirchhoff(LinearOperator):
 
         # define aperture
         # if aperture=None, we want to ensure the check is always matched (no aperture limits...)
+        # if aperture!=None in 3d, force to None as aperture checks are not yet implemented
+        if aperture is not None and self.ndims == 3:
+            aperture = None
+            warnings.warn(
+                "Aperture is forced to None as currently not implemented in 3D"
+            )
         if aperture is not None:
             warnings.warn(
                 "Aperture is currently defined as ratio of offset over depth, "
@@ -608,10 +635,10 @@ class Kirchhoff(LinearOperator):
 
         # compute traveltime gradients at image points
         trav_srcs_grad = np.gradient(
-            trav_srcs.reshape(*dims, ns), axis=np.arange(ndims)
+            trav_srcs.reshape(*dims, ns), *dsamp, axis=np.arange(ndims)
         )
         trav_recs_grad = np.gradient(
-            trav_recs.reshape(*dims, nr), axis=np.arange(ndims)
+            trav_recs.reshape(*dims, nr), *dsamp, axis=np.arange(ndims)
         )
 
         return (

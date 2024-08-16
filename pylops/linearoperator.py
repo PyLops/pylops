@@ -442,10 +442,11 @@ class LinearOperator(_LinearOperator):
         Modified version of scipy _matmat to avoid having trailing dimension
         in col when provided to matvec
         """
+        ncp = get_array_module(X)
         if sp.sparse.issparse(X):
-            y = np.vstack([self.matvec(col.toarray().reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self.matvec(col.toarray().reshape(-1)) for col in X.T]).T
         else:
-            y = np.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
         return y
 
     def _rmatmat(self, X: NDArray) -> NDArray:
@@ -454,10 +455,11 @@ class LinearOperator(_LinearOperator):
         Modified version of scipy _rmatmat to avoid having trailing dimension
         in col when provided to rmatvec
         """
+        ncp = get_array_module(X)
         if sp.sparse.issparse(X):
-            y = np.vstack([self.rmatvec(col.toarray().reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self.rmatvec(col.toarray().reshape(-1)) for col in X.T]).T
         else:
-            y = np.vstack([self.rmatvec(col.reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self.rmatvec(col.reshape(-1)) for col in X.T]).T
         return y
 
     def _adjoint(self) -> LinearOperator:
@@ -508,7 +510,9 @@ class LinearOperator(_LinearOperator):
         M, N = self.shape
 
         if x.shape != (N,) and x.shape != (N, 1):
-            raise ValueError("dimension mismatch")
+            raise ValueError(
+                f"Dimension mismatch. Got {x.shape}, but expected ({N},) or ({N}, 1)."
+            )
 
         y = self._matvec(x)
 
@@ -517,7 +521,7 @@ class LinearOperator(_LinearOperator):
         elif x.ndim == 2:
             y = y.reshape(M, 1)
         else:
-            raise ValueError("invalid shape returned by user-defined matvec()")
+            raise ValueError("Invalid shape returned by user-defined matvec()")
         return y
 
     @count(forward=False)
@@ -542,7 +546,9 @@ class LinearOperator(_LinearOperator):
         M, N = self.shape
 
         if x.shape != (M,) and x.shape != (M, 1):
-            raise ValueError("dimension mismatch")
+            raise ValueError(
+                f"Dimension mismatch. Got {x.shape}, but expected ({M},) or ({M}, 1)."
+            )
 
         y = self._rmatvec(x)
 
@@ -551,7 +557,7 @@ class LinearOperator(_LinearOperator):
         elif x.ndim == 2:
             y = y.reshape(N, 1)
         else:
-            raise ValueError("invalid shape returned by user-defined rmatvec()")
+            raise ValueError("Invalid shape returned by user-defined rmatvec()")
         return y
 
     @count(forward=True, matmat=True)
@@ -574,9 +580,9 @@ class LinearOperator(_LinearOperator):
 
         """
         if X.ndim != 2:
-            raise ValueError("expected 2-d ndarray or matrix, " "not %d-d" % X.ndim)
+            raise ValueError(f"Expected 2-d ndarray or matrix, not {X.ndim}-d ndarray")
         if X.shape[0] != self.shape[1]:
-            raise ValueError("dimension mismatch: %r, %r" % (self.shape, X.shape))
+            raise ValueError(f"Dimension mismatch: {self.shape}, {X.shape}")
         Y = self._matmat(X)
         return Y
 
@@ -600,9 +606,9 @@ class LinearOperator(_LinearOperator):
 
         """
         if X.ndim != 2:
-            raise ValueError("expected 2-d ndarray or matrix, " "not %d-d" % X.ndim)
+            raise ValueError(f"Expected 2-d ndarray or matrix, not {X.ndim}-d ndarray")
         if X.shape[0] != self.shape[0]:
-            raise ValueError("dimension mismatch: %r, %r" % (self.shape, X.shape))
+            raise ValueError(f"Dimension mismatch: {self.shape}, {X.shape}")
         Y = self._rmatmat(X)
         return Y
 
@@ -791,7 +797,7 @@ class LinearOperator(_LinearOperator):
         Parameters
         ----------
         backend : :obj:`str`, optional
-            Backend used to densify matrix (``numpy`` or ``cupy``). Note that
+            Backend used to densify matrix (``numpy`` or ``cupy`` or ``jax``). Note that
             this must be consistent with how the operator has been created.
 
         Returns
@@ -816,7 +822,7 @@ class LinearOperator(_LinearOperator):
         if Op.shape[1] == shapemin:
             matrix = Op.matmat(identity)
         else:
-            matrix = np.conj(Op.rmatmat(identity)).T
+            matrix = ncp.conj(Op.rmatmat(identity)).T
         return matrix
 
     def tosparse(self) -> NDArray:
@@ -1242,23 +1248,14 @@ def _get_dtype(
 ) -> DTypeLike:
     if dtypes is None:
         dtypes = []
-    opdtypes = []
     for obj in operators:
         if obj is not None and hasattr(obj, "dtype"):
-            opdtypes.append(obj.dtype)
-    return np.find_common_type(opdtypes, dtypes)
+            dtypes.append(obj.dtype)
+    return np.result_type(*dtypes)
 
 
 class _ScaledLinearOperator(LinearOperator):
-    """
-    Sum Linear Operator
-
-    Modified version of scipy _ScaledLinearOperator which uses a modified
-    _get_dtype where the scalar and operator types are passed separately to
-    np.find_common_type. Passing them together does lead to problems when using
-    np.float32 operators which are cast to np.float64
-
-    """
+    """Scaled Linear Operator"""
 
     def __init__(
         self,
@@ -1269,7 +1266,15 @@ class _ScaledLinearOperator(LinearOperator):
             raise ValueError("LinearOperator expected as A")
         if not np.isscalar(alpha):
             raise ValueError("scalar expected as alpha")
-        dtype = _get_dtype([A], [type(alpha)])
+        if isinstance(alpha, complex) and not np.iscomplexobj(
+            np.ones(1, dtype=A.dtype)
+        ):
+            # if the scalar is of complex type but not the operator, find out type
+            dtype = _get_dtype([A], [type(alpha)])
+        else:
+            # if both the scalar and operator are of real or complex type, use type
+            # of the operator
+            dtype = A.dtype
         super(_ScaledLinearOperator, self).__init__(dtype=dtype, shape=A.shape)
         self.args = (A, alpha)
 
@@ -1465,7 +1470,7 @@ class _PowerLinearOperator(LinearOperator):
         if not isintlike(p) or p < 0:
             raise ValueError("non-negative integer expected as p")
 
-        super(_PowerLinearOperator, self).__init__(dtype=_get_dtype([A]), shape=A.shape)
+        super(_PowerLinearOperator, self).__init__(dtype=A.dtype, shape=A.shape)
         self.args = (A, p)
 
     def _power(self, fun: Callable, x: NDArray) -> NDArray:

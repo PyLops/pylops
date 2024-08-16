@@ -9,7 +9,7 @@ The PyLops project strives to create a library that is easy to install in
 any environment and has a very limited number of dependencies.
 Required dependencies are limited to:
 
-* Python 3.8 or greater
+* Python 3.9 or greater
 * `NumPy <http://www.numpy.org>`_
 * `SciPy <http://www.scipy.org/scipylib/index.html>`_
 
@@ -99,7 +99,8 @@ For a ``conda`` environment, run
 
 .. code-block:: bash
 
-   >> make dev-install_conda
+   >> make dev-install_conda # for x86 (Intel or AMD CPUs)
+   >> make dev-install_conda_arm # for arm (M-series Mac)
 
 This will create and activate an environment called ``pylops``, with all required and optional dependencies.
 
@@ -318,9 +319,26 @@ of GPUs should install it prior to installing PyLops as described in :ref:`Optio
 In alphabetic order:
 
 
+dtcwt
+-----
+
+.. warning::
+
+   ``dtcwt`` is not yet supported with Numpy 2.
+
+`dtcwt <https://dtcwt.readthedocs.io/en/0.12.0/>`_ is a library used to implement the DT-CWT operators.
+
+Install it via ``pip`` with:
+
+.. code-block:: bash
+
+   >> pip install dtcwt
+
+
+
 Devito
 ------
-`Devito <https://github.com/devitocodes/devito>`_ is library used to solve PDEs via
+`Devito <https://github.com/devitocodes/devito>`_ is a library used to solve PDEs via
 the finite-difference method. It is used in PyLops to compute wavefields
 :py:class:`pylops.waveeqprocessing.AcousticWave2D`
 
@@ -513,16 +531,18 @@ disable this option. For more details of GPU-accelerated PyLops read :ref:`gpu`.
 
 CuPy
 ----
-`CuPy <https://cupy.dev/>`_ is a library used as a drop-in replacement to NumPy
-for GPU-accelerated
-computations. Since many different versions of CuPy exist (based on the
+`CuPy <https://cupy.dev/>`_ is a library used as a drop-in replacement to NumPy and some parts of SciPy
+for GPU-accelerated computations. Since many different versions of CuPy exist (based on the
 CUDA drivers of the GPU), users must install CuPy prior to installing
 PyLops. To do so, follow their
 `installation instructions <https://docs.cupy.dev/en/stable/install.html>`__.
 
-cuSignal
---------
-`cuSignal <https://docs.rapids.ai/api/cusignal/stable/>`_ is a library is used as a drop-in replacement to `SciPy Signal <https://docs.scipy.org/doc/scipy/reference/signal.html>`_ for
-GPU-accelerated computations. Similar to CuPy, users must install
-cuSignal prior to installing PyLops. To do so, follow their
-`installation instructions <https://github.com/rapidsai/cusignal#installation>`__.
+
+JAX
+---
+`JAX <http://JAX.readthedocs.io>`_ is another library that can be used as a drop-in replacement
+to NumPy and some parts of SciPy. It provides seamless support for multiple accelerators (e.g., GPUs, TPUs),
+Just-In-Time (JIT) compilation via Open XLA, and Automatic Differentiation. Similar to CuPy, since many
+different versions of JAX exist (based on the CUDA drivers of the GPU), users must install JAX prior
+to installing PyLops. To do so, follow their
+`installation instructions <https://jax.readthedocs.io/en/latest/installation.html#install-cpu>`__.

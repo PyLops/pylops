@@ -109,7 +109,7 @@ def Shift(
     shift = _value_or_sized_to_array(shift)
 
     if shift.size == 1:
-        shift = np.exp(-1j * 2 * np.pi * Fop.f * shift)
+        shift = np.exp(-1j * 2 * np.pi * Fop.f * shift).astype(Fop.cdtype)
         Sop = Diagonal(shift, dims=dimsdiag, axis=axis, dtype=Fop.cdtype)
     else:
         # add dimensions to shift to match dimensions of model and data
@@ -120,7 +120,7 @@ def Shift(
         sdims = np.ones(shift.ndim + 1, dtype=int)
         sdims[:axis] = shift.shape[:axis]
         sdims[axis + 1 :] = shift.shape[axis:]
-        shift = np.exp(-1j * 2 * np.pi * f * shift.reshape(sdims))
+        shift = np.exp(-1j * 2 * np.pi * f * shift.reshape(sdims)).astype(Fop.cdtype)
         Sop = Diagonal(shift, dtype=Fop.cdtype)
     Op = Fop.H * Sop * Fop
     Op.dims = Op.dimsd = Fop.dims

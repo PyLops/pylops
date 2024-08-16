@@ -6,6 +6,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
+from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -85,10 +86,12 @@ class Pad(LinearOperator):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
-        return np.pad(x, self.pad, mode="constant")
+        ncp = get_array_module(x)
+        return ncp.pad(x, self.pad, mode="constant")
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
         for ax, (before, _) in enumerate(self.pad):
-            x = np.take(x, np.arange(before, before + self.dims[ax]), axis=ax)
+            x = ncp.take(x, ncp.arange(before, before + self.dims[ax]), axis=ax)
         return x

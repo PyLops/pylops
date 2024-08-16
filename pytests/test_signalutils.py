@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from pylops.utils.signalprocessing import convmtx, nonstationary_convmtx
+from pylops.utils.signalprocessing import convmtx, nonstationary_convmtx, slope_estimate
 
 par1 = {"nt": 51, "nh": 7, "imag": 0, "dtype": "float32"}  # odd sign, odd filt, real
 par1j = {
@@ -90,3 +90,18 @@ def test_nonstationary_convmtx(par):
     y = np.dot(H[: par["nt"]], x)
     y1 = np.dot(H1, x)
     assert_array_almost_equal(y, y1, decimal=4)
+
+
+def test_slope_estimation_dips():
+    """Slope estimation using the Structure tensor algorithm should
+    apply regularisation (some slopes are set to zero)
+    while dips should not use regularisation."""
+
+    img_test = np.identity(20)  # generate test with -45° angle
+    eps = 0.09  # set a regularisation parameter that will be exceeded
+
+    slopes, _ = slope_estimate(img_test, dips=False, eps=eps)
+    slopes_dips, _ = slope_estimate(img_test, dips=True, eps=eps)
+
+    assert np.any(np.isclose(slopes, 0.0))
+    assert not np.any(np.isclose(slopes_dips, 0.0))

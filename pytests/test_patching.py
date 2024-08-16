@@ -25,6 +25,7 @@ par1 = {
     "novert": 0,
     # "winst": 2,
     "tapertype": None,
+    "savetaper": True,
 }  # no overlap, no taper
 par2 = {
     "ny": 6,
@@ -43,6 +44,7 @@ par2 = {
     "novert": 0,
     # "winst": 2,
     "tapertype": "hanning",
+    "savetaper": True,
 }  # no overlap, with taper
 par3 = {
     "ny": 6,
@@ -61,6 +63,7 @@ par3 = {
     "novert": 2,
     # "winst": 4,
     "tapertype": None,
+    "savetaper": True,
 }  # overlap, no taper
 par4 = {
     "ny": 6,
@@ -78,11 +81,50 @@ par4 = {
     "nwint": 4,
     "novert": 2,
     # "winst": 4,
+    "tapertype": None,
+    "savetaper": False,
+}  # overlap, no taper (non saved
+par5 = {
+    "ny": 6,
+    "nx": 7,
+    "nt": 10,
+    "npy": 15,
+    "nwiny": 7,
+    "novery": 3,
+    # "winsy": 3,
+    "npx": 13,
+    "nwinx": 5,
+    "noverx": 2,
+    # "winsx": 3,
+    "npt": 10,
+    "nwint": 4,
+    "novert": 2,
+    # "winst": 4,
     "tapertype": "hanning",
+    "savetaper": True,
 }  # overlap, with taper
+par6 = {
+    "ny": 6,
+    "nx": 7,
+    "nt": 10,
+    "npy": 15,
+    "nwiny": 7,
+    "novery": 3,
+    # "winsy": 3,
+    "npx": 13,
+    "nwinx": 5,
+    "noverx": 2,
+    # "winsx": 3,
+    "npt": 10,
+    "nwint": 4,
+    "novert": 2,
+    # "winst": 4,
+    "tapertype": "hanning",
+    "savetaper": False,
+}  # overlap, with taper (non saved)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5), (par6)])
 def test_Patch2D(par):
     """Dot-test and inverse for Patch2D operator"""
     Op = MatrixMult(np.ones((par["nwiny"] * par["nwint"], par["ny"] * par["nt"])))
@@ -101,6 +143,7 @@ def test_Patch2D(par):
         nover=(par["novery"], par["novert"]),
         nop=(par["ny"], par["nt"]),
         tapertype=par["tapertype"],
+        savetaper=par["savetaper"],
     )
     assert dottest(
         Pop,
@@ -134,6 +177,7 @@ def test_Patch2D_scalings(par):
         nover=(par["novery"], par["novert"]),
         nop=(par["ny"], par["nt"]),
         tapertype=par["tapertype"],
+        savetaper=par["savetaper"],
         scalings=scalings,
     )
     assert dottest(
@@ -148,7 +192,7 @@ def test_Patch2D_scalings(par):
     assert_array_almost_equal(x.ravel(), xinv)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5), (par6)])
 def test_Patch3D(par):
     """Dot-test and inverse for Patch3D operator"""
     Op = MatrixMult(
@@ -179,6 +223,7 @@ def test_Patch3D(par):
         nover=(par["novery"], par["noverx"], par["novert"]),
         nop=(par["ny"], par["nx"], par["nt"]),
         tapertype=par["tapertype"],
+        savetaper=par["savetaper"],
     )
     assert dottest(
         Pop,

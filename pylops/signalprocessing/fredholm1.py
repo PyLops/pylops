@@ -3,7 +3,7 @@ __all__ = ["Fredholm1"]
 import numpy as np
 
 from pylops import LinearOperator
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_set
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
 
@@ -61,7 +61,7 @@ class Fredholm1(LinearOperator):
         d(k, x, z) = \int{G(k, x, y) m(k, y, z) \,\mathrm{d}y}
         \quad \forall k=1,\ldots,n_{slice}
 
-    on the other hand its adjoin is expressed as
+    on the other hand its adjoint is expressed as
 
     .. math::
 
@@ -118,7 +118,7 @@ class Fredholm1(LinearOperator):
         else:
             y = ncp.squeeze(ncp.zeros((self.nsl, self.nx, self.nz), dtype=self.dtype))
             for isl in range(self.nsl):
-                y[isl] = ncp.dot(self.G[isl], x[isl])
+                y = inplace_set(ncp.dot(self.G[isl], x[isl]), y, isl)
         return y
 
     @reshaped
@@ -131,7 +131,6 @@ class Fredholm1(LinearOperator):
             if hasattr(self, "GT"):
                 y = ncp.matmul(self.GT, x)
             else:
-                # y = ncp.matmul(self.G.transpose((0, 2, 1)).conj(), x)
                 y = (
                     ncp.matmul(x.transpose(0, 2, 1).conj(), self.G)
                     .transpose(0, 2, 1)
@@ -141,9 +140,10 @@ class Fredholm1(LinearOperator):
             y = ncp.squeeze(ncp.zeros((self.nsl, self.ny, self.nz), dtype=self.dtype))
             if hasattr(self, "GT"):
                 for isl in range(self.nsl):
-                    y[isl] = ncp.dot(self.GT[isl], x[isl])
+                    y = inplace_set(ncp.dot(self.GT[isl], x[isl]), y, isl)
             else:
                 for isl in range(self.nsl):
-                    # y[isl] = ncp.dot(self.G[isl].conj().T, x[isl])
-                    y[isl] = ncp.dot(x[isl].T.conj(), self.G[isl]).T.conj()
+                    y = inplace_set(
+                        ncp.dot(x[isl].T.conj(), self.G[isl]).T.conj(), y, isl
+                    )
         return y.ravel()
