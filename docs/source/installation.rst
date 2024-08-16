@@ -474,11 +474,6 @@ or with ``pip`` via
 
 SPGL1
 -----
-
-.. warning::
-   
-   ``SPGL1`` is not yet supported with Numpy 2.
-
 `SPGL1 <https://spgl1.readthedocs.io/en/latest/>`_ is used to solve sparsity-promoting
 basis pursuit, basis pursuit denoise, and Lasso problems
 in :py:func:`pylops.optimization.sparsity.SPGL1` solver.
