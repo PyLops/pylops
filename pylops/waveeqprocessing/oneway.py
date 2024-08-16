@@ -235,6 +235,8 @@ def Deghosting(
     zrec : :obj:`float`
         Depth of receiver array
     kind : :obj:`str`, optional
+        .. versionadded:: 2.3.0
+
         Type of data (``p`` or ``vz``)
     pd : :obj:`np.ndarray`, optional
         Direct arrival to be subtracted from ``p``
