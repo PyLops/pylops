@@ -3,6 +3,15 @@
 Changelog
 =========
 
+
+Version 2.3.1
+-------------
+
+*Released on: 17/08/2024*
+
+* Fixed bug in :py:mod:`pylops.utils.backend` (see https://github.com/PyLops/pylops/issues/606)
+
+
 Version 2.3.0
 -------------
 

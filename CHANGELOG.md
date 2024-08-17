@@ -1,6 +1,9 @@
 Changelog
 =========
 
+# 2.3.1
+* Fixed bug in :py:mod:`pylops.utils.backend` (see [Issue #606](https://github.com/PyLops/pylops/issues/606))
+
 # 2.3.0
 
 * Added `pylops.JaxOperator`, `pylops.signalprocessing.DWTND`, and `pylops.signalprocessing.DTCWT` operators.
@@ -20,9 +23,9 @@ Changelog
 * Removed `cusignal` as optional dependency and `cupy`'s equivalent methods (since the library
 is now unmantained and merged into `cupy`).
 * Fixed ImportError of optional dependencies when installed but not correctly functioning (see [Issue #548](https://github.com/PyLops/pylops/issues/548))
-* Fixed bug in :py:func:`pylops.utils.deps.to_cupy_conditional` (see [Issue #579](https://github.com/PyLops/pylops/issues/579))
-* Fixed bug in the definition of `nttot` in :py:class:`pylops.waveeqprocessing.BlendingContinuous`
-* Fixed bug in :py:func:`pylops.utils.signalprocessing.dip_estimate` (see [Issue #572](https://github.com/PyLops/pylops/issues/572))
+* Fixed bug in `pylops.utils.deps.to_cupy_conditional` (see [Issue #579](https://github.com/PyLops/pylops/issues/579))
+* Fixed bug in the definition of `nttot` in `pylops.waveeqprocessing.BlendingContinuous`
+* Fixed bug in `pylops.utils.signalprocessing.dip_estimate` (see [Issue #572](https://github.com/PyLops/pylops/issues/572))
 
 
 # 2.2.0
