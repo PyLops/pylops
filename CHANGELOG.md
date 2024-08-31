@@ -2,7 +2,7 @@ Changelog
 =========
 
 # 2.3.1
-* Fixed bug in :py:mod:`pylops.utils.backend` (see [Issue #606](https://github.com/PyLops/pylops/issues/606))
+* Fixed bug in `pylops.utils.backend` (see [Issue #606](https://github.com/PyLops/pylops/issues/606))
 
 # 2.3.0
 

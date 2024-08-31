@@ -28,6 +28,9 @@ A list of operators present in pylops.signalprocessing:
     DTCWT                           Dual-Tree Complex Wavelet Transform.
     Radon2D	                        Two dimensional Radon transform.
     Radon3D	                        Three dimensional Radon transform.
+    FourierRadon2D	                Two dimensional Fourier Radon transform.
+    ChirpRadon2D	                Two dimensional Chirp Radon transform.
+    ChirpRadon3D	                Three dimensional Chirp Radon transform.
     Seislet                         Two dimensional Seislet operator.
     Sliding1D                       1D Sliding transform operator.
     Sliding2D                       2D Sliding transform operator.
@@ -52,6 +55,7 @@ from .interp import *
 from .bilinear import *
 from .radon2d import *
 from .radon3d import *
+from .fourierradon2d import *
 from .chirpradon2d import *
 from .chirpradon3d import *
 from .sliding1d import *

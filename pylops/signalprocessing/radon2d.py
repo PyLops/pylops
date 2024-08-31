@@ -218,7 +218,7 @@ def Radon2D(
     -----
     The Radon2D operator applies the following linear transform in adjoint mode
     to the data after reshaping it into a 2-dimensional array of
-    size :math:`[n_x \times n_t]` in adjoint mode:
+    size :math:`[n_x \times n_t]`:
 
     .. math::
         m(p_x, t_0) = \int{d(x, t = f(p_x, x, t))} \,\mathrm{d}x
