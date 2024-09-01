@@ -1,3 +1,33 @@
+Changelog
+=========
+
+# 2.3.1
+* Fixed bug in :py:mod:`pylops.utils.backend` (see [Issue #606](https://github.com/PyLops/pylops/issues/606))
+
+# 2.3.0
+
+* Added `pylops.JaxOperator`, `pylops.signalprocessing.DWTND`, and `pylops.signalprocessing.DTCWT` operators.
+* Added `updatesrc` method to `pylops.waveeqprocessing.AcousticWave2D`.
+* Added `verb` to `pylops.signalprocessing.Sliding1D.sliding1d_design`, `pylops.signalprocessing.Sliding2D.sliding2d_design`, `pylops.signalprocessing.Sliding3D.sliding3d_design`, `pylops.signalprocessing.Patch2D.patch2d_design`, and `pylops.signalprocessing.Patch3D.patch3d_design`.
+* Added `kwargs_fft` to `pylops.signalprocessing.FFTND`.
+* Added `cosinetaper` to `pylops.utils.tapers.cosinetaper`.
+* Added `kind` to `pylops.waveeqprocessing.Deghosting`.
+* Modified all methods in `pylops.utils.backend` to enable jax integration.
+* Modified implementations of `pylops.signalprocessing.Sliding1D`, `pylops.signalprocessing.Sliding2D`,
+`pylops.signalprocessing.Sliding3D`, `pylops.signalprocessing.Patch2D`, and
+`pylops.signalprocessing.Patch3D` to being directly implemented instead of relying on other PyLops operators. Added also `savetaper` parameter and an option to apply the operator `Op` simultaneously to all windows.
+* Modified `pylops.waveeqprocessing.AcousticWave2D._born_oneshot` and
+`pylops.waveeqprocessing.AcousticWave2D._born_allshots` to avoid recreating the devito solver for each shot (and enabling internal caching...)
+* Modified `dtype` of `pylops.signalprocessing.Shift` to be that of the input vector.
+* Modified `pylops.waveeqprocessing.BlendingContinuous` to use `matvec/rmatvec` instead of `@/.H @` for compatibility with pylops solvers.
+* Removed `cusignal` as optional dependency and `cupy`'s equivalent methods (since the library
+is now unmantained and merged into `cupy`).
+* Fixed ImportError of optional dependencies when installed but not correctly functioning (see [Issue #548](https://github.com/PyLops/pylops/issues/548))
+* Fixed bug in `pylops.utils.deps.to_cupy_conditional` (see [Issue #579](https://github.com/PyLops/pylops/issues/579))
+* Fixed bug in the definition of `nttot` in `pylops.waveeqprocessing.BlendingContinuous`
+* Fixed bug in `pylops.utils.signalprocessing.dip_estimate` (see [Issue #572](https://github.com/PyLops/pylops/issues/572))
+
+
 # 2.2.0
 
 * Added `pylops.signalprocessing.NonStationaryConvolve3D` operator
@@ -287,7 +317,7 @@ To aid users in navigating the breaking changes, we provide the following docume
   ``pylops.waveeqprocessing.UpDownComposition3Doperator``, and
   ``pylops.waveeqprocessing.PhaseShift`` operators
 * Fix bug in ``pylops.basicoperators.Kronecker``
-  (see [Issue #125](https://github.com/Statoil/pylops/issues/125))
+  (see [Issue #125](https://github.com/PyLops/pylops/issues/125))
 
 # 1.7.0
 * Added ``pylops.basicoperators.Gradient``,

@@ -219,7 +219,7 @@ class NormalEquationsInversion(Solver):
             and cupy `data`, respectively)
 
             .. note::
-                When user does not supply ``atol``, it is set to "legacy".
+                When user supplies ``tol`` this is set to ``atol``.
 
         Returns
         -------
@@ -238,8 +238,9 @@ class NormalEquationsInversion(Solver):
         if x is not None:
             self.y_normal = self.y_normal - self.Op_normal.matvec(x)
         if engine == "scipy" and self.ncp == np:
-            if "atol" not in kwargs_solver:
-                kwargs_solver["atol"] = "legacy"
+            if "tol" in kwargs_solver:
+                kwargs_solver["atol"] = kwargs_solver["tol"]
+                kwargs_solver.pop("tol")
             xinv, istop = sp_cg(self.Op_normal, self.y_normal, **kwargs_solver)
         elif engine == "pylops" or self.ncp != np:
             if show:
@@ -593,7 +594,7 @@ class RegularizedInversion(Solver):
             xinv, istop, itn, r1norm, r2norm = cgls(
                 self.RegOp,
                 self.datatot,
-                self.ncp.zeros(self.RegOp.dims, dtype=self.RegOp.dtype),
+                self.ncp.zeros(self.RegOp.shape[1], dtype=self.RegOp.dtype),
                 **kwargs_solver,
             )[0:5]
         else:

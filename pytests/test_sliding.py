@@ -22,6 +22,7 @@ par1 = {
     "noverx": 0,
     # "winsx": 2,
     "tapertype": None,
+    "savetaper": True,
 }  # no overlap, no taper
 par2 = {
     "ny": 6,
@@ -36,6 +37,7 @@ par2 = {
     "noverx": 0,
     # "winsx": 2,
     "tapertype": "hanning",
+    "savetaper": True,
 }  # no overlap, with taper
 par3 = {
     "ny": 6,
@@ -50,6 +52,7 @@ par3 = {
     "noverx": 2,
     # "winsx": 4,
     "tapertype": None,
+    "savetaper": True,
 }  # overlap, no taper
 par4 = {
     "ny": 6,
@@ -63,11 +66,42 @@ par4 = {
     "nwinx": 4,
     "noverx": 2,
     # "winsx": 4,
+    "tapertype": None,
+    "savetaper": False,
+}  # overlap, no taper (non saved)
+par5 = {
+    "ny": 6,
+    "nx": 7,
+    "nt": 10,
+    "npy": 15,
+    "nwiny": 7,
+    "novery": 3,
+    # "winsy": 3,
+    "npx": 10,
+    "nwinx": 4,
+    "noverx": 2,
+    # "winsx": 4,
     "tapertype": "hanning",
+    "savetaper": True,
 }  # overlap, with taper
+par6 = {
+    "ny": 6,
+    "nx": 7,
+    "nt": 10,
+    "npy": 15,
+    "nwiny": 7,
+    "novery": 3,
+    # "winsy": 3,
+    "npx": 10,
+    "nwinx": 4,
+    "noverx": 2,
+    # "winsx": 4,
+    "tapertype": "hanning",
+    "savetaper": False,
+}  # overlap, with taper (non saved)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5), (par6)])
 def test_Sliding1D(par):
     """Dot-test and inverse for Sliding1D operator"""
     Op = MatrixMult(np.ones((par["nwiny"], par["ny"])))
@@ -83,6 +117,7 @@ def test_Sliding1D(par):
         nwin=par["nwiny"],
         nover=par["novery"],
         tapertype=par["tapertype"],
+        savetaper=par["savetaper"],
     )
     assert dottest(Slid, par["npy"], par["ny"] * nwins)
     x = np.ones(par["ny"] * nwins)
@@ -92,7 +127,7 @@ def test_Sliding1D(par):
     assert_array_almost_equal(x.ravel(), xinv)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5), (par6)])
 def test_Sliding2D(par):
     """Dot-test and inverse for Sliding2D operator"""
     Op = MatrixMult(np.ones((par["nwiny"] * par["nt"], par["ny"] * par["nt"])))
@@ -107,6 +142,7 @@ def test_Sliding2D(par):
         nwin=par["nwiny"],
         nover=par["novery"],
         tapertype=par["tapertype"],
+        savetaper=par["savetaper"],
     )
     assert dottest(Slid, par["npy"] * par["nt"], par["ny"] * par["nt"] * nwins)
     x = np.ones((par["ny"] * nwins, par["nt"]))
@@ -116,7 +152,7 @@ def test_Sliding2D(par):
     assert_array_almost_equal(x.ravel(), xinv)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5), (par6)])
 def test_Sliding3D(par):
     """Dot-test and inverse for Sliding3D operator"""
     Op = MatrixMult(
@@ -140,6 +176,7 @@ def test_Sliding3D(par):
         nover=(par["novery"], par["noverx"]),
         nop=(par["ny"], par["nx"]),
         tapertype=par["tapertype"],
+        savetaper=par["savetaper"],
     )
     assert dottest(
         Slid,

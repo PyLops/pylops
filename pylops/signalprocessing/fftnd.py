@@ -7,8 +7,9 @@ from typing import Optional, Sequence, Union
 import numpy as np
 import numpy.typing as npt
 
+from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
-from pylops.utils.backend import get_sp_fft
+from pylops.utils.backend import get_array_module, get_sp_fft
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -29,6 +30,7 @@ class _FFTND_numpy(_BaseFFTND):
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
         dtype: DTypeLike = "complex128",
+        **kwargs_fft,
     ) -> None:
         super().__init__(
             dims=dims,
@@ -46,6 +48,7 @@ class _FFTND_numpy(_BaseFFTND):
                 f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be cast to {self.cdtype}."
             )
 
+        self._kwargs_fft = kwargs_fft
         self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
         if self.norm is _FFTNorms.ORTHO:
             self._norm_kwargs["norm"] = "ortho"
@@ -56,50 +59,52 @@ class _FFTND_numpy(_BaseFFTND):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
         if self.ifftshift_before.any():
-            x = np.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
+            x = ncp.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
         if not self.clinear:
-            x = np.real(x)
+            x = ncp.real(x)
         if self.real:
-            y = np.fft.rfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.rfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
             # Apply scaling to obtain a correct adjoint for this operator
-            y = np.swapaxes(y, -1, self.axes[-1])
-            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
-            y = np.swapaxes(y, self.axes[-1], -1)
+            y = ncp.swapaxes(y, -1, self.axes[-1])
+            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= ncp.sqrt(2)
+            y = ncp.swapaxes(y, self.axes[-1], -1)
         else:
-            y = np.fft.fftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.fftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         y = y.astype(self.cdtype)
         if self.fftshift_after.any():
-            y = np.fft.fftshift(y, axes=self.axes[self.fftshift_after])
+            y = ncp.fft.fftshift(y, axes=self.axes[self.fftshift_after])
         return y
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
         if self.fftshift_after.any():
-            x = np.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
+            x = ncp.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
         if self.real:
             # Apply scaling to obtain a correct adjoint for this operator
             x = x.copy()
-            x = np.swapaxes(x, -1, self.axes[-1])
-            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
-            x = np.swapaxes(x, self.axes[-1], -1)
-            y = np.fft.irfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            x = ncp.swapaxes(x, -1, self.axes[-1])
+            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= ncp.sqrt(2)
+            x = ncp.swapaxes(x, self.axes[-1], -1)
+            y = ncp.fft.irfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         else:
-            y = np.fft.ifftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.ifftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
         for ax, nfft in zip(self.axes, self.nffts):
             if nfft > self.dims[ax]:
-                y = np.take(y, range(self.dims[ax]), axis=ax)
+                y = ncp.take(y, np.arange(self.dims[ax]), axis=ax)
         if self.doifftpad:
-            y = np.pad(y, self.ifftpad)
+            y = ncp.pad(y, self.ifftpad)
         if not self.clinear:
-            y = np.real(y)
+            y = ncp.real(y)
         y = y.astype(self.rdtype)
         if self.ifftshift_before.any():
-            y = np.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
+            y = ncp.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
     def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
@@ -122,6 +127,7 @@ class _FFTND_scipy(_BaseFFTND):
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
         dtype: DTypeLike = "complex128",
+        **kwargs_fft,
     ) -> None:
         super().__init__(
             dims=dims,
@@ -134,7 +140,7 @@ class _FFTND_scipy(_BaseFFTND):
             fftshift_after=fftshift_after,
             dtype=dtype,
         )
-
+        self._kwargs_fft = kwargs_fft
         self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
         if self.norm is _FFTNorms.ORTHO:
             self._norm_kwargs["norm"] = "ortho"
@@ -209,7 +215,8 @@ def FFTND(
     engine: str = "scipy",
     dtype: DTypeLike = "complex128",
     name: str = "F",
-):
+    **kwargs_fft,
+) -> LinearOperator:
     r"""N-dimensional Fast-Fourier Transform.
 
     Apply N-dimensional Fast-Fourier Transform (FFT) to any n ``axes``
@@ -297,7 +304,8 @@ def FFTND(
     engine : :obj:`str`, optional
         .. versionadded:: 1.17.0
 
-        Engine used for fft computation (``numpy`` or ``scipy``).
+        Engine used for fft computation (``numpy`` or ``scipy``). Choose
+        ``numpy`` when working with cupy and jax arrays.
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
         is the corresponding complex type even when a real type is provided.
@@ -311,6 +319,10 @@ def FFTND(
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+    **kwargs_fft
+        .. versionadded:: 2.3.0
+
+        Arbitrary keyword arguments to be passed to the selected fft method
 
     Attributes
     ----------
@@ -396,6 +408,7 @@ def FFTND(
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
+            **kwargs_fft,
         )
     elif engine == "scipy":
         f = _FFTND_scipy(
@@ -408,6 +421,7 @@ def FFTND(
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
+            **kwargs_fft,
         )
     else:
         raise NotImplementedError("engine must be numpy or scipy")

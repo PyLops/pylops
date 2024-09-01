@@ -1,8 +1,10 @@
-numpy>=1.21.0
+# Currently we force rdt to use numpy<2.0.0 to build the documentation
+# since the dtcwt and spgl1 are not yet compatible with numpy=2.0.0
+numpy>=1.21.0,<2.0.0
 scipy>=1.11.0
+jax
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch>=1.2.0
-jax
 numba
 pyfftw
 PyWavelets
@@ -30,4 +32,3 @@ isort
 black
 flake8
 mypy
-ucurv

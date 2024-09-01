@@ -9,7 +9,7 @@ The PyLops project strives to create a library that is easy to install in
 any environment and has a very limited number of dependencies.
 Required dependencies are limited to:
 
-* Python 3.8 or greater
+* Python 3.9 or greater
 * `NumPy <http://www.numpy.org>`_
 * `SciPy <http://www.scipy.org/scipylib/index.html>`_
 
@@ -321,6 +321,11 @@ In alphabetic order:
 
 dtcwt
 -----
+
+.. warning::
+
+   ``dtcwt`` is not yet supported with Numpy 2.
+
 `dtcwt <https://dtcwt.readthedocs.io/en/0.12.0/>`_ is a library used to implement the DT-CWT operators.
 
 Install it via ``pip`` with:
@@ -328,6 +333,7 @@ Install it via ``pip`` with:
 .. code-block:: bash
 
    >> pip install dtcwt
+
 
 
 Devito
@@ -530,3 +536,13 @@ for GPU-accelerated computations. Since many different versions of CuPy exist (b
 CUDA drivers of the GPU), users must install CuPy prior to installing
 PyLops. To do so, follow their
 `installation instructions <https://docs.cupy.dev/en/stable/install.html>`__.
+
+
+JAX
+---
+`JAX <http://JAX.readthedocs.io>`_ is another library that can be used as a drop-in replacement
+to NumPy and some parts of SciPy. It provides seamless support for multiple accelerators (e.g., GPUs, TPUs),
+Just-In-Time (JIT) compilation via Open XLA, and Automatic Differentiation. Similar to CuPy, since many
+different versions of JAX exist (based on the CUDA drivers of the GPU), users must install JAX prior
+to installing PyLops. To do so, follow their
+`installation instructions <https://jax.readthedocs.io/en/latest/installation.html#install-cpu>`__.

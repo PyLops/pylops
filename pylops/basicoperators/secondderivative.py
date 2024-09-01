@@ -7,7 +7,7 @@ from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_add, inplace_set
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -90,6 +90,16 @@ class SecondDerivative(LinearOperator):
         self.sampling = sampling
         self.kind = kind
         self.edge = edge
+        self.slice = {
+            i: {
+                j: tuple([slice(None, None)] * (len(dims) - 1) + [slice(i, j)])
+                for j in (None, -1, -2, -3, -4)
+            }
+            for i in (None, 1, 2, 3, 4)
+        }
+        self.sample = {
+            i: tuple([slice(None, None)] * (len(dims) - 1) + [i]) for i in range(-3, 4)
+        }
         self._register_multiplications(self.kind)
 
     def _register_multiplications(
@@ -123,7 +133,10 @@ class SecondDerivative(LinearOperator):
     def _matvec_forward(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
-        y[..., :-2] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
+        # y[..., :-2] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
+        y = inplace_set(
+            x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2], y, self.slice[None][-2]
+        )
         y /= self.sampling**2
         return y
 
@@ -131,9 +144,12 @@ class SecondDerivative(LinearOperator):
     def _rmatvec_forward(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
-        y[..., :-2] += x[..., :-2]
-        y[..., 1:-1] -= 2 * x[..., :-2]
-        y[..., 2:] += x[..., :-2]
+        # y[..., :-2] += x[..., :-2]
+        y = inplace_add(x[..., :-2], y, self.slice[None][-2])
+        # y[..., 1:-1] -= 2 * x[..., :-2]
+        y = inplace_add(-2 * x[..., :-2], y, self.slice[1][-1])
+        # y[..., 2:] += x[..., :-2]
+        y = inplace_add(x[..., :-2], y, self.slice[2][None])
         y /= self.sampling**2
         return y
 
@@ -141,10 +157,17 @@ class SecondDerivative(LinearOperator):
     def _matvec_centered(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
-        y[..., 1:-1] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
+        # y[..., 1:-1] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
+        y = inplace_set(
+            x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2], y, self.slice[1][-1]
+        )
         if self.edge:
-            y[..., 0] = x[..., 0] - 2 * x[..., 1] + x[..., 2]
-            y[..., -1] = x[..., -3] - 2 * x[..., -2] + x[..., -1]
+            # y[..., 0] = x[..., 0] - 2 * x[..., 1] + x[..., 2]
+            y = inplace_set(x[..., 0] - 2 * x[..., 1] + x[..., 2], y, self.sample[0])
+            # y[..., -1] = x[..., -3] - 2 * x[..., -2] + x[..., -1]
+            y = inplace_set(
+                x[..., -3] - 2 * x[..., -2] + x[..., -1], y, self.sample[-1]
+            )
         y /= self.sampling**2
         return y
 
@@ -152,16 +175,25 @@ class SecondDerivative(LinearOperator):
     def _rmatvec_centered(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
-        y[..., :-2] += x[..., 1:-1]
-        y[..., 1:-1] -= 2 * x[..., 1:-1]
-        y[..., 2:] += x[..., 1:-1]
+        # y[..., :-2] += x[..., 1:-1]
+        y = inplace_add(x[..., 1:-1], y, self.slice[None][-2])
+        # y[..., 1:-1] -= 2 * x[..., 1:-1]
+        y = inplace_add(-2 * x[..., 1:-1], y, self.slice[1][-1])
+        # y[..., 2:] += x[..., 1:-1]
+        y = inplace_add(x[..., 1:-1], y, self.slice[2][None])
         if self.edge:
-            y[..., 0] += x[..., 0]
-            y[..., 1] -= 2 * x[..., 0]
-            y[..., 2] += x[..., 0]
-            y[..., -3] += x[..., -1]
-            y[..., -2] -= 2 * x[..., -1]
-            y[..., -1] += x[..., -1]
+            # y[..., 0] += x[..., 0]
+            y = inplace_add(x[..., 0], y, self.sample[0])
+            # y[..., 1] -= 2 * x[..., 0]
+            y = inplace_add(-2 * x[..., 0], y, self.sample[1])
+            # y[..., 2] += x[..., 0]
+            y = inplace_add(x[..., 0], y, self.sample[2])
+            # y[..., -3] += x[..., -1]
+            y = inplace_add(x[..., -1], y, self.sample[-3])
+            # y[..., -2] -= 2 * x[..., -1]
+            y = inplace_add(-2 * x[..., -1], y, self.sample[-2])
+            # y[..., -1] += x[..., -1]
+            y = inplace_add(x[..., -1], y, self.sample[-1])
         y /= self.sampling**2
         return y
 
@@ -169,7 +201,10 @@ class SecondDerivative(LinearOperator):
     def _matvec_backward(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
-        y[..., 2:] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
+        # y[..., 2:] = x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2]
+        y = inplace_set(
+            x[..., 2:] - 2 * x[..., 1:-1] + x[..., :-2], y, self.slice[2][None]
+        )
         y /= self.sampling**2
         return y
 
@@ -177,8 +212,11 @@ class SecondDerivative(LinearOperator):
     def _rmatvec_backward(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(x.shape, self.dtype)
-        y[..., :-2] += x[..., 2:]
-        y[..., 1:-1] -= 2 * x[..., 2:]
-        y[..., 2:] += x[..., 2:]
+        # y[..., :-2] += x[..., 2:]
+        y = inplace_add(x[..., 2:], y, self.slice[None][-2])
+        # y[..., 1:-1] -= 2 * x[..., 2:]
+        y = inplace_add(-2 * x[..., 2:], y, self.slice[1][-1])
+        # y[..., 2:] += x[..., 2:]
+        y = inplace_add(x[..., 2:], y, self.slice[2][None])
         y /= self.sampling**2
         return y

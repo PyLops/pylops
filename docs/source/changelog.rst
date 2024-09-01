@@ -3,20 +3,61 @@
 Changelog
 =========
 
+
+Version 2.3.1
+-------------
+
+*Released on: 17/08/2024*
+
+* Fixed bug in :py:mod:`pylops.utils.backend` (see https://github.com/PyLops/pylops/issues/606)
+
+
+Version 2.3.0
+-------------
+
+*Released on: 16/08/2024*
+
+* Added :py:class:`pylops.JaxOperator`, :py:class:`pylops.signalprocessing.DWTND`, and :py:class:`pylops.signalprocessing.DTCWT` operators.
+* Added `updatesrc` method to :py:class:`pylops.waveeqprocessing.AcousticWave2D`
+* Added `verb` to :py:func:`pylops.signalprocessing.Sliding1D.sliding1d_design`, :py:func:`pylops.signalprocessing.Sliding2D.sliding2d_design`,
+  :py:func:`pylops.signalprocessing.Sliding3D.sliding3d_design`, :py:func:`pylops.signalprocessing.Patch2D.patch2d_design`,
+  and :py:func:`pylops.signalprocessing.Patch3D.patch3d_design`
+* Added `kwargs_fft` to :py:class:`pylops.signalprocessing.FFTND`
+* Added `cosinetaper` to :py:class:`pylops.utils.tapers.cosinetaper`
+* Added `kind` to :py:class:`pylops.waveeqprocessing.Deghosting`.
+* Modified all methods in :py:mod:`pylops.utils.backend` to enable jax integration
+* Modified implementations of :py:class:`pylops.signalprocessing.Sliding1D`, :py:class:`pylops.signalprocessing.Sliding2D`, 
+  :py:class:`pylops.signalprocessing.Sliding3D`, :py:class:`pylops.signalprocessing.Patch2D`, and
+  :py:class:`pylops.signalprocessing.Patch3D` to being directly implemented instead of relying on 
+  other PyLops operators. Added also `savetaper` parameter and an option to apply the operator `Op`
+  simultaneously to all windows
+* Modified :py:func:`pylops.waveeqprocessing.AcousticWave2D._born_oneshot` 
+  and :py:func:`pylops.waveeqprocessing.AcousticWave2D._born_allshots` to avoid
+  recreating the devito solver for each shot (and enabling internal caching...) 
+* Modified `dtype` of :py:class:`pylops.signalprocessing.Shift` to be that of the input vector.
+* Modified :py:class:`pylops.waveeqprocessing.BlendingContinuous` to use `matvec/rmatvec` instead of `@/.H @` 
+  for compatibility with pylops solvers
+* Removed `cusignal` as optional dependency and `cupy`'s equivalent methods (since the library 
+  is now unmantained and merged into `cupy`)
+* Fixed ImportError of optional dependencies when installed but not correctly functioning (see https://github.com/PyLops/pylops/issues/548)
+* Fixed bug in :py:func:`pylops.utils.deps.to_cupy_conditional` (see https://github.com/PyLops/pylops/issues/579)
+* Fixed bug in the definition of `nttot` in :py:class:`pylops.waveeqprocessing.BlendingContinuous`
+* Fixed bug in :py:func:`pylops.utils.signalprocessing.dip_estimate` (see https://github.com/PyLops/pylops/issues/572)
+
 Version 2.2.0
 -------------
 
 *Released on: 11/11/2023*
 
-* Added :class:`pylops.signalprocessing.NonStationaryConvolve3D` operator
-* Added nd-array capabilities to :class:`pylops.basicoperators.Identity` and :class:`pylops.basicoperators.Zero`
-* Added second implementation in :class:`pylops.waveeqprocessing.BlendingContinuous` which is more
+* Added :py:class:`pylops.signalprocessing.NonStationaryConvolve3D` operator
+* Added nd-array capabilities to :py:class:`pylops.basicoperators.Identity` and :py:class:`pylops.basicoperators.Zero`
+* Added second implementation in :py:class:`pylops.waveeqprocessing.BlendingContinuous` which is more
   performant when dealing with small number of receivers
-* Added `forceflat` property to operators with ambiguous `rmatvec` (:class:`pylops.basicoperators.Block`,
-  :class:`pylops.basicoperators.Bilinear`, :class:`pylops.basicoperators.BlockDiag`, :class:`pylops.basicoperators.HStack`,
-  :class:`pylops.basicoperators.MatrixMult`, :class:`pylops.basicoperators.VStack`, and :class:`pylops.basicoperators.Zero`)
-* Improved `dynamic` mode of :class:`pylops.waveeqprocessing.Kirchhoff` operator
-* Modified :class:`pylops.signalprocessing.Convolve1D` to allow both filters that are both shorter and longer of the
+* Added `forceflat` property to operators with ambiguous `rmatvec` (:py:class:`pylops.basicoperators.Block`,
+  :py:class:`pylops.basicoperators.Bilinear`, :py:class:`pylops.basicoperators.BlockDiag`, :py:class:`pylops.basicoperators.HStack`,
+  :py:class:`pylops.basicoperators.MatrixMult`, :py:class:`pylops.basicoperators.VStack`, and :py:class:`pylops.basicoperators.Zero`)
+* Improved `dynamic` mode of :py:class:`pylops.waveeqprocessing.Kirchhoff` operator
+* Modified :py:class:`pylops.signalprocessing.Convolve1D` to allow both filters that are both shorter and longer of the
   input vector
 * Modified all solvers to use `matvec/rmatvec` instead of `@/.H @` to improve performance
 
@@ -26,19 +67,19 @@ Version 2.1.0
 
 *Released on: 17/03/2023*
 
-* Added :class:`pylops.signalprocessing.DCT`, :class:`pylops.signalprocessing.NonStationaryConvolve1D`,
-  :class:`pylops.signalprocessing.NonStationaryConvolve2D`, :class:`pylops.signalprocessing.NonStationaryFilters1D`, and
-  :class:`pylops.signalprocessing.NonStationaryFilters2D` operators
-* Added :class:`pylops.waveeqprocessing.BlendingContinuous`, :class:`pylops.waveeqprocessing.BlendingGroup`, and
-  :class:`pylops.waveeqprocessing.BlendingHalf` operators
-* Added `kind='datamodel'` to :class:`pylops.optimization.cls_sparsity.IRLS`
-* Improved inner working of :class:`pylops.waveeqprocessing.Kirchhoff` operator significantly
+* Added :py:class:`pylops.signalprocessing.DCT`, :py:class:`pylops.signalprocessing.NonStationaryConvolve1D`,
+  :py:class:`pylops.signalprocessing.NonStationaryConvolve2D`, :py:class:`pylops.signalprocessing.NonStationaryFilters1D`, and
+  :py:class:`pylops.signalprocessing.NonStationaryFilters2D` operators
+* Added :py:class:`pylops.waveeqprocessing.BlendingContinuous`, :py:class:`pylops.waveeqprocessing.BlendingGroup`, and
+  :py:class:`pylops.waveeqprocessing.BlendingHalf` operators
+* Added `kind='datamodel'` to :py:class:`pylops.optimization.cls_sparsity.IRLS`
+* Improved inner working of :py:class:`pylops.waveeqprocessing.Kirchhoff` operator significantly
   reducing the memory usage related to storing traveltime, angle, and amplitude tables.
-* Improved handling of `haxes` in :class:`pylops.signalprocessing.Radon2D` and :class:`pylops.signalprocessing.Radon3D` operators
-* Added possibility to feed ND-arrays to :class:`pylops.TorchOperator`
-* Removed :class:`pylops.LinearOperator` inheritance and added `__call__` method to :class:`pylops.TorchOperator`
-* Removed `scipy.sparse.linalg.LinearOperator` and added :class:`abc.ABC` inheritance to :class:`pylops.LinearOperator`
-* All operators are now classes of `:class:`pylops.LinearOperator` type
+* Improved handling of `haxes` in :py:class:`pylops.signalprocessing.Radon2D` and :py:class:`pylops.signalprocessing.Radon3D` operators
+* Added possibility to feed ND-arrays to :py:class:`pylops.TorchOperator`
+* Removed :py:class:`pylops.LinearOperator` inheritance and added `__call__` method to :py:class:`pylops.TorchOperator`
+* Removed `scipy.sparse.linalg.LinearOperator` and added :py:class:`abc.ABC` inheritance to :py:class:`pylops.LinearOperator`
+* All operators are now classes of `:py:class:`pylops.LinearOperator` type
 
 
 Version 2.0.0
@@ -56,25 +97,25 @@ To aid users in navigating the breaking changes, we provide the following docume
   Users do not need to use ``.ravel`` and ``.reshape`` as often anymore. See the migration guide for more information.
 * Typing annotations for several submodules (``avo``, ``basicoperators``, ``signalprocessing``, ``utils``, ``optimization``,
   ``waveeqprocessing``)
-* New :class:`pylops.TorchOperator` wraps a Pylops operator into a PyTorch function
-* New :class:`pylops.signalprocessing.Patch3D` applies a linear operator repeatedly to patches of the model vector
-* Each of :class:`pylops.signalprocessing.Sliding1D`, :class:`pylops.signalprocessing.Sliding2D`,
-  :class:`pylops.signalprocessing.Sliding3D`, :class:`pylops.signalprocessing.Patch2D` and :class:`pylops.signalprocessing.Patch3D`
+* New :py:class:`pylops.TorchOperator` wraps a Pylops operator into a PyTorch function
+* New :py:class:`pylops.signalprocessing.Patch3D` applies a linear operator repeatedly to patches of the model vector
+* Each of :py:class:`pylops.signalprocessing.Sliding1D`, :py:class:`pylops.signalprocessing.Sliding2D`,
+  :py:class:`pylops.signalprocessing.Sliding3D`, :py:class:`pylops.signalprocessing.Patch2D` and :py:class:`pylops.signalprocessing.Patch3D`
   have an associated ``slidingXd_design`` or ``patchXd_design`` functions associated with them to aid the user in designing the windows
-* :class:`pylops.FirstDerivative` and :class:`pylops.SecondDerivative`, and therefore other derivative operators which rely on the
-  (e.g., :class:`pylops.Gradient`) support higher order stencils
-* :class:`pylops.waveeqprocessing.Kirchhoff` substitutes :class:`pylops.waveeqprocessing.Demigration` and incorporates a variety of
+* :py:class:`pylops.FirstDerivative` and :py:class:`pylops.SecondDerivative`, and therefore other derivative operators which rely on the
+  (e.g., :py:class:`pylops.Gradient`) support higher order stencils
+* :py:class:`pylops.waveeqprocessing.Kirchhoff` substitutes :py:class:`pylops.waveeqprocessing.Demigration` and incorporates a variety of
   new functionalities
-* New :class:`pylops.waveeqprocessing.AcousticWave2D` wraps the `Devito <https://www.devitoproject.org/>`_ acoutic wave propagator
+* New :py:class:`pylops.waveeqprocessing.AcousticWave2D` wraps the `Devito <https://www.devitoproject.org/>`_ acoutic wave propagator
   providing a wave-equation based Born modeling operator with a reverse-time migration adjoint
-* Solvers can now be implemented via the :class:`pylops.optimization.basesolver.Solver` class. They can now be used through a
-  functional interface with lowercase name (e.g., :func:`pylops.optimization.sparsity.splitbregman`) or via class interface with CamelCase name
-  (e.g., :class:`pylops.optimization.cls_sparsity.SplitBregman`. Moreover, solvers now accept callbacks defined by the
-  :class:`pylops.optimization.callback.Callbacks` interface (see e.g., :class:`pylops.optimization.callback.MetricsCallback`).
-* Metrics such as :func:`pylops.utils.metrics.mae` and :func:`pylops.utils.metrics.mse` and others
-* New :func:`pylops.utils.signalprocessing.dip_estimate` estimates local dips in an image (measured in radians) in a stabler way than the old :func:`pylops.utils.signalprocessing.dip_estimate` did for slopes.
-* New :func:`pylops.utils.tapers.tapernd` for N-dimensional tapers
-* New wavelets :func:`pylops.utils.wavelets.klauder` and :func:`pylops.utils.wavelets.ormsby`
+* Solvers can now be implemented via the :py:class:`pylops.optimization.basesolver.Solver` class. They can now be used through a
+  functional interface with lowercase name (e.g., :py:func:`pylops.optimization.sparsity.splitbregman`) or via class interface with CamelCase name
+  (e.g., :py:class:`pylops.optimization.cls_sparsity.SplitBregman`. Moreover, solvers now accept callbacks defined by the
+  :py:class:`pylops.optimization.callback.Callbacks` interface (see e.g., :py:class:`pylops.optimization.callback.MetricsCallback`)
+* Metrics such as :py:func:`pylops.utils.metrics.mae` and :py:func:`pylops.utils.metrics.mse` and others
+* New :py:func:`pylops.utils.signalprocessing.dip_estimate` estimates local dips in an image (measured in radians) in a stabler way than the old :py:func:`pylops.utils.signalprocessing.dip_estimate` did for slopes.
+* New :py:func:`pylops.utils.tapers.tapernd` for N-dimensional tapers
+* New wavelets :py:func:`pylops.utils.wavelets.klauder` and :py:func:`pylops.utils.wavelets.ormsby`
 
 **Documentation**
 
@@ -210,7 +251,7 @@ Version 1.15.0
   ``full``, ``half``, or ``trapezoidal`` integration.
 * Fixed `_hardthreshold_percentile` in
   :py:mod:`pylops.optimization.sparsity`
-  - `Issue #249 <https://github.com/Statoil/pylops/issues/249>`_.
+  (see https://github.com/PyLops/pylops/issues/249).
 * Fixed r2norm in :py:func:`pylops.optimization.solver.cgls`.
 
 
@@ -261,7 +302,7 @@ Version 1.13.0
 * Fixed bug in data reshaping in check in
   :py:class:`pylops.avo.prestack.PrestackInversion`
 * Fixed loading error when using old cupy and/or cusignal
-  (see `Issue #201 <https://github.com/PyLops/pylops/issues/201>`_)
+  (see https://github.com/PyLops/pylops/issues/201)
 
 
 Version 1.12.0
@@ -380,7 +421,7 @@ Version 1.8.0
   :py:class:`pylops.waveeqprocessing.UpDownComposition3Doperator`, and
   :py:class:`pylops.waveeqprocessing.PhaseShift` operators
 * Fix bug in :py:class:`pylops.basicoperators.Kronecker`
-  (see `Issue #125 <https://github.com/PyLops/pylops/issues/125>`_)
+  (see https://github.com/PyLops/pylops/issues/125)
 
 
 Version 1.7.0

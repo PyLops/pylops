@@ -4,7 +4,7 @@
 [![PyPI version](https://badge.fury.io/py/pylops.svg)](https://badge.fury.io/py/pylops)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pylops/badges/version.svg)](https://anaconda.org/conda-forge/pylops)
 [![AzureDevOps Status](https://dev.azure.com/matteoravasi/PyLops/_apis/build/status/PyLops.pylops?branchName=dev)](https://dev.azure.com/matteoravasi/PyLops/_build/latest?definitionId=9&branchName=dev)
-[![GithubAction Status](https://github.com/mrava87/pylops/actions/workflows/build.yaml/badge.svg)](https://github.com/mrava87/pylops/actions/workflows/build.yaml)
+[![GithubAction Status](https://github.com/PyLops/pylops/actions/workflows/build.yaml/badge.svg?branch=dev)](https://github.com/PyLops/pylops/actions/workflows/build.yaml)
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=stable)](https://pylops.readthedocs.io/en/stable/?badge=stable)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/17fd60b4266347d8890dd6b64f2c0807)](https://www.codacy.com/gh/PyLops/pylops/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=PyLops/pylops&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/17fd60b4266347d8890dd6b64f2c0807)](https://www.codacy.com/gh/PyLops/pylops/dashboard?utm_source=github.com&utm_medium=referral&utm_content=PyLops/pylops&utm_campaign=Badge_Coverage)
@@ -150,3 +150,5 @@ A list of video tutorials to learn more about PyLops:
 * Wei Zhang, ZhangWeiGeo
 * Fedor Goncharov, fedor-goncharov
 * Alex Rakowski, alex-rakowski
+* David Sollberger, solldavid
+* Gustavo Coelho, guaacoelho

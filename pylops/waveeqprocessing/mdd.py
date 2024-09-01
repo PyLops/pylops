@@ -242,6 +242,7 @@ def MDC(
         conj=conj,
         prescaled=prescaled,
         args_FFT={"engine": fftengine},
+        args_FFT1={"engine": fftengine},
         args_Fredholm1={"usematmul": usematmul},
     )
     MOp.name = name

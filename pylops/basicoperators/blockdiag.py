@@ -21,7 +21,7 @@ from typing import Optional, Sequence
 
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_set
 from pylops.utils.typing import DTypeLike, NDArray
 
 
@@ -175,18 +175,22 @@ class BlockDiag(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            y[self.nnops[iop] : self.nnops[iop + 1]] = oper.matvec(
-                x[self.mmops[iop] : self.mmops[iop + 1]]
-            ).squeeze()
+            y = inplace_set(
+                oper.matvec(x[self.mmops[iop] : self.mmops[iop + 1]]).squeeze(),
+                y,
+                slice(self.nnops[iop], self.nnops[iop + 1]),
+            )
         return y
 
     def _rmatvec_serial(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
-            y[self.mmops[iop] : self.mmops[iop + 1]] = oper.rmatvec(
-                x[self.nnops[iop] : self.nnops[iop + 1]]
-            ).squeeze()
+            y = inplace_set(
+                oper.rmatvec(x[self.nnops[iop] : self.nnops[iop + 1]]).squeeze(),
+                y,
+                slice(self.mmops[iop], self.mmops[iop + 1]),
+            )
         return y
 
     def _matvec_multiproc(self, x: NDArray) -> NDArray:

@@ -14,7 +14,7 @@ if deps.torch_enabled:
 else:
     torch_message = (
         "Torch package not installed. In order to be able to use"
-        'the twoway module run "pip install torch" or'
+        'the torchoperator module run "pip install torch" or'
         '"conda install -c pytorch torch".'
     )
 from pylops.utils.typing import TensorTypeLike
