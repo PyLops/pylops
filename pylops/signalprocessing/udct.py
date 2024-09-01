@@ -11,6 +11,8 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 from ucurv import *
 
+ucurv_message = deps.ucurv_import("the ucurv module")
+
 class UDCT(LinearOperator):
     def __init__(self, sz, cfg, complex = False, sparse = False, dtype=None):
         self.udct = udct(sz, cfg, complex, sparse)

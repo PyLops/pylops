@@ -31,7 +31,7 @@ classifiers = [
 ]
 dependencies = [
     "numpy >= 1.21.0",
-    "scipy >= 1.11.0",
+    "scipy >= 1.4.0",
 ]
 dynamic = ["version"]
 
@@ -44,6 +44,7 @@ advanced = [
     "scikit-fmm",
     "spgl1",
     "dtcwt",
+    "ucurv",
 ]
 
 [tool.setuptools.packages.find]
