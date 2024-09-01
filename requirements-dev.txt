@@ -1,8 +1,6 @@
 numpy>=1.21.0
-scipy>=1.11.0
---extra-index-url https://download.pytorch.org/whl/cpu
+scipy>=1.4.0
 torch>=1.2.0
-jax
 numba
 pyfftw
 PyWavelets
@@ -20,7 +18,6 @@ docutils<0.18
 Sphinx
 pydata-sphinx-theme
 sphinx-gallery
-sphinxemoji
 numpydoc
 nbsphinx
 image
