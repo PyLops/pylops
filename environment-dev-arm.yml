@@ -10,6 +10,8 @@ dependencies:
   - numpy>=1.21.0
   - scipy>=1.4.0
   - pytorch>=1.2.0
+  - cpuonly
+  - jax
   - pyfftw
   - pywavelets
   - sympy
@@ -26,6 +28,7 @@ dependencies:
   - pip:
     - devito
     - dtcwt
+    - ucurv
     - scikit-fmm
     - spgl1
     - pytest-runner
@@ -36,3 +39,4 @@ dependencies:
     - image
     - flake8
     - mypy
+    

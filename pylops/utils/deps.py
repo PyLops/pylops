@@ -2,6 +2,7 @@ __all__ = [
     "cupy_enabled",
     "devito_enabled",
     "dtcwt_enabled",
+    "ucurv_enabled",    
     "numba_enabled",
     "pyfftw_enabled",
     "pywt_enabled",
@@ -84,6 +85,21 @@ def dtcwt_import(message: Optional[str] = None) -> str:
         )
     return dtcwt_message
 
+def ucurv_import(message: Optional[str] = None) -> str:
+    if ucurv_enabled:
+        try:
+            import ucurv  # noqa: F401
+
+            ucurv_message = None
+        except Exception as e:
+            ucurv_message = f"Failed to import ucurv (error:{e})."
+    else:
+        ucurv_message = (
+            f"UCURV not available. "
+            f"In order to be able to use "
+            f'{message} run "pip install ucurv".'
+        )
+    return ucurv_message
 
 def numba_import(message: Optional[str] = None) -> str:
     if numba_enabled:
@@ -206,6 +222,7 @@ cupy_enabled: bool = (
 )
 devito_enabled = util.find_spec("devito") is not None
 dtcwt_enabled = util.find_spec("dtcwt") is not None
+ucurv_enabled = util.find_spec("ucurv") is not None
 numba_enabled = util.find_spec("numba") is not None
 pyfftw_enabled = util.find_spec("pyfftw") is not None
 pywt_enabled = util.find_spec("pywt") is not None

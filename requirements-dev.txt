@@ -27,3 +27,4 @@ isort
 black
 flake8
 mypy
+ucurv

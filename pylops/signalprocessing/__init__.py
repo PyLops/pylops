@@ -34,6 +34,7 @@ A list of operators present in pylops.signalprocessing:
     Patch2D                         2D Patching transform operator.
     Patch3D                         3D Patching transform operator.
     Fredholm1                       Fredholm integral of first kind.
+    UDCT                            Uniform Discrete Curvelet Transform
 
 """
 
@@ -64,6 +65,7 @@ from .dwt2d import *
 from .seislet import *
 from .dct import *
 from .dtcwt import *
+from .udct import *
 
 
 __all__ = [
