@@ -1,9 +1,9 @@
 __all__ = [
     "cupy_enabled",
-    "jax_enabled",    
+    "jax_enabled",
     "devito_enabled",
     "dtcwt_enabled",
-    "ucurv_enabled",    
+    "ucurv_enabled",
     "numba_enabled",
     "pyfftw_enabled",
     "pywt_enabled",
@@ -52,6 +52,7 @@ def cupy_import(message: Optional[str] = None) -> str:
 
     return cupy_message
 
+
 def jax_import(message: Optional[str] = None) -> str:
     jax_test = (
         util.find_spec("jax") is not None and int(os.getenv("JAX_PYLOPS", 1)) == 1
@@ -76,8 +77,8 @@ def jax_import(message: Optional[str] = None) -> str:
             "'pip install jax'; "
             "for more details visit 'https://jax.readthedocs.io/en/latest/installation.html'"
         )
-
     return jax_message
+
 
 def devito_import(message: Optional[str] = None) -> str:
     if devito_enabled:
@@ -112,6 +113,7 @@ def dtcwt_import(message: Optional[str] = None) -> str:
         )
     return dtcwt_message
 
+
 def ucurv_import(message: Optional[str] = None) -> str:
     if ucurv_enabled:
         try:
@@ -127,6 +129,7 @@ def ucurv_import(message: Optional[str] = None) -> str:
             f'{message} run "pip install ucurv".'
         )
     return ucurv_message
+
 
 def numba_import(message: Optional[str] = None) -> str:
     if numba_enabled:
