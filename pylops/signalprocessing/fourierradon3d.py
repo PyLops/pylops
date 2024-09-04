@@ -1,4 +1,4 @@
-__all__ = ["FourierRadon2D"]
+__all__ = ["FourierRadon3D"]
 
 import logging
 from typing import Optional, Tuple
@@ -16,28 +16,32 @@ jit_message = deps.numba_import("the radon2d module")
 
 if jit_message is None:
 
-    from ._fourierradon2d_cuda import _aradon_inner_2d_cuda, _radon_inner_2d_cuda
-    from ._fourierradon2d_numba import _aradon_inner_2d, _radon_inner_2d
+    # from ._fourierradon3d_cuda import _aradon_inner_3d_cuda, _radon_inner_3d_cuda
+    from ._fourierradon3d_numba import _aradon_inner_3d, _radon_inner_3d
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
-class FourierRadon2D(LinearOperator):
-    r"""2D Fourier Radon transform
+class FourierRadon3D(LinearOperator):
+    r"""3D Fourier Radon transform
 
     Apply Radon forward (and adjoint) transform using Fast
-    Fourier Transform to a 2-dimensional array of size :math:`[n_{p_x} \times n_t]`
-    (and :math:`[n_x \times n_t]`).
+    Fourier Transform to a 3-dimensional array of size :math:`[n_{p_y} \times n_{p_x} \times n_t]`
+    (and :math:`[n_y \times n_x \times n_t]`).
 
     Note that forward and adjoint follow the same convention of the time-space
-    implementation in :class:`pylops.signalprocessing.Radon2D`.
+    implementation in :class:`pylops.signalprocessing.Radon3D`.
 
     Parameters
     ----------
     taxis : :obj:`np.ndarray`
         Time axis
-    haxis : :obj:`np.ndarray`
-        Spatial axis
+    hxaxis : :obj:`np.ndarray`
+        Fast patial axis
+    hyaxis : :obj:`np.ndarray`
+        Slow spatial axis
+    pyaxis : :obj:`np.ndarray`
+        Axis of scanning variable :math:`p_y` of parametric curve
     pxaxis : :obj:`np.ndarray`
         Axis of scanning variable :math:`p_x` of parametric curve
     nfft : :obj:`int`
@@ -45,8 +49,9 @@ class FourierRadon2D(LinearOperator):
     flims : :obj:`tuple`, optional
         Indices of lower and upper limits of Fourier axis to be used in
         the application of the Radon matrix (if ``None``, use entire axis)
-    kind : :obj:`str`, optional
-        Curve to be used for stacking/spreading (``linear``, ``parabolic``)
+    kind : :obj:`tuple`, optional
+        Curves to be used for stacking/spreading along the y- and x- axes
+        (``linear``, ``parabolic``)
     engine : :obj:`str`, optional
         Engine used for computation (``numpy`` or ``numba`` or ``cuda``)
     num_threads_per_blocks : :obj:`tuple`, optional
@@ -66,33 +71,34 @@ class FourierRadon2D(LinearOperator):
 
     Notes
     -----
-    The FourierRadon2D operator applies the Radon transform in the frequency domain.
-    After transforming a 2-dimensional array of size
-    :math:`[n_x \times n_t]` into the frequency domain, the following linear
+    The FourierRadon3D operator applies the Radon transform in the frequency domain.
+    After transforming a 3-dimensional array of size
+    :math:`[n_y \times n_x \times n_t]` into the frequency domain, the following linear
     transformation is applied to each frequency component in adjoint mode:
 
     .. math::
         \begin{bmatrix}
-            m(p_{x,1}, \omega_i)  \\
-            m(p_{x,2}, \omega_i)  \\
+            \mathbf{m}(p_{y,1}, \mathbf{p}_{x}, \omega_i)  \\
+            \mathbf{m}(p_{y,2}, \mathbf{p}_{x}, \omega_i)  \\
             \vdots          \\
-            m(p_{x,N_p}, \omega_i)
+            \mathbf{m}(p_{y,N_{py}}, \mathbf{p}_{x}, \omega_i)
         \end{bmatrix}
         =
         \begin{bmatrix}
-            e^{-j \omega_i p_{x,1} x^l_1}  & e^{-j \omega_i p_{x,1} x^l_2} &  \ldots & e^{-j \omega_i p_{x,1} x^l_{N_x}}  \\
-            e^{-j \omega_i p_{x,2} x^l_1}  & e^{-j \omega_i p_{x,2} x^l_2} &  \ldots & e^{-j \omega_i p_{x,2} x^l_{N_x}}  \\
+            e^{-j \omega_i (p_{y,1} y^l_1 + \mathbf{p}_x \cdot \mathbf{x}^l)}  & e^{-j \omega_i (p_{y,1} y^l_2 + \mathbf{p}_x \cdot \mathbf{x}^l)} &  \ldots & e^{-j \omega_i (p_{y,1} y^l_{N_y} + \mathbf{p}_x \cdot \mathbf{x}^l)}  \\
+            e^{-j \omega_i (p_{y,2} y^l_1 + \mathbf{p}_x \cdot \mathbf{x}^l)}  & e^{-j \omega_i (p_{y,2} y^l_2 + \mathbf{p}_x \cdot \mathbf{x}^l)} &  \ldots & e^{-j \omega_i (p_{y,2} y^l_{N_y} + \mathbf{p}_x \cdot \mathbf{x}^l)}  \\
             \vdots            & \vdots           &  \ddots & \vdots            \\
-            e^{-j \omega_i p_{x,N_p} x^l_1}  & e^{-j \omega_i p_{x,N_p} x^l_2} &  \ldots & e^{-j \omega_i p_{x,N_p} x^l_{N_x}}  \\
+            e^{-j \omega_i (p_{y,N_{py}} y^l_1 + \mathbf{p}_x \cdot \mathbf{x}^l)}  & e^{-j \omega_i (p_{y,N_{py}} y^l_2 + \mathbf{p}_x \cdot \mathbf{x}^l)} &  \ldots & e^{-j \omega_i (p_{y,N_{py}} y^l_{N_y} + \mathbf{p}_x \cdot \mathbf{x}^l)}  \\
         \end{bmatrix}
         \begin{bmatrix}
-            d(x_1, \omega_i)  \\
-            d(x_2, \omega_i)  \\
+            \mathbf{d}(y_1, \mathbf{x}, \omega_i)  \\
+            \mathbf{d}(y_2, \mathbf{x}, \omega_i)  \\
             \vdots          \\
-            d(x_{N_x}, \omega_i)
+            \mathbf{d}(y_{N_y}, \mathbf{x}, \omega_i)
         \end{bmatrix}
 
-    where :math:`l=1,2`. Similarly the forward mode is implemented by applying the
+    where :math:`\cdot` represents the element-wise multiplication of two vectors and
+    math:`l=1,2`. Similarly the forward mode is implemented by applying the
     transpose and complex conjugate of the above matrix to the model transformed to
     the Fourier domain.
 
@@ -100,14 +106,15 @@ class FourierRadon2D(LinearOperator):
 
     .. [1] Sacchi, M. "Statistical and Transform Methods for
         Geophysical Signal Processing", 2007.
-
     """
 
     def __init__(
         self,
         taxis: NDArray,
-        haxis: NDArray,
+        hyaxis: NDArray,
+        hxaxis: NDArray,
         pxaxis: NDArray,
+        pyaxis: NDArray,
         nfft: int,
         flims: Optional[Tuple[int, int]] = None,
         kind: Optional[str] = "linear",
@@ -123,17 +130,18 @@ class FourierRadon2D(LinearOperator):
             engine = "numpy"
 
         # dimensions and super
-        dims = len(pxaxis), len(taxis)
-        dimsd = len(haxis), len(taxis)
+        dims = len(pyaxis), len(pxaxis), len(taxis)
+        dimsd = len(hyaxis), len(hxaxis), len(taxis)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
 
         # other input params
-        self.taxis, self.haxis = taxis, haxis
-        self.nh, self.nt = self.dimsd
-        self.px = pxaxis
-        self.npx, self.nfft = self.dims[0], nfft
+        self.taxis, self.hyaxis, self.hxaxis = taxis, hyaxis, hxaxis
+        self.nhy, self.nhx, self.nt = self.dimsd
+        self.py, self.px = pyaxis, pxaxis
+        self.npy, self.npx, self.nfft = self.dims[0], self.dims[1], nfft
         self.dt = taxis[1] - taxis[0]
-        self.dh = haxis[1] - haxis[0]
+        self.dhy = hyaxis[1] - hyaxis[0]
+        self.dhx = hxaxis[1] - hxaxis[0]
         self.f = np.fft.rfftfreq(self.nfft, d=self.dt)
         self.nfft2 = self.f.size
         self.cdtype = get_complex_dtype(dtype)
@@ -142,10 +150,13 @@ class FourierRadon2D(LinearOperator):
         if flims is None:
             self.flims = (0, self.nfft2)
 
-        if kind == "parabolic":
-            self.haxis = self.haxis**2
+        if kind[0] == "parabolic":
+            self.hyaxis = self.hyaxis**2
+        if kind[1] == "parabolic":
+            self.hxaxis = self.hxaxis**2
 
         # create additional input parameters for engine=cuda
+        """
         if engine == "cuda":
             self.num_threads_per_blocks = num_threads_per_blocks
             (
@@ -163,6 +174,7 @@ class FourierRadon2D(LinearOperator):
             ) // num_threads_per_blocks_f
             self.num_blocks_matvec = (num_blocks_h, num_blocks_f)
             self.num_blocks_rmatvec = (num_blocks_px, num_blocks_f)
+        """
         self._register_multiplications(engine)
 
     def _register_multiplications(self, engine: str) -> None:
@@ -179,15 +191,22 @@ class FourierRadon2D(LinearOperator):
     @reshaped
     def _matvec_numpy(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
-        x = ncp.fft.rfft(x, n=self.nfft, axis=-1)
+        x = ncp.fft.rfft(x.reshape(-1, self.dims[-1]), n=self.nfft, axis=-1)
 
-        H, PX, F = ncp.meshgrid(
-            self.haxis, self.px, self.f[self.flims[0] : self.flims[1]], indexing="ij"
+        HY, HX = ncp.meshgrid(self.hyaxis, self.hxaxis, indexing="ij")
+        PY, PX = ncp.meshgrid(self.py, self.px, indexing="ij")
+
+        HYY, PYY, F = ncp.meshgrid(
+            HY.ravel(), PY.ravel(), self.f[self.flims[0] : self.flims[1]], indexing="ij"
         )
-        y = ncp.zeros((self.nh, self.nfft2), dtype=self.cdtype)
+        HXX, PXX, _ = ncp.meshgrid(
+            HX.ravel(), PX.ravel(), self.f[self.flims[0] : self.flims[1]], indexing="ij"
+        )
+
+        y = ncp.zeros((self.nhy * self.nhx, self.nfft2), dtype=self.cdtype)
         y[:, self.flims[0] : self.flims[1]] = ncp.einsum(
             "ijk,jk->ik",
-            ncp.exp(-1j * 2 * ncp.pi * F * PX * H),
+            ncp.exp(-1j * 2 * ncp.pi * F * (PYY * HYY + PXX * HXX)),
             x[:, self.flims[0] : self.flims[1]],
         )
         y = ncp.real(ncp.fft.irfft(y, n=self.nfft, axis=-1))[:, : self.nt]
@@ -196,15 +215,22 @@ class FourierRadon2D(LinearOperator):
     @reshaped
     def _rmatvec_numpy(self, y: NDArray) -> NDArray:
         ncp = get_array_module(y)
-        y = ncp.fft.rfft(y, n=self.nfft, axis=-1)
+        y = ncp.fft.rfft(y.reshape(-1, self.dimsd[-1]), n=self.nfft, axis=-1)
 
-        PX, H, F = ncp.meshgrid(
-            self.px, self.haxis, self.f[self.flims[0] : self.flims[1]], indexing="ij"
+        HY, HX = ncp.meshgrid(self.hyaxis, self.hxaxis, indexing="ij")
+        PY, PX = ncp.meshgrid(self.py, self.px, indexing="ij")
+
+        PYY, HYY, F = ncp.meshgrid(
+            PY.ravel(), HY.ravel(), self.f[self.flims[0] : self.flims[1]], indexing="ij"
         )
-        x = ncp.zeros((self.npx, self.nfft2), dtype=self.cdtype)
+        PXX, HXX, _ = ncp.meshgrid(
+            PX.ravel(), HX.ravel(), self.f[self.flims[0] : self.flims[1]], indexing="ij"
+        )
+
+        x = ncp.zeros((self.npy * self.npx, self.nfft2), dtype=self.cdtype)
         x[:, self.flims[0] : self.flims[1]] = ncp.einsum(
             "ijk,jk->ik",
-            ncp.exp(1j * 2 * ncp.pi * F * PX * H),
+            ncp.exp(1j * 2 * ncp.pi * F * (PYY * HYY + PXX * HXX)),
             y[:, self.flims[0] : self.flims[1]],
         )
         x = ncp.real(ncp.fft.irfft(x, n=self.nfft, axis=-1))[:, : self.nt]
@@ -256,38 +282,46 @@ class FourierRadon2D(LinearOperator):
 
     @reshaped
     def _matvec_numba(self, x: NDArray) -> NDArray:
-        y = np.zeros((self.nh, self.nfft2), dtype=self.cdtype)
+        y = np.zeros((self.nhy, self.nhx, self.nfft2), dtype=self.cdtype)
 
         x = sp.fft.rfft(x, n=self.nfft, axis=-1)
-        y = _radon_inner_2d(
+        y = _radon_inner_3d(
             x,
             y,
             self.f,
+            self.py,
             self.px,
-            self.haxis,
+            self.hyaxis,
+            self.hxaxis,
             self.flims[0],
             self.flims[1],
+            self.npy,
             self.npx,
-            self.nh,
+            self.nhy,
+            self.nhx,
         )
         y = np.real(sp.fft.irfft(y, n=self.nfft, axis=-1))[:, : self.nt]
         return y
 
     @reshaped
     def _rmatvec_numba(self, y: NDArray) -> NDArray:
-        x = np.zeros((self.npx, self.nfft2), dtype=self.cdtype)
+        x = np.zeros((self.npy, self.npx, self.nfft2), dtype=self.cdtype)
 
         y = sp.fft.rfft(y, n=self.nfft, axis=-1)
-        x = _aradon_inner_2d(
+        x = _aradon_inner_3d(
             x,
             y,
             self.f,
+            self.py,
             self.px,
-            self.haxis,
+            self.hyaxis,
+            self.hxaxis,
             self.flims[0],
             self.flims[1],
+            self.npy,
             self.npx,
-            self.nh,
+            self.nhy,
+            self.nhx,
         )
         x = np.real(sp.fft.irfft(x, n=self.nfft, axis=-1))[:, : self.nt]
         return x

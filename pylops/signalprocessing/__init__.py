@@ -56,6 +56,7 @@ from .bilinear import *
 from .radon2d import *
 from .radon3d import *
 from .fourierradon2d import *
+from .fourierradon3d import *
 from .chirpradon2d import *
 from .chirpradon3d import *
 from .sliding1d import *
@@ -89,6 +90,8 @@ __all__ = [
     "Bilinear",
     "Radon2D",
     "Radon3D",
+    "FourierRadon2D",
+    "FourierRadon3D",
     "ChirpRadon2D",
     "ChirpRadon3D",
     "Sliding1D",
