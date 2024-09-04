@@ -16,7 +16,7 @@ jit_message = deps.numba_import("the radon2d module")
 
 if jit_message is None:
 
-    # from ._fourierradon3d_cuda import _aradon_inner_3d_cuda, _radon_inner_3d_cuda
+    from ._fourierradon3d_cuda import _aradon_inner_3d_cuda, _radon_inner_3d_cuda
     from ._fourierradon3d_numba import _aradon_inner_3d, _radon_inner_3d
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -117,7 +117,7 @@ class FourierRadon3D(LinearOperator):
         pyaxis: NDArray,
         nfft: int,
         flims: Optional[Tuple[int, int]] = None,
-        kind: Optional[str] = "linear",
+        kind: Optional[str] = ("linear", "linear"),
         engine: Optional[str] = "numpy",
         num_threads_per_blocks: Tuple[int, int] = (32, 32),
         dtype: Optional[DTypeLike] = "float64",
@@ -156,25 +156,31 @@ class FourierRadon3D(LinearOperator):
             self.hxaxis = self.hxaxis**2
 
         # create additional input parameters for engine=cuda
-        """
         if engine == "cuda":
             self.num_threads_per_blocks = num_threads_per_blocks
             (
+                num_threads_per_blocks_hpy,
                 num_threads_per_blocks_hpx,
                 num_threads_per_blocks_f,
             ) = num_threads_per_blocks
-            num_blocks_px = (
-                self.dims[0] + num_threads_per_blocks_hpx - 1
+            num_blocks_py = (
+                self.dims[0] + num_threads_per_blocks_hpy - 1
             ) // num_threads_per_blocks_hpx
-            num_blocks_h = (
-                self.dimsd[0] + num_threads_per_blocks_hpx - 1
+            num_blocks_px = (
+                self.dims[1] + num_threads_per_blocks_hpx - 1
+            ) // num_threads_per_blocks_hpx
+            num_blocks_hy = (
+                self.dimsd[0] + num_threads_per_blocks_hpy - 1
+            ) // num_threads_per_blocks_hpx
+            num_blocks_hx = (
+                self.dimsd[1] + num_threads_per_blocks_hpx - 1
             ) // num_threads_per_blocks_hpx
             num_blocks_f = (
-                self.dims[1] + num_threads_per_blocks_f - 1
+                self.dims[2] + num_threads_per_blocks_f - 1
             ) // num_threads_per_blocks_f
-            self.num_blocks_matvec = (num_blocks_h, num_blocks_f)
-            self.num_blocks_rmatvec = (num_blocks_px, num_blocks_f)
-        """
+            self.num_blocks_matvec = (num_blocks_hy, num_blocks_hx, num_blocks_f)
+            self.num_blocks_rmatvec = (num_blocks_py, num_blocks_px, num_blocks_f)
+
         self._register_multiplications(engine)
 
     def _register_multiplications(self, engine: str) -> None:
@@ -239,19 +245,23 @@ class FourierRadon3D(LinearOperator):
     @reshaped
     def _matvec_cuda(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
-        y = ncp.zeros((self.nh, self.nfft2), dtype=self.cdtype)
+        y = ncp.zeros((self.nhy, self.nhx, self.nfft2), dtype=self.cdtype)
 
         x = ncp.fft.rfft(x, n=self.nfft, axis=-1)
-        y = _radon_inner_2d_cuda(
+        y = _radon_inner_3d_cuda(
             x,
             y,
             ncp.asarray(self.f),
+            self.py,
             self.px,
-            self.haxis,
+            self.hyaxis,
+            self.hxaxis,
             self.flims[0],
             self.flims[1],
+            self.npy,
             self.npx,
-            self.nh,
+            self.nhy,
+            self.nhx,
             num_blocks=self.num_blocks_matvec,
             num_threads_per_blocks=self.num_threads_per_blocks,
         )
@@ -261,19 +271,23 @@ class FourierRadon3D(LinearOperator):
     @reshaped
     def _rmatvec_cuda(self, y: NDArray) -> NDArray:
         ncp = get_array_module(y)
-        x = ncp.zeros((self.npx, self.nfft2), dtype=self.cdtype)
+        x = ncp.zeros((self.npy, self.npx, self.nfft2), dtype=self.cdtype)
 
         y = ncp.fft.rfft(y, n=self.nfft, axis=-1)
-        x = _aradon_inner_2d_cuda(
+        x = _aradon_inner_3d_cuda(
             x,
             y,
             ncp.asarray(self.f),
+            self.py,
             self.px,
-            self.haxis,
+            self.hyaxis,
+            self.hxaxis,
             self.flims[0],
             self.flims[1],
+            self.npy,
             self.npx,
-            self.nh,
+            self.nhy,
+            self.nhx,
             num_blocks=self.num_blocks_rmatvec,
             num_threads_per_blocks=self.num_threads_per_blocks,
         )
