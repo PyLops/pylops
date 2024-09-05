@@ -64,6 +64,11 @@ class FourierRadon2D(LinearOperator):
         Operator contains a matrix that can be solved explicitly (``True``) or
         not (``False``)
 
+    Raises
+    ------
+    NotImplementedError
+        If ``engine`` is neither ``numpy``, ``numba``, nor ``cuda``.
+
     Notes
     -----
     The FourierRadon2D operator applies the Radon transform in the frequency domain.
@@ -118,7 +123,7 @@ class FourierRadon2D(LinearOperator):
     ) -> None:
         # engine
         if engine not in ["numpy", "numba", "cuda"]:
-            raise KeyError("engine must be numpy or numba or cuda")
+            raise NotImplementedError("engine must be numpy or numba or cuda")
         if engine == "numba" and jit_message is not None:
             engine = "numpy"
 

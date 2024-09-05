@@ -37,7 +37,7 @@ class FourierRadon3D(LinearOperator):
     taxis : :obj:`np.ndarray`
         Time axis
     hxaxis : :obj:`np.ndarray`
-        Fast patial axis
+        Fast spatial axis
     hyaxis : :obj:`np.ndarray`
         Slow spatial axis
     pyaxis : :obj:`np.ndarray`
@@ -51,7 +51,8 @@ class FourierRadon3D(LinearOperator):
         the application of the Radon matrix (if ``None``, use entire axis)
     kind : :obj:`tuple`, optional
         Curves to be used for stacking/spreading along the y- and x- axes
-        (``linear``, ``parabolic``)
+        (``("linear", "linear")``, ``("linear", "parabolic")``,
+         ``("parabolic", "linear")``, or  ``("parabolic", "parabolic")``)
     engine : :obj:`str`, optional
         Engine used for computation (``numpy`` or ``numba`` or ``cuda``)
     num_threads_per_blocks : :obj:`tuple`, optional
@@ -68,6 +69,13 @@ class FourierRadon3D(LinearOperator):
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly (``True``) or
         not (``False``)
+
+    Raises
+    ------
+    NotImplementedError
+        If ``engine`` is neither ``numpy``, ``numba``, nor ``cuda``.
+    ValueError
+        If ``kind`` is not a tuple of two elements.
 
     Notes
     -----
@@ -117,7 +125,7 @@ class FourierRadon3D(LinearOperator):
         pyaxis: NDArray,
         nfft: int,
         flims: Optional[Tuple[int, int]] = None,
-        kind: Optional[str] = ("linear", "linear"),
+        kind: Optional[tuple] = ("linear", "linear"),
         engine: Optional[str] = "numpy",
         num_threads_per_blocks: Tuple[int, int] = (32, 32),
         dtype: Optional[DTypeLike] = "float64",
@@ -125,9 +133,13 @@ class FourierRadon3D(LinearOperator):
     ) -> None:
         # engine
         if engine not in ["numpy", "numba", "cuda"]:
-            raise KeyError("engine must be numpy or numba or cuda")
+            raise NotImplementedError("engine must be numpy or numba or cuda")
         if engine == "numba" and jit_message is not None:
             engine = "numpy"
+
+        # kind
+        if not isinstance(kind, (tuple, list)) and len(kind) != 2:
+            raise ValueError("kind must be a tuple of two elements")
 
         # dimensions and super
         dims = len(pyaxis), len(pxaxis), len(taxis)

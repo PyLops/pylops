@@ -4,6 +4,7 @@ __all__ = [
     "parabolic2d",
     "hyperbolic2d",
     "linear3d",
+    "parabolic3d",
     "hyperbolic3d",
 ]
 
@@ -160,7 +161,7 @@ def parabolic2d(
     r"""Parabolic 2D events
 
     Create 2d parabolic events given intercept time,
-    slowness, curvature, and amplitude of each event
+    slowness, curvature, and amplitude of each event.
 
     Parameters
     ----------
@@ -330,7 +331,7 @@ def linear3d(
     v : :obj:`float`
         propagation velocity
     t0 : :obj:`tuple` or :obj:`float`
-        intercept time at :math:`x=0` of each linear event
+        intercept time at :math:`x=0` and :math:`y=0` of each linear event
     theta : :obj:`tuple` or :obj:`float`
         angle in x direction (in degrees) of each linear event
     phi : :obj:`tuple` or :obj:`float`
@@ -384,6 +385,104 @@ def linear3d(
         py = np.sin(np.deg2rad(theta[ievent])) * np.sin(np.deg2rad(phi[ievent])) / v
         for iy in range(ny):
             tevent = t0[ievent] + px * x + py * y[iy]
+            tevent = (tevent - t[0]) / dt
+            itevent = tevent.astype(int)
+            dtevent = tevent - itevent
+            for ix in range(nx):
+                if itevent[ix] < nt - 1 and itevent[ix] >= 0:
+                    d[iy, ix, itevent[ix]] += amp[ievent] * (1 - dtevent[ix])
+                    d[iy, ix, itevent[ix] + 1] += amp[ievent] * dtevent[ix]
+
+    # filter events with certain wavelet
+    d, dwav = _filterdata(d, nt, wav, wcenter)
+    return d, dwav
+
+
+def parabolic3d(
+    x: npt.NDArray,
+    y: npt.NDArray,
+    t: npt.NDArray,
+    t0: Union[float, Tuple[float]],
+    px: Union[float, Tuple[float]],
+    py: Union[float, Tuple[float]],
+    pxx: Union[float, Tuple[float]],
+    pyy: Union[float, Tuple[float]],
+    amp: Union[float, Tuple[float]],
+    wav: npt.NDArray,
+) -> Tuple[npt.NDArray, npt.NDArray]:
+    r"""Parabolic 3D events
+
+    Create 3d parabolic events given intercept time,
+    slowness, curvature, and amplitude of each event.
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        space axis in x direction
+    y : :obj:`numpy.ndarray`
+        space axis in y direction
+    t : :obj:`numpy.ndarray`
+        time axis
+    t0 : :obj:`tuple` or :obj:`float`
+        intercept time at :math:`x=0` and :math:`y=0` of each parabolic event
+    px : :obj:`tuple` or :obj:`float`
+        slowness of each parabolic event in x direction
+    py : :obj:`tuple` or :obj:`float`
+        slowness of each parabolic event in y direction
+    pxx : :obj:`tuple` or :obj:`float`
+        curvature of each parabolic event
+    amp : :obj:`tuple` or :obj:`float`
+        amplitude of each linear event
+    wav : :obj:`numpy.ndarray`
+        wavelet to be applied to data
+
+    Returns
+    -------
+    d : :obj:`numpy.ndarray`
+        data without wavelet of size
+        :math:`[n_y \times n_x \times n_t]`
+    dwav : :obj:`numpy.ndarray`
+        data with wavelet of size
+        :math:`[n_y \times n_x \times n_t]`
+
+    Notes
+    -----
+    Each event is created using the following relation:
+
+    .. math::
+        t_i(x, y) = t_{0,i} + p_{x,i} x + p_{y,i} x + p_{xx,i} x^2 + p_{yy,i} y^2
+
+    """
+    if isinstance(t0, (float, int)):
+        t0 = (t0,)
+    if isinstance(px, (float, int)):
+        px = (px,)
+    if isinstance(py, (float, int)):
+        py = (py,)
+    if isinstance(pxx, (float, int)):
+        pxx = (pxx,)
+    if isinstance(pyy, (float, int)):
+        pyy = (pyy,)
+
+    # identify dimensions
+    dt = t[1] - t[0]
+    wcenter = int(len(wav) / 2)
+    nx = np.size(x)
+    ny = np.size(y)
+    nt = np.size(t) + wcenter
+    nevents = np.size(t0)
+
+    # create events
+    d = np.zeros((ny, nx, nt))
+    for ievent in range(nevents):
+        for iy in range(ny):
+            tevent = (
+                t0[ievent]
+                + px[ievent] * x
+                + py[ievent] * y[iy]
+                + pxx[ievent] * x**2
+                + pyy[ievent] * y[iy] ** 2
+            )
             tevent = (tevent - t[0]) / dt
             itevent = tevent.astype(int)
             dtevent = tevent - itevent

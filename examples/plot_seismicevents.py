@@ -106,9 +106,19 @@ plt.tight_layout()
 ############################################
 # Let's finally repeat the same exercise in 3d
 phi = [20, 0, -10]
+py = [0, 0, 0]
+pyy = [3e-5, 1e-5, 5e-6]
 
 mlin, mlinwav = pylops.utils.seismicevents.linear3d(
     x, y, t, v, t0, theta, phi, amp, wav
+)
+
+mpar, mparwav = pylops.utils.seismicevents.parabolic3d(
+    x, y, t, t0, px, py, pxx, pyy, amp, wav
+)
+
+mhyp, mhypwav = pylops.utils.seismicevents.hyperbolic3d(
+    x, y, t, t0, vrms, vrms, amp, wav
 )
 
 fig, axs = plt.subplots(1, 2, figsize=(7, 5), sharey=True)
@@ -135,9 +145,30 @@ axs[1].imshow(
 )
 axs[1].set_xlabel(r"$y(m)$")
 
-mhyp, mhypwav = pylops.utils.seismicevents.hyperbolic3d(
-    x, y, t, t0, vrms, vrms, amp, wav
+fig, axs = plt.subplots(1, 2, figsize=(7, 5), sharey=True)
+fig.suptitle("Parabolic events in 3d", fontsize=12, fontweight="bold", y=0.95)
+axs[0].imshow(
+    mparwav[par["ny"] // 2].T,
+    aspect="auto",
+    interpolation="nearest",
+    vmin=-2,
+    vmax=2,
+    cmap="gray",
+    extent=(x.min(), x.max(), t.max(), t.min()),
 )
+axs[0].set_xlabel(r"$x(m)$")
+axs[0].set_ylabel(r"$t(s)$")
+axs[1].imshow(
+    mparwav[:, par["nx"] // 2].T,
+    aspect="auto",
+    interpolation="nearest",
+    vmin=-2,
+    vmax=2,
+    cmap="gray",
+    extent=(y.min(), y.max(), t.max(), t.min()),
+)
+axs[1].set_xlabel(r"$y(m)$")
+
 
 fig, axs = plt.subplots(1, 2, figsize=(7, 5), sharey=True)
 fig.suptitle("Hyperbolic events in 3d", fontsize=12, fontweight="bold", y=0.95)
