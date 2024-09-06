@@ -36,10 +36,10 @@ class FourierRadon3D(LinearOperator):
     ----------
     taxis : :obj:`np.ndarray`
         Time axis
-    hxaxis : :obj:`np.ndarray`
-        Fast spatial axis
     hyaxis : :obj:`np.ndarray`
         Slow spatial axis
+    hxaxis : :obj:`np.ndarray`
+        Fast spatial axis
     pyaxis : :obj:`np.ndarray`
         Axis of scanning variable :math:`p_y` of parametric curve
     pxaxis : :obj:`np.ndarray`
@@ -121,8 +121,8 @@ class FourierRadon3D(LinearOperator):
         taxis: NDArray,
         hyaxis: NDArray,
         hxaxis: NDArray,
-        pxaxis: NDArray,
         pyaxis: NDArray,
+        pxaxis: NDArray,
         nfft: int,
         flims: Optional[Tuple[int, int]] = None,
         kind: Optional[tuple] = ("linear", "linear"),
@@ -209,6 +209,7 @@ class FourierRadon3D(LinearOperator):
     @reshaped
     def _matvec_numpy(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
+        self.f = ncp.asarray(self.f)
         x = ncp.fft.rfft(x.reshape(-1, self.dims[-1]), n=self.nfft, axis=-1)
 
         HY, HX = ncp.meshgrid(self.hyaxis, self.hxaxis, indexing="ij")
@@ -233,6 +234,7 @@ class FourierRadon3D(LinearOperator):
     @reshaped
     def _rmatvec_numpy(self, y: NDArray) -> NDArray:
         ncp = get_array_module(y)
+        self.f = ncp.asarray(self.f)
         y = ncp.fft.rfft(y.reshape(-1, self.dimsd[-1]), n=self.nfft, axis=-1)
 
         HY, HX = ncp.meshgrid(self.hyaxis, self.hxaxis, indexing="ij")
@@ -277,7 +279,7 @@ class FourierRadon3D(LinearOperator):
             num_blocks=self.num_blocks_matvec,
             num_threads_per_blocks=self.num_threads_per_blocks,
         )
-        y = ncp.real(ncp.fft.irfft(y, n=self.nfft, axis=-1))[:, : self.nt]
+        y = ncp.real(ncp.fft.irfft(y, n=self.nfft, axis=-1))[:, :, : self.nt]
         return y
 
     @reshaped
@@ -303,7 +305,7 @@ class FourierRadon3D(LinearOperator):
             num_blocks=self.num_blocks_rmatvec,
             num_threads_per_blocks=self.num_threads_per_blocks,
         )
-        x = ncp.real(ncp.fft.irfft(x, n=self.nfft, axis=-1))[:, : self.nt]
+        x = ncp.real(ncp.fft.irfft(x, n=self.nfft, axis=-1))[:, :, : self.nt]
         return x
 
     @reshaped
@@ -326,7 +328,7 @@ class FourierRadon3D(LinearOperator):
             self.nhy,
             self.nhx,
         )
-        y = np.real(sp.fft.irfft(y, n=self.nfft, axis=-1))[:, : self.nt]
+        y = np.real(sp.fft.irfft(y, n=self.nfft, axis=-1))[:, :, : self.nt]
         return y
 
     @reshaped
@@ -349,5 +351,5 @@ class FourierRadon3D(LinearOperator):
             self.nhy,
             self.nhx,
         )
-        x = np.real(sp.fft.irfft(x, n=self.nfft, axis=-1))[:, : self.nt]
+        x = np.real(sp.fft.irfft(x, n=self.nfft, axis=-1))[:, :, : self.nt]
         return x

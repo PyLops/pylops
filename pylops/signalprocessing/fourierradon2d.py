@@ -184,6 +184,7 @@ class FourierRadon2D(LinearOperator):
     @reshaped
     def _matvec_numpy(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
+        self.f = ncp.asarray(self.f)
         x = ncp.fft.rfft(x, n=self.nfft, axis=-1)
 
         H, PX, F = ncp.meshgrid(
@@ -201,6 +202,7 @@ class FourierRadon2D(LinearOperator):
     @reshaped
     def _rmatvec_numpy(self, y: NDArray) -> NDArray:
         ncp = get_array_module(y)
+        self.f = ncp.asarray(self.f)
         y = ncp.fft.rfft(y, n=self.nfft, axis=-1)
 
         PX, H, F = ncp.meshgrid(

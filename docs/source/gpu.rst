@@ -281,6 +281,14 @@ Signal processing:
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
+   * - :class:`pylops.signalprocessing.FourierRadon2D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.FourierRadon3D`
+     - |:white_check_mark:|
+     - |:white_check_mark:|
+     - |:red_circle:|
    * - :class:`pylops.signalprocessing.ChirpRadon2D`
      - |:white_check_mark:|
      - |:white_check_mark:|

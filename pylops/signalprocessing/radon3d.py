@@ -189,10 +189,10 @@ def Radon3D(
     ----------
     taxis : :obj:`np.ndarray`
         Time axis
-    hxaxis : :obj:`np.ndarray`
-        Fast patial axis
     hyaxis : :obj:`np.ndarray`
         Slow spatial axis
+    hxaxis : :obj:`np.ndarray`
+        False spatial axis
     pyaxis : :obj:`np.ndarray`
         Axis of scanning variable :math:`p_y` of parametric curve
     pxaxis : :obj:`np.ndarray`
