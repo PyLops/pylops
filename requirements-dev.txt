@@ -11,6 +11,7 @@ scikit-fmm
 sympy
 devito
 dtcwt
+ucurv
 matplotlib
 ipython
 pytest
@@ -30,4 +31,3 @@ isort
 black
 flake8
 mypy
-ucurv
