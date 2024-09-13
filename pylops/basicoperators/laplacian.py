@@ -2,13 +2,20 @@ __all__ = ["Laplacian"]
 
 
 from typing import Tuple
-from pylops.utils.typing import NDArray
 
-from numpy.core.multiarray import normalize_axis_index
+import numpy as np
 
 from pylops import LinearOperator
 from pylops.basicoperators import SecondDerivative
-from pylops.utils.typing import DTypeLike, InputDimsLike
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+
+# need to check numpy version since the namespace of normalize_axis_index
+# changed from numpy>=2.0.0
+np_version = np.__version__.split(".")
+if int(np_version[0]) > 1:
+    from numpy.lib.array_utils import normalize_axis_index
+else:
+    from numpy.core.multiarray import normalize_axis_index
 
 
 class Laplacian(LinearOperator):
@@ -58,13 +65,17 @@ class Laplacian(LinearOperator):
 
     """
 
-    def __init__(self, dims: InputDimsLike,
-                 axes: InputDimsLike = (-2, -1),
-                 weights: Tuple[float, ...] = (1, 1),
-                 sampling: Tuple[float, ...] = (1, 1),
-                 edge: bool = False,
-                 kind: str = "centered",
-                 dtype: DTypeLike = "float64", name: str = "L"):
+    def __init__(
+        self,
+        dims: InputDimsLike,
+        axes: InputDimsLike = (-2, -1),
+        weights: Tuple[float, ...] = (1, 1),
+        sampling: Tuple[float, ...] = (1, 1),
+        edge: bool = False,
+        kind: str = "centered",
+        dtype: DTypeLike = "float64",
+        name: str = "L",
+    ):
         axes = tuple(normalize_axis_index(ax, len(dims)) for ax in axes)
         if not (len(axes) == len(weights) == len(sampling)):
             raise ValueError("axes, weights, and sampling have different size")
@@ -73,8 +84,15 @@ class Laplacian(LinearOperator):
         self.sampling = sampling
         self.edge = edge
         self.kind = kind
-        Op = self._calc_l2op(dims=dims, axes=axes, sampling=sampling, edge=edge, kind=kind, dtype=dtype,
-                             weights=weights)
+        Op = self._calc_l2op(
+            dims=dims,
+            axes=axes,
+            sampling=sampling,
+            edge=edge,
+            kind=kind,
+            dtype=dtype,
+            weights=weights,
+        )
         super().__init__(Op=Op, name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
@@ -84,8 +102,15 @@ class Laplacian(LinearOperator):
         return super()._rmatvec(x)
 
     @staticmethod
-    def _calc_l2op(dims: InputDimsLike, axes: InputDimsLike, weights: Tuple[float, ...], sampling: Tuple[float, ...],
-                   edge: bool, kind: str, dtype: DTypeLike):
+    def _calc_l2op(
+        dims: InputDimsLike,
+        axes: InputDimsLike,
+        weights: Tuple[float, ...],
+        sampling: Tuple[float, ...],
+        edge: bool,
+        kind: str,
+        dtype: DTypeLike,
+    ):
         l2op = SecondDerivative(
             dims, axis=axes[0], sampling=sampling[0], edge=edge, kind=kind, dtype=dtype
         )

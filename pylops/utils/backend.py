@@ -2,6 +2,7 @@ __all__ = [
     "get_module",
     "get_module_name",
     "get_array_module",
+    "get_normalize_axis_index",
     "get_convolve",
     "get_fftconvolve",
     "get_oaconvolve",
@@ -58,6 +59,14 @@ if deps.jax_enabled:
     from jax.scipy.linalg import toeplitz as jnp_toeplitz
     from jax.scipy.signal import convolve as j_convolve
     from jax.scipy.signal import fftconvolve as j_fftconvolve
+
+# need to check numpy version since the namespace of normalize_axis_index
+# changed from numpy>=2.0.0
+np_version = np.__version__.split(".")
+if int(np_version[0]) > 1:
+    from numpy.lib.array_utils import normalize_axis_index
+else:
+    from numpy.core.multiarray import normalize_axis_index
 
 
 def get_module(backend: str = "numpy") -> ModuleType:
@@ -136,6 +145,18 @@ def get_array_module(x: npt.ArrayLike) -> ModuleType:
             return np
     else:
         return np
+
+
+def get_normalize_axis_index() -> Callable:
+    """Returns correct normalize_axis_index module based on numpy version
+
+    Returns
+    -------
+    f : :obj:`func`
+        Function to be used to process array
+
+    """
+    return normalize_axis_index
 
 
 def get_convolve(x: npt.ArrayLike) -> Callable:

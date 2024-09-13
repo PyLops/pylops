@@ -1,10 +1,10 @@
 __all__ = ["Transpose"]
 
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
+from pylops.utils.backend import get_normalize_axis_index
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -64,7 +64,7 @@ class Transpose(LinearOperator):
     ) -> None:
         dims = _value_or_sized_to_tuple(dims)
         ndims = len(dims)
-        self.axes = [normalize_axis_index(ax, ndims) for ax in axes]
+        self.axes = [get_normalize_axis_index()(ax, ndims) for ax in axes]
 
         # find out if all axes are present only once in axes
         if len(np.unique(self.axes)) != ndims:

@@ -3,13 +3,20 @@ __all__ = ["FirstDerivative"]
 from typing import Callable, Union
 
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module, inplace_add, inplace_set
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+
+# need to check numpy version since the namespace of normalize_axis_index
+# changed from numpy>=2.0.0
+np_version = np.__version__.split(".")
+if int(np_version[0]) > 1:
+    from numpy.lib.array_utils import normalize_axis_index
+else:
+    from numpy.core.multiarray import normalize_axis_index
 
 
 class FirstDerivative(LinearOperator):
