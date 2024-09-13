@@ -6,17 +6,14 @@ from typing import Sequence, Union
 import numpy as np
 import numpy.ma as np_ma
 
-# need to check numpy version since normalize_axis_index will be
-# soon moved from numpy.core.multiarray to from numpy.lib.array_utils
-np_version = np.__version__.split(".")
-if int(np_version[0]) < 2:
-    from numpy.core.multiarray import normalize_axis_index
-else:
-    from numpy.lib.array_utils import normalize_axis_index
-
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.backend import get_array_module, inplace_set, to_cupy_conditional
+from pylops.utils.backend import (
+    get_array_module,
+    get_normalize_axis_index,
+    inplace_set,
+    to_cupy_conditional,
+)
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -119,7 +116,7 @@ class Restriction(LinearOperator):
     ) -> None:
         ncp = get_array_module(iava)
         dims = _value_or_sized_to_tuple(dims)
-        axis = normalize_axis_index(axis, len(dims))
+        axis = get_normalize_axis_index()(axis, len(dims))
         dimsd = list(dims)  # data dimensions
         dimsd[axis] = len(iava)
 
