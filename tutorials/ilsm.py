@@ -164,14 +164,14 @@ axs[0].imshow(
     dpsf[ns // 2, :, :].T,
     extent=(rx[0], rx[-1], t[-1], t[0]),
     cmap="gray",
-    vmin=-200,
-    vmax=200,
+    vmin=-1e1,
+    vmax=1e1,
 )
 axs[0].axis("tight")
 axs[0].set_xlabel("x [m]"), axs[0].set_ylabel("t [m]")
 axs[0].set_title(r"$d_{psf}$")
 axs[1].imshow(
-    mmigpsf.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]), vmin=-200, vmax=200
+    mmigpsf.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]), vmin=-5e0, vmax=5e0
 )
 axs[1].scatter(Psfx.ravel() * dx, Psfz.ravel() * dz, c="r")
 axs[1].set_xlabel("x [m]"), axs[1].set_ylabel("z [m]")
@@ -196,16 +196,16 @@ fig, axs = plt.subplots(2, 1, figsize=(10, 5))
 axs[0].imshow(
     psfs[:, 0].reshape(len(psfx) * psfsize[0], psfsize[1]).T,
     cmap="gray",
-    vmin=-200,
-    vmax=200,
+    vmin=-5e0,
+    vmax=5e0,
 )
 axs[0].set_title(r"$m_{psf}$ iz=0")
 axs[0].axis("tight")
 axs[1].imshow(
     psfs[:, 1].reshape(len(psfx) * psfsize[0], psfsize[1]).T,
     cmap="gray",
-    vmin=-200,
-    vmax=200,
+    vmin=-5e0,
+    vmax=5e0,
 )
 axs[1].set_title(r"$m_{psf}$ iz=1")
 axs[1].axis("tight")
@@ -219,12 +219,12 @@ mmigpsf = Cop @ refl
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 axs[0].imshow(
-    mmig.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]), vmin=-1e3, vmax=1e3
+    mmig.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]), vmin=-5e1, vmax=5e1
 )
 axs[0].set_title(r"$m_{mig}$")
 axs[0].axis("tight")
 axs[1].imshow(
-    mmigpsf.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]), vmin=-1e3, vmax=1e3
+    mmigpsf.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]), vmin=-5e1, vmax=5e1
 )
 axs[1].set_title(r"$m_{mig, psf}$")
 axs[1].axis("tight")
@@ -235,13 +235,17 @@ plt.tight_layout()
 # reflectivity using the :py:func:`pylops.optimization.sparsity.fista` solver.
 
 minv, _, resnorm = pylops.optimization.sparsity.fista(
-    Cop, mmig.ravel(), eps=1e5, niter=100, eigsdict=dict(niter=5, tol=1e-2), show=True
+    Cop, mmig.ravel(), eps=1e2, niter=100, eigsdict=dict(niter=5, tol=1e-2), show=True
 )
 minv = minv.reshape(nx, nz)
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 axs[0].imshow(
-    mmig.T, cmap="gray", extent=(x[0], x[-1], z[-1], z[0]), vmin=-500, vmax=500
+    mmig.T,
+    cmap="gray",
+    extent=(x[0], x[-1], z[-1], z[0]),
+    vmin=-5e1,
+    vmax=5e1,
 )
 axs[0].set_title(r"$m_{mig}$")
 axs[0].axis("tight")
