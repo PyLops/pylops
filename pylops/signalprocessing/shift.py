@@ -4,11 +4,11 @@ from typing import Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
-from numpy.core.multiarray import normalize_axis_index
 
 from pylops.basicoperators import Diagonal
 from pylops.signalprocessing import FFT
 from pylops.utils._internal import _value_or_sized_to_array
+from pylops.utils.backend import get_normalize_axis_index
 from pylops.utils.typing import DTypeLike
 
 
@@ -113,7 +113,7 @@ def Shift(
         Sop = Diagonal(shift, dims=dimsdiag, axis=axis, dtype=Fop.cdtype)
     else:
         # add dimensions to shift to match dimensions of model and data
-        axis = normalize_axis_index(axis, len(dims))
+        axis = get_normalize_axis_index()(axis, len(dims))
         fdims = np.ones(shift.ndim + 1, dtype=int)
         fdims[axis] = Fop.f.size
         f = Fop.f.reshape(fdims)

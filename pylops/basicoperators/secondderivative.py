@@ -3,11 +3,15 @@ __all__ = ["SecondDerivative"]
 from typing import Callable, Union
 
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.backend import get_array_module, inplace_add, inplace_set
+from pylops.utils.backend import (
+    get_array_module,
+    get_normalize_axis_index,
+    inplace_add,
+    inplace_set,
+)
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
@@ -86,7 +90,7 @@ class SecondDerivative(LinearOperator):
         dims = _value_or_sized_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
-        self.axis = normalize_axis_index(axis, len(self.dims))
+        self.axis = get_normalize_axis_index()(axis, len(self.dims))
         self.sampling = sampling
         self.kind = kind
         self.edge = edge

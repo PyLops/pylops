@@ -4,7 +4,6 @@ from enum import Enum, auto
 from typing import Optional, Sequence, Union
 
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import (
@@ -12,7 +11,11 @@ from pylops.utils._internal import (
     _value_or_sized_to_array,
     _value_or_sized_to_tuple,
 )
-from pylops.utils.backend import get_complex_dtype, get_real_dtype
+from pylops.utils.backend import (
+    get_complex_dtype,
+    get_normalize_axis_index,
+    get_real_dtype,
+)
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
@@ -46,7 +49,7 @@ class _BaseFFT(LinearOperator):
 
         axes = _value_or_sized_to_array(axis)
         _raise_on_wrong_dtype(axes, np.integer, "axis")
-        self.axis = normalize_axis_index(axes[0], self.ndim)
+        self.axis = get_normalize_axis_index()(axes[0], self.ndim)
 
         if nfft is None:
             self.nfft = dims[self.axis]
@@ -152,7 +155,7 @@ class _BaseFFTND(LinearOperator):
 
         axes = _value_or_sized_to_array(axes)
         _raise_on_wrong_dtype(axes, np.integer, "axes")
-        self.axes = np.array([normalize_axis_index(d, self.ndim) for d in axes])
+        self.axes = np.array([get_normalize_axis_index()(d, self.ndim) for d in axes])
         self.naxes = len(self.axes)
         if self.naxes != len(np.unique(self.axes)):
             warnings.warn(
