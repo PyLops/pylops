@@ -61,6 +61,7 @@ jobs:
   - script: |
       python -m pip install --upgrade pip setuptools wheel django
       pip install -r requirements-dev.txt
+      pip install -r requirements-torch.txt
       pip install .
     displayName: 'Install prerequisites and library'
 
@@ -90,6 +91,7 @@ jobs:
   - script: |
       python -m pip install --upgrade pip setuptools wheel django
       pip install -r requirements-dev.txt
+      pip install -r requirements-torch.txt
       pip install .
     displayName: 'Install prerequisites and library'
 

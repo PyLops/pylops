@@ -21,7 +21,8 @@ install:
 
 dev-install:
 	make pipcheck
-	$(PIP) install -r requirements-dev.txt && $(PIP) install -e .
+	$(PIP) install -r requirements-dev.txt &&\
+	$(PIP) install -r requirements-torch.txt && $(PIP) install -e .
 
 install_conda:
 	conda env create -f environment.yml && conda activate pylops && pip install .
