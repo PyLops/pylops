@@ -153,7 +153,7 @@ class FourierRadon3D(LinearOperator):
         self.dt = taxis[1] - taxis[0]
         self.dhy = hyaxis[1] - hyaxis[0]
         self.dhx = hxaxis[1] - hxaxis[0]
-        self.f = np.fft.rfftfreq(self.nfft, d=self.dt)
+        self.f = np.fft.rfftfreq(self.nfft, d=self.dt).astype(self.dtype)
         self.nfft2 = len(self.f)
         self.cdtype = get_complex_dtype(dtype)
         self.flims = (0, self.nfft2) if flims is None else flims

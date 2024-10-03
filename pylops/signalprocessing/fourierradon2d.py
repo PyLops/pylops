@@ -138,7 +138,7 @@ class FourierRadon2D(LinearOperator):
         self.npx, self.nfft = self.dims[0], nfft
         self.dt = taxis[1] - taxis[0]
         self.dh = haxis[1] - haxis[0]
-        self.f = np.fft.rfftfreq(self.nfft, d=self.dt)
+        self.f = np.fft.rfftfreq(self.nfft, d=self.dt).astype(self.dtype)
         self.nfft2 = len(self.f)
         self.cdtype = get_complex_dtype(dtype)
         self.flims = (0, self.nfft2) if flims is None else flims
