@@ -15,7 +15,6 @@ from pylops.utils.typing import DTypeLike, NDArray
 jit_message = deps.numba_import("the radon2d module")
 
 if jit_message is None:
-
     from ._fourierradon2d_cuda import _aradon_inner_2d_cuda, _radon_inner_2d_cuda
     from ._fourierradon2d_numba import _aradon_inner_2d, _radon_inner_2d
 
@@ -44,16 +43,16 @@ class FourierRadon2D(LinearOperator):
         Number of samples in Fourier transform
     flims : :obj:`tuple`, optional
         Indices of lower and upper limits of Fourier axis to be used in
-        the application of the Radon matrix (if ``None``, use entire axis)
-    kind : :obj:`str`, optional
+        the application of the Radon matrix (when ``None``, use entire axis)
+    kind : :obj:`str`
         Curve to be used for stacking/spreading (``linear``, ``parabolic``)
-    engine : :obj:`str`, optional
+    engine : :obj:`str`
         Engine used for computation (``numpy`` or ``numba`` or ``cuda``)
-    num_threads_per_blocks : :obj:`tuple`, optional
+    num_threads_per_blocks : :obj:`tuple`
         Number of threads in each block (only when ``engine=cuda``)
-    dtype : :obj:`str`, optional
+    dtype : :obj:`str`
         Type of elements in input array.
-    name : :obj:`str`, optional
+    name : :obj:`str`
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
@@ -115,11 +114,11 @@ class FourierRadon2D(LinearOperator):
         pxaxis: NDArray,
         nfft: int,
         flims: Optional[Tuple[int, int]] = None,
-        kind: Optional[str] = "linear",
-        engine: Optional[str] = "numpy",
+        kind: str = "linear",
+        engine: str = "numpy",
         num_threads_per_blocks: Tuple[int, int] = (32, 32),
-        dtype: Optional[DTypeLike] = "float64",
-        name: Optional[str] = "C",
+        dtype: DTypeLike = "float64",
+        name: str = "R",
     ) -> None:
         # engine
         if engine not in ["numpy", "numba", "cuda"]:
@@ -140,12 +139,9 @@ class FourierRadon2D(LinearOperator):
         self.dt = taxis[1] - taxis[0]
         self.dh = haxis[1] - haxis[0]
         self.f = np.fft.rfftfreq(self.nfft, d=self.dt)
-        self.nfft2 = self.f.size
+        self.nfft2 = len(self.f)
         self.cdtype = get_complex_dtype(dtype)
-
-        self.flims = flims
-        if flims is None:
-            self.flims = (0, self.nfft2)
+        self.flims = (0, self.nfft2) if flims is None else flims
 
         if kind == "parabolic":
             self.haxis = self.haxis**2

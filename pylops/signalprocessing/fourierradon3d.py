@@ -15,7 +15,6 @@ from pylops.utils.typing import DTypeLike, NDArray
 jit_message = deps.numba_import("the radon2d module")
 
 if jit_message is None:
-
     from ._fourierradon3d_cuda import _aradon_inner_3d_cuda, _radon_inner_3d_cuda
     from ._fourierradon3d_numba import _aradon_inner_3d, _radon_inner_3d
 
@@ -48,18 +47,18 @@ class FourierRadon3D(LinearOperator):
         Number of samples in Fourier transform
     flims : :obj:`tuple`, optional
         Indices of lower and upper limits of Fourier axis to be used in
-        the application of the Radon matrix (if ``None``, use entire axis)
-    kind : :obj:`tuple`, optional
+        the application of the Radon matrix (when ``None``, use entire axis)
+    kind : :obj:`tuple`
         Curves to be used for stacking/spreading along the y- and x- axes
         (``("linear", "linear")``, ``("linear", "parabolic")``,
          ``("parabolic", "linear")``, or  ``("parabolic", "parabolic")``)
-    engine : :obj:`str`, optional
+    engine : :obj:`str`
         Engine used for computation (``numpy`` or ``numba`` or ``cuda``)
-    num_threads_per_blocks : :obj:`tuple`, optional
+    num_threads_per_blocks : :obj:`tuple`
         Number of threads in each block (only when ``engine=cuda``)
-    dtype : :obj:`str`, optional
+    dtype : :obj:`str`
         Type of elements in input array.
-    name : :obj:`str`, optional
+    name : :obj:`str`
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
@@ -125,11 +124,11 @@ class FourierRadon3D(LinearOperator):
         pxaxis: NDArray,
         nfft: int,
         flims: Optional[Tuple[int, int]] = None,
-        kind: Optional[tuple] = ("linear", "linear"),
-        engine: Optional[str] = "numpy",
+        kind: Tuple[str, str] = ("linear", "linear"),
+        engine: str = "numpy",
         num_threads_per_blocks: Tuple[int, int] = (32, 32),
-        dtype: Optional[DTypeLike] = "float64",
-        name: Optional[str] = "C",
+        dtype: DTypeLike = "float64",
+        name: str = "R",
     ) -> None:
         # engine
         if engine not in ["numpy", "numba", "cuda"]:
@@ -138,7 +137,7 @@ class FourierRadon3D(LinearOperator):
             engine = "numpy"
 
         # kind
-        if not isinstance(kind, (tuple, list)) and len(kind) != 2:
+        if len(kind) != 2:
             raise ValueError("kind must be a tuple of two elements")
 
         # dimensions and super
@@ -155,12 +154,9 @@ class FourierRadon3D(LinearOperator):
         self.dhy = hyaxis[1] - hyaxis[0]
         self.dhx = hxaxis[1] - hxaxis[0]
         self.f = np.fft.rfftfreq(self.nfft, d=self.dt)
-        self.nfft2 = self.f.size
+        self.nfft2 = len(self.f)
         self.cdtype = get_complex_dtype(dtype)
-
-        self.flims = flims
-        if flims is None:
-            self.flims = (0, self.nfft2)
+        self.flims = (0, self.nfft2) if flims is None else flims
 
         if kind[0] == "parabolic":
             self.hyaxis = self.hyaxis**2
