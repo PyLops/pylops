@@ -1,4 +1,6 @@
 import os
+from cmath import exp
+from math import pi
 
 import numpy as np
 from numba import jit, prange
@@ -13,9 +15,7 @@ def _radon_inner_2d(X, Y, f, px, h, flim0, flim1, npx, nh):
     for ih in prange(nh):
         for ifr in range(flim0, flim1):
             for ipx in range(npx):
-                Y[ih, ifr] += X[ipx, ifr] * np.exp(
-                    -1j * 2 * np.pi * f[ifr] * px[ipx] * h[ih]
-                )
+                Y[ih, ifr] += X[ipx, ifr] * exp(-1j * 2 * pi * f[ifr] * px[ipx] * h[ih])
     return Y
 
 
@@ -24,7 +24,5 @@ def _aradon_inner_2d(X, Y, f, px, h, flim0, flim1, npx, nh):
     for ipx in prange(npx):
         for ifr in range(flim0, flim1):
             for ih in range(nh):
-                X[ipx, ifr] += Y[ih, ifr] * np.exp(
-                    1j * 2 * np.pi * f[ifr] * px[ipx] * h[ih]
-                )
+                X[ipx, ifr] += Y[ih, ifr] * exp(1j * 2 * pi * f[ifr] * px[ipx] * h[ih])
     return X

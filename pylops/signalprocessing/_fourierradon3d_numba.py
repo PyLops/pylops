@@ -1,4 +1,6 @@
 import os
+from cmath import exp
+from math import pi
 
 import numpy as np
 from numba import jit, prange
@@ -15,10 +17,10 @@ def _radon_inner_3d(X, Y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy, nhx):
             for ifr in range(flim0, flim1):
                 for ipy in range(npy):
                     for ipx in range(npx):
-                        Y[ihy, ihx, ifr] += X[ipy, ipx, ifr] * np.exp(
+                        Y[ihy, ihx, ifr] += X[ipy, ipx, ifr] * exp(
                             -1j
                             * 2
-                            * np.pi
+                            * pi
                             * f[ifr]
                             * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
                         )
@@ -32,10 +34,10 @@ def _aradon_inner_3d(X, Y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy, nhx):
             for ifr in range(flim0, flim1):
                 for ihy in range(nhy):
                     for ihx in range(nhx):
-                        X[ipy, ipx, ifr] += Y[ihy, ihx, ifr] * np.exp(
+                        X[ipy, ipx, ifr] += Y[ihy, ihx, ifr] * exp(
                             1j
                             * 2
-                            * np.pi
+                            * pi
                             * f[ifr]
                             * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
                         )
