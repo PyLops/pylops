@@ -29,6 +29,7 @@ A list of operators present in pylops.signalprocessing:
     Radon2D	                        Two dimensional Radon transform.
     Radon3D	                        Three dimensional Radon transform.
     FourierRadon2D	                Two dimensional Fourier Radon transform.
+    FourierRadon3D	                Three dimensional Fourier Radon transform.
     ChirpRadon2D	                Two dimensional Chirp Radon transform.
     ChirpRadon3D	                Three dimensional Chirp Radon transform.
     Seislet                         Two dimensional Seislet operator.
@@ -41,37 +42,36 @@ A list of operators present in pylops.signalprocessing:
 
 """
 
-from .fft import *
-from .fft2d import *
-from .fftnd import *
-from .convolve1d import *
-from .convolvend import *
-from .convolve2d import *
-from .nonstatconvolve1d import *
-from .nonstatconvolve2d import *
-from .nonstatconvolve3d import *
-from .shift import *
-from .interp import *
 from .bilinear import *
-from .radon2d import *
-from .radon3d import *
-from .fourierradon2d import *
-from .fourierradon3d import *
 from .chirpradon2d import *
 from .chirpradon3d import *
-from .sliding1d import *
-from .sliding2d import *
-from .sliding3d import *
-from .patch2d import *
-from .patch3d import *
-from .fredholm1 import *
+from .convolve1d import *
+from .convolve2d import *
+from .convolvend import *
+from .dct import *
+from .dtcwt import *
 from .dwt import *
 from .dwt2d import *
 from .dwtnd import *
+from .fft import *
+from .fft2d import *
+from .fftnd import *
+from .fourierradon2d import *
+from .fourierradon3d import *
+from .fredholm1 import *
+from .interp import *
+from .nonstatconvolve1d import *
+from .nonstatconvolve2d import *
+from .nonstatconvolve3d import *
+from .patch2d import *
+from .patch3d import *
+from .radon2d import *
+from .radon3d import *
 from .seislet import *
-from .dct import *
-from .dtcwt import *
-
+from .shift import *
+from .sliding1d import *
+from .sliding2d import *
+from .sliding3d import *
 
 __all__ = [
     "FFT",
