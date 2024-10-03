@@ -2,7 +2,6 @@ import os
 from cmath import exp
 from math import pi
 
-import numpy as np
 from numba import jit, prange
 
 # detect whether to use parallel or not
