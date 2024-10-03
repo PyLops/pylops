@@ -14,6 +14,8 @@ import numpy as np
 import numpy.typing as npt
 import scipy.signal as filt
 
+from pylops.utils._internal import _value_or_sized_to_array
+
 
 def _filterdata(
     d: npt.NDArray, nt: int, wav: npt.ArrayLike, wcenter: int
@@ -117,12 +119,9 @@ def linear2d(
     where :math:`p_{x,i}=\sin( \theta_i)/v`
 
     """
-    if isinstance(t0, (float, int)):
-        t0 = (t0,)
-    if isinstance(theta, (float, int)):
-        theta = (theta,)
-    if isinstance(amp, (float, int)):
-        amp = (amp,)
+    t0 = _value_or_sized_to_array(t0)
+    theta = _value_or_sized_to_array(theta)
+    amp = _value_or_sized_to_array(amp)
 
     # identify dimensions
     dt = t[1] - t[0]
@@ -197,14 +196,10 @@ def parabolic2d(
         t_i(x) = t_{0,i} + p_{x,i} x + p_{xx,i} x^2
 
     """
-    if isinstance(t0, (float, int)):
-        t0 = (t0,)
-    if isinstance(px, (float, int)):
-        px = (px,)
-    if isinstance(pxx, (float, int)):
-        pxx = (pxx,)
-    if isinstance(amp, (float, int)):
-        amp = (amp,)
+    t0 = _value_or_sized_to_array(t0)
+    px = _value_or_sized_to_array(px)
+    pxx = _value_or_sized_to_array(pxx)
+    amp = _value_or_sized_to_array(amp)
 
     # identify dimensions
     dt = t[1] - t[0]
@@ -273,12 +268,9 @@ def hyperbolic2d(
         t_i(x) = \sqrt{t_{0,i}^2 + \frac{x^2}{v_{\text{rms},i}^2}}
 
     """
-    if isinstance(t0, (float, int)):
-        t0 = (t0,)
-    if isinstance(vrms, (float, int)):
-        vrms = (vrms,)
-    if isinstance(amp, (float, int)):
-        amp = (amp,)
+    t0 = _value_or_sized_to_array(t0)
+    vrms = _value_or_sized_to_array(vrms)
+    amp = _value_or_sized_to_array(amp)
 
     # identify dimensions
     dt = t[1] - t[0]
@@ -361,14 +353,10 @@ def linear3d(
     and :math:`p_{x,i}=\frac{1}{v} \sin( \theta_i)\sin( \phi_i)`.
 
     """
-    if isinstance(t0, (float, int)):
-        t0 = (t0,)
-    if isinstance(theta, (float, int)):
-        theta = (theta,)
-    if isinstance(phi, (float, int)):
-        phi = (phi,)
-    if isinstance(amp, (float, int)):
-        amp = (amp,)
+    t0 = _value_or_sized_to_array(t0)
+    theta = _value_or_sized_to_array(theta)
+    phi = _value_or_sized_to_array(phi)
+    amp = _value_or_sized_to_array(amp)
 
     # identify dimensions
     dt = t[1] - t[0]
@@ -453,16 +441,12 @@ def parabolic3d(
         t_i(x, y) = t_{0,i} + p_{x,i} x + p_{y,i} x + p_{xx,i} x^2 + p_{yy,i} y^2
 
     """
-    if isinstance(t0, (float, int)):
-        t0 = (t0,)
-    if isinstance(px, (float, int)):
-        px = (px,)
-    if isinstance(py, (float, int)):
-        py = (py,)
-    if isinstance(pxx, (float, int)):
-        pxx = (pxx,)
-    if isinstance(pyy, (float, int)):
-        pyy = (pyy,)
+    t0 = _value_or_sized_to_array(t0)
+    px = _value_or_sized_to_array(px)
+    py = _value_or_sized_to_array(py)
+    pxx = _value_or_sized_to_array(pxx)
+    pyy = _value_or_sized_to_array(pyy)
+    amp = _value_or_sized_to_array(amp)
 
     # identify dimensions
     dt = t[1] - t[0]
@@ -550,14 +534,10 @@ def hyperbolic3d(
     simply control the curvature of the hyperboloid along the spatial axes.
 
     """
-    if isinstance(t0, (float, int)):
-        t0 = (t0,)
-    if isinstance(vrms_x, (float, int)):
-        vrms_x = (vrms_x,)
-    if isinstance(vrms_y, (float, int)):
-        vrms_y = (vrms_y,)
-    if isinstance(amp, (float, int)):
-        amp = (amp,)
+    t0 = _value_or_sized_to_array(t0)
+    vrms_x = _value_or_sized_to_array(vrms_x)
+    vrms_y = _value_or_sized_to_array(vrms_y)
+    amp = _value_or_sized_to_array(amp)
 
     # identify dimensions
     dt = t[1] - t[0]
