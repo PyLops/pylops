@@ -12,6 +12,7 @@ this is analytically correct (compared to performing to shifting the data via
 nearest or linear interpolation).
 
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -74,7 +75,7 @@ axs[1].imshow(
     vmax=dL.max(),
     extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1].scatter(1e3 * np.sin(np.deg2rad(theta[0])) / 1500.0, t0[0], s=50, color="r")
+axs[1].scatter(1e3 * np.sin(np.deg2rad(theta[0])) / 1500.0, t0[0], s=50, color="k")
 axs[1].set(xlabel=r"$p$ [s/km]", title="Radon")
 axs[1].axis("tight")
 axs[2].imshow(
@@ -117,7 +118,7 @@ axs[1].imshow(
     vmax=dL.max(),
     extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1].scatter(1e3 * pxx[0], t0[0], s=50, color="r")
+axs[1].scatter(1e3 * pxx[0], t0[0], s=50, color="k")
 axs[1].set(xlabel=r"$p$ [s/km]", title="Radon")
 axs[1].axis("tight")
 axs[2].imshow(
@@ -189,7 +190,7 @@ axs[1].imshow(
     vmax=dL.max(),
     extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1].scatter(1e3 * pxx, t0[0], s=50, color="r")
+axs[1].scatter(1e3 * pxx, t0[0], s=50, color="k")
 axs[1].set(xlabel=r"$p_x$ [s/km]", title="Radon 3d - y")
 axs[1].axis("tight")
 axs[2].imshow(
@@ -220,7 +221,7 @@ axs[1].imshow(
     vmax=dL.max(),
     extent=(1e3 * py[0], 1e3 * py[-1], t[-1], t[0]),
 )
-axs[1].scatter(1e3 * pyy, t0[0], s=50, color="r")
+axs[1].scatter(1e3 * pyy, t0[0], s=50, color="k")
 axs[1].set(xlabel=r"$p_y$ [s/km]", title="Radon 3d - x")
 axs[1].axis("tight")
 axs[2].imshow(
@@ -278,7 +279,7 @@ axs[1].imshow(
     vmax=dL.max(),
     extent=(1e3 * px[0], 1e3 * px[-1], t[-1], t[0]),
 )
-axs[1].scatter(1e3 * pxx[0], t0[0], s=50, color="r")
+axs[1].scatter(1e3 * pxx[0], t0[0], s=50, color="k")
 axs[1].set(xlabel=r"$p_x$ [s/km]", title="Radon 3d - y")
 axs[1].axis("tight")
 axs[2].imshow(
@@ -309,7 +310,7 @@ axs[1].imshow(
     vmax=dL.max(),
     extent=(1e3 * py[0], 1e3 * py[-1], t[-1], t[0]),
 )
-axs[1].scatter(1e3 * pyy[0], t0[0], s=50, color="r")
+axs[1].scatter(1e3 * pyy[0], t0[0], s=50, color="k")
 axs[1].set(xlabel=r"$p_y$ [s/km]", title="Radon 3d - x")
 axs[1].axis("tight")
 axs[2].imshow(
