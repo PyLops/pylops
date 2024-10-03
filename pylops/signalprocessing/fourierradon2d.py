@@ -262,7 +262,7 @@ class FourierRadon2D(LinearOperator):
         y = np.zeros((self.nh, self.nfft2), dtype=self.cdtype)
 
         x = sp.fft.rfft(x, n=self.nfft, axis=-1)
-        y = _radon_inner_2d(
+        _radon_inner_2d(
             x,
             y,
             self.f,
@@ -281,7 +281,7 @@ class FourierRadon2D(LinearOperator):
         x = np.zeros((self.npx, self.nfft2), dtype=self.cdtype)
 
         y = sp.fft.rfft(y, n=self.nfft, axis=-1)
-        x = _aradon_inner_2d(
+        _aradon_inner_2d(
             x,
             y,
             self.f,

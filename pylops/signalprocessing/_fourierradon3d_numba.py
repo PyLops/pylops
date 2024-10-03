@@ -24,7 +24,6 @@ def _radon_inner_3d(X, Y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy, nhx):
                             * f[ifr]
                             * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
                         )
-    return Y
 
 
 @jit(nopython=True, parallel=parallel, nogil=True, cache=True, fastmath=True)
@@ -41,4 +40,3 @@ def _aradon_inner_3d(X, Y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy, nhx):
                             * f[ifr]
                             * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
                         )
-    return X

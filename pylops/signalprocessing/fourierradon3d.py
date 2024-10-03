@@ -309,7 +309,7 @@ class FourierRadon3D(LinearOperator):
         y = np.zeros((self.nhy, self.nhx, self.nfft2), dtype=self.cdtype)
 
         x = sp.fft.rfft(x, n=self.nfft, axis=-1)
-        y = _radon_inner_3d(
+        _radon_inner_3d(
             x,
             y,
             self.f,
@@ -332,7 +332,7 @@ class FourierRadon3D(LinearOperator):
         x = np.zeros((self.npy, self.npx, self.nfft2), dtype=self.cdtype)
 
         y = sp.fft.rfft(y, n=self.nfft, axis=-1)
-        x = _aradon_inner_3d(
+        _aradon_inner_3d(
             x,
             y,
             self.f,
