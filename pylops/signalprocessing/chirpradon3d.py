@@ -101,7 +101,7 @@ class ChirpRadon3D(LinearOperator):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
-        if self.engine == "fftw" and pyfftw is not None:
+        if self.engine == "fftw" and pyfftw_message is None:
             return _chirp_radon_3d_fftw(
                 x, self.dt, self.dy, self.dx, self.pmax, mode="f", **self.kwargs_fftw
             )
@@ -109,7 +109,7 @@ class ChirpRadon3D(LinearOperator):
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
-        if self.engine == "fftw" and pyfftw is not None:
+        if self.engine == "fftw" and pyfftw_message is None:
             return _chirp_radon_3d_fftw(
                 x, self.dt, self.dy, self.dx, self.pmax, mode="a", **self.kwargs_fftw
             )
@@ -117,7 +117,7 @@ class ChirpRadon3D(LinearOperator):
 
     def inverse(self, x: NDArray) -> NDArray:
         x = x.reshape(self.dimsd)
-        if self.engine == "fftw" and pyfftw is not None:
+        if self.engine == "fftw" and pyfftw_message is None:
             y = _chirp_radon_3d_fftw(
                 x, self.dt, self.dy, self.dx, self.pmax, mode="i", **self.kwargs_fftw
             )
