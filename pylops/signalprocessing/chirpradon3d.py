@@ -14,8 +14,6 @@ from ._chirpradon3d import _chirp_radon_3d
 pyfftw_message = deps.pyfftw_import("the chirpradon3d module")
 
 if pyfftw_message is None:
-    import pyfftw
-
     from ._chirpradon3d import _chirp_radon_3d_fftw
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
