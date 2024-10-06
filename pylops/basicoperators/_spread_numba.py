@@ -1,3 +1,4 @@
+import math
 import os
 
 from numba import jit, prange
@@ -21,8 +22,8 @@ def _matvec_numba_table(x, y, dims, interp, table, dtable):
                 dindices = dtable[ix0, it]
 
             for i, indexfloat in enumerate(indices):
-                index = int(indexfloat)
-                if index != -9223372036854775808:  # =int(np.nan)
+                if not math.isnan(indexfloat):
+                    index = int(indexfloat)
                     if not interp:
                         y[i, index] += x[ix0, it]
                     else:
@@ -45,8 +46,8 @@ def _rmatvec_numba_table(x, y, dims, dimsd, interp, table, dtable):
                 dindices = dtable[ix0, it]
 
             for i, indexfloat in enumerate(indices):
-                index = int(indexfloat)
-                if index != -9223372036854775808:  # =int(np.nan)
+                if not math.isnan(indexfloat):
+                    index = int(indexfloat)
                     if not interp:
                         y[ix0, it] += x[i, index]
                     else:
@@ -71,8 +72,8 @@ def _matvec_numba_onthefly(x, y, dims, interp, fh):
             else:
                 indices, dindices = fh(ix0, it)
             for i, indexfloat in enumerate(indices):
-                index = int(indexfloat)
-                if index != -9223372036854775808:  # =int(np.nan)
+                if not math.isnan(indexfloat):
+                    index = int(indexfloat)
                     if not interp:
                         y[i, index] += x[ix0, it]
                     else:
@@ -95,8 +96,8 @@ def _rmatvec_numba_onthefly(x, y, dims, dimsd, interp, fh):
             else:
                 indices, dindices = fh(ix0, it)
             for i, indexfloat in enumerate(indices):
-                index = int(indexfloat)
-                if index != -9223372036854775808:  # =int(np.nan)
+                if not math.isnan(indexfloat):
+                    index = int(indexfloat)
                     if not interp:
                         y[ix0, it] += x[i, index]
                     else:
