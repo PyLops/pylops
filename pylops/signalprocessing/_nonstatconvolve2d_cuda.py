@@ -100,9 +100,9 @@ def _matvec_rmatvec_call(
 ):
     """Caller for NonStationaryConvolve2D operator
 
-    Caller for cuda implementation of matvec and rmatvec for NonStationaryConvolve2D operato, with same signature
+    Caller for cuda implementation of matvec and rmatvec for NonStationaryConvolve2D operator, with same signature
     as numpy/numba counterparts. See :class:`pylops.signalprocessing.NonStationaryConvolve2D` for details about
-     input parameters.
+    input parameters.
 
     """
     _matvec_rmatvec[num_blocks, num_threads_per_blocks](
