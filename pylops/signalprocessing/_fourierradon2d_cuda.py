@@ -4,7 +4,7 @@ from math import pi
 from numba import cuda
 
 
-@cuda.jit()
+@cuda.jit
 def _radon_inner_2d_kernel(x, y, f, px, h, flim0, flim1, npx, nh):
     """Cuda kernels for FourierRadon2D operator
 
@@ -19,7 +19,7 @@ def _radon_inner_2d_kernel(x, y, f, px, h, flim0, flim1, npx, nh):
             y[ih, ifr] += x[ipx, ifr] * exp(-1j * 2 * pi * f[ifr] * px[ipx] * h[ih])
 
 
-@cuda.jit()
+@cuda.jit
 def _aradon_inner_2d_kernel(x, y, f, px, h, flim0, flim1, npx, nh):
     """Cuda kernels for FourierRadon2D operator
 
