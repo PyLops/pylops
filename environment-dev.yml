@@ -29,6 +29,7 @@ dependencies:
   - pip:
     - devito
     - dtcwt
+    - ucurv
     - scikit-fmm
     - spgl1
     - pytest-runner
