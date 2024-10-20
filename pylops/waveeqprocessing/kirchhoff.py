@@ -25,6 +25,7 @@ if skfmm_message is None:
 if jit_message is None:
     from numba import jit, prange
 
+    from ._kirchhoff_cuda import _kirchhoffCudaHelper
     # detect whether to use parallel or not
     numba_threads = int(os.getenv("NUMBA_NUM_THREADS", "1"))
     parallel = True if numba_threads != 1 else False
@@ -995,8 +996,8 @@ class Kirchhoff(LinearOperator):
         return y
 
     def _register_multiplications(self, engine: str) -> None:
-        if engine not in ["numpy", "numba"]:
-            raise KeyError("engine must be numpy or numba")
+        if engine not in ["numpy", "numba", "cuda"]:
+            raise KeyError("engine must be numpy or numba or cuda")
         if engine == "numba" and jit_message is None:
             # numba
             numba_opts = dict(
@@ -1011,7 +1012,20 @@ class Kirchhoff(LinearOperator):
             elif not self.travsrcrec:
                 self._kirch_matvec = jit(**numba_opts)(self._trav_kirch_matvec)
                 self._kirch_rmatvec = jit(**numba_opts)(self._trav_kirch_rmatvec)
-
+        elif engine == "cuda":
+            if self.dynamic and self.travsrcrec:
+                self.cuda_helper = _kirchhoffCudaHelper(self.ns, self.nr, self.nt, self.ni, 1, 1)
+                self.cuda_helper._data_prep_dynamic(self.ns, self.nr, self.nt, self.ni, self.nz, self.dt,
+                                                    self.aperture, self.angleaperture,
+                                                    self.aperturetap, self.vel, self.six, self.rix, self.trav_recs,
+                                                    self.angle_recs, self.trav_srcs, self.angle_srcs,self.amp_srcs,
+                                                    self.amp_recs)
+            elif self.travsrcrec:
+                self.cuda_helper = _kirchhoffCudaHelper(self.ns, self.nr, self.nt, self.ni, 0, 1)
+            elif not self.travsrcrec:
+                self.cuda_helper = _kirchhoffCudaHelper(self.ns, self.nr, self.nt, self.ni, 0, 0)
+            self._kirch_matvec = self.cuda_helper._matvec_call
+            self._kirch_rmatvec = self.cuda_helper._rmatvec_call
         else:
             if engine == "numba" and jit_message is not None:
                 logging.warning(jit_message)
