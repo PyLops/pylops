@@ -13,6 +13,7 @@ from pylops.utils.backend import (
     get_normalize_axis_index,
     inplace_set,
     to_cupy_conditional,
+    to_numpy,
 )
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
 
@@ -146,7 +147,7 @@ class Restriction(LinearOperator):
         # explicitly create a list of indices in the n-dimensional
         # model space which will be used in _rmatvec to place the input
         if ncp != np:
-            self.iavamask = _compute_iavamask(self.dims, axis, iava, ncp)
+            self.iavamask = _compute_iavamask(self.dims, axis, to_numpy(iava), ncp)
         self.inplace = inplace
         self.axis = axis
         self.iavareshape = iavareshape
@@ -173,7 +174,6 @@ class Restriction(LinearOperator):
             )
         else:
             if not hasattr(self, "iavamask"):
-                self.iava = to_cupy_conditional(x, self.iava)
                 self.iavamask = _compute_iavamask(self.dims, self.axis, self.iava, ncp)
             y = ncp.zeros(int(self.shape[-1]), dtype=self.dtype)
             y = inplace_set(x.ravel(), y, self.iavamask)
