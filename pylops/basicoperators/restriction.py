@@ -12,7 +12,6 @@ from pylops.utils.backend import (
     get_array_module,
     get_normalize_axis_index,
     inplace_set,
-    to_cupy_conditional,
     to_numpy,
 )
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
