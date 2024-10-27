@@ -1,17 +1,6 @@
 from numba import cuda
 import numpy as np
-import nvtx
 from math import cos
-
-def nvtx_range(marker):
-    def decorator(fn):
-        def wrapper(*args):
-            with nvtx.annotate(marker):
-                return fn(*args)
-
-        return wrapper
-
-    return decorator
 
 class _kirchhoffCudaHelper:
 
@@ -342,7 +331,6 @@ class _kirchhoffCudaHelper:
                             )
                             cuda.atomic.add(y, ind1, val1)
 
-    @nvtx_range("_process_streams")
     def _process_streams(self, x, opt):
         """ Data preparation and passing to different streams"""
 
