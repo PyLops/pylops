@@ -2,7 +2,28 @@ from numba import cuda
 import numpy as np
 from math import cos
 
+
 class _kirchhoffCudaHelper:
+    """ A helper class for performing Kirchhoff migration or modeling using CUDA via Numba.
+
+       This class provides methods to compute the forward and adjoint operations for Kirchhoff migration,
+       utilizing GPU acceleration through Numba's CUDA capabilities.
+
+       Parameters
+       ----------
+       ns : int
+           Number of sources.
+       nr : int
+           Number of receivers.
+       nt : int
+           Number of time samples.
+       ni : int
+           Number of image points.
+       dynamic : int, optional
+           Flag indicating whether to use dynamic computation. ``True`` == 1 or not ``False`` == 0 (default is 0).
+       travsrcrec : int, optional
+           Flag indicating whether to use separate tables for src and rec traveltimes. Seperate == 1   (default is 0).
+       """
 
     def __init__(self, ns, nr, nt, ni, dynamic=0, travsrcrec=0):
         self.dynamic, self.travsrcrec = dynamic, travsrcrec
@@ -11,8 +32,11 @@ class _kirchhoffCudaHelper:
         self._lunch_grid_setup()
 
     def _lunch_grid_setup(self):
+        """ Set up the CUDA grid and block dimensions based on the current device and computation flags.
+                This method configures the number of blocks and threads per block for CUDA kernels,
+                depending on whether dynamic computation and travel times from sources and receivers are used.
+        """
         current_device = cuda.get_current_device()
-        # self.num_blocks, self.num_threads_per_blocks = 32, 32
         if self.dynamic:
             num_sources = self.ns
             num_streams = 3
@@ -35,7 +59,8 @@ class _kirchhoffCudaHelper:
             if not self.travsrcrec:
                 # version 4
                 self.num_threads_per_blocks = current_device.WARP_SIZE * 8
-                self.num_blocks = ((self.ns * self.nr) + (self.num_threads_per_blocks - 1)) // self.num_threads_per_blocks
+                self.num_blocks = ((self.ns * self.nr) + (
+                            self.num_threads_per_blocks - 1)) // self.num_threads_per_blocks
             else:
                 # version 3
                 wrap = current_device.WARP_SIZE
@@ -43,12 +68,9 @@ class _kirchhoffCudaHelper:
                 self.num_threads_per_blocks = (wrap, wrap)
                 self.num_blocks = (multipr_count, multipr_count)
 
-
-
-
-
     def _data_prep_dynamic(self, ns, nr, nt, ni, nz, dt, aperture, angleaperture, aperturetap, vel, six,
-                           rix,trav_recs, angle_recs, trav_srcs, angle_srcs, amp_srcs, amp_recs):
+                           rix, trav_recs, angle_recs, trav_srcs, angle_srcs, amp_srcs, amp_recs):
+        """ Prepare data for dynamic computation by transfering some variables to device memory in advance once."""
         ns_d = np.int32(ns)
         nr_d = np.int32(nr)
         nt_d = np.int32(nt)
@@ -332,7 +354,23 @@ class _kirchhoffCudaHelper:
                             cuda.atomic.add(y, ind1, val1)
 
     def _process_streams(self, x, opt):
-        """ Data preparation and passing to different streams"""
+        """Process data using CUDA streams for dynamic computation.
+
+        This method handles data preparation and execution of CUDA kernels using streams,
+        for both forward ('_matvec') and adjoint ('_rmatvec') operations.
+
+        Parameters
+        ----------
+        x : ndarray
+            Input data (image or seismic data).
+        opt : str
+            Operation type, either '_matvec' for forward or '_rmatvec' for adjoint.
+
+        Returns
+        -------
+        y : ndarray
+            Output data after processing.
+        """
 
         if opt == "_matvec":
             x = x.ravel()
@@ -352,25 +390,27 @@ class _kirchhoffCudaHelper:
         for irec in range(self.nr):
             for stream, isrc_list in self.sources_per_streams.items():
                 if opt == "_matvec":
-                    self._ampsrcrec_kirch_matvec_cuda_streams[self.num_blocks, self.num_threads_per_blocks, stream](*self.const_inputs,
-                                                                                    self.trav_srcs_d_global,
-                                                                                    self.amp_srcs_d_global,
-                                                                                    self.angles_srcs_d_global,
-                                                                                    self.trav_recs_d_global,
-                                                                                    self.amp_recs_d_global,
-                                                                                    self.angles_recs_d_global,
-                                                                                    y_d_dict[stream],
-                                                                                    isrc_list_d_dict[stream], irec, x_d)
+                    self._ampsrcrec_kirch_matvec_cuda_streams[self.num_blocks, self.num_threads_per_blocks, stream](
+                        *self.const_inputs,
+                        self.trav_srcs_d_global,
+                        self.amp_srcs_d_global,
+                        self.angles_srcs_d_global,
+                        self.trav_recs_d_global,
+                        self.amp_recs_d_global,
+                        self.angles_recs_d_global,
+                        y_d_dict[stream],
+                        isrc_list_d_dict[stream], irec, x_d)
                 elif opt == "_rmatvec":
-                    self._ampsrcrec_kirch_rmatvec_cuda_streams[self.num_blocks, self.num_threads_per_blocks, stream](*self.const_inputs,
-                                                                                     self.trav_srcs_d_global,
-                                                                                     self.amp_srcs_d_global,
-                                                                                     self.angles_srcs_d_global,
-                                                                                     self.trav_recs_d_global,
-                                                                                     self.amp_recs_d_global,
-                                                                                     self.angles_recs_d_global,
-                                                                                     y_d_dict[stream],
-                                                                                     isrc_list_d_dict[stream], irec, x_d)
+                    self._ampsrcrec_kirch_rmatvec_cuda_streams[self.num_blocks, self.num_threads_per_blocks, stream](
+                        *self.const_inputs,
+                        self.trav_srcs_d_global,
+                        self.amp_srcs_d_global,
+                        self.angles_srcs_d_global,
+                        self.trav_recs_d_global,
+                        self.amp_recs_d_global,
+                        self.angles_recs_d_global,
+                        y_d_dict[stream],
+                        isrc_list_d_dict[stream], irec, x_d)
         # Synchronize the streams to ensure all operations have been completed
         for stream in self.sources_per_streams.keys():
             stream.synchronize()
@@ -385,9 +425,24 @@ class _kirchhoffCudaHelper:
         return y_total
 
     def _matvec_call(self, *inputs):
+        """Handle the forward operation call, dispatching to appropriate CUDA kernels.
+
+                This method selects the appropriate kernel to execute based on the computation flags,
+                and performs the forward operation (matrix-vector multiplication).
+
+                Parameters
+                ----------
+                *inputs : list
+                    List of input parameters required by the kernels.
+
+                Returns
+                -------
+                y : ndarray
+                    Output data (seismic data) after forward operation.
+        """
         if self.dynamic and self.travsrcrec:
             y = self._process_streams(inputs[0], "_matvec")
-        elif self.travsrcrec: #len(inputs) == 9
+        elif self.travsrcrec:  # len(inputs) == 9
             x_d = cuda.to_device(inputs[0])
             y_d = cuda.to_device(inputs[1])
             ns_d = np.int32(inputs[2])
@@ -397,9 +452,10 @@ class _kirchhoffCudaHelper:
             dt_d = np.float32(inputs[6])
             trav_srcs_d = cuda.to_device(inputs[7])
             trav_recs_d = cuda.to_device(inputs[8])
-            self._travsrcrec_kirch_matvec_cuda[self.num_blocks, self.num_threads_per_blocks](x_d, y_d, ns_d, nr_d, nt_d, ni_d, dt_d,
-                                                                              trav_srcs_d, trav_recs_d)
-        elif not self.travsrcrec: # len(inputs) == 7:
+            self._travsrcrec_kirch_matvec_cuda[self.num_blocks, self.num_threads_per_blocks](x_d, y_d, ns_d, nr_d, nt_d,
+                                                                                             ni_d, dt_d,
+                                                                                             trav_srcs_d, trav_recs_d)
+        elif not self.travsrcrec:  # len(inputs) == 7:
             x_d = cuda.to_device(inputs[0])
             y_d = cuda.to_device(inputs[1])
             nsnr_d = np.int32(inputs[2])
@@ -407,8 +463,8 @@ class _kirchhoffCudaHelper:
             ni_d = np.int32(inputs[4])
             itrav_d = cuda.to_device(inputs[5])
             travd_d = cuda.to_device(inputs[6])
-            self._trav_kirch_matvec_cuda[self.num_blocks, self.num_threads_per_blocks](x_d, y_d, nsnr_d, nt_d, ni_d, itrav_d, travd_d)
-
+            self._trav_kirch_matvec_cuda[self.num_blocks, self.num_threads_per_blocks](x_d, y_d, nsnr_d, nt_d, ni_d,
+                                                                                       itrav_d, travd_d)
 
         if not self.dynamic:
             cuda.synchronize()
@@ -416,9 +472,24 @@ class _kirchhoffCudaHelper:
         return y
 
     def _rmatvec_call(self, *inputs):
+        """ Handle the adjoint operation call, dispatching to appropriate CUDA kernels.
+
+               This method selects the appropriate kernel to execute based on the computation flags,
+               and performs the adjoint operation (matrix-vector multiplication with the transpose).
+
+               Parameters
+               ----------
+               *inputs : list
+                   List of input parameters required by the kernels.
+
+               Returns
+               -------
+               y : ndarray
+                   Output data (image) after adjoint operation.
+        """
         if self.dynamic and self.travsrcrec:
             y = self._process_streams(inputs[0], "_rmatvec")
-        elif self.travsrcrec: #len(inputs) == 9
+        elif self.travsrcrec:  # len(inputs) == 9
             x_d = cuda.to_device(inputs[0])
             y_d = cuda.to_device(inputs[1])
             ns_d = np.int32(inputs[2])
@@ -428,9 +499,10 @@ class _kirchhoffCudaHelper:
             dt_d = np.float32(inputs[6])
             trav_srcs_d = cuda.to_device(inputs[7])
             trav_recs_d = cuda.to_device(inputs[8])
-            self._travsrcrec_kirch_rmatvec_cuda[self.num_blocks, self.num_threads_per_blocks](x_d, y_d, ns_d, nr_d, nt_d, ni_d, dt_d,
-                                                                              trav_srcs_d, trav_recs_d)
-        elif not self.travsrcrec: # len(inputs) == 7:
+            self._travsrcrec_kirch_rmatvec_cuda[self.num_blocks, self.num_threads_per_blocks](x_d, y_d, ns_d, nr_d,
+                                                                                              nt_d, ni_d, dt_d,
+                                                                                              trav_srcs_d, trav_recs_d)
+        elif not self.travsrcrec:  # len(inputs) == 7:
             x_d = cuda.to_device(inputs[0])
             y_d = cuda.to_device(inputs[1])
             nsnr_d = np.int32(inputs[2])
@@ -438,11 +510,10 @@ class _kirchhoffCudaHelper:
             ni_d = np.int32(inputs[4])
             itrav_d = cuda.to_device(inputs[5])
             travd_d = cuda.to_device(inputs[6])
-            self._trav_kirch_rmatvec_cuda[self.num_blocks, self.num_threads_per_blocks](x_d, y_d, nsnr_d, nt_d, ni_d, itrav_d, travd_d)
-
+            self._trav_kirch_rmatvec_cuda[self.num_blocks, self.num_threads_per_blocks](x_d, y_d, nsnr_d, nt_d, ni_d,
+                                                                                        itrav_d, travd_d)
 
         if not self.dynamic:
             cuda.synchronize()
             y = y_d.copy_to_host()
         return y
-
