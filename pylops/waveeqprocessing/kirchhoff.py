@@ -1016,7 +1016,7 @@ class Kirchhoff(LinearOperator):
         elif engine == "cuda":
             if self.dynamic and self.travsrcrec:
                 self.cuda_helper = _KirchhoffCudaHelper(
-                    self.ns, self.nr, self.nt, self.ni, 1
+                    self.ns, self.nr, self.nt, self.ni, True
                 )
                 self.cuda_helper._data_prep_dynamic(
                     self.ns,
@@ -1040,7 +1040,7 @@ class Kirchhoff(LinearOperator):
                 )
             elif self.travsrcrec:
                 self.cuda_helper = _KirchhoffCudaHelper(
-                    self.ns, self.nr, self.nt, self.ni, 0
+                    self.ns, self.nr, self.nt, self.ni, False
                 )
             self._kirch_matvec = self.cuda_helper._matvec_call
             self._kirch_rmatvec = self.cuda_helper._rmatvec_call

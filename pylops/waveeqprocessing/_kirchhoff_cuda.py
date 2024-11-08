@@ -22,14 +22,14 @@ class _KirchhoffCudaHelper:
         Number of time samples.
     ni : :obj:`int`
         Number of image points.
-    dynamic : :obj:`int`, optional
-        Flag indicating whether to use dynamic computation. ``True`` == 1 or not ``False`` == 0 (default is 0).
+    dynamic : :obj:`bool`, optional
+        Flag indicating whether to use dynamic computation (default is `False``).
     nstreams : :obj:`int`, optional
         Number of streams used in case of ``dynamic=True``.
 
     """
 
-    def __init__(self, ns, nr, nt, ni, dynamic=0, nstreams=1):
+    def __init__(self, ns, nr, nt, ni, dynamic=False, nstreams=1):
         self.ns, self.nr, self.nt, self.ni = ns, nr, nt, ni
         self.dynamic = dynamic
         self.nstreams = nstreams
@@ -140,6 +140,136 @@ class _KirchhoffCudaHelper:
         self.angles_srcs_d_global = cuda.to_device(angle_srcs)
         self.amp_srcs_d_global = cuda.to_device(amp_srcs)
         self.amp_recs_d_global = cuda.to_device(amp_recs)
+
+    def _call_nondynamic(self, opt, *inputs):
+        """Process data using CUDA single stream for non-dynamic computation.
+
+        This method handles data preparation and execution of CUDA kernels
+        for both forward and adjoint operations of non-dynamic case.
+
+        Parameters
+        ----------
+        opt : :obj:`str`
+            Operation type, either '_matvec' for forward or '_rmatvec' for adjoint.
+        *inputs : :obj:`list`
+            List of input parameters required by the kernels.
+
+        Returns
+        -------
+        y_d : :obj:`numpy.ndarray`
+            Output data after processing.
+
+        """
+
+        if opt == "_matvec":
+            x_d = inputs[0]
+            y_d = inputs[1]
+            ns_d = np.int32(inputs[2])
+            nr_d = np.int32(inputs[3])
+            nt_d = np.int32(inputs[4])
+            ni_d = np.int32(inputs[5])
+            dt_d = np.float32(inputs[6])
+            trav_srcs_d = to_cupy(inputs[7])
+            trav_recs_d = to_cupy(inputs[8])
+            self._travsrcrec_kirch_matvec_cuda[
+                self.num_blocks, self.num_threads_per_blocks
+            ](x_d, y_d, ns_d, nr_d, nt_d, ni_d, dt_d, trav_srcs_d, trav_recs_d)
+            cuda.synchronize()
+
+        elif opt == "_rmatvec":
+            x_d = inputs[0]
+            y_d = inputs[1]
+            ns_d = np.int32(inputs[2])
+            nr_d = np.int32(inputs[3])
+            nt_d = np.int32(inputs[4])
+            ni_d = np.int32(inputs[5])
+            dt_d = np.float32(inputs[6])
+            trav_srcs_d = to_cupy(inputs[7])
+            trav_recs_d = to_cupy(inputs[8])
+            self._travsrcrec_kirch_rmatvec_cuda[
+                self.num_blocks, self.num_threads_per_blocks
+            ](x_d, y_d, ns_d, nr_d, nt_d, ni_d, dt_d, trav_srcs_d, trav_recs_d)
+            cuda.synchronize()
+
+        return y_d
+
+    def _call_dynamic(self, x, opt):
+        """Process data using CUDA streams for dynamic computation.
+
+        This method handles data preparation and execution of CUDA kernels using streams,
+        for both forward and adjoint operations of dynamic case.
+
+        Parameters
+        ----------
+        x : :obj:`numpy.ndarray`
+            Input data (image or seismic data).
+        opt : :obj:`str`
+            Operation type, either '_matvec' for forward or '_rmatvec' for adjoint.
+
+        Returns
+        -------
+        y : :obj:`numpy.ndarray`
+            Output data after processing.
+
+        """
+
+        if opt == "_matvec":
+            x = x.ravel()
+            y = np.zeros((self.ns * self.nr, self.nt))
+        elif opt == "_rmatvec":
+            y = np.zeros(self.ni)
+
+        y_d_dict = {}
+        isrc_list_d_dict = {}
+        for stream, isrc_list in self.sources_per_streams.items():
+            x_d = cuda.to_device(x, stream=stream)
+            y_d_dict[stream] = cuda.to_device(y, stream=stream)
+            isrc_list_d_dict[stream] = cuda.to_device(isrc_list, stream=stream)
+
+        for stream in self.sources_per_streams.keys():
+            stream.synchronize()
+        for irec in range(self.nr):
+            for stream, isrc_list in self.sources_per_streams.items():
+                if opt == "_matvec":
+                    self._ampsrcrec_kirch_matvec_cuda_streams[
+                        self.num_blocks, self.num_threads_per_blocks, stream
+                    ](
+                        *self.const_inputs,
+                        self.trav_srcs_d_global,
+                        self.amp_srcs_d_global,
+                        self.angles_srcs_d_global,
+                        self.trav_recs_d_global,
+                        self.amp_recs_d_global,
+                        self.angles_recs_d_global,
+                        y_d_dict[stream],
+                        isrc_list_d_dict[stream],
+                        irec,
+                        x_d
+                    )
+                elif opt == "_rmatvec":
+                    self._ampsrcrec_kirch_rmatvec_cuda_streams[
+                        self.num_blocks, self.num_threads_per_blocks, stream
+                    ](
+                        *self.const_inputs,
+                        self.trav_srcs_d_global,
+                        self.amp_srcs_d_global,
+                        self.angles_srcs_d_global,
+                        self.trav_recs_d_global,
+                        self.amp_recs_d_global,
+                        self.angles_recs_d_global,
+                        y_d_dict[stream],
+                        isrc_list_d_dict[stream],
+                        irec,
+                        x_d
+                    )
+        # Synchronize the streams to ensure all operations have been completed
+        for stream in self.sources_per_streams.keys():
+            stream.synchronize()
+        y_streams = []
+        for stream, y_dev in y_d_dict.items():
+            y_streams.append(y_dev.copy_to_host(stream=stream))
+        y_total = np.sum(y_streams, axis=0)
+        return y_total
 
     @staticmethod
     @cuda.jit
@@ -396,84 +526,6 @@ class _KirchhoffCudaHelper:
                             )
                             cuda.atomic.add(y, ind1, val1)
 
-    def _process_streams(self, x, opt):
-        """Process data using CUDA streams for dynamic computation.
-
-        This method handles data preparation and execution of CUDA kernels using streams,
-        for both forward and adjoint operations.
-
-        Parameters
-        ----------
-        x : :obj:`numpy.ndarray`
-            Input data (image or seismic data).
-        opt : :obj:`str`
-            Operation type, either '_matvec' for forward or '_rmatvec' for adjoint.
-
-        Returns
-        -------
-        y : :obj:`numpy.ndarray`
-            Output data after processing.
-
-        """
-
-        if opt == "_matvec":
-            x = x.ravel()
-            y = np.zeros((self.ns * self.nr, self.nt))
-        elif opt == "_rmatvec":
-            y = np.zeros(self.ni)
-
-        y_d_dict = {}
-        isrc_list_d_dict = {}
-        for stream, isrc_list in self.sources_per_streams.items():
-            x_d = cuda.to_device(x, stream=stream)
-            y_d_dict[stream] = cuda.to_device(y, stream=stream)
-            isrc_list_d_dict[stream] = cuda.to_device(isrc_list, stream=stream)
-
-        for stream in self.sources_per_streams.keys():
-            stream.synchronize()
-        for irec in range(self.nr):
-            for stream, isrc_list in self.sources_per_streams.items():
-                if opt == "_matvec":
-                    self._ampsrcrec_kirch_matvec_cuda_streams[
-                        self.num_blocks, self.num_threads_per_blocks, stream
-                    ](
-                        *self.const_inputs,
-                        self.trav_srcs_d_global,
-                        self.amp_srcs_d_global,
-                        self.angles_srcs_d_global,
-                        self.trav_recs_d_global,
-                        self.amp_recs_d_global,
-                        self.angles_recs_d_global,
-                        y_d_dict[stream],
-                        isrc_list_d_dict[stream],
-                        irec,
-                        x_d
-                    )
-                elif opt == "_rmatvec":
-                    self._ampsrcrec_kirch_rmatvec_cuda_streams[
-                        self.num_blocks, self.num_threads_per_blocks, stream
-                    ](
-                        *self.const_inputs,
-                        self.trav_srcs_d_global,
-                        self.amp_srcs_d_global,
-                        self.angles_srcs_d_global,
-                        self.trav_recs_d_global,
-                        self.amp_recs_d_global,
-                        self.angles_recs_d_global,
-                        y_d_dict[stream],
-                        isrc_list_d_dict[stream],
-                        irec,
-                        x_d
-                    )
-        # Synchronize the streams to ensure all operations have been completed
-        for stream in self.sources_per_streams.keys():
-            stream.synchronize()
-        y_streams = []
-        for stream, y_dev in y_d_dict.items():
-            y_streams.append(y_dev.copy_to_host(stream=stream))
-        y_total = np.sum(y_streams, axis=0)
-        return y_total
-
     def _matvec_call(self, *inputs):
         """Handle the forward operation call, dispatching to appropriate CUDA kernels.
 
@@ -492,7 +544,10 @@ class _KirchhoffCudaHelper:
 
         """
         if self.dynamic:
-            y_d = self._process_streams(inputs[0], "_matvec")
+            y_d = self._call_dynamic(inputs[0], "_matvec")
+        else:
+            y_d = self._call_nondynamic("_matvec", *inputs)
+        """
         else:
             x_d = inputs[0]
             y_d = inputs[1]
@@ -507,6 +562,7 @@ class _KirchhoffCudaHelper:
                 self.num_blocks, self.num_threads_per_blocks
             ](x_d, y_d, ns_d, nr_d, nt_d, ni_d, dt_d, trav_srcs_d, trav_recs_d)
             cuda.synchronize()
+        """
         return y_d
 
     def _rmatvec_call(self, *inputs):
@@ -527,7 +583,10 @@ class _KirchhoffCudaHelper:
 
         """
         if self.dynamic:
-            y_d = self._process_streams(inputs[0], "_rmatvec")
+            y_d = self._call_dynamic(inputs[0], "_rmatvec")
+        else:
+            y_d = self._call_nondynamic("_rmatvec", *inputs)
+        """
         else:
             x_d = inputs[0]
             y_d = inputs[1]
@@ -542,4 +601,5 @@ class _KirchhoffCudaHelper:
                 self.num_blocks, self.num_threads_per_blocks
             ](x_d, y_d, ns_d, nr_d, nt_d, ni_d, dt_d, trav_srcs_d, trav_recs_d)
             cuda.synchronize()
+        """
         return y_d
