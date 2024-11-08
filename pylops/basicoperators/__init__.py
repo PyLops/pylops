@@ -38,6 +38,8 @@ A list of operators present in pylops.basicoperators :
     Gradient                        Gradient.
     FirstDirectionalDerivative      First Directional derivative.
     SecondDirectionalDerivative     Second Directional derivative.
+    ToCupy                          Convert to CuPy.
+
 """
 
 from .functionoperator import *
@@ -72,6 +74,8 @@ from .secondderivative import *
 from .laplacian import *
 from .gradient import *
 from .directionalderivative import *
+from .tocupy import *
+
 
 __all__ = [
     "FunctionOperator",
@@ -107,4 +111,5 @@ __all__ = [
     "Gradient",
     "FirstDirectionalDerivative",
     "SecondDirectionalDerivative",
+    "ToCupy",
 ]
