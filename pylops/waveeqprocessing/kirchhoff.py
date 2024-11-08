@@ -12,6 +12,7 @@ from pylops import LinearOperator
 from pylops.signalprocessing import Convolve1D
 from pylops.utils import deps
 from pylops.utils._internal import _value_or_sized_to_array
+from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper
 from pylops.utils.typing import DTypeLike, NDArray
@@ -25,7 +26,8 @@ if skfmm_message is None:
 if jit_message is None:
     from numba import jit, prange
 
-    from ._kirchhoff_cuda import _kirchhoffCudaHelper
+    from ._kirchhoff_cuda import _KirchhoffCudaHelper
+
     # detect whether to use parallel or not
     numba_threads = int(os.getenv("NUMBA_NUM_THREADS", "1"))
     parallel = True if numba_threads != 1 else False
@@ -83,8 +85,8 @@ class Kirchhoff(LinearOperator):
         :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` or pair of traveltime tables
         of size :math:`\lbrack (n_y) n_x n_z \times n_s \rbrack` and :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack`
         (to be provided if ``mode='byot'``). Note that the latter approach is recommended as less memory demanding
-        than the former. Moreover, only ``mode='dynamic'`` is only possible when traveltimes are provided in
-        the latter form.
+        than the former. Moreover, ``mode='dynamic'`` and ``engine='cuda'`` are only possible when traveltimes are
+        provided in the latter form.
     amp : :obj:`numpy.ndarray`, optional
         .. versionadded:: 2.0.0
 
@@ -109,7 +111,7 @@ class Kirchhoff(LinearOperator):
         Deprecated, will be removed in v3.0.0. Simply kept for back-compatibility with previous implementation,
         but effectively not affecting the behaviour of the operator.
     engine : :obj:`str`, optional
-        Engine used for computations (``numpy`` or ``numba``).
+        Engine used for computations (``numpy``, ``numba`` or ``cuda``).
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -999,7 +1001,6 @@ class Kirchhoff(LinearOperator):
         if engine not in ["numpy", "numba", "cuda"]:
             raise KeyError("engine must be numpy or numba or cuda")
         if engine == "numba" and jit_message is None:
-            # numba
             numba_opts = dict(
                 nopython=True, nogil=True, parallel=parallel
             )  # fastmath=True,
@@ -1014,16 +1015,33 @@ class Kirchhoff(LinearOperator):
                 self._kirch_rmatvec = jit(**numba_opts)(self._trav_kirch_rmatvec)
         elif engine == "cuda":
             if self.dynamic and self.travsrcrec:
-                self.cuda_helper = _kirchhoffCudaHelper(self.ns, self.nr, self.nt, self.ni, 1, 1)
-                self.cuda_helper._data_prep_dynamic(self.ns, self.nr, self.nt, self.ni, self.nz, self.dt,
-                                                    self.aperture, self.angleaperture,
-                                                    self.aperturetap, self.vel, self.six, self.rix, self.trav_recs,
-                                                    self.angle_recs, self.trav_srcs, self.angle_srcs,self.amp_srcs,
-                                                    self.amp_recs)
+                self.cuda_helper = _KirchhoffCudaHelper(
+                    self.ns, self.nr, self.nt, self.ni, 1
+                )
+                self.cuda_helper._data_prep_dynamic(
+                    self.ns,
+                    self.nr,
+                    self.nt,
+                    self.ni,
+                    self.nz,
+                    self.dt,
+                    self.aperture,
+                    self.angleaperture,
+                    self.aperturetap,
+                    self.vel,
+                    self.six,
+                    self.rix,
+                    self.trav_recs,
+                    self.angle_recs,
+                    self.trav_srcs,
+                    self.angle_srcs,
+                    self.amp_srcs,
+                    self.amp_recs,
+                )
             elif self.travsrcrec:
-                self.cuda_helper = _kirchhoffCudaHelper(self.ns, self.nr, self.nt, self.ni, 0, 1)
-            elif not self.travsrcrec:
-                self.cuda_helper = _kirchhoffCudaHelper(self.ns, self.nr, self.nt, self.ni, 0, 0)
+                self.cuda_helper = _KirchhoffCudaHelper(
+                    self.ns, self.nr, self.nt, self.ni, 0
+                )
             self._kirch_matvec = self.cuda_helper._matvec_call
             self._kirch_rmatvec = self.cuda_helper._rmatvec_call
         else:
@@ -1041,7 +1059,8 @@ class Kirchhoff(LinearOperator):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
-        y = np.zeros((self.nsnr, self.nt), dtype=self.dtype)
+        ncp = get_array_module(x)
+        y = ncp.zeros((self.nsnr, self.nt), dtype=self.dtype)
         if self.dynamic and self.travsrcrec:
             inputs = (
                 x.ravel(),
@@ -1088,9 +1107,10 @@ class Kirchhoff(LinearOperator):
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
         x = self.cop._rmatvec(x.ravel())
         x = x.reshape(self.nsnr, self.nt)
-        y = np.zeros(self.ni, dtype=self.dtype)
+        y = ncp.zeros(self.ni, dtype=self.dtype)
         if self.dynamic and self.travsrcrec:
             inputs = (
                 x,
