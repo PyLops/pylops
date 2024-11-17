@@ -39,6 +39,8 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/", None),
     "pyfftw": ("https://pyfftw.readthedocs.io/en/latest/", None),
     "spgl1": ("https://spgl1.readthedocs.io/en/latest/", None),
+    "pymc": ("https://www.pymc.io/", None),
+    "arviz": ("https://python.arviz.org/en/latest/", None),
 }
 
 # Generate autodoc stubs with summaries from code
