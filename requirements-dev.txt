@@ -6,7 +6,7 @@ pyfftw
 PyWavelets
 spgl1
 scikit-fmm
-sympy
+sympy=0.12
 devito
 dtcwt
 matplotlib
