@@ -18,8 +18,8 @@ rng = np.random.default_rng()
 def test_PyTensorOperator(par):
     """Verify output and gradient of PyTensor function obtained from a LinearOperator."""
     # See: https://discourse.pymc.io/t/installation-issues-v5-9-macos/13094
-    if platform.system() == "Darwin":
-        return
+    # if platform.system() == "Darwin":
+    #     return
 
     Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])))
     pytensor_op = PyTensorOperator(Dop)
@@ -40,8 +40,8 @@ def test_PyTensorOperator_nd(par):
     """Verify output and gradient of PyTensor function obtained from a LinearOperator
     using an ND-array."""
     # See: https://discourse.pymc.io/t/installation-issues-v5-9-macos/13094
-    if platform.system() == "Darwin":
-        return
+    # if platform.system() == "Darwin":
+    #     return
 
     otherdims = rng.choice(range(1, 3), size=rng.choice(range(2, 8)))
     Dop = MatrixMult(
