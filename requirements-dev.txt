@@ -3,7 +3,7 @@ scipy>=1.11.0
 jax>=0.4
 numba
 pyfftw
-PyWavelets
+PyWavelets>=1.7
 spgl1
 scikit-fmm
 sympy
