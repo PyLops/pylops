@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-import sys
-import os
 import datetime
+import os
+import sys
+
 from sphinx_gallery.sorting import ExampleTitleSortKey
+
 from pylops import __version__
 
 # Sphinx needs to be able to import the package to use autodoc and get the version number
@@ -103,9 +105,7 @@ if len(version.split("+")) > 1 or version == "unknown":
 # These enable substitutions using |variable| in the rst files
 rst_epilog = """
 .. |year| replace:: {year}
-""".format(
-    year=year
-)
+""".format(year=year)
 html_static_path = ["_static"]
 html_last_updated_fmt = "%b %d, %Y"
 html_title = "PyLops"
@@ -122,15 +122,15 @@ html_show_copyright = True
 # Theme config
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
-    "logo_only": True,
-    "display_version": True,
+    # "logo_only": True,
+    # "display_version": True,
     "logo": {
         "image_light": "pylops_b.png",
         "image_dark": "pylops.png",
     }
 }
 html_css_files = [
-    'css/custom.css',
+    "css/custom.css",
 ]
 
 html_context = {
