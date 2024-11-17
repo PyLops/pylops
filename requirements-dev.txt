@@ -14,7 +14,7 @@ ipython
 pytest
 pytest-runner
 setuptools_scm
-docutils<0.18
+docutils>=0.18
 Sphinx
 pydata-sphinx-theme
 sphinx-gallery
@@ -28,5 +28,6 @@ isort
 black
 flake8
 mypy
-pymc
+pymc>=5
+pandas>=2
 graphviz
