@@ -35,19 +35,19 @@ torch.manual_seed(10)
 #
 # and we use AD to compute the gradient with respect to the input vector
 # evaluated at :math:`\mathbf{x}=\mathbf{x}_0` :
-# :math:`\mathbf{g} = d\mathbf{y} / d\mathbf{x} |_{\mathbf{x}=\mathbf{x}_0}`.
+# :math:`\mathbf{g} = \partial\mathbf{y} / \partial\mathbf{x} |_{\mathbf{x}=\mathbf{x}_0}`.
 #
 # Let's start by defining the Jacobian:
 #
 #   .. math::
 #        \textbf{J} = \begin{bmatrix}
-#        dy_1 / dx_1 & ... & dy_1 / dx_M \\
-#        ... & ... & ... \\
-#        dy_N / dx_1 & ... & dy_N / dx_M
+#        \frac{\partial y_1}{\partial x_1} & \cdots & \frac{\partial y_1}{\partial x_M} \\
+#        \vdots & \ddots & \vdots \\
+#        \frac{\partial y_N}{\partial x_1} & \cdots & \frac{\partial y_N}{\partial x_M}
 #        \end{bmatrix} = \begin{bmatrix}
-#        a_{11} \cos(x_1) & ... & a_{1M} \cos(x_M) \\
-#        ... & ... & ... \\
-#        a_{N1} \cos(x_1) & ... & a_{NM} \cos(x_M)
+#        a_{11} \cos(x_1) & \cdots & a_{1M} \cos(x_M) \\
+#        \vdots & \ddots & \vdots \\
+#        a_{N1} \cos(x_1) & \cdots & a_{NM} \cos(x_M)
 #        \end{bmatrix} = \textbf{A} \cos(\mathbf{x})
 #
 # Since both input and output are multidimensional,
