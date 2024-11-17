@@ -202,6 +202,7 @@ with model:
     pm.sample_posterior_predictive(idata, extend_inferencedata=True)
 
 ###############################################################################
+# sphinx_gallery_thumbnail_number = 4
 fig, ax = plt.subplots(figsize=(8, 4))
 az.plot_hdi(
     t,
