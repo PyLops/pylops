@@ -31,7 +31,8 @@ def test_PyTensorOperator(par):
 
 @pytest.mark.parametrize("par", [(par1)])
 def test_PyTensorOperator_nd(par):
-    """Verify output and gradient of PyTensor function obtained from a LinearOperator."""
+    """Verify output and gradient of PyTensor function obtained from a LinearOperator
+    using an ND-array."""
 
     otherdims = rng.choice(range(1, 3), size=rng.choice(range(2, 8)))
     Dop = MatrixMult(
