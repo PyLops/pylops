@@ -79,12 +79,14 @@ class MatrixMult(LinearOperator):
         else:
             otherdims = _value_or_sized_to_array(otherdims)
             self.otherdims = np.array(otherdims, dtype=int)
-            dims, dimsd = np.insert(self.otherdims, 0, self.A.shape[1]), np.insert(
-                self.otherdims, 0, self.A.shape[0]
+            dims, dimsd = (
+                np.insert(self.otherdims, 0, self.A.shape[1]),
+                np.insert(self.otherdims, 0, self.A.shape[0]),
             )
-            self.dimsflatten, self.dimsdflatten = np.insert(
-                [np.prod(self.otherdims)], 0, self.A.shape[1]
-            ), np.insert([np.prod(self.otherdims)], 0, self.A.shape[0])
+            self.dimsflatten, self.dimsdflatten = (
+                np.insert([np.prod(self.otherdims)], 0, self.A.shape[1]),
+                np.insert([np.prod(self.otherdims)], 0, self.A.shape[0]),
+            )
             self.reshape = True
             explicit = False
 
@@ -138,7 +140,7 @@ class MatrixMult(LinearOperator):
         r"""Return the inverse of :math:`\mathbf{A}`.
 
         Returns
-        ----------
+        -------
         Ainv : :obj:`numpy.ndarray`
             Inverse matrix.
 
