@@ -17,6 +17,7 @@ build
 dist
 pylops.egg-info/
 .eggs/
+__pycache__
 
 # setuptools_scm generated  #
 pylops/version.py
