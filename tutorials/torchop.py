@@ -14,6 +14,7 @@ terms to nonlinear cost functions or using linear preconditioners with nonlinear
 modelling operators.
 
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -30,7 +31,7 @@ torch.manual_seed(10)
 # In this example we consider a simple multidimensional functional:
 #
 # .. math::
-#   \mathbf{y} = \mathbf{A} sin(\mathbf{x})
+#   \mathbf{y} = \mathbf{A} \sin(\mathbf{x})
 #
 # and we use AD to compute the gradient with respect to the input vector
 # evaluated at :math:`\mathbf{x}=\mathbf{x}_0` :
@@ -44,10 +45,10 @@ torch.manual_seed(10)
 #        ... & ... & ... \\
 #        dy_N / dx_1 & ... & dy_N / dx_M
 #        \end{bmatrix} = \begin{bmatrix}
-#        a_{11} cos(x_1) & ... & a_{1M} cos(x_M) \\
+#        a_{11} \cos(x_1) & ... & a_{1M} \cos(x_M) \\
 #        ... & ... & ... \\
-#        a_{N1} cos(x_1) & ... & a_{NM} cos(x_M)
-#        \end{bmatrix} = \textbf{A} cos(\mathbf{x})
+#        a_{N1} \cos(x_1) & ... & a_{NM} \cos(x_M)
+#        \end{bmatrix} = \textbf{A} \cos(\mathbf{x})
 #
 # Since both input and output are multidimensional,
 # PyTorch ``backward`` actually computes the product between the transposed
