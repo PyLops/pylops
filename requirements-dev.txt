@@ -29,6 +29,7 @@ black
 flake8
 mypy
 pymc>=5
+pytensor>=2.23
 pandas>=2
 arviz>=0.20
 contourpy>=1.3
