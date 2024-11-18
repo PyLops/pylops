@@ -16,6 +16,7 @@ from pylops.basicoperators import (
     Roll,
     Sum,
     Symmetrize,
+    ToCupy,
     Zero,
 )
 from pylops.utils import dottest
@@ -601,3 +602,18 @@ def test_Conj(par):
     assert_array_equal(x, xadj)
     assert_array_equal(y, np.conj(x))
     assert_array_equal(xadj, np.conj(y))
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_ToCupy(par):
+    """Forward and adjoint for ToCupy operator (checking that it works also
+    when cupy is not available)
+    """
+    Top = ToCupy(par["nx"], dtype=par["dtype"])
+
+    np.random.seed(10)
+    x = np.random.randn(par["nx"]) + par["imag"] * np.random.randn(par["nx"])
+    y = Top * x
+    xadj = Top.H * y
+    assert_array_equal(x, xadj)
+    assert_array_equal(y, x)
