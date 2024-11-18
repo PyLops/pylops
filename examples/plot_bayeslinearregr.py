@@ -152,23 +152,17 @@ with pm.Model() as model:
     idata = pm.sample(2000, tune=1000, chains=2)
 
 ###############################################################################
-# The plot above is known as the "trace" plot. The plots on the left display the
-# posterior distribution of all latent variables in the model. The top-left
-# has multiple colored, one for each parameter in the latent vector
-# :math:`\mathbf{x}`. The bottom left plot displays the posterior of the
-# estimated noise.
+# The plot below is known as the "trace" plot. The left column displays the
+# posterior distributions of all latent variables in the model. The top-left
+# plot has multiple colored posteriors, one for each parameter of the latent
+# vector :math:`\mathbf{x}`. The bottom left plot displays the posterior of the
+# estimated noise :math:`\sigma`.
 #
-# The plot above is known as the "trace" plot. The plots on the left display the
-# posterior distribution of all latent variables in the model. The top-left
-# has multiple colored, one for each parameter in the latent vector
-# :math:`\mathbf{x}`. The bottom left plot displays the posterior of the
-# estimated noise.
-#
-# In these plots there are multiple distributions of the same color. Each
-# represents a "chain". A chain is a single run of a Monte Carlo algorithm.
-# Generally, Monte Carlo methods run various chains to ensure that all regions
-# of the posterior distribution are sampled. These chains are shown on the right
-# hand plots.
+# In these plots there are multiple distributions of the same color and multipl
+# line styles. Each of these represents a "chain". A chain is a single run of
+# a Monte Carlo algorithm. Generally, Monte Carlo methods run various chains
+# to ensure that all regions of the posterior distribution are sampled. These
+# chains are shown on the right hand plots.
 
 axes = az.plot_trace(idata, figsize=(10, 7), var_names=["~mu"])
 axes[0, 0].axvline(x[0], label="True Intercept", lw=2, color="k")
@@ -190,13 +184,17 @@ ax.get_figure().tight_layout()
 ################################################################################
 # With this model, we can obtain an uncertainty measurement via the High Density
 # Interval. To do that, we need to sample the "preditive posterior", that is,
-# the posterior distribution of the data, given the model.
+# the posterior distribution of the data, given the model. What this does is
+# sample the latent vetors from their posteriors (above), and use the model
+# to construct realizations of the data given these realizations. They represent
+# what the model thinks the data should look like, given everything it has
+# already seen.
 
 with model:
     pm.sample_posterior_predictive(idata, extend_inferencedata=True)
 
 ###############################################################################
-# sphinx_gallery_thumbnail_number = 4
+# sphinx_gallery_thumbnail_number = 3
 fig, ax = plt.subplots(figsize=(8, 4))
 az.plot_hdi(
     t,
