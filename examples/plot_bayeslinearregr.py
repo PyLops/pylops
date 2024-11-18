@@ -158,11 +158,11 @@ with pm.Model() as model:
 # vector :math:`\mathbf{x}`. The bottom left plot displays the posterior of the
 # estimated noise :math:`\sigma`.
 #
-# In these plots there are multiple distributions of the same color and multipl
-# line styles. Each of these represents a "chain". A chain is a single run of
-# a Monte Carlo algorithm. Generally, Monte Carlo methods run various chains
-# to ensure that all regions of the posterior distribution are sampled. These
-# chains are shown on the right hand plots.
+# In these plots there are multiple distributions of the same color and
+# multiple line styles. Each of these represents a "chain". A chain is a single
+# run of a Monte Carlo algorithm. Generally, Monte Carlo methods run various
+# chains to ensure that all regions of the posterior distribution are sampled.
+# These chains are shown on the right hand plots.
 
 axes = az.plot_trace(idata, figsize=(10, 7), var_names=["~mu"])
 axes[0, 0].axvline(x[0], label="True Intercept", lw=2, color="k")
