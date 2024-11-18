@@ -21,7 +21,7 @@ from typing import Optional, Sequence
 
 from pylops import LinearOperator
 from pylops.basicoperators import MatrixMult
-from pylops.utils.backend import get_array_module, inplace_set
+from pylops.utils.backend import get_array_module, get_module, inplace_set
 from pylops.utils.typing import DTypeLike, NDArray
 
 
@@ -48,6 +48,12 @@ class BlockDiag(LinearOperator):
         .. versionadded:: 2.2.0
 
         Force an array to be flattened after matvec and rmatvec.
+    inoutengine : :obj:`tuple`, optional
+        .. versionadded:: 2.4.0
+
+        Type of output vectors of `matvec` and `rmatvec. If ``None``, this is
+        inferred directly from the input vectors. Note that this is ignored
+        if ``nproc>1``.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -113,6 +119,7 @@ class BlockDiag(LinearOperator):
         ops: Sequence[LinearOperator],
         nproc: int = 1,
         forceflat: bool = None,
+        inoutengine: Optional[tuple] = None,
         dtype: Optional[DTypeLike] = None,
     ) -> None:
         self.ops = ops
@@ -149,6 +156,7 @@ class BlockDiag(LinearOperator):
         if self.nproc > 1:
             self.pool = mp.Pool(processes=nproc)
 
+        self.inoutengine = inoutengine
         dtype = _get_dtype(ops) if dtype is None else np.dtype(dtype)
         clinear = all([getattr(oper, "clinear", True) for oper in self.ops])
         super().__init__(
@@ -172,7 +180,11 @@ class BlockDiag(LinearOperator):
         self._nproc = nprocnew
 
     def _matvec_serial(self, x: NDArray) -> NDArray:
-        ncp = get_array_module(x)
+        ncp = (
+            get_array_module(x)
+            if self.inoutengine is None
+            else get_module(self.inoutengine[0])
+        )
         y = ncp.zeros(self.nops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
             y = inplace_set(
@@ -183,7 +195,11 @@ class BlockDiag(LinearOperator):
         return y
 
     def _rmatvec_serial(self, x: NDArray) -> NDArray:
-        ncp = get_array_module(x)
+        ncp = (
+            get_array_module(x)
+            if self.inoutengine is None
+            else get_module(self.inoutengine[1])
+        )
         y = ncp.zeros(self.mops, dtype=self.dtype)
         for iop, oper in enumerate(self.ops):
             y = inplace_set(

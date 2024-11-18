@@ -409,11 +409,21 @@ Geophysical subsurface characterization:
    when ``explicit=False``.
 
 
-Example
--------
+Examples
+--------
 
-Finally, let's briefly look at an example. First we write a code snippet using
-``numpy`` arrays which PyLops will run on your CPU:
+Finally, let's briefly look at some example. 
+
+End-to-end GPU powered inverse problems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First we consider the most common scenario when both the model and data 
+vectors fit onto the GPU memory. We can therefore simply replace all our 
+``numpy`` arrays with ``cupy`` arrays and solve the inverse problem of 
+interest end-to-end on the GPU. 
+
+Let's first write a code snippet using ``numpy`` arrays, which PyLops 
+will run on your CPU:
 
 .. code-block:: python
 
@@ -421,11 +431,14 @@ Finally, let's briefly look at an example. First we write a code snippet using
    G = np.random.normal(0, 1, (ny, nx)).astype(np.float32)
    x = np.ones(nx, dtype=np.float32)
 
+   # Create operator
    Gop = MatrixMult(G, dtype='float32')
-   y = Gop * x
+   
+   # Create data and invert
+   y = Gop @ x
    xest = Gop / y
 
-Now we write a code snippet using ``cupy`` arrays which PyLops will run on
+Now we write a code snippet using ``cupy`` arrays, which PyLops will run on
 your GPU:
 
 .. code-block:: python
@@ -434,8 +447,11 @@ your GPU:
    G = cp.random.normal(0, 1, (ny, nx)).astype(np.float32)
    x = cp.ones(nx, dtype=np.float32)
 
+   # Create operator
    Gop = MatrixMult(G, dtype='float32')
-   y = Gop * x
+   
+   # Create data and invert
+   y = Gop @ x
    xest = Gop / y
 
 The code is almost unchanged apart from the fact that we now use ``cupy`` arrays,
@@ -450,15 +466,90 @@ your GPU/TPU:
    G = jnp.array(np.random.normal(0, 1, (ny, nx)).astype(np.float32))
    x = jnp.ones(nx, dtype=np.float32)
 
+   # Create operator
    Gop = JaxOperator(MatrixMult(G, dtype='float32'))
-   y = Gop * x
+   
+   # Create data and invert
+   y = Gop @ x
    xest = Gop / y
 
    # Adjoint via AD
    xadj = Gop.rmatvecad(x, y)
 
+Again, the code is almost unchanged apart from the fact that we now use ``jax`` arrays.
 
-Again, the code is almost unchanged apart from the fact that we now use ``jax`` arrays,
+
+Mixed CPU-GPU powered inverse problems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Let us now consider a more intricate scenario where we have acess to 
+a GPU-powered operator, however the model and/or data vectors are too large 
+to fit onto the memory. 
+
+For the sake of clarity, we consider a problem where 
+the operator can be written as a :class:`pylops.basicoperators.BlockDiag` of 
+PyLops operators. Note how, by simply sandwitching any of the GPU-powered 
+operator within two :class:`pylops.basicoperators.ToCupy` operators, we are 
+able to tell PyLops to transfer to the GPU only the part of the model vector 
+required by a given operator and transfer back the output to the  CPU before 
+forming the combine output vector (i.e., the output vector of the 
+:class:`pylops.basicoperators.BlockDiag`)
+
+.. code-block:: python
+
+   nops, n = 5, 4
+   Ms = [np.diag((i + 1) * np.ones(n, dtype=dtype)) \
+            for i in range(nops)]
+   Ms = [M.T @ M for M in Ms]
+
+   # Create operator
+   Mops = []
+   for iop in range(nops):
+      Mop = MatrixMult(cp.asarray(Ms[iop], dtype=dtype))
+      Top = ToCupy(Mop.dims, dtype=dtype)
+      Top1 = ToCupy(Mop.dimsd, dtype=dtype)
+      Mop = Top1.H @ Mop @ Top
+      Mops.append(Mop)
+   Mops = BlockDiag(Mops, forceflat=True)
+
+   # Create data and invert
+   x = np.ones(n * nops, dtype=dtype)
+   y = Mops @ x.ravel()
+   xest = Mops / y
+
+
+Finally, let us consider a problem where 
+the operator can be written as a :class:`pylops.basicoperators.VStack` of 
+PyLops operators and the model vector can be fully transferred to the GPU. 
+We can use again the :class:`pylops.basicoperators.ToCupy` operator, however this 
+time we will only use it to move the output of each operator to the CPU. 
+Since we are now in a special scenario, where the input of the overall 
+operator sits on the GPU and the output on the
+CPU, we need to inform the :class:`pylops.basicoperators.VStack` operator about this.
+This can be easily done using the additional ``inoutengine`` parameter. Let's
+see this with an example:
+
+.. code-block:: python
+
+   nops, n, m = 3, 4, 5
+   Ms = [np.random.normal(0, 1, (n, m)) for _ in range(nops)]
+
+   # Create operator
+   Mops = []
+   for iop in range(nops):
+      Mop = MatrixMult(cp.asarray(Ms[iop]), dtype=dtype)
+      Top1 = ToCupy(Mop.dimsd, dtype=dtype)
+      Mop = Top1.H @ Mop
+      Mops.append(Mop)
+   Mops = VStack(Mops, inoutengine=("numpy", "cupy"))
+
+   # Create data and invert
+   x = cp.ones(m, dtype=dtype)
+   y = Mops @ x.ravel()
+   xest = pylops_cgls(Mops, y, x0=cp.zeros_like(x))[0]
+
+**Note:**: this feature is currently not available for ``jax`` arrays.
+
 
 .. note::
 

@@ -10,7 +10,12 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 import numpy as np
 
 from pylops.optimization.basesolver import Solver
-from pylops.utils.backend import get_array_module, to_numpy
+from pylops.utils.backend import (
+    get_array_module,
+    to_cupy_conditional,
+    to_numpy,
+    to_numpy_conditional,
+)
 from pylops.utils.typing import NDArray
 
 if TYPE_CHECKING:
@@ -131,10 +136,10 @@ class CG(Solver):
             Updated model vector
 
         """
-        Opc = self.Op.matvec(self.c)
+        Opc = self.Op.matvec(to_cupy_conditional(x, self.c))
         cOpc = self.ncp.abs(self.c.dot(Opc.conj()))
         a = self.kold / cOpc
-        x += a * self.c
+        x += to_cupy_conditional(x, a) * to_cupy_conditional(x, self.c)
         self.r -= a * Opc
         k = self.ncp.abs(self.r.dot(self.r.conj()))
         b = k / self.kold
@@ -386,7 +391,7 @@ class CGLS(Solver):
             self.q.dot(self.q.conj()) + self.damp * self.c.dot(self.c.conj())
         )
         x = x + a * self.c
-        self.s = self.s - a * self.q
+        self.s = self.s - to_numpy_conditional(self.q, a) * self.q
         r = self.Op.rmatvec(self.s) - self.damp * x
         k = self.ncp.abs(r.dot(r.conj()))
         b = k / self.kold
@@ -773,7 +778,9 @@ class LSQR(Solver):
         # next beta, u, alfa, v. These satisfy the relations
         # beta*u = Op*v - alfa*u,
         # alfa*v = Op'*u - beta*v'
-        self.u = self.Op.matvec(self.v) - self.alfa * self.u
+        self.u = (
+            self.Op.matvec(self.v) - to_numpy_conditional(self.u, self.alfa) * self.u
+        )
         self.beta = self.ncp.linalg.norm(self.u)
         if self.beta > 0:
             self.u = self.u / self.beta
@@ -812,7 +819,9 @@ class LSQR(Solver):
         self.w = self.v + self.t2 * self.w
         self.ddnorm = self.ddnorm + self.ncp.linalg.norm(self.dk) ** 2
         if self.calc_var:
-            self.var = self.var + self.ncp.dot(self.dk, self.dk)
+            self.var = self.var + to_numpy_conditional(
+                self.var, self.ncp.dot(self.dk, self.dk)
+            )
 
         # use a plane rotation on the right to eliminate the
         # super-diagonal element (theta) of the upper-bidiagonal matrix.

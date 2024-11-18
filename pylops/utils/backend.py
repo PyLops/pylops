@@ -17,8 +17,10 @@ __all__ = [
     "get_sp_fft",
     "get_complex_dtype",
     "get_real_dtype",
+    "to_cupy",
     "to_numpy",
     "to_cupy_conditional",
+    "to_numpy_conditional",
     "inplace_set",
     "inplace_add",
     "inplace_multiply",
@@ -484,6 +486,26 @@ def get_real_dtype(dtype: DTypeLike) -> DTypeLike:
     return np.real(np.ones(1, dtype)).dtype
 
 
+def to_cupy(x: NDArray) -> NDArray:
+    """Convert x to cupy array
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray` or :obj:`cupy.ndarray`
+        Array to evaluate
+
+    Returns
+    -------
+    x : :obj:`numpy.ndarray`
+        Converted array
+
+    """
+    if deps.cupy_enabled:
+        if cp.get_array_module(x) == np:
+            x = cp.asarray(x)
+    return x
+
+
 def to_numpy(x: NDArray) -> NDArray:
     """Convert x to numpy array
 
@@ -524,6 +546,28 @@ def to_cupy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> NDArray:
         if cp.get_array_module(x) == cp and cp.get_array_module(y) == np:
             with cp.cuda.Device(x.device):
                 y = cp.asarray(y)
+    return y
+
+
+def to_numpy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> NDArray:
+    """Convert y to numpy array conditional to x being a numpy array
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray` or :obj:`cupy.ndarray`
+        Array to evaluate
+    y : :obj:`numpy.ndarray`
+        Array to convert
+
+    Returns
+    -------
+    y : :obj:`cupy.ndarray`
+        Converted array
+
+    """
+    if deps.cupy_enabled:
+        if cp.get_array_module(x) == np and cp.get_array_module(y) == cp:
+            y = cp.asnumpy(y)
     return y
 
 
