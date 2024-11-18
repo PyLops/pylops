@@ -487,13 +487,13 @@ a GPU-powered operator, however the model and/or data vectors are too large
 to fit onto the memory. 
 
 For the sake of clarity, we consider a problem where 
-the operator can be written as a :class:`pylops.basicoperators.BlockDiag` of 
+the operator can be written as a :class:`pylops.BlockDiag` of
 PyLops operators. Note how, by simply sandwitching any of the GPU-powered 
-operator within two :class:`pylops.basicoperators.ToCupy` operators, we are 
+operator within two :class:`pylops.ToCupy` operators, we are
 able to tell PyLops to transfer to the GPU only the part of the model vector 
 required by a given operator and transfer back the output to the  CPU before 
 forming the combine output vector (i.e., the output vector of the 
-:class:`pylops.basicoperators.BlockDiag`)
+:class:`pylops.BlockDiag`)
 
 .. code-block:: python
 
@@ -519,13 +519,13 @@ forming the combine output vector (i.e., the output vector of the
 
 
 Finally, let us consider a problem where 
-the operator can be written as a :class:`pylops.basicoperators.VStack` of 
+the operator can be written as a :class:`pylops.VStack` of
 PyLops operators and the model vector can be fully transferred to the GPU. 
-We can use again the :class:`pylops.basicoperators.ToCupy` operator, however this 
+We can use again the :class:`pylops.ToCupy` operator, however this
 time we will only use it to move the output of each operator to the CPU. 
 Since we are now in a special scenario, where the input of the overall 
 operator sits on the GPU and the output on the
-CPU, we need to inform the :class:`pylops.basicoperators.VStack` operator about this.
+CPU, we need to inform the :class:`pylops.VStack` operator about this.
 This can be easily done using the additional ``inoutengine`` parameter. Let's
 see this with an example:
 
