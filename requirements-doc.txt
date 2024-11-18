@@ -35,4 +35,5 @@ black
 flake8
 mypy
 pymc
+arviz>=0.18
 graphviz
