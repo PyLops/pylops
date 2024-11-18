@@ -33,13 +33,10 @@ In this example, we will combine the Bayesian power of PyMC with the linear lang
 PyLops.
 """
 
-from io import BytesIO
-
 import arviz as az
 import matplotlib.pyplot as plt
 import numpy as np
 import pymc as pm
-from PIL import Image
 
 import pylops
 
@@ -155,15 +152,24 @@ with pm.Model() as model:
     idata = pm.sample(2000, tune=1000, chains=2)
 
 ###############################################################################
-# The PyMC library offers a way to visualize the Bayesian model which is
-# helpful in mapping dependencies.
-dot = pm.model_to_graphviz(model)
+# The plot above is known as the "trace" plot. The plots on the left display the
+# posterior distribution of all latent variables in the model. The top-left
+# has multiple colored, one for each parameter in the latent vector
+# :math:`\mathbf{x}`. The bottom left plot displays the posterior of the
+# estimated noise.
+#
+# The plot above is known as the "trace" plot. The plots on the left display the
+# posterior distribution of all latent variables in the model. The top-left
+# has multiple colored, one for each parameter in the latent vector
+# :math:`\mathbf{x}`. The bottom left plot displays the posterior of the
+# estimated noise.
+#
+# In these plots there are multiple distributions of the same color. Each
+# represents a "chain". A chain is a single run of a Monte Carlo algorithm.
+# Generally, Monte Carlo methods run various chains to ensure that all regions
+# of the posterior distribution are sampled. These chains are shown on the right
+# hand plots.
 
-# Some magic to display in docs
-plt.imshow(Image.open(BytesIO(dot.pipe("png"))))
-plt.axis("off")
-
-###############################################################################
 axes = az.plot_trace(idata, figsize=(10, 7), var_names=["~mu"])
 axes[0, 0].axvline(x[0], label="True Intercept", lw=2, color="k")
 axes[0, 0].axvline(xnest[0], label="Intercept MAP", lw=2, color="C0", ls="--")
@@ -182,18 +188,6 @@ for ax in axes.ravel():
 ax.get_figure().tight_layout()
 
 ################################################################################
-# The plot above is known as the "trace" plot. The plots on the left display the
-# posterior distribution of all latent variables in the model. The top-left
-# has multiple colored, one for each parameter in the latent vector
-# :math:`\mathbf{x}`. The bottom left plot displays the posterior of the
-# estimated noise.
-#
-# In these plots there are multiple distributions of the same color. Each
-# represents a "chain". A chain is a single run of a Monte Carlo algorithm.
-# Generally, Monte Carlo methods run various chains to ensure that all regions
-# of the posterior distribution are sampled. These chains are shown on the right
-# hand plots.
-#
 # With this model, we can obtain an uncertainty measurement via the High Density
 # Interval. To do that, we need to sample the "preditive posterior", that is,
 # the posterior distribution of the data, given the model.

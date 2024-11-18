@@ -28,5 +28,4 @@ isort
 black
 flake8
 mypy
-pymc
-graphviz
+pytensor
