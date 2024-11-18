@@ -480,7 +480,7 @@ Again, the code is almost unchanged apart from the fact that we now use ``jax`` 
 
 
 Mixed CPU-GPU powered inverse problems
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let us now consider a more intricate scenario where we have acess to 
 a GPU-powered operator, however the model and/or data vectors are too large 
