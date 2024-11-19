@@ -69,26 +69,35 @@ yn = y + np.random.normal(0, sigma, N)
 # :math:`\mathbf{y} =  \mathbf{A} \mathbf{x}` in a least-squares sense.
 # Using PyLops, the ``/`` operator solves the iteratively (i.e.,
 # :py:func:`scipy.sparse.linalg.lsqr`).
-xnest = LRop / yn
-noise_est = np.sqrt(np.sum((yn - LRop @ xnest) ** 2) / (N - 1))
+# In Bayesian terminology, this estimator is known as the maximulum likelihood
+# estimation (MLE).
+x_mle = LRop / yn
+noise_mle = np.sqrt(np.sum((yn - LRop @ x_mle) ** 2) / (N - 1))
+
+###############################################################################
+# Alternatively, we may regularize the problem. In this case we will condition
+# the solution towards smaller magnitude parameters, we can use a regularized
+# least squares approach. Since the weight is pretty small, we expect the
+# result to be very similar to the one above.
+sigma_prior = 20
+eps = 1 / np.sqrt(2) / sigma_prior
+x_map, *_ = pylops.optimization.basic.lsqr(LRop, yn, damp=eps)
+noise_map = np.sqrt(np.sum((yn - LRop @ x_map) ** 2) / (N - 1))
 
 ###############################################################################
 # Let's plot the best fitting line for the case of noise free and noisy data
 fig, ax = plt.subplots(figsize=(8, 4))
-ax.plot(
-    np.array([t.min(), t.max()]),
-    np.array([t.min(), t.max()]) * x[1] + x[0],
-    "k",
-    lw=4,
-    label=rf"True: $x_0$ = {x[0]:.2f}, $x_1$ = {x[1]:.2f}",
-)
-ax.plot(
-    np.array([t.min(), t.max()]),
-    np.array([t.min(), t.max()]) * xnest[1] + xnest[0],
-    "--g",
-    lw=4,
-    label=rf"MAP Estimated: $x_0$ = {xnest[0]:.2f}, $x_1$ = {xnest[1]:.2f}",
-)
+for est, est_label, c in zip(
+    [x, x_mle, x_map], ["True", "MLE", "MAP"], ["k", "C0", "C1"]
+):
+    ax.plot(
+        np.array([t.min(), t.max()]),
+        np.array([t.min(), t.max()]) * est[1] + est[0],
+        color=c,
+        ls="--" if est_label == "MAP" else "-",
+        lw=4,
+        label=rf"{est_label}: $x_0$ = {est[0]:.2f}, $x_1$ = {est[1]:.2f}",
+    )
 ax.scatter(t, y, c="r", s=70)
 ax.scatter(t, yn, c="g", s=70)
 ax.legend()
@@ -105,17 +114,23 @@ fig.tight_layout()
 #
 # To do so, we need to define the priors and the likelihood.
 #
-# Priors in Bayesian analysis can be interpreted as the probabilistic
-# equivalent to regularization. Finding the maximum a posteriori (MAP) estimate
-# to a least-squares problem with a Gaussian prior on the parameters is
-# is equivalent to applying a Tikhonov (L2) regularization to these parameters.
-# A Laplace prior is equivalent to a sparse (L1) regularization. In addition,
-# the weight of the regularization is controlled by the "scale" of the
-# distribution of the prior; the standard deviation (in the case of a Gaussian)
-# is inversely proportional strength of the regularization.
+# As hinted above, priors in Bayesian analysis can be interpreted as the
+# probabilistic equivalent to regularization. Finding the maximum a posteriori
+# (MAP) estimate to a least-squares problem with a Gaussian prior on the
+# parameters is equivalent to applying a Tikhonov (L2) regularization to these
+# parameters. A Laplace prior is equivalent to a sparse (L1) regularization.
+# In addition, the weight of the regularization is controlled by the "scale" of
+# the distribution of the prior; the standard deviation (in the case of a Gaussian)
+# is inversely proportional strength of the regularization. So if we use the same
+# sigma_prior above as the standard deviation of our prior distribition, we
+# should get the same MAP out of them. In practice, in Bayesian analysis we are
+# not only interested in point estimates like MAP, but rather, the whole
+# posterior distribution. If you want the MAP only, there are better,
+# methods to obtain them, such as the one shown above.
 #
-# In this problem we will use weak, not very informative priors, by settings
-# their "weights" to be small (high scale parameters):
+# In this problem we will use weak, not very informative priors, by setting
+# their prior to accept a wide range of probable values. This is equivalent to
+# setting the "weights" to be small, as shown above:
 #
 # .. math::
 #     x_0 \sim N(0, 20)
@@ -142,14 +157,14 @@ with pm.Model() as model:
 
     # Define priors
     sp = pm.HalfCauchy("σ", beta=10)
-    xp = pm.Normal("x", 0, sigma=20, shape=dims)
+    xp = pm.Normal("x", 0, sigma=sigma_prior, shape=dims)
     mu = pm.Deterministic("mu", pytensor_lrop(xp))
 
     # Define likelihood
     likelihood = pm.Normal("y", mu=mu, sigma=sp, observed=y_data)
 
     # Inference!
-    idata = pm.sample(2000, tune=1000, chains=2)
+    idata = pm.sample(500, tune=200, chains=2)
 
 ###############################################################################
 # The plot below is known as the "trace" plot. The left column displays the
@@ -166,17 +181,17 @@ with pm.Model() as model:
 
 axes = az.plot_trace(idata, figsize=(10, 7), var_names=["~mu"])
 axes[0, 0].axvline(x[0], label="True Intercept", lw=2, color="k")
-axes[0, 0].axvline(xnest[0], label="Intercept MAP", lw=2, color="C0", ls="--")
+axes[0, 0].axvline(x_map[0], label="Intercept MAP", lw=2, color="C0", ls="--")
 axes[0, 0].axvline(x[1], label="True Slope", lw=2, color="darkgray")
-axes[0, 0].axvline(xnest[1], label="Slope MAP", lw=2, color="C1", ls="--")
+axes[0, 0].axvline(x_map[1], label="Slope MAP", lw=2, color="C1", ls="--")
 axes[0, 1].axhline(x[0], label="True Intercept", lw=2, color="k")
-axes[0, 1].axhline(xnest[0], label="Intercept MAP", lw=2, color="C0", ls="--")
+axes[0, 1].axhline(x_map[0], label="Intercept MAP", lw=2, color="C0", ls="--")
 axes[0, 1].axhline(x[1], label="True Slope", lw=2, color="darkgray")
-axes[0, 1].axhline(xnest[1], label="Slope MAP", lw=2, color="C1", ls="--")
+axes[0, 1].axhline(x_map[1], label="Slope MAP", lw=2, color="C1", ls="--")
 axes[1, 0].axvline(sigma, label="True Sigma", lw=2, color="k")
-axes[1, 0].axvline(noise_est, label="Sigma MAP", lw=2, color="C0", ls="--")
+axes[1, 0].axvline(noise_map, label="Sigma MAP", lw=2, color="C0", ls="--")
 axes[1, 1].axhline(sigma, label="True Sigma", lw=2, color="k")
-axes[1, 1].axhline(noise_est, label="Sigma MAP", lw=2, color="C0", ls="--")
+axes[1, 1].axhline(noise_map, label="Sigma MAP", lw=2, color="C0", ls="--")
 for ax in axes.ravel():
     ax.legend()
 ax.get_figure().tight_layout()
@@ -203,20 +218,17 @@ az.plot_hdi(
     hdi_prob=0.95,
     ax=ax,
 )
-ax.plot(
-    np.array([t.min(), t.max()]),
-    np.array([t.min(), t.max()]) * x[1] + x[0],
-    "k",
-    lw=4,
-    label=rf"True: $x_0$ = {x[0]:.2f}, $x_1$ = {x[1]:.2f}",
-)
-ax.plot(
-    np.array([t.min(), t.max()]),
-    np.array([t.min(), t.max()]) * xnest[1] + xnest[0],
-    "--g",
-    lw=4,
-    label=rf"MAP Estimated: $x_0$ = {xnest[0]:.2f}, $x_1$ = {xnest[1]:.2f}",
-)
+for est, est_label, c in zip(
+    [x, x_mle, x_map], ["True", "MLE", "MAP"], ["k", "C0", "C1"]
+):
+    ax.plot(
+        np.array([t.min(), t.max()]),
+        np.array([t.min(), t.max()]) * est[1] + est[0],
+        color=c,
+        ls="--" if est_label == "MAP" else "-",
+        lw=4,
+        label=rf"{est_label}: $x_0$ = {est[0]:.2f}, $x_1$ = {est[1]:.2f}",
+    )
 ax.scatter(t, y, c="r", s=70)
 ax.scatter(t, yn, c="g", s=70)
 ax.legend()
