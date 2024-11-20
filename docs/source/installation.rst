@@ -437,8 +437,8 @@ You may need to set the environment variable ``NUMBA_NUM_THREADS`` define how ma
 It can also be checked dynamically with ``numba.config.NUMBA_DEFAULT_NUM_THREADS``.
 
 
-PyMC and PyTensor and 
---------
+PyMC and PyTensor
+-----------------
 `PyTensor <https://pytensor.readthedocs.io/en/latest/>`_ is used to allow seamless integration between PyLops and 
 `PyMC <https://www.pymc.io/welcome.html>`_ operators.
 Install both of them via ``conda`` with:
