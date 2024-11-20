@@ -3,7 +3,7 @@
 # same reason, we force devito==4.8.7 as later versions of devito
 # require numpy>=2.0.0
 numpy>=1.21.0,<2.0.0
-scipy>=1.11.0
+scipy>=1.11.0,<1.13
 jax
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch>=1.2.0
@@ -34,3 +34,5 @@ isort
 black
 flake8
 mypy
+pytensor
+pymc

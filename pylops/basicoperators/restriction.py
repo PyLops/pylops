@@ -189,7 +189,7 @@ class Restriction(LinearOperator):
             Input array (can be either flattened or not)
 
         Returns
-        ----------
+        -------
         y : :obj:`numpy.ma.core.MaskedArray`
             Masked array.
 

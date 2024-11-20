@@ -1,4 +1,4 @@
-numpy>=1.21.0
+numpy>=1.21.0,<2
 scipy>=1.11.0
 jax
 numba
@@ -28,3 +28,4 @@ isort
 black
 flake8
 mypy
+pytensor

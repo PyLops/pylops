@@ -462,5 +462,5 @@ Again, the code is almost unchanged apart from the fact that we now use ``jax`` 
 
 .. note::
 
-   More examples for the CuPy and JAX backends be found `here <https://github.com/PyLops/pylops_notebooks/tree/master/developement-cupy>`_
-   and `here <https://github.com/PyLops/pylops_notebooks/tree/master/developement/Basic_JAX.ipynb>`_.
+   More examples for the CuPy and JAX backends be found `here <https://github.com/PyLops/pylops_notebooks/tree/master/developement-cupy>`__
+   and `here <https://github.com/PyLops/pylops_notebooks/tree/master/developement/Basic_JAX.ipynb>`__.
