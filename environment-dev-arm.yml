@@ -25,7 +25,6 @@ dependencies:
   - autopep8
   - isort
   - black
-  - pytensor
   - pip:
     - devito
     - dtcwt
