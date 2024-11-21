@@ -453,6 +453,8 @@ or via ``pip`` with
 
    >> pip install pytensor pymc
 
+.. note::
+   PyTensor does not support NumPy 2 yet, so make sure you use NumPy 1.x with PyTensor and PyMC.
 
 PyWavelets
 ----------
