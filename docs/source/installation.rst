@@ -437,6 +437,25 @@ You may need to set the environment variable ``NUMBA_NUM_THREADS`` define how ma
 It can also be checked dynamically with ``numba.config.NUMBA_DEFAULT_NUM_THREADS``.
 
 
+PyMC and PyTensor
+-----------------
+`PyTensor <https://pytensor.readthedocs.io/en/latest/>`_ is used to allow seamless integration between PyLops and 
+`PyMC <https://www.pymc.io/welcome.html>`_ operators.
+Install both of them via ``conda`` with:
+
+.. code-block:: bash
+
+   conda install -c conda-forge pytensor pymc
+
+or via ``pip`` with
+
+.. code-block:: bash
+
+   >> pip install pytensor pymc
+
+.. note::
+   PyTensor does not support NumPy 2 yet, so make sure you use NumPy 1.x with PyTensor and PyMC.
+
 PyWavelets
 ----------
 `PyWavelets <https://pywavelets.readthedocs.io/en/latest/>`_ is used to implement the wavelet operators.
