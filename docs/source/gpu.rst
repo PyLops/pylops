@@ -576,4 +576,3 @@ Geophysical subsurface characterization:
    operator currently works only with ``explicit=True`` due to the same issue as
    in point 1 for the :class:`pylops.signalprocessing.Convolve1D` operator employed
    when ``explicit=False``.
-

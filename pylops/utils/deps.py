@@ -10,6 +10,7 @@ __all__ = [
     "spgl1_enabled",
     "sympy_enabled",
     "torch_enabled",
+    "pytensor_enabled",
 ]
 
 import os
@@ -223,6 +224,23 @@ def sympy_import(message: Optional[str] = None) -> str:
     return sympy_message
 
 
+def pytensor_import(message: Optional[str] = None) -> str:
+    if pytensor_enabled:
+        try:
+            import_module("pytensor")  # noqa: F401
+
+            pytensor_message = None
+        except Exception as e:
+            pytensor_message = f"Failed to import pytensor (error:{e})."
+    else:
+        pytensor_message = (
+            f"pytensor package not installed. In order to be able to use "
+            f"{message} run "
+            f'"pip install pytensor" or "conda install -c conda-forge pytensor".'
+        )
+    return pytensor_message
+
+
 # Set package availability booleans
 # cupy and jax: the package is imported to check everything is working correctly,
 # if not the package is disabled. We do this here as these libraries are used as drop-in
@@ -245,3 +263,4 @@ skfmm_enabled = util.find_spec("skfmm") is not None
 spgl1_enabled = util.find_spec("spgl1") is not None
 sympy_enabled = util.find_spec("sympy") is not None
 torch_enabled = util.find_spec("torch") is not None
+pytensor_enabled = util.find_spec("pytensor") is not None
