@@ -248,7 +248,7 @@ class NormalEquationsInversion(Solver):
             xinv = cg(
                 self.Op_normal,
                 self.y_normal,
-                self.ncp.zeros(self.Op_normal.shape[1], dtype=self.Op_normal.dtype),
+                x0=self.ncp.zeros(self.Op_normal.shape[1], dtype=self.Op_normal.dtype),
                 **kwargs_solver,
             )[0]
             istop = None
@@ -594,7 +594,7 @@ class RegularizedInversion(Solver):
             xinv, istop, itn, r1norm, r2norm = cgls(
                 self.RegOp,
                 self.datatot,
-                self.ncp.zeros(self.RegOp.shape[1], dtype=self.RegOp.dtype),
+                x0=self.ncp.zeros(self.RegOp.shape[1], dtype=self.RegOp.dtype),
                 **kwargs_solver,
             )[0:5]
         else:
@@ -816,7 +816,7 @@ class PreconditionedInversion(Solver):
             pinv, istop, itn, r1norm, r2norm = cgls(
                 self.POp,
                 self.y,
-                self.ncp.zeros(self.POp.shape[1], dtype=self.POp.dtype),
+                x0=self.ncp.zeros(self.POp.shape[1], dtype=self.POp.dtype),
                 **kwargs_solver,
             )[0:5]
             # force it 1d as we decorate this method with disable_ndarray_multiplication
