@@ -456,6 +456,10 @@ or via ``pip`` with
 .. note::
    PyTensor does not support NumPy 2 yet, so make sure you use NumPy 1.x with PyTensor and PyMC.
 
+.. note::
+   OSX users may experience a ``CompileError`` error when using PyTensor. This can be solved by adding 
+   ``pytensor.config.gcc__cxxflags = "-Wno-c++11-narrowing"`` after ``import pytensor``.
+
 PyWavelets
 ----------
 `PyWavelets <https://pywavelets.readthedocs.io/en/latest/>`_ is used to implement the wavelet operators.
