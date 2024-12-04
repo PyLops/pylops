@@ -124,6 +124,7 @@ html_show_copyright = True
 # Theme config
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
+    "github_url": "https://github.com/PyLops/pylops",
     # "logo_only": True,
     # "display_version": True,
     "logo": {
