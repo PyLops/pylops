@@ -38,7 +38,6 @@ A list of operators present in pylops.basicoperators :
     Gradient                        Gradient.
     FirstDirectionalDerivative      First Directional derivative.
     SecondDirectionalDerivative     Second Directional derivative.
-
 """
 
 from .functionoperator import *
@@ -73,7 +72,6 @@ from .secondderivative import *
 from .laplacian import *
 from .gradient import *
 from .directionalderivative import *
-
 
 __all__ = [
     "FunctionOperator",

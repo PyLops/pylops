@@ -63,7 +63,6 @@ Basic operators
     Imag
     Conj
 
-
 Smoothing and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
