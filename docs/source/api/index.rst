@@ -62,8 +62,8 @@ Basic operators
     Real
     Imag
     Conj
-    ToCupy
-    
+
+
 Smoothing and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
