@@ -586,20 +586,5 @@ class _KirchhoffCudaHelper:
             y_d = self._call_dynamic(inputs[0], "_rmatvec")
         else:
             y_d = self._call_nondynamic("_rmatvec", *inputs)
-        """
-        else:
-            x_d = inputs[0]
-            y_d = inputs[1]
-            ns_d = np.int32(inputs[2])
-            nr_d = np.int32(inputs[3])
-            nt_d = np.int32(inputs[4])
-            ni_d = np.int32(inputs[5])
-            dt_d = np.float32(inputs[6])
-            trav_srcs_d = to_cupy(inputs[7])
-            trav_recs_d = to_cupy(inputs[8])
-            self._travsrcrec_kirch_rmatvec_cuda[
-                self.num_blocks, self.num_threads_per_blocks
-            ](x_d, y_d, ns_d, nr_d, nt_d, ni_d, dt_d, trav_srcs_d, trav_recs_d)
-            cuda.synchronize()
-        """
+
         return y_d
