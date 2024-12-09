@@ -1,4 +1,3 @@
-from cmath import exp
 from math import pi
 
 import cupy as cp
@@ -6,7 +5,7 @@ from numba import cuda
 
 TWO_PI_MINUS = cp.float32(-2.0 * pi)
 TWO_PI_PLUS = cp.float32(2.0 * pi)
-I = cp.complex64(1j)
+IMG = cp.complex64(1j)
 
 
 @cuda.jit
@@ -25,7 +24,7 @@ def _radon_inner_2d_kernel(x, y, f, px, h, flim0, flim1, npx, nh):
             # y[ih, ifr] += x[ipx, ifr] * exp(TWO_PI_MINUS * f[ifr] * px[ipx] * h[ih])
             # fast computation of exp(1j * x) - see https://stackoverflow.com/questions/9860711/cucomplex-h-and-exp/9863048#9863048
             s, c = cuda.libdevice.sincosf(TWO_PI_MINUS * f[ifr] * px[ipx] * h[ih])
-            y[ih, ifr] += x[ipx, ifr] * (c + I * s)
+            y[ih, ifr] += x[ipx, ifr] * (c + IMG * s)
 
 
 @cuda.jit
@@ -44,7 +43,7 @@ def _aradon_inner_2d_kernel(x, y, f, px, h, flim0, flim1, npx, nh):
             # x[ipx, ifr] += y[ih, ifr] * exp(TWO_PI_I_PLUS * f[ifr] * px[ipx] * h[ih])
             # fast computation of exp(1j * x) - see https://stackoverflow.com/questions/9860711/cucomplex-h-and-exp/9863048#9863048
             s, c = cuda.libdevice.sincosf(TWO_PI_PLUS * f[ifr] * px[ipx] * h[ih])
-            x[ipx, ifr] += y[ih, ifr] * (c + I * s)
+            x[ipx, ifr] += y[ih, ifr] * (c + IMG * s)
 
 
 def _radon_inner_2d_cuda(

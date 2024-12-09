@@ -1,4 +1,3 @@
-from cmath import exp
 from math import pi
 
 import cupy as cp
@@ -6,7 +5,7 @@ from numba import cuda
 
 TWO_PI_MINUS = cp.float32(-2.0 * pi)
 TWO_PI_PLUS = cp.float32(2.0 * pi)
-I = cp.complex64(1j)
+IMG = cp.complex64(1j)
 
 
 @cuda.jit
@@ -30,7 +29,7 @@ def _radon_inner_3d_kernel(x, y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy,
                 s, c = cuda.libdevice.sincosf(
                     TWO_PI_MINUS * f[ifr] * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
                 )
-                y[ihy, ihx, ifr] += x[ipy, ipx, ifr] * (c + I * s)
+                y[ihy, ihx, ifr] += x[ipy, ipx, ifr] * (c + IMG * s)
 
 
 @cuda.jit
@@ -53,7 +52,7 @@ def _aradon_inner_3d_kernel(x, y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy
                 s, c = cuda.libdevice.sincosf(
                     TWO_PI_PLUS * f[ifr] * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
                 )
-                x[ipy, ipx, ifr] += y[ihy, ihx, ifr] * (c + I * s)
+                x[ipy, ipx, ifr] += y[ihy, ihx, ifr] * (c + IMG * s)
 
 
 def _radon_inner_3d_cuda(
