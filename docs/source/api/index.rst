@@ -28,6 +28,7 @@ Templates
     LinearOperator
     FunctionOperator
     MemoizeOperator
+    PyTensorOperator
     TorchOperator
     JaxOperator
 
@@ -62,6 +63,8 @@ Basic operators
     Real
     Imag
     Conj
+    ToCupy
+    
 
 Smoothing and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,6 +112,8 @@ Signal processing
     Seislet
     Radon2D
     Radon3D
+    FourierRadon2D
+    FourierRadon3D
     ChirpRadon2D
     ChirpRadon3D
     Sliding1D

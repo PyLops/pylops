@@ -1,5 +1,3 @@
-import multiprocessing
-
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
@@ -176,63 +174,59 @@ def test_Radon2D(par):
     "par", [(par1), (par2), (par3), (par4), (par5), (par6), (par7), (par8)]
 )
 def test_Radon3D(par):
-    """Dot-test,  forward and adjoint consistency check
+    """Dot-test, forward and adjoint consistency check
     (for onthefly parameter), and sparse inverse for Radon3D operator
     """
-    if (
-        par["engine"] == "numpy" or multiprocessing.cpu_count() >= 4
-    ):  # avoid timeout in travis for numba
+    dt, dhy, dhx = 0.005, 1, 1
+    t = np.arange(par["nt"]) * dt
+    hy = np.arange(par["nhy"]) * dhy
+    hx = np.arange(par["nhx"]) * dhx
+    py = np.linspace(0, par["pymax"], par["npy"])
+    px = np.linspace(0, par["pxmax"], par["npx"])
+    x = np.zeros((par["npy"], par["npx"], par["nt"]))
+    x[3, 2, par["nt"] // 2] = 1
 
-        dt, dhy, dhx = 0.005, 1, 1
-        t = np.arange(par["nt"]) * dt
-        hy = np.arange(par["nhy"]) * dhy
-        hx = np.arange(par["nhx"]) * dhx
-        py = np.linspace(0, par["pymax"], par["npy"])
-        px = np.linspace(0, par["pxmax"], par["npx"])
-        x = np.zeros((par["npy"], par["npx"], par["nt"]))
-        x[3, 2, par["nt"] // 2] = 1
+    Rop = Radon3D(
+        t,
+        hy,
+        hx,
+        py,
+        px,
+        centeredh=par["centeredh"],
+        interp=par["interp"],
+        kind=par["kind"],
+        onthefly=False,
+        engine=par["engine"],
+        dtype="float64",
+    )
+    R1op = Radon3D(
+        t,
+        hy,
+        hx,
+        py,
+        px,
+        centeredh=par["centeredh"],
+        interp=par["interp"],
+        kind=par["kind"],
+        onthefly=True,
+        engine=par["engine"],
+        dtype="float64",
+    )
 
-        Rop = Radon3D(
-            t,
-            hy,
-            hx,
-            py,
-            px,
-            centeredh=par["centeredh"],
-            interp=par["interp"],
-            kind=par["kind"],
-            onthefly=False,
-            engine=par["engine"],
-            dtype="float64",
-        )
-        R1op = Radon3D(
-            t,
-            hy,
-            hx,
-            py,
-            px,
-            centeredh=par["centeredh"],
-            interp=par["interp"],
-            kind=par["kind"],
-            onthefly=True,
-            engine=par["engine"],
-            dtype="float64",
-        )
+    assert dottest(
+        Rop,
+        par["nhy"] * par["nhx"] * par["nt"],
+        par["npy"] * par["npx"] * par["nt"],
+        rtol=1e-3,
+    )
+    y = Rop * x.ravel()
+    y1 = R1op * x.ravel()
+    assert_array_almost_equal(y, y1, decimal=4)
 
-        assert dottest(
-            Rop,
-            par["nhy"] * par["nhx"] * par["nt"],
-            par["npy"] * par["npx"] * par["nt"],
-            rtol=1e-3,
-        )
-        y = Rop * x.ravel()
-        y1 = R1op * x.ravel()
-        assert_array_almost_equal(y, y1, decimal=4)
+    xadj = Rop.H * y
+    xadj1 = R1op.H * y
+    assert_array_almost_equal(xadj, xadj1, decimal=4)
 
-        xadj = Rop.H * y
-        xadj1 = R1op.H * y
-        assert_array_almost_equal(xadj, xadj1, decimal=4)
-
-        if Rop.engine == "numba":  # as numpy is too slow here...
-            xinv, _, _ = fista(Rop, y, niter=200, eps=3e0)
-            assert_array_almost_equal(x.ravel(), xinv, decimal=1)
+    if Rop.engine == "numba":  # as numpy is too slow here...
+        xinv, _, _ = fista(Rop, y, niter=200, eps=3e0)
+        assert_array_almost_equal(x.ravel(), xinv, decimal=1)

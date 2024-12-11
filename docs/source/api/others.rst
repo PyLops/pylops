@@ -118,6 +118,7 @@ Synthetics
     seismicevents.parabolic2d
     seismicevents.hyperbolic2d
     seismicevents.linear3d
+    seismicevents.parabolic3d
     seismicevents.hyperbolic3d
 
 .. currentmodule:: pylops.waveeqprocessing

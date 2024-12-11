@@ -19,5 +19,6 @@ sphinx:
 python:
   install:
     - requirements: requirements-doc.txt
+    - requirements: requirements-torch.txt
     - method: pip
       path: .

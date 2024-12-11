@@ -1,7 +1,5 @@
-numpy>=1.21.0
+numpy>=1.21.0,<2
 scipy>=1.11.0
---extra-index-url https://download.pytorch.org/whl/cpu
-torch>=1.2.0
 jax
 numba
 pyfftw
@@ -30,3 +28,4 @@ isort
 black
 flake8
 mypy
+pytensor

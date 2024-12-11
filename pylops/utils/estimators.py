@@ -87,7 +87,7 @@ def trace_hutchinson(
         Operator trace.
 
     Raises
-    -------
+    ------
     ValueError
         If ``neval`` is smaller than 3.
 
@@ -194,7 +194,7 @@ def trace_hutchpp(
         Operator trace.
 
     Raises
-    -------
+    ------
     ValueError
         If ``neval`` is smaller than 3.
 
@@ -294,7 +294,7 @@ def trace_nahutchpp(
         Operator trace.
 
     Raises
-    -------
+    ------
     ValueError
         If ``neval`` not large enough to accomodate ``c1`` and ``c2``.
 

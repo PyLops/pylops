@@ -2,6 +2,7 @@ __all__ = [
     "get_module",
     "get_module_name",
     "get_array_module",
+    "get_normalize_axis_index",
     "get_convolve",
     "get_fftconvolve",
     "get_oaconvolve",
@@ -16,8 +17,10 @@ __all__ = [
     "get_sp_fft",
     "get_complex_dtype",
     "get_real_dtype",
+    "to_cupy",
     "to_numpy",
     "to_cupy_conditional",
+    "to_numpy_conditional",
     "inplace_set",
     "inplace_add",
     "inplace_multiply",
@@ -58,6 +61,14 @@ if deps.jax_enabled:
     from jax.scipy.linalg import toeplitz as jnp_toeplitz
     from jax.scipy.signal import convolve as j_convolve
     from jax.scipy.signal import fftconvolve as j_fftconvolve
+
+# need to check numpy version since the namespace of normalize_axis_index
+# changed from numpy>=2.0.0
+np_version = np.__version__.split(".")
+if int(np_version[0]) > 1:
+    from numpy.lib.array_utils import normalize_axis_index
+else:
+    from numpy.core.multiarray import normalize_axis_index
 
 
 def get_module(backend: str = "numpy") -> ModuleType:
@@ -136,6 +147,18 @@ def get_array_module(x: npt.ArrayLike) -> ModuleType:
             return np
     else:
         return np
+
+
+def get_normalize_axis_index() -> Callable:
+    """Returns correct normalize_axis_index module based on numpy version
+
+    Returns
+    -------
+    f : :obj:`func`
+        Function to be used to process array
+
+    """
+    return normalize_axis_index
 
 
 def get_convolve(x: npt.ArrayLike) -> Callable:
@@ -463,6 +486,26 @@ def get_real_dtype(dtype: DTypeLike) -> DTypeLike:
     return np.real(np.ones(1, dtype)).dtype
 
 
+def to_cupy(x: NDArray) -> NDArray:
+    """Convert x to cupy array
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray` or :obj:`cupy.ndarray`
+        Array to evaluate
+
+    Returns
+    -------
+    x : :obj:`numpy.ndarray`
+        Converted array
+
+    """
+    if deps.cupy_enabled:
+        if cp.get_array_module(x) == np:
+            x = cp.asarray(x)
+    return x
+
+
 def to_numpy(x: NDArray) -> NDArray:
     """Convert x to numpy array
 
@@ -503,6 +546,28 @@ def to_cupy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> NDArray:
         if cp.get_array_module(x) == cp and cp.get_array_module(y) == np:
             with cp.cuda.Device(x.device):
                 y = cp.asarray(y)
+    return y
+
+
+def to_numpy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> NDArray:
+    """Convert y to numpy array conditional to x being a numpy array
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray` or :obj:`cupy.ndarray`
+        Array to evaluate
+    y : :obj:`numpy.ndarray`
+        Array to convert
+
+    Returns
+    -------
+    y : :obj:`cupy.ndarray`
+        Converted array
+
+    """
+    if deps.cupy_enabled:
+        if cp.get_array_module(x) == np and cp.get_array_module(y) == cp:
+            y = cp.asnumpy(y)
     return y
 
 

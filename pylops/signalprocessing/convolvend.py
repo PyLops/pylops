@@ -3,7 +3,6 @@ __all__ = ["ConvolveND"]
 from typing import Optional, Union
 
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
@@ -11,6 +10,7 @@ from pylops.utils.backend import (
     get_array_module,
     get_convolve,
     get_correlate,
+    get_normalize_axis_index,
     to_cupy_conditional,
 )
 from pylops.utils.decorators import reshaped
@@ -78,7 +78,9 @@ class ConvolveND(LinearOperator):
         self.axes = (
             np.arange(len(self.dims))
             if axes is None
-            else np.array([normalize_axis_index(ax, len(self.dims)) for ax in axes])
+            else np.array(
+                [get_normalize_axis_index()(ax, len(self.dims)) for ax in axes]
+            )
         )
         self.h = h
         hshape = np.array(self.h.shape)

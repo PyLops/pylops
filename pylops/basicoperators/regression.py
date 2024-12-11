@@ -124,7 +124,7 @@ class Regression(LinearOperator):
             Regression coefficients
 
         Returns
-        ----------
+        -------
         y : :obj:`numpy.ndarray`
             Values along y-axis
 

@@ -301,7 +301,7 @@ class Marchenko:
         greens: bool = False,
         dottest: bool = False,
         usematmul: bool = False,
-        **kwargs_solver
+        **kwargs_solver,
     ) -> Union[
         Tuple[NDArray, NDArray, NDArray, NDArray, NDArray],
         Tuple[NDArray, NDArray, NDArray, NDArray],
@@ -341,7 +341,7 @@ class Marchenko:
             for numpy and cupy `data`, respectively)
 
         Returns
-        ----------
+        -------
         f1_inv_minus : :obj:`numpy.ndarray`
             Inverted upgoing focusing function of size :math:`[n_r \times n_t]`
         f1_inv_plus : :obj:`numpy.ndarray`
@@ -473,7 +473,7 @@ class Marchenko:
                 Mop,
                 d.ravel(),
                 x0=self.ncp.zeros(2 * (2 * self.nt - 1) * self.nr, dtype=self.dtype),
-                **kwargs_solver
+                **kwargs_solver,
             )[0]
 
         f1_inv = f1_inv.reshape(2 * self.nt2, self.nr)
@@ -486,8 +486,9 @@ class Marchenko:
             # Create Green's functions
             g_inv = Gop * f1_inv_tot.ravel()
             g_inv = g_inv.reshape(2 * self.nt2, self.ns)
-            g_inv_minus, g_inv_plus = -g_inv[: self.nt2].T, np.fliplr(
-                g_inv[self.nt2 :].T
+            g_inv_minus, g_inv_plus = (
+                -g_inv[: self.nt2].T,
+                np.fliplr(g_inv[self.nt2 :].T),
             )
         if rtm and greens:
             return f1_inv_minus, f1_inv_plus, p0_minus, g_inv_minus, g_inv_plus
@@ -507,7 +508,7 @@ class Marchenko:
         greens: bool = False,
         dottest: bool = False,
         usematmul: bool = False,
-        **kwargs_solver
+        **kwargs_solver,
     ) -> Union[
         Tuple[NDArray, NDArray, NDArray, NDArray, NDArray],
         Tuple[NDArray, NDArray, NDArray, NDArray],
@@ -548,7 +549,7 @@ class Marchenko:
             for numpy and cupy `data`, respectively)
 
         Returns
-        ----------
+        -------
         f1_inv_minus : :obj:`numpy.ndarray`
             Inverted upgoing focusing function of size
             :math:`[n_r \times n_{vs} \times n_t]`
@@ -695,7 +696,7 @@ class Marchenko:
                 x0=self.ncp.zeros(
                     2 * (2 * self.nt - 1) * self.nr * nvs, dtype=self.dtype
                 ),
-                **kwargs_solver
+                **kwargs_solver,
             )[0]
 
         f1_inv = f1_inv.reshape(2 * self.nt2, self.nr, nvs)
