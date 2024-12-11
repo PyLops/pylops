@@ -1,7 +1,11 @@
-from cmath import exp
 from math import pi
 
+import cupy as cp
 from numba import cuda
+
+TWO_PI_MINUS = cp.float32(-2.0 * pi)
+TWO_PI_PLUS = cp.float32(2.0 * pi)
+IMG = cp.complex64(1j)
 
 
 @cuda.jit
@@ -17,9 +21,15 @@ def _radon_inner_3d_kernel(x, y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy,
     if ihy < nhy and ihx < nhx and ifr >= flim0 and ifr <= flim1:
         for ipy in range(npy):
             for ipx in range(npx):
-                y[ihy, ihx, ifr] += x[ipy, ipx, ifr] * exp(
-                    -1j * 2 * pi * f[ifr] * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
+                # slow computation of exp(1j * x)
+                # y[ihy, ihx, ifr] += x[ipy, ipx, ifr] * exp(
+                #     TWO_PI_MINUS * f[ifr] * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
+                # )
+                # fast computation of exp(1j * x) - see https://stackoverflow.com/questions/9860711/cucomplex-h-and-exp/9863048#9863048
+                s, c = cuda.libdevice.sincosf(
+                    TWO_PI_MINUS * f[ifr] * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
                 )
+                y[ihy, ihx, ifr] += x[ipy, ipx, ifr] * (c + IMG * s)
 
 
 @cuda.jit
@@ -35,9 +45,14 @@ def _aradon_inner_3d_kernel(x, y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy
     if ipy < npy and ipx < npx and ifr >= flim0 and ifr <= flim1:
         for ihy in range(nhy):
             for ihx in range(nhx):
-                x[ipy, ipx, ifr] += y[ihy, ihx, ifr] * exp(
-                    1j * 2 * pi * f[ifr] * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
+                # slow computation of exp(1j * x)
+                # x[ipy, ipx, ifr] += y[ihy, ihx, ifr] * exp(
+                #     TWO_PI_I_PLUS * f[ifr] * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
+                # )
+                s, c = cuda.libdevice.sincosf(
+                    TWO_PI_PLUS * f[ifr] * (py[ipy] * hy[ihy] + px[ipx] * hx[ihx])
                 )
+                x[ipy, ipx, ifr] += y[ihy, ihx, ifr] * (c + IMG * s)
 
 
 def _radon_inner_3d_cuda(

@@ -13,10 +13,12 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
 
 jit_message = deps.numba_import("the radon2d module")
+cupy_message = deps.cupy_import("the radon2d module")
 
 if jit_message is None:
-    from ._fourierradon2d_cuda import _aradon_inner_2d_cuda, _radon_inner_2d_cuda
     from ._fourierradon2d_numba import _aradon_inner_2d, _radon_inner_2d
+if jit_message is None and cupy_message is None:
+    from ._fourierradon2d_cuda import _aradon_inner_2d_cuda, _radon_inner_2d_cuda
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
@@ -167,7 +169,7 @@ class FourierRadon2D(LinearOperator):
         self._register_multiplications(engine)
 
     def _register_multiplications(self, engine: str) -> None:
-        if engine == "numba" and jit_message is None:
+        if engine == "numba":
             self._matvec = self._matvec_numba
             self._rmatvec = self._rmatvec_numba
         elif engine == "cuda":
