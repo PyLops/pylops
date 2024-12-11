@@ -3,7 +3,19 @@
 Changelog
 =========
 
+Version 2.4.0
+-------------
 
+*Released on: 11/12/2024*
+
+* Added :py:class:`pylops.signalprocessing.FourierRadon2d` and 
+  :py:class:`pylops.signalprocessing.FourierRadon3d` operators
+* Added :py:class:`pylops.PyTensorOperator` operator
+* Added :py:class:`pylops.ToCupy` operator
+* Added :py:class:`pylops.utils.seismicevents.parabolic3d` method
+* Fix bug in :py:class:`pylops.Restriction` when passing iava as cupy array
+
+  
 Version 2.3.1
 -------------
 
@@ -511,7 +523,7 @@ Version 1.3.0
 * Added :py:func:`pylops.optimization.sparsity.ISTA` and
   :py:func:`pylops.optimization.sparsity.FISTA` sparse solvers
 * Added possibility to broadcast (handle multi-dimensional arrays)
-  to :py:class:`pylops.Diagonal` and :py:func:`pylops..Restriction` operators
+  to :py:class:`pylops.Diagonal` and :py:class:`pylops.Restriction` operators
 * Added :py:class:`pylops.signalprocessing.Interp` operator
 * Added :py:class:`pylops.Spread` operator
 * Added :py:class:`pylops.signalprocessing.Radon2D` operator

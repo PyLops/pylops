@@ -1,11 +1,18 @@
 Changelog
 =========
 
+# 2.4.0
+* Added `pylops.signalprocessing.FourierRadon2d` and
+  `pylops.signalprocessing.FourierRadon3d` operators
+* Added `pylops.PyTensorOperator` operator
+* Added `pylops.ToCupy` operator
+* Added `pylops.utils.seismicevents.parabolic3d` method
+* Fix bug in `pylops.Restriction` when passing iava as cupy array
+
 # 2.3.1
 * Fixed bug in `pylops.utils.backend` (see [Issue #606](https://github.com/PyLops/pylops/issues/606))
 
 # 2.3.0
-
 * Added `pylops.JaxOperator`, `pylops.signalprocessing.DWTND`, and `pylops.signalprocessing.DTCWT` operators.
 * Added `updatesrc` method to `pylops.waveeqprocessing.AcousticWave2D`.
 * Added `verb` to `pylops.signalprocessing.Sliding1D.sliding1d_design`, `pylops.signalprocessing.Sliding2D.sliding2d_design`, `pylops.signalprocessing.Sliding3D.sliding3d_design`, `pylops.signalprocessing.Patch2D.patch2d_design`, and `pylops.signalprocessing.Patch3D.patch3d_design`.
@@ -29,7 +36,6 @@ is now unmantained and merged into `cupy`).
 
 
 # 2.2.0
-
 * Added `pylops.signalprocessing.NonStationaryConvolve3D` operator
 * Added nd-array capabilities to `pylops.basicoperators.Identity` and `pylops.basicoperators.Zero`
 * Added second implementation in `pylops.waveeqprocessing.BlendingContinuous` which is more
