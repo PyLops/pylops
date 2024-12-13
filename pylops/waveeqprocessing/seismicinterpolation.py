@@ -272,8 +272,8 @@ def SeismicInterpolation(
                     )
                 else:
                     sampling = (
-                        np.abs(spataxis[1] - spataxis[1]),
-                        np.abs(taxis[1] - taxis[1]),
+                        np.abs(spataxis[1] - spataxis[0]),
+                        np.abs(taxis[1] - taxis[0]),
                     )
             Pop = FFT2D(dims=dims, nffts=nffts, sampling=sampling)
             Pop = Pop.H
