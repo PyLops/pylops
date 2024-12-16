@@ -28,6 +28,7 @@ dependencies:
   - pip:
     - devito
     - dtcwt
+    - ucurv
     - scikit-fmm
     - spgl1
     - pytest-runner
@@ -39,3 +40,4 @@ dependencies:
     - image
     - flake8
     - mypy
+    
