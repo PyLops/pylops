@@ -256,11 +256,7 @@ def SeismicInterpolation(
                         f"spat1axis and taxis for kind=%{kind}"
                     )
                 else:
-                    sampling = (
-                        np.abs(spataxis[1] - spataxis[1]),
-                        np.abs(spat1axis[1] - spat1axis[1]),
-                        np.abs(taxis[1] - taxis[1]),
-                    )
+                    sampling = (dspat, dspat1, dt)
             Pop = FFTND(dims=dims, nffts=nffts, sampling=sampling)
             Pop = Pop.H
         else:
@@ -271,10 +267,7 @@ def SeismicInterpolation(
                         f"and taxis for kind={kind}"
                     )
                 else:
-                    sampling = (
-                        np.abs(spataxis[1] - spataxis[1]),
-                        np.abs(taxis[1] - taxis[1]),
-                    )
+                    sampling = (dspat, dt)
             Pop = FFT2D(dims=dims, nffts=nffts, sampling=sampling)
             Pop = Pop.H
         SIop = Rop * Pop
