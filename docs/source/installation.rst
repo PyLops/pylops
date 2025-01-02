@@ -264,7 +264,7 @@ and run the following code in Python:
    B = np.random.random((size, size))
    print("Time with %s threads: %f s" \
          %(os.environ.get("OMP_NUM_THREADS"),
-           timeit(lambda: np.dot(A, B), number=4)))
+           timeit(lambda: np.matmul(A, B), number=4)))
 
 Subsequently set the environment variables to ``2`` or any higher number of threads available
 in your hardware (multi-threaded), and run the same code.
