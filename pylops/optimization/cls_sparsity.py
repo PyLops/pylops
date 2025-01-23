@@ -1,4 +1,12 @@
-__all__ = ["IRLS"]
+__all__ = [
+    "IRLS",
+    "OMP",
+    "ISTA",
+    "FISTA",
+    "SPGL1",
+    "SplitBregman",
+]
+
 import logging
 import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
