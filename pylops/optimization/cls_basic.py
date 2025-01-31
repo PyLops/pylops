@@ -1043,6 +1043,8 @@ class LSQR(Solver):
 
             ``7`` means the iteration limit has been reached
 
+        iiter : :obj:`int`
+            Iteration number upon termination
         r1norm : :obj:`float`
             :math:`||\mathbf{r}||_2^2`, where
             :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
@@ -1058,6 +1060,8 @@ class LSQR(Solver):
         arnorm : :obj:`float`
             Estimate of norm of :math:`\cond(\mathbf{Op}^H\mathbf{r}-
             \epsilon^2\mathbf{x})`
+        xnorm : :obj:`float`
+            :math:`||\mathbf{x}||_2`
         var : :obj:`float`
             Diagonals of :math:`(\mathbf{Op}^H\mathbf{Op})^{-1}` (if ``damp=0``)
             or more generally :math:`(\mathbf{Op}^H\mathbf{Op} +
