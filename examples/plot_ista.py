@@ -12,7 +12,9 @@ a sparse representation in a certain domain. MP and OMP use a L0 norm and
 mathematically translates to solving the following constrained problem:
 
 .. math::
-    \quad \|\mathbf{Op}\mathbf{x}-  \mathbf{b}\|_2 <= \sigma,
+    \|\mathbf{x}\|_0 \quad  \text{subject to} \quad
+    \|\mathbf{Op}\,\mathbf{x}-\mathbf{y}\|_2^2 \leq \sigma^2,
+
 
 while IRLS, ISTA and FISTA solve an uncostrained problem with a L1
 regularization term:
