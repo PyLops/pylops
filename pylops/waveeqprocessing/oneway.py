@@ -103,10 +103,10 @@ def PhaseShift(
     freq : :obj:`numpy.ndarray`
         Positive frequency axis
     kx : :obj:`int`, optional
-        Horizontal wavenumber axis (centered around 0) of size
+        Horizontal spectroscopic wavenumber axis (centered around 0) of size
         :math:`[n_x \times 1]`.
     ky : :obj:`int`, optional
-        Second horizontal wavenumber axis for 3d phase shift
+        Second horizontal spectroscopic wavenumber axis for 3d phase shift
         (centered around 0) of size :math:`[n_y \times 1]`.
     dtype : :obj:`str`, optional
         Type of elements in input array
@@ -130,9 +130,14 @@ def PhaseShift(
         d(f, k_x, k_y) = m(f, k_x, k_y)
         e^{-j \Delta z \sqrt{\omega^2/v^2 - k_x^2 - k_y^2}}
 
-    where :math:`v` is the constant propagation velocity and
-    :math:`\Delta z` is the propagation depth. In adjoint mode, the data is
-    propagated backward using the following transformation:
+    where :math:`v` is the constant propagation velocity,
+    :math:`\Delta z` is the propagation depth, :math:`\omega=2\pi f` is the
+    angular frequency axis (where :math:`f` is represented by ``freq``),
+    :math:`k_x=2\pi \tilde{k}_x` is the horizontal wavenumber (where
+    :math:`\tilde{k}_x` is represented by ``kx``), and :math:`k_y=2\pi \tilde{k}_y`
+    is the second horizontal wavenumber (where :math:`\tilde{k}_y`
+    is represented by ``ky``). In adjoint mode, the data is propagated backward
+    using the following transformation:
 
     .. math::
         m(f, k_x, k_y) = d(f, k_x, k_y)
