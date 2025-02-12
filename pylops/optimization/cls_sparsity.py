@@ -914,7 +914,7 @@ class OMP(Solver):
                 else False
             )
             x, cols = self.step(x, cols, showstep)
-            self.callback(x)
+            self.callback(x, cols)
         return x, cols
 
     def finalize(
