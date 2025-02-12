@@ -166,8 +166,9 @@ def omp(
         and every N3 steps in between where N1, N2, N3 are the
         three element of the list.
     callback : :obj:`callable`, optional
-        Function with signature (``callback(x)``) to call after each iteration
-        where ``x`` is the current model vector
+        Function with signature (``callback(x, cols)``) to call after each iteration
+        where ``x`` contains the non-zero model coefficient and ``cols`` are the
+        indices where the current model vector is non-zero
 
     Returns
     -------
