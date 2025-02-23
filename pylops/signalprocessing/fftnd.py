@@ -65,13 +65,17 @@ class _FFTND_numpy(_BaseFFTND):
         if not self.clinear:
             x = ncp.real(x)
         if self.real:
-            y = ncp.fft.rfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.rfftn(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
             # Apply scaling to obtain a correct adjoint for this operator
             y = ncp.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= ncp.sqrt(2)
             y = ncp.swapaxes(y, self.axes[-1], -1)
         else:
-            y = ncp.fft.fftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.fftn(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         y = y.astype(self.cdtype)
@@ -90,9 +94,13 @@ class _FFTND_numpy(_BaseFFTND):
             x = ncp.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= ncp.sqrt(2)
             x = ncp.swapaxes(x, self.axes[-1], -1)
-            y = ncp.fft.irfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.irfftn(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         else:
-            y = ncp.fft.ifftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.ifftn(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
         for ax, nfft in zip(self.axes, self.nffts):
@@ -157,13 +165,17 @@ class _FFTND_scipy(_BaseFFTND):
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = sp_fft.rfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = sp_fft.rfftn(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.axes[-1], -1)
         else:
-            y = sp_fft.fftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = sp_fft.fftn(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after.any():
@@ -181,9 +193,13 @@ class _FFTND_scipy(_BaseFFTND):
             x = np.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.axes[-1], -1)
-            y = sp_fft.irfftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = sp_fft.irfftn(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         else:
-            y = sp_fft.ifftn(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = sp_fft.ifftn(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
         for ax, nfft in zip(self.axes, self.nffts):

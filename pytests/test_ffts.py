@@ -39,6 +39,7 @@ par1 = {
     "engine": "numpy",
     "ifftshift_before": False,
     "dtype": np.complex128,
+    "kwargs": {},
 }  # nfft=nt, complex input, numpy engine
 par2 = {
     "nt": 41,
@@ -49,6 +50,7 @@ par2 = {
     "engine": "numpy",
     "ifftshift_before": False,
     "dtype": np.complex64,
+    "kwargs": {},
 }  # nfft>nt, complex input, numpy engine
 par3 = {
     "nt": 41,
@@ -59,6 +61,7 @@ par3 = {
     "engine": "numpy",
     "ifftshift_before": False,
     "dtype": np.float64,
+    "kwargs": {},
 }  # nfft=nt, real input, numpy engine
 par4 = {
     "nt": 41,
@@ -69,6 +72,7 @@ par4 = {
     "engine": "numpy",
     "ifftshift_before": False,
     "dtype": np.float64,
+    "kwargs": {},
 }  # nfft>nt, real input, numpy engine
 par5 = {
     "nt": 41,
@@ -79,6 +83,7 @@ par5 = {
     "engine": "numpy",
     "ifftshift_before": True,
     "dtype": np.float32,
+    "kwargs": {},
 }  # nfft>nt, real input and ifftshift_before, numpy engine
 par6 = {
     "nt": 41,
@@ -89,7 +94,74 @@ par6 = {
     "engine": "numpy",
     "ifftshift_before": False,
     "dtype": np.complex128,
-}  # nfft<nt, complex input, numpy engine
+    "kwargs": {},
+}  # nfft<nt, complex input, scipy engine
+par1s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": None,
+    "real": False,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+    "kwargs": {},
+}  # nfft=nt, complex input, scipy engine
+par2s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 64,
+    "real": False,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.complex64,
+    "kwargs": {},
+}  # nfft>nt, complex input, scipy engine
+par3s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": None,
+    "real": True,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.float64,
+    "kwargs": {},
+}  # nfft=nt, real input, scipy engine
+par4s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 64,
+    "real": True,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.float64,
+    "kwargs": {},
+}  # nfft>nt, real input, scipy engine
+par5s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 16,
+    "real": False,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+    "kwargs": {},
+}  # nfft<nt, complex input, scipy engine
+par6s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 16,
+    "real": False,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+    "kwargs": {"workers": 2},
+}  # nfft<nt, complex input, scipy engine with workers
 par1w = {
     "nt": 41,
     "nx": 31,
@@ -99,6 +171,7 @@ par1w = {
     "engine": "fftw",
     "ifftshift_before": False,
     "dtype": np.complex128,
+    "kwargs": {},
 }  # nfft=nt, complex input, fftw engine
 par2w = {
     "nt": 41,
@@ -109,6 +182,7 @@ par2w = {
     "engine": "fftw",
     "ifftshift_before": False,
     "dtype": np.complex128,
+    "kwargs": {},
 }  # nfft>nt, complex input, fftw engine
 par3w = {
     "nt": 41,
@@ -119,6 +193,7 @@ par3w = {
     "engine": "fftw",
     "ifftshift_before": False,
     "dtype": np.float64,
+    "kwargs": {},
 }  # nfft=nt, real input, fftw engine
 par4w = {
     "nt": 41,
@@ -129,6 +204,7 @@ par4w = {
     "engine": "fftw",
     "ifftshift_before": False,
     "dtype": np.float32,
+    "kwargs": {},
 }  # nfft>nt, real input, fftw engine
 par5w = {
     "nt": 41,
@@ -139,6 +215,7 @@ par5w = {
     "engine": "fftw",
     "ifftshift_before": False,
     "dtype": np.complex128,
+    "kwargs": {},
 }  # nfft<nt, complex input, fftw engine
 
 np.random.seed(5)
@@ -813,6 +890,11 @@ def test_FFTND_small_complex(par):
         (par4),
         (par5),
         (par6),
+        (par1s),
+        (par2s),
+        (par3s),
+        (par4s),
+        (par5s),
         (par1w),
         (par2w),
         (par3w),
@@ -838,6 +920,7 @@ def test_FFT_1dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -896,6 +979,11 @@ def test_FFT_1dsignal(par):
         (par4),
         (par5),
         (par6),
+        (par1s),
+        (par2s),
+        (par3s),
+        (par4s),
+        (par5s),
         (par1w),
         (par2w),
         (par3w),
@@ -926,6 +1014,7 @@ def test_FFT_2dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -958,6 +1047,7 @@ def test_FFT_2dsignal(par):
             fftshift_after=True,
             engine=par["engine"],
             dtype=par["dtype"],
+            **par["kwargs"],
         )
         assert_array_almost_equal(FFTop_fftshift.f, np.fft.fftshift(FFTop.f))
 
@@ -992,6 +1082,7 @@ def test_FFT_2dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1024,6 +1115,7 @@ def test_FFT_2dsignal(par):
             fftshift_after=True,
             engine=par["engine"],
             dtype=par["dtype"],
+            **par["kwargs"],
         )
         assert_array_almost_equal(FFTop_fftshift.f, np.fft.fftshift(FFTop.f))
 
@@ -1058,6 +1150,11 @@ def test_FFT_2dsignal(par):
         (par4),
         (par5),
         (par6),
+        (par1s),
+        (par2s),
+        (par3s),
+        (par4s),
+        (par5s),
         (par1w),
         (par2w),
         (par3w),
@@ -1089,6 +1186,7 @@ def test_FFT_3dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1129,6 +1227,7 @@ def test_FFT_3dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1169,6 +1268,7 @@ def test_FFT_3dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1209,6 +1309,7 @@ def test_FFT_3dsignal(par):
             fftshift_after=True,
             engine=par["engine"],
             dtype=par["dtype"],
+            **par["kwargs"],
         )
         assert_array_almost_equal(FFTop_fftshift.f, np.fft.fftshift(FFTop.f))
 
@@ -1234,7 +1335,21 @@ def test_FFT_3dsignal(par):
         assert_array_almost_equal(d[..., :imax], dinv[..., :imax], decimal=decimal)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par6)])
+@pytest.mark.parametrize(
+    "par",
+    [
+        (par1),
+        (par2),
+        (par3),
+        (par4),
+        (par6),
+        (par1s),
+        (par2s),
+        (par3s),
+        (par4s),
+        (par5s),
+    ],
+)
 def test_FFT2D(par):
     """Dot-test and inversion for FFT2D operator for 2d signal"""
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8
@@ -1254,6 +1369,9 @@ def test_FFT2D(par):
         sampling=(dt, dx),
         real=par["real"],
         axes=(0, 1),
+        engine=par["engine"],
+        dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1300,6 +1418,8 @@ def test_FFT2D(par):
         sampling=(dx, dt),
         real=par["real"],
         axes=(1, 0),
+        dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1338,7 +1458,21 @@ def test_FFT2D(par):
     assert_array_almost_equal(d[:imax1, :imax2], dinv[:imax1, :imax2], decimal=decimal)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par6)])
+@pytest.mark.parametrize(
+    "par",
+    [
+        (par1),
+        (par2),
+        (par3),
+        (par4),
+        (par6),
+        (par1s),
+        (par2s),
+        (par3s),
+        (par4s),
+        (par5s),
+    ],
+)
 def test_FFT3D(par):
     """Dot-test and inversion for FFTND operator for 3d signal"""
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8
@@ -1360,6 +1494,8 @@ def test_FFT3D(par):
         axes=(0, 1, 2),
         sampling=(dt, dx, dy),
         real=par["real"],
+        dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1458,6 +1594,8 @@ def test_FFT3D(par):
         axes=(1, 2, 0),
         sampling=(dx, dy, dt),
         real=par["real"],
+        dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
