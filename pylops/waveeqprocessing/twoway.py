@@ -428,7 +428,7 @@ class AcousticWave2D(LinearOperator):
             f0=self.geometry.f0,
             src_type=self.geometry.src_type,
         )
-        
+
         nsrc = self.geometry.src_positions.shape[0]
         mtot = np.zeros(self.model.shape, dtype=np.float32)
 
