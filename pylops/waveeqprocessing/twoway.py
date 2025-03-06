@@ -250,7 +250,7 @@ class AcousticWave2D(LinearOperator):
 
         # assign source location to source object with custom wavelet
         if hasattr(self, "wav"):
-            self.wav.coordinates.data[0, :] = self.geometry.src_positions[isrc, :]
+            self.wav.coordinates.data[0, :] = solver.geometry.src_positions[:]
 
         # source wavefield
         u0 = solver.forward(
@@ -388,7 +388,7 @@ class AcousticWave2D(LinearOperator):
 
         # assign source location to source object with custom wavelet
         if hasattr(self, "wav"):
-            self.wav.coordinates.data[0, :] = self.geometry.src_positions[isrc, :]
+            self.wav.coordinates.data[0, :] = solver.geometry.src_positions[:]
 
         # source wavefield
         if hasattr(self, "src_wavefield"):
