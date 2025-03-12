@@ -532,9 +532,9 @@ def ps(
 
     .. math::
         \begin{align}
-        G_2(\theta) &= \tan \frac{\theta}{2} \left\{4 (V_S/V_P)^2 \sin^2 \theta
+        G_2(\theta) &=  \frac{\tan \theta}{2} \left\{4 (V_S/V_P)^2 \sin^2 \theta
             - 4(V_S/V_P) \cos \theta \cos \phi \right\},\\
-        G_3(\theta) &= -\tan \frac{\theta}{2} \left\{1 - 2 (V_S/V_P)^2 \sin^2 \theta +
+        G_3(\theta) &= - \frac{\tan \theta}{2} \left\{1 - 2 (V_S/V_P)^2 \sin^2 \theta +
         2(V_S/V_P) \cos \theta \cos \phi\right\},\\
         \frac{\Delta V_S}{\overline{V_S}} &= 2 \frac{V_{S,2}-V_{S,1}}{V_{S,2}+V_{S,1}},\\
         \frac{\Delta \rho}{\overline{\rho}} &= 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}.
