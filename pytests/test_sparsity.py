@@ -172,6 +172,27 @@ def test_IRLS_model(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
+def test_MP(par):
+    """Invert problem with MP"""
+    np.random.seed(42)
+    Aop = MatrixMult(np.random.randn(par["ny"], par["nx"]))
+
+    x = np.zeros(par["nx"])
+    x[par["nx"] // 2] = 1
+    x[3] = 1
+    x[par["nx"] - 4] = -1
+    y = Aop * x
+
+    sigma = 1e-4
+    maxit = 100
+
+    xinv, _, _ = omp(
+        Aop, y, maxit, niter_inner=0, optimal_coeff=True, sigma=sigma, show=False
+    )
+    assert_array_almost_equal(x, xinv, decimal=1)
+
+
+@pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
 def test_OMP(par):
     """Invert problem with OMP"""
     np.random.seed(42)
