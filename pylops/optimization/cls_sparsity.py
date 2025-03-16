@@ -696,21 +696,42 @@ class OMP(Solver):
         \DeclareMathOperator*{\argmin}{arg\,min}
         \DeclareMathOperator*{\argmax}{arg\,max}
         \Lambda_k = \Lambda_{k-1} \cup \left\{\argmax_j
-        \left|\mathbf{Op}_j^H\,\mathbf{r}_k\right| \right\} \\
+        \left|\mathbf{Op}^{j H}\,\mathbf{r}_k\right| \right\} \\
         \mathbf{x}_k = \argmin_{\mathbf{x}}
         \left\|\mathbf{Op}_{\Lambda_k}\,\mathbf{x} - \mathbf{y}\right\|_2^2
+
+    where :math:`\mathbf{Op}^j` is the :math:`j`-th column of the operator,
+    :math:`\mathbf{r}_k` is the residual at iteration :math:`k`, and
+    :math:`\mathbf{Op}_{\Lambda_k}` is the operator restricted to the columns
+    in the set :math:`\Lambda_k`.
 
     Note that by choosing ``niter_inner=0`` the basic Matching Pursuit (MP)
     algorithm is implemented instead. In other words, instead of solving an
     optimization at each iteration to find the best :math:`\mathbf{x}` for the
-    currently selected basis functions, the vector :math:`\mathbf{x}` is just
-    updated at the new basis function by taking directly the value from
-    the inner product :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
+    currently selected basis functions, either the vector :math:`\mathbf{x}`
+    is just updated at the new basis function by adding the value from
+    the inner product :math:`\mathbf{Op}_j^H\,\mathbf{r}_k` to the current value
+    (``optimal_coeff=False``) or the optimal coefficient that minimizes the norm
+    of the residual :math:`\mathbf{r} - c * \mathbf{Op}^j` is estimated
+    (``optimal_coeff=True``) and added to the current value.
 
-    In this case it is highly recommended to provide a normalized basis
-    function. If different basis have different norms, the solver is likely
-    to diverge. Similar observations apply to OMP, even though mild unbalancing
-    between the basis is generally properly handled.
+    In the case the MP solver is used, it is highly recommended to provide a
+    normalized basis function. If different basis have different norms, the
+    solver is likely to diverge. Similar observations apply to OMP, even
+    though mild unbalancing between the basis is generally properly handled.
+    Two possible ways to handle the scenario fo non-normalized basis functions
+    are:
+
+        - Find the normalization factor of the the basis functions before
+          running the solver (this is done by choosing ``normalizecols=True``);
+        - Find the optimal coefficient that minimizes the norm of the residual
+          :math:`\mathbf{r} - c * \mathbf{Op}^j` at every iteration (this is
+          done by choosing ``optimal_coeff=True``).
+
+    Finally, when the operator is a chain of operators, with the rigth-most
+    representing the basis function, if the operator of the basis function is
+    provided in the ``Opbasis`` parameter, the solver will use this operator
+    to find the normalization factor for each column of the operator.
 
     """
 
@@ -742,6 +763,8 @@ class OMP(Solver):
         niter_inner: int = 40,
         sigma: float = 1e-4,
         normalizecols: bool = False,
+        Opbasis: Optional["LinearOperator"] = None,
+        optimal_coeff: bool = False,
         show: bool = False,
     ) -> None:
         r"""Setup solver
@@ -763,6 +786,14 @@ class OMP(Solver):
             :math:`n_{cols}` times to unit vectors (i.e., containing 1 at
             position j and zero otherwise); use only when the columns of the
             operator are expected to have highly varying norms.
+        Opbasis : :obj:`pylops.LinearOperator`
+            Operator representing the basis functions. If ``None``, the entire
+            operator used for inversion `Op` is used.
+        optimal_coeff : :obj:`bool`, optional
+            Estimate optimal coefficient that minimizes the norm of the residual
+            :math:`\mathbf{r} - c * \mathbf{Op}^j) norm (``True``) or use the
+            directly the value from the inner product
+            :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
         show : :obj:`bool`, optional
             Display setup log
 
@@ -772,17 +803,19 @@ class OMP(Solver):
         self.niter_inner = niter_inner
         self.sigma = sigma
         self.normalizecols = normalizecols
+        self.Opbasis = Opbasis if Opbasis is not None else self.Op
+        self.optimal_coeff = optimal_coeff
         self.ncp = get_array_module(y)
 
         # find normalization factor for each column
         if self.normalizecols:
-            ncols = self.Op.shape[1]
+            ncols = self.Opbasis.shape[1]
             self.norms = self.ncp.zeros(ncols)
             for icol in range(ncols):
-                unit = self.ncp.zeros(ncols, dtype=self.Op.dtype)
+                unit = self.ncp.zeros(ncols, dtype=self.Opbasis.dtype)
                 unit[icol] = 1
-                self.norms[icol] = np.linalg.norm(self.Op.matvec(unit))
-
+                self.norms[icol] = np.linalg.norm(self.Opbasis.matvec(unit))
+            print(f"{self.norms = }")
         # create variables to track the residual norm and iterations
         self.res = self.y.copy()
         self.cost = [
@@ -820,9 +853,9 @@ class OMP(Solver):
         """
         # compute inner products
         cres = self.Op.rmatvec(self.res)
-        cres_abs = np.abs(cres)
         if self.normalizecols:
-            cres_abs = cres_abs / self.norms
+            cres = cres / self.norms
+        cres_abs = np.abs(cres)
         # choose column with max cres
         cres_max = np.max(cres_abs)
         imax = np.argwhere(cres_abs == cres_max).ravel()
@@ -847,11 +880,22 @@ class OMP(Solver):
                     int(imax),
                 ]
             )
-            self.res -= Opcol.matvec(cres[imax] * self.ncp.ones(1))
-            if addnew:
-                x.append(cres[imax])
+            if not self.optimal_coeff:
+                # update with coefficient that maximizes the inner product
+                self.res -= Opcol.matvec(cres[imax] * self.ncp.ones(1))
+                if addnew:
+                    x.append(cres[imax])
+                else:
+                    x[imax_in_cols] += cres[imax]
             else:
-                x[imax_in_cols] += cres[imax]
+                # find optimal coefficient that minimizes the residual (r - cres * col)
+                col = Opcol.matvec(self.ncp.ones(1, dtype=Opcol.dtype))
+                cresopt = (Opcol.rmatvec(self.res) / Opcol.rmatvec(col))[0]
+                self.res -= Opcol.matvec(cresopt * self.ncp.ones(1))
+                if addnew:
+                    x.append(cresopt)
+                else:
+                    x[imax_in_cols] += cresopt
         else:
             # OMP update
             Opcol = self.Op.apply_columns(cols)
@@ -958,6 +1002,8 @@ class OMP(Solver):
         niter_inner: int = 40,
         sigma: float = 1e-4,
         normalizecols: bool = False,
+        Opbasis: Optional["LinearOperator"] = None,
+        optimal_coeff: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
@@ -980,6 +1026,14 @@ class OMP(Solver):
             :math:`n_{cols}` times to unit vectors (i.e., containing 1 at
             position j and zero otherwise); use only when the columns of the
             operator are expected to have highly varying norms.
+        Opbasis : :obj:`pylops.LinearOperator`
+            Operator representing the basis functions. If ``None``, the entire
+            operator used for inversion `Op` is used.
+        optimal_coeff : :obj:`bool`, optional
+            Estimate optimal coefficient that minimizes the norm of the residual
+            :math:`\mathbf{r} - c * \mathbf{Op}^j) norm (``True``) or use the
+            directly the value from the inner product
+            :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -1003,6 +1057,8 @@ class OMP(Solver):
             niter_inner=niter_inner,
             sigma=sigma,
             normalizecols=normalizecols,
+            Opbasis=Opbasis,
+            optimal_coeff=optimal_coeff,
             show=show,
         )
         x: List[NDArray] = []
