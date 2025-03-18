@@ -1328,7 +1328,7 @@ class _ColumnLinearOperator(LinearOperator):
     ) -> None:
         if not isinstance(Op, LinearOperator):
             raise TypeError("Op must be a LinearOperator")
-        super(_ColumnLinearOperator, self).__init__(Op, explicit=Op.explicit)
+        super(_ColumnLinearOperator, self).__init__(Op)
         self.Op = Op
         self.cols = cols
         self._shape = (Op.shape[0], len(cols))
