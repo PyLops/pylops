@@ -144,11 +144,11 @@ class _Convolve1Dlong(LinearOperator):
             self.offset -= 1
         self.hstar = ncp.flip(self.h, axis=-1)
 
-        self.pad = ncp.zeros((len(dims), 2), dtype=int)
+        self.pad = np.zeros((len(dims), 2), dtype=int)
         self.pad[self.axis, 0] = max(self.offset, 0)
         self.pad[self.axis, 1] = -min(self.offset, 0)
 
-        self.padd = ncp.zeros((len(dims), 2), dtype=int)
+        self.padd = np.zeros((len(dims), 2), dtype=int)
         self.padd[self.axis, 1] = max(self.offset, 0)
         self.padd[self.axis, 0] = -min(self.offset, 0)
 
