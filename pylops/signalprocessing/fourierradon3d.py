@@ -50,17 +50,17 @@ class FourierRadon3D(LinearOperator):
     flims : :obj:`tuple`, optional
         Indices of lower and upper limits of Fourier axis to be used in
         the application of the Radon matrix (when ``None``, use entire axis)
-    kind : :obj:`tuple`
+    kind : :obj:`tuple`, optional
         Curves to be used for stacking/spreading along the y- and x- axes
         (``("linear", "linear")``, ``("linear", "parabolic")``,
          ``("parabolic", "linear")``, or  ``("parabolic", "parabolic")``)
-    engine : :obj:`str`
+    engine : :obj:`str`, optional
         Engine used for computation (``numpy`` or ``numba`` or ``cuda``)
-    num_threads_per_blocks : :obj:`tuple`
+    num_threads_per_blocks : :obj:`tuple`, optional
         Number of threads in each block (only when ``engine=cuda``)
-    dtype : :obj:`str`
+    dtype : :obj:`str`, optional
         Type of elements in input array.
-    name : :obj:`str`
+    name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
@@ -128,7 +128,7 @@ class FourierRadon3D(LinearOperator):
         flims: Optional[Tuple[int, int]] = None,
         kind: Tuple[str, str] = ("linear", "linear"),
         engine: str = "numpy",
-        num_threads_per_blocks: Tuple[int, int] = (32, 32),
+        num_threads_per_blocks: Tuple[int, int, int] = (2, 16, 16),
         dtype: DTypeLike = "float64",
         name: str = "R",
     ) -> None:
