@@ -1,10 +1,18 @@
-import jax
-import jax.numpy as jnp
+import os
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from pylops import JaxOperator, MatrixMult
+from pylops.utils import deps
+
+jax_message = deps.devito_import("the jax module")
+
+if jax_message is None:
+    import jax
+    import jax.numpy as jnp
+
 
 par1 = {"ny": 11, "nx": 11, "dtype": np.float32}  # square
 par2 = {"ny": 21, "nx": 11, "dtype": np.float32}  # overdetermined
@@ -12,6 +20,9 @@ par2 = {"ny": 21, "nx": 11, "dtype": np.float32}  # overdetermined
 np.random.seed(0)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1)])
 def test_JaxOperator(par):
     """Apply forward and adjoint and compare with native pylops."""
@@ -34,6 +45,9 @@ def test_JaxOperator(par):
     assert_array_equal(xadj, np.array(xadjnp))
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1)])
 def test_TorchOperator_batch(par):
     """Apply forward for input with multiple samples

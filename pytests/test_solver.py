@@ -1,6 +1,16 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
 from scipy.sparse.linalg import lsqr as sp_lsqr
 
 from pylops.basicoperators import MatrixMult
@@ -114,7 +124,7 @@ def test_cg_ndarray(par):
         x0 = None
 
     y = Aop * x
-    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=1e-5, show=True)[0]
+    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=0, show=True)[0]
     assert xinv.shape == x.shape
     assert_array_almost_equal(x, xinv, decimal=4)
 
@@ -143,7 +153,7 @@ def test_cg_forceflat(par):
         x0 = None
 
     y = Aop * x
-    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=1e-5, show=True)[0]
+    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=0, show=True)[0]
     assert xinv.shape == x.ravel().shape
     assert_array_almost_equal(x.ravel(), xinv, decimal=4)
 
@@ -173,6 +183,9 @@ def test_cgls(par):
     assert_array_almost_equal(x, xinv, decimal=4)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par1j), (par2j), (par3j), (par3j)]
 )

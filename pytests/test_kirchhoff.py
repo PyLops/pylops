@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
@@ -59,6 +61,9 @@ par2d = {"mode": "eikonal", "dynamic": True}
 par3d = {"mode": "byot", "dynamic": True}
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 def test_identify_geometry():
     """Identify geometry, check expected outputs"""
     # 2d
@@ -117,6 +122,9 @@ def test_identify_geometry():
     assert list(origin) == [0, 0, 0]
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 def test_traveltime_ana():
     """Check analytical traveltimes in homogenous medium for horizontal and
     vertical paths
@@ -138,6 +146,9 @@ def test_traveltime_ana():
     assert trav_recs_ana[0, 0] == 100 / v0
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 def test_traveltime_table():
     """Compare analytical and eikonal traveltimes in homogenous medium"""
     if skfmm_enabled:
@@ -198,6 +209,9 @@ def test_traveltime_table():
         assert_array_almost_equal(trav_ana, trav_eik, decimal=2)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par1d), (par2d), (par3d)])
 def test_kirchhoff2d(par):
     """Dot-test for Kirchhoff operator"""
@@ -236,6 +250,9 @@ def test_kirchhoff2d(par):
         assert dottest(Dop, PAR["nsx"] * PAR["nrx"] * PAR["nt"], PAR["nz"] * PAR["nx"])
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 def test_kirchhoff3d(par):
     """Dot-test for Kirchhoff operator"""
@@ -278,6 +295,9 @@ def test_kirchhoff3d(par):
         )
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize(
     "par",
     [
@@ -339,6 +359,9 @@ def test_kirchhoff2d_trav_vs_travsrcrec(par):
     assert_array_almost_equal(Dop.H @ yy, D1op.H @ yy, decimal=2)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize(
     "par",
     [

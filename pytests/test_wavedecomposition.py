@@ -1,6 +1,18 @@
-import numpy as np
-import pytest
+import os
 
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+
+    backend = "cupy"
+else:
+    import numpy as np
+
+    backend = "numpy"
+import numpy as npp
+import pytest
+from scipy.sparse.linalg import lsqr as sp_lsqr
+
+from pylops.optimization.basic import lsqr
 from pylops.utils.seismicevents import hyperbolic2d, hyperbolic3d, makeaxis
 from pylops.utils.wavelets import ricker
 from pylops.waveeqprocessing.wavedecomposition import (
@@ -45,10 +57,10 @@ wav = ricker(t[:41], f0=PAR["f0"])[0]
 @pytest.fixture(scope="module")
 def create_data2D():
     """Create 2d dataset"""
-    t0_plus = np.array([0.05, 0.12])
+    t0_plus = npp.array([0.05, 0.12])
     t0_minus = t0_plus + 0.04
-    vrms = np.array([1400.0, 1800.0])
-    amp = np.array([1.0, -0.6])
+    vrms = npp.array([1400.0, 1800.0])
+    amp = npp.array([1.0, -0.6])
 
     _, p2d_minus = hyperbolic2d(x, t, t0_minus, vrms, amp, wav)
     _, p2d_plus = hyperbolic2d(x, t, t0_plus, vrms, amp, wav)
@@ -66,19 +78,24 @@ def create_data2D():
         dtype="complex128",
     )
 
-    d2d = UPop * np.concatenate((p2d_plus.ravel(), p2d_minus.ravel())).ravel()
-    d2d = np.real(d2d.reshape(2 * PAR["nx"], PAR["nt"]))
+    d2d = UPop * npp.concatenate((p2d_plus.ravel(), p2d_minus.ravel())).ravel()
+    d2d = npp.real(d2d.reshape(2 * PAR["nx"], PAR["nt"]))
     p2d, vz2d = d2d[: PAR["nx"]], d2d[PAR["nx"] :]
-    return p2d, vz2d, p2d_minus, p2d_plus
+    return (
+        np.asarray(p2d),
+        np.asarray(vz2d),
+        np.asarray(p2d_minus),
+        np.asarray(p2d_plus),
+    )
 
 
 @pytest.fixture(scope="module")
 def create_data3D():
     """Create 3d dataset"""
-    t0_plus = np.array([0.05, 0.12])
+    t0_plus = npp.array([0.05, 0.12])
     t0_minus = t0_plus + 0.04
-    vrms = np.array([1400.0, 1800.0])
-    amp = np.array([1.0, -0.6])
+    vrms = npp.array([1400.0, 1800.0])
+    amp = npp.array([1.0, -0.6])
 
     _, p3d_minus = hyperbolic3d(x, y, t, t0_minus, vrms, vrms, amp, wav)
     _, p3d_plus = hyperbolic3d(x, y, t, t0_plus, vrms, vrms, amp, wav)
@@ -96,10 +113,15 @@ def create_data3D():
         dtype="complex128",
     )
 
-    d3d = UPop * np.concatenate((p3d_plus.ravel(), p3d_minus.ravel())).ravel()
-    d3d = np.real(d3d.reshape(2 * PAR["ny"], PAR["nx"], PAR["nt"]))
+    d3d = UPop * npp.concatenate((p3d_plus.ravel(), p3d_minus.ravel())).ravel()
+    d3d = npp.real(d3d.reshape(2 * PAR["ny"], PAR["nx"], PAR["nt"]))
     p3d, vz3d = d3d[: PAR["ny"]], d3d[PAR["ny"] :]
-    return p3d, vz3d, p3d_minus, p3d_plus
+    return (
+        np.asarray(p3d),
+        np.asarray(vz3d),
+        np.asarray(p3d_minus),
+        np.asarray(p3d_plus),
+    )
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
@@ -108,6 +130,11 @@ def test_WavefieldDecomposition2D(par, create_data2D):
     p2d, vz2d, p2d_minus, p2d_plus = create_data2D
 
     # decomposition
+    solver_dict = (
+        dict(damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8)
+        if backend == "numpy"
+        else dict(damp=1e-10, niter=10, atol=0, btol=0)
+    )
     p2d_minus_est, p2d_plus_est = WavefieldDecomposition(
         p2d,
         vz2d,
@@ -122,8 +149,9 @@ def test_WavefieldDecomposition2D(par, create_data2D):
         critical=critical * 100,
         ntaper=ntaper,
         dottest=True,
+        solver=sp_lsqr if backend == "numpy" else lsqr,
         dtype="complex128",
-        **dict(damp=1e-10, atol=1e-8, btol=1e-8, iter_lim=10)
+        **solver_dict
     )
     assert np.linalg.norm(p2d_minus_est - p2d_minus) / np.linalg.norm(p2d_minus) < 2e-1
     assert np.linalg.norm(p2d_plus_est - p2d_plus) / np.linalg.norm(p2d_plus) < 2e-1
@@ -154,6 +182,11 @@ def test_WavefieldDecomposition3D(par, create_data3D):
     p3d, vz3d, p3d_minus, p3d_plus = create_data3D
 
     # decomposition
+    solver_dict = (
+        dict(damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8)
+        if backend == "numpy"
+        else dict(damp=1e-10, niter=10, atol=0, btol=0)
+    )
     p3d_minus_est, p3d_plus_est = WavefieldDecomposition(
         p3d,
         vz3d,
@@ -168,8 +201,9 @@ def test_WavefieldDecomposition3D(par, create_data3D):
         critical=critical * 100,
         ntaper=ntaper,
         dottest=True,
+        solver=sp_lsqr if backend == "numpy" else lsqr,
         dtype="complex128",
-        **dict(damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=2)
+        **solver_dict
     )
     assert np.linalg.norm(p3d_minus_est - p3d_minus) / np.linalg.norm(p3d_minus) < 3e-1
     assert np.linalg.norm(p3d_plus_est - p3d_plus) / np.linalg.norm(p3d_plus) < 3e-1
