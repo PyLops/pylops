@@ -7,7 +7,7 @@ from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pylops import JaxOperator, MatrixMult
 from pylops.utils import deps
 
-jax_message = deps.devito_import("the jax module")
+jax_message = deps.jax_import("the jax module")
 
 if jax_message is None:
     import jax
