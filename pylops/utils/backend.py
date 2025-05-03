@@ -577,11 +577,11 @@ def inplace_set(x: npt.ArrayLike, y: npt.ArrayLike, idx: list) -> NDArray:
     Parameters
     ----------
     x : :obj:`numpy.ndarray` or :obj:`jax.Array`
-        Array to sum
+        Array whose values are placed at indices ``idx``
     y : :obj:`numpy.ndarray` or :obj:`jax.Array`
         Output array
     idx : :obj:`list`
-        Indices to sum at
+        Indices where values ``x`` are set
 
     Returns
     -------
