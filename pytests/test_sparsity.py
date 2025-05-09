@@ -100,8 +100,8 @@ def test_IRLS_data(par):
     Gop = MatrixMult(G, dtype=par["dtype"])
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
     x0 = (
-        np.random.normal(0, 10, par["nx"])
-        + par["imag"] * np.random.normal(0, 10, par["nx"])
+        np.random.normal(0, 1, par["nx"])
+        + par["imag"] * np.random.normal(0, 1, par["nx"])
         if par["x0"]
         else None
     )
@@ -139,8 +139,8 @@ def test_IRLS_datamodel(par):
     x[3] = 1
     x[par["nx"] - 4] = -1
     x0 = (
-        np.random.normal(0, 10, par["nx"])
-        + par["imag"] * np.random.normal(0, 10, par["nx"])
+        np.random.normal(0, 1, par["nx"])
+        + par["imag"] * np.random.normal(0, 1, par["nx"])
         if par["x0"]
         else None
     )
