@@ -15,7 +15,7 @@ from scipy.sparse.linalg import lsqr
 from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.basesolver import Solver
 from pylops.optimization.basic import cg, cgls
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, get_module_name
 from pylops.utils.typing import NDArray
 
 if TYPE_CHECKING:
@@ -137,6 +137,7 @@ class NormalEquationsInversion(Solver):
         self.epsRs = epsRs
         self.dataregs = dataregs
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
 
         # check consistency in regularization terms
         if Regs is not None:
@@ -176,8 +177,15 @@ class NormalEquationsInversion(Solver):
             and self.dataregs is not None
         ):
             for epsR, Reg, datareg in zip(self.epsRs, self.Regs, self.dataregs):
-                self.y_normal += epsR**2 * Reg.rmatvec(datareg)
-                self.Op_normal += epsR**2 * Reg.H @ Reg
+                if self.isjax:
+                    self.y_normal += epsR**2 * Reg.rmatvec(datareg)
+                else:
+                    self.ncp.add(
+                        self.y_normal,
+                        epsR**2 * Reg.rmatvec(datareg),
+                        out=self.y_normal,
+                    )
+                    self.Op_normal += epsR**2 * Reg.H @ Reg
 
         if epsNRs is not None and NRegs is not None:
             for epsNR, NReg in zip(epsNRs, NRegs):
@@ -235,27 +243,23 @@ class NormalEquationsInversion(Solver):
             ``<0``: illegal input or breakdown
 
         """
-        if x is not None:
-            self.y_normal = self.y_normal - self.Op_normal.matvec(x)
         if engine == "scipy" and self.ncp == np:
             if "tol" in kwargs_solver:
                 kwargs_solver["atol"] = kwargs_solver["tol"]
                 kwargs_solver.pop("tol")
-            xinv, istop = sp_cg(self.Op_normal, self.y_normal, **kwargs_solver)
+            xinv, istop = sp_cg(self.Op_normal, self.y_normal, x0=x, **kwargs_solver)
         elif engine == "pylops" or self.ncp != np:
             if show:
                 kwargs_solver["show"] = True
             xinv = cg(
                 self.Op_normal,
                 self.y_normal,
-                x0=self.ncp.zeros(self.Op_normal.shape[1], dtype=self.Op_normal.dtype),
+                x0=x,
                 **kwargs_solver,
             )[0]
             istop = None
         else:
             raise NotImplementedError("Engine must be scipy or pylops")
-        if x is not None:
-            xinv = x + xinv
         return xinv, istop
 
     def solve(
@@ -520,7 +524,7 @@ class RegularizedInversion(Solver):
         # augumented operator
         if self.epsRs is not None and self.dataregs is not None:
             for epsR, datareg in zip(self.epsRs, self.dataregs):
-                self.datatot = np.hstack((self.datatot, epsR * datareg))
+                self.datatot = self.ncp.hstack((self.datatot, epsR * datareg))
 
         # print setup
         if show:
@@ -580,13 +584,11 @@ class RegularizedInversion(Solver):
             Equal to ``r1norm`` if :math:`\epsilon=0`
 
         """
-        if x is not None:
-            self.datatot = self.datatot - self.RegOp.matvec(x)
         if engine == "scipy" and self.ncp == np:
             if show:
                 kwargs_solver["show"] = 1
             xinv, istop, itn, r1norm, r2norm = lsqr(
-                self.RegOp, self.datatot, **kwargs_solver
+                self.RegOp, self.datatot, x0=x, **kwargs_solver
             )[0:5]
         elif engine == "pylops" or self.ncp != np:
             if show:
@@ -594,13 +596,11 @@ class RegularizedInversion(Solver):
             xinv, istop, itn, r1norm, r2norm = cgls(
                 self.RegOp,
                 self.datatot,
-                x0=self.ncp.zeros(self.RegOp.shape[1], dtype=self.RegOp.dtype),
+                x0=x,
                 **kwargs_solver,
             )[0:5]
         else:
             raise NotImplementedError("Engine must be scipy or pylops")
-        if x is not None:
-            xinv = x + xinv
         return xinv, istop, itn, r1norm, r2norm
 
     def solve(
@@ -800,14 +800,13 @@ class PreconditionedInversion(Solver):
             Equal to ``r1norm`` if :math:`\epsilon=0`
 
         """
-        if x is not None:
-            self.y = self.y - self.Op.matvec(x)
         if engine == "scipy" and self.ncp == np:
             if show:
                 kwargs_solver["show"] = 1
             pinv, istop, itn, r1norm, r2norm = lsqr(
                 self.POp,
                 self.y,
+                x0=x,
                 **kwargs_solver,
             )[0:5]
         elif engine == "pylops" or self.ncp != np:
@@ -816,7 +815,7 @@ class PreconditionedInversion(Solver):
             pinv, istop, itn, r1norm, r2norm = cgls(
                 self.POp,
                 self.y,
-                x0=self.ncp.zeros(self.POp.shape[1], dtype=self.POp.dtype),
+                x0=x,
                 **kwargs_solver,
             )[0:5]
             # force it 1d as we decorate this method with disable_ndarray_multiplication
@@ -824,8 +823,6 @@ class PreconditionedInversion(Solver):
         else:
             raise NotImplementedError("Engine must be scipy or pylops")
         xinv = self.P.matvec(pinv)
-        if x is not None:
-            xinv = x + xinv
         return xinv, istop, itn, r1norm, r2norm
 
     def solve(
