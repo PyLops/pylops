@@ -528,11 +528,6 @@ class IRLS(Solver):
                     )[0]
                 )
             elif engine == "pylops" or self.ncp != np:
-                xcgls = cgls(
-                    self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
-                    self.y,
-                    **kwargs_solver,
-                )[0]
                 x = self.Op.rmatvec(
                     cgls(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
