@@ -11,6 +11,8 @@ from pylops.utils.typing import NDArray
 if TYPE_CHECKING:
     from pylops.linearoperator import LinearOperator
 
+_units = {"B": 1, "KB": 1024, "MB": 1024**2, "GB": 1024**3}
+
 
 class Solver(metaclass=ABCMeta):
     r"""Solver
@@ -19,6 +21,8 @@ class Solver(metaclass=ABCMeta):
     This class comprises of the following mandatory methods:
 
     - ``__init__``: initialization method to which the operator `Op` must be passed
+    - ``memory_usage``: a method to compute upfront the memory used by each
+      step of the solver
     - ``setup``: a method that is invoked to setup the solver, basically it will create
       anything required prior to applying a step of the solver
     - ``step``: a method applying a single step of the solver
@@ -121,11 +125,43 @@ class Solver(metaclass=ABCMeta):
                 ),
             )
 
+    # @abstractmethod
+    # def memory_usage(
+    #     self,
+    #     show: bool = False,
+    #     unit: str = "B",
+    # ) -> float:
+    #     """Compute memory usage of the solver
+
+    #     This method computes an estimate of the memory required by the solver given
+    #     the shape of the operator. This is useful to assess upfront if the solver
+    #     will run out of memory.
+
+    #     Note, that the memory usage of the operator itself is not taken into account
+    #     in this estimate.
+
+    #     Parameters
+    #     ----------
+    #     show : :obj:`bool`, optional
+    #         Display memory usage
+    #     unit: :obj:`str`, optional
+    #         Unit used to display memory usage (
+    #         ``B``, ``KB``, ``MB`` or ``GB``)
+
+    #     Returns
+    #     -------
+    #     memuse :obj:`float`
+    #         Memory usage in bytes
+
+    #     """
+    #     pass
+
     @abstractmethod
     def setup(
         self,
         y: NDArray,
         *args,
+        preallocate: bool = False,
         show: bool = False,
         **kwargs,
     ) -> None:
@@ -138,6 +174,10 @@ class Solver(metaclass=ABCMeta):
         ----------
         y : :obj:`np.ndarray`
             Data of size :math:`[N \times 1]`
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver.
         show : :obj:`bool`, optional
             Display setup log
 
