@@ -28,9 +28,11 @@ def irls(
     tolIRLS: float = 1e-10,
     warm: bool = False,
     kind: str = "data",
+    engine: str = "scipy",
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
     **kwargs_solver,
 ) -> Tuple[NDArray, int]:
     r"""Iteratively reweighted least squares.
@@ -74,6 +76,8 @@ def irls(
         This only applies to ``kind="data"`` and ``kind="datamodel"``
     kind : :obj:`str`, optional
         Kind of solver (``model``, ``data`` or ``datamodel``)
+    engine : :obj:`str`, optional
+        Solver to use (``scipy`` or ``pylops``)
     show : :obj:`bool`, optional
         Display logs
     itershow : :obj:`tuple`, optional
@@ -83,6 +87,10 @@ def irls(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
     **kwargs_solver
         Arbitrary keyword arguments for
         :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
@@ -113,8 +121,10 @@ def irls(
         epsR=epsR,
         epsI=epsI,
         tolIRLS=tolIRLS,
-        warm=warm,
         kind=kind,
+        warm=warm,
+        engine=engine,
+        preallocate=preallocate,
         show=show,
         itershow=itershow,
         **kwargs_solver,
@@ -131,6 +141,7 @@ def omp(
     normalizecols: bool = False,
     Opbasis: Optional["LinearOperator"] = None,
     optimal_coeff: bool = False,
+    engine: str = "scipy",
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
@@ -169,6 +180,8 @@ def omp(
         :math:`\mathbf{r} - c * \mathbf{Op}^j) norm (``True``) or use the
         directly the value from the inner product
         :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
+    engine : :obj:`str`, optional
+        Solver to use (``scipy`` or ``pylops``)
     show : :obj:`bool`, optional
         Display iterations log
     itershow : :obj:`tuple`, optional
@@ -212,6 +225,7 @@ def omp(
         normalizecols=normalizecols,
         Opbasis=Opbasis,
         optimal_coeff=optimal_coeff,
+        engine=engine,
         show=show,
         itershow=itershow,
     )
@@ -235,6 +249,7 @@ def ista(
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
@@ -289,6 +304,10 @@ def ista(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
 
     Returns
     -------
@@ -340,6 +359,7 @@ def ista(
         monitorres=monitorres,
         show=show,
         itershow=itershow,
+        preallocate=preallocate,
     )
     return x, iiter, cost
 
@@ -361,6 +381,7 @@ def fista(
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
@@ -415,6 +436,10 @@ def fista(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
 
     Returns
     -------
@@ -464,6 +489,7 @@ def fista(
         monitorres=monitorres,
         show=show,
         itershow=itershow,
+        preallocate=preallocate,
     )
     return x, iiter, cost
 
@@ -600,6 +626,7 @@ def splitbregman(
     tol: float = 1e-10,
     tau: float = 1.0,
     restart: bool = False,
+    engine: str = "scipy",
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     show_inner: bool = False,
@@ -653,6 +680,8 @@ def splitbregman(
     restart : :obj:`bool`, optional
         The unconstrained inverse problem in inner loop is initialized with
         the initial guess (``True``) or with the last estimate (``False``)
+    engine : :obj:`str`, optional
+        Solver to use (``scipy`` or ``pylops``)
     show : :obj:`bool`, optional
         Display iterations log
     itershow : :obj:`tuple`, optional
@@ -700,6 +729,7 @@ def splitbregman(
         tol=tol,
         tau=tau,
         restart=restart,
+        engine=engine,
         show=show,
         itershow=itershow,
         show_inner=show_inner,

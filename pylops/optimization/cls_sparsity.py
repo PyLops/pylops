@@ -16,18 +16,20 @@ from scipy.sparse.linalg import lsqr
 
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, Identity, VStack
-from pylops.optimization.basesolver import Solver
+from pylops.optimization.basesolver import Solver, _units
 from pylops.optimization.basic import cgls
 from pylops.optimization.eigs import power_iteration
 from pylops.optimization.leastsquares import regularized_inversion
 from pylops.utils import deps
-from pylops.utils.backend import get_array_module, get_module_name
+from pylops.utils.backend import get_array_module, get_module_name, inplace_set
 from pylops.utils.typing import InputDimsLike, NDArray, SamplingLike
 
 spgl1_message = deps.spgl1_import("the spgl1 solver")
 
 if spgl1_message is None:
     from spgl1 import spgl1 as ext_spgl1
+
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _hardthreshold(x: NDArray, thresh: float) -> NDArray:
@@ -324,6 +326,51 @@ class IRLS(Solver):
         str2 = f"         {self.rnorm:10.3e}"
         print(str1 + str2)
 
+    def memory_usage(
+        self,
+        kind: str = "data",
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        kind : :obj:`str`, optional
+            Kind of solver (``model``, ``data`` or ``datamodel``)
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: y + augmented y if kind=datamodel
+        memuse = self.Op.shape[0] * nbytes
+        if kind == "datamodel":
+            memuse += self.Op.shape[1] * nbytes
+
+        # Step (additional variables to those in setup): rw
+        if kind == "data":
+            memuse += self.Op.shape[0] * nbytes
+        elif kind == "model":
+            memuse += self.Op.shape[1] * nbytes
+        elif kind == "datamodel":
+            memuse += 2 * self.Op.shape[0] * nbytes
+
+        if show:
+            print(f"IRLS predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -334,6 +381,7 @@ class IRLS(Solver):
         tolIRLS: float = 1e-10,
         warm: bool = False,
         kind: str = "data",
+        preallocate: bool = False,
         show: bool = False,
     ) -> None:
         r"""Setup solver
@@ -360,6 +408,10 @@ class IRLS(Solver):
             This only applies to ``kind="data"`` and ``kind="datamodel"``
         kind : :obj:`str`, optional
             Kind of solver (``model``, ``data`` or ``datamodel``)
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
             Display setup log
 
@@ -372,7 +424,12 @@ class IRLS(Solver):
         self.tolIRLS = tolIRLS
         self.warm = warm
         self.kind = kind
+        self.preallocate = preallocate
+
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+
+        # initiate outer iteration counter
         self.iiter = 0
 
         # choose step to use
@@ -386,32 +443,60 @@ class IRLS(Solver):
             # augment Op and y
             self.Op = VStack([self.Op, epsI * Identity(self.Op.shape[1])])
             self.epsI = 0.0  # as epsI is added to the augmented system already
-            self.y = np.hstack([self.y, np.zeros(self.Op.shape[1])])
+            self.y = self.ncp.hstack([self.y, self.ncp.zeros(self.Op.shape[1])])
         else:
             raise NotImplementedError("kind must be model, data or datamodel")
 
+        if self.preallocate:
+            self.r = self.ncp.empty_like(y)
+            if "data" in self.kind:
+                self.rw = self.ncp.empty_like(y)
+            else:
+                self.rw = self.ncp.empty(self.Op.shape[1], dtype=self.Op.dtype)
         # print setup
         if show:
             self._print_setup()
 
-    def _step_data(self, x: NDArray, **kwargs_solver) -> NDArray:
+    def _step_data(self, x: NDArray, engine: str = "scipy", **kwargs_solver) -> NDArray:
         r"""Run one step of solver with L1 data term"""
+        # add preallocate to keywords of solver
+        if self.preallocate and not self.isjax:
+            kwargs_solver["preallocate"] = True
         if self.iiter == 0:
+            # first iteration (standard least-squares)
             x = regularized_inversion(
                 self.Op,
                 self.y,
                 None,
                 x0=x if self.warm else None,
                 damp=self.epsI,
+                engine=engine,
                 **kwargs_solver,
             )[0]
         else:
             # other iterations (weighted least-squares)
-            if self.threshR:
-                self.rw = 1.0 / self.ncp.maximum(self.ncp.abs(self.r), self.epsR)
+            if not self.preallocate and self.iiter == 1:
+                self.rw = self.ncp.zeros_like(self.y)
+
+            if self.isjax:
+                if self.threshR:
+                    self.rw = 1.0 / self.ncp.maximum(self.ncp.abs(self.r), self.epsR)
+                else:
+                    self.rw = 1.0 / (self.ncp.abs(self.r) + self.epsR)
+                self.rw = self.rw / self.rw.max()
             else:
-                self.rw = 1.0 / (self.ncp.abs(self.r) + self.epsR)
-            self.rw = self.rw / self.rw.max()
+                if self.threshR:
+                    self.ncp.divide(
+                        1.0,
+                        self.ncp.maximum(self.ncp.abs(self.r), self.epsR),
+                        out=self.rw,
+                    )
+                else:
+                    self.ncp.divide(
+                        1.0, (self.ncp.abs(self.r) + self.epsR), out=self.rw
+                    )
+                self.ncp.divide(self.rw, self.rw.max(), out=self.rw)
+
             R = Diagonal(np.sqrt(self.rw))
             x = regularized_inversion(
                 self.Op,
@@ -420,15 +505,21 @@ class IRLS(Solver):
                 Weight=R,
                 x0=x if self.warm else None,
                 damp=self.epsI,
+                engine=engine,
                 **kwargs_solver,
             )[0]
         return x
 
-    def _step_model(self, x: NDArray, **kwargs_solver) -> NDArray:
+    def _step_model(
+        self, x: NDArray, engine: str = "scipy", **kwargs_solver
+    ) -> NDArray:
         r"""Run one step of solver with L1 model term"""
+        # add preallocate to keywords of solver
+        if self.preallocate and not self.isjax and engine == "pylops" or self.ncp != np:
+            kwargs_solver["preallocate"] = True
         if self.iiter == 0:
             # first iteration (unweighted least-squares)
-            if self.ncp == np:
+            if engine == "scipy" and self.ncp == np:
                 x = self.Op.rmatvec(
                     lsqr(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
@@ -436,7 +527,12 @@ class IRLS(Solver):
                         **kwargs_solver,
                     )[0]
                 )
-            else:
+            elif engine == "pylops" or self.ncp != np:
+                xcgls = cgls(
+                    self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
+                    self.y,
+                    **kwargs_solver,
+                )[0]
                 x = self.Op.rmatvec(
                     cgls(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
@@ -447,10 +543,17 @@ class IRLS(Solver):
                 )
         else:
             # other iterations (weighted least-squares)
-            self.rw = np.abs(x)
-            self.rw = self.rw / self.rw.max()
+            if not self.preallocate and self.iiter == 1:
+                self.rw = self.ncp.zeros_like(x)
+            if self.isjax:
+                self.rw = self.ncp.abs(x)
+                self.rw = self.rw / self.rw.max()
+            else:
+                self.ncp.abs(x, out=self.rw)
+                self.ncp.divide(self.rw, self.rw.max(), out=self.rw)
+
             R = Diagonal(self.rw, dtype=self.rw.dtype)
-            if self.ncp == np:
+            if engine == "scipy" and self.ncp == np:
                 x = R.matvec(
                     self.Op.rmatvec(
                         lsqr(
@@ -460,7 +563,8 @@ class IRLS(Solver):
                         )[0]
                     )
                 )
-            else:
+            elif engine == "pylops" or self.ncp != np:
+
                 x = R.matvec(
                     self.Op.rmatvec(
                         cgls(
@@ -473,21 +577,29 @@ class IRLS(Solver):
                 )
         return x
 
-    def step(self, x: NDArray, show: bool = False, **kwargs_solver) -> NDArray:
+    def step(
+        self, x: NDArray, engine: str = "scipy", show: bool = False, **kwargs_solver
+    ) -> NDArray:
         r"""Run one step of solver
 
         Parameters
         ----------
         x : :obj:`np.ndarray`
             Current model vector to be updated by a step of ISTA
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.5.0
+
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display iteration log
         **kwargs_solver
             Arbitrary keyword arguments for
             :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
             :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS when using
-            numpy data(or :py:func:`pylops.optimization.solver.cg` and
-            :py:func:`pylops.optimization.solver.cgls` when using cupy data)
+            numpy data and ``engine='scipy'`` (or
+            :py:func:`pylops.optimization.solver.cg` and
+            :py:func:`pylops.optimization.solver.cgls` when using cupy data or
+            ``engine='pylops'``)
 
         Returns
         -------
@@ -496,10 +608,13 @@ class IRLS(Solver):
 
         """
         # update model
-        x = self._step(x, **kwargs_solver)
+        x = self._step(x, engine=engine, **kwargs_solver)
 
         # compute residual
-        self.r: NDArray = self.y - self.Op.matvec(x)
+        if self.isjax or not self.preallocate:
+            self.r: NDArray = self.y - self.Op.matvec(x)
+        else:
+            self.ncp.subtract(self.y, self.Op.matvec(x), out=self.r)
         self.rnorm = self.ncp.linalg.norm(self.r)
 
         self.iiter += 1
@@ -509,8 +624,9 @@ class IRLS(Solver):
 
     def run(
         self,
-        x: NDArray,
+        x: Optional[NDArray],
         nouter: int = 10,
+        engine: str = "scipy",
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
         **kwargs_solver,
@@ -520,9 +636,14 @@ class IRLS(Solver):
         Parameters
         ----------
         x : :obj:`np.ndarray`
-            Current model vector to be updated by multiple steps of IRLS
+            Current model vector to be updated by multiple steps of IRLS. Provide
+            ``None`` to initialize internally as zero vector
         nouter : :obj:`int`, optional
             Number of outer iterations.
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.5.0
+
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -533,8 +654,10 @@ class IRLS(Solver):
             Arbitrary keyword arguments for
             :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
             :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS when using
-            numpy data(or :py:func:`pylops.optimization.solver.cg` and
-            :py:func:`pylops.optimization.solver.cgls` when using cupy data)
+            numpy data and ``engine='scipy'`` (or
+            :py:func:`pylops.optimization.solver.cg` and
+            :py:func:`pylops.optimization.solver.cgls` when using cupy data or
+            ``engine='pylops'``)
 
         Returns
         -------
@@ -546,6 +669,7 @@ class IRLS(Solver):
         if x is not None:
             self.x0 = x.copy()
             self.y = self.y - self.Op.matvec(x)
+
         # choose xold to ensure tolerance test is passed initially
         xold = x.copy() + np.inf
         while self.iiter < nouter and self.ncp.linalg.norm(x - xold) >= self.tolIRLS:
@@ -560,7 +684,7 @@ class IRLS(Solver):
                 else False
             )
             xold = x.copy()
-            x = self.step(x, showstep, **kwargs_solver)
+            x = self.step(x, engine, showstep, **kwargs_solver)
             self.callback(x)
 
         # adding initial guess
@@ -594,6 +718,8 @@ class IRLS(Solver):
         tolIRLS: float = 1e-10,
         kind: str = "data",
         warm: bool = False,
+        engine: str = "scipy",
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
         **kwargs_solver,
@@ -624,6 +750,14 @@ class IRLS(Solver):
             This only applies to ``kind="data"`` and ``kind="datamodel"``
         kind : :obj:`str`, optional
             Kind of solver (``data`` or ``model``)
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.5.0
+
+            Solver to use (``scipy`` or ``pylops``)
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
             Display setup log
         itershow : :obj:`tuple`, optional
@@ -651,11 +785,19 @@ class IRLS(Solver):
             tolIRLS=tolIRLS,
             warm=warm,
             kind=kind,
+            preallocate=preallocate,
             show=show,
         )
         if x0 is None:
             x0 = self.ncp.zeros(self.Op.shape[1], dtype=self.y.dtype)
-        x = self.run(x0, nouter=nouter, show=show, itershow=itershow, **kwargs_solver)
+        x = self.run(
+            x0,
+            nouter=nouter,
+            engine=engine,
+            show=show,
+            itershow=itershow,
+            **kwargs_solver,
+        )
         self.finalize(show)
         return x, self.nouter
 
@@ -756,6 +898,41 @@ class OMP(Solver):
         str2 = f"         {self.cost[-1]:10.3e}"
         print(str1 + str2)
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: y, res
+        memuse = (2 * self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): cres, cres_abs
+        memuse += (2 * self.Op.shape[0]) * nbytes
+
+        if show:
+            print(f"OMP predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -805,7 +982,9 @@ class OMP(Solver):
         self.normalizecols = normalizecols
         self.Opbasis = Opbasis if Opbasis is not None else self.Op
         self.optimal_coeff = optimal_coeff
+
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
 
         # find normalization factor for each column
         if self.normalizecols:
@@ -814,8 +993,8 @@ class OMP(Solver):
             for icol in range(ncols):
                 unit = self.ncp.zeros(ncols, dtype=self.Opbasis.dtype)
                 unit[icol] = 1
-                self.norms[icol] = np.linalg.norm(self.Opbasis.matvec(unit))
-            print(f"{self.norms = }")
+                self.norms[icol] = self.ncp.linalg.norm(self.Opbasis.matvec(unit))
+
         # create variables to track the residual norm and iterations
         self.res = self.y.copy()
         self.cost = [
@@ -830,6 +1009,7 @@ class OMP(Solver):
         self,
         x: NDArray,
         cols: InputDimsLike,
+        engine: str = "scipy",
         show: bool = False,
     ) -> NDArray:
         r"""Run one step of solver
@@ -840,6 +1020,10 @@ class OMP(Solver):
             Current model vector to be updated by a step of OMP
         cols : :obj:`list`
             Current list of chosen elements of vector x to be updated by a step of OMP
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.5.0
+
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display iteration log
 
@@ -855,10 +1039,10 @@ class OMP(Solver):
         cres = self.Op.rmatvec(self.res)
         if self.normalizecols:
             cres = cres / self.norms
-        cres_abs = np.abs(cres)
+        cres_abs = self.ncp.abs(cres)
         # choose column with max cres
-        cres_max = np.max(cres_abs)
-        imax = np.argwhere(cres_abs == cres_max).ravel()
+        cres_max = self.ncp.max(cres_abs)
+        imax = self.ncp.argwhere(cres_abs == cres_max).ravel()
         nimax = len(imax)
         if nimax > 0:
             imax = imax[np.random.permutation(nimax)[0]]
@@ -882,7 +1066,14 @@ class OMP(Solver):
             )
             if not self.optimal_coeff:
                 # update with coefficient that maximizes the inner product
-                self.res -= Opcol.matvec(cres[imax] * self.ncp.ones(1))
+                if self.isjax:
+                    self.res -= Opcol.matvec(cres[imax] * self.ncp.ones(1))
+                else:
+                    self.ncp.subtract(
+                        self.res,
+                        Opcol.matvec(cres[imax] * self.ncp.ones(1)),
+                        out=self.res,
+                    )
                 if addnew:
                     x.append(cres[imax])
                 else:
@@ -891,7 +1082,12 @@ class OMP(Solver):
                 # find optimal coefficient that minimizes the residual (r - cres * col)
                 col = Opcol.matvec(self.ncp.ones(1, dtype=Opcol.dtype))
                 cresopt = (Opcol.rmatvec(self.res) / Opcol.rmatvec(col))[0]
-                self.res -= Opcol.matvec(cresopt * self.ncp.ones(1))
+                if self.isjax:
+                    self.res -= Opcol.matvec(cresopt * self.ncp.ones(1))
+                else:
+                    self.ncp.subtract(
+                        self.res, Opcol.matvec(cresopt * self.ncp.ones(1)), out=self.res
+                    )
                 if addnew:
                     x.append(cresopt)
                 else:
@@ -899,16 +1095,20 @@ class OMP(Solver):
         else:
             # OMP update
             Opcol = self.Op.apply_columns(cols)
-            if self.ncp == np:
+            if engine == "scipy" and self.ncp == np:
                 x = lsqr(Opcol, self.y, iter_lim=self.niter_inner)[0]
-            else:
+            elif engine == "pylops" or self.ncp != np:
                 x = cgls(
                     Opcol,
                     self.y,
                     self.ncp.zeros(int(Opcol.shape[1]), dtype=Opcol.dtype),
                     niter=self.niter_inner,
                 )[0]
-            self.res = self.y - Opcol.matvec(x)
+            if self.isjax:
+                self.res = self.y - Opcol.matvec(x)
+            else:
+                self.res = Opcol.matvec(x)
+                self.ncp.subtract(self.res, self.y, out=self.res)
 
         self.iiter += 1
         self.cost.append(float(np.linalg.norm(self.res)))
@@ -920,6 +1120,7 @@ class OMP(Solver):
         self,
         x: NDArray,
         cols: InputDimsLike,
+        engine: str = "scipy",
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, InputDimsLike]:
@@ -931,6 +1132,10 @@ class OMP(Solver):
             Current model vector to be updated by multiple steps of IRLS
         cols : :obj:`list`
             Current list of chosen elements of vector x to be updated by a step of OMP
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.5.0
+
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -957,7 +1162,7 @@ class OMP(Solver):
                 )
                 else False
             )
-            x, cols = self.step(x, cols, showstep)
+            x, cols = self.step(x, cols, engine, showstep)
             self.callback(x, cols)
         return x, cols
 
@@ -990,7 +1195,8 @@ class OMP(Solver):
         self.nouter = self.iiter
 
         xfin = self.ncp.zeros(int(self.Op.shape[1]), dtype=self.Op.dtype)
-        xfin[cols] = self.ncp.array(x)
+        xfin = inplace_set(self.ncp.array(x), xfin, self.ncp.array(cols))
+
         if show:
             self._print_finalize(nbar=55)
         return xfin
@@ -1004,6 +1210,7 @@ class OMP(Solver):
         normalizecols: bool = False,
         Opbasis: Optional["LinearOperator"] = None,
         optimal_coeff: bool = False,
+        engine: str = "scipy",
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
@@ -1034,6 +1241,10 @@ class OMP(Solver):
             :math:`\mathbf{r} - c * \mathbf{Op}^j) norm (``True``) or use the
             directly the value from the inner product
             :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.5.0
+
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -1063,7 +1274,7 @@ class OMP(Solver):
         )
         x: List[NDArray] = []
         cols: List[InputDimsLike] = []
-        x, cols = self.run(x, cols, show=show, itershow=itershow)
+        x, cols = self.run(x, cols, engine=engine, show=show, itershow=itershow)
         x = self.finalize(x, cols, show)
         return x, self.nouter, self.cost
 
@@ -1180,6 +1391,41 @@ class ISTA(Solver):
         )
         print(msg)
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0, y
+        memuse = (self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): xold, grad, x_unthesh, res
+        memuse += (3 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        if show:
+            print(f"ISTA predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -1194,6 +1440,7 @@ class ISTA(Solver):
         perc: Optional[float] = None,
         decay: Optional[NDArray] = None,
         monitorres: bool = False,
+        preallocate: bool = False,
         show: bool = False,
     ) -> NDArray:
         r"""Setup solver
@@ -1234,6 +1481,10 @@ class ISTA(Solver):
             Decay factor to be applied to thresholding during iterations
         monitorres : :obj:`bool`, optional
             Monitor that residual is decreasing
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
             Display setup log
 
@@ -1253,8 +1504,17 @@ class ISTA(Solver):
         self.perc = perc
         self.decay = decay
         self.monitorres = monitorres
+        self.preallocate = preallocate
 
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+
+        # disable preallocation for jax backend
+        if self.isjax and self.preallocate:
+            self.preallocate = False
+            logging.warning(
+                "Preallocation not supported with JAX backend, " "setting to False"
+            )
 
         # choose matvec/rmatvec or matmat/rmatmat based on R
         if y.ndim > 1 and y.shape[1] > 1:
@@ -1357,6 +1617,13 @@ class ISTA(Solver):
             else:
                 x = x0.copy()
 
+        # initialize other internal variabled
+        if self.preallocate:
+            self.res = self.ncp.empty_like(y)
+            self.grad = self.ncp.empty_like(x)
+            self.x_unthesh = self.ncp.empty_like(x)
+            self.xold = self.ncp.empty_like(x)
+
         # create variable to track residual
         if monitorres:
             self.normresold = np.inf
@@ -1391,12 +1658,27 @@ class ISTA(Solver):
             Norm of the update
 
         """
+        if not self.preallocate:
+            res: NDArray = self.ncp.zeros_like(self.y)
+            grad: NDArray = self.ncp.zeros_like(x)
+            x_unthesh: NDArray = self.ncp.zeros_like(x)
+
         # store old vector
-        xold = x.copy()
+        if self.preallocate:
+            self.xold[:] = x[:]
+        else:
+            xold = x.copy()
+
         # compute residual
-        res: NDArray = self.y - self.Opmatvec(x)
+        if self.isjax:
+            res: NDArray = self.y - self.Opmatvec(x)
+        else:
+            self.ncp.subtract(
+                self.y, self.Opmatvec(x), out=self.res if self.preallocate else res
+            )
+
         if self.monitorres:
-            self.normres = np.linalg.norm(res)
+            self.normres = np.linalg.norm(self.res if self.preallocate else res)
             if self.normres > self.normresold:
                 raise ValueError(
                     f"ISTA stopped at iteration {self.iiter} due to "
@@ -1407,23 +1689,53 @@ class ISTA(Solver):
                 self.normresold = self.normres
 
         # compute gradient
-        grad: NDArray = self.alpha * (self.Oprmatvec(res))
+        if self.isjax:
+            grad: NDArray = self.alpha * (self.Oprmatvec(res))
+        else:
+            self.ncp.multiply(
+                self.Oprmatvec(self.res if self.preallocate else res),
+                self.alpha,
+                out=self.grad if self.preallocate else grad,
+            )
 
         # update inverted model
-        x_unthesh: NDArray = x + grad
+        if self.isjax:
+            x_unthesh: NDArray = x + grad
+        else:
+            self.ncp.add(
+                x,
+                self.grad if self.preallocate else grad,
+                out=self.x_unthesh if self.preallocate else x_unthesh,
+            )
+
         if self.SOp is not None:
-            x_unthesh = self.SOprmatvec(x_unthesh)
+            if self.preallocate:
+                self.x_unthesh[:] = self.SOprmatvec(self.x_unthesh)
+            else:
+                x_unthesh[:] = self.SOprmatvec(x_unthesh)
         if self.perc is None and self.decay is not None:
-            x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
+            x = self.threshf(
+                self.x_unthesh if self.preallocate else x_unthesh,
+                self.decay[self.iiter] * self.thresh,
+            )
         elif self.perc is not None:
-            x = self.threshf(x_unthesh, 100 - self.perc)
+            x = self.threshf(
+                self.x_unthesh if self.preallocate else x_unthesh, 100 - self.perc
+            )
         if self.SOp is not None:
             x = self.SOpmatvec(x)
 
         # model update
-        xupdate = np.linalg.norm(x - xold)
-
-        costdata = 0.5 * np.linalg.norm(res) ** 2
+        if self.isjax:
+            xupdate = np.linalg.norm(x - xold)
+        else:
+            self.ncp.subtract(
+                x,
+                self.xold if self.preallocate else xold,
+                out=self.xold if self.preallocate else xold,
+            )
+        xupdate = np.linalg.norm(self.xold if self.preallocate else xold)
+        costdata = 0.5 * np.linalg.norm(self.res if self.preallocate else res) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
         self.cost.append(float(costdata + costreg))
         self.iiter += 1
@@ -1512,6 +1824,7 @@ class ISTA(Solver):
         perc: Optional[float] = None,
         decay: Optional[NDArray] = None,
         monitorres: bool = False,
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
@@ -1552,6 +1865,11 @@ class ISTA(Solver):
             Decay factor to be applied to thresholding during iterations
         monitorres : :obj:`bool`, optional
             Monitor that residual is decreasing
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver. This does not work
+            with JAX arrays and will be ignored
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -1582,6 +1900,7 @@ class ISTA(Solver):
             perc=perc,
             decay=decay,
             monitorres=monitorres,
+            preallocate=preallocate,
             show=show,
         )
         x = self.run(x, niter, show=show, itershow=itershow)
@@ -1647,6 +1966,41 @@ class FISTA(ISTA):
 
     """
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0, y
+        memuse = (self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): xold, res, grad, x_unthesh, z
+        memuse += (4 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        if show:
+            print(f"FISTA predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def step(self, x: NDArray, z: NDArray, show: bool = False) -> NDArray:
         r"""Run one step of solver
 
@@ -1669,12 +2023,27 @@ class FISTA(ISTA):
             Norm of the update
 
         """
+        if not self.preallocate:
+            res: NDArray = self.ncp.zeros_like(self.y)
+            grad: NDArray = self.ncp.zeros_like(x)
+            x_unthesh: NDArray = self.ncp.zeros_like(x)
+
         # store old vector
-        xold = x.copy()
+        if self.preallocate:
+            self.xold[:] = x[:]
+        else:
+            xold = x.copy()
+
         # compute residual
-        resz: NDArray = self.y - self.Opmatvec(z)
+        if self.isjax:
+            res: NDArray = self.y - self.Opmatvec(z)
+        else:
+            self.ncp.subtract(
+                self.y, self.Opmatvec(z), out=self.res if self.preallocate else res
+            )
+
         if self.monitorres:
-            self.normres = np.linalg.norm(resz)
+            self.normres = np.linalg.norm(self.res if self.preallocate else res)
             if self.normres > self.normresold:
                 raise ValueError(
                     f"ISTA stopped at iteration {self.iiter} due to "
@@ -1684,27 +2053,60 @@ class FISTA(ISTA):
             else:
                 self.normresold = self.normres
 
-        # compute gradient
-        grad: NDArray = self.alpha * (self.Oprmatvec(resz))
+        # compute gradient and update inverted model
+        if self.isjax:
+            grad: NDArray = self.alpha * (self.Oprmatvec(res))
+            x_unthesh: NDArray = z + grad
+        else:
+            self.ncp.multiply(
+                self.Oprmatvec(self.res if self.preallocate else res),
+                self.alpha,
+                out=self.grad if self.preallocate else grad,
+            )
+            self.ncp.add(
+                z,
+                self.grad if self.preallocate else grad,
+                out=self.x_unthesh if self.preallocate else x_unthesh,
+            )
 
-        # update inverted model
-        x_unthesh: NDArray = z + grad
+        # apply regularization operator
         if self.SOp is not None:
-            x_unthesh = self.SOprmatvec(x_unthesh)
+            if self.preallocate:
+                self.x_unthesh[:] = self.SOprmatvec(self.x_unthesh)
+            else:
+                x_unthesh[:] = self.SOprmatvec(x_unthesh)
         if self.perc is None and self.decay is not None:
-            x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
+            x = self.threshf(
+                self.x_unthesh if self.preallocate else x_unthesh,
+                self.decay[self.iiter] * self.thresh,
+            )
         elif self.perc is not None:
-            x = self.threshf(x_unthesh, 100 - self.perc)
+            x = self.threshf(
+                self.x_unthesh if self.preallocate else x_unthesh, 100 - self.perc
+            )
         if self.SOp is not None:
             x = self.SOpmatvec(x)
 
         # update auxiliary coefficients
         told = self.t
         self.t = (1.0 + np.sqrt(1.0 + 4.0 * self.t**2)) / 2.0
-        z = x + ((told - 1.0) / self.t) * (x - xold)
 
         # model update
-        xupdate = np.linalg.norm(x - xold)
+        if self.isjax:
+            z = x + ((told - 1.0) / self.t) * (x - xold)
+        else:
+            self.ncp.subtract(
+                x,
+                self.xold if self.preallocate else xold,
+                out=self.xold if self.preallocate else xold,
+            )
+            self.ncp.multiply(
+                self.xold if self.preallocate else xold, ((told - 1.0) / self.t), out=z
+            )
+            self.ncp.add(x, z, out=z)
+
+        # xupdate = np.linalg.norm(x - xold)
+        xupdate = np.linalg.norm(self.xold if self.preallocate else xold)
 
         costdata = 0.5 * np.linalg.norm(self.y - self.Op @ x) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
@@ -2141,6 +2543,60 @@ class SplitBregman(Solver):
         str2 = f"{self.costdata:10.3e}        {self.costtot:9.3e}"
         print(str1 + str2)
 
+    def memory_usage(
+        self,
+        nopRegsL1: Optional[Tuple[int]] = None,
+        nopRegsL2: Optional[Tuple[int]] = None,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        nopRegsL1 : :obj:`tuple`, optional
+            Number of data elements of ``RegsL1`` operators
+        nopRegsL2 : :obj:`tuple`, optional
+            Number of data elements of ``RegsL2`` operators
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Convert nopRegsL1 and nopRegsL2 if None
+        if nopRegsL1 is None:
+            nopRegsL1 = 0
+        if nopRegsL2 is None:
+            nopRegsL2 = 0
+
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0, y, dataregsL1, dataregsL2, b, d
+        memuse = (
+            self.Op.shape[1]
+            + self.Op.shape[0]
+            + 3 * np.prod(nopRegsL1)
+            + np.prod(nopRegsL2)
+        ) * nbytes
+
+        # Step (additional variables to those in setup): dataregs
+        memuse += np.prod(nopRegsL1) * nbytes
+
+        if show:
+            print(
+                f"Split-Bregman predicted memory usage: {memuse / _units[unit]:.2f} {unit}"
+            )
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -2270,9 +2726,10 @@ class SplitBregman(Solver):
     def step(
         self,
         x: NDArray,
+        engine: str = "scipy",
         show: bool = False,
         show_inner: bool = False,
-        **kwargs_lsqr,
+        **kwargs_solver,
     ) -> NDArray:
         r"""Run one step of solver
 
@@ -2280,14 +2737,18 @@ class SplitBregman(Solver):
         ----------
         x : :obj:`list` or :obj:`np.ndarray`
             Current model vector to be updated by a step of OMP
-        show_inner : :obj:`bool`, optional
-            Display inner iteration logs of lsqr
+        engine : :obj:`str`, optional
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display iteration log
-        **kwargs_lsqr
-            Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-            subproblem in the first step of the Split Bregman algorithm.
+        show_inner : :obj:`bool`, optional
+            Display inner iteration logs of lsqr
+        **kwargs_solver
+            Arbitrary keyword arguments for chosen solver
+            used to solve the first subproblem in the first step of the
+            Split Bregman algorithm (:py:func:`scipy.sparse.linalg.lsqr` and
+            :py:func:`pylops.optimization.solver.cgls` are used as default
+            for numpy and cupy `data`, respectively).
 
         Returns
         -------
@@ -2308,21 +2769,18 @@ class SplitBregman(Solver):
                 epsRs=self.epsRs,
                 x0=self.x0 if self.restart else x,
                 show=show_inner,
-                **kwargs_lsqr,
+                engine=engine,
+                **kwargs_solver,
             )[0]
             # Shrinkage
-            self.d = [
-                _softthreshold(
+            for ireg in range(self.nregsL1):
+                self.d[ireg] = _softthreshold(
                     self.RegsL1[ireg].matvec(x) + self.b[ireg], self.epsRL1s[ireg]
                 )
-                for ireg in range(self.nregsL1)
-            ]
 
         # Bregman update
-        self.b = [
-            self.b[ireg] + self.tau * (self.RegsL1[ireg].matvec(x) - self.d[ireg])
-            for ireg in range(self.nregsL1)
-        ]
+        for ireg in range(self.nregsL1):
+            self.b[ireg] += self.tau * (self.RegsL1[ireg].matvec(x) - self.d[ireg])
 
         # compute residual norms
         self.costdata = (
@@ -2340,7 +2798,7 @@ class SplitBregman(Solver):
         )
         self.costregL1 = [
             self.ncp.linalg.norm(RegL1.matvec(x), ord=1)
-            for epsRL1, RegL1 in zip(self.epsRL1s, self.RegsL1)
+            for _, RegL1 in zip(self.epsRL1s, self.RegsL1)
         ]
         self.costtot = (
             self.costdata
@@ -2358,6 +2816,7 @@ class SplitBregman(Solver):
     def run(
         self,
         x: NDArray,
+        engine: str = "scipy",
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
@@ -2369,6 +2828,8 @@ class SplitBregman(Solver):
         ----------
         x : :obj:`np.ndarray`
             Current model vector to be updated by multiple steps of IRLS
+        engine : :obj:`str`, optional
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -2403,8 +2864,9 @@ class SplitBregman(Solver):
                 )
                 else False
             )
-            x = self.step(x, showstep, show_inner, **kwargs_lsqr)
+            x = self.step(x, engine, showstep, show_inner, **kwargs_lsqr)
             self.callback(x)
+
         return x
 
     def finalize(self, show: bool = False) -> NDArray:
@@ -2443,6 +2905,7 @@ class SplitBregman(Solver):
         tol: float = 1e-10,
         tau: float = 1.0,
         restart: bool = False,
+        engine: str = "scipy",
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
@@ -2491,6 +2954,8 @@ class SplitBregman(Solver):
             the initial guess (``True``) or with the last estimate (``False``).
             Note that when this is set to ``True``, the ``x0`` provided in the setup will
             be used in all iterations.
+        engine : :obj:`str`, optional
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -2531,7 +2996,12 @@ class SplitBregman(Solver):
             show=show,
         )
         x = self.run(
-            x, show=show, itershow=itershow, show_inner=show_inner, **kwargs_lsqr
+            x,
+            engine=engine,
+            show=show,
+            itershow=itershow,
+            show_inner=show_inner,
+            **kwargs_lsqr,
         )
         self.finalize(show)
         return x, self.iiter, self.cost
