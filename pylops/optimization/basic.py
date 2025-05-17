@@ -24,6 +24,7 @@ def cg(
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Conjugate gradient
 
@@ -51,6 +52,10 @@ def cg(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
 
     Returns
     -------
@@ -70,7 +75,13 @@ def cg(
     if callback is not None:
         cgsolve.callback = callback
     x, iiter, cost = cgsolve.solve(
-        y=y, x0=x0, tol=tol, niter=niter, show=show, itershow=itershow
+        y=y,
+        x0=x0,
+        tol=tol,
+        niter=niter,
+        show=show,
+        itershow=itershow,
+        preallocate=preallocate,
     )
     return x, iiter, cost
 
@@ -86,6 +97,7 @@ def cgls(
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, int, float, float, NDArray]:
     r"""Conjugate gradient least squares
 
@@ -115,6 +127,10 @@ def cgls(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
 
     Returns
     -------
@@ -139,6 +155,10 @@ def cgls(
         Equal to ``r1norm`` if :math:`\epsilon=0`
     cost : :obj:`numpy.ndarray`, optional
         History of r1norm through iterations
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
 
     Notes
     -----
@@ -149,7 +169,14 @@ def cgls(
     if callback is not None:
         cgsolve.callback = callback
     x, istop, iiter, r1norm, r2norm, cost = cgsolve.solve(
-        y=y, x0=x0, tol=tol, niter=niter, damp=damp, show=show, itershow=itershow
+        y=y,
+        x0=x0,
+        tol=tol,
+        niter=niter,
+        damp=damp,
+        show=show,
+        itershow=itershow,
+        preallocate=preallocate,
     )
     return x, istop, iiter, r1norm, r2norm, cost
 
@@ -168,6 +195,7 @@ def lsqr(
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, int, float, float, float, float, float, float, float, NDArray]:
     r"""LSQR
 
@@ -213,6 +241,10 @@ def lsqr(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
 
     Returns
     -------
@@ -299,5 +331,6 @@ def lsqr(
         calc_var=calc_var,
         show=show,
         itershow=itershow,
+        preallocate=preallocate,
     )
     return x, istop, iiter, r1norm, r2norm, anorm, acond, arnorm, xnorm, var, cost
