@@ -271,6 +271,8 @@ def SeismicInterpolation(
             Pop = FFT2D(dims=dims, nffts=nffts, sampling=sampling)
             Pop = Pop.H
         SIop = Rop * Pop
+        # Force data to be of same dtype of operator
+        data = data.astype(SIop.dtype)
     elif "chirpradon" in kind:
         prec = True
         dotcflag = 0
