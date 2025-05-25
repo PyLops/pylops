@@ -1618,6 +1618,10 @@ class ISTA(Solver):
             self.grad = self.ncp.empty_like(x)
             self.x_unthesh = self.ncp.empty_like(x)
             self.xold = self.ncp.empty_like(x)
+            if self.SOp is not None:
+                self.SOpx_unthesh: NDArray = self.ncp.zeros(
+                    self.SOp.shape[1], dtype=self.SOp.dtype
+                )
 
         # create variable to track residual
         if monitorres:
@@ -1657,6 +1661,10 @@ class ISTA(Solver):
             res: NDArray = self.ncp.zeros_like(self.y)
             grad: NDArray = self.ncp.zeros_like(x)
             x_unthesh: NDArray = self.ncp.zeros_like(x)
+            if self.SOp is not None:
+                SOpx_unthesh: NDArray = self.ncp.zeros(
+                    self.SOp.shape[1], dtype=self.SOp.dtype
+                )
 
         # store old vector
         if self.preallocate:
@@ -1703,20 +1711,29 @@ class ISTA(Solver):
                 out=self.x_unthesh if self.preallocate else x_unthesh,
             )
 
+        # apply SOp.H to current x
         if self.SOp is not None:
             if self.preallocate:
-                self.x_unthesh[:] = self.SOprmatvec(self.x_unthesh)
+                self.SOpx_unthesh[:] = self.SOprmatvec(self.x_unthesh)
             else:
-                x_unthesh[:] = self.SOprmatvec(x_unthesh)
-        if self.perc is None and self.decay is not None:
+                SOpx_unthesh[:] = self.SOprmatvec(x_unthesh)
+        # threshold current solution or current solution projected onto SOp.H space
+        if self.SOp is None:
+            x_unthesh_or_SOpx_unthesh = (
+                self.x_unthesh if self.preallocate else x_unthesh
+            )
+        else:
+            x_unthesh_or_SOpx_unthesh = (
+                self.SOpx_unthesh if self.preallocate else SOpx_unthesh
+            )
+        if self.perc is None:
             x = self.threshf(
-                self.x_unthesh if self.preallocate else x_unthesh,
+                x_unthesh_or_SOpx_unthesh,
                 self.decay[self.iiter] * self.thresh,
             )
-        elif self.perc is not None:
-            x = self.threshf(
-                self.x_unthesh if self.preallocate else x_unthesh, 100 - self.perc
-            )
+        else:
+            x = self.threshf(x_unthesh_or_SOpx_unthesh, 100 - self.perc)
+        # apply SOp to thresholded x
         if self.SOp is not None:
             x = self.SOpmatvec(x)
 
@@ -2022,6 +2039,10 @@ class FISTA(ISTA):
             res: NDArray = self.ncp.zeros_like(self.y)
             grad: NDArray = self.ncp.zeros_like(x)
             x_unthesh: NDArray = self.ncp.zeros_like(x)
+            if self.SOp is not None:
+                SOpx_unthesh: NDArray = self.ncp.zeros(
+                    self.SOp.shape[1], dtype=self.SOp.dtype
+                )
 
         # store old vector
         if self.preallocate:
@@ -2064,21 +2085,29 @@ class FISTA(ISTA):
                 out=self.x_unthesh if self.preallocate else x_unthesh,
             )
 
-        # apply regularization operator
+        # apply SOp.H to current x
         if self.SOp is not None:
             if self.preallocate:
-                self.x_unthesh[:] = self.SOprmatvec(self.x_unthesh)
+                self.SOpx_unthesh[:] = self.SOprmatvec(self.x_unthesh)
             else:
-                x_unthesh[:] = self.SOprmatvec(x_unthesh)
-        if self.perc is None and self.decay is not None:
+                SOpx_unthesh[:] = self.SOprmatvec(x_unthesh)
+        # threshold current solution or current solution projected onto SOp.H space
+        if self.SOp is None:
+            x_unthesh_or_SOpx_unthesh = (
+                self.x_unthesh if self.preallocate else x_unthesh
+            )
+        else:
+            x_unthesh_or_SOpx_unthesh = (
+                self.SOpx_unthesh if self.preallocate else SOpx_unthesh
+            )
+        if self.perc is None:
             x = self.threshf(
-                self.x_unthesh if self.preallocate else x_unthesh,
+                x_unthesh_or_SOpx_unthesh,
                 self.decay[self.iiter] * self.thresh,
             )
-        elif self.perc is not None:
-            x = self.threshf(
-                self.x_unthesh if self.preallocate else x_unthesh, 100 - self.perc
-            )
+        else:
+            x = self.threshf(x_unthesh_or_SOpx_unthesh, 100 - self.perc)
+        # apply SOp to thresholded x
         if self.SOp is not None:
             x = self.SOpmatvec(x)
 
