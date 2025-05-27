@@ -1,4 +1,7 @@
+import os
+
 import numpy as np
+import pytest
 from numpy.testing import assert_array_almost_equal
 from scipy.signal import convolve
 
@@ -12,6 +15,9 @@ inputfile3d = "testdata/marchenko/direct3D.npz"
 vel = 2400.0  # velocity
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 def test_direct2D():
     """Check consistency of analytical 2D Green's function with FD modelling"""
     inputdata = np.load(inputfile2d)
@@ -48,6 +54,9 @@ def test_direct2D():
     )
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 def test_direct3D():
     """Check consistency of analytical 3D Green's function with FD modelling"""
     inputdata = np.load(inputfile3d)

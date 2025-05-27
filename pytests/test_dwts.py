@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
@@ -21,6 +23,9 @@ par4 = {
 np.random.seed(10)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1)])
 def test_unknown_wavelet(par):
     """Check error is raised if unknown wavelet is chosen is passed"""
@@ -28,6 +33,9 @@ def test_unknown_wavelet(par):
         _ = DWT(dims=par["nt"], wavelet="foo")
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT_1dsignal(par):
     """Dot-test and inversion for DWT operator for 1d signal"""
@@ -48,6 +56,9 @@ def test_DWT_1dsignal(par):
     assert_array_almost_equal(x, xinv, decimal=8)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT_2dsignal(par):
     """Dot-test and inversion for DWT operator for 2d signal"""
@@ -72,6 +83,9 @@ def test_DWT_2dsignal(par):
         assert_array_almost_equal(x.ravel(), xinv, decimal=8)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT_3dsignal(par):
     """Dot-test and inversion for DWT operator for 3d signal"""
@@ -98,6 +112,9 @@ def test_DWT_3dsignal(par):
         assert_array_almost_equal(x.ravel(), xinv, decimal=8)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT2D_2dsignal(par):
     """Dot-test and inversion for DWT2D operator for 2d signal"""
@@ -118,6 +135,9 @@ def test_DWT2D_2dsignal(par):
     assert_array_almost_equal(x.ravel(), xinv, decimal=8)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_DWT2D_3dsignal(par):
     """Dot-test and inversion for DWT operator for 3d signal"""
@@ -144,6 +164,9 @@ def test_DWT2D_3dsignal(par):
         assert_array_almost_equal(x.ravel(), xinv, decimal=8)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par3), (par4)])
 def test_DWTND_3dsignal(par):
     """Dot-test and inversion for DWTND operator for 3d signal"""
@@ -166,6 +189,9 @@ def test_DWTND_3dsignal(par):
     assert_array_almost_equal(x.ravel(), xinv, decimal=8)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par3), (par4)])
 def test_DWTND_4dsignal(par):
     """Dot-test and inversion for DWTND operator for 4d signal"""

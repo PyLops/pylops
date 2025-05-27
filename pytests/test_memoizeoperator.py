@@ -1,6 +1,18 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
+import itertools
+
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops import MemoizeOperator
 from pylops.basicoperators import MatrixMult, VStack

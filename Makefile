@@ -1,7 +1,7 @@
 PIP := $(shell command -v pip3 2> /dev/null || command which pip 2> /dev/null)
 PYTHON := $(shell command -v python3 2> /dev/null || command which python 2> /dev/null)
 
-.PHONY: install dev-install install_conda dev-install_conda tests doc docupdate servedoc lint typeannot coverage
+.PHONY: install dev-install dev-install_gpu install_conda dev-install_conda dev-install_conda_arm tests doc docupdate servedoc lint typeannot coverage
 
 pipcheck:
 ifndef PIP
@@ -24,6 +24,11 @@ dev-install:
 	$(PIP) install -r requirements-dev.txt &&\
 	$(PIP) install -r requirements-torch.txt && $(PIP) install -e .
 
+dev-install_gpu:
+	make pipcheck
+	$(PIP) install -r requirements-dev-gpu.txt &&\
+	$(PIP) install -e .
+
 install_conda:
 	conda env create -f environment.yml && conda activate pylops && pip install .
 
@@ -32,6 +37,9 @@ dev-install_conda:
 
 dev-install_conda_arm:
 	conda env create -f environment-dev-arm.yml && conda activate pylops && pip install -e .
+
+dev-install_conda_gpu:
+	conda env create -f environment-dev-gpu.yml && conda activate pylops_gpu && pip install -e .
 
 tests:
 	make pythoncheck

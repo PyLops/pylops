@@ -1,7 +1,18 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+    from cupyx.scipy.signal import filtfilt
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+    from scipy.signal import filtfilt
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
-from scipy.signal import filtfilt
 
 from pylops.avo.prestack import (
     PrestackInversion,
@@ -9,6 +20,7 @@ from pylops.avo.prestack import (
     PrestackWaveletModelling,
     _linearizations,
 )
+from pylops.optimization.basic import lsqr
 from pylops.utils import dottest
 from pylops.utils.wavelets import ricker
 
@@ -240,7 +252,10 @@ def test_PrestackLinearModelling(par):
         kind=par["kind"],
     )
     assert dottest(
-        PPop_dense, nt0 * ntheta, nt0 * _linearizations[par["linearization"]]
+        PPop_dense,
+        nt0 * ntheta,
+        nt0 * _linearizations[par["linearization"]],
+        backend=backend,
     )
 
     # Linear operator
@@ -253,7 +268,9 @@ def test_PrestackLinearModelling(par):
         explicit=False,
         kind=par["kind"],
     )
-    assert dottest(PPop, nt0 * ntheta, nt0 * _linearizations[par["linearization"]])
+    assert dottest(
+        PPop, nt0 * ntheta, nt0 * _linearizations[par["linearization"]], backend=backend
+    )
 
     # Compare data
     d = PPop * m.ravel()
@@ -263,14 +280,28 @@ def test_PrestackLinearModelling(par):
     assert_array_almost_equal(d, d_dense, decimal=4)
 
     # Inversion
+    par3b = {
+        "vsvp": np.linspace(0.4, 0.6, nt0),
+        "linearization": "akirich",
+        "epsR": 1e-4,
+        "epsRL1": 1e-2,
+        "epsI": 1e-6,
+        "simultaneous": True,
+        "kind": "forward",
+    }
+
     for explicit in [True, False]:
-        dict_inv = dict(iter_lim=10)
+        dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
         if not par["simultaneous"]:
             dict_inv = {}
         if not explicit:
-            dict_inv = dict(iter_lim=10)
+            dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
         if par["epsRL1"] is not None:
-            dict_inv = dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+            dict_inv = (
+                dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+                if backend == "numpy"
+                else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
+            )
         minv = PrestackInversion(
             d,
             theta,
@@ -299,7 +330,7 @@ def test_PrestackWaveletModelling(par):
         vsvp=par["vsvp"],
         linearization=par["linearization"],
     )
-    assert dottest(Wavestop, nt0 * ntheta, ntwav)
+    assert dottest(Wavestop, nt0 * ntheta, ntwav, backend=backend)
 
     Wavestop_phase = PrestackWaveletModelling(
         m,
@@ -309,15 +340,35 @@ def test_PrestackWaveletModelling(par):
         vsvp=par["vsvp"],
         linearization=par["linearization"],
     )
-    assert dottest(Wavestop_phase, nt0 * ntheta, ntwav)
+    assert dottest(Wavestop_phase, nt0 * ntheta, ntwav, backend=backend)
 
     # Create data
     d = (Wavestop * wav).reshape(ntheta, nt0).T
     d_phase = (Wavestop_phase * wav_phase).reshape(ntheta, nt0).T
 
     # Estimate wavelet
-    wav_est = Wavestop / d.T.ravel()
-    wav_phase_est = Wavestop_phase / d_phase.T.ravel()
+    wav_est = lsqr(
+        Wavestop,
+        d.T.ravel(),
+        x0=np.zeros_like(wav),
+        damp=1e-20,
+        niter=300,
+        atol=0,
+        btol=0,
+        conlim=np.inf,
+        show=0,
+    )[0]
+    wav_phase_est = lsqr(
+        Wavestop_phase,
+        d_phase.T.ravel(),
+        x0=np.zeros_like(wav_phase),
+        damp=1e-20,
+        niter=300,
+        atol=0,
+        btol=0,
+        conlim=np.inf,
+        show=0,
+    )[0]
 
     assert_array_almost_equal(wav, wav_est, decimal=3)
     assert_array_almost_equal(wav_phase, wav_phase_est, decimal=3)
@@ -339,7 +390,7 @@ def test_PrestackLinearModelling2d(par):
         linearization=par["linearization"],
         explicit=True,
     )
-    assert dottest(PPop_dense, nz * ntheta * nx, nz * nm * nx)
+    assert dottest(PPop_dense, nz * ntheta * nx, nz * nm * nx, backend=backend)
 
     # Linear operator
     PPop = PrestackLinearModelling(
@@ -351,7 +402,7 @@ def test_PrestackLinearModelling2d(par):
         linearization=par["linearization"],
         explicit=False,
     )
-    assert dottest(PPop_dense, nz * ntheta * nx, nz * nm * nx)
+    assert dottest(PPop_dense, nz * ntheta * nx, nz * nm * nx, backend=backend)
 
     # Compare data
     d = (PPop * m2d.ravel()).reshape(nz, ntheta, nx)
@@ -362,14 +413,18 @@ def test_PrestackLinearModelling2d(par):
 
     # Inversion
     for explicit in [True, False]:
-        dict_inv = dict(iter_lim=10)
+        dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
         if not par["simultaneous"]:
             dict_inv = {}
         if not explicit:
-            dict_inv = dict(iter_lim=10)
+            dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
         if par["epsRL1"] is not None:
-            dict_inv = dict(mu=0.1, niter_outer=3, niter_inner=3, iter_lim=5)
-        minv2d, dinv2d = PrestackInversion(
+            dict_inv = (
+                dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+                if backend == "numpy"
+                else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
+            )
+        minv2d = PrestackInversion(
             d,
             theta,
             wav,
@@ -379,7 +434,6 @@ def test_PrestackLinearModelling2d(par):
             epsR=par["epsR"],
             epsRL1=par["epsRL1"],
             simultaneous=par["simultaneous"],
-            returnres=True,
             **dict_inv
         )
         assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < 2e-1
