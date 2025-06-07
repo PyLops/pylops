@@ -1720,19 +1720,22 @@ class ISTA(Solver):
         if self.SOp is not None:
             x = self.SOpmatvec(x)
 
-        # model update
+        # check model update
         if not self.preallocate:
             xupdate = np.linalg.norm(x - xold)
         else:
             self.ncp.subtract(
                 x,
-                self.xold if self.preallocate else xold,
-                out=self.xold if self.preallocate else xold,
+                self.xold,
+                out=self.xold,
             )
-        xupdate = np.linalg.norm(self.xold if self.preallocate else xold)
+            xupdate = np.linalg.norm(self.xold)
+
+        # cost functions
         costdata = 0.5 * np.linalg.norm(self.res if self.preallocate else res) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
         self.cost.append(float(costdata + costreg))
+
         self.iiter += 1
         if show:
             self._print_step(x, costdata, costreg, xupdate)
@@ -2028,9 +2031,7 @@ class FISTA(ISTA):
         if not self.preallocate:
             res: NDArray = self.y - self.Opmatvec(z)
         else:
-            self.ncp.subtract(
-                self.y, self.Opmatvec(z), out=self.res if self.preallocate else res
-            )
+            self.ncp.subtract(self.y, self.Opmatvec(z), out=self.res)
 
         if self.monitorres:
             self.normres = np.linalg.norm(self.res if self.preallocate else res)
@@ -2049,14 +2050,14 @@ class FISTA(ISTA):
             x_unthesh: NDArray = z + grad
         else:
             self.ncp.multiply(
-                self.Oprmatvec(self.res if self.preallocate else res),
+                self.Oprmatvec(self.res),
                 self.alpha,
-                out=self.grad if self.preallocate else grad,
+                out=self.grad,
             )
             self.ncp.add(
                 z,
-                self.grad if self.preallocate else grad,
-                out=self.x_unthesh if self.preallocate else x_unthesh,
+                self.grad,
+                out=self.x_unthesh,
             )
 
         # apply SOp.H to current x
@@ -2065,6 +2066,7 @@ class FISTA(ISTA):
                 self.SOpx_unthesh[:] = self.SOprmatvec(self.x_unthesh)
             else:
                 SOpx_unthesh = self.SOprmatvec(x_unthesh)
+
         # threshold current solution or current solution projected onto SOp.H space
         if self.SOp is None:
             x_unthesh_or_SOpx_unthesh = (
@@ -2081,6 +2083,7 @@ class FISTA(ISTA):
             )
         else:
             x = self.threshf(x_unthesh_or_SOpx_unthesh, 100 - self.perc)
+
         # apply SOp to thresholded x
         if self.SOp is not None:
             x = self.SOpmatvec(x)
@@ -2095,20 +2098,25 @@ class FISTA(ISTA):
         else:
             self.ncp.subtract(
                 x,
-                self.xold if self.preallocate else xold,
-                out=self.xold if self.preallocate else xold,
+                self.xold,
+                out=self.xold,
             )
-            self.ncp.multiply(
-                self.xold if self.preallocate else xold, ((told - 1.0) / self.t), out=z
-            )
+            self.ncp.multiply(self.xold, ((told - 1.0) / self.t), out=z)
             self.ncp.add(x, z, out=z)
 
-        # xupdate = np.linalg.norm(x - xold)
-        xupdate = np.linalg.norm(self.xold if self.preallocate else xold)
+        # check model update
+        if not self.preallocate:
+            xupdate = np.linalg.norm(x - xold)
+        else:
+            # note that x - xold has been already computed as part of the
+            # intermediate calculation of x in model update step
+            xupdate = np.linalg.norm(self.xold)
 
+        # cost functions
         costdata = 0.5 * np.linalg.norm(self.y - self.Op @ x) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
         self.cost.append(float(costdata + costreg))
+
         self.iiter += 1
         if show:
             self._print_step(x, costdata, costreg, xupdate)
@@ -2228,6 +2236,13 @@ class SPGL1(Solver):
     def _print_finalize(self) -> None:
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 80 + "\n")
+
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        pass
 
     def setup(
         self,
