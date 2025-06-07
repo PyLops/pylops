@@ -922,7 +922,7 @@ class LSQR(Solver):
             self.u = y.copy()
         else:
             x = x0.copy()
-            if self.preallocate:
+            if not self.preallocate:
                 self.u = self.y - self.Op.matvec(x0)
             else:
                 self.u = self.ncp.empty_like(self.y)
@@ -930,14 +930,14 @@ class LSQR(Solver):
         self.alfa = 0.0
         self.beta = self.ncp.linalg.norm(self.u)
         if self.beta > 0.0:
-            if self.preallocate:
+            if not self.preallocate:
                 self.u = self.u / self.beta
             else:
                 self.ncp.divide(self.u, self.beta, out=self.u)
             self.v = self.Op.rmatvec(self.u)
             self.alfa = self.ncp.linalg.norm(self.v)
             if self.alfa > 0:
-                if self.preallocate:
+                if not self.preallocate:
                     self.v = self.v / self.alfa
                 else:
                     self.ncp.divide(self.v, self.alfa, out=self.v)

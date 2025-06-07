@@ -155,10 +155,6 @@ def cgls(
         Equal to ``r1norm`` if :math:`\epsilon=0`
     cost : :obj:`numpy.ndarray`, optional
         History of r1norm through iterations
-    preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
-
-            Pre-allocate all variables used by the solver
 
     Notes
     -----

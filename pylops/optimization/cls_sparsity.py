@@ -475,10 +475,10 @@ class IRLS(Solver):
             )[0]
         else:
             # other iterations (weighted least-squares)
-            if not self.preallocate and self.iiter == 1:
+            if self.preallocate and self.iiter == 1:
                 self.rw = self.ncp.zeros_like(self.y)
 
-            if self.preallocate:
+            if not self.preallocate:
                 if self.threshR:
                     self.rw = 1.0 / self.ncp.maximum(self.ncp.abs(self.r), self.epsR)
                 else:
@@ -538,9 +538,9 @@ class IRLS(Solver):
                 )
         else:
             # other iterations (weighted least-squares)
-            if not self.preallocate and self.iiter == 1:
+            if self.preallocate and self.iiter == 1:
                 self.rw = self.ncp.zeros_like(x)
-            if self.preallocate:
+            if not self.preallocate:
                 self.rw = self.ncp.abs(x)
                 self.rw = self.rw / self.rw.max()
             else:
