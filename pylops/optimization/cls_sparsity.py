@@ -424,10 +424,10 @@ class IRLS(Solver):
         self.tolIRLS = tolIRLS
         self.warm = warm
         self.kind = kind
-        self.preallocate = preallocate
 
         self.ncp = get_array_module(y)
         self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # initiate outer iteration counter
         self.iiter = 0
@@ -460,7 +460,7 @@ class IRLS(Solver):
     def _step_data(self, x: NDArray, engine: str = "scipy", **kwargs_solver) -> NDArray:
         r"""Run one step of solver with L1 data term"""
         # add preallocate to keywords of solver
-        if self.preallocate and not self.isjax:
+        if self.preallocate and (engine == "pylops" or self.ncp != np):
             kwargs_solver["preallocate"] = True
         if self.iiter == 0:
             # first iteration (standard least-squares)
@@ -478,7 +478,7 @@ class IRLS(Solver):
             if not self.preallocate and self.iiter == 1:
                 self.rw = self.ncp.zeros_like(self.y)
 
-            if self.isjax:
+            if self.preallocate:
                 if self.threshR:
                     self.rw = 1.0 / self.ncp.maximum(self.ncp.abs(self.r), self.epsR)
                 else:
@@ -515,7 +515,7 @@ class IRLS(Solver):
     ) -> NDArray:
         r"""Run one step of solver with L1 model term"""
         # add preallocate to keywords of solver
-        if self.preallocate and not self.isjax and engine == "pylops" or self.ncp != np:
+        if self.preallocate and (engine == "pylops" or self.ncp != np):
             kwargs_solver["preallocate"] = True
         if self.iiter == 0:
             # first iteration (unweighted least-squares)
@@ -540,7 +540,7 @@ class IRLS(Solver):
             # other iterations (weighted least-squares)
             if not self.preallocate and self.iiter == 1:
                 self.rw = self.ncp.zeros_like(x)
-            if self.isjax:
+            if self.preallocate:
                 self.rw = self.ncp.abs(x)
                 self.rw = self.rw / self.rw.max()
             else:
@@ -559,7 +559,6 @@ class IRLS(Solver):
                     )
                 )
             elif engine == "pylops" or self.ncp != np:
-
                 x = R.matvec(
                     self.Op.rmatvec(
                         cgls(
@@ -606,7 +605,7 @@ class IRLS(Solver):
         x = self._step(x, engine=engine, **kwargs_solver)
 
         # compute residual
-        if self.isjax or not self.preallocate:
+        if not self.preallocate:
             self.r: NDArray = self.y - self.Op.matvec(x)
         else:
             self.ncp.subtract(self.y, self.Op.matvec(x), out=self.r)
@@ -1410,10 +1409,10 @@ class ISTA(Solver):
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
 
-        # Setup: x0, y
+        # Setup: x0 - y
         memuse = (self.Op.shape[1] + self.Op.shape[0]) * nbytes
 
-        # Step (additional variables to those in setup): xold, grad, x_unthesh, res
+        # Step (additional variables to those in setup): xold, grad, x_unthesh - res
         memuse += (3 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
 
         if show:
@@ -1499,17 +1498,10 @@ class ISTA(Solver):
         self.perc = perc
         self.decay = decay
         self.monitorres = monitorres
-        self.preallocate = preallocate
 
         self.ncp = get_array_module(y)
         self.isjax = get_module_name(self.ncp) == "jax"
-
-        # disable preallocation for jax backend
-        if self.isjax and self.preallocate:
-            self.preallocate = False
-            logging.warning(
-                "Preallocation not supported with JAX backend, " "setting to False"
-            )
+        self._setpreallocate(preallocate)
 
         # choose matvec/rmatvec or matmat/rmatmat based on R
         if y.ndim > 1 and y.shape[1] > 1:
@@ -1657,15 +1649,6 @@ class ISTA(Solver):
             Norm of the update
 
         """
-        if not self.preallocate:
-            res: NDArray = self.ncp.zeros_like(self.y)
-            grad: NDArray = self.ncp.zeros_like(x)
-            x_unthesh: NDArray = self.ncp.zeros_like(x)
-            if self.SOp is not None:
-                SOpx_unthesh: NDArray = self.ncp.zeros(
-                    self.SOp.shape[1], dtype=self.SOp.dtype
-                )
-
         # store old vector
         if self.preallocate:
             self.xold[:] = x[:]
@@ -1673,7 +1656,7 @@ class ISTA(Solver):
             xold = x.copy()
 
         # compute residual
-        if self.isjax:
+        if not self.preallocate:
             res: NDArray = self.y - self.Opmatvec(x)
         else:
             self.ncp.subtract(
@@ -1692,7 +1675,7 @@ class ISTA(Solver):
                 self.normresold = self.normres
 
         # compute gradient
-        if self.isjax:
+        if not self.preallocate:
             grad: NDArray = self.alpha * (self.Oprmatvec(res))
         else:
             self.ncp.multiply(
@@ -1702,7 +1685,7 @@ class ISTA(Solver):
             )
 
         # update inverted model
-        if self.isjax:
+        if not self.preallocate:
             x_unthesh: NDArray = x + grad
         else:
             self.ncp.add(
@@ -1716,7 +1699,7 @@ class ISTA(Solver):
             if self.preallocate:
                 self.SOpx_unthesh[:] = self.SOprmatvec(self.x_unthesh)
             else:
-                SOpx_unthesh[:] = self.SOprmatvec(x_unthesh)
+                SOpx_unthesh = self.SOprmatvec(x_unthesh)
         # threshold current solution or current solution projected onto SOp.H space
         if self.SOp is None:
             x_unthesh_or_SOpx_unthesh = (
@@ -1738,7 +1721,7 @@ class ISTA(Solver):
             x = self.SOpmatvec(x)
 
         # model update
-        if self.isjax:
+        if not self.preallocate:
             xupdate = np.linalg.norm(x - xold)
         else:
             self.ncp.subtract(
@@ -2002,10 +1985,10 @@ class FISTA(ISTA):
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
 
-        # Setup: x0, y
+        # Setup: x0 - y
         memuse = (self.Op.shape[1] + self.Op.shape[0]) * nbytes
 
-        # Step (additional variables to those in setup): xold, res, grad, x_unthesh, z
+        # Step (additional variables to those in setup): xold, grad, x_unthesh, z - res
         memuse += (4 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
 
         if show:
@@ -2035,15 +2018,6 @@ class FISTA(ISTA):
             Norm of the update
 
         """
-        if not self.preallocate:
-            res: NDArray = self.ncp.zeros_like(self.y)
-            grad: NDArray = self.ncp.zeros_like(x)
-            x_unthesh: NDArray = self.ncp.zeros_like(x)
-            if self.SOp is not None:
-                SOpx_unthesh: NDArray = self.ncp.zeros(
-                    self.SOp.shape[1], dtype=self.SOp.dtype
-                )
-
         # store old vector
         if self.preallocate:
             self.xold[:] = x[:]
@@ -2051,7 +2025,7 @@ class FISTA(ISTA):
             xold = x.copy()
 
         # compute residual
-        if self.isjax:
+        if not self.preallocate:
             res: NDArray = self.y - self.Opmatvec(z)
         else:
             self.ncp.subtract(
@@ -2070,7 +2044,7 @@ class FISTA(ISTA):
                 self.normresold = self.normres
 
         # compute gradient and update inverted model
-        if self.isjax:
+        if not self.preallocate:
             grad: NDArray = self.alpha * (self.Oprmatvec(res))
             x_unthesh: NDArray = z + grad
         else:
@@ -2090,7 +2064,7 @@ class FISTA(ISTA):
             if self.preallocate:
                 self.SOpx_unthesh[:] = self.SOprmatvec(self.x_unthesh)
             else:
-                SOpx_unthesh[:] = self.SOprmatvec(x_unthesh)
+                SOpx_unthesh = self.SOprmatvec(x_unthesh)
         # threshold current solution or current solution projected onto SOp.H space
         if self.SOp is None:
             x_unthesh_or_SOpx_unthesh = (
@@ -2116,7 +2090,7 @@ class FISTA(ISTA):
         self.t = (1.0 + np.sqrt(1.0 + 4.0 * self.t**2)) / 2.0
 
         # model update
-        if self.isjax:
+        if not self.preallocate:
             z = x + ((told - 1.0) / self.t) * (x - xold)
         else:
             self.ncp.subtract(
@@ -2603,7 +2577,7 @@ class SplitBregman(Solver):
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
 
-        # Setup: x0, y, dataregsL1, dataregsL2, b, d
+        # Setup: x0 - y - b, d dataregsL1 - dataregsL2
         memuse = (
             self.Op.shape[1]
             + self.Op.shape[0]

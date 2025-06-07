@@ -88,11 +88,11 @@ class CG(Solver):
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
 
-        # Setup: x0, y, self.r, self.c
+        # Setup: x0 - y, self.r, self.c
         memuse = (self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
 
-        # Step (additional variables to those in setup): Opc, c1
-        memuse += (2 * self.Op.shape[0]) * nbytes
+        # Step (additional variables to those in setup): c1 - Opc
+        memuse += (self.Op.shape[1] + self.Op.shape[0]) * nbytes
 
         if show:
             print(f"CG predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -125,7 +125,10 @@ class CG(Solver):
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.5.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
+
         show : :obj:`bool`, optional
             Display setup log
 
@@ -138,9 +141,10 @@ class CG(Solver):
         self.y = y
         self.niter = niter
         self.tol = tol
-        self.preallocate = preallocate
+
         self.ncp = get_array_module(y)
         self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # initialize solver
         if x0 is None:
@@ -148,7 +152,7 @@ class CG(Solver):
             self.r = self.y.copy()
         else:
             x = x0
-            if self.isjax:
+            if not self.preallocate:
                 self.r = self.y - self.Op.matvec(x)
             else:
                 self.r = self.ncp.empty_like(self.y)
@@ -186,23 +190,20 @@ class CG(Solver):
             Updated model vector
 
         """
-        if not self.preallocate:
-            c1 = self.ncp.empty_like(self.c)
-
         Opc = self.Op.matvec(self.c)
         cOpc = self.ncp.abs(self.c.dot(Opc.conj()))
         a = self.kold / cOpc
-        if self.isjax:
+        if not self.preallocate:
             x += a * self.c
             self.r -= a * Opc
         else:
-            self.ncp.multiply(self.c, a, out=self.c1 if self.preallocate else c1)
-            self.ncp.add(x, self.c1 if self.preallocate else c1, out=x)
+            self.ncp.multiply(self.c, a, out=self.c1)
+            self.ncp.add(x, self.c1, out=x)
             self.ncp.multiply(Opc, a, out=Opc)
             self.ncp.subtract(self.r, Opc, out=self.r)
         k = self.ncp.abs(self.r.dot(self.r.conj()))
         b = k / self.kold
-        if self.isjax:
+        if not self.preallocate:
             self.c = self.r + b * self.c
         else:
             self.ncp.multiply(self.c, b, out=self.c)
@@ -401,11 +402,11 @@ class CGLS(Solver):
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
 
-        # Setup: x0, y, self.s, self.c, self.q
+        # Setup: x0, self.c - y, self.s, self.q
         memuse = (2 * self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
 
         # Step (additional variables to those in setup): r, x1, c1
-        memuse += (self.Op.shape[1] + 2 * self.Op.shape[0]) * nbytes
+        memuse += (3 * self.Op.shape[1]) * nbytes
 
         if show:
             print(f"CGLS predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -455,9 +456,10 @@ class CGLS(Solver):
         self.damp = damp**2
         self.tol = tol
         self.niter = niter
-        self.preallocate = preallocate
+
         self.ncp = get_array_module(y)
         self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # initialize solver
         if x0 is None:
@@ -466,7 +468,7 @@ class CGLS(Solver):
             self.c = self.Op.rmatvec(self.s)
         else:
             x = x0.copy()
-            if self.isjax:
+            if not self.preallocate:
                 self.s = self.y - self.Op.matvec(x)
                 self.c = self.Op.rmatvec(self.s) - damp * x
             else:
@@ -512,40 +514,35 @@ class CGLS(Solver):
             Display iteration log
 
         """
-        if not self.preallocate:
-            c1 = self.ncp.empty_like(self.c)
-            x1 = self.ncp.empty_like(x)
-            r = self.ncp.empty_like(x)
-
         a = self.kold / (
             self.q.dot(self.q.conj()) + self.damp * self.c.dot(self.c.conj())
         )
-        if self.isjax:
+        if not self.preallocate:
             x += a * self.c
             self.s = self.s - a * self.q
             r = self.Op.rmatvec(self.s) - self.damp * x
         else:
-            self.ncp.multiply(self.c, a, out=self.c1 if self.preallocate else c1)
-            self.ncp.add(x, self.c1 if self.preallocate else c1, out=x)
+            self.ncp.multiply(self.c, a, out=self.c1)
+            self.ncp.add(x, self.c1, out=x)
 
             self.ncp.multiply(self.q, a, out=self.q)
             self.ncp.subtract(self.s, self.q, out=self.s)
 
-            self.ncp.multiply(x, self.damp, out=self.x1 if self.preallocate else x1)
+            self.ncp.multiply(x, self.damp, out=self.x1)
             self.ncp.subtract(
                 self.Op.rmatvec(self.s),
-                self.x1 if self.preallocate else x1,
-                out=self.r if self.preallocate else r,
+                self.x1,
+                out=self.r,
             )
         k = self.ncp.abs(
             self.r.dot(self.r.conj()) if self.preallocate else r.dot(r.conj())
         )
         b = k / self.kold
-        if self.isjax:
+        if not self.preallocate:
             self.c = r + b * self.c
         else:
             self.ncp.multiply(self.c, b, out=self.c)
-            self.ncp.add(self.c, self.r if self.preallocate else r, out=self.c)
+            self.ncp.add(self.c, self.r, out=self.c)
         self.q = self.Op.matvec(self.c)
         self.kold = k
         self.iiter += 1
@@ -818,7 +815,7 @@ class LSQR(Solver):
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
 
-        # Setup: x0, y, self.u, self.v, self.w, self.dk
+        # Setup: x0, self.v, self.w, self.dk - y, self.u
         memuse = (4 * self.Op.shape[1] + 2 * self.Op.shape[0]) * nbytes
 
         # Step (additional variables to those in setup): w1
@@ -890,9 +887,10 @@ class LSQR(Solver):
         self.conlim = conlim
         self.niter = niter
         self.calc_var = calc_var
-        self.preallocate = preallocate
+
         self.ncp = get_array_module(y)
         self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         m, n = self.Op.shape
 
@@ -924,7 +922,7 @@ class LSQR(Solver):
             self.u = y.copy()
         else:
             x = x0.copy()
-            if self.isjax:
+            if self.preallocate:
                 self.u = self.y - self.Op.matvec(x0)
             else:
                 self.u = self.ncp.empty_like(self.y)
@@ -932,14 +930,14 @@ class LSQR(Solver):
         self.alfa = 0.0
         self.beta = self.ncp.linalg.norm(self.u)
         if self.beta > 0.0:
-            if self.isjax:
+            if self.preallocate:
                 self.u = self.u / self.beta
             else:
                 self.ncp.divide(self.u, self.beta, out=self.u)
             self.v = self.Op.rmatvec(self.u)
             self.alfa = self.ncp.linalg.norm(self.v)
             if self.alfa > 0:
-                if self.isjax:
+                if self.preallocate:
                     self.v = self.v / self.alfa
                 else:
                     self.ncp.divide(self.v, self.alfa, out=self.v)
@@ -994,35 +992,32 @@ class LSQR(Solver):
             Estimated model of size :math:`[M \times 1]`
 
         """
-        if not self.preallocate:
-            w1 = self.ncp.empty_like(self.w)
-
         # perform the next step of the bidiagonalization to obtain the
         # next beta, u, alfa, v. These satisfy the relations
         # beta*u = Op*v - alfa*u,
         # alfa*v = Op'*u - beta*v'
-        if self.isjax:
+        if not self.preallocate:
             self.u = self.Op.matvec(self.v) - self.alfa * self.u
         else:
             self.ncp.multiply(self.u, self.alfa, out=self.u)
             self.ncp.subtract(self.Op.matvec(self.v), self.u, out=self.u)
         self.beta = self.ncp.linalg.norm(self.u)
         if self.beta > 0:
-            if self.isjax:
+            if not self.preallocate:
                 self.u = self.u / self.beta
             else:
                 self.ncp.divide(self.u, self.beta, out=self.u)
             self.anorm = np.linalg.norm(
                 [self.anorm, to_numpy(self.alfa), to_numpy(self.beta), self.damp]
             )
-            if self.isjax:
+            if not self.preallocate:
                 self.v = self.Op.rmatvec(self.u) - self.beta * self.v
             else:
                 self.ncp.multiply(self.v, self.beta, out=self.v)
                 self.ncp.subtract(self.Op.rmatvec(self.u), self.v, out=self.v)
             self.alfa = self.ncp.linalg.norm(self.v)
             if self.alfa > 0:
-                if self.isjax:
+                if not self.preallocate:
                     self.v = self.v / self.alfa
                 else:
                     self.ncp.divide(self.v, self.alfa, out=self.v)
@@ -1049,14 +1044,14 @@ class LSQR(Solver):
         # update x and w.
         self.t1 = self.phi / self.rho
         self.t2 = -self.theta / self.rho
-        if self.isjax:
+        if not self.preallocate:
             self.dk = self.w / self.rho
             x = x + self.t1 * self.w
             self.w = self.v + self.t2 * self.w
         else:
             self.ncp.divide(self.w, self.rho, out=self.dk)
-            self.ncp.multiply(self.w, self.t1, out=self.w1 if self.preallocate else w1)
-            self.ncp.add(x, self.w1 if self.preallocate else w1, out=x)
+            self.ncp.multiply(self.w, self.t1, out=self.w1)
+            self.ncp.add(x, self.w1, out=x)
             self.ncp.multiply(self.w, self.t2, out=self.w)
             self.ncp.add(self.v, self.w, out=self.w)
         self.ddnorm = self.ddnorm + self.ncp.linalg.norm(self.dk) ** 2

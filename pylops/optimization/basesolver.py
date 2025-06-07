@@ -1,6 +1,7 @@
 __all__ = ["Solver"]
 
 import functools
+import logging
 import time
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Any
@@ -125,36 +126,48 @@ class Solver(metaclass=ABCMeta):
                 ),
             )
 
-    # @abstractmethod
-    # def memory_usage(
-    #     self,
-    #     show: bool = False,
-    #     unit: str = "B",
-    # ) -> float:
-    #     """Compute memory usage of the solver
+    def _setpreallocate(self, preallocate: bool) -> None:
+        # Check if the solver can work in preallocate mode
+        # (basically all the time except when JAX arrays are
+        # used) and force it to be False otherwise.
+        self.preallocate = preallocate if not self.isjax else False
 
-    #     This method computes an estimate of the memory required by the solver given
-    #     the shape of the operator. This is useful to assess upfront if the solver
-    #     will run out of memory.
+        if preallocate and self.isjax:
+            logging.warning(
+                "Preallocation is not supported for JAX arrays. "
+                "Setting preallocate to False."
+            )
 
-    #     Note, that the memory usage of the operator itself is not taken into account
-    #     in this estimate.
+    @abstractmethod
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
 
-    #     Parameters
-    #     ----------
-    #     show : :obj:`bool`, optional
-    #         Display memory usage
-    #     unit: :obj:`str`, optional
-    #         Unit used to display memory usage (
-    #         ``B``, ``KB``, ``MB`` or ``GB``)
+        This method computes an estimate of the memory required by the solver given
+        the shape of the operator. This is useful to assess upfront if the solver
+        will run out of memory.
 
-    #     Returns
-    #     -------
-    #     memuse :obj:`float`
-    #         Memory usage in bytes
+        Note, that the memory usage of the operator itself is not taken into account
+        in this estimate.
 
-    #     """
-    #     pass
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in bytes
+
+        """
+        pass
 
     @abstractmethod
     def setup(
