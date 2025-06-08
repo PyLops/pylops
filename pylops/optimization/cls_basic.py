@@ -151,7 +151,7 @@ class CG(Solver):
             x = self.ncp.zeros(self.Op.shape[1], dtype=self.y.dtype)
             self.r = self.y.copy()
         else:
-            x = x0
+            x = x0.copy()
             if not self.preallocate:
                 self.r = self.y - self.Op.matvec(x)
             else:
@@ -518,7 +518,7 @@ class CGLS(Solver):
             self.q.dot(self.q.conj()) + self.damp * self.c.dot(self.c.conj())
         )
         if not self.preallocate:
-            x += a * self.c
+            x = x + a * self.c
             self.s = self.s - a * self.q
             r = self.Op.rmatvec(self.s) - self.damp * x
         else:
@@ -950,8 +950,8 @@ class LSQR(Solver):
         self.arnorm: float = self.alfa * self.beta
 
         # initialize other internal variables
-        self.dk = self.ncp.empty_like(self.w)
         if self.preallocate:
+            self.dk = self.ncp.empty_like(self.w)
             self.w1 = self.ncp.empty_like(self.w)
 
         # finalize setup
