@@ -1,4 +1,5 @@
 import os
+import platform
 
 import numpy as np
 import pytest
@@ -11,6 +12,10 @@ pytensor_message = deps.pytensor_import("the pytensor module")
 
 if pytensor_message is None:
     import pytensor
+
+    # avoid compile error on mac
+    if platform.system() == "Darwin":
+        pytensor.config.gcc__cxxflags = "-Wno-c++11-narrowing"
 
 
 par1 = {"ny": 11, "nx": 11, "dtype": np.float32}  # square
