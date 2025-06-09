@@ -636,6 +636,7 @@ def splitbregman(
     itershow: Tuple[int, int, int] = (10, 10, 10),
     show_inner: bool = False,
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
     **kwargs_lsqr,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Split Bregman for mixed L2-L1 norms.
@@ -698,6 +699,10 @@ def splitbregman(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
     **kwargs_lsqr
         Arbitrary keyword arguments for
         :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
@@ -735,6 +740,7 @@ def splitbregman(
         tau=tau,
         restart=restart,
         engine=engine,
+        preallocate=preallocate,
         show=show,
         itershow=itershow,
         show_inner=show_inner,

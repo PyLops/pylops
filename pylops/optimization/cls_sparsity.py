@@ -1687,9 +1687,7 @@ class ISTA(Solver):
         if not self.preallocate:
             res: NDArray = self.y - self.Opmatvec(x)
         else:
-            self.ncp.subtract(
-                self.y, self.Opmatvec(x), out=self.res if self.preallocate else res
-            )
+            self.ncp.subtract(self.y, self.Opmatvec(x), out=self.res)
 
         if self.monitorres:
             self.normres = np.linalg.norm(self.res if self.preallocate else res)
@@ -1707,9 +1705,9 @@ class ISTA(Solver):
             grad: NDArray = self.alpha * (self.Oprmatvec(res))
         else:
             self.ncp.multiply(
-                self.Oprmatvec(self.res if self.preallocate else res),
+                self.Oprmatvec(self.res),
                 self.alpha,
-                out=self.grad if self.preallocate else grad,
+                out=self.grad,
             )
 
         # update inverted model
@@ -1718,8 +1716,8 @@ class ISTA(Solver):
         else:
             self.ncp.add(
                 x,
-                self.grad if self.preallocate else grad,
-                out=self.x_unthesh if self.preallocate else x_unthesh,
+                self.grad,
+                out=self.x_unthesh,
             )
 
         # apply SOp.H to current x
@@ -2653,6 +2651,7 @@ class SplitBregman(Solver):
         tol: float = 1e-10,
         tau: float = 1.0,
         restart: bool = False,
+        preallocate: bool = False,
         show: bool = False,
     ) -> NDArray:
         r"""Setup solver
@@ -2698,6 +2697,10 @@ class SplitBregman(Solver):
             the initial guess (``True``) or with the last estimate (``False``).
             Note that when this is set to ``True``, the ``x0`` provided in the setup will
             be used in all iterations.
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
             Display setup log
 
@@ -2719,14 +2722,19 @@ class SplitBregman(Solver):
         self.tol = tol
         self.tau = tau
         self.restart = restart
+
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # L1 regularizations
         self.nregsL1 = len(RegsL1)
         self.b = [
             self.ncp.zeros(RegL1.shape[0], dtype=self.Op.dtype) for RegL1 in RegsL1
         ]
-        self.d = self.b.copy()
+        self.d = [
+            self.ncp.zeros(RegL1.shape[0], dtype=self.Op.dtype) for RegL1 in RegsL1
+        ]
 
         # L2 regularizations
         self.nregsL2 = 0 if RegsL2 is None else len(RegsL2)
@@ -2797,11 +2805,22 @@ class SplitBregman(Solver):
             Updated model vector
 
         """
+        # add preallocate to keywords of solver
+        if self.preallocate and (engine == "pylops" or self.ncp != np):
+            kwargs_solver["preallocate"] = True
+
         for _ in range(self.niter_inner):
             # regularized problem
-            dataregs = self.dataregsL2 + [
-                self.d[ireg] - self.b[ireg] for ireg in range(self.nregsL1)
-            ]
+            if not self.preallocate:
+                dataregs = self.dataregsL2 + [
+                    self.d[ireg] - self.b[ireg] for ireg in range(self.nregsL1)
+                ]
+            else:
+                for ireg in range(self.nregsL1):
+                    self.ncp.subtract(self.d[ireg], self.b[ireg], out=self.d[ireg])
+                dataregs = self.dataregsL2 + [
+                    self.d[ireg] for ireg in range(self.nregsL1)
+                ]
             x = regularized_inversion(
                 self.Op,
                 self.y,
@@ -2813,11 +2832,18 @@ class SplitBregman(Solver):
                 engine=engine,
                 **kwargs_solver,
             )[0]
-            # Shrinkage
-            for ireg in range(self.nregsL1):
-                self.d[ireg] = _softthreshold(
-                    self.RegsL1[ireg].matvec(x) + self.b[ireg], self.epsRL1s[ireg]
-                )
+            # shrinkage
+            if not self.preallocate:
+                for ireg in range(self.nregsL1):
+                    self.d[ireg] = _softthreshold(
+                        self.RegsL1[ireg].matvec(x) + self.b[ireg], self.epsRL1s[ireg]
+                    )
+            else:
+                for ireg in range(self.nregsL1):
+                    self.ncp.add(
+                        self.RegsL1[ireg].matvec(x), self.b[ireg], out=self.d[ireg]
+                    )
+                    self.d[ireg] = _softthreshold(self.d[ireg], self.epsRL1s[ireg])
 
         # Bregman update
         for ireg in range(self.nregsL1):
