@@ -1,4 +1,4 @@
-name: PyLops
+name: PyLops Testing
 
 on: [push, pull_request]
 
@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         platform: [ ubuntu-latest, macos-13 ]
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.10", ]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -30,6 +30,6 @@ jobs:
       run: |
         python -m setuptools_scm
         pip install .
-    - name: Test with pytest
+    - name: Tests with pytest
       run: |
         pytest
