@@ -145,6 +145,7 @@ def omp(
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Orthogonal Matching Pursuit (OMP).
 
@@ -192,7 +193,10 @@ def omp(
         Function with signature (``callback(x, cols)``) to call after each iteration
         where ``x`` contains the non-zero model coefficient and ``cols`` are the
         indices where the current model vector is non-zero
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
 
+            Pre-allocate all variables used by the solver
     Returns
     -------
     xinv : :obj:`numpy.ndarray`
@@ -228,6 +232,7 @@ def omp(
         engine=engine,
         show=show,
         itershow=itershow,
+        preallocate=preallocate,
     )
     return x, niter_outer, cost
 

@@ -572,7 +572,11 @@ class IRLS(Solver):
         return x
 
     def step(
-        self, x: NDArray, engine: str = "scipy", show: bool = False, **kwargs_solver
+        self,
+        x: NDArray,
+        engine: str = "scipy",
+        show: bool = False,
+        **kwargs_solver,
     ) -> NDArray:
         r"""Run one step of solver
 
@@ -936,6 +940,7 @@ class OMP(Solver):
         normalizecols: bool = False,
         Opbasis: Optional["LinearOperator"] = None,
         optimal_coeff: bool = False,
+        preallocate: bool = False,
         show: bool = False,
     ) -> None:
         r"""Setup solver
@@ -965,6 +970,10 @@ class OMP(Solver):
             :math:`\mathbf{r} - c * \mathbf{Op}^j) norm (``True``) or use the
             directly the value from the inner product
             :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
             Display setup log
 
@@ -979,6 +988,7 @@ class OMP(Solver):
 
         self.ncp = get_array_module(y)
         self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # find normalization factor for each column
         if self.normalizecols:
@@ -1005,6 +1015,7 @@ class OMP(Solver):
         cols: InputDimsLike,
         engine: str = "scipy",
         show: bool = False,
+        **kwargs_solver,
     ) -> NDArray:
         r"""Run one step of solver
 
@@ -1020,6 +1031,12 @@ class OMP(Solver):
             Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display iteration log
+        **kwargs_solver
+            Arbitrary keyword arguments for
+            :py:func:`scipy.sparse.linalg.lsqr` solver when using
+            numpy data and ``engine='scipy'`` (or
+            :py:func:`pylops.optimization.solver.cgls` when using cupy
+            data or ``engine='pylops'``)
 
         Returns
         -------
@@ -1029,6 +1046,10 @@ class OMP(Solver):
             Current list of chosen elements
 
         """
+        # add preallocate to keywords of solver
+        if self.preallocate and (engine == "pylops" or self.ncp != np):
+            kwargs_solver["preallocate"] = True
+
         # compute inner products
         cres = self.Op.rmatvec(self.res)
         if self.normalizecols:
@@ -1060,7 +1081,7 @@ class OMP(Solver):
             )
             if not self.optimal_coeff:
                 # update with coefficient that maximizes the inner product
-                if self.isjax:
+                if not self.preallocate:
                     self.res -= Opcol.matvec(cres[imax] * self.ncp.ones(1))
                 else:
                     self.ncp.subtract(
@@ -1076,7 +1097,7 @@ class OMP(Solver):
                 # find optimal coefficient that minimizes the residual (r - cres * col)
                 col = Opcol.matvec(self.ncp.ones(1, dtype=Opcol.dtype))
                 cresopt = (Opcol.rmatvec(self.res) / Opcol.rmatvec(col))[0]
-                if self.isjax:
+                if not self.preallocate:
                     self.res -= Opcol.matvec(cresopt * self.ncp.ones(1))
                 else:
                     self.ncp.subtract(
@@ -1090,15 +1111,16 @@ class OMP(Solver):
             # OMP update
             Opcol = self.Op.apply_columns(cols)
             if engine == "scipy" and self.ncp == np:
-                x = lsqr(Opcol, self.y, iter_lim=self.niter_inner)[0]
+                x = lsqr(Opcol, self.y, iter_lim=self.niter_inner, **kwargs_solver)[0]
             elif engine == "pylops" or self.ncp != np:
                 x = cgls(
                     Opcol,
                     self.y,
                     self.ncp.zeros(int(Opcol.shape[1]), dtype=Opcol.dtype),
                     niter=self.niter_inner,
+                    **kwargs_solver,
                 )[0]
-            if self.isjax:
+            if not self.preallocate:
                 self.res = self.y - Opcol.matvec(x)
             else:
                 self.res = Opcol.matvec(x)
@@ -1205,6 +1227,7 @@ class OMP(Solver):
         Opbasis: Optional["LinearOperator"] = None,
         optimal_coeff: bool = False,
         engine: str = "scipy",
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
@@ -1239,6 +1262,10 @@ class OMP(Solver):
             .. versionadded:: 2.5.0
 
             Solver to use (``scipy`` or ``pylops``)
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -1264,6 +1291,7 @@ class OMP(Solver):
             normalizecols=normalizecols,
             Opbasis=Opbasis,
             optimal_coeff=optimal_coeff,
+            preallocate=preallocate,
             show=show,
         )
         x: List[NDArray] = []
