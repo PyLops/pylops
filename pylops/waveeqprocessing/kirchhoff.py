@@ -1028,7 +1028,8 @@ class Kirchhoff(LinearOperator):
                 )
             elif not self.travsrcrec:
                 raise NotImplementedError(
-                    "cuda not implemented for traveltimes " "provided in one table"
+                    "engine='cuda' not implemented for traveltimes "
+                    "provided in one table"
                 )
             self._kirch_matvec = self.cuda_helper._matvec_cuda
             self._kirch_rmatvec = self.cuda_helper._rmatvec_cuda
