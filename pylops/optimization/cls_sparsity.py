@@ -2973,6 +2973,7 @@ class SplitBregman(Solver):
         tau: float = 1.0,
         restart: bool = False,
         engine: str = "scipy",
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
@@ -3023,6 +3024,10 @@ class SplitBregman(Solver):
             be used in all iterations.
         engine : :obj:`str`, optional
             Solver to use (``scipy`` or ``pylops``)
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -3060,6 +3065,7 @@ class SplitBregman(Solver):
             tol=tol,
             tau=tau,
             restart=restart,
+            preallocate=preallocate,
             show=show,
         )
         x = self.run(
