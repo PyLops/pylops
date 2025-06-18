@@ -6,7 +6,7 @@ if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
     from cupy.testing import assert_array_almost_equal
 
-    backend = "cuda"
+    backend = "cupy"
 else:
     import numpy as np
     from numpy.testing import assert_array_almost_equal
@@ -215,6 +215,8 @@ def test_traveltime_table():
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par1d), (par2d), (par3d)])
 def test_kirchhoff2d(par):
     """Dot-test for Kirchhoff operator"""
+    if backend == "cupy" and par["mode"] == "byot":
+        pytest.skip("cuda engine not available for single trav table")
     vel = v0 * np.ones((PAR["nx"], PAR["nz"]))
 
     if par["mode"] == "byot":
@@ -244,7 +246,7 @@ def test_kirchhoff2d(par):
             trav=trav,
             amp=amp,
             mode=par["mode"],
-            engine=backend,
+            engine="numpy" if backend == "numpy" else "cuda",
         )
         if par["mode"] == "byot":
             Dop.trav = np.asarray(Dop.trav)
@@ -266,6 +268,8 @@ def test_kirchhoff2d(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 def test_kirchhoff3d(par):
     """Dot-test for Kirchhoff operator"""
+    if backend == "cupy" and par["mode"] == "byot":
+        pytest.skip("cuda engine not available for single trav table")
     vel = v0 * np.ones((PAR["ny"], PAR["nx"], PAR["nz"]))
 
     if par["mode"] == "byot":
@@ -297,7 +301,7 @@ def test_kirchhoff3d(par):
             y=y,
             trav=trav,
             mode=par["mode"],
-            engine=backend,
+            engine="numpy" if backend == "numpy" else "cuda",
         )
         if par["mode"] == "byot":
             Dop.trav = np.asarray(Dop.trav)
@@ -338,7 +342,7 @@ def test_kirchhoff2d_trav_vs_travsrcrec(par):
         mode=par["mode"],
         dynamic=par["dynamic"],
         angleaperture=None,
-        engine=backend,
+        engine="numpy" if backend == "numpy" else "cuda",
     )
     Dop.trav_srcs = np.asarray(Dop.trav_srcs)
     Dop.trav_recs = np.asarray(Dop.trav_recs)
@@ -369,7 +373,7 @@ def test_kirchhoff2d_trav_vs_travsrcrec(par):
         mode=par["mode"],
         dynamic=par["dynamic"],
         angleaperture=None,
-        engine=backend,
+        engine="numpy" if backend == "numpy" else "cuda",
     )
     D1op.trav_srcs = np.asarray(D1op.trav_srcs)
     D1op.trav_recs = np.asarray(D1op.trav_recs)
@@ -408,7 +412,7 @@ def test_kirchhoff3d_trav_vs_travsrcrec(par):
         wavc,
         y=y,
         mode=par["mode"],
-        engine=backend,
+        engine="numpy" if backend == "numpy" else "cuda",
     )
     Dop.trav_srcs = np.asarray(Dop.trav_srcs)
     Dop.trav_recs = np.asarray(Dop.trav_recs)
@@ -439,7 +443,7 @@ def test_kirchhoff3d_trav_vs_travsrcrec(par):
         y=y,
         trav=trav,
         mode=par["mode"],
-        engine=backend,
+        engine="numpy" if backend == "numpy" else "cuda",
     )
     D1op.trav_srcs = np.asarray(D1op.trav_srcs)
     D1op.trav_recs = np.asarray(D1op.trav_recs)
