@@ -28,7 +28,7 @@ jobs:
           source pylopsvenv/bin/activate 
           python3 -m setuptools_scm
           pip install .
-      - name: pytest 
+      - name: Tests with pytest 
         run: |
           export CUPY_PYLOPS=1; export TEST_CUPY_PYLOPS=1; 
           source pylopsvenv/bin/activate 
