@@ -3,18 +3,18 @@ name: PyLops Testing (CuPy)
 on: [push, pull_request]
 
 jobs:
-  Cupy_Testing:
+  build:
     runs-on: self-hosted
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Check out source repository
+        uses: actions/checkout@v4
       - name: Print checked code and check environments
         run: |
           ls -lah
           echo $(pwd)
           echo $(which python3)
           echo $(which pip3)
-      - name: create new virtual environment and install dependencies
+      - name: Set up Python environment and Install dependencies
         run: |
           python3 -m venv pylopsvenv 
           source pylopsvenv/bin/activate 
