@@ -1,8 +1,19 @@
 import os
 
 import numpy as np
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cuda"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
+import numpy as npp
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.utils import dottest
 from pylops.utils.wavelets import ricker
@@ -34,22 +45,22 @@ except ImportError:
     skfmm_enabled = False
 
 v0 = 500
-y = np.arange(PAR["ny"]) * PAR["dy"]
-x = np.arange(PAR["nx"]) * PAR["dx"]
-z = np.arange(PAR["nz"]) * PAR["dz"]
-t = np.arange(PAR["nt"]) * PAR["dt"]
+y = npp.arange(PAR["ny"]) * PAR["dy"]
+x = npp.arange(PAR["nx"]) * PAR["dx"]
+z = npp.arange(PAR["nz"]) * PAR["dz"]
+t = npp.arange(PAR["nt"]) * PAR["dt"]
 
-sy = np.linspace(y.min(), y.max(), PAR["nsy"])
-sx = np.linspace(x.min(), x.max(), PAR["nsx"])
-syy, sxx = np.meshgrid(sy, sx, indexing="ij")
-s2d = np.vstack((sx, 2 * np.ones(PAR["nsx"])))
-s3d = np.vstack((syy.ravel(), sxx.ravel(), 2 * np.ones(PAR["nsx"] * PAR["nsy"])))
+sy = npp.linspace(y.min(), y.max(), PAR["nsy"])
+sx = npp.linspace(x.min(), x.max(), PAR["nsx"])
+syy, sxx = npp.meshgrid(sy, sx, indexing="ij")
+s2d = npp.vstack((sx, 2 * npp.ones(PAR["nsx"])))
+s3d = npp.vstack((syy.ravel(), sxx.ravel(), 2 * npp.ones(PAR["nsx"] * PAR["nsy"])))
 
-ry = np.linspace(y.min(), y.max(), PAR["nry"])
-rx = np.linspace(x.min(), x.max(), PAR["nrx"])
-ryy, rxx = np.meshgrid(ry, rx, indexing="ij")
-r2d = np.vstack((rx, 2 * np.ones(PAR["nrx"])))
-r3d = np.vstack((ryy.ravel(), rxx.ravel(), 2 * np.ones(PAR["nrx"] * PAR["nry"])))
+ry = npp.linspace(y.min(), y.max(), PAR["nry"])
+rx = npp.linspace(x.min(), x.max(), PAR["nrx"])
+ryy, rxx = npp.meshgrid(ry, rx, indexing="ij")
+r2d = npp.vstack((rx, 2 * npp.ones(PAR["nrx"])))
+r3d = npp.vstack((ryy.ravel(), rxx.ravel(), 2 * npp.ones(PAR["nrx"] * PAR["nry"])))
 
 wav, _, wavc = ricker(t[:21], f0=40)
 
@@ -157,7 +168,7 @@ def test_traveltime_table():
             trav_ana,
             trav_srcs_ana,
             trav_recs_ana,
-            dist_ana,
+            _,
             _,
             _,
         ) = Kirchhoff._traveltime_table(z, x, s2d, r2d, v0, mode="analytic")
@@ -166,7 +177,7 @@ def test_traveltime_table():
             trav_eik,
             trav_srcs_eik,
             trav_recs_eik,
-            dist_eik,
+            _,
             _,
             _,
         ) = Kirchhoff._traveltime_table(
@@ -181,20 +192,13 @@ def test_traveltime_table():
         (
             trav_srcs_ana,
             trav_recs_ana,
-            dist_srcs_ana,
-            dist_recs_ana,
+            _,
+            _,
             _,
             _,
         ) = Kirchhoff._traveltime_table(z, x, s3d, r3d, v0, y=y, mode="analytic")
 
-        (
-            trav_srcs_eik,
-            trav_recs_eik,
-            dist_srcs_eik,
-            dist_recs_eik,
-            _,
-            _,
-        ) = Kirchhoff._traveltime_table(
+        (trav_srcs_eik, trav_recs_eik, _, _, _, _,) = Kirchhoff._traveltime_table(
             z,
             x,
             s3d,
@@ -206,12 +210,8 @@ def test_traveltime_table():
 
         assert_array_almost_equal(trav_srcs_ana, trav_srcs_eik, decimal=2)
         assert_array_almost_equal(trav_recs_ana, trav_recs_eik, decimal=2)
-        assert_array_almost_equal(trav_ana, trav_eik, decimal=2)
 
 
-@pytest.mark.skipif(
-    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
-)
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par1d), (par2d), (par3d)])
 def test_kirchhoff2d(par):
     """Dot-test for Kirchhoff operator"""
@@ -226,8 +226,6 @@ def test_kirchhoff2d(par):
         ) + trav_recs.reshape(PAR["nx"] * PAR["nz"], 1, PAR["nrx"])
         trav = trav.reshape(PAR["nx"] * PAR["nz"], PAR["nsx"] * PAR["nrx"])
         amp = None
-        # amp = 1 / (dist + 1e-2 * dist.max())
-
     else:
         trav = None
         amp = None
@@ -240,19 +238,31 @@ def test_kirchhoff2d(par):
             s2d,
             r2d,
             vel if par["mode"] == "eikonal" else v0,
-            wav,
+            np.asarray(wav),
             wavc,
             y=None,
             trav=trav,
             amp=amp,
             mode=par["mode"],
+            engine=backend,
         )
-        assert dottest(Dop, PAR["nsx"] * PAR["nrx"] * PAR["nt"], PAR["nz"] * PAR["nx"])
+        if par["mode"] == "byot":
+            Dop.trav = np.asarray(Dop.trav)
+        else:
+            Dop.trav_srcs = np.asarray(Dop.trav_srcs)
+            Dop.trav_recs = np.asarray(Dop.trav_recs)
+        if par["mode"] == "dynamic":
+            Dop.amp_srcs = np.asarray(Dop.amp_srcs)
+            Dop.amp_recs = np.asarray(Dop.amp_recs)
+
+        assert dottest(
+            Dop,
+            PAR["nsx"] * PAR["nrx"] * PAR["nt"],
+            PAR["nz"] * PAR["nx"],
+            backend=backend,
+        )
 
 
-@pytest.mark.skipif(
-    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
-)
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 def test_kirchhoff3d(par):
     """Dot-test for Kirchhoff operator"""
@@ -287,17 +297,22 @@ def test_kirchhoff3d(par):
             y=y,
             trav=trav,
             mode=par["mode"],
+            engine=backend,
         )
+        if par["mode"] == "byot":
+            Dop.trav = np.asarray(Dop.trav)
+        else:
+            Dop.trav_srcs = np.asarray(Dop.trav_srcs)
+            Dop.trav_recs = np.asarray(Dop.trav_recs)
+
         assert dottest(
             Dop,
             PAR["nsx"] * PAR["nrx"] * PAR["nsy"] * PAR["nry"] * PAR["nt"],
             PAR["nz"] * PAR["nx"] * PAR["ny"],
+            backend=backend,
         )
 
 
-@pytest.mark.skipif(
-    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
-)
 @pytest.mark.parametrize(
     "par",
     [
@@ -323,7 +338,13 @@ def test_kirchhoff2d_trav_vs_travsrcrec(par):
         mode=par["mode"],
         dynamic=par["dynamic"],
         angleaperture=None,
+        engine=backend,
     )
+    Dop.trav_srcs = np.asarray(Dop.trav_srcs)
+    Dop.trav_recs = np.asarray(Dop.trav_recs)
+    if par["dynamic"]:
+        Dop.amp_srcs = np.asarray(Dop.amp_srcs)
+        Dop.amp_recs = np.asarray(Dop.amp_recs)
 
     # old behaviour
     trav = Dop.trav_srcs.reshape(
@@ -348,7 +369,13 @@ def test_kirchhoff2d_trav_vs_travsrcrec(par):
         mode=par["mode"],
         dynamic=par["dynamic"],
         angleaperture=None,
+        engine=backend,
     )
+    D1op.trav_srcs = np.asarray(D1op.trav_srcs)
+    D1op.trav_recs = np.asarray(D1op.trav_recs)
+    if par["dynamic"]:
+        D1op.amp_srcs = np.asarray(D1op.amp_srcs)
+        D1op.amp_recs = np.asarray(D1op.amp_recs)
 
     # forward
     xx = np.random.normal(0, 1, PAR["nx"] * PAR["nz"])
@@ -359,9 +386,6 @@ def test_kirchhoff2d_trav_vs_travsrcrec(par):
     assert_array_almost_equal(Dop.H @ yy, D1op.H @ yy, decimal=2)
 
 
-@pytest.mark.skipif(
-    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
-)
 @pytest.mark.parametrize(
     "par",
     [
@@ -384,7 +408,13 @@ def test_kirchhoff3d_trav_vs_travsrcrec(par):
         wavc,
         y=y,
         mode=par["mode"],
+        engine=backend,
     )
+    Dop.trav_srcs = np.asarray(Dop.trav_srcs)
+    Dop.trav_recs = np.asarray(Dop.trav_recs)
+    if par["dynamic"]:
+        Dop.amp_srcs = np.asarray(Dop.amp_srcs)
+        Dop.amp_recs = np.asarray(Dop.amp_recs)
 
     # old behaviour
     trav = Dop.trav_srcs.reshape(
@@ -409,7 +439,13 @@ def test_kirchhoff3d_trav_vs_travsrcrec(par):
         y=y,
         trav=trav,
         mode=par["mode"],
+        engine=backend,
     )
+    D1op.trav_srcs = np.asarray(D1op.trav_srcs)
+    D1op.trav_recs = np.asarray(D1op.trav_recs)
+    if par["dynamic"]:
+        D1op.amp_srcs = np.asarray(D1op.amp_srcs)
+        D1op.amp_recs = np.asarray(D1op.amp_recs)
 
     # forward
     xx = np.random.normal(0, 1, PAR["ny"] * PAR["nx"] * PAR["nz"])
