@@ -1,0 +1,35 @@
+name: Cupy Testing
+on:
+  workflow_dispatch:
+
+jobs:
+  Cupy_Testing:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Print checked code and check environments
+        run: |
+          ls -lah
+          echo $(pwd)
+          echo $(which python3)
+          echo $(which pip3)
+      - name: create new virtual environment and install dependencies
+        run: |
+          python3 -m venv pylopsvenv 
+          source pylopsvenv/bin/activate 
+          echo $(which python3)
+          echo $(which pip3)
+          python3 -m pip install --upgrade pip setuptools
+          pip install flake8 pytest setuptools-scm
+          pip install -r requirements-dev-gpu.txt
+      - name: Install pylops
+        run: |
+          source pylopsvenv/bin/activate 
+          python3 -m setuptools_scm
+          pip install .
+      - name: pytest 
+        run: |
+          export CUPY_PYLOPS=1; export TEST_CUPY_PYLOPS=1; 
+          source pylopsvenv/bin/activate 
+          pytest
