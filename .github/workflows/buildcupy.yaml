@@ -1,6 +1,6 @@
-name: Cupy Testing
-on:
-  workflow_dispatch:
+name: PyLops Testing (CuPy)
+
+on: [push, pull_request]
 
 jobs:
   Cupy_Testing:
