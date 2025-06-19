@@ -7,10 +7,10 @@ from pylops.utils.backend import to_cupy
 
 
 class _KirchhoffCudaHelper:
-    """A helper class to perform Kirchhoff demigration/migration using Numba CUDA.
+    """Helper class for Kirchhoff operator using Numba CUDA.
 
-    This class provides methods to compute the forward and adjoint operations for the
-    Kirchhoff operator, utilizing GPU acceleration through Numba's CUDA capabilities.
+    This class provides methods to compute the forward and adjoint operations of the
+    Kirchhoff operator utilizing GPU acceleration through Numba's CUDA capabilities.
 
     Parameters
     ----------
@@ -39,7 +39,8 @@ class _KirchhoffCudaHelper:
         This method configures the number of blocks and threads per block for
         CUDA kernels, depending on the number of sources and receivers.
         """
-        # use warp size as number of threads per block
+        # use half of warp size as number of threads per block
+        # although this will be ideally lifted up to the user
         current_device = cuda.get_current_device()
         warp = current_device.WARP_SIZE // 2
         self.num_threads_per_blocks = (warp, warp)
@@ -339,7 +340,7 @@ class _KirchhoffCudaHelper:
         return y_d
 
     def _call_dynamic(self, opt, *inputs):
-        """Synamic computations using CUDA.
+        """Dynamic computations using CUDA.
 
         This method handles data preparation and execution of CUDA kernels
         for both forward and adjoint operations of dynamic operator.

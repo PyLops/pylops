@@ -111,8 +111,7 @@ class Kirchhoff(LinearOperator):
         Deprecated, will be removed in v3.0.0. Simply kept for back-compatibility with previous implementation,
         but effectively not affecting the behaviour of the operator.
     engine : :obj:`str`, optional
-        Engine used for computations (``numpy``, ``numba`` or ``cuda``). Note that the ``cuda`` engine
-        currently supports only ``dynamic=False``.
+        Engine used for computations (``numpy``, ``numba`` or ``cuda``).
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -134,7 +133,7 @@ class Kirchhoff(LinearOperator):
         If ``mode`` is neither ``analytic``, ``eikonal``, or ``byot``.
 
     NotImplementedError
-        If ``dynamic=True`` and ``engine="cuda"``
+        If ``engine="cuda"`` and ``trav`` is provided as a single table
 
     Notes
     -----
