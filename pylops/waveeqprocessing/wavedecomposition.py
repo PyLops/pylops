@@ -787,7 +787,7 @@ def WavefieldDecomposition(
         \end{bmatrix}(k_x, \omega)
 
     if ``kind='analytical'`` or alternatively by solving the equation in
-    :func:`ptcpy.waveeqprocessing.UpDownComposition2D` as an inverse problem,
+    :func:`pylops.waveeqprocessing.UpDownComposition2D` as an inverse problem,
     if ``kind='inverse'``.
 
     The latter approach has several advantages as data regularization
@@ -807,9 +807,9 @@ def WavefieldDecomposition(
             0 & \mathbf{F}^H \mathbf{S}
         \end{bmatrix}  \mathbf{p^{\pm}}
 
-    where :math:`\mathbf{R}` is a :class:`ptcpy.basicoperators.Restriction`
+    where :math:`\mathbf{R}` is a :class:`pylops.basicoperators.Restriction`
     operator and :math:`\mathbf{S}` is sparsyfing transform operator (e.g.,
-    :class:`ptcpy.signalprocessing.Radon2D`).
+    :class:`pylops.signalprocessing.Radon2D`).
 
     .. [1] Wapenaar, K. "Reciprocity properties of one-way propagators",
        Geophysics, vol. 63, pp. 1795-1798. 1998.

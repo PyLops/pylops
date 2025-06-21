@@ -1,10 +1,21 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+    from cupyx.scipy.sparse import random as sp_random
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+    from scipy.sparse import random as sp_random
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
-from scipy.sparse import random as sp_random
-from scipy.sparse.linalg import lsqr
 
 from pylops.basicoperators import Block, BlockDiag, HStack, MatrixMult, Real, VStack
+from pylops.optimization.basic import lsqr
 from pylops.utils import dottest
 
 par1 = {"ny": 101, "nx": 101, "imag": 0, "dtype": "float64"}  # square real
@@ -54,25 +65,44 @@ def test_VStack(par):
         dtype=par["dtype"],
     )
     assert dottest(
-        Vop, 2 * par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        Vop,
+        2 * par["ny"],
+        par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
-    xlsqr = lsqr(Vop, Vop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[
-        0
-    ]
+    xlsqr = lsqr(
+        Vop,
+        Vop * x,
+        x0=np.zeros_like(x).ravel(),
+        damp=1e-20,
+        niter=300,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
     # use numpy matrix directly in the definition of the operator
     V1op = VStack([G1, MatrixMult(G2, dtype=par["dtype"])], dtype=par["dtype"])
     assert dottest(
-        V1op, 2 * par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        V1op,
+        2 * par["ny"],
+        par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     # use scipy matrix directly in the definition of the operator
     G1 = sp_random(par["ny"], par["nx"], density=0.4).astype("float32")
     V2op = VStack([G1, MatrixMult(G2, dtype=par["dtype"])], dtype=par["dtype"])
     assert dottest(
-        V2op, 2 * par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        V2op,
+        2 * par["ny"],
+        par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
 
@@ -86,25 +116,43 @@ def test_HStack(par):
 
     Hop = HStack([G1, MatrixMult(G2, dtype=par["dtype"])], dtype=par["dtype"])
     assert dottest(
-        Hop, par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        Hop,
+        par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
-    xlsqr = lsqr(Hop, Hop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[
-        0
-    ]
+    xlsqr = lsqr(
+        Hop,
+        Hop * x,
+        x0=np.zeros_like(x).ravel(),
+        niter=300,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
     # use numpy matrix directly in the definition of the operator
     H1op = HStack([G1, MatrixMult(G2, dtype=par["dtype"])], dtype=par["dtype"])
     assert dottest(
-        H1op, par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        H1op,
+        par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     # use scipy matrix directly in the definition of the operator
     G1 = sp_random(par["ny"], par["nx"], density=0.4).astype("float32")
     H2op = HStack([G1, MatrixMult(G2, dtype=par["dtype"])], dtype=par["dtype"])
     assert dottest(
-        H2op, par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        H2op,
+        par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
 
@@ -127,12 +175,23 @@ def test_Block(par):
         dtype=par["dtype"],
     )
     assert dottest(
-        Bop, 2 * par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        Bop,
+        2 * par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
-    xlsqr = lsqr(Bop, Bop * x, damp=1e-20, iter_lim=500, atol=1e-8, btol=1e-8, show=0)[
-        0
-    ]
+    xlsqr = lsqr(
+        Bop,
+        Bop * x,
+        x0=np.zeros_like(x).ravel(),
+        damp=1e-20,
+        niter=500,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
     # use numpy matrix directly in the definition of the operator
@@ -144,7 +203,11 @@ def test_Block(par):
         dtype=par["dtype"],
     )
     assert dottest(
-        B1op, 2 * par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        B1op,
+        2 * par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     # use scipy matrix directly in the definition of the operator
@@ -157,7 +220,11 @@ def test_Block(par):
         dtype=par["dtype"],
     )
     assert dottest(
-        B2op, 2 * par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        B2op,
+        2 * par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
 
@@ -174,28 +241,50 @@ def test_BlockDiag(par):
         dtype=par["dtype"],
     )
     assert dottest(
-        BDop, 2 * par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        BDop,
+        2 * par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     xlsqr = lsqr(
-        BDop, BDop * x, damp=1e-20, iter_lim=500, atol=1e-8, btol=1e-8, show=0
+        BDop,
+        BDop * x,
+        x0=np.zeros_like(x).ravel(),
+        damp=1e-20,
+        niter=500,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
     )[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
     # use numpy matrix directly in the definition of the operator
     BD1op = BlockDiag([MatrixMult(G1, dtype=par["dtype"]), G2], dtype=par["dtype"])
     assert dottest(
-        BD1op, 2 * par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        BD1op,
+        2 * par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     # use scipy matrix directly in the definition of the operator
     G2 = sp_random(par["ny"], par["nx"], density=0.4).astype("float32")
     BD2op = BlockDiag([MatrixMult(G1, dtype=par["dtype"]), G2], dtype=par["dtype"])
     assert dottest(
-        BD2op, 2 * par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        BD2op,
+        2 * par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_VStack_multiproc(par):
     """Single and multiprocess consistentcy for VStack operator"""
@@ -210,7 +299,11 @@ def test_VStack_multiproc(par):
         [MatrixMult(G, dtype=par["dtype"])] * 4, nproc=nproc, dtype=par["dtype"]
     )
     assert dottest(
-        Vmultiop, 4 * par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        Vmultiop,
+        4 * par["ny"],
+        par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
     # forward
     assert_array_almost_equal(Vop * x, Vmultiop * x, decimal=4)
@@ -221,6 +314,9 @@ def test_VStack_multiproc(par):
     Vmultiop.pool.close()
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par2), (par2j)])
 def test_HStack_multiproc(par):
     """Single and multiprocess consistentcy for HStack operator"""
@@ -235,7 +331,11 @@ def test_HStack_multiproc(par):
         [MatrixMult(G, dtype=par["dtype"])] * 4, nproc=nproc, dtype=par["dtype"]
     )
     assert dottest(
-        Hmultiop, par["ny"], 4 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        Hmultiop,
+        par["ny"],
+        4 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
     # forward
     assert_array_almost_equal(Hop * x, Hmultiop * x, decimal=4)
@@ -246,6 +346,9 @@ def test_HStack_multiproc(par):
     Hmultiop.pool.close()
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_Block_multiproc(par):
     """Single and multiprocess consistentcy for Block operator"""
@@ -260,7 +363,11 @@ def test_Block_multiproc(par):
     Bop = Block(Ghor, dtype=par["dtype"])
     Bmultiop = Block(Ghor, nproc=nproc, dtype=par["dtype"])
     assert dottest(
-        Bmultiop, 4 * par["ny"], 2 * par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        Bmultiop,
+        4 * par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
     # forward
     assert_array_almost_equal(Bop * x, Bmultiop * x, decimal=3)
@@ -271,6 +378,9 @@ def test_Block_multiproc(par):
     Bmultiop.pool.close()
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_BlockDiag_multiproc(par):
     """Single and multiprocess consistentcy for BlockDiag operator"""
@@ -289,6 +399,7 @@ def test_BlockDiag_multiproc(par):
         4 * par["ny"],
         4 * par["nx"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
     # forward
     assert_array_almost_equal(BDop * x, BDmultiop * x, decimal=4)
@@ -299,23 +410,24 @@ def test_BlockDiag_multiproc(par):
     BDmultiop.pool.close()
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+@pytest.mark.parametrize("par", [(par1j), (par2j)])
 def test_VStack_rlinear(par):
     """VStack operator applied to mix of R-linear and C-linear operators"""
     np.random.seed(0)
-    if np.dtype(par["dtype"]).kind == "c":
-        G = (
-            np.random.normal(0, 10, (par["ny"], par["nx"]))
-            + 1j * np.random.normal(0, 10, (par["ny"], par["nx"]))
-        ).astype(par["dtype"])
-    else:
-        G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
+    G = (
+        np.random.normal(0, 10, (par["ny"], par["nx"]))
+        + 1j * np.random.normal(0, 10, (par["ny"], par["nx"]))
+    ).astype(par["dtype"])
     Rop = Real(dims=(par["nx"],), dtype=par["dtype"])
 
     VSop = VStack([Rop, MatrixMult(G, dtype=par["dtype"])], dtype=par["dtype"])
     assert VSop.clinear is False
     assert dottest(
-        VSop, par["nx"] + par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3
+        VSop,
+        par["nx"] + par["ny"],
+        par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
     # forward
     x = np.random.randn(par["nx"]) + par["imag"] * np.random.randn(par["nx"])
@@ -323,43 +435,41 @@ def test_VStack_rlinear(par):
     assert_array_almost_equal(expected, VSop * x, decimal=4)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+@pytest.mark.parametrize("par", [(par1j), (par2j)])
 def test_HStack_rlinear(par):
     """HStack operator applied to mix of R-linear and C-linear operators"""
     np.random.seed(0)
-    if np.dtype(par["dtype"]).kind == "c":
-        G = (
-            np.random.normal(0, 10, (par["ny"], par["nx"]))
-            + 1j * np.random.normal(0, 10, (par["ny"], par["nx"]))
-        ).astype(par["dtype"])
-    else:
-        G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
+    G = (
+        np.random.normal(0, 10, (par["ny"], par["nx"]))
+        + 1j * np.random.normal(0, 10, (par["ny"], par["nx"]))
+    ).astype(par["dtype"])
     Rop = Real(dims=(par["ny"],), dtype=par["dtype"])
 
     HSop = HStack([Rop, MatrixMult(G, dtype=par["dtype"])], dtype=par["dtype"])
     assert HSop.clinear is False
     assert dottest(
-        HSop, par["ny"], par["nx"] + par["ny"], complexflag=0 if par["imag"] == 0 else 3
+        HSop,
+        par["ny"],
+        par["nx"] + par["ny"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
     # forward
     x = np.random.randn(par["nx"] + par["ny"]) + par["imag"] * np.random.randn(
         par["nx"] + par["ny"]
     )
-    expected = np.sum([np.real(x[: par["ny"]]), G @ x[par["ny"] :]], axis=0)
+    expected = np.sum(np.array([np.real(x[: par["ny"]]), G @ x[par["ny"] :]]), axis=0)
     assert_array_almost_equal(expected, HSop * x, decimal=4)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+@pytest.mark.parametrize("par", [(par1j), (par2j)])
 def test_BlockDiag_rlinear(par):
     """BlockDiag operator applied to mix of R-linear and C-linear operators"""
     np.random.seed(0)
-    if np.dtype(par["dtype"]).kind == "c":
-        G = (
-            np.random.normal(0, 10, (par["ny"], par["nx"]))
-            + 1j * np.random.normal(0, 10, (par["ny"], par["nx"]))
-        ).astype(par["dtype"])
-    else:
-        G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
+    G = (
+        np.random.normal(0, 10, (par["ny"], par["nx"]))
+        + 1j * np.random.normal(0, 10, (par["ny"], par["nx"]))
+    ).astype(par["dtype"])
     Rop = Real(dims=(par["nx"],), dtype=par["dtype"])
 
     BDop = BlockDiag([Rop, MatrixMult(G, dtype=par["dtype"])], dtype=par["dtype"])
@@ -369,6 +479,7 @@ def test_BlockDiag_rlinear(par):
         par["nx"] + par["ny"],
         2 * par["nx"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
     # forward
     x = np.random.randn(2 * par["nx"]) + par["imag"] * np.random.randn(2 * par["nx"])

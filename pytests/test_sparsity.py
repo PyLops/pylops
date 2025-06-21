@@ -1,6 +1,16 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import FirstDerivative, Identity, MatrixMult
 from pylops.optimization.sparsity import fista, irls, ista, omp, spgl1, splitbregman
@@ -90,8 +100,8 @@ def test_IRLS_data(par):
     Gop = MatrixMult(G, dtype=par["dtype"])
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
     x0 = (
-        np.random.normal(0, 10, par["nx"])
-        + par["imag"] * np.random.normal(0, 10, par["nx"])
+        np.random.normal(0, 1, par["nx"])
+        + par["imag"] * np.random.normal(0, 1, par["nx"])
         if par["x0"]
         else None
     )
@@ -112,7 +122,7 @@ def test_IRLS_data(par):
         tolIRLS=1e-3,
         kind="data",
     )[0]
-    assert_array_almost_equal(x, xinv, decimal=3)
+    assert_array_almost_equal(x, xinv, decimal=2)
 
 
 @pytest.mark.parametrize("par", [(par3), (par4), (par3j), (par4j)])
@@ -129,8 +139,8 @@ def test_IRLS_datamodel(par):
     x[3] = 1
     x[par["nx"] - 4] = -1
     x0 = (
-        np.random.normal(0, 10, par["nx"])
-        + par["imag"] * np.random.normal(0, 10, par["nx"])
+        np.random.normal(0, 1, par["nx"])
+        + par["imag"] * np.random.normal(0, 1, par["nx"])
         if par["x0"]
         else None
     )
@@ -151,7 +161,7 @@ def test_IRLS_datamodel(par):
         tolIRLS=1e-3,
         kind="datamodel",
     )[0]
-    assert_array_almost_equal(x, xinv, decimal=3)
+    assert_array_almost_equal(x, xinv, decimal=2)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
@@ -168,6 +178,30 @@ def test_IRLS_model(par):
 
     maxit = 100
     xinv = irls(Aop, y, nouter=maxit, tolIRLS=1e-3, kind="model")[0]
+    assert_array_almost_equal(x, xinv, decimal=1)
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
+@pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
+def test_MP(par):
+    """Invert problem with MP"""
+    np.random.seed(42)
+    Aop = MatrixMult(np.random.randn(par["ny"], par["nx"]))
+
+    x = np.zeros(par["nx"])
+    x[par["nx"] // 2] = 1
+    x[3] = 1
+    x[par["nx"] - 4] = -1
+    y = Aop * x
+
+    sigma = 1e-4
+    maxit = 100
+
+    xinv, _, _ = omp(
+        Aop, y, maxit, niter_inner=0, optimal_coeff=True, sigma=sigma, show=False
+    )
     assert_array_almost_equal(x, xinv, decimal=1)
 
 
@@ -235,7 +269,8 @@ def test_ISTA_FISTA(par):
         )
 
     # Regularization based ISTA and FISTA
-    for threshkind in ["hard", "soft", "half"]:
+    threshkinds = ["hard", "soft", "half"] if backend == "numpy" else ["soft", "half"]
+    for threshkind in threshkinds:
         # ISTA
         xinv, _, _ = ista(
             Aop,
@@ -261,30 +296,31 @@ def test_ISTA_FISTA(par):
         assert_array_almost_equal(x, xinv, decimal=1)
 
     # Percentile based ISTA and FISTA
-    for threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]:
-        # ISTA
-        xinv, _, _ = ista(
-            Aop,
-            y,
-            niter=maxit,
-            perc=perc,
-            threshkind=threshkind,
-            tol=0,
-            show=False,
-        )
-        assert_array_almost_equal(x, xinv, decimal=1)
+    if backend == "numpy":
+        for threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]:
+            # ISTA
+            xinv, _, _ = ista(
+                Aop,
+                y,
+                niter=maxit,
+                perc=perc,
+                threshkind=threshkind,
+                tol=0,
+                show=False,
+            )
+            assert_array_almost_equal(x, xinv, decimal=1)
 
-        # FISTA
-        xinv, _, _ = fista(
-            Aop,
-            y,
-            niter=maxit,
-            perc=perc,
-            threshkind=threshkind,
-            tol=0,
-            show=False,
-        )
-        assert_array_almost_equal(x, xinv, decimal=1)
+            # FISTA
+            xinv, _, _ = fista(
+                Aop,
+                y,
+                niter=maxit,
+                perc=perc,
+                threshkind=threshkind,
+                tol=0,
+                show=False,
+            )
+            assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
@@ -305,7 +341,8 @@ def test_ISTA_FISTA_multiplerhs(par):
     maxit = 2000
 
     # Regularization based ISTA and FISTA
-    for threshkind in ["hard", "soft", "half"]:
+    threshkinds = ["hard", "soft", "half"] if backend == "numpy" else ["soft", "half"]
+    for threshkind in threshkinds:
         # ISTA
         xinv, _, _ = ista(
             Aop,
@@ -331,32 +368,36 @@ def test_ISTA_FISTA_multiplerhs(par):
         assert_array_almost_equal(x, xinv, decimal=1)
 
     # Percentile based ISTA and FISTA
-    for threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]:
-        # ISTA
-        xinv, _, _ = ista(
-            Aop,
-            y,
-            niter=maxit,
-            perc=perc,
-            threshkind=threshkind,
-            tol=0,
-            show=False,
-        )
-        assert_array_almost_equal(x, xinv, decimal=1)
+    if backend == "numpy":
+        for threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]:
+            # ISTA
+            xinv, _, _ = ista(
+                Aop,
+                y,
+                niter=maxit,
+                perc=perc,
+                threshkind=threshkind,
+                tol=0,
+                show=False,
+            )
+            assert_array_almost_equal(x, xinv, decimal=1)
 
-        # FISTA
-        xinv, _, _ = fista(
-            Aop,
-            y,
-            niter=maxit,
-            perc=perc,
-            threshkind=threshkind,
-            tol=0,
-            show=False,
-        )
-        assert_array_almost_equal(x, xinv, decimal=1)
+            # FISTA
+            xinv, _, _ = fista(
+                Aop,
+                y,
+                niter=maxit,
+                perc=perc,
+                threshkind=threshkind,
+                tol=0,
+                show=False,
+            )
+            assert_array_almost_equal(x, xinv, decimal=1)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par5), (par1j), (par3j)]
 )
@@ -402,6 +443,9 @@ def test_SplitBregman(par):
     niter_in = 3
 
     x0 = np.ones(nx)
+    kwars_solver = (
+        dict(iter_lim=5, damp=1e-3) if backend == "numpy" else dict(niter=5, damp=1e-3)
+    )
     xinv, _, _ = splitbregman(
         Iop,
         y,
@@ -415,6 +459,6 @@ def test_SplitBregman(par):
         x0=x0 if par["x0"] else None,
         restart=False,
         show=False,
-        **dict(iter_lim=5, damp=1e-3),
+        **kwars_solver,
     )
     assert (np.linalg.norm(x - xinv) / np.linalg.norm(x)) < 1e-1

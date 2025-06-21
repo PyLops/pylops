@@ -114,9 +114,9 @@ def get_module_name(mod: ModuleType) -> str:
     """
     if mod == np:
         backend = "numpy"
-    elif mod == cp:
+    elif deps.cupy_enabled and mod == cp:
         backend = "cupy"
-    elif mod == jnp:
+    elif deps.jax_enabled and mod == jnp:
         backend = "jax"
     else:
         raise ValueError("module must be numpy, cupy, or jax")
@@ -577,11 +577,11 @@ def inplace_set(x: npt.ArrayLike, y: npt.ArrayLike, idx: list) -> NDArray:
     Parameters
     ----------
     x : :obj:`numpy.ndarray` or :obj:`jax.Array`
-        Array to sum
+        Array whose values are placed at indices ``idx``
     y : :obj:`numpy.ndarray` or :obj:`jax.Array`
         Output array
     idx : :obj:`list`
-        Indices to sum at
+        Indices where values ``x`` are set
 
     Returns
     -------

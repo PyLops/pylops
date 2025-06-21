@@ -1,8 +1,19 @@
-import numpy as np
-import pytest
-from numpy.testing import assert_array_almost_equal
-from scipy.sparse.linalg import lsqr
+import os
 
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
+import numpy as npp
+import pytest
+
+from pylops.optimization.basic import lsqr
 from pylops.signalprocessing import Shift
 from pylops.utils import dottest
 from pylops.utils.wavelets import gaussian
@@ -36,7 +47,7 @@ def test_Shift1D(par):
     """Dot-test and inversion for Shift operator on 1d data"""
     np.random.seed(0)
     shift = 5.5
-    x = (
+    x = np.asarray(
         gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
         + par["imag"] * gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
     )
@@ -44,9 +55,24 @@ def test_Shift1D(par):
     Sop = Shift(
         par["nt"], shift, real=True if par["imag"] == 0 else False, dtype=par["dtype"]
     )
-    assert dottest(Sop, par["nt"], par["nt"], complexflag=0 if par["imag"] == 0 else 3)
+    assert dottest(
+        Sop,
+        par["nt"],
+        par["nt"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
+    )
 
-    xlsqr = lsqr(Sop, Sop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(
+        Sop,
+        Sop * x,
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=200,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
@@ -57,7 +83,7 @@ def test_Shift2D(par):
     shift = 5.5
 
     # 1st axis
-    x = (
+    x = np.asarray(
         gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
         + par["imag"] * gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
     )
@@ -74,12 +100,22 @@ def test_Shift2D(par):
         par["nt"] * par["nx"],
         par["nt"] * par["nx"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
-    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
-    assert_array_almost_equal(x.ravel(), xlsqr, decimal=1)
+    xlsqr = lsqr(
+        Sop,
+        Sop * x.ravel(),
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=200,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
+    assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 2nd axis
-    x = (
+    x = np.asarray(
         gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
         + par["imag"] * gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
     )
@@ -96,19 +132,29 @@ def test_Shift2D(par):
         par["nt"] * par["nx"],
         par["nt"] * par["nx"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
-    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
-    assert_array_almost_equal(x.ravel(), xlsqr, decimal=1)
+    xlsqr = lsqr(
+        Sop,
+        Sop * x.ravel(),
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=200,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
+    assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_Shift2Dvariable(par):
     """Dot-test and inversion for Shift operator on 2d data with variable shift"""
     np.random.seed(0)
-    shift = np.arange(par["nx"])
+    shift = npp.arange(par["nx"])
 
     # 1st axis
-    x = (
+    x = np.asarray(
         gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
         + par["imag"] * gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
     )
@@ -125,12 +171,22 @@ def test_Shift2Dvariable(par):
         par["nt"] * par["nx"],
         par["nt"] * par["nx"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
-    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
-    assert_array_almost_equal(x.ravel(), xlsqr, decimal=1)
+    xlsqr = lsqr(
+        Sop,
+        Sop * x.ravel(),
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=200,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
+    assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 2nd axis
-    x = (
+    x = np.asarray(
         gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
         + par["imag"] * gaussian(np.arange(par["nt"] // 2 + 1), 2.0)[0]
     )
@@ -147,6 +203,16 @@ def test_Shift2Dvariable(par):
         par["nt"] * par["nx"],
         par["nt"] * par["nx"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
-    xlsqr = lsqr(Sop, Sop * x.ravel(), damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[0]
-    assert_array_almost_equal(x.ravel(), xlsqr, decimal=1)
+    xlsqr = lsqr(
+        Sop,
+        Sop * x.ravel(),
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=200,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
+    assert_array_almost_equal(x, xlsqr, decimal=1)

@@ -1,8 +1,20 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
+import numpy as npp
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.utils import dottest
+from pylops.utils.backend import to_numpy
 from pylops.utils.seismicevents import linear2d, linear3d, makeaxis
 from pylops.utils.wavelets import ricker
 from pylops.waveeqprocessing.mdd import MDC, MDD
@@ -23,46 +35,46 @@ PAR = {
 # nt odd, single-sided, full fft
 par1 = PAR.copy()
 par1["twosided"] = False
-par1["nfmax"] = int(np.ceil((PAR["nt"] + 1.0) / 2))
+par1["nfmax"] = int(npp.ceil((PAR["nt"] + 1.0) / 2))
 
 # nt odd, double-sided, full fft
 par2 = PAR.copy()
 par2["twosided"] = True
-par2["nfmax"] = int(np.ceil((PAR["nt"] + 1.0) / 2))
+par2["nfmax"] = int(npp.ceil((PAR["nt"] + 1.0) / 2))
 
 # nt odd, single-sided, truncated fft
 par3 = PAR.copy()
 par3["twosided"] = False
-par3["nfmax"] = int(np.ceil((PAR["nt"] + 1.0) / 2)) - 30
+par3["nfmax"] = int(npp.ceil((PAR["nt"] + 1.0) / 2)) - 30
 
 # nt odd, double-sided, truncated fft
 par4 = PAR.copy()
 par4["twosided"] = True
-par4["nfmax"] = int(np.ceil((PAR["nt"] + 1.0) / 2)) - 30
+par4["nfmax"] = int(npp.ceil((PAR["nt"] + 1.0) / 2)) - 30
 
 # nt even, single-sided, full fft
 par5 = PAR.copy()
 par5["nt"] -= 1
 par5["twosided"] = False
-par5["nfmax"] = int(np.ceil((PAR["nt"] + 1.0) / 2))
+par5["nfmax"] = int(npp.ceil((PAR["nt"] + 1.0) / 2))
 
 # nt even, double-sided, full fft
 par6 = PAR.copy()
 par6["nt"] -= 1
 par6["twosided"] = True
-par6["nfmax"] = int(np.ceil((PAR["nt"] + 1.0) / 2))
+par6["nfmax"] = int(npp.ceil((PAR["nt"] + 1.0) / 2))
 
 # nt even, single-sided, truncated fft
 par7 = PAR.copy()
 par7["nt"] -= 1
 par7["twosided"] = False
-par7["nfmax"] = int(np.ceil((PAR["nt"] + 1.0) / 2)) - 30
+par7["nfmax"] = int(npp.ceil((PAR["nt"] + 1.0) / 2)) - 30
 
 # nt even, double-sided, truncated fft
 par8 = PAR.copy()
 par8["nt"] -= 1
 par8["twosided"] = True
-par8["nfmax"] = int(np.ceil((PAR["nt"] + 1.0) / 2)) - 30
+par8["nfmax"] = int(npp.ceil((PAR["nt"] + 1.0) / 2)) - 30
 
 
 @pytest.mark.parametrize(
@@ -80,7 +92,7 @@ def test_MDC_1virtualsource(par):
     theta_m = 0
     amp_m = 1.0
 
-    it0_G = np.array([25, 50, 75])
+    it0_G = npp.array([25, 50, 75])
     t0_G = it0_G * par["dt"]
     theta_G = (0, 0, 0)
     phi_G = (0, 0, 0)
@@ -99,25 +111,25 @@ def test_MDC_1virtualsource(par):
 
     # Add negative part to data and model
     if par["twosided"]:
-        mwav = np.concatenate((np.zeros((par["nx"], par["nt"] - 1)), mwav), axis=-1)
-        Gwav = np.concatenate(
-            (np.zeros((par["ny"], par["nx"], par["nt"] - 1)), Gwav), axis=-1
+        mwav = npp.concatenate((npp.zeros((par["nx"], par["nt"] - 1)), mwav), axis=-1)
+        Gwav = npp.concatenate(
+            (npp.zeros((par["ny"], par["nx"], par["nt"] - 1)), Gwav), axis=-1
         )
 
     # Define MDC linear operator
-    Gwav_fft = np.fft.fft(Gwav, par["nt2"], axis=-1)
+    Gwav_fft = npp.fft.fft(Gwav, par["nt2"], axis=-1)
     Gwav_fft = Gwav_fft[..., : par["nfmax"]]
 
     MDCop = MDC(
-        Gwav_fft.transpose(2, 0, 1),
+        np.asarray(Gwav_fft).transpose(2, 0, 1),
         nt=par["nt2"],
         nv=1,
         dt=par["dt"],
         dr=par["dx"],
         twosided=par["twosided"],
     )
-    dottest(MDCop, par["nt2"] * par["ny"], par["nt2"] * par["nx"])
-    mwav = mwav.T
+    dottest(MDCop, par["nt2"] * par["ny"], par["nt2"] * par["nx"], backend=backend)
+    mwav = np.asarray(mwav).T
     d = MDCop * mwav.ravel()
     d = d.reshape(par["nt2"], par["ny"])
 
@@ -126,21 +138,28 @@ def test_MDC_1virtualsource(par):
         if par["twosided"]:
             ittot += par["nt"] - 1
         assert (
-            np.abs(
-                d[ittot, par["ny"] // 2]
-                - np.abs(wav**2).sum()
+            npp.abs(
+                to_numpy(d[ittot, par["ny"] // 2])
+                - npp.abs(wav**2).sum()
                 * amp_m
                 * amp
                 * par["nx"]
                 * par["dx"]
                 * par["dt"]
-                * np.sqrt(par["nt2"])
+                * npp.sqrt(par["nt2"])
             )
             < 1e-2
         )
 
+    solver_dict = (
+        dict(damp=1e-10, iter_lim=50)
+        if backend == "numpy"
+        else dict(damp=1e-10, niter=50)
+    )
     minv = MDD(
-        Gwav[:, :, par["nt"] - 1 :] if par["twosided"] else Gwav,
+        np.asarray(Gwav[:, :, par["nt"] - 1 :])
+        if par["twosided"]
+        else np.asarray(Gwav),
         d[par["nt"] - 1 :].T if par["twosided"] else d.T,
         dt=par["dt"],
         dr=par["dx"],
@@ -150,7 +169,7 @@ def test_MDC_1virtualsource(par):
         adjoint=False,
         psf=False,
         dottest=False,
-        **dict(damp=1e-10, iter_lim=50, show=0)
+        **solver_dict
     )
     assert_array_almost_equal(mwav, minv.T, decimal=2)
 
@@ -171,7 +190,7 @@ def test_MDC_Nvirtualsources(par):
     phi_m = 0
     amp_m = 1.0
 
-    it0_G = np.array([25, 50, 75])
+    it0_G = npp.array([25, 50, 75])
     t0_G = it0_G * par["dt"]
     theta_G = (0, 0, 0)
     phi_G = (0, 0, 0)
@@ -191,19 +210,19 @@ def test_MDC_Nvirtualsources(par):
 
     # Add negative part to data and model
     if par["twosided"]:
-        mwav = np.concatenate(
-            (np.zeros((par["nx"], par["nx"], par["nt"] - 1)), mwav), axis=-1
+        mwav = npp.concatenate(
+            (npp.zeros((par["nx"], par["nx"], par["nt"] - 1)), mwav), axis=-1
         )
-        Gwav = np.concatenate(
-            (np.zeros((par["ny"], par["nx"], par["nt"] - 1)), Gwav), axis=-1
+        Gwav = npp.concatenate(
+            (npp.zeros((par["ny"], par["nx"], par["nt"] - 1)), Gwav), axis=-1
         )
 
     # Define MDC linear operator
-    Gwav_fft = np.fft.fft(Gwav, par["nt2"], axis=-1)
+    Gwav_fft = npp.fft.fft(Gwav, par["nt2"], axis=-1)
     Gwav_fft = Gwav_fft[..., : par["nfmax"]]
 
     MDCop = MDC(
-        Gwav_fft.transpose(2, 0, 1),
+        np.asarray(Gwav_fft).transpose(2, 0, 1),
         nt=par["nt2"],
         nv=par["nx"],
         dt=par["dt"],
@@ -211,10 +230,13 @@ def test_MDC_Nvirtualsources(par):
         twosided=par["twosided"],
     )
     dottest(
-        MDCop, par["nt2"] * par["ny"] * par["nx"], par["nt2"] * par["nx"] * par["nx"]
+        MDCop,
+        par["nt2"] * par["ny"] * par["nx"],
+        par["nt2"] * par["nx"] * par["nx"],
+        backend=backend,
     )
 
-    mwav = mwav.transpose(2, 0, 1)
+    mwav = np.asarray(mwav).transpose(2, 0, 1)
     d = MDCop * mwav.ravel()
     d = d.reshape(par["nt2"], par["ny"], par["nx"])
 
@@ -231,8 +253,15 @@ def test_MDC_Nvirtualsources(par):
             > d[ittot + 1, par["ny"] // 2, par["nx"] // 2]
         )
 
+    solver_dict = (
+        dict(damp=1e-10, iter_lim=50)
+        if backend == "numpy"
+        else dict(damp=1e-10, niter=50)
+    )
     minv = MDD(
-        Gwav[:, :, par["nt"] - 1 :] if par["twosided"] else Gwav,
+        np.asarray(Gwav[:, :, par["nt"] - 1 :])
+        if par["twosided"]
+        else np.asarray(Gwav),
         d[par["nt"] - 1 :].transpose(1, 2, 0)
         if par["twosided"]
         else d.transpose(1, 2, 0),
@@ -244,6 +273,6 @@ def test_MDC_Nvirtualsources(par):
         adjoint=False,
         psf=False,
         dottest=False,
-        **dict(damp=1e-10, iter_lim=50, show=0)
+        **solver_dict
     )
     assert_array_almost_equal(mwav, minv.transpose(2, 0, 1), decimal=2)

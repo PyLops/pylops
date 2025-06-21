@@ -13,7 +13,7 @@ from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 class ToCupy(LinearOperator):
     r"""Convert to CuPy.
 
-    Convert an input array to CuPy in forward mode,
+    Convert an input NumPy array to CuPy in forward mode,
     and convert back to NumPy in adjoint mode.
 
     Parameters

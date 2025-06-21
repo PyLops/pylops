@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
@@ -112,6 +114,9 @@ par8 = {
 }  # hyperbolic, uncentered, interp, numba
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 def test_unknown_engine():
     """Check error is raised if unknown engine is passed"""
     with pytest.raises(KeyError):
@@ -120,6 +125,9 @@ def test_unknown_engine():
         _ = Radon3D(None, None, None, None, None, engine="foo")
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par5), (par6), (par7), (par8)]
 )
@@ -170,6 +178,9 @@ def test_Radon2D(par):
     assert_array_almost_equal(x.ravel(), xinv, decimal=1)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par5), (par6), (par7), (par8)]
 )

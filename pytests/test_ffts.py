@@ -1,10 +1,20 @@
 import itertools
+import os
 
-import numpy as np
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
+import numpy as npp
 import pytest
-from numpy.testing import assert_array_almost_equal
-from scipy.sparse.linalg import lsqr
 
+from pylops.optimization.basic import lsqr
 from pylops.signalprocessing import FFT, FFT2D, FFTND
 from pylops.utils import dottest
 
@@ -22,7 +32,7 @@ def _choose_random_axes(ndim, n_choices=2):
     axes_choices = list(range(-ndim, ndim))
     axes = []
     for _ in range(n_choices):
-        axis_chosen = np.random.choice(axes_choices)
+        axis_chosen = npp.random.choice(axes_choices)
         # Remove chosen and its symmetrical counterpart
         axes_choices.remove(axis_chosen)
         axes_choices.remove(axis_chosen - (1 if axis_chosen >= 0 else -1) * ndim)
@@ -39,6 +49,7 @@ par1 = {
     "engine": "numpy",
     "ifftshift_before": False,
     "dtype": np.complex128,
+    "kwargs": {},
 }  # nfft=nt, complex input, numpy engine
 par2 = {
     "nt": 41,
@@ -49,6 +60,7 @@ par2 = {
     "engine": "numpy",
     "ifftshift_before": False,
     "dtype": np.complex64,
+    "kwargs": {},
 }  # nfft>nt, complex input, numpy engine
 par3 = {
     "nt": 41,
@@ -59,6 +71,7 @@ par3 = {
     "engine": "numpy",
     "ifftshift_before": False,
     "dtype": np.float64,
+    "kwargs": {},
 }  # nfft=nt, real input, numpy engine
 par4 = {
     "nt": 41,
@@ -69,6 +82,7 @@ par4 = {
     "engine": "numpy",
     "ifftshift_before": False,
     "dtype": np.float64,
+    "kwargs": {},
 }  # nfft>nt, real input, numpy engine
 par5 = {
     "nt": 41,
@@ -79,6 +93,7 @@ par5 = {
     "engine": "numpy",
     "ifftshift_before": True,
     "dtype": np.float32,
+    "kwargs": {},
 }  # nfft>nt, real input and ifftshift_before, numpy engine
 par6 = {
     "nt": 41,
@@ -89,7 +104,74 @@ par6 = {
     "engine": "numpy",
     "ifftshift_before": False,
     "dtype": np.complex128,
-}  # nfft<nt, complex input, numpy engine
+    "kwargs": {},
+}  # nfft<nt, complex input, scipy engine
+par1s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": None,
+    "real": False,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+    "kwargs": {},
+}  # nfft=nt, complex input, scipy engine
+par2s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 64,
+    "real": False,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.complex64,
+    "kwargs": {},
+}  # nfft>nt, complex input, scipy engine
+par3s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": None,
+    "real": True,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.float64,
+    "kwargs": {},
+}  # nfft=nt, real input, scipy engine
+par4s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 64,
+    "real": True,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.float64,
+    "kwargs": {},
+}  # nfft>nt, real input, scipy engine
+par5s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 16,
+    "real": False,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+    "kwargs": {},
+}  # nfft<nt, complex input, scipy engine
+par6s = {
+    "nt": 41,
+    "nx": 31,
+    "ny": 10,
+    "nfft": 16,
+    "real": False,
+    "engine": "numpy",
+    "ifftshift_before": False,
+    "dtype": np.complex128,
+    "kwargs": {"workers": 2},
+}  # nfft<nt, complex input, scipy engine with workers
 par1w = {
     "nt": 41,
     "nx": 31,
@@ -99,6 +181,7 @@ par1w = {
     "engine": "fftw",
     "ifftshift_before": False,
     "dtype": np.complex128,
+    "kwargs": {},
 }  # nfft=nt, complex input, fftw engine
 par2w = {
     "nt": 41,
@@ -109,6 +192,7 @@ par2w = {
     "engine": "fftw",
     "ifftshift_before": False,
     "dtype": np.complex128,
+    "kwargs": {},
 }  # nfft>nt, complex input, fftw engine
 par3w = {
     "nt": 41,
@@ -119,6 +203,7 @@ par3w = {
     "engine": "fftw",
     "ifftshift_before": False,
     "dtype": np.float64,
+    "kwargs": {},
 }  # nfft=nt, real input, fftw engine
 par4w = {
     "nt": 41,
@@ -129,6 +214,7 @@ par4w = {
     "engine": "fftw",
     "ifftshift_before": False,
     "dtype": np.float32,
+    "kwargs": {},
 }  # nfft>nt, real input, fftw engine
 par5w = {
     "nt": 41,
@@ -139,6 +225,7 @@ par5w = {
     "engine": "fftw",
     "ifftshift_before": False,
     "dtype": np.complex128,
+    "kwargs": {},
 }  # nfft<nt, complex input, fftw engine
 
 np.random.seed(5)
@@ -157,13 +244,16 @@ def test_unknown_engine(par):
         )
 
 
+dtype_precision = [
+    (np.float16, 1),
+    (np.float32, 4),
+    (np.float64, 11),
+]
+if backend == "numpy":
+    dtype_precision.append((np.longdouble, 11))
+
 par_lists_fft_small_real = dict(
-    dtype_precision=[
-        (np.float16, 1),
-        (np.float32, 4),
-        (np.float64, 11),
-        (np.longdouble, 11),
-    ],
+    dtype_precision=dtype_precision,
     norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
     engine=["numpy", "fftw", "scipy"],
@@ -177,65 +267,68 @@ pars_fft_small_real = [
 
 @pytest.mark.parametrize("par", pars_fft_small_real)
 def test_FFT_small_real(par):
-    dtype, decimal = par["dtype_precision"]
-    norm = par["norm"]
-    ifftshift_before = par["ifftshift_before"]
-    engine = par["engine"]
+    np.random.seed(5)
 
-    x = np.array([1, 0, -1, 1], dtype=dtype)
+    if backend == "numpy" or (backend == "cupy" and par["engine"] == "numpy"):
+        dtype, decimal = par["dtype_precision"]
+        norm = par["norm"]
+        ifftshift_before = par["ifftshift_before"]
+        engine = par["engine"]
 
-    FFTop = FFT(
-        dims=x.shape,
-        axis=0,
-        norm=norm,
-        real=True,
-        ifftshift_before=ifftshift_before,
-        dtype=dtype,
-        engine=engine,
-    )
-    y = FFTop * x.ravel()
+        x = np.array([1, 0, -1, 1], dtype=dtype)
 
-    if norm == "ortho":
-        y_true = np.array([0.5, 1 + 0.5j, -0.5], dtype=FFTop.cdtype)
-    elif norm == "none":
-        y_true = np.array([1, 2 + 1j, -1], dtype=FFTop.cdtype)
-    elif norm == "1/n":
-        y_true = np.array([0.25, 0.5 + 0.25j, -0.25], dtype=FFTop.cdtype)
+        FFTop = FFT(
+            dims=x.shape,
+            axis=0,
+            norm=norm,
+            real=True,
+            ifftshift_before=ifftshift_before,
+            dtype=dtype,
+            engine=engine,
+        )
+        FFTop.f = np.asarray(FFTop.f)
+        y = FFTop * x.ravel()
 
-    y_true[1:-1] *= np.sqrt(2)  # Zero and Nyquist
-    if ifftshift_before:
-        # `ifftshift_before`` is useful when the time-axis is centered around zero as
-        # it ensures the time axis to starts at zero:
-        #     [-2, -1, 0, 1] ---ifftshift--> [0, 1, -2, -1]
-        # This does not alter the amplitude of the FFT, but does alter the phase. To
-        # match the results without ifftshift, we need to add a phase shift opposite to
-        # the one introduced by FFT as given below. See "An FFT Primer for physicists",
-        # by Thomas Kaiser.
-        # https://www.iap.uni-jena.de/iapmedia/de/Lecture/Computational+Photonics/CoPho19_supp_FFT_primer.pdf
-        x0 = -np.ceil(len(x) / 2)
-        y_true *= np.exp(2 * np.pi * 1j * FFTop.f * x0)
+        if norm == "ortho":
+            y_true = np.array([0.5, 1 + 0.5j, -0.5], dtype=FFTop.cdtype)
+        elif norm == "none":
+            y_true = np.array([1, 2 + 1j, -1], dtype=FFTop.cdtype)
+        elif norm == "1/n":
+            y_true = np.array([0.25, 0.5 + 0.25j, -0.25], dtype=FFTop.cdtype)
 
-    assert_array_almost_equal(y, y_true, decimal=decimal)
-    assert dottest(FFTop, len(y), len(x), complexflag=0, rtol=10 ** (-decimal))
-    assert dottest(FFTop, len(y), len(x), complexflag=2, rtol=10 ** (-decimal))
+        y_true[1:-1] *= np.sqrt(2)  # Zero and Nyquist
+        if ifftshift_before:
+            # `ifftshift_before`` is useful when the time-axis is centered around zero as
+            # it ensures the time axis to starts at zero:
+            #     [-2, -1, 0, 1] ---ifftshift--> [0, 1, -2, -1]
+            # This does not alter the amplitude of the FFT, but does alter the phase. To
+            # match the results without ifftshift, we need to add a phase shift opposite to
+            # the one introduced by FFT as given below. See "An FFT Primer for physicists",
+            # by Thomas Kaiser.
+            # https://www.iap.uni-jena.de/iapmedia/de/Lecture/Computational+Photonics/CoPho19_supp_FFT_primer.pdf
+            x0 = -np.ceil(len(x) / 2)
+            y_true *= np.exp(2 * np.pi * 1j * FFTop.f * x0)
 
-    x_inv = FFTop / y
-    x_inv = x_inv.reshape(x.shape)
-    assert_array_almost_equal(x_inv, x, decimal=decimal)
+        assert_array_almost_equal(y, y_true, decimal=decimal)
+        assert dottest(
+            FFTop, len(y), len(x), complexflag=0, rtol=10 ** (-decimal), backend=backend
+        )
+        assert dottest(
+            FFTop, len(y), len(x), complexflag=2, rtol=10 ** (-decimal), backend=backend
+        )
+
+        x_inv = FFTop / y
+        x_inv = x_inv.reshape(x.shape)
+        assert_array_almost_equal(x_inv, x, decimal=decimal)
 
 
 par_lists_fft_random_real = dict(
     shape=[
-        np.random.randint(1, 20, size=(1,)),
-        np.random.randint(1, 20, size=(2,)),
-        np.random.randint(1, 20, size=(3,)),
+        npp.random.randint(1, 20, size=(1,)),
+        npp.random.randint(1, 20, size=(2,)),
+        npp.random.randint(1, 20, size=(3,)),
     ],
-    dtype_precision=[
-        (np.float16, 1),
-        (np.float32, 3),
-        (np.float64, 11),
-        (np.longdouble, 11),
-    ],
+    dtype_precision=dtype_precision,
     ifftshift_before=[False, True],
     engine=["numpy", "fftw", "scipy"],
 )
@@ -245,8 +338,14 @@ pars_fft_random_real = [
 ]
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1,
+    reason="Dot-test failure with CuPy enabled when running entire test suite",
+)
 @pytest.mark.parametrize("par", pars_fft_random_real)
 def test_FFT_random_real(par):
+    np.random.seed(5)
+
     shape = par["shape"]
     dtype, decimal = par["dtype_precision"]
     ifftshift_before = par["ifftshift_before"]
@@ -269,18 +368,25 @@ def test_FFT_random_real(par):
 
     # Ensure inverse and adjoint recover x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    xinv = lsqr(FFTop, y, damp=0, niter=10, atol=1e-8, btol=1e-8, show=0)[0].ravel()
     assert_array_almost_equal(x, xadj, decimal=decimal)
     assert_array_almost_equal(x, xinv, decimal=decimal)
 
     # Dot tests
     nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal), backend=backend)
+    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal), backend=backend)
 
+
+dtype_precision_cpx = [
+    (np.complex64, 4),
+    (np.complex128, 11),
+]
+if backend == "numpy":
+    dtype_precision_cpx.append((np.clongdouble, 11))
 
 par_lists_fft_small_cpx = dict(
-    dtype_precision=[(np.complex64, 4), (np.complex128, 11), (np.clongdouble, 11)],
+    dtype_precision=dtype_precision_cpx,
     norm=["ortho", "none", "1/n"],
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
@@ -294,6 +400,7 @@ pars_fft_small_cpx = [
 
 @pytest.mark.parametrize("par", pars_fft_small_cpx)
 def test_FFT_small_complex(par):
+    np.random.seed(5)
     dtype, decimal = par["dtype_precision"]
     norm = par["norm"]
     ifftshift_before = par["ifftshift_before"]
@@ -322,33 +429,37 @@ def test_FFT_small_complex(par):
         y_true = np.fft.fftshift(y_true)
     if ifftshift_before:
         x0 = -np.ceil(x.shape[0] / 2)
-        y_true *= np.exp(2 * np.pi * 1j * FFTop.f * x0)
+        y_true *= np.exp(2 * np.pi * 1j * np.asarray(FFTop.f) * x0)
 
     # Compute FFT with FFTop and compare with y_true
     y = FFTop * x.ravel()
     assert_array_almost_equal(y, y_true, decimal=decimal)
-    assert dottest(FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal))
+    assert dottest(
+        FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal), backend=backend
+    )
 
     x_inv = FFTop / y
     x_inv = x_inv.reshape(x.shape)
     assert_array_almost_equal(x_inv, x, decimal=decimal)
 
 
+dtype_precision_cpx1 = [
+    (np.float16, 1),
+    (np.float32, 3),
+    (np.float64, 11),
+    (np.complex64, 3),
+    (np.complex128, 11),
+]
+if backend == "numpy":
+    dtype_precision_cpx1.append((np.longdouble, 11))
+    dtype_precision_cpx1.append((np.clongdouble, 11))
 par_lists_fft_random_cpx = dict(
     shape=[
-        np.random.randint(1, 20, size=(1,)),
-        np.random.randint(1, 20, size=(2,)),
-        np.random.randint(1, 20, size=(3,)),
+        npp.random.randint(1, 20, size=(1,)),
+        npp.random.randint(1, 20, size=(2,)),
+        npp.random.randint(1, 20, size=(3,)),
     ],
-    dtype_precision=[
-        (np.float16, 1),
-        (np.float32, 3),
-        (np.float64, 11),
-        (np.longdouble, 11),
-        (np.complex64, 3),
-        (np.complex128, 11),
-        (np.clongdouble, 11),
-    ],
+    dtype_precision=dtype_precision_cpx1,
     ifftshift_before=[False, True],
     fftshift_after=[False, True],
     engine=["numpy", "fftw", "scipy"],
@@ -361,73 +472,78 @@ pars_fft_random_cpx = [
 
 @pytest.mark.parametrize("par", pars_fft_random_cpx)
 def test_FFT_random_complex(par):
-    shape = par["shape"]
-    dtype, decimal = par["dtype_precision"]
-    ifftshift_before = par["ifftshift_before"]
-    fftshift_after = par["fftshift_after"]
-    engine = par["engine"]
+    np.random.seed(5)
+    if backend == "numpy" or (backend == "cupy" and par["engine"] == "numpy"):
+        shape = par["shape"]
+        dtype, decimal = par["dtype_precision"]
+        ifftshift_before = par["ifftshift_before"]
+        fftshift_after = par["fftshift_after"]
+        engine = par["engine"]
 
-    x = np.random.randn(*shape).astype(dtype)
-    if np.issubdtype(dtype, np.complexfloating):
-        x += 1j * np.random.randn(*shape).astype(dtype)
+        x = np.random.randn(*shape).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            x += 1j * np.random.randn(*shape).astype(dtype)
 
-    # Select an axis to apply FFT on. It can be any integer
-    # in [0,..., ndim-1] but also in [-ndim, ..., -1]
-    axis = _choose_random_axes(x.ndim, n_choices=1)[0]
+        # Select an axis to apply FFT on. It can be any integer
+        # in [0,..., ndim-1] but also in [-ndim, ..., -1]
+        axis = _choose_random_axes(x.ndim, n_choices=1)[0]
 
-    FFTop = FFT(
-        dims=x.shape,
-        axis=axis,
-        ifftshift_before=ifftshift_before,
-        fftshift_after=fftshift_after,
-        dtype=dtype,
-        engine=engine,
-    )
+        FFTop = FFT(
+            dims=x.shape,
+            axis=axis,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+            engine=engine,
+        )
 
-    # Compute FFT of x independently
-    y_true = np.fft.fft(x, axis=axis, norm="ortho")
-    if fftshift_after:
-        y_true = np.fft.fftshift(y_true, axes=axis)
-    if ifftshift_before:
-        y_true = np.swapaxes(y_true, axis, -1)
-        x0 = -np.ceil(x.shape[axis] / 2)
-        phase_correction = np.exp(2 * np.pi * 1j * FFTop.f * x0)
-        y_true *= phase_correction
-        y_true = np.swapaxes(y_true, -1, axis)
-    y_true = y_true.ravel()
+        # Compute FFT of x independently
+        y_true = np.fft.fft(x, axis=axis, norm="ortho")
+        if fftshift_after:
+            y_true = np.fft.fftshift(y_true, axes=int(axis))
+        if ifftshift_before:
+            y_true = np.swapaxes(y_true, axis, -1)
+            x0 = -np.ceil(x.shape[axis] / 2)
+            phase_correction = np.exp(2 * np.pi * 1j * np.asarray(FFTop.f) * x0)
+            y_true *= phase_correction
+            y_true = np.swapaxes(y_true, -1, axis)
+        y_true = y_true.ravel()
 
-    # Compute FFT with FFTop and compare with y_true
-    x = x.ravel()
-    y = FFTop * x
-    assert_array_almost_equal(y, y_true, decimal=decimal)
+        # Compute FFT with FFTop and compare with y_true
+        x = x.ravel()
+        y = FFTop * x
+        assert_array_almost_equal(y, y_true, decimal=decimal)
 
-    # Ensure inverse and adjoint recover x
-    xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
-    assert_array_almost_equal(x, xadj, decimal=decimal)
-    assert_array_almost_equal(x, xinv, decimal=decimal)
+        # Ensure inverse and adjoint recover x
+        xadj = FFTop.H * y  # adjoint is same as inverse for fft
+        xinv = lsqr(FFTop, y, damp=0, niter=10, atol=1e-8, btol=1e-8, show=0)[0].ravel()
+        assert_array_almost_equal(x, xadj, decimal=decimal)
+        assert_array_almost_equal(x, xinv, decimal=decimal)
 
-    # Dot tests
-    nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
-    if np.issubdtype(dtype, np.complexfloating):
-        assert dottest(FFTop, nr, nc, complexflag=1, rtol=10 ** (-decimal))
-        assert dottest(FFTop, nr, nc, complexflag=3, rtol=10 ** (-decimal))
+        # Dot tests
+        nr, nc = FFTop.shape
+        assert dottest(
+            FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal), backend=backend
+        )
+        assert dottest(
+            FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal), backend=backend
+        )
+        if np.issubdtype(dtype, np.complexfloating):
+            assert dottest(
+                FFTop, nr, nc, complexflag=1, rtol=10 ** (-decimal), backend=backend
+            )
+            assert dottest(
+                FFTop, nr, nc, complexflag=3, rtol=10 ** (-decimal), backend=backend
+            )
 
 
 par_lists_fft2d_random_real = dict(
     shape=[
-        np.random.randint(1, 5, size=(2,)),
-        np.random.randint(1, 5, size=(3,)),
-        np.random.randint(1, 5, size=(4,)),
+        npp.random.randint(1, 5, size=(2,)),
+        npp.random.randint(1, 5, size=(3,)),
+        npp.random.randint(1, 5, size=(4,)),
     ],
-    dtype_precision=[
-        (np.float16, 1),
-        (np.float32, 3),
-        (np.float64, 11),
-        (np.longdouble, 11),
-    ],
+    dtype_precision=dtype_precision,
     ifftshift_before=[False, True],
     engine=["numpy", "scipy"],
 )
@@ -437,58 +553,60 @@ pars_fft2d_random_real = [
 ]
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1,
+    reason="Dot-test failure with CuPy enabled when running entire test suite",
+)
 @pytest.mark.parametrize("par", pars_fft2d_random_real)
 def test_FFT2D_random_real(par):
-    shape = par["shape"]
-    dtype, decimal = par["dtype_precision"]
-    ifftshift_before = par["ifftshift_before"]
-    engine = par["engine"]
+    np.random.seed(5)
+    if backend == "numpy" or (backend == "cupy" and par["engine"] == "numpy"):
+        shape = par["shape"]
+        dtype, decimal = par["dtype_precision"]
+        ifftshift_before = par["ifftshift_before"]
+        engine = par["engine"]
 
-    x = np.random.randn(*shape).astype(dtype)
+        x = np.random.randn(*shape).astype(dtype)
 
-    # Select an axis to apply FFT on. It can be any integer
-    # in [0,..., ndim-1] but also in [-ndim, ..., -1]
-    # However, dimensions cannot be repeated
-    axes = _choose_random_axes(x.ndim, n_choices=2)
+        # Select an axis to apply FFT on. It can be any integer
+        # in [0,..., ndim-1] but also in [-ndim, ..., -1]
+        # However, dimensions cannot be repeated
+        axes = _choose_random_axes(x.ndim, n_choices=2)
 
-    FFTop = FFT2D(
-        dims=x.shape,
-        axes=axes,
-        ifftshift_before=ifftshift_before,
-        real=True,
-        dtype=dtype,
-        engine=engine,
-    )
-    x = x.ravel()
-    y = FFTop * x
+        FFTop = FFT2D(
+            dims=x.shape,
+            axes=axes,
+            ifftshift_before=ifftshift_before,
+            real=True,
+            dtype=dtype,
+            engine=engine,
+        )
+        x = x.ravel()
+        y = FFTop * x
 
-    # Ensure inverse and adjoint recover x
-    xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
-    assert_array_almost_equal(x, xadj, decimal=decimal)
-    assert_array_almost_equal(x, xinv, decimal=decimal)
+        # Ensure inverse and adjoint recover x
+        xadj = FFTop.H * y  # adjoint is same as inverse for fft
+        xinv = lsqr(FFTop, y, damp=0, niter=10, atol=1e-8, btol=1e-8, show=0)[0].ravel()
+        assert_array_almost_equal(x, xadj, decimal=decimal)
+        assert_array_almost_equal(x, xinv, decimal=decimal)
 
-    # Dot tests
-    nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
+        # Dot tests
+        nr, nc = FFTop.shape
+        assert dottest(
+            FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal), backend=backend
+        )
+        assert dottest(
+            FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal), backend=backend
+        )
 
 
 par_lists_fft2d_random_cpx = dict(
     shape=[
-        np.random.randint(1, 5, size=(2,)),
-        np.random.randint(1, 5, size=(3,)),
-        np.random.randint(1, 5, size=(5,)),
+        npp.random.randint(1, 5, size=(2,)),
+        npp.random.randint(1, 5, size=(3,)),
+        npp.random.randint(1, 5, size=(5,)),
     ],
-    dtype_precision=[
-        (np.float16, 1),
-        (np.float32, 3),
-        (np.float64, 11),
-        (np.longdouble, 11),
-        (np.complex64, 3),
-        (np.complex128, 11),
-        (np.clongdouble, 11),
-    ],
+    dtype_precision=dtype_precision_cpx1,
     ifftshift_before=itertools.product([False, True], [False, True]),
     fftshift_after=itertools.product([False, True], [False, True]),
     engine=["numpy", "scipy"],
@@ -502,72 +620,77 @@ pars_fft2d_random_cpx = [
 
 @pytest.mark.parametrize("par", pars_fft2d_random_cpx)
 def test_FFT2D_random_complex(par):
-    shape = par["shape"]
-    dtype, decimal = par["dtype_precision"]
-    ifftshift_before = par["ifftshift_before"]
-    fftshift_after = par["fftshift_after"]
-    engine = par["engine"]
+    np.random.seed(5)
+    if backend == "numpy" or (backend == "cupy" and par["engine"] == "numpy"):
+        shape = par["shape"]
+        dtype, decimal = par["dtype_precision"]
+        ifftshift_before = par["ifftshift_before"]
+        fftshift_after = par["fftshift_after"]
+        engine = par["engine"]
 
-    x = np.random.randn(*shape).astype(dtype)
-    if np.issubdtype(dtype, np.complexfloating):
-        x += 1j * np.random.randn(*shape).astype(dtype)
+        x = np.random.randn(*shape).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            x += 1j * np.random.randn(*shape).astype(dtype)
 
-    # Select an axis to apply FFT on. It can be any integer
-    # in [0,..., ndim-1] but also in [-ndim, ..., -1]
-    # However, dimensions cannot be repeated
-    axes = _choose_random_axes(x.ndim, n_choices=2)
+        # Select an axis to apply FFT on. It can be any integer
+        # in [0,..., ndim-1] but also in [-ndim, ..., -1]
+        # However, dimensions cannot be repeated
+        axes = _choose_random_axes(x.ndim, n_choices=2)
 
-    FFTop = FFT2D(
-        dims=x.shape,
-        axes=axes,
-        ifftshift_before=ifftshift_before,
-        fftshift_after=fftshift_after,
-        dtype=dtype,
-        engine=engine,
-    )
+        FFTop = FFT2D(
+            dims=x.shape,
+            axes=axes,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+            engine=engine,
+        )
 
-    # Compute FFT of x independently
-    x_ishift = x.copy()
-    for axis, ishift in zip(axes, ifftshift_before):
-        if ishift:
-            x_ishift = np.fft.ifftshift(x_ishift, axes=axis)
-    y_true = np.fft.fft2(x_ishift, axes=axes, norm="ortho")
-    for axis, fshift in zip(axes, fftshift_after):
-        if fshift:
-            y_true = np.fft.fftshift(y_true, axes=axis)
-    y_true = y_true.ravel()
+        # Compute FFT of x independently
+        x_ishift = x.copy()
+        for axis, ishift in zip(axes, ifftshift_before):
+            if ishift:
+                x_ishift = np.fft.ifftshift(x_ishift, axes=int(axis))
+        y_true = np.fft.fft2(x_ishift, axes=axes, norm="ortho")
+        for axis, fshift in zip(axes, fftshift_after):
+            if fshift:
+                y_true = np.fft.fftshift(y_true, axes=int(axis))
+        y_true = y_true.ravel()
 
-    # Compute FFT with FFTop and compare with y_true
-    x = x.ravel()
-    y = FFTop * x
-    assert_array_almost_equal(y, y_true, decimal=decimal)
+        # Compute FFT with FFTop and compare with y_true
+        x = x.ravel()
+        y = FFTop * x
+        assert_array_almost_equal(y, y_true, decimal=decimal)
 
-    # Ensure inverse and adjoint recover x
-    xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
-    assert_array_almost_equal(x, xadj, decimal=decimal)
-    assert_array_almost_equal(x, xinv, decimal=decimal)
+        # Ensure inverse and adjoint recover x
+        xadj = FFTop.H * y  # adjoint is same as inverse for fft
+        xinv = lsqr(FFTop, y, damp=0, niter=10, atol=1e-8, btol=1e-8, show=0)[0].ravel()
+        assert_array_almost_equal(x, xadj, decimal=decimal)
+        assert_array_almost_equal(x, xinv, decimal=decimal)
 
-    # Dot tests
-    nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
-    if np.issubdtype(dtype, np.complexfloating):
-        assert dottest(FFTop, nr, nc, complexflag=1, rtol=10 ** (-decimal))
-        assert dottest(FFTop, nr, nc, complexflag=3, rtol=10 ** (-decimal))
+        # Dot tests
+        nr, nc = FFTop.shape
+        assert dottest(
+            FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal), backend=backend
+        )
+        assert dottest(
+            FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal), backend=backend
+        )
+        if np.issubdtype(dtype, np.complexfloating):
+            assert dottest(
+                FFTop, nr, nc, complexflag=1, rtol=10 ** (-decimal), backend=backend
+            )
+            assert dottest(
+                FFTop, nr, nc, complexflag=3, rtol=10 ** (-decimal), backend=backend
+            )
 
 
 par_lists_fftnd_random_real = dict(
     shape=[
-        np.random.randint(1, 5, size=(3,)),
-        np.random.randint(1, 5, size=(4,)),
+        npp.random.randint(1, 5, size=(3,)),
+        npp.random.randint(1, 5, size=(4,)),
     ],
-    dtype_precision=[
-        (np.float16, 1),
-        (np.float32, 3),
-        (np.float64, 11),
-        (np.longdouble, 11),
-    ],
+    dtype_precision=dtype_precision,
     engine=["numpy", "scipy"],
 )
 pars_fftnd_random_real = [
@@ -578,58 +701,56 @@ pars_fftnd_random_real = [
 
 @pytest.mark.parametrize("par", pars_fftnd_random_real)
 def test_FFTND_random_real(par):
-    shape = par["shape"]
-    dtype, decimal = par["dtype_precision"]
-    engine = par["engine"]
+    np.random.seed(5)
+    if backend == "numpy" or (backend == "cupy" and par["engine"] == "numpy"):
+        shape = par["shape"]
+        dtype, decimal = par["dtype_precision"]
+        engine = par["engine"]
 
-    x = np.random.randn(*shape).astype(dtype)
+        x = np.random.randn(*shape).astype(dtype)
 
-    # Select an axis to apply FFT on. It can be any integer
-    # in [0,..., ndim-1] but also in [-ndim, ..., -1]
-    # However, dimensions cannot be repeated
-    n_choices = np.random.randint(3, x.ndim + 1)
-    axes = _choose_random_axes(x.ndim, n_choices=n_choices)
+        # Select an axis to apply FFT on. It can be any integer
+        # in [0,..., ndim-1] but also in [-ndim, ..., -1]
+        # However, dimensions cannot be repeated
+        n_choices = npp.random.randint(3, x.ndim + 1)
+        axes = _choose_random_axes(x.ndim, n_choices=n_choices)
 
-    # Trying out all posibilities is very cumbersome, let's select some shifts randomly
-    ifftshift_before = np.random.choice([False, True], size=n_choices)
+        # Trying out all posibilities is very cumbersome, let's select some shifts randomly
+        ifftshift_before = npp.random.choice([False, True], size=n_choices)
 
-    FFTop = FFTND(
-        dims=x.shape,
-        axes=axes,
-        ifftshift_before=ifftshift_before,
-        real=True,
-        dtype=dtype,
-        engine=engine,
-    )
-    x = x.ravel()
-    y = FFTop * x
+        FFTop = FFTND(
+            dims=x.shape,
+            axes=axes,
+            ifftshift_before=ifftshift_before,
+            real=True,
+            dtype=dtype,
+            engine=engine,
+        )
+        x = x.ravel()
+        y = FFTop * x
 
-    # Ensure inverse and adjoint recover x
-    xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
-    assert_array_almost_equal(x, xadj, decimal=decimal)
-    assert_array_almost_equal(x, xinv, decimal=decimal)
+        # Ensure inverse and adjoint recover x
+        xadj = FFTop.H * y  # adjoint is same as inverse for fft
+        xinv = lsqr(FFTop, y, damp=0, niter=10, atol=1e-8, btol=1e-8, show=0)[0].ravel()
+        assert_array_almost_equal(x, xadj, decimal=decimal)
+        assert_array_almost_equal(x, xinv, decimal=decimal)
 
-    # Dot tests
-    nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
+        # Dot tests
+        nr, nc = FFTop.shape
+        assert dottest(
+            FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal), backend=backend
+        )
+        assert dottest(
+            FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal), backend=backend
+        )
 
 
 par_lists_fftnd_random_cpx = dict(
     shape=[
-        np.random.randint(1, 5, size=(3,)),
-        np.random.randint(1, 5, size=(5,)),
+        npp.random.randint(1, 5, size=(3,)),
+        npp.random.randint(1, 5, size=(5,)),
     ],
-    dtype_precision=[
-        (np.float16, 1),
-        (np.float32, 3),
-        (np.float64, 11),
-        (np.longdouble, 11),
-        (np.complex64, 3),
-        (np.complex128, 11),
-        (np.clongdouble, 11),
-    ],
+    dtype_precision=dtype_precision_cpx1,
     engine=["numpy", "scipy"],
 )
 # Generate all combinations of the above parameters
@@ -641,6 +762,7 @@ pars_fftnd_random_cpx = [
 
 @pytest.mark.parametrize("par", pars_fftnd_random_cpx)
 def test_FFTND_random_complex(par):
+    np.random.seed(5)
     shape = par["shape"]
     dtype, decimal = par["dtype_precision"]
     engine = par["engine"]
@@ -652,12 +774,12 @@ def test_FFTND_random_complex(par):
     # Select an axis to apply FFT on. It can be any integer
     # in [0,..., ndim-1] but also in [-ndim, ..., -1]
     # However, dimensions cannot be repeated
-    n_choices = np.random.randint(3, x.ndim + 1)
+    n_choices = npp.random.randint(3, x.ndim + 1)
     axes = _choose_random_axes(x.ndim, n_choices=n_choices)
 
     # Trying out all posibilities is very cumbersome, let's select some shifts randomly
-    ifftshift_before = np.random.choice([False, True], size=n_choices)
-    fftshift_after = np.random.choice([True, False], size=n_choices)
+    ifftshift_before = npp.random.choice([False, True], size=n_choices)
+    fftshift_after = npp.random.choice([True, False], size=n_choices)
 
     FFTop = FFTND(
         dims=x.shape,
@@ -672,11 +794,11 @@ def test_FFTND_random_complex(par):
     x_ishift = x.copy()
     for axis, ishift in zip(axes, ifftshift_before):
         if ishift:
-            x_ishift = np.fft.ifftshift(x_ishift, axes=axis)
+            x_ishift = np.fft.ifftshift(x_ishift, axes=int(axis))
     y_true = np.fft.fft2(x_ishift, axes=axes, norm="ortho")
     for axis, fshift in zip(axes, fftshift_after):
         if fshift:
-            y_true = np.fft.fftshift(y_true, axes=axis)
+            y_true = np.fft.fftshift(y_true, axes=int(axis))
     y_true = y_true.ravel()
 
     # Compute FFT with FFTop and compare with y_true
@@ -686,21 +808,25 @@ def test_FFTND_random_complex(par):
 
     # Ensure inverse and adjoint recover x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=0, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    xinv = lsqr(FFTop, y, damp=0, niter=10, atol=1e-8, btol=1e-8, show=0)[0].ravel()
     assert_array_almost_equal(x, xadj, decimal=decimal)
     assert_array_almost_equal(x, xinv, decimal=decimal)
 
     # Dot tests
     nr, nc = FFTop.shape
-    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal))
-    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal))
+    assert dottest(FFTop, nr, nc, complexflag=0, rtol=10 ** (-decimal), backend=backend)
+    assert dottest(FFTop, nr, nc, complexflag=2, rtol=10 ** (-decimal), backend=backend)
     if np.issubdtype(dtype, np.complexfloating):
-        assert dottest(FFTop, nr, nc, complexflag=1, rtol=10 ** (-decimal))
-        assert dottest(FFTop, nr, nc, complexflag=3, rtol=10 ** (-decimal))
+        assert dottest(
+            FFTop, nr, nc, complexflag=1, rtol=10 ** (-decimal), backend=backend
+        )
+        assert dottest(
+            FFTop, nr, nc, complexflag=3, rtol=10 ** (-decimal), backend=backend
+        )
 
 
 par_lists_fft2dnd_small_cpx = dict(
-    dtype_precision=[(np.complex64, 5), (np.complex128, 11), (np.clongdouble, 11)],
+    dtype_precision=dtype_precision_cpx,
     norm=["ortho", "none", "1/n"],
     engine=["numpy", "scipy"],
 )
@@ -712,6 +838,7 @@ pars_fft2dnd_small_cpx = [
 
 @pytest.mark.parametrize("par", pars_fft2dnd_small_cpx)
 def test_FFT2D_small_complex(par):
+    np.random.seed(5)
     dtype, decimal = par["dtype_precision"]
     norm = par["norm"]
 
@@ -750,7 +877,9 @@ def test_FFT2D_small_complex(par):
     y = FFTop * x.ravel()
     y = y.reshape(FFTop.dimsd)
     assert_array_almost_equal(y, y_true, decimal=decimal)
-    assert dottest(FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal))
+    assert dottest(
+        FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal), backend=backend
+    )
 
     x_inv = FFTop / y.ravel()
     x_inv = x_inv.reshape(x.shape)
@@ -759,6 +888,7 @@ def test_FFT2D_small_complex(par):
 
 @pytest.mark.parametrize("par", pars_fft2dnd_small_cpx)
 def test_FFTND_small_complex(par):
+    np.random.seed(5)
     dtype, decimal = par["dtype_precision"]
     norm = par["norm"]
 
@@ -797,7 +927,9 @@ def test_FFTND_small_complex(par):
     y = FFTop * x.ravel()
     y = y.reshape(FFTop.dimsd)
     assert_array_almost_equal(y, y_true, decimal=decimal)
-    assert dottest(FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal))
+    assert dottest(
+        FFTop, *FFTop.shape, complexflag=3, rtol=10 ** (-decimal), backend=backend
+    )
 
     x_inv = FFTop / y.ravel()
     x_inv = x_inv.reshape(x.shape)
@@ -813,6 +945,11 @@ def test_FFTND_small_complex(par):
         (par4),
         (par5),
         (par6),
+        (par1s),
+        (par2s),
+        (par3s),
+        (par4s),
+        (par5s),
         (par1w),
         (par2w),
         (par3w),
@@ -821,6 +958,7 @@ def test_FFTND_small_complex(par):
     ],
 )
 def test_FFT_1dsignal(par):
+    np.random.seed(5)
     """Dot-test and inversion for FFT operator for 1d signal"""
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8
 
@@ -838,19 +976,39 @@ def test_FFT_1dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
         assert dottest(
-            FFTop, nfft // 2 + 1, par["nt"], complexflag=2, rtol=10 ** (-decimal)
+            FFTop,
+            nfft // 2 + 1,
+            par["nt"],
+            complexflag=2,
+            rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
-        assert dottest(FFTop, nfft, par["nt"], complexflag=2, rtol=10 ** (-decimal))
-        assert dottest(FFTop, nfft, par["nt"], complexflag=3, rtol=10 ** (-decimal))
+        assert dottest(
+            FFTop,
+            nfft,
+            par["nt"],
+            complexflag=2,
+            rtol=10 ** (-decimal),
+            backend=backend,
+        )
+        assert dottest(
+            FFTop,
+            nfft,
+            par["nt"],
+            complexflag=3,
+            rtol=10 ** (-decimal),
+            backend=backend,
+        )
 
     y = FFTop * x
     xadj = FFTop.H * y  # adjoint is same as inverse for fft
-    xinv = lsqr(FFTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    xinv = lsqr(FFTop, y, damp=1e-10, niter=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     # check all signal if nt>nfft and only up to nfft if nfft<nt
     imax = par["nt"] if par["nfft"] is None else min([par["nt"], par["nfft"]])
@@ -878,7 +1036,7 @@ def test_FFT_1dsignal(par):
             FFTop_fftshift,
             y_fftshift,
             damp=1e-10,
-            iter_lim=10,
+            niter=10,
             atol=1e-8,
             btol=1e-8,
             show=0,
@@ -896,6 +1054,11 @@ def test_FFT_1dsignal(par):
         (par4),
         (par5),
         (par6),
+        (par1s),
+        (par2s),
+        (par3s),
+        (par4s),
+        (par5s),
         (par1w),
         (par2w),
         (par3w),
@@ -907,6 +1070,7 @@ def test_FFT_2dsignal(par):
     """Dot-test and inversion for fft operator for 2d signal
     (fft on single dimension)
     """
+    np.random.seed(5)
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8
 
     dt = 0.005
@@ -926,19 +1090,39 @@ def test_FFT_2dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
         assert dottest(
-            FFTop, (nfft // 2 + 1) * nx, nt * nx, complexflag=2, rtol=10 ** (-decimal)
+            FFTop,
+            (nfft // 2 + 1) * nx,
+            nt * nx,
+            complexflag=2,
+            rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
-        assert dottest(FFTop, nfft * nx, nt * nx, complexflag=2, rtol=10 ** (-decimal))
-        assert dottest(FFTop, nfft * nx, nt * nx, complexflag=3, rtol=10 ** (-decimal))
+        assert dottest(
+            FFTop,
+            nfft * nx,
+            nt * nx,
+            complexflag=2,
+            rtol=10 ** (-decimal),
+            backend=backend,
+        )
+        assert dottest(
+            FFTop,
+            nfft * nx,
+            nt * nx,
+            complexflag=3,
+            rtol=10 ** (-decimal),
+            backend=backend,
+        )
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is same as inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, niter=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx))
     dinv = np.real(dinv.reshape(nt, nx))
@@ -958,6 +1142,7 @@ def test_FFT_2dsignal(par):
             fftshift_after=True,
             engine=par["engine"],
             dtype=par["dtype"],
+            **par["kwargs"],
         )
         assert_array_almost_equal(FFTop_fftshift.f, np.fft.fftshift(FFTop.f))
 
@@ -970,7 +1155,7 @@ def test_FFT_2dsignal(par):
             FFTop_fftshift,
             D_fftshift,
             damp=1e-10,
-            iter_lim=10,
+            niter=10,
             atol=1e-8,
             btol=1e-8,
             show=0,
@@ -992,19 +1177,39 @@ def test_FFT_2dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
         assert dottest(
-            FFTop, nt * (nfft // 2 + 1), nt * nx, complexflag=2, rtol=10 ** (-decimal)
+            FFTop,
+            nt * (nfft // 2 + 1),
+            nt * nx,
+            complexflag=2,
+            rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
-        assert dottest(FFTop, nt * nfft, nt * nx, complexflag=2, rtol=10 ** (-decimal))
-        assert dottest(FFTop, nt * nfft, nt * nx, complexflag=3, rtol=10 ** (-decimal))
+        assert dottest(
+            FFTop,
+            nt * nfft,
+            nt * nx,
+            complexflag=2,
+            rtol=10 ** (-decimal),
+            backend=backend,
+        )
+        assert dottest(
+            FFTop,
+            nt * nfft,
+            nt * nx,
+            complexflag=3,
+            rtol=10 ** (-decimal),
+            backend=backend,
+        )
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, niter=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx))
     dinv = np.real(dinv.reshape(nt, nx))
@@ -1024,6 +1229,7 @@ def test_FFT_2dsignal(par):
             fftshift_after=True,
             engine=par["engine"],
             dtype=par["dtype"],
+            **par["kwargs"],
         )
         assert_array_almost_equal(FFTop_fftshift.f, np.fft.fftshift(FFTop.f))
 
@@ -1036,7 +1242,7 @@ def test_FFT_2dsignal(par):
             FFTop_fftshift,
             D_fftshift,
             damp=1e-10,
-            iter_lim=10,
+            niter=10,
             atol=1e-8,
             btol=1e-8,
             show=0,
@@ -1058,6 +1264,11 @@ def test_FFT_2dsignal(par):
         (par4),
         (par5),
         (par6),
+        (par1s),
+        (par2s),
+        (par3s),
+        (par4s),
+        (par5s),
         (par1w),
         (par2w),
         (par3w),
@@ -1069,6 +1280,7 @@ def test_FFT_3dsignal(par):
     """Dot-test and inversion for fft operator for 3d signal
     (fft on single dimension)
     """
+    np.random.seed(5)
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8
 
     dt = 0.005
@@ -1089,6 +1301,7 @@ def test_FFT_3dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1098,18 +1311,29 @@ def test_FFT_3dsignal(par):
             nt * nx * ny,
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
         assert dottest(
-            FFTop, nfft * nx * ny, nt * nx * ny, complexflag=2, rtol=10 ** (-decimal)
+            FFTop,
+            nfft * nx * ny,
+            nt * nx * ny,
+            complexflag=2,
+            rtol=10 ** (-decimal),
+            backend=backend,
         )
         assert dottest(
-            FFTop, nfft * nx * ny, nt * nx * ny, complexflag=3, rtol=10 ** (-decimal)
+            FFTop,
+            nfft * nx * ny,
+            nt * nx * ny,
+            complexflag=3,
+            rtol=10 ** (-decimal),
+            backend=backend,
         )
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is same as inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, niter=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx, ny))
     dinv = np.real(dinv.reshape(nt, nx, ny))
@@ -1129,6 +1353,7 @@ def test_FFT_3dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1138,18 +1363,29 @@ def test_FFT_3dsignal(par):
             nt * nx * ny,
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
         assert dottest(
-            FFTop, nt * nfft * ny, nt * nx * ny, complexflag=2, rtol=10 ** (-decimal)
+            FFTop,
+            nt * nfft * ny,
+            nt * nx * ny,
+            complexflag=2,
+            rtol=10 ** (-decimal),
+            backend=backend,
         )
         assert dottest(
-            FFTop, nt * nfft * ny, nt * nx * ny, complexflag=3, rtol=10 ** (-decimal)
+            FFTop,
+            nt * nfft * ny,
+            nt * nx * ny,
+            complexflag=3,
+            rtol=10 ** (-decimal),
+            backend=backend,
         )
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, niter=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx, ny))
     dinv = np.real(dinv.reshape(nt, nx, ny))
@@ -1169,6 +1405,7 @@ def test_FFT_3dsignal(par):
         real=par["real"],
         engine=par["engine"],
         dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1178,18 +1415,29 @@ def test_FFT_3dsignal(par):
             nt * nx * ny,
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
         assert dottest(
-            FFTop, nt * nx * nfft, nt * nx * ny, complexflag=2, rtol=10 ** (-decimal)
+            FFTop,
+            nt * nx * nfft,
+            nt * nx * ny,
+            complexflag=2,
+            rtol=10 ** (-decimal),
+            backend=backend,
         )
         assert dottest(
-            FFTop, nt * nx * nfft, nt * nx * ny, complexflag=3, rtol=10 ** (-decimal)
+            FFTop,
+            nt * nx * nfft,
+            nt * nx * ny,
+            complexflag=3,
+            rtol=10 ** (-decimal),
+            backend=backend,
         )
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, niter=10, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj.reshape(nt, nx, ny))
     dinv = np.real(dinv.reshape(nt, nx, ny))
@@ -1209,6 +1457,7 @@ def test_FFT_3dsignal(par):
             fftshift_after=True,
             engine=par["engine"],
             dtype=par["dtype"],
+            **par["kwargs"],
         )
         assert_array_almost_equal(FFTop_fftshift.f, np.fft.fftshift(FFTop.f))
 
@@ -1221,7 +1470,7 @@ def test_FFT_3dsignal(par):
             FFTop_fftshift,
             D_fftshift,
             damp=1e-10,
-            iter_lim=10,
+            niter=10,
             atol=1e-8,
             btol=1e-8,
             show=0,
@@ -1234,9 +1483,24 @@ def test_FFT_3dsignal(par):
         assert_array_almost_equal(d[..., :imax], dinv[..., :imax], decimal=decimal)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par6)])
+@pytest.mark.parametrize(
+    "par",
+    [
+        (par1),
+        (par2),
+        (par3),
+        (par4),
+        (par6),
+        (par1s),
+        (par2s),
+        (par3s),
+        (par4s),
+        (par5s),
+    ],
+)
 def test_FFT2D(par):
     """Dot-test and inversion for FFT2D operator for 2d signal"""
+    np.random.seed(5)
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8
 
     dt, dx = 0.005, 5
@@ -1254,6 +1518,9 @@ def test_FFT2D(par):
         sampling=(dt, dx),
         real=par["real"],
         axes=(0, 1),
+        engine=par["engine"],
+        dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1263,6 +1530,7 @@ def test_FFT2D(par):
             par["nt"] * par["nx"],
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
         assert dottest(
@@ -1271,6 +1539,7 @@ def test_FFT2D(par):
             par["nt"] * par["nx"],
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
         assert dottest(
             FFTop,
@@ -1278,11 +1547,12 @@ def test_FFT2D(par):
             par["nt"] * par["nx"],
             complexflag=3,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, niter=100, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj).reshape(par["nt"], par["nx"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"])
@@ -1300,6 +1570,8 @@ def test_FFT2D(par):
         sampling=(dx, dt),
         real=par["real"],
         axes=(1, 0),
+        dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1309,6 +1581,7 @@ def test_FFT2D(par):
             par["nt"] * par["nx"],
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
         assert dottest(
@@ -1317,6 +1590,7 @@ def test_FFT2D(par):
             par["nt"] * par["nx"],
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
         assert dottest(
             FFTop,
@@ -1324,11 +1598,12 @@ def test_FFT2D(par):
             par["nt"] * par["nx"],
             complexflag=3,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, niter=100, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj).reshape(par["nt"], par["nx"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"])
@@ -1338,9 +1613,24 @@ def test_FFT2D(par):
     assert_array_almost_equal(d[:imax1, :imax2], dinv[:imax1, :imax2], decimal=decimal)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par6)])
+@pytest.mark.parametrize(
+    "par",
+    [
+        (par1),
+        (par2),
+        (par3),
+        (par4),
+        (par6),
+        (par1s),
+        (par2s),
+        (par3s),
+        (par4s),
+        (par5s),
+    ],
+)
 def test_FFT3D(par):
     """Dot-test and inversion for FFTND operator for 3d signal"""
+    np.random.seed(5)
     decimal = 3 if np.real(np.ones(1, par["dtype"])).dtype == np.float32 else 8
 
     dt, dx, dy = 0.005, 5, 2
@@ -1360,6 +1650,8 @@ def test_FFT3D(par):
         axes=(0, 1, 2),
         sampling=(dt, dx, dy),
         real=par["real"],
+        dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1369,6 +1661,7 @@ def test_FFT3D(par):
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
         assert dottest(
@@ -1377,6 +1670,7 @@ def test_FFT3D(par):
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
         assert dottest(
             FFTop,
@@ -1384,11 +1678,12 @@ def test_FFT3D(par):
             par["nt"] * par["nx"] * par["ny"],
             complexflag=3,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, niter=100, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj).reshape(par["nt"], par["nx"], par["ny"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"], par["ny"])
@@ -1420,6 +1715,7 @@ def test_FFT3D(par):
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
         assert dottest(
@@ -1428,6 +1724,7 @@ def test_FFT3D(par):
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
         assert dottest(
             FFTop,
@@ -1435,11 +1732,12 @@ def test_FFT3D(par):
             par["nt"] * par["nx"] * par["ny"],
             complexflag=3,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, niter=100, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj).reshape(par["nt"], par["nx"], par["ny"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"], par["ny"])
@@ -1458,6 +1756,8 @@ def test_FFT3D(par):
         axes=(1, 2, 0),
         sampling=(dx, dy, dt),
         real=par["real"],
+        dtype=par["dtype"],
+        **par["kwargs"],
     )
 
     if par["real"]:
@@ -1467,6 +1767,7 @@ def test_FFT3D(par):
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
     else:
         assert dottest(
@@ -1475,6 +1776,7 @@ def test_FFT3D(par):
             par["nt"] * par["nx"] * par["ny"],
             complexflag=2,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
         assert dottest(
             FFTop,
@@ -1482,11 +1784,12 @@ def test_FFT3D(par):
             par["nt"] * par["nx"] * par["ny"],
             complexflag=3,
             rtol=10 ** (-decimal),
+            backend=backend,
         )
 
     D = FFTop * d.ravel()
     dadj = FFTop.H * D  # adjoint is inverse for fft
-    dinv = lsqr(FFTop, D, damp=1e-10, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
+    dinv = lsqr(FFTop, D, damp=1e-10, niter=100, atol=1e-8, btol=1e-8, show=0)[0]
 
     dadj = np.real(dadj).reshape(par["nt"], par["nx"], par["ny"])
     dinv = np.real(dinv).reshape(par["nt"], par["nx"], par["ny"])

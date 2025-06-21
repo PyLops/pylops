@@ -129,6 +129,8 @@ def omp(
     niter_inner: int = 40,
     sigma: float = 1e-4,
     normalizecols: bool = False,
+    Opbasis: Optional["LinearOperator"] = None,
+    optimal_coeff: bool = False,
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
@@ -159,6 +161,14 @@ def omp(
         :math:`n_{cols}` times to unit vectors (i.e., containing 1 at
         position j and zero otherwise); use only when the columns of the
         operator are expected to have highly varying norms.
+    Opbasis : :obj:`pylops.LinearOperator`
+        Operator representing the basis functions. If not provided, the entire
+        operator used for inversion `Op` is used.
+    optimal_coeff : :obj:`bool`, optional
+        Estimate optimal coefficient that minimizes the norm of the residual
+        :math:`\mathbf{r} - c * \mathbf{Op}^j) norm (``True``) or use the
+        directly the value from the inner product
+        :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
     show : :obj:`bool`, optional
         Display iterations log
     itershow : :obj:`tuple`, optional
@@ -166,8 +176,9 @@ def omp(
         and every N3 steps in between where N1, N2, N3 are the
         three element of the list.
     callback : :obj:`callable`, optional
-        Function with signature (``callback(x)``) to call after each iteration
-        where ``x`` is the current model vector
+        Function with signature (``callback(x, cols)``) to call after each iteration
+        where ``x`` contains the non-zero model coefficient and ``cols`` are the
+        indices where the current model vector is non-zero
 
     Returns
     -------
@@ -199,6 +210,8 @@ def omp(
         niter_inner=niter_inner,
         sigma=sigma,
         normalizecols=normalizecols,
+        Opbasis=Opbasis,
+        optimal_coeff=optimal_coeff,
         show=show,
         itershow=itershow,
     )
