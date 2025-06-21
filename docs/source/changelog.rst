@@ -3,6 +3,37 @@
 Changelog
 =========
 
+Version 2.5.0
+-------------
+
+*Released on: 21/06/2025*
+
+* Added `cuda` engine to :py:class:`pylops.waveeqprocessing.Kirchhoff` 
+  operator
+* Added `Opbasis` and `optimal_coeff` to 
+  :py:class:`pylops.optimization.cls_sparsity.OMP`
+* Added `solver` to the input parameters of the `_oneshot`
+  internal methods of :py:class:`pylops.waveeqprocessing.AcousticWave2D`
+  to avoid recreating it for every shot
+* Added `kwargs_fft` to `pylops.signalprocessing.FFT`,
+  :py:class:`pylops.signalprocessing.FFT2D`, and 
+  :py:class:`pylops.signalprocessing.FFTND`
+* Fix bug in :py:func:`pylops.waveeqprocessing.MDD` when using
+  CuPy arrays for `G` and `d` with `twosided=True` and `add_negative=True`
+* Fix bug in :py:class:`pylops.signalprocessing.FourierRadon3D` 
+  in the default choice of `num_threads_per_blocks`
+* Fix bug in :py:class:`pylops.signalprocessing.Convolve1D` 
+  in the definition of `pad` and `padd` when applying the 
+  operator to a CuPy array
+* Fix bug in :py:class:`pylops.optimization.cls_sparsity.OMP` avoiding 
+  passing `explicit` in the creation of `_ColumnLinearOperator`
+* Fix bug in :py:class:`pylops.optimization.cls_sparsity.OMP` callback 
+  method as `cols` was not passed not allowing ``x`` to be 
+  properly reconstructed
+* Fix bug in :py:func:`pylops.waveeqprocessing.SeismicInterpolation` 
+  in calculation of `sampling` when not passed
+
+
 Version 2.4.0
 -------------
 
@@ -189,7 +220,7 @@ Version 1.18.0
 * Extended :py:func:`pylops.Laplacian` to N-dimensional arrays
 * Added `forward` kind to :py:class:`pylops.SecondDerivative` and
   :py:func:`pylops.Laplacian`
-* Added `chirp-sliding` kind to :py:class:`pylops.waveeqprocessing.seismicinterpolation.SeismicInterpolation`
+* Added `chirp-sliding` kind to :py:func:`pylops.waveeqprocessing.SeismicInterpolation`
 * Fixed bug due to the new internal structure of `LinearOperator` submodule introduced in `scipy1.8.0`
 
 
@@ -389,7 +420,7 @@ Version 1.9.1
   :py:class:`pylops.signalprocessing.FFT2D` to ensure that the type of the input
   vector is retained when applying forward and adjoint.
 * Added ``dtype`` parameter to the ``FFT`` calls in the definition of the
-  :py:class:`pylops.waveeqprocessing.MDD` operation. This ensure that the type
+  :py:func:`pylops.waveeqprocessing.MDD` operation. This ensure that the type
   of the real part of ``G`` input is enforced to the output vectors of the
   forward and adjoint operations.
 
