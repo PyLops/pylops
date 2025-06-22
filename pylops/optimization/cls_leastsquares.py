@@ -13,7 +13,7 @@ from scipy.sparse.linalg import cg as sp_cg
 from scipy.sparse.linalg import lsqr
 
 from pylops.basicoperators import Diagonal, VStack
-from pylops.optimization.basesolver import Solver
+from pylops.optimization.basesolver import Solver, _units
 from pylops.optimization.basic import cg, cgls
 from pylops.utils.backend import get_array_module
 from pylops.utils.typing import NDArray
@@ -87,6 +87,53 @@ class NormalEquationsInversion(Solver):
     def _print_finalize(self) -> None:
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 55 + "\n")
+
+    def memory_usage(
+        self,
+        nopRegs: Optional[Tuple[int]] = None,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        nopRegs : :obj:`tuple`, optional
+            Number of data elements of ``Regs`` operators
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Convert nopRegs if None
+        if nopRegs is None:
+            nopRegs = 0
+
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: y_normal, data_regs (temporary as these are
+        # later projected and summed to y_normal)
+        memuse = (self.Op.shape[1] + np.prod(nopRegs)) * nbytes
+
+        # Run (additional variables to those in setup): Setup and Step
+        # of CG solver on normal equations
+        memuse += (self.Op.shape[1] + 3 * self.Op.shape[1]) * nbytes
+        memuse += (2 * self.Op.shape[1]) * nbytes
+
+        if show:
+            print(
+                f"NormalEquationsInversion predicted memory usage: {memuse / _units[unit]:.2f} {unit}"
+            )
+
+        return memuse
 
     def setup(
         self,
@@ -235,27 +282,23 @@ class NormalEquationsInversion(Solver):
             ``<0``: illegal input or breakdown
 
         """
-        if x is not None:
-            self.y_normal = self.y_normal - self.Op_normal.matvec(x)
         if engine == "scipy" and self.ncp == np:
             if "tol" in kwargs_solver:
                 kwargs_solver["atol"] = kwargs_solver["tol"]
                 kwargs_solver.pop("tol")
-            xinv, istop = sp_cg(self.Op_normal, self.y_normal, **kwargs_solver)
+            xinv, istop = sp_cg(self.Op_normal, self.y_normal, x0=x, **kwargs_solver)
         elif engine == "pylops" or self.ncp != np:
             if show:
                 kwargs_solver["show"] = True
             xinv = cg(
                 self.Op_normal,
                 self.y_normal,
-                x0=self.ncp.zeros(self.Op_normal.shape[1], dtype=self.Op_normal.dtype),
+                x0=x,
                 **kwargs_solver,
             )[0]
             istop = None
         else:
             raise NotImplementedError("Engine must be scipy or pylops")
-        if x is not None:
-            xinv = x + xinv
         return xinv, istop
 
     def solve(
@@ -448,6 +491,60 @@ class RegularizedInversion(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 65 + "\n")
 
+    def memory_usage(
+        self,
+        nopRegs: Optional[Tuple[int]] = None,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
+        Parameters
+        ----------
+        nopRegs : :obj:`tuple`, optional
+            Number of data elements of ``Regs`` operators
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Convert nopRegs if None
+        if nopRegs is None:
+            nopRegs = 0
+
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: datatot
+        ndatatot = self.Op.shape[0] + np.prod(nopRegs)
+        memuse = ndatatot * nbytes
+
+        # Run (additional variables to those in setup): Setup and Step
+        # of PyLops CGLS solver on augumented equations. Note that when
+        # engine="scipy", the SciPy LSQR solver is used instead (which
+        # may consume more memory).
+        memuse += (2 * self.Op.shape[1] + 3 * ndatatot) * nbytes
+        memuse += (3 * self.Op.shape[1]) * nbytes
+
+        if show:
+            print(
+                f"RegularizedInversion predicted memory usage: {memuse / _units[unit]:.2f} {unit}"
+            )
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -520,7 +617,7 @@ class RegularizedInversion(Solver):
         # augumented operator
         if self.epsRs is not None and self.dataregs is not None:
             for epsR, datareg in zip(self.epsRs, self.dataregs):
-                self.datatot = np.hstack((self.datatot, epsR * datareg))
+                self.datatot = self.ncp.hstack((self.datatot, epsR * datareg))
 
         # print setup
         if show:
@@ -580,13 +677,11 @@ class RegularizedInversion(Solver):
             Equal to ``r1norm`` if :math:`\epsilon=0`
 
         """
-        if x is not None:
-            self.datatot = self.datatot - self.RegOp.matvec(x)
         if engine == "scipy" and self.ncp == np:
             if show:
                 kwargs_solver["show"] = 1
             xinv, istop, itn, r1norm, r2norm = lsqr(
-                self.RegOp, self.datatot, **kwargs_solver
+                self.RegOp, self.datatot, x0=x, **kwargs_solver
             )[0:5]
         elif engine == "pylops" or self.ncp != np:
             if show:
@@ -594,13 +689,11 @@ class RegularizedInversion(Solver):
             xinv, istop, itn, r1norm, r2norm = cgls(
                 self.RegOp,
                 self.datatot,
-                x0=self.ncp.zeros(self.RegOp.shape[1], dtype=self.RegOp.dtype),
+                x0=x,
                 **kwargs_solver,
             )[0:5]
         else:
             raise NotImplementedError("Engine must be scipy or pylops")
-        if x is not None:
-            xinv = x + xinv
         return xinv, istop, itn, r1norm, r2norm
 
     def solve(
@@ -717,6 +810,52 @@ class PreconditionedInversion(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 65 + "\n")
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: y
+        memuse = self.Op.shape[0] * nbytes
+
+        # Run (additional variables to those in setup): Setup and Step
+        # of PyLops CGLS solver on augumented equations. Note that when
+        # engine="scipy", the SciPy LSQR solver is used instead (which
+        # may consume more memory).
+        memuse += (2 * self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
+        memuse += (3 * self.Op.shape[1]) * nbytes
+
+        if show:
+            print(
+                f"PreconditionedInversion predicted memory usage: {memuse / _units[unit]:.2f} {unit}"
+            )
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -800,14 +939,13 @@ class PreconditionedInversion(Solver):
             Equal to ``r1norm`` if :math:`\epsilon=0`
 
         """
-        if x is not None:
-            self.y = self.y - self.Op.matvec(x)
         if engine == "scipy" and self.ncp == np:
             if show:
                 kwargs_solver["show"] = 1
             pinv, istop, itn, r1norm, r2norm = lsqr(
                 self.POp,
                 self.y,
+                x0=x,
                 **kwargs_solver,
             )[0:5]
         elif engine == "pylops" or self.ncp != np:
@@ -816,7 +954,7 @@ class PreconditionedInversion(Solver):
             pinv, istop, itn, r1norm, r2norm = cgls(
                 self.POp,
                 self.y,
-                x0=self.ncp.zeros(self.POp.shape[1], dtype=self.POp.dtype),
+                x0=x,
                 **kwargs_solver,
             )[0:5]
             # force it 1d as we decorate this method with disable_ndarray_multiplication
@@ -824,8 +962,6 @@ class PreconditionedInversion(Solver):
         else:
             raise NotImplementedError("Engine must be scipy or pylops")
         xinv = self.P.matvec(pinv)
-        if x is not None:
-            xinv = x + xinv
         return xinv, istop, itn, r1norm, r2norm
 
     def solve(

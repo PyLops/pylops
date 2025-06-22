@@ -239,9 +239,9 @@ def preconditioned_inversion(
     x0 : :obj:`numpy.ndarray`
         Initial guess of size :math:`[M \times 1]`
     engine : :obj:`str`, optional
-            Solver to use (``scipy`` or ``pylops``)
+        Solver to use (``scipy`` or ``pylops``)
     show : :obj:`bool`, optional
-         Display normal equations solver log
+        Display normal equations solver log
     **kwargs_solver
         Arbitrary keyword arguments for chosen solver
         (:py:func:`scipy.sparse.linalg.lsqr` and
