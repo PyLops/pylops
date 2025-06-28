@@ -15,6 +15,7 @@ scikit-fmm
 sympy
 devito==4.8.6
 dtcwt
+ucurv
 matplotlib
 ipython
 pytest
