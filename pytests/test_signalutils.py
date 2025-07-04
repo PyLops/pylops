@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
@@ -37,6 +39,9 @@ par4j = {
 np.random.seed(10)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
 def test_convmtx(par):
     """Compare convmtx with np.convolve (small filter)"""
@@ -52,6 +57,9 @@ def test_convmtx(par):
     assert_array_almost_equal(y, y1, decimal=4)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
 def test_convmtx1(par):
     """Compare convmtx with np.convolve (large filter)"""
@@ -69,6 +77,9 @@ def test_convmtx1(par):
     assert_array_almost_equal(y, y1, decimal=4)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par1j)])
 def test_nonstationary_convmtx(par):
     """Compare nonstationary_convmtx with convmtx for stationary filter"""
@@ -92,6 +103,9 @@ def test_nonstationary_convmtx(par):
     assert_array_almost_equal(y, y1, decimal=4)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 def test_slope_estimation_dips():
     """Slope estimation using the Structure tensor algorithm should
     apply regularisation (some slopes are set to zero)

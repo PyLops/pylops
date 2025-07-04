@@ -5,7 +5,7 @@ channels:
   - numba
   - pytorch
 dependencies:
-  - python>=3.6.4
+  - python>=3.9.0
   - pip
   - numpy>=1.21.0
   - scipy>=1.11.0
@@ -15,6 +15,8 @@ dependencies:
   - pyfftw
   - pywavelets
   - sympy
+  - pymc>=5
+  - pytensor
   - matplotlib
   - ipython
   - pytest

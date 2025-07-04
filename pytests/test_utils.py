@@ -1,12 +1,18 @@
+import os
+
+import pytest
+
 from pylops import utils
 
-# Optional import
 try:
     import scooby
 except ImportError:
     scooby = False
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 def test_report(capsys):
     out, _ = capsys.readouterr()  # Empty capsys
 

@@ -75,6 +75,13 @@ that the both old and new tests pass successfully:
 
    >> make tests
 
+If you have access to a GPU, it is advised also that old and new tests run with the CuPy 
+backend pass successfully:
+
+.. code-block:: bash
+
+   >> make tests_gpu
+
 4. Run flake8 to check the quality of your code:
 
 .. code-block:: bash

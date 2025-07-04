@@ -1,5 +1,20 @@
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal, assert_array_equal
+    from cupyx.scipy.sparse import rand
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
+    from scipy.sparse import rand
+
+    backend = "numpy"
+import itertools
+
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.optimization.sparsity import fista
 from pylops.signalprocessing import ChirpRadon2D, ChirpRadon3D
@@ -72,10 +87,9 @@ def test_ChirpRadon2D(par):
     wav, _, wav_c = ricker(t[:41], f0=parmod["f0"])
 
     # Generate model
-    _, x = linear2d(hx, t, 1500.0, t0, theta, amp, wav)
-
-    Rop = ChirpRadon2D(t, hx, par["pxmax"], dtype="float64")
-    assert dottest(Rop, par["nhx"] * par["nt"], par["nhx"] * par["nt"])
+    x = np.asarray(linear2d(hx, t, 1500.0, t0, theta, amp, wav)[1])
+    Rop = ChirpRadon2D(np.asarray(t), np.asarray(hx), par["pxmax"], dtype="float64")
+    assert dottest(Rop, par["nhx"] * par["nt"], par["nhx"] * par["nt"], backend=backend)
 
     y = Rop * x.ravel()
     xinvana = Rop.inverse(y)
@@ -122,18 +136,22 @@ def test_ChirpRadon3D(par):
     wav, _, wav_c = ricker(t[:41], f0=parmod["f0"])
 
     # Generate model
-    _, x = linear3d(hy, hx, t, 1500.0, t0, theta, phi, amp, wav)
+    x = np.asarray(linear3d(hy, hx, t, 1500.0, t0, theta, phi, amp, wav)[1])
+
     Rop = ChirpRadon3D(
-        t,
-        hy,
-        hx,
+        np.asarray(t),
+        np.asarray(hy),
+        np.asarray(hx),
         (par["pymax"], par["pxmax"]),
         engine=par["engine"],
         dtype="float64",
         **dict(flags=("FFTW_ESTIMATE",), threads=2)
     )
     assert dottest(
-        Rop, par["nhy"] * par["nhx"] * par["nt"], par["nhy"] * par["nhx"] * par["nt"]
+        Rop,
+        par["nhy"] * par["nhx"] * par["nt"],
+        par["nhy"] * par["nhx"] * par["nt"],
+        backend=backend,
     )
 
     y = Rop * x.ravel()

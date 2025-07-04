@@ -1,9 +1,22 @@
-import numpy as np
-import pytest
-from numpy.testing import assert_array_almost_equal
-from scipy.signal.windows import triang
-from scipy.sparse.linalg import lsqr
+import os
 
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+    from cupyx.scipy.signal.windows import triang
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+    from scipy.signal.windows import triang
+
+    backend = "numpy"
+import itertools
+
+import pytest
+
+from pylops.optimization.basic import lsqr
 from pylops.signalprocessing import Convolve1D, Convolve2D, ConvolveND
 from pylops.utils import dottest
 
@@ -129,12 +142,19 @@ def test_Convolve1D(par):
     # 1D
     if par["axis"] == 0:
         Cop = Convolve1D(par["nx"], h=h1, offset=par["offset"], dtype="float64")
-        assert dottest(Cop, par["nx"], par["nx"])
+        assert dottest(Cop, par["nx"], par["nx"], backend=backend)
 
         x = np.zeros((par["nx"]))
         x[par["nx"] // 2] = 1.0
         xlsqr = lsqr(
-            Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0
+            Cop,
+            Cop * x,
+            x0=np.zeros_like(x),
+            damp=1e-20,
+            niter=200,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
         )[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
@@ -147,16 +167,24 @@ def test_Convolve1D(par):
             axis=par["axis"],
             dtype="float64",
         )
-        assert dottest(Cop, par["ny"] * par["nx"], par["ny"] * par["nx"])
+        assert dottest(
+            Cop, par["ny"] * par["nx"], par["ny"] * par["nx"], backend=backend
+        )
 
         x = np.zeros((par["ny"], par["nx"]))
         x[
             int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
             int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
         ] = 1.0
-        x = x.ravel()
         xlsqr = lsqr(
-            Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0
+            Cop,
+            Cop * x.ravel(),
+            x0=np.zeros_like(x),
+            damp=1e-20,
+            niter=200,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
         )[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
@@ -169,7 +197,10 @@ def test_Convolve1D(par):
         dtype="float64",
     )
     assert dottest(
-        Cop, par["nz"] * par["ny"] * par["nx"], par["nz"] * par["ny"] * par["nx"]
+        Cop,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        backend=backend,
     )
 
     x = np.zeros((par["nz"], par["ny"], par["nx"]))
@@ -178,10 +209,16 @@ def test_Convolve1D(par):
         int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
         int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
     ] = 1.0
-    x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[
-        0
-    ]
+    xlsqr = lsqr(
+        Cop,
+        Cop * x.ravel(),
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=200,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
@@ -196,10 +233,10 @@ def test_Convolve1D_long(par):
         x = np.zeros((par["nx"]))
         x[par["nx"] // 2] = 1.0
         Xop = Convolve1D(nfilt[0], h=x, offset=nfilt[0] // 2, dtype="float64")
-        assert dottest(Xop, par["nx"], nfilt[0])
+        assert dottest(Xop, par["nx"], nfilt[0], backend=backend)
 
         h1lsqr = lsqr(
-            Xop, Xop * h1, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0
+            Xop, Xop * h1, damp=1e-20, niter=200, atol=1e-8, btol=1e-8, show=0
         )[0]
         assert_array_almost_equal(h1, h1lsqr, decimal=1)
 
@@ -217,16 +254,24 @@ def test_Convolve2D(par):
             offset=par["offset"],
             dtype="float64",
         )
-        assert dottest(Cop, par["ny"] * par["nx"], par["ny"] * par["nx"])
+        assert dottest(
+            Cop, par["ny"] * par["nx"], par["ny"] * par["nx"], backend=backend
+        )
 
         x = np.zeros((par["ny"], par["nx"]))
         x[
             int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
             int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
         ] = 1.0
-        x = x.ravel()
         xlsqr = lsqr(
-            Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0
+            Cop,
+            Cop * x.ravel(),
+            x0=np.zeros_like(x),
+            damp=1e-20,
+            niter=200,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
         )[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
@@ -241,7 +286,10 @@ def test_Convolve2D(par):
         dtype="float64",
     )
     assert dottest(
-        Cop, par["nz"] * par["ny"] * par["nx"], par["nz"] * par["ny"] * par["nx"]
+        Cop,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        backend=backend,
     )
 
     x = np.zeros((par["nz"], par["ny"], par["nx"]))
@@ -250,10 +298,16 @@ def test_Convolve2D(par):
         int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
         int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
     ] = 1.0
-    x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0)[
-        0
-    ]
+    xlsqr = lsqr(
+        Cop,
+        Cop * x.ravel(),
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=200,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     # due to ringing in solution we cannot use assert_array_almost_equal
     assert np.linalg.norm(xlsqr - x) / np.linalg.norm(xlsqr) < 2e-1
 
@@ -269,7 +323,10 @@ def test_Convolve3D(par):
         dtype="float64",
     )
     assert dottest(
-        Cop, par["nz"] * par["ny"] * par["nx"], par["nz"] * par["ny"] * par["nx"]
+        Cop,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        backend=backend,
     )
 
     x = np.zeros((par["nz"], par["ny"], par["nx"]))
@@ -278,9 +335,10 @@ def test_Convolve3D(par):
         int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
         int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
     ] = 1.0
-    x = x.ravel()
     y = Cop * x
-    xlsqr = lsqr(Cop, y, damp=1e-20, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(
+        Cop, y, x0=np.zeros_like(x), damp=1e-20, niter=400, atol=1e-8, btol=1e-8, show=0
+    )[0]
     # due to ringing in solution we cannot use assert_array_almost_equal
     assert np.linalg.norm(xlsqr - x) / np.linalg.norm(xlsqr) < 2e-1
 
@@ -296,4 +354,5 @@ def test_Convolve3D(par):
         Cop,
         par["nz"] * par["ny"] * par["nx"] * par["nt"],
         par["nz"] * par["ny"] * par["nx"] * par["nt"],
+        backend=backend,
     )

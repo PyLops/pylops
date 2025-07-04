@@ -1,22 +1,15 @@
-name: pylops
+name: pylops_gpu
 channels:
-  - defaults
   - conda-forge
+  - defaults
   - numba
-  - pytorch
 dependencies:
-  - python>=3.9.0
+  - python>=3.11.0
   - pip
   - numpy>=1.21.0
   - scipy>=1.11.0
-  - pytorch>=1.2.0
-  - cpuonly
-  - jax
-  - pyfftw
-  - pywavelets
+  - cupy
   - sympy
-  - pymc>=5
-  - pytensor
   - matplotlib
   - ipython
   - pytest
@@ -29,10 +22,7 @@ dependencies:
   - isort
   - black
   - pip:
-    - devito
-    - dtcwt
-    - scikit-fmm
-    - spgl1
+    - torch
     - pytest-runner
     - setuptools_scm
     - pydata-sphinx-theme

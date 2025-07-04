@@ -32,6 +32,20 @@ be also wrapped into a :class:`pylops.JaxOperator`.
 See below for a comphrensive list of supported operators and additional functionalities for both the
 ``cupy`` and ``jax`` backends.
 
+Install dependencies
+--------------------
+GPU-enabled development environments can created using ``conda`` 
+
+.. code-block:: bash
+
+   >> make dev-install_conda_gpu
+
+or ``pip``
+
+.. code-block:: bash
+
+   >> make dev-install_gpu
+
 
 Examples
 --------
