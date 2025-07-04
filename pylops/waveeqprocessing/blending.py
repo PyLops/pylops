@@ -242,7 +242,7 @@ def BlendingGroup(
         Time sampling in seconds
     times : :obj:`np.ndarray`
         Absolute ignition times for each source. This should have dimensions
-        :math:`n_{groups} \times group_{size}`, where each row contains the
+        :math:`group_{size} \times n_{groups}`, where each column contains the
         firing times for every group.
     group_size : :obj:`int`
         The number of sources per group
@@ -269,7 +269,7 @@ def BlendingGroup(
     Group blending refers to an acquisition scenario where two or more sources are towed behind a single vessel
     and fired at short time differences. The same experiment is repeated :math:`n_{groups}` times to create
     :math:`n_{groups}` blended recordings. For the case of 2 sources and an overall number of
-    :math:`N=n_{groups}*group_{size}` shots, the modelling operator is
+    :math:`N=2*n_{groups}` shots, the modelling operator is
 
     .. math::
         \Phi = \begin{bmatrix}
@@ -334,8 +334,8 @@ def BlendingHalf(
         Time sampling in seconds
     times : :obj:`np.ndarray`
         Absolute ignition times for each source. This should have dimensions
-        :math`n_{groups} \times group_{size}`, where each row contains the firing
-        times for every group.
+        :math:`group_{size} \times n_{groups}`, where each column contains the
+        firing times for every group.
     group_size : :obj:`int`
         The number of sources per group
     n_groups : :obj:`int`
@@ -360,7 +360,7 @@ def BlendingHalf(
 
     Half blending refers to an acquisition scenario where two or more vessels, each with a source are fired at
     short time differences. The same experiment is repeated :math:`n_{groups}` times to create :math:`n_{groups}`
-    blended recordings. For the case of 2 sources and an overall number of :math:`N=n_{groups}*group_{size}` shots
+    blended recordings. For the case of 2 sources and an overall number of :math:`N=2*n_{groups}` shots
 
     .. math::
         \Phi = \begin{bmatrix}
