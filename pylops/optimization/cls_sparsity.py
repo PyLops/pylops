@@ -9,6 +9,7 @@ __all__ = [
 
 import logging
 import time
+from math import sqrt
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -56,7 +57,7 @@ def _hardthreshold(x: NDArray, thresh: float) -> NDArray:
 
     """
     x1 = x.copy()
-    x1[np.abs(x) <= np.sqrt(2 * thresh)] = 0
+    x1[np.abs(x) <= sqrt(2 * thresh)] = 0
     return x1
 
 
@@ -497,7 +498,7 @@ class IRLS(Solver):
                     )
                 self.ncp.divide(self.rw, self.rw.max(), out=self.rw)
 
-            R = Diagonal(np.sqrt(self.rw))
+            R = Diagonal(self.ncp.sqrt(self.rw))
             x = regularized_inversion(
                 self.Op,
                 self.y,
@@ -1584,7 +1585,7 @@ class ISTA(Solver):
 
         # prepare decay (if not passed)
         if perc is None and decay is None:
-            self.decay = self.ncp.ones(niter)
+            self.decay = self.ncp.ones(niter, dtype=self.Op)
 
         # step size
         if alpha is not None:
@@ -2063,7 +2064,7 @@ class FISTA(ISTA):
             self.normres = np.linalg.norm(self.res if self.preallocate else res)
             if self.normres > self.normresold:
                 raise ValueError(
-                    f"ISTA stopped at iteration {self.iiter} due to "
+                    f"FISTA stopped at iteration {self.iiter} due to "
                     "residual increasing, consider modifying "
                     "eps and/or alpha..."
                 )
@@ -2116,7 +2117,7 @@ class FISTA(ISTA):
 
         # update auxiliary coefficients
         told = self.t
-        self.t = (1.0 + np.sqrt(1.0 + 4.0 * self.t**2)) / 2.0
+        self.t = (1.0 + sqrt(1.0 + 4.0 * self.t**2)) / 2.0
 
         # model update
         if not self.preallocate:
@@ -2752,13 +2753,11 @@ class SplitBregman(Solver):
         self.epsRs: List[float] = []
         if epsRL2s is not None:
             self.epsRs += [
-                np.sqrt(epsRL2s[ireg] / 2) / np.sqrt(mu / 2)
-                for ireg in range(self.nregsL2)
+                sqrt(epsRL2s[ireg] / 2) / sqrt(mu / 2) for ireg in range(self.nregsL2)
             ]
         if epsRL1s is not None:
             self.epsRs += [
-                np.sqrt(epsRL1s[ireg] / 2) / np.sqrt(mu / 2)
-                for ireg in range(self.nregsL1)
+                sqrt(epsRL1s[ireg] / 2) / sqrt(mu / 2) for ireg in range(self.nregsL1)
             ]
 
         self.x0 = x0
