@@ -451,9 +451,9 @@ class IRLS(Solver):
             raise NotImplementedError("kind must be model, data or datamodel")
 
         if self.preallocate:
-            self.r = self.ncp.empty_like(y)
+            self.r = self.ncp.empty_like(self.y)
             if "data" in self.kind:
-                self.rw = self.ncp.empty_like(y)
+                self.rw = self.ncp.empty_like(self.y)
             else:
                 self.rw = self.ncp.empty(self.Op.shape[1], dtype=self.Op.dtype)
         # print setup
