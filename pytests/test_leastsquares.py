@@ -1,6 +1,16 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import Diagonal, HStack, Identity, MatrixMult, Smoothing1D
 from pylops.optimization.leastsquares import (
@@ -93,12 +103,26 @@ def test_NormalEquationsInversion(par):
 
     # normal equations with regularization
     xinv = normal_equations_inversion(
-        Gop, y, [Reg], epsI=1e-5, epsRs=[1e-8], x0=x0, **dict(maxiter=200, atol=1e-10)
+        Gop,
+        y,
+        [Reg],
+        epsI=1e-5,
+        epsRs=[1e-8],
+        x0=x0,
+        engine="pylops",
+        **dict(niter=200, tol=1e-10)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
     # normal equations with weight
     xinv = normal_equations_inversion(
-        Gop, y, None, Weight=Weigth, epsI=1e-5, x0=x0, **dict(maxiter=200, atol=1e-10)
+        Gop,
+        y,
+        None,
+        Weight=Weigth,
+        epsI=1e-5,
+        x0=x0,
+        engine="pylops",
+        **dict(niter=200, tol=1e-10)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
     # normal equations with weight and small regularization
@@ -110,7 +134,8 @@ def test_NormalEquationsInversion(par):
         epsI=1e-5,
         epsRs=[1e-8],
         x0=x0,
-        **dict(maxiter=200, atol=1e-10)
+        engine="pylops",
+        **dict(niter=200, tol=1e-10)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
     # normal equations with weight and small normal regularization
@@ -123,7 +148,8 @@ def test_NormalEquationsInversion(par):
         epsI=1e-5,
         epsNRs=[1e-8],
         x0=x0,
-        **dict(maxiter=200, atol=1e-10)
+        engine="pylops",
+        **dict(niter=200, tol=1e-10)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
 
@@ -151,12 +177,24 @@ def test_RegularizedInversion(par):
 
     # regularized inversion with regularization
     xinv = regularized_inversion(
-        Gop, y, [Reg], epsRs=[1e-8], x0=x0, **dict(damp=0, iter_lim=200, show=0)
+        Gop,
+        y,
+        [Reg],
+        epsRs=[1e-8],
+        x0=x0,
+        engine="pylops",
+        **dict(damp=0, niter=200, show=0)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
     # regularized inversion with weight
     xinv = regularized_inversion(
-        Gop, y, None, Weight=Weigth, x0=x0, **dict(damp=0, iter_lim=200, show=0)
+        Gop,
+        y,
+        None,
+        Weight=Weigth,
+        x0=x0,
+        engine="pylops",
+        **dict(damp=0, niter=200, show=0)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
     # regularized inversion with regularization
@@ -167,7 +205,8 @@ def test_RegularizedInversion(par):
         Weight=Weigth,
         epsRs=[1e-8],
         x0=x0,
-        **dict(damp=0, iter_lim=200, show=0)
+        engine="pylops",
+        **dict(damp=0, niter=200, show=0)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=3)
 
@@ -192,10 +231,10 @@ def test_WeightedInversion(par):
     y = Gop * x
 
     xne = normal_equations_inversion(
-        Gop, y, None, Weight=Weigth, **dict(maxiter=5, atol=1e-10)
+        Gop, y, None, Weight=Weigth, engine="pylops", **dict(niter=5, tol=1e-10)
     )[0]
     xreg = regularized_inversion(
-        Gop, y, None, Weight=Weigth1, **dict(damp=0, iter_lim=5, show=0)
+        Gop, y, None, Weight=Weigth1, engine="pylops", **dict(damp=0, niter=5, show=0)
     )[0]
     assert_array_almost_equal(xne, xreg, decimal=3)
 
@@ -222,7 +261,7 @@ def test_PreconditionedInversion(par):
     )
     y = Gop * x
     xinv = preconditioned_inversion(
-        Gop, y, Pre, x0=x0, **dict(damp=0, iter_lim=800, show=0)
+        Gop, y, Pre, x0=x0, engine="pylops", **dict(damp=0, niter=800, show=0)
     )[0]
     assert_array_almost_equal(x, xinv, decimal=2)
 
@@ -240,8 +279,8 @@ def test_skinnyregularization(par):
     x = np.arange(par["nx"] - 1)
     y = Dop * x
 
-    xinv = normal_equations_inversion(Dop, y, [Regop], epsRs=[1e-4])[0]
+    xinv = normal_equations_inversion(Dop, y, [Regop], epsRs=[1e-4], engine="pylops")[0]
     assert_array_almost_equal(x, xinv, decimal=2)
 
-    xinv = regularized_inversion(Dop, y, [Regop], epsRs=[1e-4])[0]
+    xinv = regularized_inversion(Dop, y, [Regop], epsRs=[1e-4], engine="pylops")[0]
     assert_array_almost_equal(x, xinv, decimal=2)

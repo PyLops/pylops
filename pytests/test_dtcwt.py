@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 
@@ -17,6 +19,9 @@ def sequential_array(shape):
     return result
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_dtcwt1D_input1D(par):
     """Test for DTCWT with 1D input"""
@@ -33,6 +38,9 @@ def test_dtcwt1D_input1D(par):
         np.testing.assert_allclose(t, y)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_dtcwt1D_input2D(par):
     """Test for DTCWT with 2D input (forward-inverse pair)"""
@@ -54,6 +62,9 @@ def test_dtcwt1D_input2D(par):
         np.testing.assert_allclose(t, y)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_dtcwt1D_input3D(par):
     """Test for DTCWT with 3D input (forward-inverse pair)"""
@@ -70,6 +81,9 @@ def test_dtcwt1D_input3D(par):
         np.testing.assert_allclose(t, y)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_dtcwt1D_birot(par):
     """Test for DTCWT birot (forward-inverse pair)"""

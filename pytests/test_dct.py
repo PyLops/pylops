@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 
@@ -9,6 +11,9 @@ par2 = {"ny": 11, "nx": 21, "imag": 0, "dtype": "float64"}
 par3 = {"ny": 21, "nx": 21, "imag": 0, "dtype": "float64"}
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par3)])
 def test_DCT1D(par):
     """Dot test for Discrete Cosine Transform Operator 1D"""
@@ -23,6 +28,9 @@ def test_DCT1D(par):
         np.testing.assert_allclose(t, y)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 def test_DCT2D(par):
     """Dot test for Discrete Cosine Transform Operator 2D"""
@@ -45,6 +53,9 @@ def test_DCT2D(par):
             np.testing.assert_allclose(t, y)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 def test_DCT3D(par):
     """Dot test for Discrete Cosine Transform Operator 3D"""
@@ -67,6 +78,9 @@ def test_DCT3D(par):
             np.testing.assert_allclose(t, y)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par3)])
 def test_DCT_workers(par):
     """Dot test for Discrete Cosine Transform Operator with workers"""

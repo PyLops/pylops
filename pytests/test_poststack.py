@@ -1,7 +1,18 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+    from cupyx.scipy.signal import filtfilt
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+    from scipy.signal import filtfilt
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
-from scipy.signal import filtfilt
 
 from pylops.avo.poststack import PoststackInversion, PoststackLinearModelling
 from pylops.utils import dottest
@@ -96,11 +107,11 @@ def test_PoststackLinearModelling1d(par):
     """
     # Dense
     PPop_dense = PoststackLinearModelling(wav, nt0=nt0, explicit=True)
-    assert dottest(PPop_dense, nt0, nt0, rtol=1e-4)
+    assert dottest(PPop_dense, nt0, nt0, rtol=1e-4, backend=backend)
 
     # Linear operator
     PPop = PoststackLinearModelling(wav, nt0=nt0, explicit=False)
-    assert dottest(PPop, nt0, nt0, rtol=1e-4)
+    assert dottest(PPop, nt0, nt0, rtol=1e-4, backend=backend)
 
     # Compare data
     d = PPop * m.ravel()
@@ -112,7 +123,12 @@ def test_PoststackLinearModelling1d(par):
         if par["epsR"] is None:
             dict_inv = {}
         else:
-            dict_inv = dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=80)
+            dict_inv = (
+                dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=80)
+                if backend == "numpy"
+                else dict(damp=0 if par["epsI"] is None else par["epsI"], niter=80)
+            )
+
         minv = PoststackInversion(
             d,
             wav,
@@ -133,11 +149,11 @@ def test_PoststackLinearModelling1d_nonstationary(par):
     """
     # Dense
     PPop_dense = PoststackLinearModelling(wavs, nt0=nt0, explicit=True)
-    assert dottest(PPop_dense, nt0, nt0, rtol=1e-4)
+    assert dottest(PPop_dense, nt0, nt0, rtol=1e-4, backend=backend)
 
     # Linear operator
     PPop = PoststackLinearModelling(wavs, nt0=nt0, explicit=False)
-    assert dottest(PPop, nt0, nt0, rtol=1e-4)
+    assert dottest(PPop, nt0, nt0, rtol=1e-4, backend=backend)
 
     # Compare data
     d = PPop * m.ravel()
@@ -149,7 +165,11 @@ def test_PoststackLinearModelling1d_nonstationary(par):
         if par["epsR"] is None:
             dict_inv = {}
         else:
-            dict_inv = dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=80)
+            dict_inv = (
+                dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=80)
+                if backend == "numpy"
+                else dict(damp=0 if par["epsI"] is None else par["epsI"], niter=80)
+            )
         minv = PoststackInversion(
             d,
             wavs,
@@ -171,11 +191,11 @@ def test_PoststackLinearModelling2d(par):
 
     # Dense
     PPop_dense = PoststackLinearModelling(wav, nt0=nz, spatdims=nx, explicit=True)
-    assert dottest(PPop_dense, nz * nx, nz * nx, rtol=1e-4)
+    assert dottest(PPop_dense, nz * nx, nz * nx, rtol=1e-4, backend=backend)
 
     # Linear operator
     PPop = PoststackLinearModelling(wav, nt0=nz, spatdims=nx, explicit=False)
-    assert dottest(PPop, nz * nx, nz * nx, rtol=1e-4)
+    assert dottest(PPop, nz * nx, nz * nx, rtol=1e-4, backend=backend)
 
     # Compare data
     d = (PPop * m2d.ravel()).reshape(nz, nx)
@@ -187,9 +207,17 @@ def test_PoststackLinearModelling2d(par):
         if explicit and not par["simultaneous"] and par["epsR"] is None:
             dict_inv = {}
         elif explicit and not par["simultaneous"] and par["epsR"] is not None:
-            dict_inv = dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=10)
+            dict_inv = (
+                dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=10)
+                if backend == "numpy"
+                else dict(damp=0 if par["epsI"] is None else par["epsI"], niter=10)
+            )
         else:
-            dict_inv = dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=10)
+            dict_inv = (
+                dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=10)
+                if backend == "numpy"
+                else dict(damp=0 if par["epsI"] is None else par["epsI"], niter=10)
+            )
         minv2d = PoststackInversion(
             d,
             wav,

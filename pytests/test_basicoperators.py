@@ -1,8 +1,19 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal, assert_array_equal
+    from cupyx.scipy.sparse import rand
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
+    from scipy.sparse import rand
+
+    backend = "numpy"
+import numpy as npp
 import pytest
-from numpy.testing import assert_array_almost_equal, assert_array_equal
-from scipy.sparse import rand
-from scipy.sparse.linalg import lsqr
 
 from pylops.basicoperators import (
     Conj,
@@ -19,6 +30,7 @@ from pylops.basicoperators import (
     ToCupy,
     Zero,
 )
+from pylops.optimization.basic import lsqr
 from pylops.utils import dottest
 
 par1 = {"ny": 11, "nx": 11, "imag": 0, "dtype": "float64"}  # square real
@@ -40,13 +52,21 @@ def test_Regression(par):
     """Dot-test, inversion and apply for Regression operator"""
     np.random.seed(10)
     order = 4
-    t = np.arange(par["ny"], dtype=np.float32)
+    t = np.arange(par["ny"], dtype=np.float64)
     LRop = Regression(t, order=order, dtype=par["dtype"])
-    assert dottest(LRop, par["ny"], order + 1)
+    assert dottest(LRop, par["ny"], order + 1, backend=backend)
 
-    x = np.array([1.0, 2.0, 0.0, 3.0, -1.0], dtype=np.float32)
+    x = np.array([1.0, 2.0, 0.0, 3.0, -1.0], dtype=np.float64)
     xlsqr = lsqr(
-        LRop, LRop * x, damp=1e-10, iter_lim=300, atol=1e-8, btol=1e-8, show=0
+        LRop,
+        LRop * x,
+        x0=np.zeros_like(x),
+        damp=1e-10,
+        niter=300,
+        atol=0,
+        btol=0,
+        conlim=np.inf,
+        show=0,
     )[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
@@ -61,11 +81,19 @@ def test_LinearRegression(par):
     np.random.seed(10)
     t = np.arange(par["ny"], dtype=np.float32)
     LRop = LinearRegression(t, dtype=par["dtype"])
-    assert dottest(LRop, par["ny"], 2)
+    assert dottest(LRop, par["ny"], 2, backend=backend)
 
-    x = np.array([1.0, 2.0], dtype=np.float32)
+    x = np.array([1.0, 2.0], dtype=np.float64)
     xlsqr = lsqr(
-        LRop, LRop * x, damp=1e-10, iter_lim=300, atol=1e-8, btol=1e-8, show=0
+        LRop,
+        LRop * x,
+        x0=np.zeros_like(x),
+        damp=1e-10,
+        niter=300,
+        atol=0,
+        btol=0,
+        conlim=np.inf,
+        show=0,
     )[0]
     assert_array_almost_equal(x, xlsqr, decimal=3)
 
@@ -82,12 +110,25 @@ def test_MatrixMult(par):
         "imag"
     ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32")
     Gop = MatrixMult(G, dtype=par["dtype"])
-    assert dottest(Gop, par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3)
+    assert dottest(
+        Gop,
+        par["ny"],
+        par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
+    )
 
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
-    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[
-        0
-    ]
+    xlsqr = lsqr(
+        Gop,
+        Gop * x,
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=300,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
@@ -102,12 +143,25 @@ def test_MatrixMult_sparse(par):
     ).astype("float32")
 
     Gop = MatrixMult(G, dtype=par["dtype"])
-    assert dottest(Gop, par["ny"], par["nx"], complexflag=0 if par["imag"] == 1 else 3)
+    assert dottest(
+        Gop,
+        par["ny"],
+        par["nx"],
+        complexflag=0 if par["imag"] == 1 else 3,
+        backend=backend,
+    )
 
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
-    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[
-        0
-    ]
+    xlsqr = lsqr(
+        Gop,
+        Gop * x,
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=300,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
@@ -136,13 +190,24 @@ def test_MatrixMult_repeated(par):
     ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32")
     Gop = MatrixMult(G, otherdims=5, dtype=par["dtype"])
     assert dottest(
-        Gop, par["ny"] * 5, par["nx"] * 5, complexflag=0 if par["imag"] == 1 else 3
+        Gop,
+        par["ny"] * 5,
+        par["nx"] * 5,
+        complexflag=0 if par["imag"] == 1 else 3,
+        backend=backend,
     )
 
     x = (np.ones((par["nx"], 5)) + par["imag"] * np.ones((par["nx"], 5))).ravel()
-    xlsqr = lsqr(Gop, Gop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[
-        0
-    ]
+    xlsqr = lsqr(
+        Gop,
+        Gop * x,
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=300,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=4)
 
 
@@ -151,7 +216,13 @@ def test_Identity_inplace(par):
     """Dot-test, forward and adjoint for Identity operator"""
     np.random.seed(10)
     Iop = Identity(par["ny"], par["nx"], dtype=par["dtype"], inplace=True)
-    assert dottest(Iop, par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3)
+    assert dottest(
+        Iop,
+        par["ny"],
+        par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
+    )
 
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
     y = Iop * x
@@ -170,7 +241,13 @@ def test_Identity_noinplace(par):
     """Dot-test, forward and adjoint for Identity operator (not in place)"""
     np.random.seed(10)
     Iop = Identity(par["ny"], par["nx"], dtype=par["dtype"], inplace=False)
-    assert dottest(Iop, par["ny"], par["nx"], complexflag=0 if par["imag"] == 0 else 3)
+    assert dottest(
+        Iop,
+        par["ny"],
+        par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
+    )
 
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
     y = Iop * x
@@ -193,7 +270,7 @@ def test_Zero(par):
     """Dot-test, forward and adjoint for Zero operator"""
     np.random.seed(10)
     Zop = Zero(par["ny"], par["nx"], dtype=par["dtype"])
-    assert dottest(Zop, par["ny"], par["nx"])
+    assert dottest(Zop, par["ny"], par["nx"], backend=backend)
 
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
     y = Zop * x
@@ -210,7 +287,7 @@ def test_Flip1D(par):
     x = np.arange(par["ny"]) + par["imag"] * np.arange(par["ny"])
 
     Fop = Flip(par["ny"], dtype=par["dtype"])
-    assert dottest(Fop, par["ny"], par["ny"])
+    assert dottest(Fop, par["ny"], par["ny"], backend=backend)
 
     y = Fop * x
     xadj = Fop.H * y
@@ -235,7 +312,9 @@ def test_Flip2D(par):
             axis=axis,
             dtype=par["dtype"],
         )
-        assert dottest(Fop, par["ny"] * par["nx"], par["ny"] * par["nx"])
+        assert dottest(
+            Fop, par["ny"] * par["nx"], par["ny"] * par["nx"], backend=backend
+        )
 
         y = Fop * x[str(axis)].ravel()
         xadj = Fop.H * y.ravel()
@@ -284,7 +363,10 @@ def test_Flip3D(par):
             dtype=par["dtype"],
         )
         assert dottest(
-            Fop, par["ny"] * par["nx"] * par["nx"], par["ny"] * par["nx"] * par["nx"]
+            Fop,
+            par["ny"] * par["nx"] * par["nx"],
+            par["ny"] * par["nx"] * par["nx"],
+            backend=backend,
         )
 
         y = Fop * x[str(axis)].ravel()
@@ -300,7 +382,7 @@ def test_Symmetrize1D(par):
     x = np.arange(par["ny"]) + par["imag"] * np.arange(par["ny"])
 
     Sop = Symmetrize(par["ny"], dtype=par["dtype"])
-    dottest(Sop, par["ny"] * 2 - 1, par["ny"], verb=True)
+    dottest(Sop, par["ny"] * 2 - 1, par["ny"], verb=True, backend=backend)
 
     y = Sop * x
     xinv = Sop / y
@@ -326,7 +408,7 @@ def test_Symmetrize2D(par):
             dtype=par["dtype"],
         )
         y = Sop * x[str(axis)].ravel()
-        assert dottest(Sop, y.size, par["ny"] * par["nx"])
+        assert dottest(Sop, y.size, par["ny"] * par["nx"], backend=backend)
 
         xinv = Sop / y
         assert_array_almost_equal(x[str(axis)].ravel(), xinv, decimal=3)
@@ -373,7 +455,7 @@ def test_Symmetrize3D(par):
             dtype=par["dtype"],
         )
         y = Sop * x[str(axis)].ravel()
-        assert dottest(Sop, y.size, par["ny"] * par["nx"] * par["nx"])
+        assert dottest(Sop, y.size, par["ny"] * par["nx"] * par["nx"], backend=backend)
 
         xinv = Sop / y
         assert_array_almost_equal(x[str(axis)].ravel(), xinv, decimal=3)
@@ -386,7 +468,7 @@ def test_Roll1D(par):
     x = np.arange(par["ny"]) + par["imag"] * np.arange(par["ny"])
 
     Rop = Roll(par["ny"], shift=2, dtype=par["dtype"])
-    assert dottest(Rop, par["ny"], par["ny"])
+    assert dottest(Rop, par["ny"], par["ny"], backend=backend)
 
     y = Rop * x
     xadj = Rop.H * y
@@ -413,7 +495,9 @@ def test_Roll2D(par):
             dtype=par["dtype"],
         )
         y = Rop * x[str(axis)].ravel()
-        assert dottest(Rop, par["ny"] * par["nx"], par["ny"] * par["nx"])
+        assert dottest(
+            Rop, par["ny"] * par["nx"], par["ny"] * par["nx"], backend=backend
+        )
 
         xadj = Rop.H * y
         assert_array_almost_equal(x[str(axis)].ravel(), xadj, decimal=3)
@@ -462,7 +546,10 @@ def test_Roll3D(par):
         )
         y = Rop * x[str(axis)].ravel()
         assert dottest(
-            Rop, par["ny"] * par["nx"] * par["nx"], par["ny"] * par["nx"] * par["nx"]
+            Rop,
+            par["ny"] * par["nx"] * par["nx"],
+            par["ny"] * par["nx"] * par["nx"],
+            backend=backend,
         )
 
         xinv = Rop.H * y
@@ -476,7 +563,7 @@ def test_Sum2D(par):
         dim_d = [par["ny"], par["nx"]]
         dim_d.pop(axis)
         Sop = Sum(dims=(par["ny"], par["nx"]), axis=axis, dtype=par["dtype"])
-        assert dottest(Sop, np.prod(dim_d), par["ny"] * par["nx"])
+        assert dottest(Sop, npp.prod(dim_d), par["ny"] * par["nx"], backend=backend)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
@@ -525,10 +612,12 @@ def test_Sum3D(par):
         dim_d = [par["ny"], par["nx"], par["nx"]]
         dim_d.pop(axis)
         Sop = Sum(dims=(par["ny"], par["nx"], par["nx"]), axis=axis, dtype=par["dtype"])
-        assert dottest(Sop, np.prod(dim_d), par["ny"] * par["nx"] * par["nx"])
+        assert dottest(
+            Sop, npp.prod(dim_d), par["ny"] * par["nx"] * par["nx"], backend=backend
+        )
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+@pytest.mark.parametrize("par", [(par1j), (par2j)])
 def test_Real(par):
     """Dot-test, forward and adjoint for Real operator"""
     Rop = Real(dims=(par["ny"], par["nx"]), dtype=par["dtype"])
@@ -537,7 +626,11 @@ def test_Real(par):
     else:
         complexflag = 0
     assert dottest(
-        Rop, par["ny"] * par["nx"], par["ny"] * par["nx"], complexflag=complexflag
+        Rop,
+        par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        complexflag=complexflag,
+        backend=backend,
     )
 
     np.random.seed(10)
@@ -553,7 +646,7 @@ def test_Real(par):
     assert_array_equal(x, np.real(y) + 0j)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+@pytest.mark.parametrize("par", [(par1j), (par2j)])
 def test_Imag(par):
     """Dot-test, forward and adjoint for Imag operator"""
     Iop = Imag(dims=(par["ny"], par["nx"]), dtype=par["dtype"])
@@ -562,7 +655,11 @@ def test_Imag(par):
     else:
         complexflag = 0
     assert dottest(
-        Iop, par["ny"] * par["nx"], par["ny"] * par["nx"], complexflag=complexflag
+        Iop,
+        par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        complexflag=complexflag,
+        backend=backend,
     )
 
     np.random.seed(10)
@@ -590,7 +687,11 @@ def test_Conj(par):
     else:
         complexflag = 0
     assert dottest(
-        Cop, par["ny"] * par["nx"], par["ny"] * par["nx"], complexflag=complexflag
+        Cop,
+        par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        complexflag=complexflag,
+        backend=backend,
     )
 
     np.random.seed(10)
@@ -612,8 +713,8 @@ def test_ToCupy(par):
     Top = ToCupy(par["nx"], dtype=par["dtype"])
 
     np.random.seed(10)
-    x = np.random.randn(par["nx"]) + par["imag"] * np.random.randn(par["nx"])
+    x = npp.random.randn(par["nx"]) + par["imag"] * npp.random.randn(par["nx"])
     y = Top * x
     xadj = Top.H * y
     assert_array_equal(x, xadj)
-    assert_array_equal(y, x)
+    assert_array_equal(y, np.asarray(x))

@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
@@ -56,12 +58,18 @@ par1d = {"mode": "analytic", "dynamic": True}
 par2d = {"mode": "eikonal", "dynamic": True}
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 def test_unknown_mode():
     """Check error is raised if unknown mode is passed"""
     with pytest.raises(NotImplementedError):
         _ = LSM(z, x, t, s2d, r2d, 0, np.ones(3), 1, mode="foo")
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par1d), (par2d)])
 def test_lsm2d(par):
     """Dot-test and inverse for LSM operator"""

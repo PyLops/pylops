@@ -1,8 +1,20 @@
-import numpy as np
-import pytest
-from numpy.testing import assert_array_almost_equal
-from scipy.sparse.linalg import lsqr
+import os
 
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
+import itertools
+
+import pytest
+
+from pylops.optimization.basic import lsqr
 from pylops.signalprocessing import Fredholm1
 from pylops.utils import dottest
 
@@ -95,7 +107,17 @@ def test_Fredholm1(par):
         par["nsl"] * par["nx"] * par["nz"],
         par["nsl"] * par["ny"] * par["nz"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
-    xlsqr = lsqr(Fop, Fop * x.ravel(), damp=1e-20, iter_lim=30, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(
+        Fop,
+        Fop * x.ravel(),
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=30,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     xlsqr = xlsqr.reshape(par["nsl"], par["ny"], par["nz"])
     assert_array_almost_equal(x, xlsqr, decimal=3)
