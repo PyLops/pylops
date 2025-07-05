@@ -90,7 +90,9 @@ def irls(
     preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
     **kwargs_solver
         Arbitrary keyword arguments for
         :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
@@ -196,7 +198,9 @@ def omp(
     preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
     Returns
     -------
     xinv : :obj:`numpy.ndarray`
@@ -312,7 +316,9 @@ def ista(
     preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
 
     Returns
     -------
@@ -444,7 +450,9 @@ def fista(
     preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
 
     Returns
     -------
@@ -702,7 +710,9 @@ def splitbregman(
     preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
     **kwargs_lsqr
         Arbitrary keyword arguments for
         :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first

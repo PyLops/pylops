@@ -412,7 +412,9 @@ class IRLS(Solver):
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
@@ -756,7 +758,9 @@ class IRLS(Solver):
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
         itershow : :obj:`tuple`, optional
@@ -974,7 +978,9 @@ class OMP(Solver):
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
@@ -1266,7 +1272,9 @@ class OMP(Solver):
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -1507,7 +1515,9 @@ class ISTA(Solver):
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
@@ -1893,8 +1903,9 @@ class ISTA(Solver):
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver. This does not work
-            with JAX arrays and will be ignored
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -2701,7 +2712,9 @@ class SplitBregman(Solver):
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
@@ -3026,7 +3039,9 @@ class SplitBregman(Solver):
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
