@@ -123,7 +123,7 @@ class CG(Solver):
         tol : :obj:`float`, optional
             Tolerance on residual norm
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver. Note that if ``y``
             is a JAX array, this option is ignored and variables are not
@@ -301,7 +301,7 @@ class CG(Solver):
         tol : :obj:`float`, optional
             Tolerance on residual norm
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
@@ -440,7 +440,7 @@ class CGLS(Solver):
         tol : :obj:`float`, optional
             Tolerance on residual norm
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
@@ -653,7 +653,7 @@ class CGLS(Solver):
         tol : :obj:`float`, optional
             Tolerance on residual norm
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
@@ -868,7 +868,7 @@ class LSQR(Solver):
             Estimate diagonals of :math:`(\mathbf{Op}^H\mathbf{Op} +
             \epsilon^2\mathbf{I})^{-1}`
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
@@ -1247,7 +1247,7 @@ class LSQR(Solver):
             Estimate diagonals of :math:`(\mathbf{Op}^H\mathbf{Op} +
             \epsilon^2\mathbf{I})^{-1}`.
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional

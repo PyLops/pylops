@@ -188,7 +188,7 @@ class Solver(metaclass=ABCMeta):
         y : :obj:`np.ndarray`
             Data of size :math:`[N \times 1]`
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver.
         show : :obj:`bool`, optional

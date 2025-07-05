@@ -88,7 +88,7 @@ def irls(
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
     preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
     **kwargs_solver
@@ -194,7 +194,7 @@ def omp(
         where ``x`` contains the non-zero model coefficient and ``cols`` are the
         indices where the current model vector is non-zero
     preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
     Returns
@@ -310,7 +310,7 @@ def ista(
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
     preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
 
@@ -442,7 +442,7 @@ def fista(
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
     preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
 
@@ -700,7 +700,7 @@ def splitbregman(
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
     preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
     **kwargs_lsqr

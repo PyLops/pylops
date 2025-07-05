@@ -410,7 +410,7 @@ class IRLS(Solver):
         kind : :obj:`str`, optional
             Kind of solver (``model``, ``data`` or ``datamodel``)
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
@@ -586,7 +586,7 @@ class IRLS(Solver):
         x : :obj:`np.ndarray`
             Current model vector to be updated by a step of ISTA
         engine : :obj:`str`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
@@ -640,7 +640,7 @@ class IRLS(Solver):
         nouter : :obj:`int`, optional
             Number of outer iterations.
         engine : :obj:`str`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
@@ -750,11 +750,11 @@ class IRLS(Solver):
         kind : :obj:`str`, optional
             Kind of solver (``data`` or ``model``)
         engine : :obj:`str`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Solver to use (``scipy`` or ``pylops``)
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
@@ -972,7 +972,7 @@ class OMP(Solver):
             directly the value from the inner product
             :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
@@ -1027,7 +1027,7 @@ class OMP(Solver):
         cols : :obj:`list`
             Current list of chosen elements of vector x to be updated by a step of OMP
         engine : :obj:`str`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
@@ -1150,7 +1150,7 @@ class OMP(Solver):
         cols : :obj:`list`
             Current list of chosen elements of vector x to be updated by a step of OMP
         engine : :obj:`str`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
@@ -1260,11 +1260,11 @@ class OMP(Solver):
             directly the value from the inner product
             :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
         engine : :obj:`str`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Solver to use (``scipy`` or ``pylops``)
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
@@ -1505,7 +1505,7 @@ class ISTA(Solver):
         monitorres : :obj:`bool`, optional
             Monitor that residual is decreasing
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
@@ -1891,7 +1891,7 @@ class ISTA(Solver):
         monitorres : :obj:`bool`, optional
             Monitor that residual is decreasing
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver. This does not work
             with JAX arrays and will be ignored
@@ -2699,7 +2699,7 @@ class SplitBregman(Solver):
             Note that when this is set to ``True``, the ``x0`` provided in the setup will
             be used in all iterations.
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional
@@ -3024,7 +3024,7 @@ class SplitBregman(Solver):
         engine : :obj:`str`, optional
             Solver to use (``scipy`` or ``pylops``)
         preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
         show : :obj:`bool`, optional

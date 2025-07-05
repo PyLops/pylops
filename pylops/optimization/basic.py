@@ -53,7 +53,7 @@ def cg(
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
     preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
 
@@ -238,7 +238,7 @@ def lsqr(
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
     preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.5.0
+            .. versionadded:: 2.6.0
 
             Pre-allocate all variables used by the solver
 
