@@ -237,7 +237,7 @@ def BlendingGroup(
     nr : :obj:`int`
         Number of receivers
     ns : :obj:`int`
-        Number of sources. Equal to group_size x n_groups
+        Number of sources. Equal to :math:`group_{size} \cdot n_{groups}`
     dt : :obj:`float`
         Time sampling in seconds
     times : :obj:`np.ndarray`
@@ -329,7 +329,7 @@ def BlendingHalf(
     nr : :obj:`int`
         Number of receivers
     ns : :obj:`int`
-        Number of sources. Equal to group_size x n_groups
+        Number of sources. Equal to :math:`group_{size} \cdot n_{groups}`
     dt : :obj:`float`
         Time sampling in seconds
     times : :obj:`np.ndarray`
