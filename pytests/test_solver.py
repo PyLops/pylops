@@ -96,8 +96,10 @@ def test_cg(par):
         x0 = None
 
     y = Aop * x
-    xinv = cg(Aop, y, x0=x0, niter=par["nx"], tol=1e-5, show=True)[0]
-    assert_array_almost_equal(x, xinv, decimal=4)
+
+    for preallocate in [False, True]:
+        xinv = cg(Aop, y, x0=x0, niter=par["nx"], tol=1e-5, preallocate=preallocate)[0]
+        assert_array_almost_equal(x, xinv, decimal=4)
 
 
 @pytest.mark.parametrize(
@@ -124,9 +126,11 @@ def test_cg_ndarray(par):
         x0 = None
 
     y = Aop * x
-    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=0, show=True)[0]
-    assert xinv.shape == x.shape
-    assert_array_almost_equal(x, xinv, decimal=4)
+
+    for preallocate in [False, True]:
+        xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=0, preallocate=preallocate)[0]
+        assert xinv.shape == x.shape
+        assert_array_almost_equal(x, xinv, decimal=4)
 
 
 @pytest.mark.parametrize(
@@ -153,9 +157,11 @@ def test_cg_forceflat(par):
         x0 = None
 
     y = Aop * x
-    xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=0, show=True)[0]
-    assert xinv.shape == x.ravel().shape
-    assert_array_almost_equal(x.ravel(), xinv, decimal=4)
+
+    for preallocate in [False, True]:
+        xinv = cg(Aop, y, x0=x0, niter=2 * x.size, tol=0, preallocate=preallocate)[0]
+        assert xinv.shape == x.ravel().shape
+        assert_array_almost_equal(x.ravel(), xinv, decimal=4)
 
 
 @pytest.mark.parametrize(
@@ -179,8 +185,12 @@ def test_cgls(par):
         x0 = None
 
     y = Aop * x
-    xinv = cgls(Aop, y, x0=x0, niter=par["nx"], tol=1e-5, show=True)[0]
-    assert_array_almost_equal(x, xinv, decimal=4)
+
+    for preallocate in [False, True]:
+        xinv = cgls(Aop, y, x0=x0, niter=par["nx"], tol=1e-5, preallocate=preallocate)[
+            0
+        ]
+        assert_array_almost_equal(x, xinv, decimal=4)
 
 
 @pytest.mark.skipif(
@@ -210,10 +220,13 @@ def test_lsqr(par):
         y_sp = y - Aop * x0
     else:
         y_sp = y.copy()
-    xinv = lsqr(Aop, y, x0, niter=par["nx"])[0]
+
     xinv_sp = sp_lsqr(Aop, y_sp, iter_lim=par["nx"])[0]
     if par["x0"]:
         xinv_sp += x0
 
-    assert_array_almost_equal(xinv, x, decimal=4)
-    assert_array_almost_equal(xinv_sp, x, decimal=4)
+    for preallocate in [False, True]:
+        xinv = lsqr(Aop, y, x0, niter=par["nx"], preallocate=preallocate)[0]
+
+        assert_array_almost_equal(xinv, x, decimal=4)
+        assert_array_almost_equal(xinv_sp, x, decimal=4)
