@@ -111,18 +111,20 @@ def test_IRLS_data(par):
     y[par["ny"] - 2] *= 5
 
     # irls inversion
-    xinv = irls(
-        Gop,
-        y,
-        x0=x0,
-        nouter=10,
-        threshR=False,
-        epsR=1e-2,
-        epsI=0,
-        tolIRLS=1e-3,
-        kind="data",
-    )[0]
-    assert_array_almost_equal(x, xinv, decimal=2)
+    for preallocate in [False, True]:
+        xinv = irls(
+            Gop,
+            y,
+            x0=x0,
+            nouter=10,
+            threshR=False,
+            epsR=1e-2,
+            epsI=0,
+            tolIRLS=1e-3,
+            kind="data",
+            preallocate=preallocate,
+        )[0]
+        assert_array_almost_equal(x, xinv, decimal=2)
 
 
 @pytest.mark.parametrize("par", [(par3), (par4), (par3j), (par4j)])
@@ -150,17 +152,19 @@ def test_IRLS_datamodel(par):
     y[par["ny"] - 2] *= 5
 
     # irls inversion
-    xinv = irls(
-        Gop,
-        y,
-        x0=x0,
-        nouter=10,
-        threshR=False,
-        epsR=1e-2,
-        epsI=0,
-        tolIRLS=1e-3,
-        kind="datamodel",
-    )[0]
+    for preallocate in [False, True]:
+        xinv = irls(
+            Gop,
+            y,
+            x0=x0,
+            nouter=10,
+            threshR=False,
+            epsR=1e-2,
+            epsI=0,
+            tolIRLS=1e-3,
+            kind="datamodel",
+            preallocate=preallocate,
+        )[0]
     assert_array_almost_equal(x, xinv, decimal=2)
 
 
@@ -177,8 +181,12 @@ def test_IRLS_model(par):
     y = Aop * x
 
     maxit = 100
-    xinv = irls(Aop, y, nouter=maxit, tolIRLS=1e-3, kind="model")[0]
-    assert_array_almost_equal(x, xinv, decimal=1)
+
+    for preallocate in [False, True]:
+        xinv = irls(
+            Aop, y, nouter=maxit, tolIRLS=1e-3, kind="model", preallocate=preallocate
+        )[0]
+        assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.skipif(
@@ -199,10 +207,17 @@ def test_MP(par):
     sigma = 1e-4
     maxit = 100
 
-    xinv, _, _ = omp(
-        Aop, y, maxit, niter_inner=0, optimal_coeff=True, sigma=sigma, show=False
-    )
-    assert_array_almost_equal(x, xinv, decimal=1)
+    for preallocate in [False, True]:
+        xinv, _, _ = omp(
+            Aop,
+            y,
+            maxit,
+            niter_inner=0,
+            optimal_coeff=True,
+            sigma=sigma,
+            preallocate=preallocate,
+        )
+        assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
@@ -220,8 +235,9 @@ def test_OMP(par):
     sigma = 1e-4
     maxit = 100
 
-    xinv, _, _ = omp(Aop, y, maxit, sigma=sigma, show=False)
-    assert_array_almost_equal(x, xinv, decimal=1)
+    for preallocate in [False, True]:
+        xinv, _, _ = omp(Aop, y, maxit, sigma=sigma, preallocate=preallocate)
+        assert_array_almost_equal(x, xinv, decimal=1)
 
 
 def test_ISTA_FISTA_unknown_threshkind():
@@ -271,42 +287,16 @@ def test_ISTA_FISTA(par):
     # Regularization based ISTA and FISTA
     threshkinds = ["hard", "soft", "half"] if backend == "numpy" else ["soft", "half"]
     for threshkind in threshkinds:
-        # ISTA
-        xinv, _, _ = ista(
-            Aop,
-            y,
-            niter=maxit,
-            eps=eps,
-            threshkind=threshkind,
-            tol=0,
-            show=False,
-        )
-        assert_array_almost_equal(x, xinv, decimal=1)
-
-        # FISTA
-        xinv, _, _ = fista(
-            Aop,
-            y,
-            niter=maxit,
-            eps=eps,
-            threshkind=threshkind,
-            tol=0,
-            show=False,
-        )
-        assert_array_almost_equal(x, xinv, decimal=1)
-
-    # Percentile based ISTA and FISTA
-    if backend == "numpy":
-        for threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]:
+        for preallocate in [False, True]:
             # ISTA
             xinv, _, _ = ista(
                 Aop,
                 y,
                 niter=maxit,
-                perc=perc,
+                eps=eps,
                 threshkind=threshkind,
                 tol=0,
-                show=False,
+                preallocate=preallocate,
             )
             assert_array_almost_equal(x, xinv, decimal=1)
 
@@ -315,12 +305,40 @@ def test_ISTA_FISTA(par):
                 Aop,
                 y,
                 niter=maxit,
-                perc=perc,
+                eps=eps,
                 threshkind=threshkind,
                 tol=0,
-                show=False,
+                preallocate=preallocate,
             )
             assert_array_almost_equal(x, xinv, decimal=1)
+
+    # Percentile based ISTA and FISTA
+    if backend == "numpy":
+        for threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]:
+            for preallocate in [False, True]:
+                # ISTA
+                xinv, _, _ = ista(
+                    Aop,
+                    y,
+                    niter=maxit,
+                    perc=perc,
+                    threshkind=threshkind,
+                    tol=0,
+                    preallocate=preallocate,
+                )
+                assert_array_almost_equal(x, xinv, decimal=1)
+
+                # FISTA
+                xinv, _, _ = fista(
+                    Aop,
+                    y,
+                    niter=maxit,
+                    perc=perc,
+                    threshkind=threshkind,
+                    tol=0,
+                    preallocate=preallocate,
+                )
+                assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
@@ -343,42 +361,16 @@ def test_ISTA_FISTA_multiplerhs(par):
     # Regularization based ISTA and FISTA
     threshkinds = ["hard", "soft", "half"] if backend == "numpy" else ["soft", "half"]
     for threshkind in threshkinds:
-        # ISTA
-        xinv, _, _ = ista(
-            Aop,
-            y,
-            niter=maxit,
-            eps=eps,
-            threshkind=threshkind,
-            tol=0,
-            show=False,
-        )
-        assert_array_almost_equal(x, xinv, decimal=1)
-
-        # FISTA
-        xinv, _, _ = fista(
-            Aop,
-            y,
-            niter=maxit,
-            eps=eps,
-            threshkind=threshkind,
-            tol=0,
-            show=False,
-        )
-        assert_array_almost_equal(x, xinv, decimal=1)
-
-    # Percentile based ISTA and FISTA
-    if backend == "numpy":
-        for threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]:
+        for preallocate in [False, True]:
             # ISTA
             xinv, _, _ = ista(
                 Aop,
                 y,
                 niter=maxit,
-                perc=perc,
+                eps=eps,
                 threshkind=threshkind,
                 tol=0,
-                show=False,
+                preallocate=preallocate,
             )
             assert_array_almost_equal(x, xinv, decimal=1)
 
@@ -387,12 +379,40 @@ def test_ISTA_FISTA_multiplerhs(par):
                 Aop,
                 y,
                 niter=maxit,
-                perc=perc,
+                eps=eps,
                 threshkind=threshkind,
                 tol=0,
-                show=False,
+                preallocate=preallocate,
             )
             assert_array_almost_equal(x, xinv, decimal=1)
+
+    # Percentile based ISTA and FISTA
+    if backend == "numpy":
+        for threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]:
+            for preallocate in [False, True]:
+                # ISTA
+                xinv, _, _ = ista(
+                    Aop,
+                    y,
+                    niter=maxit,
+                    perc=perc,
+                    threshkind=threshkind,
+                    tol=0,
+                    preallocate=preallocate,
+                )
+                assert_array_almost_equal(x, xinv, decimal=1)
+
+                # FISTA
+                xinv, _, _ = fista(
+                    Aop,
+                    y,
+                    niter=maxit,
+                    perc=perc,
+                    threshkind=threshkind,
+                    tol=0,
+                    preallocate=preallocate,
+                )
+                assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.skipif(
@@ -446,19 +466,21 @@ def test_SplitBregman(par):
     kwars_solver = (
         dict(iter_lim=5, damp=1e-3) if backend == "numpy" else dict(niter=5, damp=1e-3)
     )
-    xinv, _, _ = splitbregman(
-        Iop,
-        y,
-        [Dop],
-        niter_outer=niter_end,
-        niter_inner=niter_in,
-        mu=mu,
-        epsRL1s=[lamda],
-        tol=1e-4,
-        tau=1,
-        x0=x0 if par["x0"] else None,
-        restart=False,
-        show=False,
-        **kwars_solver,
-    )
-    assert (np.linalg.norm(x - xinv) / np.linalg.norm(x)) < 1e-1
+
+    for preallocate in [False, True]:
+        xinv, _, _ = splitbregman(
+            Iop,
+            y,
+            [Dop],
+            niter_outer=niter_end,
+            niter_inner=niter_in,
+            mu=mu,
+            epsRL1s=[lamda],
+            tol=1e-4,
+            tau=1,
+            x0=x0 if par["x0"] else None,
+            restart=False,
+            preallocate=preallocate,
+            **kwars_solver,
+        )
+        assert (np.linalg.norm(x - xinv) / np.linalg.norm(x)) < 1e-1
