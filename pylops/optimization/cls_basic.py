@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 import numpy as np
 
-from pylops.optimization.basesolver import Solver
+from pylops.optimization.basesolver import Solver, _units
 from pylops.utils.backend import (
     get_array_module,
-    to_cupy_conditional,
+    get_module_name,
     to_numpy,
     to_numpy_conditional,
 )
@@ -64,12 +64,48 @@ class CG(Solver):
         msg = f"{self.iiter:6g}        " + strx + f"{self.cost[self.iiter]:11.4e}"
         print(msg)
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0 - y, self.r, self.c
+        memuse = (self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): c1 - Opc
+        memuse += (self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        if show:
+            print(f"CG predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
         x0: Optional[NDArray] = None,
         niter: Optional[int] = None,
         tol: float = 1e-4,
+        preallocate: bool = False,
         show: bool = False,
     ) -> NDArray:
         r"""Setup solver
@@ -86,6 +122,13 @@ class CG(Solver):
             manually step over the solver)
         tol : :obj:`float`, optional
             Tolerance on residual norm
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
+
         show : :obj:`bool`, optional
             Display setup log
 
@@ -98,7 +141,10 @@ class CG(Solver):
         self.y = y
         self.niter = niter
         self.tol = tol
+
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # initialize solver
         if x0 is None:
@@ -106,9 +152,17 @@ class CG(Solver):
             self.r = self.y.copy()
         else:
             x = x0.copy()
-            self.r = self.y - self.Op.matvec(x)
+            if not self.preallocate:
+                self.r = self.y - self.Op.matvec(x)
+            else:
+                self.r = self.ncp.empty_like(self.y)
+                self.ncp.subtract(self.y, self.Op.matvec(x), out=self.r)
         self.c = self.r.copy()
         self.kold = self.ncp.abs(self.r.dot(self.r.conj()))
+
+        # initialize other internal variabled
+        if self.preallocate:
+            self.c1 = self.ncp.empty_like(x)
 
         # create variables to track the residual norm and iterations
         self.cost: List = []
@@ -136,14 +190,24 @@ class CG(Solver):
             Updated model vector
 
         """
-        Opc = self.Op.matvec(to_cupy_conditional(x, self.c))
+        Opc = self.Op.matvec(self.c)
         cOpc = self.ncp.abs(self.c.dot(Opc.conj()))
         a = self.kold / cOpc
-        x += to_cupy_conditional(x, a) * to_cupy_conditional(x, self.c)
-        self.r -= a * Opc
+        if not self.preallocate:
+            x += a * self.c
+            self.r -= a * Opc
+        else:
+            self.ncp.multiply(self.c, a, out=self.c1)
+            self.ncp.add(x, self.c1, out=x)
+            self.ncp.multiply(Opc, a, out=Opc)
+            self.ncp.subtract(self.r, Opc, out=self.r)
         k = self.ncp.abs(self.r.dot(self.r.conj()))
         b = k / self.kold
-        self.c = self.r + b * self.c
+        if not self.preallocate:
+            self.c = self.r + b * self.c
+        else:
+            self.ncp.multiply(self.c, b, out=self.c)
+            self.ncp.add(self.c, self.r, out=self.c)
         self.kold = k
         self.iiter += 1
         self.cost.append(float(np.sqrt(self.kold)))
@@ -219,6 +283,7 @@ class CG(Solver):
         x0: Optional[NDArray] = None,
         niter: int = 10,
         tol: float = 1e-4,
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
@@ -235,6 +300,12 @@ class CG(Solver):
             Number of iterations
         tol : :obj:`float`, optional
             Tolerance on residual norm
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -252,7 +323,9 @@ class CG(Solver):
             History of the L2 norm of the residual
 
         """
-        x = self.setup(y=y, x0=x0, niter=niter, tol=tol, show=show)
+        x = self.setup(
+            y=y, x0=x0, niter=niter, tol=tol, preallocate=preallocate, show=show
+        )
         x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)
         return x, self.iiter, self.cost
@@ -307,6 +380,41 @@ class CGLS(Solver):
         )
         print(msg)
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0, self.c - y, self.s, self.q
+        memuse = (2 * self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): r, x1, c1
+        memuse += (3 * self.Op.shape[1]) * nbytes
+
+        if show:
+            print(f"CGLS predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -314,6 +422,7 @@ class CGLS(Solver):
         niter: Optional[int] = None,
         damp: float = 0.0,
         tol: float = 1e-4,
+        preallocate: bool = False,
         show: bool = False,
     ) -> NDArray:
         r"""Setup solver
@@ -323,7 +432,7 @@ class CGLS(Solver):
         y : :obj:`np.ndarray`
             Data of size :math:`[N \times 1]`
         x0 : :obj:`np.ndarray`, optional
-            Initial guess  of size :math:`[M \times 1]`. If ``None``, initialize
+            Initial guess of size :math:`[M \times 1]`. If ``None``, initialize
             internally as zero vector
         niter : :obj:`int`, optional
             Number of iterations (default to ``None`` in case a user wants to
@@ -332,6 +441,12 @@ class CGLS(Solver):
             Damping coefficient
         tol : :obj:`float`, optional
             Tolerance on residual norm
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
@@ -345,20 +460,36 @@ class CGLS(Solver):
         self.damp = damp**2
         self.tol = tol
         self.niter = niter
+
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # initialize solver
         if x0 is None:
             x = self.ncp.zeros(self.Op.shape[1], dtype=y.dtype)
             self.s = self.y.copy()
-            r = self.Op.rmatvec(self.s)
+            self.c = self.Op.rmatvec(self.s)
         else:
             x = x0.copy()
-            self.s = self.y - self.Op.matvec(x)
-            r = self.Op.rmatvec(self.s) - damp * x
-        self.c = r.copy()
+            if not self.preallocate:
+                self.s = self.y - self.Op.matvec(x)
+                self.c = self.Op.rmatvec(self.s) - damp * x
+            else:
+                self.s = self.ncp.empty_like(self.y)
+                self.ncp.subtract(self.y, self.Op.matvec(x), out=self.s)
+                x1 = self.ncp.empty_like(x)
+                self.c = self.ncp.empty_like(x)
+                self.ncp.multiply(x, damp, out=x1)
+                self.ncp.subtract(self.Op.rmatvec(self.s), x1, out=self.c)
         self.q = self.Op.matvec(self.c)
-        self.kold = self.ncp.abs(r.dot(r.conj()))
+        self.kold = self.ncp.abs(self.c.dot(self.c.conj()))
+
+        # initialize other internal variables
+        if self.preallocate:
+            self.c1 = self.ncp.empty_like(self.c)
+            self.x1 = self.ncp.empty_like(x)
+            self.r = self.ncp.empty_like(x)
 
         # create variables to track the residual norm and iterations
         self.cost = []
@@ -390,12 +521,32 @@ class CGLS(Solver):
         a = self.kold / (
             self.q.dot(self.q.conj()) + self.damp * self.c.dot(self.c.conj())
         )
-        x = x + a * self.c
-        self.s = self.s - to_numpy_conditional(self.q, a) * self.q
-        r = self.Op.rmatvec(self.s) - self.damp * x
-        k = self.ncp.abs(r.dot(r.conj()))
+        if not self.preallocate:
+            x = x + a * self.c
+            self.s = self.s - a * self.q
+            r = self.Op.rmatvec(self.s) - self.damp * x
+        else:
+            self.ncp.multiply(self.c, a, out=self.c1)
+            self.ncp.add(x, self.c1, out=x)
+
+            self.ncp.multiply(self.q, a, out=self.q)
+            self.ncp.subtract(self.s, self.q, out=self.s)
+
+            self.ncp.multiply(x, self.damp, out=self.x1)
+            self.ncp.subtract(
+                self.Op.rmatvec(self.s),
+                self.x1,
+                out=self.r,
+            )
+        k = self.ncp.abs(
+            self.r.dot(self.r.conj()) if self.preallocate else r.dot(r.conj())
+        )
         b = k / self.kold
-        self.c = r + b * self.c
+        if not self.preallocate:
+            self.c = r + b * self.c
+        else:
+            self.ncp.multiply(self.c, b, out=self.c)
+            self.ncp.add(self.c, self.r, out=self.c)
         self.q = self.Op.matvec(self.c)
         self.kold = k
         self.iiter += 1
@@ -485,6 +636,7 @@ class CGLS(Solver):
         niter: int = 10,
         damp: float = 0.0,
         tol: float = 1e-4,
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, int, float, float, NDArray]:
@@ -504,6 +656,12 @@ class CGLS(Solver):
             Damping coefficient
         tol : :obj:`float`, optional
             Tolerance on residual norm
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -536,7 +694,15 @@ class CGLS(Solver):
             History of r1norm through iterations
 
         """
-        x = self.setup(y=y, x0=x0, niter=niter, damp=damp, tol=tol, show=show)
+        x = self.setup(
+            y=y,
+            x0=x0,
+            niter=niter,
+            damp=damp,
+            tol=tol,
+            preallocate=preallocate,
+            show=show,
+        )
         x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)
         return x, self.istop, self.iiter, self.r1norm, self.r2norm, self.cost
@@ -631,6 +797,41 @@ class LSQR(Solver):
         print(str5)
         print("-" * 90 + "\n")
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0, self.v, self.w, self.dk - y, self.u
+        memuse = (4 * self.Op.shape[1] + 2 * self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): w1
+        memuse += self.Op.shape[1] * nbytes
+
+        if show:
+            print(f"LSQR predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -641,6 +842,7 @@ class LSQR(Solver):
         conlim: float = 100000000.0,
         niter: int = 10,
         calc_var: bool = True,
+        preallocate: bool = False,
         show: bool = False,
     ) -> NDArray:
         r"""Setup solver
@@ -670,7 +872,13 @@ class LSQR(Solver):
             Number of iterations
         calc_var : :obj:`bool`, optional
             Estimate diagonals of :math:`(\mathbf{Op}^H\mathbf{Op} +
-            \epsilon^2\mathbf{I})^{-1}`.
+            \epsilon^2\mathbf{I})^{-1}`
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
@@ -687,7 +895,10 @@ class LSQR(Solver):
         self.conlim = conlim
         self.niter = niter
         self.calc_var = calc_var
+
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         m, n = self.Op.shape
 
@@ -719,15 +930,25 @@ class LSQR(Solver):
             self.u = y.copy()
         else:
             x = x0.copy()
-            self.u = self.y - self.Op.matvec(x0)
+            if not self.preallocate:
+                self.u = self.y - self.Op.matvec(x0)
+            else:
+                self.u = self.ncp.empty_like(self.y)
+                self.ncp.subtract(self.y, self.Op.matvec(x0), out=self.u)
         self.alfa = 0.0
         self.beta = self.ncp.linalg.norm(self.u)
         if self.beta > 0.0:
-            self.u = self.u / self.beta
+            if not self.preallocate:
+                self.u = self.u / self.beta
+            else:
+                self.ncp.divide(self.u, self.beta, out=self.u)
             self.v = self.Op.rmatvec(self.u)
             self.alfa = self.ncp.linalg.norm(self.v)
             if self.alfa > 0:
-                self.v = self.v / self.alfa
+                if not self.preallocate:
+                    self.v = self.v / self.alfa
+                else:
+                    self.ncp.divide(self.v, self.alfa, out=self.v)
         else:
             self.v = x.copy()
             self.alfa = 0
@@ -735,6 +956,11 @@ class LSQR(Solver):
 
         # check if solution is already found
         self.arnorm: float = self.alfa * self.beta
+
+        # initialize other internal variables
+        if self.preallocate:
+            self.dk = self.ncp.empty_like(self.w)
+            self.w1 = self.ncp.empty_like(self.w)
 
         # finalize setup
         self.arnorm0: float = self.arnorm
@@ -778,19 +1004,31 @@ class LSQR(Solver):
         # next beta, u, alfa, v. These satisfy the relations
         # beta*u = Op*v - alfa*u,
         # alfa*v = Op'*u - beta*v'
-        self.u = (
-            self.Op.matvec(self.v) - to_numpy_conditional(self.u, self.alfa) * self.u
-        )
+        if not self.preallocate:
+            self.u = self.Op.matvec(self.v) - self.alfa * self.u
+        else:
+            self.ncp.multiply(self.u, self.alfa, out=self.u)
+            self.ncp.subtract(self.Op.matvec(self.v), self.u, out=self.u)
         self.beta = self.ncp.linalg.norm(self.u)
         if self.beta > 0:
-            self.u = self.u / self.beta
+            if not self.preallocate:
+                self.u = self.u / self.beta
+            else:
+                self.ncp.divide(self.u, self.beta, out=self.u)
             self.anorm = np.linalg.norm(
                 [self.anorm, to_numpy(self.alfa), to_numpy(self.beta), self.damp]
             )
-            self.v = self.Op.rmatvec(self.u) - self.beta * self.v
+            if not self.preallocate:
+                self.v = self.Op.rmatvec(self.u) - self.beta * self.v
+            else:
+                self.ncp.multiply(self.v, self.beta, out=self.v)
+                self.ncp.subtract(self.Op.rmatvec(self.u), self.v, out=self.v)
             self.alfa = self.ncp.linalg.norm(self.v)
             if self.alfa > 0:
-                self.v = self.v / self.alfa
+                if not self.preallocate:
+                    self.v = self.v / self.alfa
+                else:
+                    self.ncp.divide(self.v, self.alfa, out=self.v)
 
         # use a plane rotation to eliminate the damping parameter.
         # This alters the diagonal (rhobar) of the lower-bidiagonal matrix.
@@ -814,9 +1052,16 @@ class LSQR(Solver):
         # update x and w.
         self.t1 = self.phi / self.rho
         self.t2 = -self.theta / self.rho
-        self.dk = self.w / self.rho
-        x = x + self.t1 * self.w
-        self.w = self.v + self.t2 * self.w
+        if not self.preallocate:
+            self.dk = self.w / self.rho
+            x = x + self.t1 * self.w
+            self.w = self.v + self.t2 * self.w
+        else:
+            self.ncp.divide(self.w, self.rho, out=self.dk)
+            self.ncp.multiply(self.w, self.t1, out=self.w1)
+            self.ncp.add(x, self.w1, out=x)
+            self.ncp.multiply(self.w, self.t2, out=self.w)
+            self.ncp.add(self.v, self.w, out=self.w)
         self.ddnorm = self.ddnorm + self.ncp.linalg.norm(self.dk) ** 2
         if self.calc_var:
             self.var = self.var + to_numpy_conditional(
@@ -965,6 +1210,7 @@ class LSQR(Solver):
         conlim: float = 100000000.0,
         niter: int = 10,
         calc_var: bool = True,
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[
@@ -1008,6 +1254,12 @@ class LSQR(Solver):
         calc_var : :obj:`bool`, optional
             Estimate diagonals of :math:`(\mathbf{Op}^H\mathbf{Op} +
             \epsilon^2\mathbf{I})^{-1}`.
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -1079,6 +1331,7 @@ class LSQR(Solver):
             conlim=conlim,
             niter=niter,
             calc_var=calc_var,
+            preallocate=preallocate,
             show=show,
         )
         x = self.run(x, niter=niter, show=show, itershow=itershow)

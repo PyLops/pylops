@@ -224,7 +224,7 @@ xreg = pylops.optimization.leastsquares.regularized_inversion(
     y,
     [D2op],
     epsRs=[np.sqrt(0.1)],
-    **dict(damp=np.sqrt(1e-4), iter_lim=50, show=0)
+    **dict(damp=np.sqrt(1e-4), iter_lim=50, show=0),
 )[0]
 
 ###############################################################################
@@ -292,8 +292,8 @@ plt.tight_layout()
 #              \epsilon \|\mathbf{p}\|_1
 #
 # where :math:`\mathbf{F}` is the FFT operator. We will thus use the
-# :py:class:`pylops.optimization.sparsity.ista` and
-# :py:class:`pylops.optimization.sparsity.fista` solvers to estimate our input
+# :py:func:`pylops.optimization.sparsity.ista` and
+# :py:func:`pylops.optimization.sparsity.fista` solvers to estimate our input
 # signal.
 
 pista, niteri, costi = pylops.optimization.sparsity.ista(
@@ -347,7 +347,7 @@ plt.tight_layout()
 # converges much faster than ISTA as expected and should be preferred when
 # using sparse solvers.
 #
-# Finally we consider a slightly different cost function (note that in this
+# We now consider a slightly different cost function (note that in this
 # case we try to solve a constrained problem):
 #
 #   .. math::
@@ -356,7 +356,7 @@ plt.tight_layout()
 #              \mathbf{R} \mathbf{F} \mathbf{p}\|
 #
 # A very popular solver to solve such kind of cost function is called *spgl1*
-# and can be accessed via :py:class:`pylops.optimization.sparsity.spgl1`.
+# and can be accessed via :py:func:`pylops.optimization.sparsity.spgl1`.
 
 xspgl1, pspgl1, info = pylops.optimization.sparsity.spgl1(
     Rop, y, SOp=FFTop, tau=3, iter_lim=200
@@ -384,3 +384,35 @@ ax.set_xlabel("Iteration")
 ax.legend()
 ax.grid(True)
 plt.tight_layout()
+
+###############################################################################
+# Finally, we go back to the :py:func:`pylops.optimization.sparsity.ista`
+# solver and show a new feature that was introduced in PyLops v2.6.0.
+# When the solver is run  with ``preallocate=True``, all internal vectors
+# are pre-allocated in the ``setup`` method of the
+# :py:class:`pylops.optimization.cls_sparsity.ISTA` class. This is likely to
+# improve the performance of the solver (see :ref:`sphx_glr_tutorials_classsolvers.py`
+# for more details), especially when it is applied to large problems.
+
+# Original ISTA
+pista = pylops.optimization.sparsity.ista(
+    Rop * FFTop.H,
+    y,
+    niter=100,
+    alpha=1e-2,
+    eps=0.1,
+    tol=1e-7,
+)[0]
+
+# ISTA with preallocation
+pista_prealloc = pylops.optimization.sparsity.ista(
+    Rop * FFTop.H,
+    y,
+    niter=100,
+    alpha=1e-2,
+    eps=0.1,
+    tol=1e-7,
+    preallocate=True,
+)[0]
+
+print(f"Norm of difference: {np.linalg.norm(pista - pista_prealloc)}")
