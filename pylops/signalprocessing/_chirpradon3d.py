@@ -1,6 +1,6 @@
 import numpy as np
 
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_set
 from pylops.utils.typing import NDArray
 
 try:
@@ -88,8 +88,11 @@ def _chirp_radon_3d(
 
     # perform transform
     h = ncp.zeros((2 * ny, 2 * nx, nt)).astype(cdtype)
-    h[0:ny, 0:nx, :] = ncp.fft.fftn(data, axes=(2,)) * K1 * K2
-
+    h = inplace_set(
+        ncp.fft.fftn(data, axes=(2,)) * K1 * K2,
+        h,
+        (slice(0, ny), slice(0, nx), slice(None)),
+    )
     g = ncp.fft.ifftn(
         ncp.fft.fftn(h, axes=(1,)) * ncp.fft.fftn(K01, axes=(1,)), axes=(1,)
     )
