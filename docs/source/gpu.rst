@@ -473,11 +473,11 @@ Signal processing:
    * - :class:`pylops.signalprocessing.ChirpRadon2D`
      - |:white_check_mark:|
      - |:white_check_mark:|
-     - |:red_circle:|
+     - |:white_check_mark:|
    * - :class:`pylops.signalprocessing.ChirpRadon3D`
      - |:white_check_mark:|
      - |:white_check_mark:|
-     - |:red_circle:|
+     - |:white_check_mark:|
    * - :class:`pylops.signalprocessing.Sliding1D`
      - |:white_check_mark:|
      - |:white_check_mark:|
