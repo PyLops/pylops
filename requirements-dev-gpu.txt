@@ -11,6 +11,7 @@ pytest-runner
 setuptools_scm
 docutils<0.18
 Sphinx
+pooch
 pydata-sphinx-theme
 sphinx-gallery
 sphinxemoji
