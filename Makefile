@@ -30,16 +30,16 @@ dev-install_gpu:
 	$(PIP) install -e .
 
 install_conda:
-	conda env create -f environment.yml && conda activate pylops && pip install .
+	conda env create -f environment.yml && source ${CONDA_PREFIX}/etc/profile.d/conda.sh && conda activate pylops && pip install .
 
 dev-install_conda:
-	conda env create -f environment-dev.yml && conda activate pylops && pip install -e .
+	conda env create -f environment-dev.yml && source ${CONDA_PREFIX}/etc/profile.d/conda.sh && conda activate pylops && pip install -e .
 
 dev-install_conda_arm:
-	conda env create -f environment-dev-arm.yml && conda activate pylops && pip install -e .
+	conda env create -f environment-dev-arm.yml && source ${CONDA_PREFIX}/etc/profile.d/conda.sh && conda activate pylops && pip install -e .
 
 dev-install_conda_gpu:
-	conda env create -f environment-dev-gpu.yml && conda activate pylops_gpu && pip install -e .
+	conda env create -f environment-dev-gpu.yml && source ${CONDA_PREFIX}/etc/profile.d/conda.sh && conda activate pylops_gpu && pip install -e .
 
 tests:
 	# Run tests with CPU
