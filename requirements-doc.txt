@@ -1,6 +1,6 @@
 # Currently we force rdt to use numpy<2.0.0 to build the documentation
 # since the dtcwt is not yet compatible with numpy=2.0.0. For the
-# same reason, we force devito==4.8.7 as later versions of devito
+# same reason, we force devito==4.8.6 as later versions of devito
 # require numpy>=2.0.0
 numpy>=1.21.0,<2.0.0
 scipy>=1.11.0,<1.13

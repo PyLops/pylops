@@ -8,7 +8,7 @@ spgl1
 scikit-fmm
 sympy
 devito
-dtcwt
+# dtcwt (until numpy>=2.0.0 is supported)
 matplotlib
 ipython
 pytest

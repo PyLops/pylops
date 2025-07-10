@@ -30,7 +30,7 @@ dependencies:
   - black
   - pip:
     - devito
-    - dtcwt
+    # - dtcwt (until numpy>=2.0.0 is supported)
     - scikit-fmm
     - spgl1
     - pytest-runner

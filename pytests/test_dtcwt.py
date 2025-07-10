@@ -22,11 +22,10 @@ def sequential_array(shape):
 @pytest.mark.skipif(
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
+@pytest.mark.skipif(int(np_version[0]) >= 2, reason="dtcwt does not support numpy v2")
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_dtcwt1D_input1D(par):
     """Test for DTCWT with 1D input"""
-    if int(np_version[0]) >= 2:
-        return
 
     t = sequential_array((par["ny"],))
 
