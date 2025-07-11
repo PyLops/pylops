@@ -1,5 +1,5 @@
-numpy>=1.21.0
-scipy>=1.11.0
+numpy>=2.0.0
+scipy>=1.13.0
 jax
 numba
 pyfftw
