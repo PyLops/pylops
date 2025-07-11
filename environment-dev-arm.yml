@@ -3,15 +3,11 @@ channels:
   - defaults
   - conda-forge
   - numba
-  - pytorch
 dependencies:
-  - python>=3.9.0
+  - python>=3.11.0
   - pip
-  - numpy>=1.21.0
-  - scipy>=1.11.0
-  - pytorch>=1.2.0
-  - cpuonly
-  - jax
+  - numpy>=2.0.0
+  - scipy>=1.13.0
   - pyfftw
   - pywavelets
   - sympy
@@ -28,10 +24,12 @@ dependencies:
   - isort
   - black
   - pip:
+    - torch
     - devito
-    - dtcwt
+    # - dtcwt (until numpy>=2.0.0 is supported)
     - scikit-fmm
     - spgl1
+    - jax
     - pytest-runner
     - setuptools_scm
     - pydata-sphinx-theme
