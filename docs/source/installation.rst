@@ -453,10 +453,6 @@ or via ``pip`` with
    >> pip install pytensor pymc
 
 .. warning::
-   ``PyTensor`` does not support NumPy 2 yet, so make sure you use NumPy 1.x with PyTensor and PyMC.
-   to be able to use PyLops operators with ``PyMC``.
-   
-.. warning::
    OSX users may experience a ``CompileError`` error when using PyTensor. This can be solved by adding 
    ``pytensor.config.gcc__cxxflags = "-Wno-c++11-narrowing"`` after ``import pytensor``.
 
