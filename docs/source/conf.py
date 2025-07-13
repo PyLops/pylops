@@ -60,14 +60,16 @@ numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
 
 sphinx_gallery_conf = {
-    # path to your examples scripts
+    # Path to examples scripts
     "examples_dirs": [
         "../../examples",
         "../../tutorials",
     ],
-    # path where to save gallery generated examples
+    # Path where to save gallery generated examples
     "gallery_dirs": ["gallery", "tutorials"],
     "filename_pattern": r"\.py",
+    # Examples to skip when building the gallery
+    "ignore_pattern": r"plot_dtcwt\.py$",
     # Remove the "Download all examples" button from the top level gallery
     "download_all_examples": False,
     # Sort gallery example by file name instead of number of lines (default)

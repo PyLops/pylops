@@ -322,10 +322,6 @@ In alphabetic order:
 dtcwt
 -----
 
-.. warning::
-
-   ``dtcwt`` is not yet supported with Numpy 2.
-
 `dtcwt <https://dtcwt.readthedocs.io/en/0.12.0/>`_ is a library used to implement the DT-CWT operators.
 
 Install it via ``pip`` with:
@@ -334,7 +330,9 @@ Install it via ``pip`` with:
 
    >> pip install dtcwt
 
-
+.. warning::
+   ``dtcwt`` does not support NumPy 2 yet, so make sure you use NumPy 1.x 
+   to be able to use the ``DTCWT`` operator.
 
 Devito
 ------
@@ -439,6 +437,7 @@ It can also be checked dynamically with ``numba.config.NUMBA_DEFAULT_NUM_THREADS
 
 PyMC and PyTensor
 -----------------
+
 `PyTensor <https://pytensor.readthedocs.io/en/latest/>`_ is used to allow seamless integration between PyLops and 
 `PyMC <https://www.pymc.io/welcome.html>`_ operators.
 Install both of them via ``conda`` with:
@@ -453,10 +452,7 @@ or via ``pip`` with
 
    >> pip install pytensor pymc
 
-.. note::
-   PyTensor does not support NumPy 2 yet, so make sure you use NumPy 1.x with PyTensor and PyMC.
-
-.. note::
+.. warning::
    OSX users may experience a ``CompileError`` error when using PyTensor. This can be solved by adding 
    ``pytensor.config.gcc__cxxflags = "-Wno-c++11-narrowing"`` after ``import pytensor``.
 

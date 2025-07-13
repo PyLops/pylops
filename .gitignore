@@ -33,6 +33,7 @@ docs/build
 docs/source/api/generated
 docs/source/gallery
 docs/source/tutorials
+docs/source/sg_execution_times.rst
 
 # Pylint #
 pylint_plot.py

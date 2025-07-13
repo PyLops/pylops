@@ -1,5 +1,5 @@
-numpy>=1.21.0
-scipy>=1.11.0
+numpy>=2.0.0
+scipy>=1.13.0
 jax
 numba
 pyfftw
@@ -8,7 +8,7 @@ spgl1
 scikit-fmm
 sympy
 devito
-dtcwt
+# dtcwt (until numpy>=2.0.0 is supported)
 matplotlib
 ipython
 pytest
@@ -29,4 +29,4 @@ isort
 black
 flake8
 mypy
-pytensor
+pytensor>=2.28.0
