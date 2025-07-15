@@ -1,5 +1,4 @@
 import os
-import platform
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
@@ -11,7 +10,6 @@ else:
     from numpy.testing import assert_array_equal
 
     backend = "numpy"
-import numpy as npp
 import pytest
 import torch
 
@@ -30,10 +28,6 @@ def test_TorchOperator(par):
     must equal the adjoint of operator applied to the same vector, the two
     results are also checked to be the same.
     """
-    # temporarily, skip tests on mac as torch seems not to recognized
-    # numpy when v2 is installed
-    if platform.system() == "Darwin":
-        return
     device = "cpu" if backend == "numpy" else "cuda"
 
     Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])))
@@ -60,10 +54,6 @@ def test_TorchOperator(par):
 @pytest.mark.parametrize("par", [(par1)])
 def test_TorchOperator_batch(par):
     """Apply forward for input with multiple samples (= batch) and flattened arrays"""
-    # temporarily, skip tests on mac as torch seems not to recognized
-    # numpy when v2 is installed
-    if platform.system() == "Darwin":
-        return
     device = "cpu" if backend == "numpy" else "cuda"
 
     Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])))
@@ -82,10 +72,6 @@ def test_TorchOperator_batch(par):
 @pytest.mark.parametrize("par", [(par1)])
 def test_TorchOperator_batch_nd(par):
     """Apply forward for input with multiple samples (= batch) and nd-arrays"""
-    # temporarily, skip tests on mac as torch seems not to recognized
-    # numpy when v2 is installed
-    if platform.system() == "Darwin":
-        return
     device = "cpu" if backend == "numpy" else "cuda"
 
     Dop = MatrixMult(np.random.normal(0.0, 1.0, (par["ny"], par["nx"])), otherdims=(2,))
