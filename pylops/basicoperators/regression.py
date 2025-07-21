@@ -1,15 +1,11 @@
 __all__ = ["Regression"]
 
-import logging
-
 import numpy as np
 import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_array_module
 from pylops.utils.typing import DTypeLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class Regression(LinearOperator):
@@ -92,7 +88,6 @@ class Regression(LinearOperator):
     ) -> None:
         ncp = get_array_module(taxis)
         if not isinstance(taxis, ncp.ndarray):
-            logging.error("t must be ndarray...")
             raise TypeError("t must be ndarray...")
         else:
             self.taxis = taxis

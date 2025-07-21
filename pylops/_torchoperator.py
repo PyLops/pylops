@@ -1,4 +1,4 @@
-import logging
+import warnings
 
 from pylops.utils import deps
 
@@ -22,8 +22,8 @@ class _TorchOperator(torch.autograd.Function):
 
         # check if data is moved to cpu and warn user
         if ctx.device == "cpu" and ctx.devicetorch != "cpu":
-            logging.warning(
-                "pylops operator will be applied on the cpu "
+            warnings.warn(
+                "PyLops operator will be applied on the cpu "
                 "whilst the input torch vector is on "
                 "%s, this may lead to poor performance" % ctx.devicetorch
             )

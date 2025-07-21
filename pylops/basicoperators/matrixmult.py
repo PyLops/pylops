@@ -1,6 +1,7 @@
 __all__ = ["MatrixMult"]
 
 import logging
+import warnings
 from typing import Optional, Union
 
 import numpy as np
@@ -12,7 +13,7 @@ from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.backend import get_array_module
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class MatrixMult(LinearOperator):
@@ -92,8 +93,8 @@ class MatrixMult(LinearOperator):
 
         # Check if forceflat is needed and set it back to None otherwise
         if otherdims is not None and forceflat is not None:
-            logging.warning(
-                "setting forceflat=None since otherdims!=None. "
+            logger.warning(
+                "Setting forceflat=None since otherdims!=None. "
                 "PyLops will automatically detect whether to return "
                 "a 1d or nd array based on the shape of the input "
                 "array."
@@ -102,7 +103,7 @@ class MatrixMult(LinearOperator):
         # Check dtype for correctness (upcast to complex when A is complex)
         if np.iscomplexobj(A) and not np.iscomplexobj(np.ones(1, dtype=dtype)):
             dtype = A.dtype
-            logging.warning("Matrix A is a complex object, dtype cast to %s" % dtype)
+            warnings.warn("Matrix A is a complex object, dtype cast to %s" % dtype)
         super().__init__(
             dtype=np.dtype(dtype),
             dims=dims,

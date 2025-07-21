@@ -1,13 +1,9 @@
 __all__ = ["LinearRegression"]
 
-import logging
-
 import numpy.typing as npt
 
 from pylops.basicoperators import Regression
 from pylops.utils.typing import DTypeLike
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class LinearRegression(Regression):
@@ -76,5 +72,7 @@ class LinearRegression(Regression):
     ``order=1``.
     """
 
-    def __init__(self, taxis: npt.ArrayLike, dtype: DTypeLike = "float64", name: str = 'L'):
+    def __init__(
+        self, taxis: npt.ArrayLike, dtype: DTypeLike = "float64", name: str = "L"
+    ):
         super().__init__(taxis=taxis, order=1, dtype=dtype, name=name)

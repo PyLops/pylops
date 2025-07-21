@@ -23,6 +23,8 @@ from pylops.utils.backend import (
 )
 from pylops.utils.typing import NDArray
 
+logger = logging.getLogger(__name__)
+
 
 def _MDC(
     G: NDArray,
@@ -87,7 +89,7 @@ def _MDC(
     nfft = int(np.ceil((nt + 1) / 2))
     if nfmax > nfft:
         nfmax = nfft
-        logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]", nfmax)
+        logger.warning("nfmax set equal to ceil[(nt+1)/2=%d]", nfmax)
 
     Fop = _FFT(
         dims=(nt, nr, nv),
@@ -401,7 +403,7 @@ def MDD(
     # Fix nfmax to be at maximum equal to half of the size of fft samples
     if nfmax is None or nfmax > nfmax_allowed:
         nfmax = nfmax_allowed
-        logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]", nfmax)
+        logger.warning("nfmax set equal to ceil[(nt+1)/2=%d]", nfmax)
 
     # Add negative part to data and model
     if twosided and add_negative:

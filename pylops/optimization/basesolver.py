@@ -1,8 +1,8 @@
 __all__ = ["Solver"]
 
 import functools
-import logging
 import time
+import warnings
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Any
 
@@ -133,7 +133,7 @@ class Solver(metaclass=ABCMeta):
         self.preallocate = preallocate if not self.isjax else False
 
         if preallocate and self.isjax:
-            logging.warning(
+            warnings.warn(
                 "Preallocation is not supported for JAX arrays. "
                 "Setting preallocate to False."
             )

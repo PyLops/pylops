@@ -15,7 +15,7 @@ from pylops.utils.backend import get_array_module, get_module_name, to_cupy_cond
 from pylops.utils.typing import DTypeLike, NDArray
 from pylops.waveeqprocessing.mdd import MDC
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 def directwave(
@@ -168,8 +168,8 @@ class Marchenko:
 
     Raises
     ------
-    TypeError
-        If ``t`` is not :obj:`numpy.ndarray`.
+    ValueError
+        If ``nt`` is not provided when ``R`` is in time domain.
 
     See Also
     --------
@@ -265,17 +265,18 @@ class Marchenko:
             self.ns, self.nr, self.nt = R.shape
             self.nfmax = nfmax
         else:
+            if nt is None:
+                raise ValueError("nt must be provided as R is in frequency")
             self.ns, self.nr, self.nfmax = R.shape
             self.nt = nt
-            if nt is None:
-                logging.error("nt must be provided as R is in frequency")
+
         self.nt2 = int(2 * self.nt - 1)
         self.t = np.arange(self.nt) * self.dt
 
         # Fix nfmax to be at maximum equal to half of the size of fft samples
         if self.nfmax is None or self.nfmax > np.ceil((self.nt2 + 1) / 2):
             self.nfmax = int(np.ceil((self.nt2 + 1) / 2))
-            logging.warning("nfmax set equal to (nt+1)/2=%d", self.nfmax)
+            logger.warning("nfmax set equal to (nt+1)/2=%d", self.nfmax)
 
         # Add negative time to reflection data and convert to frequency
         if not np.iscomplexobj(R):
@@ -439,10 +440,6 @@ class Marchenko:
                 ).T
                 G0 = to_cupy_conditional(self.Rtwosided_fft, G0)
             else:
-                logging.error(
-                    "wav and/or nfft are not provided. "
-                    "Provide either G0 or wav and nfft..."
-                )
                 raise ValueError(
                     "wav and/or nfft are not provided. "
                     "Provide either G0 or wav and nfft..."
@@ -657,10 +654,6 @@ class Marchenko:
                     ).T
                 G0 = to_cupy_conditional(self.Rtwosided_fft, G0)
             else:
-                logging.error(
-                    "wav and/or nfft are not provided. "
-                    "Provide either G0 or wav and nfft..."
-                )
                 raise ValueError(
                     "wav and/or nfft are not provided. "
                     "Provide either G0 or wav and nfft..."

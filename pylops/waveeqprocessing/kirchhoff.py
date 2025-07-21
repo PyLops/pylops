@@ -34,7 +34,7 @@ if jit_message is None:
 else:
     prange = range
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class Kirchhoff(LinearOperator):
@@ -1034,7 +1034,7 @@ class Kirchhoff(LinearOperator):
             self._kirch_rmatvec = self.cuda_helper._rmatvec_cuda
         else:
             if engine == "numba" and jit_message is not None:
-                logging.warning(jit_message)
+                logger.warning(jit_message)
             if self.dynamic and self.travsrcrec:
                 self._kirch_matvec = self._ampsrcrec_kirch_matvec
                 self._kirch_rmatvec = self._ampsrcrec_kirch_rmatvec

@@ -3,7 +3,6 @@ __all__ = [
     "PoststackInversion",
 ]
 
-import logging
 from typing import Optional, Tuple, Union
 
 import numpy as np
@@ -31,8 +30,6 @@ from pylops.utils.backend import (
 )
 from pylops.utils.signalprocessing import convmtx, nonstationary_convmtx
 from pylops.utils.typing import NDArray, ShapeLike
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _PoststackLinearModelling(

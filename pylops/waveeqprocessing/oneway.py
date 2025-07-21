@@ -3,8 +3,6 @@ __all__ = [
     "Deghosting",
 ]
 
-
-import logging
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -16,8 +14,6 @@ from pylops.utils import dottest as Dottest
 from pylops.utils.backend import to_cupy_conditional
 from pylops.utils.tapers import taper2d, taper3d
 from pylops.utils.typing import DTypeLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class _PhaseShift(LinearOperator):

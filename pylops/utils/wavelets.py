@@ -18,7 +18,7 @@ def _tcrop(t: npt.ArrayLike) -> npt.ArrayLike:
     """Crop time axis with even number of samples"""
     if len(t) % 2 == 0:
         t = t[:-1]
-        warnings.warn("one sample removed from time axis...")
+        warnings.warn("One sample removed from time axis...")
     return t
 
 
