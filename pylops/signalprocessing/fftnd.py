@@ -1,6 +1,5 @@
 __all__ = ["FFTND"]
 
-import logging
 import warnings
 from typing import Optional, Sequence, Union
 
@@ -12,8 +11,6 @@ from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
 from pylops.utils.backend import get_array_module, get_sp_fft
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class _FFTND_numpy(_BaseFFTND):

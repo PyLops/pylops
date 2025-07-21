@@ -18,8 +18,6 @@ from pylops.utils.backend import (
 )
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
-
 
 class _FFTNorms(Enum):
     ORTHO = auto()

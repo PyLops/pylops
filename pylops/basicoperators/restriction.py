@@ -16,7 +16,7 @@ from pylops.utils.backend import (
 )
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 def _compute_iavamask(dims, axis, iava, ncp):
@@ -123,8 +123,8 @@ class Restriction(LinearOperator):
         # check if forceflat is needed and set it back to None otherwise
         if len(dims) > 2:
             if forceflat is not None:
-                logging.warning(
-                    f"setting forceflat=None since len(dims)={len(dims)}>2. "
+                logger.warning(
+                    f"Setting forceflat=None since len(dims)={len(dims)}>2. "
                     f"PyLops will automatically detect whether to return "
                     f"a 1d or nd array based on the shape of the input"
                     f"array."

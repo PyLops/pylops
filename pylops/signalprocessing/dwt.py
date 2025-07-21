@@ -1,6 +1,5 @@
 __all__ = ["DWT"]
 
-import logging
 from math import ceil, log
 from typing import Union
 
@@ -16,8 +15,6 @@ pywt_message = deps.pywt_import("the dwt module")
 
 if pywt_message is None:
     import pywt
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _checkwavelet(wavelet: str) -> None:

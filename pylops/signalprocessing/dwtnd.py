@@ -1,6 +1,5 @@
 __all__ = ["DWTND"]
 
-import logging
 from math import ceil, log
 
 import numpy as np
@@ -16,8 +15,6 @@ pywt_message = deps.pywt_import("the dwtnd module")
 
 if pywt_message is None:
     import pywt
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class DWTND(LinearOperator):

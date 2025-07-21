@@ -1,7 +1,5 @@
 __all__ = ["ChirpRadon2D"]
 
-import logging
-
 import numpy as np
 
 from pylops import LinearOperator
@@ -9,8 +7,6 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
 
 from ._chirpradon2d import _chirp_radon_2d
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class ChirpRadon2D(LinearOperator):

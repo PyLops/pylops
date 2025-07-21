@@ -1,6 +1,5 @@
 __all__ = ["FourierRadon3D"]
 
-import logging
 from typing import Optional, Tuple
 
 import numpy as np
@@ -19,8 +18,6 @@ if jit_message is None:
     from ._fourierradon3d_numba import _aradon_inner_3d, _radon_inner_3d
 if jit_message is None and cupy_message is None:
     from ._fourierradon3d_cuda import _aradon_inner_3d_cuda, _radon_inner_3d_cuda
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class FourierRadon3D(LinearOperator):
