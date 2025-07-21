@@ -1,4 +1,3 @@
-import logging
 import warnings
 from enum import Enum, auto
 from typing import Optional, Sequence, Union
