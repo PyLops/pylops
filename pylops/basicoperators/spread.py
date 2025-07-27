@@ -22,7 +22,7 @@ if jit_message is None:
         _rmatvec_numba_table,
     )
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class Spread(LinearOperator):
@@ -184,7 +184,7 @@ class Spread(LinearOperator):
             self.engine = "numba"
         else:
             if engine == "numba" and jit is not None:
-                logging.warning(jit_message)
+                logger.warning(jit_message)
             self.engine = "numpy"
 
         # axes
@@ -222,7 +222,7 @@ class Spread(LinearOperator):
                 if len(fh(0, 0)) == 2:
                     self.interp = True
         if interp is not None and self.interp != interp:
-            logging.warning("interp has been overridden to %r.", self.interp)
+            logger.warning("interp has been overridden to %r.", self.interp)
 
     def _matvec_numpy(self, x: NDArray) -> NDArray:
         y = np.zeros(self.dimsd, dtype=self.dtype)

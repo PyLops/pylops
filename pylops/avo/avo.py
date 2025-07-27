@@ -9,7 +9,6 @@ __all__ = [
     "AVOLinearModelling",
 ]
 
-import logging
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -21,8 +20,6 @@ from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def zoeppritz_scattering(
@@ -659,7 +656,6 @@ class AVOLinearModelling(LinearOperator):
         elif linearization == "ps":
             Gs = ps(theta, vsvp, n=self.nt0)
         else:
-            logging.error("%s not an available " "linearization...", linearization)
             raise NotImplementedError(
                 "%s not an available linearization..." % linearization
             )

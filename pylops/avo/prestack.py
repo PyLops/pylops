@@ -4,7 +4,6 @@ __all__ = [
     "PrestackInversion",
 ]
 
-import logging
 from typing import Optional, Tuple, Union
 
 import numpy as np
@@ -35,8 +34,6 @@ from pylops.utils.backend import (
 )
 from pylops.utils.signalprocessing import convmtx
 from pylops.utils.typing import NDArray, ShapeLike
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 _linearizations = {"akirich": 3, "fatti": 3, "ps": 3}
 
@@ -167,7 +164,6 @@ def PrestackLinearModelling(
         elif callable(linearization):
             G = linearization(theta, vsvp, n=nt0)
         else:
-            logging.error("%s not an available linearization...", linearization)
             raise NotImplementedError(
                 "%s not an available linearization..." % linearization
             )
@@ -326,7 +322,6 @@ def PrestackWaveletModelling(
     elif callable(linearization):
         G = linearization(theta, vsvp, n=nt0)
     else:
-        logging.error("%s not an available linearization...", linearization)
         raise NotImplementedError(
             "%s not an available linearization..." % linearization
         )

@@ -1,6 +1,5 @@
 __all__ = ["LSM"]
 
-import logging
 from typing import Callable, Optional
 
 from scipy.sparse.linalg import lsqr
@@ -9,8 +8,6 @@ from pylops.utils import dottest as Dottest
 from pylops.utils.typing import NDArray
 from pylops.waveeqprocessing.kirchhoff import Kirchhoff
 from pylops.waveeqprocessing.twoway import AcousticWave2D
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class LSM:

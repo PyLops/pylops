@@ -5,7 +5,6 @@ __all__ = [
     "aslinearoperator",
 ]
 
-import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -36,8 +35,6 @@ from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.decorators import count
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class _LinearOperator(ABC):

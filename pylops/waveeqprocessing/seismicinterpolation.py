@@ -1,6 +1,5 @@
 __all__ = ["SeismicInterpolation"]
 
-import logging
 from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -21,8 +20,6 @@ from pylops.signalprocessing import (
 )
 from pylops.utils.dottest import dottest as Dottest
 from pylops.utils.typing import InputDimsLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def SeismicInterpolation(

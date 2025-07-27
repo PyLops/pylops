@@ -10,7 +10,7 @@ from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class Sum(LinearOperator):
@@ -84,8 +84,8 @@ class Sum(LinearOperator):
         dimsd.pop(self.axis)
         # check if forceflat is needed and set it back to None otherwise
         if len(dims) > 2 and forceflat is not None:
-            logging.warning(
-                f"setting forceflat=None since len(dims)={len(dims)}>2. "
+            logger.warning(
+                f"Setting forceflat=None since len(dims)={len(dims)}>2. "
                 f"PyLops will automatically detect whether to return "
                 f"a 1d or nd array based on the shape of the input"
                 f"array."

@@ -1,7 +1,5 @@
 __all__ = ["ChirpRadon3D"]
 
-import logging
-
 import numpy as np
 
 from pylops import LinearOperator
@@ -15,8 +13,6 @@ pyfftw_message = deps.pyfftw_import("the chirpradon3d module")
 
 if pyfftw_message is None:
     from ._chirpradon3d import _chirp_radon_3d_fftw
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class ChirpRadon3D(LinearOperator):
