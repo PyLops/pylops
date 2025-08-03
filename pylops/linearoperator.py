@@ -1474,7 +1474,7 @@ class _PowerLinearOperator(LinearOperator):
         self.args = (A, p)
 
     def _power(self, fun: Callable, x: NDArray) -> NDArray:
-        res = np.array(x, copy=True)
+        res = x.copy()
         for _ in range(self.args[1]):
             res = fun(res)
         return res
