@@ -30,7 +30,7 @@ spgl1_message = deps.spgl1_import("the spgl1 solver")
 if spgl1_message is None:
     from spgl1 import spgl1 as ext_spgl1
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 def _hardthreshold(x: NDArray, thresh: float) -> NDArray:
@@ -1825,9 +1825,7 @@ class ISTA(Solver):
             x, xupdate = self.step(x, showstep)
             self.callback(x)
         if xupdate <= self.tol:
-            logging.warning(
-                "update smaller that tolerance for " "iteration %d", self.iiter
-            )
+            logger.info("Update smaller that tolerance for iteration %d", self.iiter)
         return x
 
     def finalize(self, show: bool = False) -> None:
@@ -2208,8 +2206,8 @@ class FISTA(ISTA):
             x, z, xupdate = self.step(x, z, showstep)
             self.callback(x)
         if xupdate <= self.tol:
-            logging.warning(
-                "update smaller that tolerance for " "iteration %d", self.iiter
+            logger.warning(
+                "Update smaller that tolerance for " "iteration %d", self.iiter
             )
         return x
 

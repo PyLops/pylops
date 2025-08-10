@@ -20,7 +20,7 @@ pyfftw_message = deps.pyfftw_import("the fft module")
 if pyfftw_message is None:
     import pyfftw
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class _FFT_numpy(_BaseFFT):
@@ -581,7 +581,7 @@ def FFT(
         )
     elif engine == "numpy" or (engine == "fftw" and pyfftw_message is not None):
         if engine == "fftw" and pyfftw_message is not None:
-            logging.warning(pyfftw_message)
+            logger.warning(pyfftw_message)
         f = _FFT_numpy(
             dims,
             axis=axis,

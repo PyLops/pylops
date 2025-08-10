@@ -1,4 +1,3 @@
-import logging
 import warnings
 from enum import Enum, auto
 from typing import Optional, Sequence, Union
@@ -17,8 +16,6 @@ from pylops.utils.backend import (
     get_real_dtype,
 )
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class _FFTNorms(Enum):

@@ -1,6 +1,5 @@
 __all__ = ["Radon3D"]
 
-import logging
 from typing import Callable, Optional, Tuple
 
 import numpy as np
@@ -21,8 +20,6 @@ if jit_message is None:
         _linear_numba,
         _parabolic_numba,
     )
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _linear(

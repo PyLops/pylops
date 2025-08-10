@@ -5,7 +5,6 @@ __all__ = [
     "PreconditionedInversion",
 ]
 
-import logging
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 import numpy as np
@@ -20,9 +19,6 @@ from pylops.utils.typing import NDArray
 
 if TYPE_CHECKING:
     from pylops.linearoperator import LinearOperator
-
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _check_regularization_dims(

@@ -20,7 +20,7 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper3d
 from pylops.utils.typing import InputDimsLike, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 def sliding3d_design(
@@ -53,8 +53,8 @@ def sliding3d_design(
     nop : :obj:`tuple`
         Size of model in the transformed domain.
     verb : :obj:`bool`, optional
-        Verbosity flag. If ``verb==True``, print the data
-        and model windows start-end indices
+        *Deprecated*, will be removed in v3.0.0. Simply kept for
+        back-compatibility with previous implementation
 
     Returns
     -------
@@ -83,22 +83,21 @@ def sliding3d_design(
     mwins_inends = ((mwin0_ins, mwin0_ends), (mwin1_ins, mwin1_ends))
 
     # print information about patching
-    if verb:
-        logging.warning("%d-%d windows required...", nwins0, nwins1)
-        logging.warning(
-            "data wins - start:%s, end:%s / start:%s, end:%s",
-            dwin0_ins,
-            dwin0_ends,
-            dwin1_ins,
-            dwin1_ends,
-        )
-        logging.warning(
-            "model wins - start:%s, end:%s / start:%s, end:%s",
-            mwin0_ins,
-            mwin0_ends,
-            mwin1_ins,
-            mwin1_ends,
-        )
+    logger.info("%d-%d windows required...", nwins0, nwins1)
+    logger.info(
+        "Data wins - start:%s, end:%s / start:%s, end:%s",
+        dwin0_ins,
+        dwin0_ends,
+        dwin1_ins,
+        dwin1_ends,
+    )
+    logger.info(
+        "Model wins - start:%s, end:%s / start:%s, end:%s",
+        mwin0_ins,
+        mwin0_ends,
+        mwin1_ins,
+        mwin1_ends,
+    )
     return nwins, dims, mwins_inends, dwins_inends
 
 

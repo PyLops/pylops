@@ -5,7 +5,6 @@ __all__ = [
     "WavefieldDecomposition",
 ]
 
-import logging
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -17,8 +16,6 @@ from pylops.signalprocessing import FFT2D, FFTND
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import get_array_module, get_module, get_module_name
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _filter_obliquity(
