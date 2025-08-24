@@ -19,6 +19,7 @@ from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, Identity, VStack
 from pylops.optimization.basesolver import Solver, _units
 from pylops.optimization.basic import cgls
+from pylops.optimization.callback import _callback_stop
 from pylops.optimization.eigs import power_iteration
 from pylops.optimization.leastsquares import regularized_inversion
 from pylops.utils import deps
@@ -399,14 +400,14 @@ class IRLS(Solver):
         epsR : :obj:`float`, optional
             Damping to be applied to residuals for weighting term
         epsI : :obj:`float`, optional
-            Tikhonov damping (for ``kind="data"``) or L1 model damping
-            (for ``kind="datamodel"``)
+            Tikhonov damping
         tolIRLS : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
             at subsequent iterations is smaller than ``tolIRLS``
         warm  : :obj:`bool`, optional
-            Warm start each inversion inner step with previous estimate (``True``) or not (``False``).
-            This only applies to ``kind="data"`` and ``kind="datamodel"``
+            Warm start each inversion inner step with previous estimate (``True``)
+            or not (``False``). This only applies to ``kind="data"`` and
+            ``kind="datamodel"``
         kind : :obj:`str`, optional
             Kind of solver (``model``, ``data`` or ``datamodel``)
         preallocate : :obj:`bool`, optional
@@ -432,9 +433,6 @@ class IRLS(Solver):
         self.isjax = get_module_name(self.ncp) == "jax"
         self._setpreallocate(preallocate)
 
-        # initiate outer iteration counter
-        self.iiter = 0
-
         # choose step to use
         if self.kind == "data":
             self._step = self._step_data
@@ -456,6 +454,13 @@ class IRLS(Solver):
                 self.rw = self.ncp.empty_like(self.y)
             else:
                 self.rw = self.ncp.empty(self.Op.shape[1], dtype=self.Op.dtype)
+
+        # create variables to track the residual norm and iterations
+        self.cost = [
+            float(np.linalg.norm(self.y)),
+        ]
+        self.iiter = 0
+
         # print setup
         if show:
             self._print_setup()
@@ -619,6 +624,7 @@ class IRLS(Solver):
         self.rnorm = self.ncp.linalg.norm(self.r)
 
         self.iiter += 1
+        self.cost.append(float(self.rnorm))
         if show:
             self._print_step(x)
         return x
@@ -687,6 +693,10 @@ class IRLS(Solver):
             xold = x.copy()
             x = self.step(x, engine, showstep, **kwargs_solver)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
 
         # adding initial guess
         if hasattr(self, "x0"):
@@ -1134,7 +1144,7 @@ class OMP(Solver):
                 self.ncp.subtract(self.res, self.y, out=self.res)
 
         self.iiter += 1
-        self.cost.append(float(np.linalg.norm(self.res)))
+        self.cost.append(float(self.ncp.linalg.norm(self.res)))
         if show:
             self._print_step(x)
         return x, cols
@@ -1187,6 +1197,10 @@ class OMP(Solver):
             )
             x, cols = self.step(x, cols, engine, showstep)
             self.callback(x, cols)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         return x, cols
 
     def finalize(
@@ -1824,6 +1838,10 @@ class ISTA(Solver):
             )
             x, xupdate = self.step(x, showstep)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         if xupdate <= self.tol:
             logger.info("Update smaller that tolerance for iteration %d", self.iiter)
         return x
@@ -2205,6 +2223,10 @@ class FISTA(ISTA):
             )
             x, z, xupdate = self.step(x, z, showstep)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         if xupdate <= self.tol:
             logger.warning(
                 "Update smaller that tolerance for " "iteration %d", self.iiter
@@ -2943,7 +2965,10 @@ class SplitBregman(Solver):
             )
             x = self.step(x, engine, showstep, show_inner, **kwargs_lsqr)
             self.callback(x)
-
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         return x
 
     def finalize(self, show: bool = False) -> NDArray:

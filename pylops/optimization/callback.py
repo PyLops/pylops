@@ -1,6 +1,7 @@
 __all__ = [
     "Callbacks",
     "MetricsCallback",
+    "ResidualNormCallback",
 ]
 
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
@@ -27,6 +28,11 @@ class Callbacks:
     - ``on_run_end``: a method that is invoked at the end of the run method of the solver
 
     All methods take two input parameters: the solver itself, and the vector ``x``.
+
+    Moreover, some callback may be used to implement custom stopping criteria for the solvers.
+    This can be done by adding a boolean attribute `stop` to the callback object, which will
+    be initially set to `False`. As soon as the callback sets this attribute to `True`, the
+    ``run`` method of the solver will stop iterating and return the current model vector.
 
     Examples
     --------
@@ -181,3 +187,53 @@ class MetricsCallback(Callbacks):
             self.metrics["snr"].append(snr(self.xtrue, x))
         if "psnr" in self.which:
             self.metrics["psnr"].append(psnr(self.xtrue, x))
+
+
+class ResidualNormCallback(Callbacks):
+    """Residual norm callback
+
+    This callback can be used to stop the solver when the residual norm
+    is below a certain threshold defined as a percentage of the
+    initial residual norm.
+
+    Parameters
+    ----------
+    rtol : :obj:`float`
+        Percentage of the initial residual norm below which the solver
+        will stop iterating. For example, if `rtol` is 0.1, the solver
+        will stop when the residual norm is below 10% of the initial
+        residual norm.
+
+    """
+
+    def __init__(self, rtol: float) -> None:
+        self.rtol = rtol
+        self.stop = False
+
+    def on_step_end(self, solver: "Solver", x: NDArray) -> None:
+        if solver.cost[-1] < self.rtol * solver.cost[0]:
+            self.stop = True
+
+
+def _callback_stop(callbacks: Sequence[Callbacks]) -> bool:
+    """Check if any callback has raised a stop flag
+
+    Parameters
+    ----------
+    callbacks : :obj:`pylops.optimization.callback.Callbacks`
+        List of callbacks to evaluate
+
+    Returns
+    -------
+    stop : :obj:`bool`
+        Whether to stop the solver or not
+
+    """
+    if callbacks is not None:
+        stop = [
+            False if not hasattr(callback, "stop") else callback.stop
+            for callback in callbacks
+        ]
+        if any(stop):
+            return True
+    return False
