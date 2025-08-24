@@ -13,6 +13,8 @@ else:
 import pytest
 
 from pylops.basicoperators import FirstDerivative, Identity, MatrixMult
+from pylops.optimization.callback import ResidualNormCallback
+from pylops.optimization.cls_sparsity import IRLS
 from pylops.optimization.sparsity import fista, irls, ista, omp, spgl1, splitbregman
 
 # currently test spgl1 only if numpy<2.0.0 is installed...
@@ -88,6 +90,12 @@ par5j = {
     "x0": True,
     "dtype": "complex64",
 }  # underdetermined complex, non-zero initial guess
+
+
+def test_IRLS_unknown_kind():
+    """Check error is raised if unknown kind is passed"""
+    with pytest.raises(NotImplementedError):
+        _ = irls(Identity(5), np.ones(5), 10, kind="foo")
 
 
 @pytest.mark.parametrize("par", [(par3), (par4), (par3j), (par4j)])
@@ -189,6 +197,34 @@ def test_IRLS_model(par):
         assert_array_almost_equal(x, xinv, decimal=1)
 
 
+@pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
+def test_IRLS_model_stopping(par):
+    """IRLS model testing stopping criterion rtol (here the class based
+    solver is used as cost is not returned by the function based one)"""
+    np.random.seed(42)
+    Aop = MatrixMult(np.random.randn(par["ny"], par["nx"]))
+
+    x = np.zeros(par["nx"])
+    x[par["nx"] // 2] = 1
+    x[3] = 1
+    x[par["nx"] - 4] = -1
+    y = Aop * x
+
+    maxit = 100
+    rtol = 6e-1
+    rcallback = ResidualNormCallback(rtol)
+    irlssolve = IRLS(
+        Aop,
+        callbacks=[
+            rcallback,
+        ],
+    )
+    irlssolve.setup(y=y, epsI=0.1, tolIRLS=0, kind="model")
+    _ = irlssolve.run(np.zeros(Aop.shape[1], dtype=Aop.dtype), nouter=maxit, iter_lim=2)
+    assert irlssolve.cost[-2] / irlssolve.cost[0] >= rtol
+    assert irlssolve.cost[-1] / irlssolve.cost[0] < rtol
+
+
 @pytest.mark.skipif(
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
@@ -240,6 +276,27 @@ def test_OMP(par):
         assert_array_almost_equal(x, xinv, decimal=1)
 
 
+@pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
+def test_OMP_stopping(par):
+    """OMP testing stopping criterion rtol"""
+    np.random.seed(42)
+    Aop = MatrixMult(np.random.randn(par["ny"], par["nx"]))
+
+    x = np.zeros(par["nx"])
+    x[par["nx"] // 2] = 1
+    x[3] = 1
+    x[par["nx"] - 4] = -1
+    y = Aop * x
+
+    maxit = 100
+
+    for preallocate in [False, True]:
+        rtol = 1e-2
+        _, _, cost = omp(Aop, y, maxit, sigma=0.0, rtol=rtol, preallocate=preallocate)
+        assert cost[-2] / cost[0] >= rtol
+        assert cost[-1] / cost[0] < rtol
+
+
 def test_ISTA_FISTA_unknown_threshkind():
     """Check error is raised if unknown threshkind is passed"""
     with pytest.raises(NotImplementedError):
@@ -270,7 +327,7 @@ def test_ISTA_FISTA(par):
 
     eps = 0.5
     perc = 30
-    maxit = 2000
+    maxit = 500
 
     # ISTA with too high alpha (check that exception is raised)
     with pytest.raises(ValueError):
@@ -356,7 +413,7 @@ def test_ISTA_FISTA_multiplerhs(par):
 
     eps = 0.5
     perc = 30
-    maxit = 2000
+    maxit = 500
 
     # Regularization based ISTA and FISTA
     threshkinds = ["hard", "soft", "half"] if backend == "numpy" else ["soft", "half"]
@@ -413,6 +470,55 @@ def test_ISTA_FISTA_multiplerhs(par):
                     preallocate=preallocate,
                 )
                 assert_array_almost_equal(x, xinv, decimal=1)
+
+
+@pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
+def test_ISTA_FISTA_stopping(par):
+    """ISTA/FISTA testing stopping criterion rtol"""
+    np.random.seed(42)
+    Aop = MatrixMult(np.random.randn(par["ny"], par["nx"]))
+
+    x = np.zeros(par["nx"])
+    x[par["nx"] // 2] = 1
+    x[3] = 1
+    x[par["nx"] - 4] = -1
+    y = Aop * x
+
+    eps = 0.5
+    maxit = 500
+
+    # Regularization based ISTA and FISTA
+    threshkinds = ["hard", "soft", "half"] if backend == "numpy" else ["soft", "half"]
+    for threshkind in threshkinds:
+        for preallocate in [False, True]:
+            rtol = 5e-1
+            # ISTA
+            _, _, cost = ista(
+                Aop,
+                y,
+                niter=maxit,
+                eps=eps,
+                threshkind=threshkind,
+                tol=0.0,
+                rtol=rtol,
+                preallocate=preallocate,
+            )
+            assert cost[-2] / cost[0] >= rtol
+            assert cost[-1] / cost[0] < rtol
+
+            # FISTA
+            _, _, cost = fista(
+                Aop,
+                y,
+                niter=maxit,
+                eps=eps,
+                threshkind=threshkind,
+                tol=0.0,
+                rtol=rtol,
+                preallocate=preallocate,
+            )
+            assert cost[-2] / cost[0] >= rtol
+            assert cost[-1] / cost[0] < rtol
 
 
 @pytest.mark.skipif(
