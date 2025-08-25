@@ -29,30 +29,32 @@ class Callbacks:
 
     All methods take two input parameters: the solver itself, and the vector ``x``.
 
-    Moreover, some callback may be used to implement custom stopping criteria for the solvers.
-    This can be done by adding a boolean attribute `stop` to the callback object, which will
-    be initially set to `False`. As soon as the callback sets this attribute to `True`, the
+    Moreover, some callback may be used to implement custom stopping criteria for the solver.
+    This can be done by adding a boolean attribute ``stop`` to the callback object, which will
+    be initially set to ``False``. As soon as the callback sets this attribute to ``True``, the
     ``run`` method of the solver will stop iterating and return the current model vector.
 
     Examples
     --------
     >>> import numpy as np
     >>> from pylops.basicoperators import MatrixMult
-    >>> from pylops.optimization.solver import CG
+    >>> from pylops.optimization.basic import CG
     >>> from pylops.optimization.callback import Callbacks
+    >>>
     >>> class StoreIterCallback(Callbacks):
     ...     def __init__(self):
     ...         self.stored = []
     ...     def on_step_end(self, solver, x):
     ...         self.stored.append(solver.iiter)
-    >>> cb_sto = StoreIterCallback()
+    >>>
     >>> Aop = MatrixMult(np.random.normal(0., 1., 36).reshape(6, 6))
     >>> Aop = Aop.H @ Aop
     >>> y = Aop @ np.ones(6)
+    >>> cb_sto = StoreIterCallback()
     >>> cgsolve = CG(Aop, callbacks=[cb_sto, ])
     >>> xest = cgsolve.solve(y=y, x0=np.zeros(6), tol=0, niter=6, show=False)[0]
-    >>> xest
-    array([1., 1., 1., 1., 1., 1.])
+    >>> xest, cb_sto.stored
+    (array([1., 1., 1., 1., 1., 1.]), [1, 2, 3, 4, 5, 6])
 
     """
 

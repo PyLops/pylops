@@ -83,7 +83,6 @@ note that the ``setup`` method returns the created starting guess ``x`` (does no
 .. code-block:: python
 
     def setup(self, y, x0=None, niter=None, tol=1e-4, show=False):
-
         self.y = y
         self.tol = tol
         self.niter = niter

@@ -305,7 +305,8 @@ class CG(Solver):
         niter : :obj:`int`, optional
             Number of iterations
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
@@ -446,7 +447,8 @@ class CGLS(Solver):
         damp : :obj:`float`, optional
             Damping coefficient
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
@@ -670,7 +672,8 @@ class CGLS(Solver):
         damp : :obj:`float`, optional
             Damping coefficient
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
