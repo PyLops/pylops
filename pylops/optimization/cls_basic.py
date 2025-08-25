@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 import numpy as np
 
 from pylops.optimization.basesolver import Solver, _units
+from pylops.optimization.callback import _callback_stop
 from pylops.utils.backend import (
     get_array_module,
     get_module_name,
@@ -121,7 +122,8 @@ class CG(Solver):
             Number of iterations (default to ``None`` in case a user wants to
             manually step over the solver)
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
@@ -260,6 +262,10 @@ class CG(Solver):
             )
             x = self.step(x, showstep)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         return x
 
     def finalize(self, show: bool = False) -> None:
@@ -299,7 +305,8 @@ class CG(Solver):
         niter : :obj:`int`, optional
             Number of iterations
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
@@ -440,7 +447,8 @@ class CGLS(Solver):
         damp : :obj:`float`, optional
             Damping coefficient
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
@@ -592,22 +600,26 @@ class CGLS(Solver):
             Estimated model of size :math:`[M \times 1]`
 
         """
-        niter = self.niter if niter is None else niter
-        if niter is None:
+        self.niter = self.niter if niter is None else niter
+        if self.niter is None:
             raise ValueError("niter must not be None")
-        while self.iiter < niter and self.kold > self.tol:
+        while self.iiter < self.niter and self.kold > self.tol:
             showstep = (
                 True
                 if show
                 and (
                     self.iiter < itershow[0]
-                    or niter - self.iiter < itershow[1]
+                    or self.niter - self.iiter < itershow[1]
                     or self.iiter % itershow[2] == 0
                 )
                 else False
             )
             x = self.step(x, showstep)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         return x
 
     def finalize(self, show: bool = False) -> None:
@@ -622,7 +634,12 @@ class CGLS(Solver):
         self.tend = time.time()
         self.telapsed = self.tend - self.tstart
         # reason for termination
-        self.istop = 1 if self.kold < self.tol else 2
+        if self.kold < self.tol:
+            self.istop = 1
+        elif self.iiter >= self.niter:
+            self.istop = 2
+        else:
+            self.istop = 3
         self.r1norm = self.kold
         self.r2norm = self.cost1[self.iiter]
         if show:
@@ -655,7 +672,8 @@ class CGLS(Solver):
         damp : :obj:`float`, optional
             Damping coefficient
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
@@ -677,10 +695,14 @@ class CGLS(Solver):
             Gives the reason for termination
 
             ``1`` means :math:`\mathbf{x}` is an approximate solution to
-            :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}` with the provided
+            tolerance ``tol``
 
             ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
-            problem
+            problem (reached the maximum number of iterations ``niter``)
+
+            ``3`` means another stopping criterion implemented via a callback
+            was reached
         iit : :obj:`int`
             Iteration number upon termination
         r1norm : :obj:`float`

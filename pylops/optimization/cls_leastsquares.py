@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 import numpy as np
 from scipy.sparse.linalg import cg as sp_cg
-from scipy.sparse.linalg import lsqr
+from scipy.sparse.linalg import lsqr as sp_lsqr
 
 from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.basesolver import Solver, _units
@@ -676,7 +676,7 @@ class RegularizedInversion(Solver):
         if engine == "scipy" and self.ncp == np:
             if show:
                 kwargs_solver["show"] = 1
-            xinv, istop, itn, r1norm, r2norm = lsqr(
+            xinv, istop, itn, r1norm, r2norm = sp_lsqr(
                 self.RegOp, self.datatot, x0=x, **kwargs_solver
             )[0:5]
         elif engine == "pylops" or self.ncp != np:
@@ -938,7 +938,7 @@ class PreconditionedInversion(Solver):
         if engine == "scipy" and self.ncp == np:
             if show:
                 kwargs_solver["show"] = 1
-            pinv, istop, itn, r1norm, r2norm = lsqr(
+            pinv, istop, itn, r1norm, r2norm = sp_lsqr(
                 self.POp,
                 self.y,
                 x0=x,

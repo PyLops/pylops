@@ -4,8 +4,8 @@ Implementing new solvers
 ========================
 Users are welcome to create new solvers and add them to the PyLops library.
 
-In this tutorial, we will go through the key steps in the definition of a solver, using the
-:py:class:`pylops.optimization.basic.CG` as an example.
+In this tutorial, we will go through the key steps in the definition of a solver, using a
+sligthly simplified version of :py:class:`pylops.optimization.basic.CG` as an example.
 
 .. note::
     In case the solver that you are planning to create falls within the category of proximal solvers,
@@ -83,7 +83,6 @@ note that the ``setup`` method returns the created starting guess ``x`` (does no
 .. code-block:: python
 
     def setup(self, y, x0=None, niter=None, tol=1e-4, show=False):
-
         self.y = y
         self.tol = tol
         self.niter = niter
@@ -134,7 +133,26 @@ can add additional input parameters. For CG, the step is:
 
 
 Similarly, we also implement a ``run`` method that is in charge of running a number of iterations by repeatedly
-calling the ``step`` method. It is also usually convenient to implement a finalize method; this method can do any required post-processing that should
+calling the ``step`` method. 
+
+.. code-block:: python
+
+    def run(self, x, niter, show, itershow):
+        while self.iiter < niter and self.kold > self.tol:
+            x = self.step(x, showstep)
+            self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
+        return x
+
+It is worth noting that any number of callbacks can be attached to the solver; some of these
+callbacks can implement a stopping criterion and set the ``stop`` member to True when a given
+condition is met. The ``_callback_stop`` method is in change of checking if any of the callbacks
+has set ``stop`` to True and in the case break the iterations.
+
+Finally, it is also usually convenient to implement a ``finalize`` method; this method can do any required post-processing that should
 not be applied at the end of each step, rather at the end of the entire optimization process. For CG, this is as simple
 as converting the ``cost`` variable from a list to a ``numpy`` array. For more details, see our implementations for CG.
 
@@ -169,8 +187,10 @@ input and returns some of the most valuable properties of the class-based solver
 
 .. code-block:: python
 
-    def cg(Op, y, x0, niter=10, tol=1e-4, show=False, itershow=(10, 10, 10), callback=None):
-        cgsolve = CG(Op)
+    def cg(Op, y, x0, niter=10, tol=1e-4, rtol=0.0,
+           show=False, itershow=(10, 10, 10), callback=None):
+        rcallback = ResidualNormCallback(rtol)
+        cgsolve = CG(Op, callbacks=[rcallback, ])
         if callback is not None:
             cgsolve.callback = callback
         x, iiter, cost = cgsolve.solve(

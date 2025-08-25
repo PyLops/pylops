@@ -1,6 +1,7 @@
 __all__ = [
     "Callbacks",
     "MetricsCallback",
+    "ResidualNormCallback",
 ]
 
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
@@ -28,25 +29,32 @@ class Callbacks:
 
     All methods take two input parameters: the solver itself, and the vector ``x``.
 
+    Moreover, some callback may be used to implement custom stopping criteria for the solver.
+    This can be done by adding a boolean attribute ``stop`` to the callback object, which will
+    be initially set to ``False``. As soon as the callback sets this attribute to ``True``, the
+    ``run`` method of the solver will stop iterating and return the current model vector.
+
     Examples
     --------
     >>> import numpy as np
     >>> from pylops.basicoperators import MatrixMult
-    >>> from pylops.optimization.solver import CG
+    >>> from pylops.optimization.basic import CG
     >>> from pylops.optimization.callback import Callbacks
+    >>>
     >>> class StoreIterCallback(Callbacks):
     ...     def __init__(self):
     ...         self.stored = []
     ...     def on_step_end(self, solver, x):
     ...         self.stored.append(solver.iiter)
-    >>> cb_sto = StoreIterCallback()
+    >>>
     >>> Aop = MatrixMult(np.random.normal(0., 1., 36).reshape(6, 6))
     >>> Aop = Aop.H @ Aop
     >>> y = Aop @ np.ones(6)
+    >>> cb_sto = StoreIterCallback()
     >>> cgsolve = CG(Aop, callbacks=[cb_sto, ])
     >>> xest = cgsolve.solve(y=y, x0=np.zeros(6), tol=0, niter=6, show=False)[0]
-    >>> xest
-    array([1., 1., 1., 1., 1., 1.])
+    >>> xest, cb_sto.stored
+    (array([1., 1., 1., 1., 1., 1.]), [1, 2, 3, 4, 5, 6])
 
     """
 
@@ -181,3 +189,53 @@ class MetricsCallback(Callbacks):
             self.metrics["snr"].append(snr(self.xtrue, x))
         if "psnr" in self.which:
             self.metrics["psnr"].append(psnr(self.xtrue, x))
+
+
+class ResidualNormCallback(Callbacks):
+    """Residual norm callback
+
+    This callback can be used to stop the solver when the residual norm
+    is below a certain threshold defined as a percentage of the
+    initial residual norm.
+
+    Parameters
+    ----------
+    rtol : :obj:`float`
+        Percentage of the initial residual norm below which the solver
+        will stop iterating. For example, if `rtol` is 0.1, the solver
+        will stop when the residual norm is below 10% of the initial
+        residual norm.
+
+    """
+
+    def __init__(self, rtol: float) -> None:
+        self.rtol = rtol
+        self.stop = False
+
+    def on_step_end(self, solver: "Solver", x: NDArray) -> None:
+        if solver.cost[-1] < self.rtol * solver.cost[0]:
+            self.stop = True
+
+
+def _callback_stop(callbacks: Sequence[Callbacks]) -> bool:
+    """Check if any callback has raised a stop flag
+
+    Parameters
+    ----------
+    callbacks : :obj:`pylops.optimization.callback.Callbacks`
+        List of callbacks to evaluate
+
+    Returns
+    -------
+    stop : :obj:`bool`
+        Whether to stop the solver or not
+
+    """
+    if callbacks is not None:
+        stop = [
+            False if not hasattr(callback, "stop") else callback.stop
+            for callback in callbacks
+        ]
+        if any(stop):
+            return True
+    return False

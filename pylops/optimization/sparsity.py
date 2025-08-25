@@ -9,6 +9,7 @@ __all__ = [
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
+from pylops.optimization.callback import ResidualNormCallback
 from pylops.optimization.cls_sparsity import FISTA, IRLS, ISTA, OMP, SPGL1, SplitBregman
 from pylops.utils.decorators import add_ndarray_support_to_solver
 from pylops.utils.typing import NDArray, SamplingLike
@@ -140,6 +141,7 @@ def omp(
     niter_outer: int = 10,
     niter_inner: int = 40,
     sigma: float = 1e-4,
+    rtol: float = 0.0,
     normalizecols: bool = False,
     Opbasis: Optional["LinearOperator"] = None,
     optimal_coeff: bool = False,
@@ -167,8 +169,12 @@ def omp(
     niter_inner : :obj:`int`, optional
         Number of iterations of inner loop. By choosing ``niter_inner=0``, the
         Matching Pursuit (MP) algorithm is implemented.
-    sigma : :obj:`list`
+    sigma : :obj:`float`, optional
         Maximum :math:`L_2` norm of residual. When smaller stop iterations.
+    rtol : :obj:`float`, optional
+        Relative tolerance on residual. Stops the solver when the
+        ratio of the current residual norm to the initial residual norm
+        is below this value.
     normalizecols : :obj:`list`, optional
         Normalize columns (``True``) or not (``False``). Note that this can be
         expensive as it requires applying the forward operator
@@ -201,6 +207,7 @@ def omp(
             Pre-allocate all variables used by the solver. Note that if ``y``
             is a JAX array, this option is ignored and variables are not
             pre-allocated since JAX does not support in-place operations.
+
     Returns
     -------
     xinv : :obj:`numpy.ndarray`
@@ -222,7 +229,13 @@ def omp(
     See :class:`pylops.optimization.cls_sparsity.OMP`
 
     """
-    ompsolve = OMP(Op)
+    rcallback = ResidualNormCallback(rtol)
+    ompsolve = OMP(
+        Op,
+        callbacks=[
+            rcallback,
+        ],
+    )
     if callback is not None:
         ompsolve.callback = callback
     x, niter_outer, cost = ompsolve.solve(
@@ -251,6 +264,7 @@ def ista(
     alpha: Optional[float] = None,
     eigsdict: Optional[Dict[str, Any]] = None,
     tol: float = 1e-10,
+    rtol: bool = 0.0,
     threshkind: str = "soft",
     perc: Optional[float] = None,
     decay: Optional[NDArray] = None,
@@ -292,8 +306,12 @@ def ista(
         Dictionary of parameters to be passed to :func:`pylops.LinearOperator.eigs` method
         when computing the maximum eigenvalue
     tol : :obj:`float`, optional
-        Tolerance. Stop iterations if difference between inverted model
+        Absolute tolerance on model update. Stop iterations if difference between inverted model
         at subsequent iterations is smaller than ``tol``
+    rtol : :obj:`float`, optional
+        Relative tolerance on total cost function. Stops the solver when the
+        ratio of the current cost function to the initial cost function
+        is below this value.
     threshkind : :obj:`str`, optional
         Kind of thresholding ('hard', 'soft', 'half', 'hard-percentile',
         'soft-percentile', or 'half-percentile' - 'soft' used as default)
@@ -327,7 +345,7 @@ def ista(
     niter : :obj:`int`
         Number of effective iterations
     cost : :obj:`numpy.ndarray`
-        History of cost function
+        History of cost (including regularization term)
 
     Raises
     ------
@@ -352,7 +370,13 @@ def ista(
     See :class:`pylops.optimization.cls_sparsity.ISTA`
 
     """
-    istasolve = ISTA(Op)
+    rcallback = ResidualNormCallback(rtol)
+    istasolve = ISTA(
+        Op,
+        callbacks=[
+            rcallback,
+        ],
+    )
     if callback is not None:
         istasolve.callback = callback
     x, iiter, cost = istasolve.solve(
@@ -385,6 +409,7 @@ def fista(
     alpha: Optional[float] = None,
     eigsdict: Optional[Dict[str, Any]] = None,
     tol: float = 1e-10,
+    rtol: float = 0.0,
     threshkind: str = "soft",
     perc: Optional[float] = None,
     decay: Optional[NDArray] = None,
@@ -426,8 +451,12 @@ def fista(
         Dictionary of parameters to be passed to :func:`pylops.LinearOperator.eigs` method
         when computing the maximum eigenvalue
     tol : :obj:`float`, optional
-        Tolerance. Stop iterations if difference between inverted model
+        Absolute tolerance on model update. Stop iterations if difference between inverted model
         at subsequent iterations is smaller than ``tol``
+    rtol : :obj:`float`, optional
+        Relative tolerance on total cost function. Stops the solver when the
+        ratio of the current cost function to the initial cost function
+        is below this value.
     threshkind : :obj:`str`, optional
         Kind of thresholding ('hard', 'soft', 'half', 'soft-percentile', or
         'half-percentile' - 'soft' used as default)
@@ -461,7 +490,7 @@ def fista(
     niter : :obj:`int`
         Number of effective iterations
     cost : :obj:`numpy.ndarray`, optional
-        History of cost function
+        History of cost (including regularization term)
 
     Raises
     ------
@@ -484,7 +513,13 @@ def fista(
     See :class:`pylops.optimization.cls_sparsity.FISTA`
 
     """
-    fistasolve = FISTA(Op)
+    rcallback = ResidualNormCallback(rtol)
+    fistasolve = FISTA(
+        Op,
+        callbacks=[
+            rcallback,
+        ],
+    )
     if callback is not None:
         fistasolve.callback = callback
     x, iiter, cost = fistasolve.solve(
@@ -637,6 +672,7 @@ def splitbregman(
     epsRL1s: Optional[SamplingLike] = None,
     epsRL2s: Optional[SamplingLike] = None,
     tol: float = 1e-10,
+    rtol: float = 0.0,
     tau: float = 1.0,
     restart: bool = False,
     engine: str = "scipy",
@@ -687,8 +723,12 @@ def splitbregman(
          :math:`L_2` Regularization dampings (must have the same number of elements
          as ``RegsL2``)
     tol : :obj:`float`, optional
-        Tolerance. Stop outer iterations if difference between inverted model
+        Tolerance. Stop the solver if difference between inverted model
         at subsequent iterations is smaller than ``tol``
+    rtol : :obj:`float`, optional
+        Relative tolerance on total cost function. Stops the solver when the
+        ratio of the current cost function to the initial cost function
+        is below this value.
     tau : :obj:`float`, optional
         Scaling factor in the Bregman update (must be close to 1)
     restart : :obj:`bool`, optional
@@ -732,7 +772,13 @@ def splitbregman(
     See :class:`pylops.optimization.cls_sparsity.SplitBregman`
 
     """
-    sbsolve = SplitBregman(Op)
+    rcallback = ResidualNormCallback(rtol)
+    sbsolve = SplitBregman(
+        Op,
+        callbacks=[
+            rcallback,
+        ],
+    )
     if callback is not None:
         sbsolve.callback = callback
     xinv, itn_out, cost = sbsolve.solve(
