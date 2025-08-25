@@ -1771,7 +1771,7 @@ class ISTA(Solver):
         if self.SOp is not None:
             x = self.SOpmatvec(x)
 
-        # check model update
+        # compute model update norm
         if not self.preallocate:
             xupdate = np.linalg.norm(x - xold)
         else:
@@ -1782,7 +1782,7 @@ class ISTA(Solver):
             )
             xupdate = np.linalg.norm(self.xold)
 
-        # cost functions
+        # compute cost functions
         costdata = 0.5 * np.linalg.norm(self.res if self.preallocate else res) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
         self.cost.append(float(costdata + costreg))

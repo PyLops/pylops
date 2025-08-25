@@ -10,8 +10,6 @@ else:
     from numpy.testing import assert_array_almost_equal
 
     backend = "numpy"
-import itertools
-
 import pytest
 
 from pylops import MemoizeOperator
@@ -73,7 +71,7 @@ def test_memoize_evals_2(par):
 
     # Approach 1
     Aop1 = Aop.toreal(forw=False, adj=True)
-    xinv1 = Aop1.div(y)
+    xinv1 = Aop1.div(y).real
     assert_array_almost_equal(x, xinv1)
 
     # Approach 2
