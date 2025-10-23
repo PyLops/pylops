@@ -52,11 +52,20 @@ class Identity(LinearOperator):
 
     Attributes
     ----------
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    mode : :obj:`str`
+        Operation mode: ``same`` for :math:`M = N`,
+        ``model`` for :math:`N > M,
+        and ``data`` for :math:`M > N`.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     Raises
     ------
@@ -133,12 +142,12 @@ class Identity(LinearOperator):
                 self.mode = "same"
             elif N < M:
                 self.mode = "model"
-                self.sliceN = slice(0, N)
-                self.sliceM = slice(0, M)
+                self._sliceN = slice(0, N)
+                self._sliceM = slice(0, M)
             else:
                 self.mode = "data"
-                self.sliceN = slice(0, N)
-                self.sliceM = slice(0, M)
+                self._sliceN = slice(0, N)
+                self._sliceM = slice(0, M)
         elif isinstance(N, (tuple, list)) and isinstance(M, (tuple, list)):
             # N and M are tuples (nd-arrays)
             # First check that all elements in N and M are the same or that
@@ -148,12 +157,12 @@ class Identity(LinearOperator):
                 self.mode = "same"
             elif np.array_equal(M, np.maximum(N, M)):
                 self.mode = "model"
-                self.sliceN = tuple([slice(0, n) for n in N])
-                self.sliceM = tuple([slice(0, m) for m in M])
+                self._sliceN = tuple([slice(0, n) for n in N])
+                self._sliceM = tuple([slice(0, m) for m in M])
             elif np.array_equal(N, np.maximum(N, M)):
                 self.mode = "data"
-                self.sliceN = tuple([slice(0, n) for n in N])
-                self.sliceM = tuple([slice(0, m) for m in M])
+                self._sliceN = tuple([slice(0, n) for n in N])
+                self._sliceM = tuple([slice(0, m) for m in M])
             else:
                 raise ValueError(
                     "N and M are not identical, "
@@ -178,10 +187,10 @@ class Identity(LinearOperator):
         if self.mode == "same":
             y = x
         elif self.mode == "model":
-            y = x[self.sliceN]
+            y = x[self._sliceN]
         else:
             y = ncp.zeros(self.dimsd, dtype=self.dtype)
-            y = inplace_set(x, y, self.sliceM)
+            y = inplace_set(x, y, self._sliceM)
         return y
 
     @reshaped
@@ -193,7 +202,7 @@ class Identity(LinearOperator):
             y = x
         elif self.mode == "model":
             y = ncp.zeros(self.dims, dtype=self.dtype)
-            y = inplace_set(x, y, self.sliceN)
+            y = inplace_set(x, y, self._sliceN)
         else:
-            y = x[self.sliceM]
+            y = x[self._sliceM]
         return y

@@ -1,0 +1,4 @@
+--index-url https://software.repos.intel.com/python/pypi
+numpy>=2.0.0
+scipy>=1.13.0
+mkl_fft; sys_platform != "darwin"

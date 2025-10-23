@@ -5,7 +5,6 @@ __all__ = [
     "aslinearoperator",
 ]
 
-import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -36,8 +35,6 @@ from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.decorators import count
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class _LinearOperator(ABC):
@@ -103,6 +100,21 @@ class LinearOperator(_LinearOperator):
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+
+    Attributes
+    ----------
+    matvec_count : :obj:`int`
+        Counter tracking the number of ``matvec``
+        operations performed since the operator was instantiated.
+    rmatvec_count : :obj:`int`
+        Counter tracking the number of ``rmatvec``
+        operations performed since the operator was instantiated.
+    matmat_count : :obj:`int`
+        Counter tracking the number of ``matmat``
+        operations performed since the operator was instantiated.
+    rmatmat_count : :obj:`int`
+        Counter tracking the number of ``rmatmat``
+        operations performed since the operator was instantiated.
 
     """
 
@@ -717,7 +729,7 @@ class LinearOperator(_LinearOperator):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data
         niter : :obj:`int`, optional
             Number of iterations (to be used only when ``explicit=False``)
@@ -726,7 +738,7 @@ class LinearOperator(_LinearOperator):
 
         Returns
         -------
-        xest : :obj:`np.ndarray`
+        xest : :obj:`numpy.ndarray`
             Estimated model
 
         """
@@ -1328,7 +1340,7 @@ class _ColumnLinearOperator(LinearOperator):
     ) -> None:
         if not isinstance(Op, LinearOperator):
             raise TypeError("Op must be a LinearOperator")
-        super(_ColumnLinearOperator, self).__init__(Op, explicit=Op.explicit)
+        super(_ColumnLinearOperator, self).__init__(Op)
         self.Op = Op
         self.cols = cols
         self._shape = (Op.shape[0], len(cols))
@@ -1474,7 +1486,7 @@ class _PowerLinearOperator(LinearOperator):
         self.args = (A, p)
 
     def _power(self, fun: Callable, x: NDArray) -> NDArray:
-        res = np.array(x, copy=True)
+        res = x.copy()
         for _ in range(self.args[1]):
             res = fun(res)
         return res

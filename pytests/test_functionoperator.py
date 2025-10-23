@@ -6,13 +6,24 @@ by wrapping a matrix multiplication as a FunctionOperator.
 Also provides a good starting point for new tests.
 """
 import itertools
+import os
 
-import numpy as np
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal, assert_array_equal
+    from cupyx.scipy.sparse import rand
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
+    from scipy.sparse import rand
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal, assert_array_equal
-from scipy.sparse.linalg import lsqr
 
 from pylops.basicoperators import FunctionOperator
+from pylops.optimization.basic import lsqr
 from pylops.utils import dottest
 
 PARS_LISTS = [
@@ -61,6 +72,7 @@ def test_FunctionOperator(par):
         par["nc"],
         complexflag=0 if par["imag"] == 0 else 3,
         rtol=par["rtol"],
+        backend=backend,
     )
 
     x = (np.ones(par["nc"]) + np.ones(par["nc"]) * par["imag"]).astype(par["dtype"])
@@ -77,7 +89,16 @@ def test_FunctionOperator(par):
 
     # Only test inversion for square or overdetermined systems
     if par["nc"] <= par["nr"]:
-        xlsqr = lsqr(Fop, F_x, damp=0, iter_lim=100, atol=1e-8, btol=1e-8, show=0)[0]
+        xlsqr = lsqr(
+            Fop,
+            F_x,
+            x0=np.zeros_like(x),
+            damp=0,
+            niter=100,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
+        )[0]
         assert_array_almost_equal(x, xlsqr, decimal=4)
 
 

@@ -19,7 +19,7 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper2d
 from pylops.utils.typing import InputDimsLike, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 def _slidingsteps(
@@ -41,9 +41,9 @@ def _slidingsteps(
 
     Returns
     -------
-    starts : :obj:`np.ndarray`
+    starts : :obj:`numpy.ndarray`
         Start indices
-    ends : :obj:`np.ndarray`
+    ends : :obj:`numpy.ndarray`
         End indices
 
     """
@@ -80,8 +80,8 @@ def sliding2d_design(
     nop : :obj:`tuple`
         Size of model in the transformed domain.
     verb : :obj:`bool`, optional
-        Verbosity flag. If ``verb==True``, print the data
-        and model windows start-end indices
+        *Deprecated*, will be removed in v3.0.0. Simply kept for
+        back-compatibility with previous implementation
 
     Returns
     -------
@@ -106,18 +106,17 @@ def sliding2d_design(
     mwins_inends = (mwin_ins, mwin_ends)
 
     # print information about patching
-    if verb:
-        logging.warning("%d windows required...", nwins)
-        logging.warning(
-            "data wins - start:%s, end:%s",
-            dwin_ins,
-            dwin_ends,
-        )
-        logging.warning(
-            "model wins - start:%s, end:%s",
-            mwin_ins,
-            mwin_ends,
-        )
+    logger.info("%d windows required...", nwins)
+    logger.info(
+        "Data wins - start:%s, end:%s",
+        dwin_ins,
+        dwin_ends,
+    )
+    logger.info(
+        "Model wins - start:%s, end:%s",
+        mwin_ins,
+        mwin_ends,
+    )
     return nwins, dims, mwins_inends, dwins_inends
 
 
@@ -178,10 +177,23 @@ class Sliding2D(LinearOperator):
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
-    Returns
-    -------
-    Sop : :obj:`pylops.LinearOperator`
-        Sliding operator
+    Attributes
+    ----------
+    taps: :obj:`numpy.ndarray`
+        Set of tapers applied to each window (only if ``tapertype`` is not ``None``)
+    simOp : :obj:`bool`
+        Operator ``Op`` is applied to all windows simultaneously (``True``)
+        or to each window individually (``False``)
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    shape : :obj:`tuple`
+        Operator shape.
 
     Raises
     ------

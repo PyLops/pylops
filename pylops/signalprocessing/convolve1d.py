@@ -144,11 +144,11 @@ class _Convolve1Dlong(LinearOperator):
             self.offset -= 1
         self.hstar = ncp.flip(self.h, axis=-1)
 
-        self.pad = ncp.zeros((len(dims), 2), dtype=int)
+        self.pad = np.zeros((len(dims), 2), dtype=int)
         self.pad[self.axis, 0] = max(self.offset, 0)
         self.pad[self.axis, 1] = -min(self.offset, 0)
 
-        self.padd = ncp.zeros((len(dims), 2), dtype=int)
+        self.padd = np.zeros((len(dims), 2), dtype=int)
         self.padd[self.axis, 1] = max(self.offset, 0)
         self.padd[self.axis, 0] = -min(self.offset, 0)
 
@@ -238,11 +238,21 @@ class Convolve1D(LinearOperator):
 
     Attributes
     ----------
+    nh : :obj:`int`
+        Length of the filter
+    hstar : :obj:`numpy.ndarray`
+        Time-reversed filter used in adjoint
+    convfunc : :obj:`callable`
+        Function handler used to perform convolution
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening. In
+        this case, same as ``dims``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved
-        explicitly (``True``) or not (``False``)
+        Operator shape.
 
     Raises
     ------

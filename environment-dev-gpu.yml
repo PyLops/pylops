@@ -1,0 +1,35 @@
+name: pylops_gpu
+channels:
+  - conda-forge
+  - defaults
+  - numba
+dependencies:
+  - python>=3.11.0
+  - pip
+  - numpy>=2.0.0
+  - scipy>=1.13.0
+  - cupy
+  - sympy
+  - matplotlib
+  - ipython
+  - pytest
+  - Sphinx
+  - numpydoc
+  - numba
+  - icc_rt
+  - pre-commit
+  - autopep8
+  - isort
+  - black
+  - pip:
+    - torch
+    - pytest-runner
+    - setuptools_scm
+    - pydata-sphinx-theme
+    - pooch
+    - sphinx-gallery
+    - nbsphinx
+    - sphinxemoji
+    - image
+    - flake8
+    - mypy

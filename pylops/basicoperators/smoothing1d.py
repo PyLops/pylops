@@ -17,7 +17,8 @@ class Smoothing1D(Convolve1D):
     Parameters
     ----------
     nsmooth : :obj:`int`
-        Length of smoothing operator (must be odd)
+        Length of smoothing operator (must be odd, if even it will be
+        increased by 1).
     dims : :obj:`tuple` or :obj:`int`
         Number of samples for each dimension
     axis : :obj:`int`, optional
@@ -29,11 +30,21 @@ class Smoothing1D(Convolve1D):
 
     Attributes
     ----------
+    nh : :obj:`int`
+        Length of the filter.
+    hstar : :obj:`numpy.ndarray`
+        Time-reversed filter used in adjoint.
+    convfunc : :obj:`callable`
+        Function handler used to perform convolution.
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening. In
+        this case, same as ``dims``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     Notes
     -----
@@ -67,10 +78,18 @@ class Smoothing1D(Convolve1D):
 
     """
 
-    def __init__(self, nsmooth: int, dims: Union[int, InputDimsLike], axis: int = -1,
-                 dtype: DTypeLike = "float64", name: str = 'S'):
+    def __init__(
+        self,
+        nsmooth: int,
+        dims: Union[int, InputDimsLike],
+        axis: int = -1,
+        dtype: DTypeLike = "float64",
+        name: str = "S",
+    ):
         if nsmooth % 2 == 0:
             nsmooth += 1
         h = np.ones(nsmooth) / float(nsmooth)
         offset = (nsmooth - 1) // 2
-        super().__init__(dims=dims, h=h, axis=axis, offset=offset, dtype=dtype, name=name)
+        super().__init__(
+            dims=dims, h=h, axis=axis, offset=offset, dtype=dtype, name=name
+        )

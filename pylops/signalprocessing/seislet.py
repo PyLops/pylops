@@ -273,11 +273,35 @@ class Seislet(LinearOperator):
 
     Attributes
     ----------
+    predict : :obj:`callable`
+        Function used for the predict step.
+    padop : :obj:`pylops.basicoperators.Pad`
+        Padding operator used to make the number of traces multiple of
+        :math:`2^{level}`.
+    nx : :obj:`int`
+        Number of traces after padding.
+    nt : :obj:`int`
+        Number of samples per trace.
+    dx : :obj:`float`
+        Sampling step in x-axis.
+    dt : :obj:`float`
+        Sampling step in t-axis.
+    levels_size : :obj:`int`
+        Number of traces for each level.
+    levels_cum : :obj:`int`
+        Cumulative number of traces up to each level.
+    slopes : :obj:`numpy.ndarray`
+        Padded slope field.
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
+        Operator shape.
 
     Raises
     ------

@@ -34,6 +34,24 @@ class Convolve2D(ConvolveND):
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
+    Attributes
+    ----------
+    nh : :obj:`int`
+        Length of the filter
+    convolve : :obj:`callable`
+        Convolution function
+    correlate : :obj:`callable`
+        Correlation function
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening. In
+        this case, same as ``dims``.
+    shape : :obj:`tuple`
+        Operator shape.
+
     Notes
     -----
     The Convolve2D operator applies two-dimensional convolution
@@ -74,13 +92,25 @@ class Convolve2D(ConvolveND):
         y(t, x) = \mathscr{F}^{-1} (H(f, k_x)^* * X(f, k_x))
 
     """
-    def __init__(self, dims: Union[int, InputDimsLike],
-                 h: NDArray,
-                 offset: InputDimsLike = (0, 0),
-                 axes: InputDimsLike = (-2, -1),
-                 method: str = "fft",
-                 dtype: DTypeLike = "float64",
-                 name: str = "C", ):
+
+    def __init__(
+        self,
+        dims: Union[int, InputDimsLike],
+        h: NDArray,
+        offset: InputDimsLike = (0, 0),
+        axes: InputDimsLike = (-2, -1),
+        method: str = "fft",
+        dtype: DTypeLike = "float64",
+        name: str = "C",
+    ):
         if h.ndim != 2:
             raise ValueError("h must be 2-dimensional")
-        super().__init__(dims=dims, h=h, offset=offset, axes=axes, method=method, dtype=dtype, name=name)
+        super().__init__(
+            dims=dims,
+            h=h,
+            offset=offset,
+            axes=axes,
+            method=method,
+            dtype=dtype,
+            name=name,
+        )

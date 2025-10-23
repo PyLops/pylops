@@ -42,11 +42,18 @@ class Diagonal(LinearOperator):
 
     Attributes
     ----------
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening. In
+        this case, same as ``dims``.
+    complex : :obj:`bool`
+        Vector to be used for element-wise multiplication has complex numbers
+        (``True``) or not (``False``).
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     Notes
     -----

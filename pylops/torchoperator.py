@@ -49,6 +49,13 @@ class TorchOperator:
     devicetorch : :obj:`str`, optional
         Device to be assigned the output of the operator to (any Torch-compatible device)
 
+    Attributes
+    ----------
+    transpf : :obj:`numpy.ndarray`
+        Indices to transpose batch to last dimension before applying ``Op``
+    transpb : :obj:`numpy.ndarray`
+        Indices to transpose back batch to first dimension after applying ``Op``
+
     """
 
     def __init__(

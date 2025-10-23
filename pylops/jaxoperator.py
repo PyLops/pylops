@@ -39,6 +39,16 @@ class JaxOperator(LinearOperator):
     ----------
     Op : :obj:`pylops.LinearOperator`
         PyLops operator
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    shape : :obj:`tuple`
+        Operator shape.
 
     """
 

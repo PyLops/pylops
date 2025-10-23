@@ -1,6 +1,16 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import Restriction
 from pylops.utils import dottest
@@ -51,12 +61,14 @@ def test_Restriction_1dsignal(par):
     iava = np.sort(np.random.permutation(np.arange(par["nx"]))[:Nsub])
 
     Rop = Restriction(par["nx"], iava, inplace=par["dtype"], dtype=par["dtype"])
-    assert dottest(Rop, Nsub, par["nx"], complexflag=0 if par["imag"] == 0 else 3)
+    assert dottest(
+        Rop, Nsub, par["nx"], complexflag=0 if par["imag"] == 0 else 3, backend=backend
+    )
 
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
     y = Rop * x
     x1 = Rop.H * y
-    y1 = Rop.mask(x)
+    y1 = np.asarray(Rop.mask(x))
 
     assert_array_almost_equal(y, y1[iava])
     assert_array_almost_equal(x[iava], x1[iava])
@@ -81,12 +93,13 @@ def test_Restriction_2dsignal(par):
         Nsub * par["nt"],
         par["nx"] * par["nt"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     y = (Rop * x.ravel()).reshape(Nsub, par["nt"])
     x1 = (Rop.H * y.ravel()).reshape(par["nx"], par["nt"])
-    y1_fromflat = Rop.mask(x.ravel())
-    y1 = Rop.mask(x)
+    y1_fromflat = np.asarray(Rop.mask(x.ravel()))
+    y1 = np.asarray(Rop.mask(x))
 
     assert_array_almost_equal(y, y1_fromflat.reshape(par["nx"], par["nt"])[iava])
     assert_array_almost_equal(y, y1[iava])
@@ -104,12 +117,13 @@ def test_Restriction_2dsignal(par):
         par["nx"] * Nsub,
         par["nx"] * par["nt"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     y = (Rop * x.ravel()).reshape(par["nx"], Nsub)
     x1 = (Rop.H * y.ravel()).reshape(par["nx"], par["nt"])
-    y1_fromflat = Rop.mask(x.ravel())
-    y1 = Rop.mask(x)
+    y1_fromflat = np.asarray(Rop.mask(x.ravel()))
+    y1 = np.asarray(Rop.mask(x))
 
     assert_array_almost_equal(y, y1_fromflat[:, iava])
     assert_array_almost_equal(y, y1[:, iava])
@@ -141,12 +155,13 @@ def test_Restriction_3dsignal(par):
         Nsub * par["nx"] * par["nt"],
         par["ny"] * par["nx"] * par["nt"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     y = (Rop * x.ravel()).reshape(Nsub, par["nx"], par["nt"])
     x1 = (Rop.H * y.ravel()).reshape(par["ny"], par["nx"], par["nt"])
-    y1_fromflat = Rop.mask(x.ravel())
-    y1 = Rop.mask(x)
+    y1_fromflat = np.asarray(Rop.mask(x.ravel()))
+    y1 = np.asarray(Rop.mask(x))
 
     assert_array_almost_equal(
         y, y1_fromflat.reshape(par["ny"], par["nx"], par["nt"])[iava]
@@ -170,12 +185,13 @@ def test_Restriction_3dsignal(par):
         par["ny"] * Nsub * par["nt"],
         par["ny"] * par["nx"] * par["nt"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     y = (Rop * x.ravel()).reshape(par["ny"], Nsub, par["nt"])
     x1 = (Rop.H * y.ravel()).reshape(par["ny"], par["nx"], par["nt"])
-    y1_fromflat = Rop.mask(x.ravel())
-    y1 = Rop.mask(x)
+    y1_fromflat = np.asarray(Rop.mask(x.ravel()))
+    y1 = np.asarray(Rop.mask(x))
 
     assert_array_almost_equal(y, y1_fromflat[:, iava])
     assert_array_almost_equal(y, y1[:, iava])
@@ -197,12 +213,13 @@ def test_Restriction_3dsignal(par):
         par["ny"] * par["nx"] * Nsub,
         par["ny"] * par["nx"] * par["nt"],
         complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     y = (Rop * x.ravel()).reshape(par["ny"], par["nx"], Nsub)
     x1 = (Rop.H * y.ravel()).reshape(par["ny"], par["nx"], par["nt"])
-    y1_fromflat = Rop.mask(x.ravel())
-    y1 = Rop.mask(x)
+    y1_fromflat = np.asarray(Rop.mask(x.ravel()))
+    y1 = np.asarray(Rop.mask(x))
 
     assert_array_almost_equal(y, y1_fromflat[:, :, iava])
     assert_array_almost_equal(y, y1[:, :, iava])

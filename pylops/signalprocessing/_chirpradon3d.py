@@ -1,6 +1,6 @@
 import numpy as np
 
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_set
 from pylops.utils.typing import NDArray
 
 try:
@@ -20,7 +20,7 @@ def _chirp_radon_3d(
 
     Parameters
     ----------
-    data : :obj:`np.ndarray`
+    data : :obj:`numpy.ndarray`
         3D input data of size :math:`[n_y \times n_x \times n_t]`
     dt : :obj:`float`
         Time sampling :math:`dt`
@@ -28,7 +28,7 @@ def _chirp_radon_3d(
         Spatial sampling in :math:`y` direction :math:`dy`
     dx : :obj:`float`
         Spatial sampling in :math:`x` direction :math:`dx`
-    pmax : :obj:`np.ndarray`
+    pmax : :obj:`numpy.ndarray`
         Two element array :math:`(p_y_{max}, p_x_{max})` of :math:`\tan`
         of maximum stacking angles in :math:`y` and :math:`x` directions
         :math:`(\tan(\alpha_{y,max}), \tan(\alpha_{x,max}))`. If one operates
@@ -39,7 +39,7 @@ def _chirp_radon_3d(
 
     Returns
     -------
-    g : :obj:`np.ndarray`
+    g : :obj:`numpy.ndarray`
         3D array of size :math:`[n_{y} \times n_{x} \times n_t]`
 
     """
@@ -88,8 +88,11 @@ def _chirp_radon_3d(
 
     # perform transform
     h = ncp.zeros((2 * ny, 2 * nx, nt)).astype(cdtype)
-    h[0:ny, 0:nx, :] = ncp.fft.fftn(data, axes=(2,)) * K1 * K2
-
+    h = inplace_set(
+        ncp.fft.fftn(data, axes=(2,)) * K1 * K2,
+        h,
+        (slice(0, ny), slice(0, nx), slice(None)),
+    )
     g = ncp.fft.ifftn(
         ncp.fft.fftn(h, axes=(1,)) * ncp.fft.fftn(K01, axes=(1,)), axes=(1,)
     )
@@ -132,7 +135,7 @@ def _chirp_radon_3d_fftw(
         Spatial sampling in :math:`y` direction :math:`dy`
     dx : :obj:`float`
         Spatial sampling in :math:`x` direction :math:`dx`
-    pmax : :obj:`np.ndarray`
+    pmax : :obj:`numpy.ndarray`
         Two element array :math:`(p_y_{max}, p_x_{max})` of :math:`\tan`
         of maximum stacking angles in :math:`y` and :math:`x` directions
         :math:`(\tan(\alpha_{y,max}), \tan(\alpha_{x,max}))`. If one operates

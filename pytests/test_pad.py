@@ -1,6 +1,16 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_equal
 
 from pylops.basicoperators import Pad
 from pylops.utils import dottest
@@ -29,7 +39,7 @@ def test_Pad_2d_negative(par):
 def test_Pad1d(par):
     """Dot-test and adjoint for Pad operator on 1d signal"""
     Pop = Pad(dims=par["ny"], pad=par["pad"][0], dtype=par["dtype"])
-    assert dottest(Pop, Pop.shape[0], Pop.shape[1])
+    assert dottest(Pop, Pop.shape[0], Pop.shape[1], backend=backend)
 
     x = np.arange(par["ny"], dtype=par["dtype"]) + 1.0
     y = Pop * x
@@ -41,7 +51,7 @@ def test_Pad1d(par):
 def test_Pad2d(par):
     """Dot-test and adjoint for Pad operator on 2d signal"""
     Pop = Pad(dims=(par["ny"], par["nx"]), pad=par["pad"], dtype=par["dtype"])
-    assert dottest(Pop, Pop.shape[0], Pop.shape[1])
+    assert dottest(Pop, Pop.shape[0], Pop.shape[1], backend=backend)
 
     x = (np.arange(par["ny"] * par["nx"], dtype=par["dtype"]) + 1.0).reshape(
         par["ny"], par["nx"]

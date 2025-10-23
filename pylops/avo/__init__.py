@@ -20,6 +20,7 @@ and a list of applications:
 
 """
 
+from .avo import *
 from .poststack import *
 from .prestack import *
 

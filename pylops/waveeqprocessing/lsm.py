@@ -1,6 +1,5 @@
 __all__ = ["LSM"]
 
-import logging
 from typing import Callable, Optional
 
 from scipy.sparse.linalg import lsqr
@@ -9,8 +8,6 @@ from pylops.utils import dottest as Dottest
 from pylops.utils.typing import NDArray
 from pylops.waveeqprocessing.kirchhoff import Kirchhoff
 from pylops.waveeqprocessing.twoway import AcousticWave2D
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class LSM:
@@ -155,14 +152,14 @@ class LSM:
         d : :obj:`numpy.ndarray`
             Input data of size :math:`\lbrack n_s \times n_r
             \times n_t \rbrack`
-        solver : :obj:`func`, optional
+        solver : :obj:`callable`, optional
             Solver to be used for inversion
         **kwargs_solver
             Arbitrary keyword arguments for chosen ``solver``
 
         Returns
         -------
-        minv : :obj:`np.ndarray`
+        minv : :obj:`numpy.ndarray`
             Inverted reflectivity model of size :math:`\lbrack (n_y \times)
             n_x \times n_z \rbrack`
 

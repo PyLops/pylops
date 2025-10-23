@@ -1,6 +1,16 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal, assert_array_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from pylops.basicoperators import (
     FirstDerivative,
@@ -93,6 +103,7 @@ np.random.seed(10)
 )
 def test_FirstDerivative_centered(par):
     """Dot-test and forward for FirstDerivative operator (centered stencil)"""
+    np.random.seed(10)
     for order in (3, 5):
         # 1d
         D1op = FirstDerivative(
@@ -100,9 +111,9 @@ def test_FirstDerivative_centered(par):
             sampling=par["dx"],
             edge=par["edge"],
             order=order,
-            dtype="float32",
+            dtype="float64",
         )
-        assert dottest(D1op, par["nx"], par["nx"], rtol=1e-3)
+        assert dottest(D1op, par["nx"], par["nx"], backend=backend)
 
         x = (par["dx"] * np.arange(par["nx"])) ** 2
         yana = 2 * par["dx"] * np.arange(par["nx"])
@@ -118,9 +129,14 @@ def test_FirstDerivative_centered(par):
             sampling=par["dy"],
             edge=par["edge"],
             order=order,
-            dtype="float32",
+            dtype="float64",
         )
-        assert dottest(D1op, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+        assert dottest(
+            D1op,
+            par["ny"] * par["nx"],
+            par["ny"] * par["nx"],
+            backend=backend,
+        )
 
         x = np.outer((par["dy"] * np.arange(par["ny"])) ** 2, np.ones(par["nx"]))
         yana = np.outer(2 * par["dy"] * np.arange(par["ny"]), np.ones(par["nx"]))
@@ -137,9 +153,14 @@ def test_FirstDerivative_centered(par):
             sampling=par["dx"],
             edge=par["edge"],
             order=order,
-            dtype="float32",
+            dtype="float64",
         )
-        assert dottest(D1op, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+        assert dottest(
+            D1op,
+            par["ny"] * par["nx"],
+            par["ny"] * par["nx"],
+            backend=backend,
+        )
 
         x = np.outer((par["dy"] * np.arange(par["ny"])) ** 2, np.ones(par["nx"]))
         yana = np.zeros((par["ny"], par["nx"]))
@@ -156,13 +177,13 @@ def test_FirstDerivative_centered(par):
             sampling=par["dz"],
             edge=par["edge"],
             order=order,
-            dtype="float32",
+            dtype="float64",
         )
         assert dottest(
             D1op,
             par["nz"] * par["ny"] * par["nx"],
             par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-3,
+            backend=backend,
         )
 
         x = np.outer(
@@ -184,13 +205,13 @@ def test_FirstDerivative_centered(par):
             sampling=par["dy"],
             edge=par["edge"],
             order=order,
-            dtype="float32",
+            dtype="float64",
         )
         assert dottest(
             D1op,
             par["nz"] * par["ny"] * par["nx"],
             par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-3,
+            backend=backend,
         )
 
         x = np.outer(
@@ -210,13 +231,13 @@ def test_FirstDerivative_centered(par):
             sampling=par["dx"],
             edge=par["edge"],
             order=order,
-            dtype="float32",
+            dtype="float64",
         )
         assert dottest(
             D1op,
             par["nz"] * par["ny"] * par["nx"],
             par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-3,
+            backend=backend,
         )
 
         yana = np.zeros((par["nz"], par["ny"], par["nx"]))
@@ -235,12 +256,13 @@ def test_FirstDerivative_forwaback(par):
     stencils). Note that the analytical expression cannot be validated in this
     case
     """
+    np.random.seed(10)
     for kind in ("forward", "backward"):
         # 1d
         D1op = FirstDerivative(
-            par["nx"], sampling=par["dx"], edge=par["edge"], kind=kind, dtype="float32"
+            par["nx"], sampling=par["dx"], edge=par["edge"], kind=kind, dtype="float64"
         )
-        assert dottest(D1op, par["nx"], par["nx"], rtol=1e-3)
+        assert dottest(D1op, par["nx"], par["nx"], backend=backend)
 
         # 2d - derivative on 1st direction
         D1op = FirstDerivative(
@@ -249,9 +271,14 @@ def test_FirstDerivative_forwaback(par):
             sampling=par["dy"],
             edge=par["edge"],
             kind=kind,
-            dtype="float32",
+            dtype="float64",
         )
-        assert dottest(D1op, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+        assert dottest(
+            D1op,
+            par["ny"] * par["nx"],
+            par["ny"] * par["nx"],
+            backend=backend,
+        )
 
         # 2d - derivative on 2nd direction
         D1op = FirstDerivative(
@@ -260,9 +287,14 @@ def test_FirstDerivative_forwaback(par):
             sampling=par["dx"],
             edge=par["edge"],
             kind=kind,
-            dtype="float32",
+            dtype="float64",
         )
-        assert dottest(D1op, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+        assert dottest(
+            D1op,
+            par["ny"] * par["nx"],
+            par["ny"] * par["nx"],
+            backend=backend,
+        )
 
         # 3d - derivative on 1st direction
         D1op = FirstDerivative(
@@ -271,13 +303,13 @@ def test_FirstDerivative_forwaback(par):
             sampling=par["dz"],
             edge=par["edge"],
             kind=kind,
-            dtype="float32",
+            dtype="float64",
         )
         assert dottest(
             D1op,
             par["nz"] * par["ny"] * par["nx"],
             par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-3,
+            backend=backend,
         )
 
         # 3d - derivative on 2nd direction
@@ -287,13 +319,13 @@ def test_FirstDerivative_forwaback(par):
             sampling=par["dy"],
             edge=par["edge"],
             kind=kind,
-            dtype="float32",
+            dtype="float64",
         )
         assert dottest(
             D1op,
             par["nz"] * par["ny"] * par["nx"],
             par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-3,
+            backend=backend,
         )
 
         # 3d - derivative on 3rd direction
@@ -303,13 +335,13 @@ def test_FirstDerivative_forwaback(par):
             sampling=par["dx"],
             edge=par["edge"],
             kind=kind,
-            dtype="float32",
+            dtype="float64",
         )
         assert dottest(
             D1op,
             par["nz"] * par["ny"] * par["nx"],
             par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-3,
+            backend=backend,
         )
 
 
@@ -321,7 +353,7 @@ def test_SecondDerivative_centered(par):
     The test is based on the fact that the central stencil is exact for polynomials of
     degree 3.
     """
-
+    np.random.seed(10)
     x = par["dx"] * np.arange(par["nx"])
     y = par["dy"] * np.arange(par["ny"])
     z = par["dz"] * np.arange(par["nz"])
@@ -331,9 +363,9 @@ def test_SecondDerivative_centered(par):
 
     # 1d
     D2op = SecondDerivative(
-        par["nx"], sampling=par["dx"], edge=par["edge"], dtype="float32"
+        par["nx"], sampling=par["dx"], edge=par["edge"], dtype="float64"
     )
-    assert dottest(D2op, par["nx"], par["nx"], rtol=1e-3)
+    assert dottest(D2op, par["nx"], par["nx"], backend=backend)
 
     # polynomial f(x) = x^3, f''(x) = 6x
     f = x**3
@@ -347,10 +379,10 @@ def test_SecondDerivative_centered(par):
         axis=0,
         sampling=par["dy"],
         edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
 
-    assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+    assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], backend=backend)
 
     # polynomial f(x,y) = y^3, f_{yy}(x,y) = 6y
     f = yy**3
@@ -365,10 +397,10 @@ def test_SecondDerivative_centered(par):
         axis=1,
         sampling=par["dx"],
         edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
 
-    assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+    assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], backend=backend)
 
     # polynomial f(x,y) = x^3, f_{xx}(x,y) = 6x
     f = xx**3
@@ -383,14 +415,14 @@ def test_SecondDerivative_centered(par):
         axis=0,
         sampling=par["dy"],
         edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
 
     assert dottest(
         D2op,
         par["nz"] * par["ny"] * par["nx"],
         par["nz"] * par["ny"] * par["nx"],
-        rtol=1e-3,
+        backend=backend,
     )
 
     # polynomial f(x,y,z) = y^3, f_{yy}(x,y,z) = 6y
@@ -407,14 +439,14 @@ def test_SecondDerivative_centered(par):
         axis=1,
         sampling=par["dx"],
         edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
 
     assert dottest(
         D2op,
         par["nz"] * par["ny"] * par["nx"],
         par["nz"] * par["ny"] * par["nx"],
-        rtol=1e-3,
+        backend=backend,
     )
 
     # polynomial f(x,y,z) = x^3, f_{xx}(x,y,z) = 6x
@@ -431,14 +463,14 @@ def test_SecondDerivative_centered(par):
         axis=2,
         sampling=par["dz"],
         edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
 
     assert dottest(
         D2op,
         par["nz"] * par["ny"] * par["nx"],
         par["ny"] * par["nx"] * par["nz"],
-        rtol=1e-3,
+        backend=backend,
     )
 
     # polynomial f(x,y,z) = z^3, f_{zz}(x,y,z) = 6z
@@ -457,6 +489,7 @@ def test_SecondDerivative_forwaback(par):
     """Dot-test for SecondDerivative operator (forward and backward stencils).
     Note that the analytical expression cannot be validated in this case
     """
+    np.random.seed(10)
     x = par["dx"] * np.arange(par["nx"])
     y = par["dy"] * np.arange(par["ny"])
     z = par["dz"] * np.arange(par["nz"])
@@ -471,9 +504,9 @@ def test_SecondDerivative_forwaback(par):
             sampling=par["dx"],
             edge=par["edge"],
             kind="forward",
-            dtype="float32",
+            dtype="float64",
         )
-        assert dottest(D2op, par["nx"], par["nx"], rtol=1e-3)
+        assert dottest(D2op, par["nx"], par["nx"], backend=backend)
 
         # 2d - derivative on 1st direction
         D2op = SecondDerivative(
@@ -482,10 +515,15 @@ def test_SecondDerivative_forwaback(par):
             sampling=par["dy"],
             edge=par["edge"],
             kind="forward",
-            dtype="float32",
+            dtype="float64",
         )
 
-        assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+        assert dottest(
+            D2op,
+            par["ny"] * par["nx"],
+            par["ny"] * par["nx"],
+            backend=backend,
+        )
 
         # 2d - derivative on 2nd direction
         D2op = SecondDerivative(
@@ -494,10 +532,15 @@ def test_SecondDerivative_forwaback(par):
             sampling=par["dx"],
             edge=par["edge"],
             kind="forward",
-            dtype="float32",
+            dtype="float64",
         )
 
-        assert dottest(D2op, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+        assert dottest(
+            D2op,
+            par["ny"] * par["nx"],
+            par["ny"] * par["nx"],
+            backend=backend,
+        )
 
         # 3d - derivative on 1st direction
         D2op = SecondDerivative(
@@ -506,14 +549,14 @@ def test_SecondDerivative_forwaback(par):
             sampling=par["dy"],
             edge=par["edge"],
             kind="forward",
-            dtype="float32",
+            dtype="float64",
         )
 
         assert dottest(
             D2op,
             par["nz"] * par["ny"] * par["nx"],
             par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-3,
+            backend=backend,
         )
 
         # 3d - derivative on 2nd direction
@@ -523,14 +566,14 @@ def test_SecondDerivative_forwaback(par):
             sampling=par["dx"],
             edge=par["edge"],
             kind="forward",
-            dtype="float32",
+            dtype="float64",
         )
 
         assert dottest(
             D2op,
             par["nz"] * par["ny"] * par["nx"],
             par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-3,
+            backend=backend,
         )
 
         # 3d - derivative on 3rd direction
@@ -540,14 +583,14 @@ def test_SecondDerivative_forwaback(par):
             sampling=par["dz"],
             edge=par["edge"],
             kind="forward",
-            dtype="float32",
+            dtype="float64",
         )
 
         assert dottest(
             D2op,
             par["nz"] * par["ny"] * par["nx"],
             par["ny"] * par["nx"] * par["nz"],
-            rtol=1e-3,
+            backend=backend,
         )
 
 
@@ -556,6 +599,7 @@ def test_SecondDerivative_forwaback(par):
 )
 def test_Laplacian(par):
     """Dot-test for Laplacian operator"""
+    np.random.seed(10)
     # 2d - symmetrical
     Dlapop = Laplacian(
         (par["ny"], par["nx"]),
@@ -563,9 +607,11 @@ def test_Laplacian(par):
         weights=(1, 1),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
-    assert dottest(Dlapop, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+    assert dottest(
+        Dlapop, par["ny"] * par["nx"], par["ny"] * par["nx"], backend=backend
+    )
 
     # 2d - asymmetrical
     Dlapop = Laplacian(
@@ -574,24 +620,10 @@ def test_Laplacian(par):
         weights=(1, 2),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
-        dtype="float32",
-    )
-    assert dottest(Dlapop, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
-
-    # 3d - symmetrical on 1st and 2nd direction
-    Dlapop = Laplacian(
-        (par["nz"], par["ny"], par["nx"]),
-        axes=(0, 1),
-        weights=(1, 1),
-        sampling=(par["dy"], par["dx"]),
-        edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
     assert dottest(
-        Dlapop,
-        par["nz"] * par["ny"] * par["nx"],
-        par["nz"] * par["ny"] * par["nx"],
-        rtol=1e-3,
+        Dlapop, par["ny"] * par["nx"], par["ny"] * par["nx"], backend=backend
     )
 
     # 3d - symmetrical on 1st and 2nd direction
@@ -601,13 +633,29 @@ def test_Laplacian(par):
         weights=(1, 1),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
     assert dottest(
         Dlapop,
         par["nz"] * par["ny"] * par["nx"],
         par["nz"] * par["ny"] * par["nx"],
-        rtol=1e-3,
+        backend=backend,
+    )
+
+    # 3d - symmetrical on 1st and 2nd direction
+    Dlapop = Laplacian(
+        (par["nz"], par["ny"], par["nx"]),
+        axes=(0, 1),
+        weights=(1, 1),
+        sampling=(par["dy"], par["dx"]),
+        edge=par["edge"],
+        dtype="float64",
+    )
+    assert dottest(
+        Dlapop,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        backend=backend,
     )
 
     # 3d - symmetrical on all directions
@@ -617,13 +665,13 @@ def test_Laplacian(par):
         weights=(1, 1, 1),
         sampling=(par["dz"], par["dx"], par["dx"]),
         edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
     assert dottest(
         Dlapop,
         par["nz"] * par["ny"] * par["nx"],
         par["nz"] * par["ny"] * par["nx"],
-        rtol=1e-3,
+        backend=backend,
     )
 
 
@@ -632,6 +680,7 @@ def test_Laplacian(par):
 )
 def test_Gradient(par):
     """Dot-test for Gradient operator"""
+    np.random.seed(10)
     for kind in ("forward", "centered", "backward"):
         # 2d
         Gop = Gradient(
@@ -639,9 +688,14 @@ def test_Gradient(par):
             sampling=(par["dy"], par["dx"]),
             edge=par["edge"],
             kind=kind,
-            dtype="float32",
+            dtype="float64",
         )
-        assert dottest(Gop, 2 * par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+        assert dottest(
+            Gop,
+            2 * par["ny"] * par["nx"],
+            par["ny"] * par["nx"],
+            backend=backend,
+        )
 
         # 3d
         Gop = Gradient(
@@ -649,13 +703,13 @@ def test_Gradient(par):
             sampling=(par["dz"], par["dy"], par["dx"]),
             edge=par["edge"],
             kind=kind,
-            dtype="float32",
+            dtype="float64",
         )
         assert dottest(
             Gop,
             3 * par["nz"] * par["ny"] * par["nx"],
             par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-3,
+            backend=backend,
         )
 
 
@@ -664,6 +718,7 @@ def test_Gradient(par):
 )
 def test_FirstDirectionalDerivative(par):
     """Dot-test for FirstDirectionalDerivative operator"""
+    np.random.seed(10)
     for kind in ("forward", "centered", "backward"):
         # 2d
         Fdop = FirstDirectionalDerivative(
@@ -672,9 +727,14 @@ def test_FirstDirectionalDerivative(par):
             sampling=(par["dy"], par["dx"]),
             edge=par["edge"],
             kind=kind,
-            dtype="float32",
+            dtype="float64",
         )
-        assert dottest(Fdop, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+        assert dottest(
+            Fdop,
+            par["ny"] * par["nx"],
+            par["ny"] * par["nx"],
+            backend=backend,
+        )
 
         # 3d
         Fdop = FirstDirectionalDerivative(
@@ -683,13 +743,13 @@ def test_FirstDirectionalDerivative(par):
             sampling=(par["dz"], par["dy"], par["dx"]),
             edge=par["edge"],
             kind=kind,
-            dtype="float32",
+            dtype="float64",
         )
         assert dottest(
             Fdop,
             par["nz"] * par["ny"] * par["nx"],
             par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-3,
+            backend=backend,
         )
 
 
@@ -698,15 +758,16 @@ def test_FirstDirectionalDerivative(par):
 )
 def test_SecondDirectionalDerivative(par):
     """Dot-test for test_SecondDirectionalDerivative operator"""
+    np.random.seed(10)
     # 2d
     Fdop = SecondDirectionalDerivative(
         (par["ny"], par["nx"]),
         v=np.sqrt(2.0) / 2.0 * np.ones(2),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
-    assert dottest(Fdop, par["ny"] * par["nx"], par["ny"] * par["nx"], rtol=1e-3)
+    assert dottest(Fdop, par["ny"] * par["nx"], par["ny"] * par["nx"], backend=backend)
 
     # 3d
     Fdop = SecondDirectionalDerivative(
@@ -714,13 +775,13 @@ def test_SecondDirectionalDerivative(par):
         v=np.ones(3) / np.sqrt(3),
         sampling=(par["dz"], par["dy"], par["dx"]),
         edge=par["edge"],
-        dtype="float32",
+        dtype="float64",
     )
     assert dottest(
         Fdop,
         par["nz"] * par["ny"] * par["nx"],
         par["nz"] * par["ny"] * par["nx"],
-        rtol=1e-3,
+        backend=backend,
     )
 
 
@@ -731,13 +792,14 @@ def test_SecondDirectionalDerivative_verticalderivative(par):
     """Compare vertical derivative for SecondDirectionalDerivative operator
     and SecondDerivative
     """
+    np.random.seed(10)
     Fop = FirstDerivative(
-        (par["ny"], par["nx"]), axis=0, edge=par["edge"], dtype="float32"
+        (par["ny"], par["nx"]), axis=0, edge=par["edge"], dtype="float64"
     )
     F2op = Fop.H * Fop
 
     F2dop = SecondDirectionalDerivative(
-        (par["ny"], par["nx"]), v=np.array([1, 0]), edge=par["edge"], dtype="float32"
+        (par["ny"], par["nx"]), v=np.array([1, 0]), edge=par["edge"], dtype="float64"
     )
 
     x = np.random.normal(0.0, 1.0, (par["ny"], par["nx"]))

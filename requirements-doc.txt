@@ -1,20 +1,15 @@
-# Currently we force rdt to use numpy<2.0.0 to build the documentation
-# since the dtcwt is not yet compatible with numpy=2.0.0. For the
-# same reason, we force devito==4.8.7 as later versions of devito
-# require numpy>=2.0.0
-numpy>=1.21.0,<2.0.0
-scipy>=1.11.0
+numpy>=2.0.0
+scipy>=1.13.0
 jax
---extra-index-url https://download.pytorch.org/whl/cpu
-torch>=1.2.0
 numba
 pyfftw
 PyWavelets
 spgl1
 scikit-fmm
 sympy
-devito==4.8.6
-dtcwt
+devito
+# dtcwt (until numpy>=2.0.0 is supported)
+astra-toolbox
 matplotlib
 ipython
 pytest
@@ -22,6 +17,7 @@ pytest-runner
 setuptools_scm
 docutils<0.18
 Sphinx
+pooch
 pydata-sphinx-theme
 sphinx-gallery
 sphinxemoji
@@ -35,3 +31,6 @@ black
 flake8
 mypy
 standard-imghdr; python_version >= '3.13'
+pytensor>=2.28.0
+pymc>=5.21.0
+mkl_fft; sys_platform != "darwin"

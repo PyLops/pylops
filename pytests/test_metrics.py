@@ -1,4 +1,15 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+
+    backend = "cupy"
+else:
+    import numpy as np
+
+    backend = "numpy"
+import itertools
+
 import pytest
 
 from pylops.utils.metrics import mae, mse, psnr, snr

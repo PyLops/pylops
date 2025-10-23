@@ -1,4 +1,9 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+else:
+    import numpy as np
 
 from pylops.basicoperators import BlockDiag, Diagonal, HStack, MatrixMult
 from pylops.utils.describe import describe

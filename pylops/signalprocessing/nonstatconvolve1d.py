@@ -41,11 +41,27 @@ class NonStationaryConvolve1D(LinearOperator):
 
     Attributes
     ----------
+    hsize : :obj:`int`
+        Size of the 1d compact filters.
+    oh : :obj:`int`
+        Origin of filter indices ``ih``.
+    dh : :obj:`int`
+        Step of filter indices ``ih``.
+    nh : :obj:`int`
+        Number of filters provided.
+    eh : :obj:`int`
+        End of filter indices ``ih``.
+    hsinterp : :obj:`numpy.ndarray`
+        Interpolated filters at all locations along ``axis``.
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening. In
+        this case, same as ``dims``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     Raises
     ------
@@ -239,7 +255,7 @@ class NonStationaryFilters1D(LinearOperator):
     Attributes
     ----------
     shape : :obj:`tuple`
-        Operator shape
+        Operator shape.
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly (``True``) or
         not (``False``)

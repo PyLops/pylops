@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
@@ -35,6 +37,9 @@ par3 = {
 np.random.seed(10)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1)])
 def test_predict_trace(par):
     """Dot-test for _predict_trace operator"""
@@ -49,6 +54,9 @@ def test_predict_trace(par):
         dottest(Fop, par["nt"], par["nt"])
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1)])
 def test_predict(par):
     """Dot-test for _predict operator"""
@@ -98,6 +106,9 @@ def test_predict(par):
                 dottest(Fop, par["nt"] * par["nx"], par["nt"] * par["nx"])
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 def test_Seislet(par):
     """Dot-test and forward-inverse for Seislet"""

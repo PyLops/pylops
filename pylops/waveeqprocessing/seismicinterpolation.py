@@ -1,6 +1,5 @@
 __all__ = ["SeismicInterpolation"]
 
-import logging
 from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -21,8 +20,6 @@ from pylops.signalprocessing import (
 )
 from pylops.utils.dottest import dottest as Dottest
 from pylops.utils.typing import InputDimsLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def SeismicInterpolation(
@@ -55,7 +52,7 @@ def SeismicInterpolation(
 
     Parameters
     ----------
-    data : :obj:`np.ndarray`
+    data : :obj:`numpy.ndarray`
         Irregularly sampled seismic data of size
         :math:`[n_{r_y} \,(\times n_{r_x} \times n_t)]`
     nrec : :obj:`int` or :obj:`tuple`
@@ -84,27 +81,27 @@ def SeismicInterpolation(
     sampling : :obj:`tuple`, optional
         Sampling steps ``dy`` (, ``dx``) and ``dt``. Required if ``kind='fk'``
         or ``kind='radon-linear'``
-    spataxis : :obj:`np.ndarray`, optional
+    spataxis : :obj:`numpy.ndarray`, optional
         First spatial axis. Required for ``kind='radon-linear'``,
         ``kind='chirpradon-linear'``, ``kind='radon-parabolic'``,
         ``kind='radon-hyperbolic'``, can also be provided instead of
         ``sampling`` for ``kind='fk'``
-    spat1axis : :obj:`np.ndarray`, optional
+    spat1axis : :obj:`numpy.ndarray`, optional
         Second spatial axis. Required for ``kind='radon-linear'``,
         ``kind='chirpradon-linear'``, ``kind='radon-parabolic'``,
         ``kind='radon-hyperbolic'``, can also be provided instead of
         ``sampling`` for ``kind='fk'``
-    taxis : :obj:`np.ndarray`, optional
+    taxis : :obj:`numpy.ndarray`, optional
         Time axis. Required for ``kind='radon-linear'``,
         ``kind='chirpradon-linear'``, ``kind='radon-parabolic'``,
         ``kind='radon-hyperbolic'``, can also be provided instead of
         ``sampling`` for ``kind='fk'``
-    paxis : :obj:`np.ndarray`, optional
+    paxis : :obj:`numpy.ndarray`, optional
         First Radon axis. Required for ``kind='radon-linear'``,
         ``kind='chirpradon-linear'``, ``kind='radon-parabolic'``,
         ``kind='radon-hyperbolic'``, ``kind='sliding'``, and
         ``kind='chirp-sliding'``
-    p1axis : :obj:`np.ndarray`, optional
+    p1axis : :obj:`numpy.ndarray`, optional
         Second Radon axis. Required for ``kind='radon-linear'``,
         ``kind='chirpradon-linear'``, ``kind='radon-parabolic'``,
         ``kind='radon-hyperbolic'``, ``kind='sliding'``, and
@@ -136,13 +133,13 @@ def SeismicInterpolation(
 
     Returns
     -------
-    recdata : :obj:`np.ndarray`
+    recdata : :obj:`numpy.ndarray`
         Reconstructed data of size :math:`[n_{R_y}\,(\times n_{R_x} \times n_t)]`
-    recprec : :obj:`np.ndarray`
+    recprec : :obj:`numpy.ndarray`
         Reconstructed data in the sparse or preconditioned domain in case of
         ``kind='fk'``, ``kind='radon-linear'``, ``kind='radon-parabolic'``,
         ``kind='radon-hyperbolic'`` and ``kind='sliding'``
-    cost : :obj:`np.ndarray`
+    cost : :obj:`numpy.ndarray`
         Cost function norm
 
     Raises
@@ -256,11 +253,7 @@ def SeismicInterpolation(
                         f"spat1axis and taxis for kind=%{kind}"
                     )
                 else:
-                    sampling = (
-                        np.abs(spataxis[1] - spataxis[1]),
-                        np.abs(spat1axis[1] - spat1axis[1]),
-                        np.abs(taxis[1] - taxis[1]),
-                    )
+                    sampling = (dspat, dspat1, dt)
             Pop = FFTND(dims=dims, nffts=nffts, sampling=sampling)
             Pop = Pop.H
         else:
@@ -271,13 +264,12 @@ def SeismicInterpolation(
                         f"and taxis for kind={kind}"
                     )
                 else:
-                    sampling = (
-                        np.abs(spataxis[1] - spataxis[1]),
-                        np.abs(taxis[1] - taxis[1]),
-                    )
+                    sampling = (dspat, dt)
             Pop = FFT2D(dims=dims, nffts=nffts, sampling=sampling)
             Pop = Pop.H
         SIop = Rop * Pop
+        # Force data to be of same dtype of operator
+        data = data.astype(SIop.dtype)
     elif "chirpradon" in kind:
         prec = True
         dotcflag = 0

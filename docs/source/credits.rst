@@ -24,3 +24,4 @@ Contributors
 *  `Alex Rakowski <https://github.com/alex-rakowski>`_, alex-rakowski
 *  `David Sollberger <https://github.com/solldavid>`_, solldavid
 *  `Gustavo Coelho <https://github.com/guaacoelho>`_, guaacoelho
+*  `Shaowen Wang <https://github.com/GeophyAI>`_, GeophyAI

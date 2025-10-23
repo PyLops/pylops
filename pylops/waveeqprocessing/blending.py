@@ -31,7 +31,7 @@ class BlendingContinuous(LinearOperator):
         Number of sources
     dt : :obj:`float`
         Time sampling in seconds
-    times : :obj:`np.ndarray`
+    times : :obj:`numpy.ndarray`
         Absolute ignition times for each source
     shiftall : :obj:`bool`, optional
         Shift all shots together (``True``) or one at the time (``False``). Defaults to ``shiftall=False`` (original
@@ -40,6 +40,29 @@ class BlendingContinuous(LinearOperator):
         Operator dtype
     name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+
+    Attributes
+    ----------
+    ntot : :obj:`int`
+        Total number of time samples in blended data (based on the
+        the maximum ignition time in ``times``)
+    PadOp : :obj:`pylops.basicoperators.Pad`
+        Padding operator used to add one zero at the end of each
+        shot gather to avoid boundary effects when shifting
+    shifts : :obj:`list` or :obj:`numpy.ndarray`
+        Integer part of the time shifts (in number of samples)
+    ShiftOps : :obj:`list` of :obj:`pylops.signalprocessing.Shift` or :obj:`pylops.signalprocessing.Shift`
+        Shift operator(s) used to apply the fractional part of the time shifts
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    shape : :obj:`tuple`
+        Operator shape.
 
     Notes
     -----
@@ -237,12 +260,12 @@ def BlendingGroup(
     nr : :obj:`int`
         Number of receivers
     ns : :obj:`int`
-        Number of sources. Equal to group_size x n_groups
+        Number of sources. Equal to :math:`group_{size} \cdot n_{groups}`
     dt : :obj:`float`
         Time sampling in seconds
-    times : :obj:`np.ndarray`
+    times : :obj:`numpy.ndarray`
         Absolute ignition times for each source. This should have dimensions
-        :math:`n_{groups} \times group_{size}`, where each row contains the
+        :math:`group_{size} \times n_{groups}`, where each column contains the
         firing times for every group.
     group_size : :obj:`int`
         The number of sources per group
@@ -269,7 +292,7 @@ def BlendingGroup(
     Group blending refers to an acquisition scenario where two or more sources are towed behind a single vessel
     and fired at short time differences. The same experiment is repeated :math:`n_{groups}` times to create
     :math:`n_{groups}` blended recordings. For the case of 2 sources and an overall number of
-    :math:`N=n_{groups}*group_{size}` shots, the modelling operator is
+    :math:`N=2*n_{groups}` shots, the modelling operator is
 
     .. math::
         \Phi = \begin{bmatrix}
@@ -329,13 +352,13 @@ def BlendingHalf(
     nr : :obj:`int`
         Number of receivers
     ns : :obj:`int`
-        Number of sources. Equal to group_size x n_groups
+        Number of sources. Equal to :math:`group_{size} \cdot n_{groups}`
     dt : :obj:`float`
         Time sampling in seconds
-    times : :obj:`np.ndarray`
+    times : :obj:`numpy.ndarray`
         Absolute ignition times for each source. This should have dimensions
-        :math`n_{groups} \times group_{size}`, where each row contains the firing
-        times for every group.
+        :math:`group_{size} \times n_{groups}`, where each column contains the
+        firing times for every group.
     group_size : :obj:`int`
         The number of sources per group
     n_groups : :obj:`int`
@@ -360,7 +383,7 @@ def BlendingHalf(
 
     Half blending refers to an acquisition scenario where two or more vessels, each with a source are fired at
     short time differences. The same experiment is repeated :math:`n_{groups}` times to create :math:`n_{groups}`
-    blended recordings. For the case of 2 sources and an overall number of :math:`N=n_{groups}*group_{size}` shots
+    blended recordings. For the case of 2 sources and an overall number of :math:`N=2*n_{groups}` shots
 
     .. math::
         \Phi = \begin{bmatrix}

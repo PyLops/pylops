@@ -1,10 +1,17 @@
-import devito
-import numpy as np
+import os
 
-from pylops.utils import dottest
+import numpy as np
+import pytest
+
+from pylops.utils import deps, dottest
 from pylops.waveeqprocessing.twoway import AcousticWave2D
 
-devito.configuration["log-level"] = "ERROR"
+devito_message = deps.devito_import("the twoway module")
+
+if devito_message is None:
+    import devito
+
+    devito.configuration["log-level"] = "ERROR"
 
 
 par = {
@@ -28,6 +35,9 @@ sx = np.linspace(x.min(), x.max(), par["ns"])
 rx = np.linspace(x.min(), x.max(), par["nr"])
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 def test_acwave2d():
     """Dot-test for AcousticWave2D operator"""
     Dop = AcousticWave2D(

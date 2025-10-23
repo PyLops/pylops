@@ -3,8 +3,6 @@ __all__ = [
     "Deghosting",
 ]
 
-
-import logging
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -16,8 +14,6 @@ from pylops.utils import dottest as Dottest
 from pylops.utils.backend import to_cupy_conditional
 from pylops.utils.tapers import taper2d, taper3d
 from pylops.utils.typing import DTypeLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class _PhaseShift(LinearOperator):
@@ -84,6 +80,8 @@ def PhaseShift(
     ky: Optional[NDArray] = None,
     dtype: DTypeLike = "float64",
     name: str = "P",
+    fftengine: str = "numpy",
+    **kwargs_fft,
 ) -> LinearOperator:
     r"""Phase shift operator
 
@@ -103,10 +101,10 @@ def PhaseShift(
     freq : :obj:`numpy.ndarray`
         Positive frequency axis
     kx : :obj:`int`, optional
-        Horizontal wavenumber axis (centered around 0) of size
+        Horizontal spectroscopic wavenumber axis (centered around 0) of size
         :math:`[n_x \times 1]`.
     ky : :obj:`int`, optional
-        Second horizontal wavenumber axis for 3d phase shift
+        Second horizontal spectroscopic wavenumber axis for 3d phase shift
         (centered around 0) of size :math:`[n_y \times 1]`.
     dtype : :obj:`str`, optional
         Type of elements in input array
@@ -114,6 +112,15 @@ def PhaseShift(
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+    fftengine : :obj:`str`, optional
+        .. versionadded:: 2.6.0
+
+        Engine used for fft computation (``numpy``, ``scipy``, or ``fftw``). Choose
+        ``numpy`` when working with CuPy arrays.
+    **kwargs_fft
+        .. versionadded:: 2.6.0
+
+        Arbitrary keyword arguments to be passed to the selected fft method
 
     Returns
     -------
@@ -130,9 +137,14 @@ def PhaseShift(
         d(f, k_x, k_y) = m(f, k_x, k_y)
         e^{-j \Delta z \sqrt{\omega^2/v^2 - k_x^2 - k_y^2}}
 
-    where :math:`v` is the constant propagation velocity and
-    :math:`\Delta z` is the propagation depth. In adjoint mode, the data is
-    propagated backward using the following transformation:
+    where :math:`v` is the constant propagation velocity,
+    :math:`\Delta z` is the propagation depth, :math:`\omega=2\pi f` is the
+    angular frequency axis (where :math:`f` is represented by ``freq``),
+    :math:`k_x=2\pi \tilde{k}_x` is the horizontal wavenumber (where
+    :math:`\tilde{k}_x` is represented by ``kx``), and :math:`k_y=2\pi \tilde{k}_y`
+    is the second horizontal wavenumber (where :math:`\tilde{k}_y`
+    is represented by ``ky``). In adjoint mode, the data is propagated backward
+    using the following transformation:
 
     .. math::
         m(f, k_x, k_y) = d(f, k_x, k_y)
@@ -169,7 +181,9 @@ def PhaseShift(
             nfft=ky.size,
             real=False,
             ifftshift_before=True,
+            engine=fftengine,
             dtype=dtypefft,
+            **kwargs_fft,
         )
     Pop = _PhaseShift(vel, dz, freq, kx, ky, dtypefft)
     if ky is None:
@@ -203,7 +217,7 @@ def Deghosting(
     solver: Callable = lsqr,
     dottest: bool = False,
     dtype: DTypeLike = "complex128",
-    **kwargs_solver
+    **kwargs_solver,
 ) -> Tuple[NDArray, NDArray]:
     r"""Wavefield deghosting.
 
@@ -213,7 +227,7 @@ def Deghosting(
 
     Parameters
     ----------
-    p : :obj:`np.ndarray`
+    p : :obj:`numpy.ndarray`
         Pressure (or vertical velocity) data of of size
         :math:`\lbrack n_{r_x}\,(\times n_{r_y})
         \times n_t \rbrack` (or :math:`\lbrack n_{r_{x,\text{sub}}}\,
@@ -238,9 +252,9 @@ def Deghosting(
         .. versionadded:: 2.3.0
 
         Type of data (``p`` or ``vz``)
-    pd : :obj:`np.ndarray`, optional
+    pd : :obj:`numpy.ndarray`, optional
         Direct arrival to be subtracted from ``p``
-    win : :obj:`np.ndarray`, optional
+    win : :obj:`numpy.ndarray`, optional
         Time window to be applied to ``p`` to remove the direct arrival
         (if ``pd=None``)
     ntaper : :obj:`float` or :obj:`tuple`, optional
@@ -266,9 +280,9 @@ def Deghosting(
 
     Returns
     -------
-    pup : :obj:`np.ndarray`
+    pup : :obj:`numpy.ndarray`
         Up-going pressure (or particle velocity) wavefield
-    pdown : :obj:`np.ndarray`
+    pdown : :obj:`numpy.ndarray`
         Down-going (or particle velocity) wavefield
 
     Raises

@@ -1,6 +1,17 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_equal
+
+    backend = "numpy"
+import numpy as npp
 import pytest
-from numpy.testing import assert_equal
 
 from pylops.basicoperators import Transpose
 from pylops.utils import dottest
@@ -21,7 +32,11 @@ def test_Transpose_2dsignal(par):
 
     Top = Transpose(dims=dims, axes=(1, 0), dtype=par["dtype"])
     assert dottest(
-        Top, np.prod(dims), np.prod(dims), complexflag=0 if par["imag"] == 0 else 3
+        Top,
+        npp.prod(dims),
+        npp.prod(dims),
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
     y = Top * x.ravel()
     xadj = Top.H * y
@@ -29,8 +44,8 @@ def test_Transpose_2dsignal(par):
     y = y.reshape(Top.dimsd)
     xadj = xadj.reshape(Top.dims)
 
-    assert_equal(x, xadj)
-    assert_equal(y, x.T)
+    assert_array_equal(x, xadj)
+    assert_array_equal(y, x.T)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
@@ -43,7 +58,11 @@ def test_Transpose_3dsignal(par):
 
     Top = Transpose(dims=dims, axes=(2, 1, 0))
     assert dottest(
-        Top, np.prod(dims), np.prod(dims), complexflag=0 if par["imag"] == 0 else 3
+        Top,
+        npp.prod(dims),
+        npp.prod(dims),
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
     )
 
     y = Top * x.ravel()
@@ -52,4 +71,4 @@ def test_Transpose_3dsignal(par):
     y = y.reshape(Top.dimsd)
     xadj = xadj.reshape(Top.dims)
 
-    assert_equal(x, xadj)
+    assert_array_equal(x, xadj)

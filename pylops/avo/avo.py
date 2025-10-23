@@ -9,7 +9,6 @@ __all__ = [
     "AVOLinearModelling",
 ]
 
-import logging
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -21,8 +20,6 @@ from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def zoeppritz_scattering(
@@ -53,12 +50,12 @@ def zoeppritz_scattering(
         S-wave velocity of the lower medium
     rho0 : :obj:`float`
         Density of the lower medium
-    theta1 : :obj:`np.ndarray` or :obj:`float`
+    theta1 : :obj:`numpy.ndarray` or :obj:`float`
         Incident angles in degrees
 
     Returns
     -------
-    zoep : :obj:`np.ndarray`
+    zoep : :obj:`numpy.ndarray`
         :math:`4 \times 4` matrix representing the scattering matrix for the
         incident angle ``theta1``
 
@@ -172,7 +169,7 @@ def zoeppritz_element(
         S-wave velocity of the lower medium
     rho0 : :obj:`float`
         Density of the lower medium
-    theta1 : :obj:`np.ndarray` or :obj:`float`
+    theta1 : :obj:`numpy.ndarray` or :obj:`float`
         Incident angles in degrees
     element : :obj:`str`, optional
         Specific choice of incident and reflected wave combining
@@ -182,7 +179,7 @@ def zoeppritz_element(
 
     Returns
     -------
-    refl : :obj:`np.ndarray`
+    refl : :obj:`numpy.ndarray`
         reflectivity values for all input angles for specific combination
         of incident and reflected wave.
 
@@ -234,12 +231,12 @@ def zoeppritz_pp(
         S-wave velocity of the lower medium
     rho0 : :obj:`float`
         Density of the lower medium
-    theta1 : :obj:`np.ndarray` or :obj:`float`
+    theta1 : :obj:`numpy.ndarray` or :obj:`float`
         Incident angles in degrees
 
     Returns
     -------
-    PPrefl : :obj:`np.ndarray`
+    PPrefl : :obj:`numpy.ndarray`
         PP reflectivity values for all input angles.
 
     See also
@@ -271,24 +268,24 @@ def approx_zoeppritz_pp(
 
     Parameters
     ----------
-    vp1 : :obj:`np.ndarray` or :obj:`list` or :obj:`tuple`
+    vp1 : :obj:`numpy.ndarray` or :obj:`list` or :obj:`tuple`
         P-wave velocity of the upper medium
-    vs1 : :obj:`np.ndarray` or :obj:`list` or :obj:`tuple`
+    vs1 : :obj:`numpy.ndarray` or :obj:`list` or :obj:`tuple`
         S-wave velocity of the upper medium
-    rho1 : :obj:`np.ndarray` or :obj:`list` or :obj:`tuple`
+    rho1 : :obj:`numpy.ndarray` or :obj:`list` or :obj:`tuple`
         Density of the upper medium
-    vp0 : :obj:`np.ndarray` or :obj:`list` or :obj:`tuple`
+    vp0 : :obj:`numpy.ndarray` or :obj:`list` or :obj:`tuple`
         P-wave velocity of the lower medium
-    vs0 : :obj:`np.ndarray` or :obj:`list` or :obj:`tuple`
+    vs0 : :obj:`numpy.ndarray` or :obj:`list` or :obj:`tuple`
         S-wave velocity of the lower medium
-    rho0 : :obj:`np.ndarray` or :obj:`list` or :obj:`tuple`
+    rho0 : :obj:`numpy.ndarray` or :obj:`list` or :obj:`tuple`
         Density of the lower medium
-    theta1 : :obj:`np.ndarray` or :obj:`float`
+    theta1 : :obj:`numpy.ndarray` or :obj:`float`
         Incident angles in degrees
 
     Returns
     -------
-    PPrefl : :obj:`np.ndarray`
+    PPrefl : :obj:`numpy.ndarray`
         PP reflectivity values for all input angles.
 
     See also
@@ -349,22 +346,22 @@ def akirichards(
 
     Parameters
     ----------
-    theta : :obj:`np.ndarray`
+    theta : :obj:`numpy.ndarray`
         Incident angles in degrees
-    vsvp : :obj:`np.ndarray` or :obj:`float`
+    vsvp : :obj:`numpy.ndarray` or :obj:`float`
         :math:`V_S/V_P` ratio
     n : :obj:`int`, optional
         Number of samples (if ``vsvp`` is a scalar)
 
     Returns
     -------
-    G1 : :obj:`np.ndarray`
+    G1 : :obj:`numpy.ndarray`
         First coefficient of three terms Aki-Richards approximation
         :math:`[n_\theta  \times  n_\text{vsvp}]`
-    G2 : :obj:`np.ndarray`
+    G2 : :obj:`numpy.ndarray`
         Second coefficient of three terms Aki-Richards approximation
         :math:`[n_\theta  \times  n_\text{vsvp}]`
-    G3 : :obj:`np.ndarray`
+    G3 : :obj:`numpy.ndarray`
         Third coefficient of three terms Aki-Richards approximation
         :math:`[n_\theta  \times  n_\text{vsvp}]`
 
@@ -423,22 +420,22 @@ def fatti(
 
     Parameters
     ----------
-    theta : :obj:`np.ndarray`
+    theta : :obj:`numpy.ndarray`
         Incident angles in degrees
-    vsvp : :obj:`np.ndarray` or :obj:`float`
+    vsvp : :obj:`numpy.ndarray` or :obj:`float`
         :math:`V_S/V_P` ratio
     n : :obj:`int`, optional
         Number of samples (if ``vsvp`` is a scalar)
 
     Returns
     -------
-    G1 : :obj:`np.ndarray`
+    G1 : :obj:`numpy.ndarray`
         First coefficient of three terms Smith-Gidlow approximation
         :math:`[n_{\theta}  \times  n_\text{vsvp}]`
-    G2 : :obj:`np.ndarray`
+    G2 : :obj:`numpy.ndarray`
         Second coefficient of three terms Smith-Gidlow approximation
         :math:`[n_{\theta}  \times  n_\text{vsvp}]`
-    G3 : :obj:`np.ndarray`
+    G3 : :obj:`numpy.ndarray`
         Third coefficient of three terms Smith-Gidlow approximation
         :math:`[n_{\theta}  \times  n_\text{vsvp}]`
 
@@ -499,23 +496,23 @@ def ps(
 
     Parameters
     ----------
-    theta : :obj:`np.ndarray`
+    theta : :obj:`numpy.ndarray`
         Incident angles in degrees
-    vsvp : :obj:`np.ndarray` or :obj:`float`
+    vsvp : :obj:`numpy.ndarray` or :obj:`float`
         :math:`V_S/V_P` ratio
     n : :obj:`int`, optional
         Number of samples (if ``vsvp`` is a scalar)
 
     Returns
     -------
-    G1 : :obj:`np.ndarray`
+    G1 : :obj:`numpy.ndarray`
         First coefficient for VP :math:`[n_{\theta}  \times  n_\text{vsvp}]`.
         Since the PS reflection at zero angle is zero, this value is not used and is
         only available to ensure function signature compatibility with other
         linearization routines.
-    G2 : :obj:`np.ndarray`
+    G2 : :obj:`numpy.ndarray`
         Second coefficient for VS :math:`[n_{\theta}  \times  n_\text{vsvp}]`
-    G3 : :obj:`np.ndarray`
+    G3 : :obj:`numpy.ndarray`
         Third coefficient for density :math:`[n_{\theta}  \times  n_\text{vsvp}]`
 
     Notes
@@ -532,9 +529,9 @@ def ps(
 
     .. math::
         \begin{align}
-        G_2(\theta) &= \tan \frac{\theta}{2} \left\{4 (V_S/V_P)^2 \sin^2 \theta
+        G_2(\theta) &=  \frac{\tan \theta}{2} \left\{4 (V_S/V_P)^2 \sin^2 \theta
             - 4(V_S/V_P) \cos \theta \cos \phi \right\},\\
-        G_3(\theta) &= -\tan \frac{\theta}{2} \left\{1 - 2 (V_S/V_P)^2 \sin^2 \theta +
+        G_3(\theta) &= - \frac{\tan \theta}{2} \left\{1 - 2 (V_S/V_P)^2 \sin^2 \theta +
         2(V_S/V_P) \cos \theta \cos \phi\right\},\\
         \frac{\Delta V_S}{\overline{V_S}} &= 2 \frac{V_{S,2}-V_{S,1}}{V_{S,2}+V_{S,1}},\\
         \frac{\Delta \rho}{\overline{\rho}} &= 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}.
@@ -582,9 +579,9 @@ class AVOLinearModelling(LinearOperator):
 
     Parameters
     ----------
-    theta : :obj:`np.ndarray`
+    theta : :obj:`numpy.ndarray`
         Incident angles in degrees
-    vsvp : :obj:`np.ndarray` or :obj:`float`
+    vsvp : :obj:`numpy.ndarray` or :obj:`float`
         :math:`V_S/V_P` ratio
     nt0 : :obj:`int`, optional
         Number of samples (if ``vsvp`` is a scalar)
@@ -607,11 +604,23 @@ class AVOLinearModelling(LinearOperator):
 
     Attributes
     ----------
+    ntheta : :obj:`int`
+        Number of angles.
+    G : :obj:`numpy.ndarray`
+        AVO coefficients of shape :math:`[n_{\theta}  \times  N \times  1 \times
+        \ldots \times 1]` where :math:`N=2,\, 3` is the number of elastic
+        parameters and the remaining dimensions are singleton dimensions
+        to account for spatial axes.
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
+        Operator shape.
 
     Raises
     ------
@@ -659,7 +668,6 @@ class AVOLinearModelling(LinearOperator):
         elif linearization == "ps":
             Gs = ps(theta, vsvp, n=self.nt0)
         else:
-            logging.error("%s not an available " "linearization...", linearization)
             raise NotImplementedError(
                 "%s not an available linearization..." % linearization
             )

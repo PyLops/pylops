@@ -48,10 +48,7 @@ class FunctionOperator(LinearOperator):
     Attributes
     ----------
     shape : :obj:`tuple`
-        Operator shape :math:`[n \times m]`
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape. :math:`[n \times m]`
 
     Examples
     --------

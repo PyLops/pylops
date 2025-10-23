@@ -26,11 +26,12 @@ class MemoizeOperator(LinearOperator):
 
     Attributes
     ----------
+    store : :obj:`list`
+        List of stored (x, y) pairs.
+    neval : :obj:`int`
+        Number of evaluations of the operator.
     shape : :obj:`tuple`
-        Operator shape :math:`[n \times m]`
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
+        Operator shape. :math:`[n \times m]`.
 
     """
 

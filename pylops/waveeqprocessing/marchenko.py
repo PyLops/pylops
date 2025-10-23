@@ -1,7 +1,7 @@
 __all__ = ["Marchenko"]
 
 import logging
-from typing import Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -15,7 +15,7 @@ from pylops.utils.backend import get_array_module, get_module_name, to_cupy_cond
 from pylops.utils.typing import DTypeLike, NDArray
 from pylops.waveeqprocessing.mdd import MDC
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 def directwave(
@@ -157,19 +157,37 @@ class Marchenko:
     Attributes
     ----------
     ns : :obj:`int`
-        Number of samples along source axis
+        Number of samples along source axis.
     nr : :obj:`int`
-        Number of samples along receiver axis
+        Number of samples along receiver axis.
+    nt : :obj:`int`
+        Number of samples along time axis.
+    nt2 : :obj:`int`
+        Number of samples along the negative-mirrored time axis.
+    t : :obj:`numpy.ndarray`
+        Time axis.
+    kwargs_fft : :obj:`dict`
+        Keyword arguments to be passed to the selected fft method
+    ncp : :obj:`module`
+        Array module (``numpy`` or ``cupy``)
+    Rtwosided_fft : :obj:`numpy.ndarray`
+        Two-sided frequency-domain reflection response of size
+        :math:`[n_{f_\text{max}} \times n_s \times n_r]`.
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
+        Operator shape.
 
     Raises
     ------
-    TypeError
-        If ``t`` is not :obj:`numpy.ndarray`.
+    ValueError
+        If ``nt`` is not provided when ``R`` is in time domain.
 
     See Also
     --------
@@ -246,6 +264,7 @@ class Marchenko:
         prescaled: bool = False,
         fftengine: str = "numpy",
         dtype: DTypeLike = "float64",
+        kwargs_fft: Optional[Dict[str, Any]] = None,
     ) -> None:
         # Save inputs into class
         self.dt = dt
@@ -257,6 +276,7 @@ class Marchenko:
         self.prescaled = prescaled
         self.fftengine = fftengine
         self.dtype = dtype
+        self.kwargs_fft = {} if kwargs_fft is None else kwargs_fft
         self.explicit = False
         self.ncp = get_array_module(R)
 
@@ -265,17 +285,18 @@ class Marchenko:
             self.ns, self.nr, self.nt = R.shape
             self.nfmax = nfmax
         else:
+            if nt is None:
+                raise ValueError("nt must be provided as R is in frequency")
             self.ns, self.nr, self.nfmax = R.shape
             self.nt = nt
-            if nt is None:
-                logging.error("nt must be provided as R is in frequency")
+
         self.nt2 = int(2 * self.nt - 1)
         self.t = np.arange(self.nt) * self.dt
 
         # Fix nfmax to be at maximum equal to half of the size of fft samples
         if self.nfmax is None or self.nfmax > np.ceil((self.nt2 + 1) / 2):
             self.nfmax = int(np.ceil((self.nt2 + 1) / 2))
-            logging.warning("nfmax set equal to (nt+1)/2=%d", self.nfmax)
+            logger.warning("nfmax set equal to (nt+1)/2=%d", self.nfmax)
 
         # Add negative time to reflection data and convert to frequency
         if not np.iscomplexobj(R):
@@ -301,7 +322,7 @@ class Marchenko:
         greens: bool = False,
         dottest: bool = False,
         usematmul: bool = False,
-        **kwargs_solver
+        **kwargs_solver,
     ) -> Union[
         Tuple[NDArray, NDArray, NDArray, NDArray, NDArray],
         Tuple[NDArray, NDArray, NDArray, NDArray],
@@ -341,7 +362,7 @@ class Marchenko:
             for numpy and cupy `data`, respectively)
 
         Returns
-        ----------
+        -------
         f1_inv_minus : :obj:`numpy.ndarray`
             Inverted upgoing focusing function of size :math:`[n_r \times n_t]`
         f1_inv_plus : :obj:`numpy.ndarray`
@@ -383,6 +404,7 @@ class Marchenko:
             saveGt=self.saveRt,
             prescaled=self.prescaled,
             usematmul=usematmul,
+            **self.kwargs_fft,
         )
         R1op = MDC(
             self.Rtwosided_fft,
@@ -396,6 +418,7 @@ class Marchenko:
             saveGt=self.saveRt,
             prescaled=self.prescaled,
             usematmul=usematmul,
+            **self.kwargs_fft,
         )
         Rollop = Roll(
             (self.nt2, self.ns),
@@ -439,10 +462,6 @@ class Marchenko:
                 ).T
                 G0 = to_cupy_conditional(self.Rtwosided_fft, G0)
             else:
-                logging.error(
-                    "wav and/or nfft are not provided. "
-                    "Provide either G0 or wav and nfft..."
-                )
                 raise ValueError(
                     "wav and/or nfft are not provided. "
                     "Provide either G0 or wav and nfft..."
@@ -473,7 +492,7 @@ class Marchenko:
                 Mop,
                 d.ravel(),
                 x0=self.ncp.zeros(2 * (2 * self.nt - 1) * self.nr, dtype=self.dtype),
-                **kwargs_solver
+                **kwargs_solver,
             )[0]
 
         f1_inv = f1_inv.reshape(2 * self.nt2, self.nr)
@@ -486,8 +505,9 @@ class Marchenko:
             # Create Green's functions
             g_inv = Gop * f1_inv_tot.ravel()
             g_inv = g_inv.reshape(2 * self.nt2, self.ns)
-            g_inv_minus, g_inv_plus = -g_inv[: self.nt2].T, np.fliplr(
-                g_inv[self.nt2 :].T
+            g_inv_minus, g_inv_plus = (
+                -g_inv[: self.nt2].T,
+                np.fliplr(g_inv[self.nt2 :].T),
             )
         if rtm and greens:
             return f1_inv_minus, f1_inv_plus, p0_minus, g_inv_minus, g_inv_plus
@@ -507,7 +527,7 @@ class Marchenko:
         greens: bool = False,
         dottest: bool = False,
         usematmul: bool = False,
-        **kwargs_solver
+        **kwargs_solver,
     ) -> Union[
         Tuple[NDArray, NDArray, NDArray, NDArray, NDArray],
         Tuple[NDArray, NDArray, NDArray, NDArray],
@@ -548,7 +568,7 @@ class Marchenko:
             for numpy and cupy `data`, respectively)
 
         Returns
-        ----------
+        -------
         f1_inv_minus : :obj:`numpy.ndarray`
             Inverted upgoing focusing function of size
             :math:`[n_r \times n_{vs} \times n_t]`
@@ -594,6 +614,7 @@ class Marchenko:
             fftengine=self.fftengine,
             prescaled=self.prescaled,
             usematmul=usematmul,
+            **self.kwargs_fft,
         )
         R1op = MDC(
             self.Rtwosided_fft,
@@ -606,6 +627,7 @@ class Marchenko:
             fftengine=self.fftengine,
             prescaled=self.prescaled,
             usematmul=usematmul,
+            **self.kwargs_fft,
         )
         Rollop = Roll(
             (self.nt2, self.ns, nvs),
@@ -656,10 +678,6 @@ class Marchenko:
                     ).T
                 G0 = to_cupy_conditional(self.Rtwosided_fft, G0)
             else:
-                logging.error(
-                    "wav and/or nfft are not provided. "
-                    "Provide either G0 or wav and nfft..."
-                )
                 raise ValueError(
                     "wav and/or nfft are not provided. "
                     "Provide either G0 or wav and nfft..."
@@ -695,7 +713,7 @@ class Marchenko:
                 x0=self.ncp.zeros(
                     2 * (2 * self.nt - 1) * self.nr * nvs, dtype=self.dtype
                 ),
-                **kwargs_solver
+                **kwargs_solver,
             )[0]
 
         f1_inv = f1_inv.reshape(2 * self.nt2, self.nr, nvs)

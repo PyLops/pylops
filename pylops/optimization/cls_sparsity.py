@@ -1,6 +1,15 @@
-__all__ = ["IRLS"]
+__all__ = [
+    "IRLS",
+    "OMP",
+    "ISTA",
+    "FISTA",
+    "SPGL1",
+    "SplitBregman",
+]
+
 import logging
 import time
+from math import sqrt
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -8,18 +17,26 @@ from scipy.sparse.linalg import lsqr
 
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, Identity, VStack
-from pylops.optimization.basesolver import Solver
+from pylops.optimization.basesolver import Solver, _units
 from pylops.optimization.basic import cgls
+from pylops.optimization.callback import _callback_stop
 from pylops.optimization.eigs import power_iteration
 from pylops.optimization.leastsquares import regularized_inversion
 from pylops.utils import deps
-from pylops.utils.backend import get_array_module, get_module_name
+from pylops.utils.backend import (
+    get_array_module,
+    get_module_name,
+    get_real_dtype,
+    inplace_set,
+)
 from pylops.utils.typing import InputDimsLike, NDArray, SamplingLike
 
 spgl1_message = deps.spgl1_import("the spgl1 solver")
 
 if spgl1_message is None:
     from spgl1 import spgl1 as ext_spgl1
+
+logger = logging.getLogger(__name__)
 
 
 def _hardthreshold(x: NDArray, thresh: float) -> NDArray:
@@ -46,7 +63,7 @@ def _hardthreshold(x: NDArray, thresh: float) -> NDArray:
 
     """
     x1 = x.copy()
-    x1[np.abs(x) <= np.sqrt(2 * thresh)] = 0
+    x1[np.abs(x) <= sqrt(2 * thresh)] = 0.0
     return x1
 
 
@@ -108,13 +125,17 @@ def _halfthreshold(x: NDArray, thresh: float) -> NDArray:
             Since version 1.17.0 does not produce ``np.nan`` on bad input.
 
     """
-    arg = np.ones_like(x)
-    arg[x != 0] = (thresh / 8.0) * (np.abs(x[x != 0]) / 3.0) ** (-1.5)
-    arg = np.clip(arg, -1, 1)
-    phi = 2.0 / 3.0 * np.arccos(arg)
-    x1 = 2.0 / 3.0 * x * (1 + np.cos(2.0 * np.pi / 3.0 - phi))
-    # x1[np.abs(x) <= 1.5 * thresh ** (2. / 3.)] = 0
-    x1[np.abs(x) <= (54 ** (1.0 / 3.0) / 4.0) * thresh ** (2.0 / 3.0)] = 0
+    ncp = get_array_module(x)
+    arg = ncp.ones_like(x)
+    arg[x != 0] = (thresh / 8.0) * (ncp.abs(x[x != 0.0]) / 3.0) ** (-1.5)
+    if ncp.iscomplexobj(arg):
+        arg.real = ncp.clip(arg.real, -1.0, 1.0)
+        arg.imag = ncp.clip(arg.imag, -1.0, 1.0)
+    else:
+        arg = ncp.clip(arg, -1.0, 1.0)
+    phi = 2.0 / 3.0 * ncp.arccos(arg)
+    x1 = 2.0 / 3.0 * x * (1.0 + ncp.cos(2.0 * np.pi / 3.0 - phi))
+    x1[ncp.abs(x) <= (54.0 ** (1.0 / 3.0) / 4.0) * thresh ** (2.0 / 3.0)] = 0
     return x1
 
 
@@ -222,6 +243,30 @@ class IRLS(Solver):
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
 
+    Attributes
+    ----------
+    ncp : :obj:`module`
+        Array module used by the solver (obtained via
+        :func:`pylops.utils.backend.get_array_module`)
+        ). Available only after ``setup`` is called.
+    isjax : :obj:`bool`
+        Whether the input data is a JAX array or not.
+    r : :obj:`numpy.ndarray`
+        Residual vector of size :math:`[N \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called.
+    rw : :obj:`numpy.ndarray`
+        Weigthing vector of size :math:`[N \times 1]` for ``kind=data``
+        or ``kind=datamodel`` or of size :math:`[M \times 1]` for ``kind=model``
+        used in the solver when ``preallocate=True``. Available only
+        after ``setup`` is called and updated at each call to ``step``.
+    cost : :obj:`list`
+        History of the L2 norm of the residual. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    iiter : :obj:`int`
+        Current iteration number. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+
     Raises
     ------
     NotImplementedError
@@ -316,6 +361,51 @@ class IRLS(Solver):
         str2 = f"         {self.rnorm:10.3e}"
         print(str1 + str2)
 
+    def memory_usage(
+        self,
+        kind: str = "data",
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        kind : :obj:`str`, optional
+            Kind of solver (``model``, ``data`` or ``datamodel``)
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: y + augmented y if kind=datamodel
+        memuse = self.Op.shape[0] * nbytes
+        if kind == "datamodel":
+            memuse += self.Op.shape[1] * nbytes
+
+        # Step (additional variables to those in setup): rw
+        if kind == "data":
+            memuse += self.Op.shape[0] * nbytes
+        elif kind == "model":
+            memuse += self.Op.shape[1] * nbytes
+        elif kind == "datamodel":
+            memuse += 2 * self.Op.shape[0] * nbytes
+
+        if show:
+            print(f"IRLS predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -326,13 +416,14 @@ class IRLS(Solver):
         tolIRLS: float = 1e-10,
         warm: bool = False,
         kind: str = "data",
+        preallocate: bool = False,
         show: bool = False,
     ) -> None:
         r"""Setup solver
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
         nouter : :obj:`int`, optional
             Number of outer iterations
@@ -342,16 +433,22 @@ class IRLS(Solver):
         epsR : :obj:`float`, optional
             Damping to be applied to residuals for weighting term
         epsI : :obj:`float`, optional
-            Tikhonov damping (for ``kind="data"``) or L1 model damping
-            (for ``kind="datamodel"``)
+            Tikhonov damping
         tolIRLS : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
             at subsequent iterations is smaller than ``tolIRLS``
         warm  : :obj:`bool`, optional
-            Warm start each inversion inner step with previous estimate (``True``) or not (``False``).
-            This only applies to ``kind="data"`` and ``kind="datamodel"``
+            Warm start each inversion inner step with previous estimate (``True``)
+            or not (``False``). This only applies to ``kind="data"`` and
+            ``kind="datamodel"``
         kind : :obj:`str`, optional
             Kind of solver (``model``, ``data`` or ``datamodel``)
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
@@ -364,8 +461,10 @@ class IRLS(Solver):
         self.tolIRLS = tolIRLS
         self.warm = warm
         self.kind = kind
+
         self.ncp = get_array_module(y)
-        self.iiter = 0
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # choose step to use
         if self.kind == "data":
@@ -378,33 +477,68 @@ class IRLS(Solver):
             # augment Op and y
             self.Op = VStack([self.Op, epsI * Identity(self.Op.shape[1])])
             self.epsI = 0.0  # as epsI is added to the augmented system already
-            self.y = np.hstack([self.y, np.zeros(self.Op.shape[1])])
+            self.y = self.ncp.hstack([self.y, self.ncp.zeros(self.Op.shape[1])])
         else:
             raise NotImplementedError("kind must be model, data or datamodel")
+
+        if self.preallocate:
+            self.r = self.ncp.empty_like(self.y)
+            if "data" in self.kind:
+                self.rw = self.ncp.empty_like(self.y)
+            else:
+                self.rw = self.ncp.empty(self.Op.shape[1], dtype=self.Op.dtype)
+
+        # create variables to track the residual norm and iterations
+        self.cost = [
+            float(np.linalg.norm(self.y)),
+        ]
+        self.iiter = 0
 
         # print setup
         if show:
             self._print_setup()
 
-    def _step_data(self, x: NDArray, **kwargs_solver) -> NDArray:
+    def _step_data(self, x: NDArray, engine: str = "scipy", **kwargs_solver) -> NDArray:
         r"""Run one step of solver with L1 data term"""
+        # add preallocate to keywords of solver
+        if self.preallocate and (engine == "pylops" or self.ncp != np):
+            kwargs_solver["preallocate"] = True
         if self.iiter == 0:
+            # first iteration (standard least-squares)
             x = regularized_inversion(
                 self.Op,
                 self.y,
                 None,
                 x0=x if self.warm else None,
                 damp=self.epsI,
+                engine=engine,
                 **kwargs_solver,
             )[0]
         else:
             # other iterations (weighted least-squares)
-            if self.threshR:
-                self.rw = 1.0 / self.ncp.maximum(self.ncp.abs(self.r), self.epsR)
+            if self.preallocate and self.iiter == 1:
+                self.rw = self.ncp.zeros_like(self.y)
+
+            if not self.preallocate:
+                if self.threshR:
+                    self.rw = 1.0 / self.ncp.maximum(self.ncp.abs(self.r), self.epsR)
+                else:
+                    self.rw = 1.0 / (self.ncp.abs(self.r) + self.epsR)
+                self.rw = self.rw / self.rw.max()
             else:
-                self.rw = 1.0 / (self.ncp.abs(self.r) + self.epsR)
-            self.rw = self.rw / self.rw.max()
-            R = Diagonal(np.sqrt(self.rw))
+                if self.threshR:
+                    self.ncp.divide(
+                        1.0,
+                        self.ncp.maximum(self.ncp.abs(self.r), self.epsR),
+                        out=self.rw,
+                    )
+                else:
+                    self.ncp.divide(
+                        1.0, (self.ncp.abs(self.r) + self.epsR), out=self.rw
+                    )
+                self.ncp.divide(self.rw, self.rw.max(), out=self.rw)
+
+            R = Diagonal(self.ncp.sqrt(self.rw))
             x = regularized_inversion(
                 self.Op,
                 self.y,
@@ -412,15 +546,21 @@ class IRLS(Solver):
                 Weight=R,
                 x0=x if self.warm else None,
                 damp=self.epsI,
+                engine=engine,
                 **kwargs_solver,
             )[0]
         return x
 
-    def _step_model(self, x: NDArray, **kwargs_solver) -> NDArray:
+    def _step_model(
+        self, x: NDArray, engine: str = "scipy", **kwargs_solver
+    ) -> NDArray:
         r"""Run one step of solver with L1 model term"""
+        # add preallocate to keywords of solver
+        if self.preallocate and (engine == "pylops" or self.ncp != np):
+            kwargs_solver["preallocate"] = True
         if self.iiter == 0:
             # first iteration (unweighted least-squares)
-            if self.ncp == np:
+            if engine == "scipy" and self.ncp == np:
                 x = self.Op.rmatvec(
                     lsqr(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
@@ -428,7 +568,7 @@ class IRLS(Solver):
                         **kwargs_solver,
                     )[0]
                 )
-            else:
+            elif engine == "pylops" or self.ncp != np:
                 x = self.Op.rmatvec(
                     cgls(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
@@ -439,10 +579,17 @@ class IRLS(Solver):
                 )
         else:
             # other iterations (weighted least-squares)
-            self.rw = np.abs(x)
-            self.rw = self.rw / self.rw.max()
+            if self.preallocate and self.iiter == 1:
+                self.rw = self.ncp.zeros_like(x)
+            if not self.preallocate:
+                self.rw = self.ncp.abs(x)
+                self.rw = self.rw / self.rw.max()
+            else:
+                self.ncp.abs(x, out=self.rw)
+                self.ncp.divide(self.rw, self.rw.max(), out=self.rw)
+
             R = Diagonal(self.rw, dtype=self.rw.dtype)
-            if self.ncp == np:
+            if engine == "scipy" and self.ncp == np:
                 x = R.matvec(
                     self.Op.rmatvec(
                         lsqr(
@@ -452,7 +599,7 @@ class IRLS(Solver):
                         )[0]
                     )
                 )
-            else:
+            elif engine == "pylops" or self.ncp != np:
                 x = R.matvec(
                     self.Op.rmatvec(
                         cgls(
@@ -465,44 +612,61 @@ class IRLS(Solver):
                 )
         return x
 
-    def step(self, x: NDArray, show: bool = False, **kwargs_solver) -> NDArray:
+    def step(
+        self,
+        x: NDArray,
+        engine: str = "scipy",
+        show: bool = False,
+        **kwargs_solver,
+    ) -> NDArray:
         r"""Run one step of solver
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by a step of ISTA
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.6.0
+
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display iteration log
         **kwargs_solver
             Arbitrary keyword arguments for
             :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
             :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS when using
-            numpy data(or :py:func:`pylops.optimization.solver.cg` and
-            :py:func:`pylops.optimization.solver.cgls` when using cupy data)
+            numpy data and ``engine='scipy'`` (or
+            :py:func:`pylops.optimization.solver.cg` and
+            :py:func:`pylops.optimization.solver.cgls` when using cupy data or
+            ``engine='pylops'``)
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Updated model vector
 
         """
         # update model
-        x = self._step(x, **kwargs_solver)
+        x = self._step(x, engine=engine, **kwargs_solver)
 
         # compute residual
-        self.r: NDArray = self.y - self.Op.matvec(x)
+        if not self.preallocate:
+            self.r: NDArray = self.y - self.Op.matvec(x)
+        else:
+            self.ncp.subtract(self.y, self.Op.matvec(x), out=self.r)
         self.rnorm = self.ncp.linalg.norm(self.r)
 
         self.iiter += 1
+        self.cost.append(float(self.rnorm))
         if show:
             self._print_step(x)
         return x
 
     def run(
         self,
-        x: NDArray,
+        x: Optional[NDArray],
         nouter: int = 10,
+        engine: str = "scipy",
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
         **kwargs_solver,
@@ -511,10 +675,15 @@ class IRLS(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
-            Current model vector to be updated by multiple steps of IRLS
+        x : :obj:`numpy.ndarray`
+            Current model vector to be updated by multiple steps of IRLS. Provide
+            ``None`` to initialize internally as zero vector
         nouter : :obj:`int`, optional
             Number of outer iterations.
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.6.0
+
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -525,12 +694,14 @@ class IRLS(Solver):
             Arbitrary keyword arguments for
             :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
             :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS when using
-            numpy data(or :py:func:`pylops.optimization.solver.cg` and
-            :py:func:`pylops.optimization.solver.cgls` when using cupy data)
+            numpy data and ``engine='scipy'`` (or
+            :py:func:`pylops.optimization.solver.cg` and
+            :py:func:`pylops.optimization.solver.cgls` when using cupy data or
+            ``engine='pylops'``)
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
 
         """
@@ -538,6 +709,7 @@ class IRLS(Solver):
         if x is not None:
             self.x0 = x.copy()
             self.y = self.y - self.Op.matvec(x)
+
         # choose xold to ensure tolerance test is passed initially
         xold = x.copy() + np.inf
         while self.iiter < nouter and self.ncp.linalg.norm(x - xold) >= self.tolIRLS:
@@ -552,8 +724,12 @@ class IRLS(Solver):
                 else False
             )
             xold = x.copy()
-            x = self.step(x, showstep, **kwargs_solver)
+            x = self.step(x, engine, showstep, **kwargs_solver)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
 
         # adding initial guess
         if hasattr(self, "x0"):
@@ -586,6 +762,8 @@ class IRLS(Solver):
         tolIRLS: float = 1e-10,
         kind: str = "data",
         warm: bool = False,
+        engine: str = "scipy",
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
         **kwargs_solver,
@@ -594,9 +772,9 @@ class IRLS(Solver):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
-        x0 : :obj:`np.ndarray`, optional
+        x0 : :obj:`numpy.ndarray`, optional
             Initial guess of size :math:`[N \times 1]`. If ``None``, initialize
             internally as zero vector
         nouter : :obj:`int`, optional
@@ -616,6 +794,16 @@ class IRLS(Solver):
             This only applies to ``kind="data"`` and ``kind="datamodel"``
         kind : :obj:`str`, optional
             Kind of solver (``data`` or ``model``)
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.6.0
+
+            Solver to use (``scipy`` or ``pylops``)
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
         itershow : :obj:`tuple`, optional
@@ -631,7 +819,7 @@ class IRLS(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[N \times 1]`
 
         """
@@ -643,11 +831,19 @@ class IRLS(Solver):
             tolIRLS=tolIRLS,
             warm=warm,
             kind=kind,
+            preallocate=preallocate,
             show=show,
         )
         if x0 is None:
             x0 = self.ncp.zeros(self.Op.shape[1], dtype=self.y.dtype)
-        x = self.run(x0, nouter=nouter, show=show, itershow=itershow, **kwargs_solver)
+        x = self.run(
+            x0,
+            nouter=nouter,
+            engine=engine,
+            show=show,
+            itershow=itershow,
+            **kwargs_solver,
+        )
         self.finalize(show)
         return x, self.nouter
 
@@ -664,6 +860,28 @@ class OMP(Solver):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
+
+    Attributes
+    ----------
+    ncp : :obj:`module`
+        Array module used by the solver (obtained via
+        :func:`pylops.utils.backend.get_array_module`)
+        ). Available only after ``setup`` is called.
+    isjax : :obj:`bool`
+        Whether the input data is a JAX array or not.
+    norms : :obj:`numpy.ndarray`
+        Vector of size :math:`[Nbasis \times 1]` containing the
+        norms of each column of the ``Opbasis`` operator. Available
+        only after ``setup`` is called.
+    res : :obj:`numpy.ndarray`
+        Residual vector of size :math:`[N \times 1]`. Available only
+        after ``setup`` is called and updated at each call to ``step``.
+    cost : :obj:`list`
+        History of the L2 norm of the residual. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    iiter : :obj:`int`
+        Current iteration number. Available only after
+        ``setup`` is called and updated at each call to ``step``.
 
     See Also
     --------
@@ -688,21 +906,42 @@ class OMP(Solver):
         \DeclareMathOperator*{\argmin}{arg\,min}
         \DeclareMathOperator*{\argmax}{arg\,max}
         \Lambda_k = \Lambda_{k-1} \cup \left\{\argmax_j
-        \left|\mathbf{Op}_j^H\,\mathbf{r}_k\right| \right\} \\
+        \left|\mathbf{Op}^{j H}\,\mathbf{r}_k\right| \right\} \\
         \mathbf{x}_k = \argmin_{\mathbf{x}}
         \left\|\mathbf{Op}_{\Lambda_k}\,\mathbf{x} - \mathbf{y}\right\|_2^2
+
+    where :math:`\mathbf{Op}^j` is the :math:`j`-th column of the operator,
+    :math:`\mathbf{r}_k` is the residual at iteration :math:`k`, and
+    :math:`\mathbf{Op}_{\Lambda_k}` is the operator restricted to the columns
+    in the set :math:`\Lambda_k`.
 
     Note that by choosing ``niter_inner=0`` the basic Matching Pursuit (MP)
     algorithm is implemented instead. In other words, instead of solving an
     optimization at each iteration to find the best :math:`\mathbf{x}` for the
-    currently selected basis functions, the vector :math:`\mathbf{x}` is just
-    updated at the new basis function by taking directly the value from
-    the inner product :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
+    currently selected basis functions, either the vector :math:`\mathbf{x}`
+    is just updated at the new basis function by adding the value from
+    the inner product :math:`\mathbf{Op}_j^H\,\mathbf{r}_k` to the current value
+    (``optimal_coeff=False``) or the optimal coefficient that minimizes the norm
+    of the residual :math:`\mathbf{r} - c * \mathbf{Op}^j` is estimated
+    (``optimal_coeff=True``) and added to the current value.
 
-    In this case it is highly recommended to provide a normalized basis
-    function. If different basis have different norms, the solver is likely
-    to diverge. Similar observations apply to OMP, even though mild unbalancing
-    between the basis is generally properly handled.
+    In the case the MP solver is used, it is highly recommended to provide a
+    normalized basis function. If different basis have different norms, the
+    solver is likely to diverge. Similar observations apply to OMP, even
+    though mild unbalancing between the basis is generally properly handled.
+    Two possible ways to handle the scenario fo non-normalized basis functions
+    are:
+
+        - Find the normalization factor of the the basis functions before
+          running the solver (this is done by choosing ``normalizecols=True``);
+        - Find the optimal coefficient that minimizes the norm of the residual
+          :math:`\mathbf{r} - c * \mathbf{Op}^j` at every iteration (this is
+          done by choosing ``optimal_coeff=True``).
+
+    Finally, when the operator is a chain of operators, with the rigth-most
+    representing the basis function, if the operator of the basis function is
+    provided in the ``Opbasis`` parameter, the solver will use this operator
+    to find the normalization factor for each column of the operator.
 
     """
 
@@ -727,6 +966,41 @@ class OMP(Solver):
         str2 = f"         {self.cost[-1]:10.3e}"
         print(str1 + str2)
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: y, res
+        memuse = (2 * self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): cres, cres_abs
+        memuse += (2 * self.Op.shape[0]) * nbytes
+
+        if show:
+            print(f"OMP predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -734,13 +1008,16 @@ class OMP(Solver):
         niter_inner: int = 40,
         sigma: float = 1e-4,
         normalizecols: bool = False,
+        Opbasis: Optional["LinearOperator"] = None,
+        optimal_coeff: bool = False,
+        preallocate: bool = False,
         show: bool = False,
     ) -> None:
         r"""Setup solver
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
         niter_outer : :obj:`int`, optional
             Number of iterations of outer loop
@@ -755,6 +1032,20 @@ class OMP(Solver):
             :math:`n_{cols}` times to unit vectors (i.e., containing 1 at
             position j and zero otherwise); use only when the columns of the
             operator are expected to have highly varying norms.
+        Opbasis : :obj:`pylops.LinearOperator`
+            Operator representing the basis functions. If ``None``, the entire
+            operator used for inversion `Op` is used.
+        optimal_coeff : :obj:`bool`, optional
+            Estimate optimal coefficient that minimizes the norm of the residual
+            :math:`\mathbf{r} - c * \mathbf{Op}^j) norm (``True``) or use the
+            directly the value from the inner product
+            :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
@@ -764,21 +1055,26 @@ class OMP(Solver):
         self.niter_inner = niter_inner
         self.sigma = sigma
         self.normalizecols = normalizecols
+        self.Opbasis = Opbasis if Opbasis is not None else self.Op
+        self.optimal_coeff = optimal_coeff
+
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # find normalization factor for each column
         if self.normalizecols:
-            ncols = self.Op.shape[1]
+            ncols = self.Opbasis.shape[1]
             self.norms = self.ncp.zeros(ncols)
             for icol in range(ncols):
-                unit = self.ncp.zeros(ncols, dtype=self.Op.dtype)
+                unit = self.ncp.zeros(ncols, dtype=self.Opbasis.dtype)
                 unit[icol] = 1
-                self.norms[icol] = np.linalg.norm(self.Op.matvec(unit))
+                self.norms[icol] = self.ncp.linalg.norm(self.Opbasis.matvec(unit))
 
         # create variables to track the residual norm and iterations
         self.res = self.y.copy()
         self.cost = [
-            float(np.linalg.norm(self.y)),
+            float(np.linalg.norm(self.res)),
         ]
         self.iiter = 0
 
@@ -789,35 +1085,51 @@ class OMP(Solver):
         self,
         x: NDArray,
         cols: InputDimsLike,
+        engine: str = "scipy",
         show: bool = False,
+        **kwargs_solver,
     ) -> NDArray:
         r"""Run one step of solver
 
         Parameters
         ----------
-        x : :obj:`list` or :obj:`np.ndarray`
+        x : :obj:`list` or :obj:`numpy.ndarray`
             Current model vector to be updated by a step of OMP
         cols : :obj:`list`
             Current list of chosen elements of vector x to be updated by a step of OMP
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.6.0
+
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display iteration log
+        **kwargs_solver
+            Arbitrary keyword arguments for
+            :py:func:`scipy.sparse.linalg.lsqr` solver when using
+            numpy data and ``engine='scipy'`` (or
+            :py:func:`pylops.optimization.solver.cgls` when using cupy
+            data or ``engine='pylops'``)
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Updated model vector
         cols : :obj:`list`
             Current list of chosen elements
 
         """
+        # add preallocate to keywords of solver
+        if self.preallocate and (engine == "pylops" or self.ncp != np):
+            kwargs_solver["preallocate"] = True
+
         # compute inner products
         cres = self.Op.rmatvec(self.res)
-        cres_abs = np.abs(cres)
         if self.normalizecols:
-            cres_abs = cres_abs / self.norms
+            cres = cres / self.norms
+        cres_abs = self.ncp.abs(cres)
         # choose column with max cres
-        cres_max = np.max(cres_abs)
-        imax = np.argwhere(cres_abs == cres_max).ravel()
+        cres_max = self.ncp.max(cres_abs)
+        imax = self.ncp.argwhere(cres_abs == cres_max).ravel()
         nimax = len(imax)
         if nimax > 0:
             imax = imax[np.random.permutation(nimax)[0]]
@@ -839,27 +1151,55 @@ class OMP(Solver):
                     int(imax),
                 ]
             )
-            self.res -= Opcol.matvec(cres[imax] * self.ncp.ones(1))
-            if addnew:
-                x.append(cres[imax])
+            if not self.optimal_coeff:
+                # update with coefficient that maximizes the inner product
+                if not self.preallocate:
+                    self.res -= Opcol.matvec(cres[imax] * self.ncp.ones(1))
+                else:
+                    self.ncp.subtract(
+                        self.res,
+                        Opcol.matvec(cres[imax] * self.ncp.ones(1)),
+                        out=self.res,
+                    )
+                if addnew:
+                    x.append(cres[imax])
+                else:
+                    x[imax_in_cols] += cres[imax]
             else:
-                x[imax_in_cols] += cres[imax]
+                # find optimal coefficient that minimizes the residual (r - cres * col)
+                col = Opcol.matvec(self.ncp.ones(1, dtype=Opcol.dtype))
+                cresopt = (Opcol.rmatvec(self.res) / Opcol.rmatvec(col))[0]
+                if not self.preallocate:
+                    self.res -= Opcol.matvec(cresopt * self.ncp.ones(1))
+                else:
+                    self.ncp.subtract(
+                        self.res, Opcol.matvec(cresopt * self.ncp.ones(1)), out=self.res
+                    )
+                if addnew:
+                    x.append(cresopt)
+                else:
+                    x[imax_in_cols] += cresopt
         else:
             # OMP update
             Opcol = self.Op.apply_columns(cols)
-            if self.ncp == np:
-                x = lsqr(Opcol, self.y, iter_lim=self.niter_inner)[0]
-            else:
+            if engine == "scipy" and self.ncp == np:
+                x = lsqr(Opcol, self.y, iter_lim=self.niter_inner, **kwargs_solver)[0]
+            elif engine == "pylops" or self.ncp != np:
                 x = cgls(
                     Opcol,
                     self.y,
                     self.ncp.zeros(int(Opcol.shape[1]), dtype=Opcol.dtype),
                     niter=self.niter_inner,
+                    **kwargs_solver,
                 )[0]
-            self.res = self.y - Opcol.matvec(x)
+            if not self.preallocate:
+                self.res = self.y - Opcol.matvec(x)
+            else:
+                self.res = Opcol.matvec(x)
+                self.ncp.subtract(self.res, self.y, out=self.res)
 
         self.iiter += 1
-        self.cost.append(float(np.linalg.norm(self.res)))
+        self.cost.append(float(self.ncp.linalg.norm(self.res)))
         if show:
             self._print_step(x)
         return x, cols
@@ -868,6 +1208,7 @@ class OMP(Solver):
         self,
         x: NDArray,
         cols: InputDimsLike,
+        engine: str = "scipy",
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, InputDimsLike]:
@@ -875,10 +1216,14 @@ class OMP(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by multiple steps of IRLS
         cols : :obj:`list`
             Current list of chosen elements of vector x to be updated by a step of OMP
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.6.0
+
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -888,7 +1233,7 @@ class OMP(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
         cols : :obj:`list`
             Current list of chosen elements
@@ -905,8 +1250,12 @@ class OMP(Solver):
                 )
                 else False
             )
-            x, cols = self.step(x, cols, showstep)
-            self.callback(x)
+            x, cols = self.step(x, cols, engine, showstep)
+            self.callback(x, cols)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         return x, cols
 
     def finalize(
@@ -919,7 +1268,7 @@ class OMP(Solver):
 
         Parameters
         ----------
-        x : :obj:`list` or :obj:`np.ndarray`
+        x : :obj:`list` or :obj:`numpy.ndarray`
             Current model vector to be updated by a step of OMP
         cols : :obj:`list`
             Current list of chosen elements of vector x to be updated by a step of OMP
@@ -928,7 +1277,7 @@ class OMP(Solver):
 
         Returns
         -------
-        xfin : :obj:`np.ndarray`
+        xfin : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
 
         """
@@ -938,7 +1287,8 @@ class OMP(Solver):
         self.nouter = self.iiter
 
         xfin = self.ncp.zeros(int(self.Op.shape[1]), dtype=self.Op.dtype)
-        xfin[cols] = self.ncp.array(x)
+        xfin = inplace_set(self.ncp.array(x), xfin, self.ncp.array(cols))
+
         if show:
             self._print_finalize(nbar=55)
         return xfin
@@ -950,6 +1300,10 @@ class OMP(Solver):
         niter_inner: int = 40,
         sigma: float = 1e-4,
         normalizecols: bool = False,
+        Opbasis: Optional["LinearOperator"] = None,
+        optimal_coeff: bool = False,
+        engine: str = "scipy",
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
@@ -957,7 +1311,7 @@ class OMP(Solver):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
         niter_outer : :obj:`int`, optional
             Number of iterations of outer loop
@@ -972,6 +1326,24 @@ class OMP(Solver):
             :math:`n_{cols}` times to unit vectors (i.e., containing 1 at
             position j and zero otherwise); use only when the columns of the
             operator are expected to have highly varying norms.
+        Opbasis : :obj:`pylops.LinearOperator`
+            Operator representing the basis functions. If ``None``, the entire
+            operator used for inversion `Op` is used.
+        optimal_coeff : :obj:`bool`, optional
+            Estimate optimal coefficient that minimizes the norm of the residual
+            :math:`\mathbf{r} - c * \mathbf{Op}^j) norm (``True``) or use the
+            directly the value from the inner product
+            :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
+        engine : :obj:`str`, optional
+            .. versionadded:: 2.6.0
+
+            Solver to use (``scipy`` or ``pylops``)
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -981,7 +1353,7 @@ class OMP(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
         niter_outer : :obj:`int`
             Number of effective outer iterations
@@ -995,11 +1367,14 @@ class OMP(Solver):
             niter_inner=niter_inner,
             sigma=sigma,
             normalizecols=normalizecols,
+            Opbasis=Opbasis,
+            optimal_coeff=optimal_coeff,
+            preallocate=preallocate,
             show=show,
         )
         x: List[NDArray] = []
         cols: List[InputDimsLike] = []
-        x, cols = self.run(x, cols, show=show, itershow=itershow)
+        x, cols = self.run(x, cols, engine=engine, show=show, itershow=itershow)
         x = self.finalize(x, cols, show)
         return x, self.nouter, self.cost
 
@@ -1016,6 +1391,61 @@ class ISTA(Solver):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
+
+    Attributes
+    ----------
+    ncp : :obj:`module`
+        Array module used by the solver (obtained via
+        :func:`pylops.utils.backend.get_array_module`)
+        ). Available only after ``setup`` is called.
+    isjax : :obj:`bool`
+        Whether the input data is a JAX array or not.
+    Opmatvec : :obj:`callable`
+        Function handle to ``Op.matvec`` or ``Op.matmat``
+        depending on the number of dimensions of ``y``.
+    Oprmatvec : :obj:`callable`
+        Function handle to ``Op.rmatvec`` or ``Op.rmatmat``
+        depending on the number of dimensions of ``y``.
+    SOpmatvec : :obj:`callable`
+        Function handle to ``SOp.matvec`` or ``SOp.matmat``
+        depending on the number of dimensions of ``y``.
+    SOprmatvec : :obj:`callable`
+        Function handle to ``SOp.rmatvec`` or ``SOp.rmatmat``
+        depending on the number of dimensions of ``y``.
+    threshf : :obj:`callable`
+        Function handle to the chosen thresholding method.
+    thresh : :obj:`float`
+        Threshold.
+    res : :obj:`numpy.ndarray`
+        Residual vector of size :math:`[N \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    grad : :obj:`numpy.ndarray`
+        Gradient vector of size :math:`[M \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    x_unthesh : :obj:`numpy.ndarray`
+        Unthresholded model vector of size :math:`[M \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    xold : :obj:`numpy.ndarray`
+        Old model vector of size :math:`[M \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    SOpx_unthesh : :obj:`numpy.ndarray`
+        Old model vector pre-multiplied by the regularization operator
+        of size :math:`[M_S \times 1]` used in the solver when ``preallocate=True``.
+        Available only after ``setup`` is called and updated at each call to ``step``.
+    normresold : :obj:`float`
+        Old norm of the residual.
+    t : :obj:`float`
+        FISTA auxiliary coefficient (not used in ISTA).
+    cost : :obj:`list`
+        History of the L2 norm of the total objectiv function. Available
+        only after ``setup`` is called and updated at each call to ``step``.
+    iiter : :obj:`int`
+        Current iteration number. Available only after
+        ``setup`` is called and updated at each call to ``step``.
 
     Raises
     ------
@@ -1116,6 +1546,41 @@ class ISTA(Solver):
         )
         print(msg)
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0 - y
+        memuse = (self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): xold, grad, x_unthesh - res
+        memuse += (3 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        if show:
+            print(f"ISTA predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -1130,13 +1595,14 @@ class ISTA(Solver):
         perc: Optional[float] = None,
         decay: Optional[NDArray] = None,
         monitorres: bool = False,
+        preallocate: bool = False,
         show: bool = False,
     ) -> NDArray:
         r"""Setup solver
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]` or :math:`[N \times R]` where
             a solution for multiple right-hand-side is found when ``R>1``.
         x0: :obj:`numpy.ndarray`, optional
@@ -1170,12 +1636,18 @@ class ISTA(Solver):
             Decay factor to be applied to thresholding during iterations
         monitorres : :obj:`bool`, optional
             Monitor that residual is decreasing
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Initial model vector
 
         """
@@ -1191,6 +1663,8 @@ class ISTA(Solver):
         self.monitorres = monitorres
 
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # choose matvec/rmatvec or matmat/rmatmat based on R
         if y.ndim > 1 and y.shape[1] > 1:
@@ -1245,7 +1719,7 @@ class ISTA(Solver):
 
         # prepare decay (if not passed)
         if perc is None and decay is None:
-            self.decay = self.ncp.ones(niter)
+            self.decay = self.ncp.ones(niter, dtype=get_real_dtype(self.Op.dtype))
 
         # step size
         if alpha is not None:
@@ -1293,6 +1767,17 @@ class ISTA(Solver):
             else:
                 x = x0.copy()
 
+        # initialize other internal variabled
+        if self.preallocate:
+            self.res = self.ncp.empty_like(y)
+            self.grad = self.ncp.empty_like(x)
+            self.x_unthesh = self.ncp.empty_like(x)
+            self.xold = self.ncp.empty_like(x)
+            if self.SOp is not None:
+                self.SOpx_unthesh: NDArray = self.ncp.zeros(
+                    self.SOp.shape[1], dtype=self.SOp.dtype
+                )
+
         # create variable to track residual
         if monitorres:
             self.normresold = np.inf
@@ -1314,25 +1799,33 @@ class ISTA(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by a step of ISTA
         show : :obj:`bool`, optional
             Display iteration log
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Updated model vector
         xupdate : :obj:`float`
             Norm of the update
 
         """
         # store old vector
-        xold = x.copy()
+        if self.preallocate:
+            self.xold[:] = x[:]
+        else:
+            xold = x.copy()
+
         # compute residual
-        res: NDArray = self.y - self.Opmatvec(x)
+        if not self.preallocate:
+            res: NDArray = self.y - self.Opmatvec(x)
+        else:
+            self.ncp.subtract(self.y, self.Opmatvec(x), out=self.res)
+
         if self.monitorres:
-            self.normres = np.linalg.norm(res)
+            self.normres = np.linalg.norm(self.res if self.preallocate else res)
             if self.normres > self.normresold:
                 raise ValueError(
                     f"ISTA stopped at iteration {self.iiter} due to "
@@ -1343,25 +1836,69 @@ class ISTA(Solver):
                 self.normresold = self.normres
 
         # compute gradient
-        grad: NDArray = self.alpha * (self.Oprmatvec(res))
+        if not self.preallocate:
+            grad: NDArray = self.alpha * (self.Oprmatvec(res))
+        else:
+            self.ncp.multiply(
+                self.Oprmatvec(self.res),
+                self.alpha,
+                out=self.grad,
+            )
 
         # update inverted model
-        x_unthesh: NDArray = x + grad
+        if not self.preallocate:
+            x_unthesh: NDArray = x + grad
+        else:
+            self.ncp.add(
+                x,
+                self.grad,
+                out=self.x_unthesh,
+            )
+
+        # apply SOp.H to current x
         if self.SOp is not None:
-            x_unthesh = self.SOprmatvec(x_unthesh)
-        if self.perc is None and self.decay is not None:
-            x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
-        elif self.perc is not None:
-            x = self.threshf(x_unthesh, 100 - self.perc)
+            if self.preallocate:
+                self.SOpx_unthesh[:] = self.SOprmatvec(self.x_unthesh)
+            else:
+                SOpx_unthesh = self.SOprmatvec(x_unthesh)
+
+        # threshold current solution or current solution projected onto SOp.H space
+        if self.SOp is None:
+            x_unthesh_or_SOpx_unthesh = (
+                self.x_unthesh if self.preallocate else x_unthesh
+            )
+        else:
+            x_unthesh_or_SOpx_unthesh = (
+                self.SOpx_unthesh if self.preallocate else SOpx_unthesh
+            )
+        if self.perc is None:
+            x = self.threshf(
+                x_unthesh_or_SOpx_unthesh,
+                self.decay[self.iiter] * self.thresh,
+            )
+        else:
+            x = self.threshf(x_unthesh_or_SOpx_unthesh, 100 - self.perc)
+
+        # apply SOp to thresholded x
         if self.SOp is not None:
             x = self.SOpmatvec(x)
 
-        # model update
-        xupdate = np.linalg.norm(x - xold)
+        # compute model update norm
+        if not self.preallocate:
+            xupdate = np.linalg.norm(x - xold)
+        else:
+            self.ncp.subtract(
+                x,
+                self.xold,
+                out=self.xold,
+            )
+            xupdate = np.linalg.norm(self.xold)
 
-        costdata = 0.5 * np.linalg.norm(res) ** 2
+        # compute cost functions
+        costdata = 0.5 * np.linalg.norm(self.res if self.preallocate else res) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
         self.cost.append(float(costdata + costreg))
+
         self.iiter += 1
         if show:
             self._print_step(x, costdata, costreg, xupdate)
@@ -1378,7 +1915,7 @@ class ISTA(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by multiple steps of CG
         niter : :obj:`int`, optional
             Number of iterations. Can be set to ``None`` if already
@@ -1392,7 +1929,7 @@ class ISTA(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
 
         """
@@ -1413,10 +1950,12 @@ class ISTA(Solver):
             )
             x, xupdate = self.step(x, showstep)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         if xupdate <= self.tol:
-            logging.warning(
-                "update smaller that tolerance for " "iteration %d", self.iiter
-            )
+            logger.info("Update smaller that tolerance for iteration %d", self.iiter)
         return x
 
     def finalize(self, show: bool = False) -> None:
@@ -1448,6 +1987,7 @@ class ISTA(Solver):
         perc: Optional[float] = None,
         decay: Optional[NDArray] = None,
         monitorres: bool = False,
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
@@ -1455,7 +1995,7 @@ class ISTA(Solver):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
         x0: :obj:`numpy.ndarray`, optional
             Initial guess
@@ -1488,6 +2028,12 @@ class ISTA(Solver):
             Decay factor to be applied to thresholding during iterations
         monitorres : :obj:`bool`, optional
             Monitor that residual is decreasing
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -1497,7 +2043,7 @@ class ISTA(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
         niter : :obj:`int`
             Number of effective iterations
@@ -1518,6 +2064,7 @@ class ISTA(Solver):
             perc=perc,
             decay=decay,
             monitorres=monitorres,
+            preallocate=preallocate,
             show=show,
         )
         x = self.run(x, niter, show=show, itershow=itershow)
@@ -1537,6 +2084,62 @@ class FISTA(ISTA):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
+
+
+    Attributes
+    ----------
+    ncp : :obj:`module`
+        Array module used by the solver (obtained via
+        :func:`pylops.utils.backend.get_array_module`)
+        ). Available only after ``setup`` is called.
+    isjax : :obj:`bool`
+        Whether the input data is a JAX array or not.
+    Opmatvec : :obj:`callable`
+        Function handle to ``Op.matvec`` or ``Op.matmat``
+        depending on the number of dimensions of ``y``.
+    Oprmatvec : :obj:`callable`
+        Function handle to ``Op.rmatvec`` or ``Op.rmatmat``
+        depending on the number of dimensions of ``y``.
+    SOpmatvec : :obj:`callable`
+        Function handle to ``SOp.matvec`` or ``SOp.matmat``
+        depending on the number of dimensions of ``y``.
+    SOprmatvec : :obj:`callable`
+        Function handle to ``SOp.rmatvec`` or ``SOp.rmatmat``
+        depending on the number of dimensions of ``y``.
+    threshf : :obj:`callable`
+        Function handle to the chosen thresholding method.
+    thresh : :obj:`float`
+        Threshold.
+    res : :obj:`numpy.ndarray`
+        Residual vector of size :math:`[N \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    grad : :obj:`numpy.ndarray`
+        Gradient vector of size :math:`[M \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    x_unthesh : :obj:`numpy.ndarray`
+        Unthresholded model vector of size :math:`[M \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    xold : :obj:`numpy.ndarray`
+        Old model vector of size :math:`[M \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    SOpx_unthesh : :obj:`numpy.ndarray`
+        Old model vector pre-multiplied by the regularization operator
+        of size :math:`[M_S \times 1]` used in the solver when ``preallocate=True``.
+        Available only after ``setup`` is called and updated at each call to ``step``.
+    normresold : :obj:`float`
+        Old norm of the residual.
+    t : :obj:`float`
+        FISTA auxiliary coefficient (not used in ISTA).
+    cost : :obj:`list`
+        History of the L2 norm of the total objectiv function. Available
+        only after ``setup`` is called and updated at each call to ``step``.
+    iiter : :obj:`int`
+        Current iteration number. Available only after
+        ``setup`` is called and updated at each call to ``step``.
 
     Raises
     ------
@@ -1583,68 +2186,159 @@ class FISTA(ISTA):
 
     """
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0 - y
+        memuse = (self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): xold, grad, x_unthesh, z - res
+        memuse += (4 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        if show:
+            print(f"FISTA predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def step(self, x: NDArray, z: NDArray, show: bool = False) -> NDArray:
         r"""Run one step of solver
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by a step of ISTA
-        z : :obj:`np.ndarray`
+        z : :obj:`numpy.ndarray`
             Current auxiliary model vector to be updated by a step of ISTA
         show : :obj:`bool`, optional
             Display iteration log
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Updated model vector
-        z : :obj:`np.ndarray`
+        z : :obj:`numpy.ndarray`
             Updated auxiliary model vector
         xupdate : :obj:`float`
             Norm of the update
 
         """
         # store old vector
-        xold = x.copy()
+        if self.preallocate:
+            self.xold[:] = x[:]
+        else:
+            xold = x.copy()
+
         # compute residual
-        resz: NDArray = self.y - self.Opmatvec(z)
+        if not self.preallocate:
+            res: NDArray = self.y - self.Opmatvec(z)
+        else:
+            self.ncp.subtract(self.y, self.Opmatvec(z), out=self.res)
+
         if self.monitorres:
-            self.normres = np.linalg.norm(resz)
+            self.normres = np.linalg.norm(self.res if self.preallocate else res)
             if self.normres > self.normresold:
                 raise ValueError(
-                    f"ISTA stopped at iteration {self.iiter} due to "
+                    f"FISTA stopped at iteration {self.iiter} due to "
                     "residual increasing, consider modifying "
                     "eps and/or alpha..."
                 )
             else:
                 self.normresold = self.normres
 
-        # compute gradient
-        grad: NDArray = self.alpha * (self.Oprmatvec(resz))
+        # compute gradient and update inverted model
+        if not self.preallocate:
+            grad: NDArray = self.alpha * (self.Oprmatvec(res))
+            x_unthesh: NDArray = z + grad
+        else:
+            self.ncp.multiply(
+                self.Oprmatvec(self.res),
+                self.alpha,
+                out=self.grad,
+            )
+            self.ncp.add(
+                z,
+                self.grad,
+                out=self.x_unthesh,
+            )
 
-        # update inverted model
-        x_unthesh: NDArray = z + grad
+        # apply SOp.H to current x
         if self.SOp is not None:
-            x_unthesh = self.SOprmatvec(x_unthesh)
-        if self.perc is None and self.decay is not None:
-            x = self.threshf(x_unthesh, self.decay[self.iiter] * self.thresh)
-        elif self.perc is not None:
-            x = self.threshf(x_unthesh, 100 - self.perc)
+            if self.preallocate:
+                self.SOpx_unthesh[:] = self.SOprmatvec(self.x_unthesh)
+            else:
+                SOpx_unthesh = self.SOprmatvec(x_unthesh)
+
+        # threshold current solution or current solution projected onto SOp.H space
+        if self.SOp is None:
+            x_unthesh_or_SOpx_unthesh = (
+                self.x_unthesh if self.preallocate else x_unthesh
+            )
+        else:
+            x_unthesh_or_SOpx_unthesh = (
+                self.SOpx_unthesh if self.preallocate else SOpx_unthesh
+            )
+        if self.perc is None:
+            x = self.threshf(
+                x_unthesh_or_SOpx_unthesh,
+                self.decay[self.iiter] * self.thresh,
+            )
+        else:
+            x = self.threshf(x_unthesh_or_SOpx_unthesh, 100 - self.perc)
+
+        # apply SOp to thresholded x
         if self.SOp is not None:
             x = self.SOpmatvec(x)
 
         # update auxiliary coefficients
         told = self.t
-        self.t = (1.0 + np.sqrt(1.0 + 4.0 * self.t**2)) / 2.0
-        z = x + ((told - 1.0) / self.t) * (x - xold)
+        self.t = (1.0 + sqrt(1.0 + 4.0 * self.t**2)) / 2.0
 
         # model update
-        xupdate = np.linalg.norm(x - xold)
+        if not self.preallocate:
+            z = x + ((told - 1.0) / self.t) * (x - xold)
+        else:
+            self.ncp.subtract(
+                x,
+                self.xold,
+                out=self.xold,
+            )
+            self.ncp.multiply(self.xold, ((told - 1.0) / self.t), out=z)
+            self.ncp.add(x, z, out=z)
 
+        # check model update
+        if not self.preallocate:
+            xupdate = np.linalg.norm(x - xold)
+        else:
+            # note that x - xold has been already computed as part of the
+            # intermediate calculation of x in model update step
+            xupdate = np.linalg.norm(self.xold)
+
+        # cost functions
         costdata = 0.5 * np.linalg.norm(self.y - self.Op @ x) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
         self.cost.append(float(costdata + costreg))
+
         self.iiter += 1
         if show:
             self._print_step(x, costdata, costreg, xupdate)
@@ -1661,7 +2355,7 @@ class FISTA(ISTA):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by multiple steps of CG
         niter : :obj:`int`, optional
             Number of iterations. Can be set to ``None`` if already
@@ -1675,7 +2369,7 @@ class FISTA(ISTA):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
 
         """
@@ -1697,9 +2391,13 @@ class FISTA(ISTA):
             )
             x, z, xupdate = self.step(x, z, showstep)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         if xupdate <= self.tol:
-            logging.warning(
-                "update smaller that tolerance for " "iteration %d", self.iiter
+            logger.warning(
+                "Update smaller that tolerance for " "iteration %d", self.iiter
             )
         return x
 
@@ -1721,6 +2419,13 @@ class SPGL1(Solver):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert of size :math:`[N \times M]`.
+
+    Attributes
+    ----------
+    ncp : :obj:`module`
+        Array module used by the solver (obtained via
+        :func:`pylops.utils.backend.get_array_module`)
+        ). Available only after ``setup`` is called.
 
     Raises
     ------
@@ -1765,6 +2470,13 @@ class SPGL1(Solver):
         print(f"\nTotal time (s) = {self.telapsed:.2f}")
         print("-" * 80 + "\n")
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        pass
+
     def setup(
         self,
         y: NDArray,
@@ -1777,7 +2489,7 @@ class SPGL1(Solver):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
         SOp : :obj:`pylops.LinearOperator`, optional
             Sparsifying transform
@@ -1821,7 +2533,7 @@ class SPGL1(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by multiple steps of the solver.
             If ``None``, x is assumed to be a zero vector
         show : :obj:`bool`, optional
@@ -1906,7 +2618,7 @@ class SPGL1(Solver):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
         x0 : :obj:`numpy.ndarray`, optional
             Initial guess
@@ -1993,6 +2705,32 @@ class SplitBregman(Solver):
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
 
+    Attributes
+    ----------
+    ncp : :obj:`module`
+        Array module used by the solver (obtained via
+        :func:`pylops.utils.backend.get_array_module`)
+        ). Available only after ``setup`` is called.
+    isjax : :obj:`bool`
+        Whether the input data is a JAX array or not.
+    nregsL1 : :obj:`int`
+        Number of L1 regularization terms.
+    b : :obj:`numpy.ndarray`
+        Bregman update vector.
+    d : :obj:`numpy.ndarray`
+        Shrinked vector.
+    nregsL1 : :obj:`int`
+        Number of L2 regularization terms.
+    Regs : :obj:`list`
+        List of L1 and L2 regularization terms.
+    epsRs : :obj:`list`
+        List of L1 and L2 regularization dampings.
+    cost : :obj:`numpy.ndarray`, optional
+        History of total cost function through iterations.
+    iiter : :obj:`int`
+        Current iteration number. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+
     Notes
     -----
     Solve the following system of unconstrained, regularized equations
@@ -2077,6 +2815,60 @@ class SplitBregman(Solver):
         str2 = f"{self.costdata:10.3e}        {self.costtot:9.3e}"
         print(str1 + str2)
 
+    def memory_usage(
+        self,
+        nopRegsL1: Optional[Tuple[int]] = None,
+        nopRegsL2: Optional[Tuple[int]] = None,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        nopRegsL1 : :obj:`tuple`, optional
+            Number of data elements of ``RegsL1`` operators
+        nopRegsL2 : :obj:`tuple`, optional
+            Number of data elements of ``RegsL2`` operators
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Convert nopRegsL1 and nopRegsL2 if None
+        if nopRegsL1 is None:
+            nopRegsL1 = 0
+        if nopRegsL2 is None:
+            nopRegsL2 = 0
+
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0 - y - b, d dataregsL1 - dataregsL2
+        memuse = (
+            self.Op.shape[1]
+            + self.Op.shape[0]
+            + 3 * np.prod(nopRegsL1)
+            + np.prod(nopRegsL2)
+        ) * nbytes
+
+        # Step (additional variables to those in setup): dataregs
+        memuse += np.prod(nopRegsL1) * nbytes
+
+        if show:
+            print(
+                f"Split-Bregman predicted memory usage: {memuse / _units[unit]:.2f} {unit}"
+            )
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -2092,17 +2884,18 @@ class SplitBregman(Solver):
         tol: float = 1e-10,
         tau: float = 1.0,
         restart: bool = False,
+        preallocate: bool = False,
         show: bool = False,
     ) -> NDArray:
         r"""Setup solver
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
         RegsL1 : :obj:`list`
             :math:`L_1` regularization operators
-        x0 : :obj:`np.ndarray`, optional
+        x0 : :obj:`numpy.ndarray`, optional
             Initial guess of size :math:`[M \times 1]`. If ``None``, initialize
             internally as zero vector
         niter_outer : :obj:`int`, optional
@@ -2137,12 +2930,18 @@ class SplitBregman(Solver):
             the initial guess (``True``) or with the last estimate (``False``).
             Note that when this is set to ``True``, the ``x0`` provided in the setup will
             be used in all iterations.
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Initial guess of size :math:`[N \times 1]`
 
         """
@@ -2158,14 +2957,19 @@ class SplitBregman(Solver):
         self.tol = tol
         self.tau = tau
         self.restart = restart
+
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # L1 regularizations
         self.nregsL1 = len(RegsL1)
         self.b = [
             self.ncp.zeros(RegL1.shape[0], dtype=self.Op.dtype) for RegL1 in RegsL1
         ]
-        self.d = self.b.copy()
+        self.d = [
+            self.ncp.zeros(RegL1.shape[0], dtype=self.Op.dtype) for RegL1 in RegsL1
+        ]
 
         # L2 regularizations
         self.nregsL2 = 0 if RegsL2 is None else len(RegsL2)
@@ -2183,13 +2987,11 @@ class SplitBregman(Solver):
         self.epsRs: List[float] = []
         if epsRL2s is not None:
             self.epsRs += [
-                np.sqrt(epsRL2s[ireg] / 2) / np.sqrt(mu / 2)
-                for ireg in range(self.nregsL2)
+                sqrt(epsRL2s[ireg] / 2) / sqrt(mu / 2) for ireg in range(self.nregsL2)
             ]
         if epsRL1s is not None:
             self.epsRs += [
-                np.sqrt(epsRL1s[ireg] / 2) / np.sqrt(mu / 2)
-                for ireg in range(self.nregsL1)
+                sqrt(epsRL1s[ireg] / 2) / sqrt(mu / 2) for ireg in range(self.nregsL1)
             ]
 
         self.x0 = x0
@@ -2206,36 +3008,52 @@ class SplitBregman(Solver):
     def step(
         self,
         x: NDArray,
+        engine: str = "scipy",
         show: bool = False,
         show_inner: bool = False,
-        **kwargs_lsqr,
+        **kwargs_solver,
     ) -> NDArray:
         r"""Run one step of solver
 
         Parameters
         ----------
-        x : :obj:`list` or :obj:`np.ndarray`
+        x : :obj:`list` or :obj:`numpy.ndarray`
             Current model vector to be updated by a step of OMP
-        show_inner : :obj:`bool`, optional
-            Display inner iteration logs of lsqr
+        engine : :obj:`str`, optional
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display iteration log
-        **kwargs_lsqr
-            Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-            subproblem in the first step of the Split Bregman algorithm.
+        show_inner : :obj:`bool`, optional
+            Display inner iteration logs of lsqr
+        **kwargs_solver
+            Arbitrary keyword arguments for chosen solver
+            used to solve the first subproblem in the first step of the
+            Split Bregman algorithm (:py:func:`scipy.sparse.linalg.lsqr` and
+            :py:func:`pylops.optimization.solver.cgls` are used as default
+            for numpy and cupy `data`, respectively).
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Updated model vector
 
         """
+        # add preallocate to keywords of solver
+        if self.preallocate and (engine == "pylops" or self.ncp != np):
+            kwargs_solver["preallocate"] = True
+
         for _ in range(self.niter_inner):
             # regularized problem
-            dataregs = self.dataregsL2 + [
-                self.d[ireg] - self.b[ireg] for ireg in range(self.nregsL1)
-            ]
+            if not self.preallocate:
+                dataregs = self.dataregsL2 + [
+                    self.d[ireg] - self.b[ireg] for ireg in range(self.nregsL1)
+                ]
+            else:
+                for ireg in range(self.nregsL1):
+                    self.ncp.subtract(self.d[ireg], self.b[ireg], out=self.d[ireg])
+                dataregs = self.dataregsL2 + [
+                    self.d[ireg] for ireg in range(self.nregsL1)
+                ]
             x = regularized_inversion(
                 self.Op,
                 self.y,
@@ -2244,21 +3062,25 @@ class SplitBregman(Solver):
                 epsRs=self.epsRs,
                 x0=self.x0 if self.restart else x,
                 show=show_inner,
-                **kwargs_lsqr,
+                engine=engine,
+                **kwargs_solver,
             )[0]
-            # Shrinkage
-            self.d = [
-                _softthreshold(
-                    self.RegsL1[ireg].matvec(x) + self.b[ireg], self.epsRL1s[ireg]
-                )
-                for ireg in range(self.nregsL1)
-            ]
+            # shrinkage
+            if not self.preallocate:
+                for ireg in range(self.nregsL1):
+                    self.d[ireg] = _softthreshold(
+                        self.RegsL1[ireg].matvec(x) + self.b[ireg], self.epsRL1s[ireg]
+                    )
+            else:
+                for ireg in range(self.nregsL1):
+                    self.ncp.add(
+                        self.RegsL1[ireg].matvec(x), self.b[ireg], out=self.d[ireg]
+                    )
+                    self.d[ireg] = _softthreshold(self.d[ireg], self.epsRL1s[ireg])
 
         # Bregman update
-        self.b = [
-            self.b[ireg] + self.tau * (self.RegsL1[ireg].matvec(x) - self.d[ireg])
-            for ireg in range(self.nregsL1)
-        ]
+        for ireg in range(self.nregsL1):
+            self.b[ireg] += self.tau * (self.RegsL1[ireg].matvec(x) - self.d[ireg])
 
         # compute residual norms
         self.costdata = (
@@ -2276,7 +3098,7 @@ class SplitBregman(Solver):
         )
         self.costregL1 = [
             self.ncp.linalg.norm(RegL1.matvec(x), ord=1)
-            for epsRL1, RegL1 in zip(self.epsRL1s, self.RegsL1)
+            for _, RegL1 in zip(self.epsRL1s, self.RegsL1)
         ]
         self.costtot = (
             self.costdata
@@ -2294,6 +3116,7 @@ class SplitBregman(Solver):
     def run(
         self,
         x: NDArray,
+        engine: str = "scipy",
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
@@ -2303,8 +3126,10 @@ class SplitBregman(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by multiple steps of IRLS
+        engine : :obj:`str`, optional
+            Solver to use (``scipy`` or ``pylops``)
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -2320,7 +3145,7 @@ class SplitBregman(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
 
         """
@@ -2339,8 +3164,12 @@ class SplitBregman(Solver):
                 )
                 else False
             )
-            x = self.step(x, showstep, show_inner, **kwargs_lsqr)
+            x = self.step(x, engine, showstep, show_inner, **kwargs_lsqr)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         return x
 
     def finalize(self, show: bool = False) -> NDArray:
@@ -2353,7 +3182,7 @@ class SplitBregman(Solver):
 
         Returns
         -------
-        xfin : :obj:`np.ndarray`
+        xfin : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
 
         """
@@ -2379,6 +3208,8 @@ class SplitBregman(Solver):
         tol: float = 1e-10,
         tau: float = 1.0,
         restart: bool = False,
+        engine: str = "scipy",
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
@@ -2388,11 +3219,11 @@ class SplitBregman(Solver):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
         RegsL1 : :obj:`list`
             :math:`L_1` regularization operators
-        x0 : :obj:`np.ndarray`, optional
+        x0 : :obj:`numpy.ndarray`, optional
             Initial guess of size :math:`[M \times 1]`. If ``None``, initialize
             internally as zero vector
         niter_outer : :obj:`int`, optional
@@ -2427,6 +3258,14 @@ class SplitBregman(Solver):
             the initial guess (``True``) or with the last estimate (``False``).
             Note that when this is set to ``True``, the ``x0`` provided in the setup will
             be used in all iterations.
+        engine : :obj:`str`, optional
+            Solver to use (``scipy`` or ``pylops``)
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -2442,12 +3281,12 @@ class SplitBregman(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
         iiter : :obj:`int`
             Iteration number of outer loop upon termination
         cost : :obj:`numpy.ndarray`
-            History of cost function through iterations
+            History of total cost function through iterations
 
         """
         x = self.setup(
@@ -2464,10 +3303,16 @@ class SplitBregman(Solver):
             tol=tol,
             tau=tau,
             restart=restart,
+            preallocate=preallocate,
             show=show,
         )
         x = self.run(
-            x, show=show, itershow=itershow, show_inner=show_inner, **kwargs_lsqr
+            x,
+            engine=engine,
+            show=show,
+            itershow=itershow,
+            show_inner=show_inner,
+            **kwargs_lsqr,
         )
         self.finalize(show)
         return x, self.iiter, self.cost

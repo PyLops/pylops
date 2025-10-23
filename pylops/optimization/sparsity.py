@@ -9,6 +9,11 @@ __all__ = [
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
+from pylops.optimization.callback import (
+    CostNanInfCallback,
+    CostToDataCallback,
+    CostToInitialCallback,
+)
 from pylops.optimization.cls_sparsity import FISTA, IRLS, ISTA, OMP, SPGL1, SplitBregman
 from pylops.utils.decorators import add_ndarray_support_to_solver
 from pylops.utils.typing import NDArray, SamplingLike
@@ -28,9 +33,11 @@ def irls(
     tolIRLS: float = 1e-10,
     warm: bool = False,
     kind: str = "data",
+    engine: str = "scipy",
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
     **kwargs_solver,
 ) -> Tuple[NDArray, int]:
     r"""Iteratively reweighted least squares.
@@ -74,6 +81,8 @@ def irls(
         This only applies to ``kind="data"`` and ``kind="datamodel"``
     kind : :obj:`str`, optional
         Kind of solver (``model``, ``data`` or ``datamodel``)
+    engine : :obj:`str`, optional
+        Solver to use (``scipy`` or ``pylops``)
     show : :obj:`bool`, optional
         Display logs
     itershow : :obj:`tuple`, optional
@@ -83,6 +92,12 @@ def irls(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
     **kwargs_solver
         Arbitrary keyword arguments for
         :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
@@ -113,8 +128,10 @@ def irls(
         epsR=epsR,
         epsI=epsI,
         tolIRLS=tolIRLS,
-        warm=warm,
         kind=kind,
+        warm=warm,
+        engine=engine,
+        preallocate=preallocate,
         show=show,
         itershow=itershow,
         **kwargs_solver,
@@ -128,10 +145,16 @@ def omp(
     niter_outer: int = 10,
     niter_inner: int = 40,
     sigma: float = 1e-4,
+    rtol: float = 0.0,
+    rtol1: float = 0.0,
     normalizecols: bool = False,
+    Opbasis: Optional["LinearOperator"] = None,
+    optimal_coeff: bool = False,
+    engine: str = "scipy",
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Orthogonal Matching Pursuit (OMP).
 
@@ -151,14 +174,32 @@ def omp(
     niter_inner : :obj:`int`, optional
         Number of iterations of inner loop. By choosing ``niter_inner=0``, the
         Matching Pursuit (MP) algorithm is implemented.
-    sigma : :obj:`list`
+    sigma : :obj:`float`, optional
         Maximum :math:`L_2` norm of residual. When smaller stop iterations.
+    rtol : :obj:`float`, optional
+        Relative tolerance on residual norm wrt initial residual norm. Stops
+        the solver when the ratio of the current residual norm to the initial
+        residual norm is below this value.
+    rtol1 : :obj:`float`, optional
+        Relative tolerance on residual norm wrt to data. Stops the solver
+        when the ratio of the current residual norm to the data norm is
+        below this value.
     normalizecols : :obj:`list`, optional
         Normalize columns (``True``) or not (``False``). Note that this can be
         expensive as it requires applying the forward operator
         :math:`n_{cols}` times to unit vectors (i.e., containing 1 at
         position j and zero otherwise); use only when the columns of the
         operator are expected to have highly varying norms.
+    Opbasis : :obj:`pylops.LinearOperator`
+        Operator representing the basis functions. If not provided, the entire
+        operator used for inversion `Op` is used.
+    optimal_coeff : :obj:`bool`, optional
+        Estimate optimal coefficient that minimizes the norm of the residual
+        :math:`\mathbf{r} - c * \mathbf{Op}^j) norm (``True``) or use the
+        directly the value from the inner product
+        :math:`\mathbf{Op}_j^H\,\mathbf{r}_k`.
+    engine : :obj:`str`, optional
+        Solver to use (``scipy`` or ``pylops``)
     show : :obj:`bool`, optional
         Display iterations log
     itershow : :obj:`tuple`, optional
@@ -166,8 +207,15 @@ def omp(
         and every N3 steps in between where N1, N2, N3 are the
         three element of the list.
     callback : :obj:`callable`, optional
-        Function with signature (``callback(x)``) to call after each iteration
-        where ``x`` is the current model vector
+        Function with signature (``callback(x, cols)``) to call after each iteration
+        where ``x`` contains the non-zero model coefficient and ``cols`` are the
+        indices where the current model vector is non-zero
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
 
     Returns
     -------
@@ -190,7 +238,18 @@ def omp(
     See :class:`pylops.optimization.cls_sparsity.OMP`
 
     """
-    ompsolve = OMP(Op)
+    callbacks = [
+        CostNanInfCallback(),
+    ]
+    if rtol > 0.0:
+        callbacks.append(CostToInitialCallback(rtol))
+    if rtol1 > 0.0:
+        callbacks.append(CostToDataCallback(rtol1))
+
+    ompsolve = OMP(
+        Op,
+        callbacks=callbacks,
+    )
     if callback is not None:
         ompsolve.callback = callback
     x, niter_outer, cost = ompsolve.solve(
@@ -199,8 +258,12 @@ def omp(
         niter_inner=niter_inner,
         sigma=sigma,
         normalizecols=normalizecols,
+        Opbasis=Opbasis,
+        optimal_coeff=optimal_coeff,
+        engine=engine,
         show=show,
         itershow=itershow,
+        preallocate=preallocate,
     )
     return x, niter_outer, cost
 
@@ -215,6 +278,8 @@ def ista(
     alpha: Optional[float] = None,
     eigsdict: Optional[Dict[str, Any]] = None,
     tol: float = 1e-10,
+    rtol: float = 0.0,
+    rtol1: float = 0.0,
     threshkind: str = "soft",
     perc: Optional[float] = None,
     decay: Optional[NDArray] = None,
@@ -222,6 +287,7 @@ def ista(
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
@@ -255,8 +321,15 @@ def ista(
         Dictionary of parameters to be passed to :func:`pylops.LinearOperator.eigs` method
         when computing the maximum eigenvalue
     tol : :obj:`float`, optional
-        Tolerance. Stop iterations if difference between inverted model
+        Absolute tolerance on model update. Stop iterations if difference between inverted model
         at subsequent iterations is smaller than ``tol``
+    rtol : :obj:`float`, optional
+        Relative tolerance on total cost function wrt initial total cost
+        function. Stops the solver when the ratio of the current total cost function
+        to the initial total cost function is below this value.
+    rtol1 : :obj:`float`, optional
+        Relative tolerance on total cost function wrt to data. Stops the solver when
+        the ratio of the current total cost function to the data norm is below this value.
     threshkind : :obj:`str`, optional
         Kind of thresholding ('hard', 'soft', 'half', 'hard-percentile',
         'soft-percentile', or 'half-percentile' - 'soft' used as default)
@@ -276,6 +349,12 @@ def ista(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
 
     Returns
     -------
@@ -284,7 +363,7 @@ def ista(
     niter : :obj:`int`
         Number of effective iterations
     cost : :obj:`numpy.ndarray`
-        History of cost function
+        History of cost (including regularization term)
 
     Raises
     ------
@@ -309,7 +388,18 @@ def ista(
     See :class:`pylops.optimization.cls_sparsity.ISTA`
 
     """
-    istasolve = ISTA(Op)
+    callbacks = [
+        CostNanInfCallback(),
+    ]
+    if rtol > 0.0:
+        callbacks.append(CostToInitialCallback(rtol))
+    if rtol1 > 0.0:
+        callbacks.append(CostToDataCallback(rtol1))
+
+    istasolve = ISTA(
+        Op,
+        callbacks=callbacks,
+    )
     if callback is not None:
         istasolve.callback = callback
     x, iiter, cost = istasolve.solve(
@@ -327,6 +417,7 @@ def ista(
         monitorres=monitorres,
         show=show,
         itershow=itershow,
+        preallocate=preallocate,
     )
     return x, iiter, cost
 
@@ -341,6 +432,8 @@ def fista(
     alpha: Optional[float] = None,
     eigsdict: Optional[Dict[str, Any]] = None,
     tol: float = 1e-10,
+    rtol: float = 0.0,
+    rtol1: float = 0.0,
     threshkind: str = "soft",
     perc: Optional[float] = None,
     decay: Optional[NDArray] = None,
@@ -348,6 +441,7 @@ def fista(
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
@@ -381,8 +475,15 @@ def fista(
         Dictionary of parameters to be passed to :func:`pylops.LinearOperator.eigs` method
         when computing the maximum eigenvalue
     tol : :obj:`float`, optional
-        Tolerance. Stop iterations if difference between inverted model
+        Absolute tolerance on model update. Stop iterations if difference between inverted model
         at subsequent iterations is smaller than ``tol``
+    rtol : :obj:`float`, optional
+        Relative tolerance on total cost function wrt initial total cost
+        function. Stops the solver when the ratio of the current total cost function
+        to the initial total cost function is below this value.
+    rtol1 : :obj:`float`, optional
+        Relative tolerance on total cost function wrt to data. Stops the solver when
+        the ratio of the current total cost function to the data norm is below this value.
     threshkind : :obj:`str`, optional
         Kind of thresholding ('hard', 'soft', 'half', 'soft-percentile', or
         'half-percentile' - 'soft' used as default)
@@ -402,6 +503,12 @@ def fista(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
 
     Returns
     -------
@@ -410,7 +517,7 @@ def fista(
     niter : :obj:`int`
         Number of effective iterations
     cost : :obj:`numpy.ndarray`, optional
-        History of cost function
+        History of cost (including regularization term)
 
     Raises
     ------
@@ -433,7 +540,18 @@ def fista(
     See :class:`pylops.optimization.cls_sparsity.FISTA`
 
     """
-    fistasolve = FISTA(Op)
+    callbacks = [
+        CostNanInfCallback(),
+    ]
+    if rtol > 0.0:
+        callbacks.append(CostToInitialCallback(rtol))
+    if rtol1 > 0.0:
+        callbacks.append(CostToDataCallback(rtol1))
+
+    fistasolve = FISTA(
+        Op,
+        callbacks=callbacks,
+    )
     if callback is not None:
         fistasolve.callback = callback
     x, iiter, cost = fistasolve.solve(
@@ -451,6 +569,7 @@ def fista(
         monitorres=monitorres,
         show=show,
         itershow=itershow,
+        preallocate=preallocate,
     )
     return x, iiter, cost
 
@@ -585,12 +704,16 @@ def splitbregman(
     epsRL1s: Optional[SamplingLike] = None,
     epsRL2s: Optional[SamplingLike] = None,
     tol: float = 1e-10,
+    rtol: float = 0.0,
+    rtol1: float = 0.0,
     tau: float = 1.0,
     restart: bool = False,
+    engine: str = "scipy",
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     show_inner: bool = False,
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
     **kwargs_lsqr,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Split Bregman for mixed L2-L1 norms.
@@ -633,13 +756,22 @@ def splitbregman(
          :math:`L_2` Regularization dampings (must have the same number of elements
          as ``RegsL2``)
     tol : :obj:`float`, optional
-        Tolerance. Stop outer iterations if difference between inverted model
+        Tolerance. Stop the solver if difference between inverted model
         at subsequent iterations is smaller than ``tol``
+    rtol : :obj:`float`, optional
+        Relative tolerance on total cost function wrt initial total cost
+        function. Stops the solver when the ratio of the current total cost function
+        to the initial total cost function is below this value.
+    rtol1 : :obj:`float`, optional
+        Relative tolerance on total cost function wrt to data. Stops the solver when
+        the ratio of the current total cost function to the data norm is below this value.
     tau : :obj:`float`, optional
         Scaling factor in the Bregman update (must be close to 1)
     restart : :obj:`bool`, optional
         The unconstrained inverse problem in inner loop is initialized with
         the initial guess (``True``) or with the last estimate (``False``)
+    engine : :obj:`str`, optional
+        Solver to use (``scipy`` or ``pylops``)
     show : :obj:`bool`, optional
         Display iterations log
     itershow : :obj:`tuple`, optional
@@ -651,6 +783,12 @@ def splitbregman(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
     **kwargs_lsqr
         Arbitrary keyword arguments for
         :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
@@ -663,14 +801,24 @@ def splitbregman(
     itn_out : :obj:`int`
         Iteration number of outer loop upon termination
     cost : :obj:`numpy.ndarray`, optional
-            History of cost function through iterations
+        History of the total cost function through iterations
 
     Notes
     -----
     See :class:`pylops.optimization.cls_sparsity.SplitBregman`
 
     """
-    sbsolve = SplitBregman(Op)
+    callbacks = [
+        CostNanInfCallback(),
+    ]
+    if rtol > 0.0:
+        callbacks.append(CostToInitialCallback(rtol))
+    if rtol1 > 0.0:
+        callbacks.append(CostToDataCallback(rtol1))
+    sbsolve = SplitBregman(
+        Op,
+        callbacks=callbacks,
+    )
     if callback is not None:
         sbsolve.callback = callback
     xinv, itn_out, cost = sbsolve.solve(
@@ -687,6 +835,8 @@ def splitbregman(
         tol=tol,
         tau=tau,
         restart=restart,
+        engine=engine,
+        preallocate=preallocate,
         show=show,
         itershow=itershow,
         show_inner=show_inner,

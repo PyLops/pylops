@@ -16,11 +16,16 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 pyfftw_message = deps.pyfftw_import("the fft module")
+mkl_fft_message = deps.mkl_fft_import("the fft module")
 
 if pyfftw_message is None:
     import pyfftw
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+if mkl_fft_message is None:
+    import mkl_fft.interfaces.scipy_fft as mkl_backend
+    from mkl_fft.interfaces import _float_utils
+
+logger = logging.getLogger(__name__)
 
 
 class _FFT_numpy(_BaseFFT):
@@ -37,6 +42,7 @@ class _FFT_numpy(_BaseFFT):
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
         dtype: DTypeLike = "complex128",
+        **kwargs_fft,
     ) -> None:
         super().__init__(
             dims=dims,
@@ -54,6 +60,7 @@ class _FFT_numpy(_BaseFFT):
                 f"numpy backend always returns complex128 dtype. To respect the passed dtype, data will be casted to {self.cdtype}."
             )
 
+        self._kwargs_fft = kwargs_fft
         self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
         if self.norm is _FFTNorms.ORTHO:
             self._norm_kwargs["norm"] = "ortho"
@@ -74,14 +81,18 @@ class _FFT_numpy(_BaseFFT):
         if not self.clinear:
             x = ncp.real(x)
         if self.real:
-            y = ncp.fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = ncp.fft.rfft(
+                x, n=self.nfft, axis=self.axis, **self._norm_kwargs, **self._kwargs_fft
+            )
             # Apply scaling to obtain a correct adjoint for this operator
             y = ncp.swapaxes(y, -1, self.axis)
             # y[..., 1 : 1 + (self.nfft - 1) // 2] *= ncp.sqrt(2)
             y = inplace_multiply(ncp.sqrt(2), y, self.slice)
             y = ncp.swapaxes(y, self.axis, -1)
         else:
-            y = ncp.fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = ncp.fft.fft(
+                x, n=self.nfft, axis=self.axis, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after:
@@ -101,9 +112,13 @@ class _FFT_numpy(_BaseFFT):
             # x[..., 1 : 1 + (self.nfft - 1) // 2] /= ncp.sqrt(2)
             x = inplace_divide(ncp.sqrt(2), x, self.slice)
             x = ncp.swapaxes(x, self.axis, -1)
-            y = ncp.fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = ncp.fft.irfft(
+                x, n=self.nfft, axis=self.axis, **self._norm_kwargs, **self._kwargs_fft
+            )
         else:
-            y = ncp.fft.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = ncp.fft.ifft(
+                x, n=self.nfft, axis=self.axis, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
 
@@ -139,6 +154,7 @@ class _FFT_scipy(_BaseFFT):
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
         dtype: DTypeLike = "complex128",
+        **kwargs_fft,
     ) -> None:
         super().__init__(
             dims=dims,
@@ -152,6 +168,7 @@ class _FFT_scipy(_BaseFFT):
             dtype=dtype,
         )
 
+        self._kwargs_fft = kwargs_fft
         self._norm_kwargs = {"norm": None}  # equivalent to "backward" in Numpy/Scipy
         if self.norm is _FFTNorms.ORTHO:
             self._norm_kwargs["norm"] = "ortho"
@@ -167,13 +184,17 @@ class _FFT_scipy(_BaseFFT):
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = scipy.fft.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = scipy.fft.rfft(
+                x, n=self.nfft, axis=self.axis, **self._norm_kwargs, **self._kwargs_fft
+            )
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.axis)
             y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.axis, -1)
         else:
-            y = scipy.fft.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = scipy.fft.fft(
+                x, n=self.nfft, axis=self.axis, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after:
@@ -190,9 +211,13 @@ class _FFT_scipy(_BaseFFT):
             x = np.swapaxes(x, -1, self.axis)
             x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.axis, -1)
-            y = scipy.fft.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = scipy.fft.irfft(
+                x, n=self.nfft, axis=self.axis, **self._norm_kwargs, **self._kwargs_fft
+            )
         else:
-            y = scipy.fft.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = scipy.fft.ifft(
+                x, n=self.nfft, axis=self.axis, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
 
@@ -227,7 +252,7 @@ class _FFT_fftw(_BaseFFT):
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
         dtype: DTypeLike = "complex128",
-        **kwargs_fftw,
+        **kwargs_fft,
     ) -> None:
         if np.dtype(dtype) == np.float16:
             warnings.warn(
@@ -236,13 +261,13 @@ class _FFT_fftw(_BaseFFT):
             dtype = np.float32
 
         for badop in ["ortho", "normalise_idft"]:
-            if badop in kwargs_fftw:
+            if badop in kwargs_fft:
                 if badop == "ortho" and norm == "ortho":
                     continue
                 warnings.warn(
                     f"FFTW option '{badop}' will be overwritten by norm={norm}"
                 )
-                del kwargs_fftw[badop]
+                del kwargs_fft[badop]
 
         super().__init__(
             dims=dims,
@@ -298,10 +323,10 @@ class _FFT_fftw(_BaseFFT):
             self._scale = 1.0 / self.nfft
 
         self.fftplan = pyfftw.FFTW(
-            self.x, self.y, axes=(self.axis,), direction="FFTW_FORWARD", **kwargs_fftw
+            self.x, self.y, axes=(self.axis,), direction="FFTW_FORWARD", **kwargs_fft
         )
         self.ifftplan = pyfftw.FFTW(
-            self.y, self.x, axes=(self.axis,), direction="FFTW_BACKWARD", **kwargs_fftw
+            self.y, self.x, axes=(self.axis,), direction="FFTW_BACKWARD", **kwargs_fft
         )
 
     @reshaped
@@ -315,7 +340,7 @@ class _FFT_fftw(_BaseFFT):
         elif self.doifftpad:
             x = np.take(x, range(0, self.nfft), axis=self.axis)
 
-        # self.fftplan() always uses byte-alligned self.x as input array and
+        # self.fftplan() always uses byte-aligned self.x as input array and
         # returns self.y as output array. As such, self.x must be copied so as
         # not to be overwritten on a subsequent call to _matvec.
         np.copyto(self.x, x)
@@ -337,7 +362,7 @@ class _FFT_fftw(_BaseFFT):
         if self.fftshift_after:
             x = np.fft.ifftshift(x, axes=self.axis)
 
-        # self.ifftplan() always uses byte-alligned self.y as input array.
+        # self.ifftplan() always uses byte-aligned self.y as input array.
         # We copy here so we don't need to copy again in the case of `real=True`,
         # which only performs operations that preserve byte-allignment.
         np.copyto(self.y, x)
@@ -374,6 +399,98 @@ class _FFT_fftw(_BaseFFT):
         return self._rmatvec(y) / self._scale
 
 
+class _FFT_mklfft(_BaseFFT):
+    """One-dimensional Fast-Fourier Transform using mkl_fft"""
+
+    def __init__(
+        self,
+        dims: Union[int, InputDimsLike],
+        axis: int = -1,
+        nfft: Optional[int] = None,
+        sampling: float = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = False,
+        fftshift_after: bool = False,
+        dtype: DTypeLike = "complex128",
+        **kwargs_fft,
+    ) -> None:
+        super().__init__(
+            dims=dims,
+            axis=axis,
+            nfft=nfft,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+        self._kwargs_fft = kwargs_fft
+        self._norm_kwargs = {"norm": None}
+        if self.norm is _FFTNorms.ORTHO:
+            self._norm_kwargs["norm"] = "ortho"
+            self._scale = np.sqrt(1 / self.nfft)
+        elif self.norm is _FFTNorms.NONE:
+            self._scale = self.nfft
+        elif self.norm is _FFTNorms.ONE_OVER_N:
+            self._scale = 1.0 / self.nfft
+
+    @reshaped
+    def _matvec(self, x: NDArray) -> NDArray:
+        x = _float_utils._downcast_float128_array(x)
+        x = _float_utils._upcast_float16_array(x)
+        if self.ifftshift_before:
+            x = scipy.fft.ifftshift(x, axes=self.axis)
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = mkl_backend.rfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+            y = np.swapaxes(y, -1, self.axis)
+            y[..., 1 : 1 + (self.nfft - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.axis, -1)
+        else:
+            y = mkl_backend.fft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+        if self.norm is _FFTNorms.ONE_OVER_N:
+            y *= self._scale
+        if self.fftshift_after:
+            y = scipy.fft.fftshift(y, axes=self.axis)
+        return y
+
+    @reshaped
+    def _rmatvec(self, x: NDArray) -> NDArray:
+        x = _float_utils._downcast_float128_array(x)
+        x = _float_utils._upcast_float16_array(x)
+        if self.fftshift_after:
+            x = scipy.fft.ifftshift(x, axes=self.axis)
+        if self.real:
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.axis)
+            x[..., 1 : 1 + (self.nfft - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.axis, -1)
+            y = mkl_backend.irfft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+        else:
+            y = mkl_backend.ifft(x, n=self.nfft, axis=self.axis, **self._norm_kwargs)
+        if self.norm is _FFTNorms.NONE:
+            y *= self._scale
+
+        if self.nfft > self.dims[self.axis]:
+            y = np.take(y, range(0, self.dims[self.axis]), axis=self.axis)
+        elif self.nfft < self.dims[self.axis]:
+            y = np.pad(y, self.ifftpad)
+
+        if not self.clinear:
+            y = np.real(y)
+        if self.ifftshift_before:
+            y = scipy.fft.fftshift(y, axes=self.axis)
+        return y
+
+    def __truediv__(self, y):
+        if self.norm is not _FFTNorms.ORTHO:
+            return self._rmatvec(y) / self._scale
+        return self._rmatvec(y)
+
+
 def FFT(
     dims: Union[int, InputDimsLike],
     axis: int = -1,
@@ -386,7 +503,7 @@ def FFT(
     engine: str = "numpy",
     dtype: DTypeLike = "complex128",
     name: str = "F",
-    **kwargs_fftw,
+    **kwargs_fft,
 ) -> LinearOperator:
     r"""One dimensional Fast-Fourier Transform.
 
@@ -461,7 +578,7 @@ def FFT(
         frequencies are arranged from zero to largest positive, and then from negative
         Nyquist to the frequency bin before zero.
     engine : :obj:`str`, optional
-        Engine used for fft computation (``numpy``, ``fftw``, or ``scipy``). Choose
+        Engine used for fft computation (``numpy``, ``fftw``, ``scipy`` or ``mkl_fft``). Choose
         ``numpy`` when working with cupy and jax arrays.
 
         .. note:: Since version 1.17.0, accepts "scipy".
@@ -479,9 +596,8 @@ def FFT(
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
-    **kwargs_fftw
-            Arbitrary keyword arguments
-            for :py:class:`pyfftw.FTTW`
+    **kwargs_fft
+        Arbitrary keyword arguments to be passed to the selected fft method
 
     Attributes
     ----------
@@ -498,15 +614,12 @@ def FFT(
     cdtype : :obj:`bool`
         Output type of the forward. Complex equivalent to ``rdtype``.
     shape : :obj:`tuple`
-        Operator shape
+        Operator shape.
     clinear : :obj:`bool`
         .. versionadded:: 1.17.0
 
         Operator is complex-linear. Is false when either ``real=True`` or when
         ``dtype`` is not a complex type.
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
 
     Raises
     ------
@@ -514,7 +627,7 @@ def FFT(
         - If ``dims`` is provided and ``axis`` is bigger than ``len(dims)``.
         - If ``norm`` is not one of "ortho", "none", or "1/n".
     NotImplementedError
-        If ``engine`` is neither ``numpy``, ``fftw``, nor ``scipy``.
+        If ``engine`` is neither ``numpy``, ``fftw``, ``scipy`` nor ``mkl_fft``.
 
     See Also
     --------
@@ -557,11 +670,30 @@ def FFT(
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
-            **kwargs_fftw,
+            **kwargs_fft,
         )
-    elif engine == "numpy" or (engine == "fftw" and pyfftw_message is not None):
+    elif engine == "mkl_fft" and mkl_fft_message is None:
+        f = _FFT_mklfft(
+            dims,
+            axis=axis,
+            nfft=nfft,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+            **kwargs_fft,
+        )
+    elif (
+        engine == "numpy"
+        or (engine == "fftw" and pyfftw_message is not None)
+        or (engine == "mkl_fft" and mkl_fft_message is not None)
+    ):
         if engine == "fftw" and pyfftw_message is not None:
-            logging.warning(pyfftw_message)
+            logger.warning(pyfftw_message)
+        if engine == "mkl_fft" and mkl_fft_message is not None:
+            logger.warning(mkl_fft_message)
         f = _FFT_numpy(
             dims,
             axis=axis,
@@ -572,6 +704,7 @@ def FFT(
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
+            **kwargs_fft,
         )
     elif engine == "scipy":
         f = _FFT_scipy(
@@ -584,8 +717,9 @@ def FFT(
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
+            **kwargs_fft,
         )
     else:
-        raise NotImplementedError("engine must be numpy, fftw or scipy")
+        raise NotImplementedError("engine must be numpy, scipy, fftw, or mkl_fft")
     f.name = name
     return f

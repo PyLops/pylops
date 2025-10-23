@@ -38,6 +38,8 @@ avo
     Linear Operators for Seismic Reservoir Characterization
 waveeqprocessing
     Linear Operators for Wave Equation oriented processing
+medical
+    Linear Operators for Medical imaging
 optimization
     Solvers
 utils
@@ -45,14 +47,18 @@ utils
 
 """
 
+import logging
+
 from .config import *
 from .linearoperator import *
 from .torchoperator import *
+from .pytensoroperator import *
 from .jaxoperator import *
 from .basicoperators import *
 from . import (
     avo,
     basicoperators,
+    medical,
     optimization,
     signalprocessing,
     utils,
@@ -67,6 +73,9 @@ from .utils.seismicevents import *
 from .utils.tapers import *
 from .utils.utils import *
 from .utils.wavelets import *
+
+# Prevent no handler message if an application using PyLops does not configure logging
+logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 try:
     from .version import version as __version__

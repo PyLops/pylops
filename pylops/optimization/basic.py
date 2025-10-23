@@ -6,6 +6,7 @@ __all__ = [
 
 from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
+from pylops.optimization.callback import CostToDataCallback, CostToInitialCallback
 from pylops.optimization.cls_basic import CG, CGLS, LSQR
 from pylops.utils.decorators import add_ndarray_support_to_solver
 from pylops.utils.typing import NDArray
@@ -21,9 +22,12 @@ def cg(
     x0: Optional[NDArray] = None,
     niter: int = 10,
     tol: float = 1e-4,
+    rtol: float = 0.0,
+    rtol1: float = 0.0,
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, NDArray]:
     r"""Conjugate gradient
 
@@ -34,14 +38,23 @@ def cg(
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert of size :math:`[N \times N]`
-    y : :obj:`np.ndarray`
+    y : :obj:`numpy.ndarray`
         Data of size :math:`[N \times 1]`
-    x0 : :obj:`np.ndarray`, optional
+    x0 : :obj:`numpy.ndarray`, optional
         Initial guess
     niter : :obj:`int`, optional
         Number of iterations
     tol : :obj:`float`, optional
-        Tolerance on residual norm
+        Absolute tolerance on residual norm. Stops the solver when the
+        residual norm is below this value.
+    rtol : :obj:`float`, optional
+        Relative tolerance on residual norm wrt initial residual norm. Stops
+        the solver when the ratio of the current residual norm to the initial
+        residual norm is below this value.
+    rtol1 : :obj:`float`, optional
+        Relative tolerance on residual norm wrt to data. Stops the solver
+        when the ratio of the current residual norm to the data norm is
+        below this value.
     show : :obj:`bool`, optional
         Display iterations log
     itershow : :obj:`tuple`, optional
@@ -51,10 +64,14 @@ def cg(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver
 
     Returns
     -------
-    x : :obj:`np.ndarray`
+    x : :obj:`numpy.ndarray`
         Estimated model of size :math:`[N \times 1]`
     iit : :obj:`int`
         Number of executed iterations
@@ -66,11 +83,26 @@ def cg(
     See :class:`pylops.optimization.cls_basic.CG`
 
     """
-    cgsolve = CG(Op)
+    callbacks = []
+    if rtol > 0.0:
+        callbacks.append(CostToInitialCallback(rtol))
+    if rtol1 > 0.0:
+        callbacks.append(CostToDataCallback(rtol1))
+
+    cgsolve = CG(
+        Op,
+        callbacks=callbacks if len(callbacks) > 0 else None,
+    )
     if callback is not None:
         cgsolve.callback = callback
     x, iiter, cost = cgsolve.solve(
-        y=y, x0=x0, tol=tol, niter=niter, show=show, itershow=itershow
+        y=y,
+        x0=x0,
+        tol=tol,
+        niter=niter,
+        show=show,
+        itershow=itershow,
+        preallocate=preallocate,
     )
     return x, iiter, cost
 
@@ -83,9 +115,12 @@ def cgls(
     niter: int = 10,
     damp: float = 0.0,
     tol: float = 1e-4,
+    rtol: float = 0.0,
+    rtol1: float = 0.0,
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, int, float, float, NDArray]:
     r"""Conjugate gradient least squares
 
@@ -96,16 +131,25 @@ def cgls(
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert of size :math:`[N \times M]`
-    y : :obj:`np.ndarray`
+    y : :obj:`numpy.ndarray`
         Data of size :math:`[N \times 1]`
-    x0 : :obj:`np.ndarray`, optional
+    x0 : :obj:`numpy.ndarray`, optional
         Initial guess
     niter : :obj:`int`, optional
         Number of iterations
     damp : :obj:`float`, optional
         Damping coefficient
     tol : :obj:`float`, optional
-        Tolerance on residual norm
+        Absolute tolerance on residual norm. Stops the solver when the
+        residual norm is below this value.
+    rtol : :obj:`float`, optional
+        Relative tolerance on residual norm wrt initial residual norm. Stops
+        the solver when the ratio of the current residual norm to the initial
+        residual norm is below this value.
+    rtol1 : :obj:`float`, optional
+        Relative tolerance on residual norm wrt to data. Stops the solver
+        when the ratio of the current residual norm to the data norm is
+        below this value.
     show : :obj:`bool`, optional
         Display iterations log
     itershow : :obj:`tuple`, optional
@@ -115,10 +159,14 @@ def cgls(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.5.0
+
+            Pre-allocate all variables used by the solver
 
     Returns
     -------
-    x : :obj:`np.ndarray`
+    x : :obj:`numpy.ndarray`
         Estimated model of size :math:`[M \times 1]`
     istop : :obj:`int`
         Gives the reason for termination
@@ -145,11 +193,26 @@ def cgls(
     See :class:`pylops.optimization.cls_basic.CGLS`
 
     """
-    cgsolve = CGLS(Op)
+    callbacks = []
+    if rtol > 0.0:
+        callbacks.append(CostToInitialCallback(rtol))
+    if rtol1 > 0.0:
+        callbacks.append(CostToDataCallback(rtol1))
+    cgsolve = CGLS(
+        Op,
+        callbacks=callbacks if len(callbacks) > 0 else None,
+    )
     if callback is not None:
         cgsolve.callback = callback
     x, istop, iiter, r1norm, r2norm, cost = cgsolve.solve(
-        y=y, x0=x0, tol=tol, niter=niter, damp=damp, show=show, itershow=itershow
+        y=y,
+        x0=x0,
+        tol=tol,
+        niter=niter,
+        damp=damp,
+        show=show,
+        itershow=itershow,
+        preallocate=preallocate,
     )
     return x, istop, iiter, r1norm, r2norm, cost
 
@@ -168,6 +231,7 @@ def lsqr(
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
+    preallocate: bool = False,
 ) -> Tuple[NDArray, int, int, float, float, float, float, float, float, float, NDArray]:
     r"""LSQR
 
@@ -181,9 +245,9 @@ def lsqr(
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert of size :math:`[N \times M]`
-    y : :obj:`np.ndarray`
+    y : :obj:`numpy.ndarray`
         Data of size :math:`[N \times 1]`
-    x0 : :obj:`np.ndarray`, optional
+    x0 : :obj:`numpy.ndarray`, optional
         Initial guess of size :math:`[M \times 1]`
     damp : :obj:`float`, optional
         Damping coefficient
@@ -213,10 +277,14 @@ def lsqr(
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
+    preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver
 
     Returns
     -------
-    x : :obj:`np.ndarray`
+    x : :obj:`numpy.ndarray`
         Estimated model of size :math:`[M \times 1]`
     istop : :obj:`int`
         Gives the reason for termination
@@ -242,6 +310,8 @@ def lsqr(
 
         ``7`` means the iteration limit has been reached
 
+    iiter : :obj:`int`
+        Iteration number upon termination
     r1norm : :obj:`float`
         :math:`||\mathbf{r}||_2^2`, where
         :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
@@ -257,6 +327,8 @@ def lsqr(
     arnorm : :obj:`float`
         Estimate of norm of :math:`\cond(\mathbf{Op}^H\mathbf{r}-
         \epsilon^2\mathbf{x})`
+    xnorm : :obj:`float`
+        :math:`||\mathbf{x}||_2`
     var : :obj:`float`
         Diagonals of :math:`(\mathbf{Op}^H\mathbf{Op})^{-1}` (if ``damp=0``)
         or more generally :math:`(\mathbf{Op}^H\mathbf{Op} +
@@ -295,5 +367,6 @@ def lsqr(
         calc_var=calc_var,
         show=show,
         itershow=itershow,
+        preallocate=preallocate,
     )
     return x, istop, iiter, r1norm, r2norm, anorm, acond, arnorm, xnorm, var, cost

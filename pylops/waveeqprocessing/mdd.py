@@ -23,6 +23,8 @@ from pylops.utils.backend import (
 )
 from pylops.utils.typing import NDArray
 
+logger = logging.getLogger(__name__)
+
 
 def _MDC(
     G: NDArray,
@@ -87,7 +89,7 @@ def _MDC(
     nfft = int(np.ceil((nt + 1) / 2))
     if nfmax > nfft:
         nfmax = nfft
-        logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]", nfmax)
+        logger.warning("nfmax set equal to ceil[(nt+1)/2=%d]", nfmax)
 
     Fop = _FFT(
         dims=(nt, nr, nv),
@@ -95,7 +97,7 @@ def _MDC(
         real=True,
         ifftshift_before=twosided,
         dtype=rdtype,
-        **args_FFT
+        **args_FFT,
     )
     F1op = _FFT(
         dims=(nt, ns, nv),
@@ -103,7 +105,7 @@ def _MDC(
         real=True,
         ifftshift_before=False,
         dtype=rdtype,
-        **args_FFT1
+        **args_FFT1,
     )
 
     # create Identity operator to extract only relevant frequencies
@@ -138,6 +140,7 @@ def MDC(
     usematmul: bool = False,
     prescaled: bool = False,
     name: str = "M",
+    **kwargs_fft,
 ) -> LinearOperator:
     r"""Multi-dimensional convolution.
 
@@ -186,6 +189,15 @@ def MDC(
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+    **kwargs_fft
+        .. versionadded:: 2.6.0
+
+        Arbitrary keyword arguments to be passed to the selected fft method
+
+    Returns
+    -------
+    MOp : :obj:`pylops.LinearOperator`
+        Multi-dimensional convolution operator.
 
     Raises
     ------
@@ -241,8 +253,8 @@ def MDC(
         saveGt=saveGt,
         conj=conj,
         prescaled=prescaled,
-        args_FFT={"engine": fftengine},
-        args_FFT1={"engine": fftengine},
+        args_FFT={**{"engine": fftengine}, **kwargs_fft},
+        args_FFT1={**{"engine": fftengine}, **kwargs_fft},
         args_Fredholm1={"usematmul": usematmul},
     )
     MOp.name = name
@@ -265,7 +277,7 @@ def MDD(
     add_negative: bool = True,
     smooth_precond: int = 0,
     fftengine: str = "numpy",
-    **kwargs_solver
+    **kwargs_solver,
 ) -> Union[
     Tuple[NDArray, NDArray],
     Tuple[NDArray, NDArray, NDArray],
@@ -401,21 +413,23 @@ def MDD(
     # Fix nfmax to be at maximum equal to half of the size of fft samples
     if nfmax is None or nfmax > nfmax_allowed:
         nfmax = nfmax_allowed
-        logging.warning("nfmax set equal to ceil[(nt+1)/2=%d]", nfmax)
+        logger.warning("nfmax set equal to ceil[(nt+1)/2=%d]", nfmax)
 
     # Add negative part to data and model
     if twosided and add_negative:
-        G = np.concatenate((ncp.zeros((ns, nr, nt - 1)), G), axis=-1)
-        d = np.concatenate((np.squeeze(np.zeros((ns, nv, nt - 1))), d), axis=-1)
+        G = ncp.concatenate((ncp.zeros((ns, nr, nt - 1), dtype=G.dtype), G), axis=-1)
+        d = ncp.concatenate(
+            (ncp.squeeze(ncp.zeros((ns, nv, nt - 1), dtype=d.dtype)), d), axis=-1
+        )
     # Bring kernel to frequency domain
-    Gfft = np.fft.rfft(G, nt2, axis=-1)
+    Gfft = ncp.fft.rfft(G, nt2, axis=-1)
     Gfft = Gfft[..., :nfmax]
 
     # Bring frequency/time to first dimension
-    Gfft = np.moveaxis(Gfft, -1, 0)
-    d = np.moveaxis(d, -1, 0)
+    Gfft = ncp.moveaxis(Gfft, -1, 0)
+    d = ncp.moveaxis(d, -1, 0)
     if psf:
-        G = np.moveaxis(G, -1, 0)
+        G = ncp.moveaxis(G, -1, 0)
 
     # Define MDC linear operator
     MDCop = MDC(
@@ -455,12 +469,12 @@ def MDD(
     # Adjoint
     if adjoint:
         madj = MDCop.H * d.ravel()
-        madj = np.squeeze(madj.reshape(nt2, nr, nv))
-        madj = np.moveaxis(madj, 0, -1)
+        madj = ncp.squeeze(madj.reshape(nt2, nr, nv))
+        madj = ncp.moveaxis(madj, 0, -1)
         if psf:
             psfadj = PSFop.H * G.ravel()
-            psfadj = np.squeeze(psfadj.reshape(nt2, nr, nr))
-            psfadj = np.moveaxis(psfadj, 0, -1)
+            psfadj = ncp.squeeze(psfadj.reshape(nt2, nr, nr))
+            psfadj = ncp.moveaxis(psfadj, 0, -1)
 
     # Inverse
     if twosided and causality_precond:
@@ -479,10 +493,10 @@ def MDD(
                 MDCop,
                 d.ravel(),
                 ncp.zeros(int(MDCop.shape[1]), dtype=MDCop.dtype),
-                **kwargs_solver
+                **kwargs_solver,
             )[0]
-    minv = np.squeeze(minv.reshape(nt2, nr, nv))
-    minv = np.moveaxis(minv, 0, -1)
+    minv = ncp.squeeze(minv.reshape(nt2, nr, nv))
+    minv = ncp.moveaxis(minv, 0, -1)
 
     if wav is not None:
         wav1 = wav.copy()
@@ -498,10 +512,10 @@ def MDD(
                 PSFop,
                 G.ravel(),
                 ncp.zeros(int(PSFop.shape[1]), dtype=PSFop.dtype),
-                **kwargs_solver
+                **kwargs_solver,
             )[0]
-        psfinv = np.squeeze(psfinv.reshape(nt2, nr, nr))
-        psfinv = np.moveaxis(psfinv, 0, -1)
+        psfinv = ncp.squeeze(psfinv.reshape(nt2, nr, nr))
+        psfinv = ncp.moveaxis(psfinv, 0, -1)
         if wav is not None:
             wav1 = wav.copy()
             for _ in range(psfinv.ndim - 1):

@@ -68,12 +68,20 @@ Ready to contribute?
 
 Now you can make your changes locally.
 
-3. When you're done making changes, check that your code follows the guidelines for :ref:`addingoperator` and
-that the both old and new tests pass successfully:
+3. When you're done making changes, check that your code follows the guidelines for 
+:ref:`addingoperator` or :ref:`addingsolver` and that both old and new tests pass 
+successfully:
 
 .. code-block:: bash
 
    >> make tests
+
+If you have access to a GPU, it is advised also that old and new tests run with the CuPy 
+backend pass successfully:
+
+.. code-block:: bash
+
+   >> make tests_gpu
 
 4. Run flake8 to check the quality of your code:
 
@@ -119,6 +127,7 @@ Before you submit a pull request, check that it meets these guidelines:
 Project structure
 #################
 This repository is organized as follows:
+
 * **pylops**:     Python library containing various linear operators and auxiliary routines
 * **pytests**:    set of pytests
 * **testdata**:   sample datasets used in pytests and documentation

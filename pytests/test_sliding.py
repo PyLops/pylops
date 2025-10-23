@@ -1,6 +1,16 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import MatrixMult
 from pylops.signalprocessing import Sliding1D, Sliding2D, Sliding3D
@@ -106,9 +116,9 @@ def test_Sliding1D(par):
     """Dot-test and inverse for Sliding1D operator"""
     Op = MatrixMult(np.ones((par["nwiny"], par["ny"])))
 
-    nwins, dim, mwin_inends, dwin_inends = sliding1d_design(
-        par["npy"], par["nwiny"], par["novery"], par["ny"]
-    )
+    nwins, dim = sliding1d_design(par["npy"], par["nwiny"], par["novery"], par["ny"])[
+        :2
+    ]
 
     Slid = Sliding1D(
         Op,
@@ -119,7 +129,7 @@ def test_Sliding1D(par):
         tapertype=par["tapertype"],
         savetaper=par["savetaper"],
     )
-    assert dottest(Slid, par["npy"], par["ny"] * nwins)
+    assert dottest(Slid, par["npy"], par["ny"] * nwins, backend=backend)
     x = np.ones(par["ny"] * nwins)
     y = Slid * x.ravel()
 
@@ -132,9 +142,9 @@ def test_Sliding2D(par):
     """Dot-test and inverse for Sliding2D operator"""
     Op = MatrixMult(np.ones((par["nwiny"] * par["nt"], par["ny"] * par["nt"])))
 
-    nwins, dims, mwin_inends, dwin_inends = sliding2d_design(
+    nwins, dims = sliding2d_design(
         (par["npy"], par["nt"]), par["nwiny"], par["novery"], (par["ny"], par["nt"])
-    )
+    )[:2]
     Slid = Sliding2D(
         Op,
         dims=dims,
@@ -144,7 +154,9 @@ def test_Sliding2D(par):
         tapertype=par["tapertype"],
         savetaper=par["savetaper"],
     )
-    assert dottest(Slid, par["npy"] * par["nt"], par["ny"] * par["nt"] * nwins)
+    assert dottest(
+        Slid, par["npy"] * par["nt"], par["ny"] * par["nt"] * nwins, backend=backend
+    )
     x = np.ones((par["ny"] * nwins, par["nt"]))
     y = Slid * x.ravel()
 
@@ -161,12 +173,12 @@ def test_Sliding3D(par):
         )
     )
 
-    nwins, dims, mwin_inends, dwin_inends = sliding3d_design(
+    nwins, dims = sliding3d_design(
         (par["npy"], par["npx"], par["nt"]),
         (par["nwiny"], par["nwinx"]),
         (par["novery"], par["noverx"]),
         (par["ny"], par["nx"], par["nt"]),
-    )
+    )[:2]
 
     Slid = Sliding3D(
         Op,
@@ -182,6 +194,7 @@ def test_Sliding3D(par):
         Slid,
         par["npy"] * par["npx"] * par["nt"],
         par["ny"] * par["nx"] * par["nt"] * nwins[0] * nwins[1],
+        backend=backend,
     )
     x = np.ones((par["ny"] * par["nx"] * nwins[0] * nwins[1], par["nt"]))
     y = Slid * x.ravel()

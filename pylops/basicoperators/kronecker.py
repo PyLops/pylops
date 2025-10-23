@@ -29,11 +29,12 @@ class Kronecker(LinearOperator):
 
     Attributes
     ----------
+    Op1H : :obj:`pylops.LinearOperator`
+        Adjoint of first operator
+    Op2H : :obj:`pylops.LinearOperator`
+        Adjoint of second operator
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved
-        explicitly (``True``) or not (``False``)
+        Operator shape.
 
     Notes
     -----

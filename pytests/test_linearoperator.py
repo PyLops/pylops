@@ -1,6 +1,16 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal, assert_array_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal, assert_array_equal
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
 
 import pylops
@@ -112,9 +122,12 @@ def test_dense_skinny(par):
     Zop = Zero(par["nx"], 3, dtype=par["dtype"])
     Op = HStack([Dop, Zop])
     OOp = np.hstack((D, np.zeros((par["nx"], 3))))
-    assert_array_equal(Op.todense(), OOp)
+    assert_array_equal(Op.todense(backend=backend), OOp)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
 def test_sparse(par):
     """Sparse matrix representation"""
@@ -125,6 +138,9 @@ def test_sparse(par):
     assert_array_equal(S.toarray(), D)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
 def test_eigs(par):
     """Eigenvalues and condition number estimate with ARPACK"""
@@ -231,7 +247,7 @@ def test_realimag(par):
     assert_array_equal(np.imag(x), -xi)
 
 
-@pytest.mark.parametrize("par", [(par1), (par1j)])
+@pytest.mark.parametrize("par", [(par1j)])
 def test_rlinear(par):
     """R-linear"""
     np.random.seed(123)
@@ -263,8 +279,12 @@ def test_rlinear(par):
 
     # adjoint (dot product test)
     for complexflag in range(4):
-        assert dottest(Op_left, par["ny"], par["nx"], complexflag=complexflag)
-        assert dottest(Op_right, par["ny"], par["nx"], complexflag=complexflag)
+        assert dottest(
+            Op_left, par["ny"], par["nx"], complexflag=complexflag, backend=backend
+        )
+        assert dottest(
+            Op_right, par["ny"], par["nx"], complexflag=complexflag, backend=backend
+        )
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])

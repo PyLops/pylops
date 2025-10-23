@@ -1,7 +1,16 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
-from scipy.sparse.linalg import lsqr as sp_lsqr
 
 from pylops.basicoperators import Diagonal
 from pylops.optimization.basic import lsqr
@@ -20,10 +29,21 @@ def test_Diagonal_1dsignal(par):
         d = np.arange(ddim) + 1.0 + par["imag"] * (np.arange(ddim) + 1.0)
 
         Dop = Diagonal(d, dtype=par["dtype"])
-        assert dottest(Dop, ddim, ddim, complexflag=0 if par["imag"] == 0 else 3)
+        assert dottest(
+            Dop, ddim, ddim, complexflag=0 if par["imag"] == 0 else 3, backend=backend
+        )
 
         x = np.ones(ddim) + par["imag"] * np.ones(ddim)
-        xlsqr = sp_lsqr(Dop, Dop * x, damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
+        xlsqr = lsqr(
+            Dop,
+            Dop * x,
+            x0=np.zeros_like(x).ravel(),
+            damp=1e-20,
+            niter=300,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
+        )[0]
 
         assert_array_almost_equal(x, xlsqr, decimal=4)
 
@@ -40,12 +60,22 @@ def test_Diagonal_2dsignal(par):
             par["nx"] * par["nt"],
             par["nx"] * par["nt"],
             complexflag=0 if par["imag"] == 0 else 3,
+            backend=backend,
         )
 
         x = np.ones((par["nx"], par["nt"])) + par["imag"] * np.ones(
             (par["nx"], par["nt"])
         )
-        xlsqr = sp_lsqr(Dop, Dop * x.ravel(), damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
+        xlsqr = lsqr(
+            Dop,
+            Dop * x.ravel(),
+            x0=np.zeros_like(x).ravel(),
+            damp=1e-20,
+            niter=300,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
+        )[0]
 
         assert_array_almost_equal(x.ravel(), xlsqr.ravel(), decimal=4)
 
@@ -64,12 +94,22 @@ def test_Diagonal_3dsignal(par):
             par["ny"] * par["nx"] * par["nt"],
             par["ny"] * par["nx"] * par["nt"],
             complexflag=0 if par["imag"] == 0 else 3,
+            backend=backend,
         )
 
         x = np.ones((par["ny"], par["nx"], par["nt"])) + par["imag"] * np.ones(
             (par["ny"], par["nx"], par["nt"])
         )
-        xlsqr = sp_lsqr(Dop, Dop * x.ravel(), damp=1e-20, iter_lim=300, atol=1e-8, btol=1e-8, show=0)[0]
+        xlsqr = lsqr(
+            Dop,
+            Dop * x.ravel(),
+            x0=np.zeros_like(x).ravel(),
+            damp=1e-20,
+            niter=300,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
+        )[0]
 
         assert_array_almost_equal(x.ravel(), xlsqr.ravel(), decimal=4)
 
@@ -86,12 +126,22 @@ def test_Diagonal_2dsignal_unflattened(par):
             par["nx"] * par["nt"],
             par["nx"] * par["nt"],
             complexflag=0 if par["imag"] == 0 else 3,
+            backend=backend,
         )
 
         x = np.ones((par["nx"], par["nt"])) + par["imag"] * np.ones(
             (par["nx"], par["nt"])
         )
-        xlsqr = lsqr(Dop, Dop * x, damp=1e-20, niter=300, atol=1e-8, btol=1e-8, show=0)[0]
+        xlsqr = lsqr(
+            Dop,
+            Dop * x,
+            x0=np.zeros_like(x),
+            damp=1e-20,
+            niter=300,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
+        )[0]
 
         assert_array_almost_equal(x, xlsqr, decimal=4)
 
@@ -110,11 +160,21 @@ def test_Diagonal_3dsignal_unflattened(par):
             par["ny"] * par["nx"] * par["nt"],
             par["ny"] * par["nx"] * par["nt"],
             complexflag=0 if par["imag"] == 0 else 3,
+            backend=backend,
         )
 
         x = np.ones((par["ny"], par["nx"], par["nt"])) + par["imag"] * np.ones(
             (par["ny"], par["nx"], par["nt"])
         )
-        xlsqr = lsqr(Dop, Dop * x, damp=1e-20, niter=300, atol=1e-8, btol=1e-8, show=0)[0]
+        xlsqr = lsqr(
+            Dop,
+            Dop * x,
+            x0=np.zeros_like(x),
+            damp=1e-20,
+            niter=300,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
+        )[0]
 
         assert_array_almost_equal(x, xlsqr, decimal=4)

@@ -17,6 +17,7 @@ build
 dist
 pylops.egg-info/
 .eggs/
+__pycache__
 
 # setuptools_scm generated  #
 pylops/version.py
@@ -32,6 +33,7 @@ docs/build
 docs/source/api/generated
 docs/source/gallery
 docs/source/tutorials
+docs/source/sg_execution_times.rst
 
 # Pylint #
 pylint_plot.py

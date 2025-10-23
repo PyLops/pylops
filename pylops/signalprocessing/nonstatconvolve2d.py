@@ -64,11 +64,40 @@ class NonStationaryConvolve2D(LinearOperator):
 
     Attributes
     ----------
+    hshape : :obj:`tuple`
+        Shape of each 2d filter (last two dimensions of ``hs``).
+    ohx : :obj:`int`
+        Origin of filter indices ``ihx``.
+    dhx : :obj:`int`
+        Step of filter indices ``ihx``.
+    nhx : :obj:`int`
+        Number of filters provided alond x direction
+        (first dimension of ``hs``).
+    ehx : :obj:`int`
+        End of filter indices ``ihx``.
+    ohz : :obj:`int`
+        Origin of filter indices ``ihz``.
+    dhz : :obj:`int`
+        Step of filter indices ``ihz``.
+    nhz : :obj:`int`
+        Number of filters provided alond z direction
+        (second dimension of ``hs``).
+    ehz : :obj:`int`
+        End of filter indices ``ihz``.
+    hsinterp : :obj:`numpy.ndarray`
+        Interpolated filters at all locations along ``axis``.
+    kwargs_cuda : :obj:`dict`
+        Additional arguments to be passed to the CUDA kernel (only when
+        ``engine=cuda``).
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening. In
+        this case, same as ``dims``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     Raises
     ------
@@ -332,7 +361,7 @@ class NonStationaryFilters2D(LinearOperator):
     Attributes
     ----------
     shape : :obj:`tuple`
-        Operator shape
+        Operator shape.
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly (``True``) or
         not (``False``)

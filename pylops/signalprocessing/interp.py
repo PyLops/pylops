@@ -1,6 +1,6 @@
 __all__ = ["Interp"]
 
-import logging
+import warnings
 from typing import Tuple, Union
 
 import numpy as np
@@ -11,8 +11,6 @@ from pylops.basicoperators import Diagonal, MatrixMult, Restriction, Transpose
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _checkunique(iava: npt.ArrayLike) -> None:
@@ -54,8 +52,8 @@ def _linearinterp(
     # penultimate sample and raise a warning
     outside = iava >= lastsample - 1
     if sum(outside) > 0:
-        logging.warning(
-            "at least one value is beyond penultimate sample, "
+        warnings.warn(
+            "At least one value is beyond the penultimate sample, "
             "forced to be at penultimate sample"
         )
     iava[outside] = lastsample - 1 - 1e-10
@@ -119,9 +117,9 @@ def Interp(
 ) -> Tuple[LinearOperator, IntNDArray]:
     r"""Interpolation operator.
 
-    Apply interpolation along ``axis``
-    from regularly sampled input vector into fractionary positions ``iava``
-    using one of the following algorithms:
+    Apply interpolation along ``axis`` from regularly sampled input
+    vector into fractionary positions ``iava`` using one of the
+    following algorithms:
 
     - *Nearest neighbour* interpolation
       is a thin wrapper around :obj:`pylops.Restriction` at ``np.round(iava)``

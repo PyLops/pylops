@@ -3,7 +3,6 @@ __all__ = ["describe"]
 import logging
 import random
 import string
-
 from typing import List, Set, Union
 
 from pylops import LinearOperator
@@ -35,7 +34,7 @@ compositeops = (
     BlockDiag,
 )
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 def _in_notebook() -> bool:
@@ -95,7 +94,7 @@ def _assign_name(Op, Ops, names: List[str]) -> str:
         while proposedname in names:
             proposedname = random.choice(string.ascii_letters).upper() + suffix
         name = proposedname
-        logging.warning(
+        logger.warning(
             f"The user has used the same name {origname} for two distinct operators, "
             f"changing name of operator {type(Op).__name__} to {name}..."
         )

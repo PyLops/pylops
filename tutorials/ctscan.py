@@ -4,11 +4,19 @@ r"""
 This tutorial considers a very well-known inverse problem from the field of
 medical imaging.
 
-We will be using the :func:`pylops.signalprocessing.Radon2D` operator
+First, we will be using the :class:`pylops.signalprocessing.Radon2D` operator
 to model a *sinogram*, which is a graphic representation of the raw data
-obtained from a CT scan. The sinogram is further inverted using both a L2
-solver and a TV-regularized solver like Split-Bregman.
+obtained from a CT scan.
 
+Note that whilst we can twick the Radon2D operator to work in a CT-like style,
+this has initially been designed with other applications in mind
+(i.e., seismic). We will see that if we use :class:`pylops.medical.CT2D` the produced
+sinogram will be very similar in the middle (horizontal and near horizontal lines) but
+it will greatly differ at both end (vertical and near vertical lines). The latter lines
+are in fact not easy to parametrize using the convention chosen in Radon2D.
+
+The sinogram created by the :class:`pylops.medical.CT2D` operator is further
+inverted using both a L2 solver and a TV-regularized solver like Split-Bregman.
 """
 import matplotlib.pyplot as plt
 
@@ -28,17 +36,11 @@ np.random.seed(10)
 # such a type:
 #
 # .. math::
-#    t\sin(\theta) + x\cos(\theta) = r,
+#    t(r,\theta; x) = \tan(90°-\theta)x + \frac{r}{\sin(\theta)}
 #
 # where :math:`\theta` is the angle between the x-axis (:math:`x`) and
 # the perpendicular to the summation line and :math:`r` is the distance
-# from the origin of the summation line. Radon transform in CT
-# corresponds to the integral of the input image along the straight line above.
-# To implement the integration in PyLops we simply need to express
-# :math:`t(r,\theta;x)` which is given by:
-#
-# .. math::
-#    t(r,\theta; x) = \tan\left(\frac{\pi}{2}-\theta\right)x + \frac{r}{\sin(\theta)}.
+# from the origin of the summation line.
 
 
 @jit(nopython=True)
@@ -48,13 +50,6 @@ def radoncurve(x, r, theta):
         + np.tan(np.pi / 2.0 - theta) * x
         + ny // 2
     )
-
-
-###############################################################################
-# Note that in the above implementation we added centering :math:`t \mapsto t - n_y/2` and
-# :math:`r \mapsto r - n_y/2` so that the origin of the integration lines is exactly in the
-# center of the image (centering for :math:`x` is not needed because we will use
-# ``centeredh=True`` in the constructor of ``Radon2D``).
 
 
 x = np.load("../testdata/optimization/shepp_logan_phantom.npy").T
@@ -94,51 +89,48 @@ axs[1].imshow(y.T, cmap="gray")
 axs[1].set_title("Data")
 axs[1].axis("tight")
 axs[2].imshow(xrec.T, cmap="gray")
-axs[2].set_title("Adjoint model in PyLops")
+axs[2].set_title("Adjoint model")
+axs[2].axis("tight")
+fig.tight_layout()
+
+
+###############################################################################
+# Let's now repeat the same exercise, this time using the CT2D operator
+Cop = pylops.medical.CT2D((ny, nx), 1.0, ny, theta)
+
+y = Cop * x.T
+xrec = Cop.H * y
+
+fig, axs = plt.subplots(1, 3, figsize=(10, 4))
+axs[0].imshow(x.T, vmin=0, vmax=1, cmap="gray")
+axs[0].set_title("Model")
+axs[0].axis("tight")
+axs[1].imshow(np.flipud(y.T), cmap="gray")
+axs[1].set_title("Data")
+axs[1].axis("tight")
+axs[2].imshow(xrec, cmap="gray")
+axs[2].set_title("Adjoint model")
 axs[2].axis("tight")
 fig.tight_layout()
 
 ###############################################################################
-# Note that our raw data ``y`` *does not represent exactly* classical sinograms
-# in medical imaging. Integration along curves in the adjoint form of
-# :func:`pylops.signalprocessing.Radon2D` is performed with respect to
-# :math:`dx`, whereas canonically it is assumed to be with respect to the natural
-# parametrization :math:`dl = \sqrt{(dx)^2 + (dt)^2}`. To retrieve back the
-# classical sinogram we have to divide data by the jacobian
-# :math:`j(x,l) = \left\vert dx/dl \right\vert = |\sin(\theta)|`.
-
-sinogram = np.divide(
-    y.T, np.abs(np.sin(theta) + 1e-15)
-)  # small shift to avoid zero-division
-fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-axs[0].imshow(y.T, cmap="gray")
-axs[0].set_title("Data")
-axs[0].axis("tight")
-axs[1].imshow(sinogram, cmap="gray")
-axs[1].set_title("Sinogram in medical imaging")
-axs[1].axis("tight")
-fig.tight_layout()
-
-###############################################################################
-# From now on, we will not pursue further working with the "true sinogram", instead
-# we will reconstruct the original phantom directly from ``y``. For this we take advantage
-# of our different solvers and try to invert the modelling operator both in a
-# least-squares sense and using TV-reg.
+# Finally we take advantage of our different solvers and try to invert the
+# modelling operator both in a least-squares sense and using TV-reg.
 Dop = [
     pylops.FirstDerivative(
-        (nx, ny), axis=0, edge=True, kind="backward", dtype=np.float64
+        (ny, nx), axis=0, edge=True, kind="backward", dtype=np.float64
     ),
     pylops.FirstDerivative(
-        (nx, ny), axis=1, edge=True, kind="backward", dtype=np.float64
+        (ny, nx), axis=1, edge=True, kind="backward", dtype=np.float64
     ),
 ]
-D2op = pylops.Laplacian(dims=(nx, ny), edge=True, dtype=np.float64)
+D2op = pylops.Laplacian(dims=(ny, nx), edge=True, dtype=np.float64)
 
 # L2
 xinv_sm = pylops.optimization.leastsquares.regularized_inversion(
-    RLop.H, y.ravel(), [D2op], epsRs=[1e1], **dict(iter_lim=20)
+    Cop, y.ravel(), [D2op], epsRs=[1e1], **dict(iter_lim=20)
 )[0]
-xinv_sm = np.real(xinv_sm.reshape(nx, ny))
+xinv_sm = np.real(xinv_sm.reshape(ny, nx)).T
 
 # TV
 mu = 1.5
@@ -147,7 +139,7 @@ niter = 3
 niterinner = 4
 
 xinv = pylops.optimization.sparsity.splitbregman(
-    RLop.H,
+    Cop,
     y.ravel(),
     Dop,
     niter_outer=niter,
@@ -159,7 +151,7 @@ xinv = pylops.optimization.sparsity.splitbregman(
     show=False,
     **dict(iter_lim=20, damp=1e-2)
 )[0]
-xinv = np.real(xinv.reshape(nx, ny))
+xinv = np.real(xinv.reshape(ny, nx)).T
 
 fig, axs = plt.subplots(1, 3, figsize=(10, 4))
 axs[0].imshow(x.T, vmin=0, vmax=1, cmap="gray")

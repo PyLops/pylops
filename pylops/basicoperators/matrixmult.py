@@ -1,6 +1,7 @@
 __all__ = ["MatrixMult"]
 
 import logging
+import warnings
 from typing import Optional, Union
 
 import numpy as np
@@ -12,7 +13,7 @@ from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.backend import get_array_module
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class MatrixMult(LinearOperator):
@@ -40,21 +41,34 @@ class MatrixMult(LinearOperator):
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
-        Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+        Name of operator (to be used by :func:`pylops.utils.describe.describe`).
 
     Attributes
     ----------
+    dimsflatten : :obj:`tuple`
+        Same as ``dims`` but with first dimension flattened (i.e.,
+        defined as the product of ``otherdims``).
+    dimsdflatten : :obj:`tuple`
+        Same as ``dimsd`` but with first dimension flattened (i.e.,
+        defined as the product of ``otherdims``).
+    reshape : :obj:`bool`
+        Whether to reshape the input prior to applying the matrix ``A``
+        (when ``otherdims`` is provided) or not (when ``otherdims=None``).
+    complex : :obj:`bool`
+        Matrix has complex numbers (``True``) or not (``False``).
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
     dimsd : :obj:`tuple`
-        Shape of the array after the forward, but before linearization.
+        Shape of the array after the forward, but before flattening.
 
         For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
+        Operator shape.
     explicit : :obj:`bool`
         Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
-    complex : :obj:`bool`
-        Matrix has complex numbers (``True``) or not (``False``)
+        (``True``) or not (``False``).
 
     """
 
@@ -79,19 +93,21 @@ class MatrixMult(LinearOperator):
         else:
             otherdims = _value_or_sized_to_array(otherdims)
             self.otherdims = np.array(otherdims, dtype=int)
-            dims, dimsd = np.insert(self.otherdims, 0, self.A.shape[1]), np.insert(
-                self.otherdims, 0, self.A.shape[0]
+            dims, dimsd = (
+                np.insert(self.otherdims, 0, self.A.shape[1]),
+                np.insert(self.otherdims, 0, self.A.shape[0]),
             )
-            self.dimsflatten, self.dimsdflatten = np.insert(
-                [np.prod(self.otherdims)], 0, self.A.shape[1]
-            ), np.insert([np.prod(self.otherdims)], 0, self.A.shape[0])
+            self.dimsflatten, self.dimsdflatten = (
+                np.insert([np.prod(self.otherdims)], 0, self.A.shape[1]),
+                np.insert([np.prod(self.otherdims)], 0, self.A.shape[0]),
+            )
             self.reshape = True
             explicit = False
 
         # Check if forceflat is needed and set it back to None otherwise
         if otherdims is not None and forceflat is not None:
-            logging.warning(
-                "setting forceflat=None since otherdims!=None. "
+            logger.warning(
+                "Setting forceflat=None since otherdims!=None. "
                 "PyLops will automatically detect whether to return "
                 "a 1d or nd array based on the shape of the input "
                 "array."
@@ -100,7 +116,7 @@ class MatrixMult(LinearOperator):
         # Check dtype for correctness (upcast to complex when A is complex)
         if np.iscomplexobj(A) and not np.iscomplexobj(np.ones(1, dtype=dtype)):
             dtype = A.dtype
-            logging.warning("Matrix A is a complex object, dtype cast to %s" % dtype)
+            warnings.warn("Matrix A is a complex object, dtype cast to %s" % dtype)
         super().__init__(
             dtype=np.dtype(dtype),
             dims=dims,
@@ -138,7 +154,7 @@ class MatrixMult(LinearOperator):
         r"""Return the inverse of :math:`\mathbf{A}`.
 
         Returns
-        ----------
+        -------
         Ainv : :obj:`numpy.ndarray`
             Inverse matrix.
 

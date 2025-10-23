@@ -12,6 +12,7 @@ from pylops import LinearOperator
 from pylops.signalprocessing import Convolve1D
 from pylops.utils import deps
 from pylops.utils._internal import _value_or_sized_to_array
+from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper
 from pylops.utils.typing import DTypeLike, NDArray
@@ -25,13 +26,15 @@ if skfmm_message is None:
 if jit_message is None:
     from numba import jit, prange
 
+    from ._kirchhoff_cuda import _KirchhoffCudaHelper
+
     # detect whether to use parallel or not
     numba_threads = int(os.getenv("NUMBA_NUM_THREADS", "1"))
     parallel = True if numba_threads != 1 else False
 else:
     prange = range
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class Kirchhoff(LinearOperator):
@@ -82,8 +85,8 @@ class Kirchhoff(LinearOperator):
         :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` or pair of traveltime tables
         of size :math:`\lbrack (n_y) n_x n_z \times n_s \rbrack` and :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack`
         (to be provided if ``mode='byot'``). Note that the latter approach is recommended as less memory demanding
-        than the former. Moreover, only ``mode='dynamic'`` is only possible when traveltimes are provided in
-        the latter form.
+        than the former. Moreover, ``mode='dynamic'`` and ``engine='cuda'`` are only possible when traveltimes are
+        provided in the latter form.
     amp : :obj:`numpy.ndarray`, optional
         .. versionadded:: 2.0.0
 
@@ -108,7 +111,7 @@ class Kirchhoff(LinearOperator):
         Deprecated, will be removed in v3.0.0. Simply kept for back-compatibility with previous implementation,
         but effectively not affecting the behaviour of the operator.
     engine : :obj:`str`, optional
-        Engine used for computations (``numpy`` or ``numba``).
+        Engine used for computations (``numpy``, ``numba`` or ``cuda``).
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -118,16 +121,92 @@ class Kirchhoff(LinearOperator):
 
     Attributes
     ----------
+    ndims : :obj:`int`
+        Number of spatial dimensions (2 or 3).
+    ny : :obj:`int`
+        Number of samples in ``y`` axis (1 if ``ndims=2``).
+    nx : :obj:`int`
+        Number of samples in ``x`` axis.
+    nz : :obj:`int`
+        Number of samples in ``z`` axis.
+    dt : :obj:`float`
+        Sampling step in time axis.
+    nt : :obj:`int`
+        Number of samples in time axis.
+    nsnr : :obj:`int`
+        Number of source-receiver pairs.
+    ni : :obj:`int`
+        Number of image points (``ni=nx*nz`` if ``ndims=2`` and
+        ``ni=ny*nx*nz`` if ``ndims=3``).
+    six : :obj:`numpy.ndarray`
+        ix locations of sources (1d array of size ``ns*nr``).
+    rix : :obj:`numpy.ndarray`
+        ix locations of receivers (1d array of size ``ns*nr``).
+    travsrcrec : :obj:`bool`
+        Whether separate traveltime tables for sources and receivers are used (``True``)
+        or a single traveltime table for source-receiver pairs (``False``).
+    trav_srcs : :obj:`numpy.ndarray`
+        Traveltime table from sources to image points of size
+        :math:`\lbrack (n_y) n_x n_z \times n_s \rbrack`.
+    trav_recs : :obj:`numpy.ndarray`
+        Traveltime table from image points to receivers of size
+        :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack`.
+    trav : :obj:`numpy.ndarray`
+        Traveltime table from sources to receivers of size
+        :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack`.
+    itrav : :obj:`numpy.ndarray`
+        Integer traveltime table (in samples) from sources to receivers of size
+        :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` (only if
+        ``travsrcrec=False``).
+    travd : :obj:`numpy.ndarray`
+        Fractional part of the traveltime table from sources to receivers of size
+        :math:`\lbrack (n_y) n_x n_z \times n_s n_r \rbrack` (only if
+        ``travsrcrec=False``).
+    maxdist : :obj:`float`
+        Maximum distance between sources/receivers and image points.
+    amp_srcs : :obj:`numpy.ndarray`
+        Amplitude table from sources to image points of size
+        :math:`\lbrack (n_y) n_x n_z \times n_s \rbrack`.
+    amp_recs : :obj:`numpy.ndarray`
+        Amplitude table from image points to receivers of size
+        :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack`.
+    angle_srcs : :obj:`numpy.ndarray`
+        Incident angle table from sources to image points of size
+        :math:`\lbrack (n_y) n_x n_z \times n_s \rbrack` (
+        only if ``dynamic=True``).
+    angle_recs : :obj:`numpy.ndarray`
+        Emerging angle table from image points to receivers of size
+        :math:`\lbrack (n_y) n_x n_z \times n_r \rbrack` (
+        only if ``dynamic=True``).
+    cop : :obj:`pylops.Convolve1D`
+        Wavelet convolution operator of size :math:`\lbrack n_t \times n_t \rbrack`.
+    aperturetap : :obj:`numpy.ndarray`
+        Aperture taper
+    aperture : :obj:`tuple` or :obj:`numpy.ndarray`
+        Aperture limits (in terms of offset over depth)
+    apertureangle : :obj:`numpy.ndarray`
+        Angle aperture limits (in degrees)
+    vel : :obj:`numpy.ndarray`
+        Velocity model of size :math:`\lbrack (n_y\,\times)\; n_x
+        \times n_z \rbrack`
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     Raises
     ------
     NotImplementedError
-        If ``mode`` is neither ``analytic``, ``eikonal``, or ``byot``
+        If ``mode`` is neither ``analytic``, ``eikonal``, or ``byot``.
+
+    NotImplementedError
+        If ``engine="cuda"`` and ``trav`` is provided as a single table
 
     Notes
     -----
@@ -857,7 +936,7 @@ class Kirchhoff(LinearOperator):
                                 ]
                             )
 
-                        # identify x-index of image point
+                        # identify z-index of image point
                         iz = ii % nz
                         # aperture check
                         aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1)
@@ -917,7 +996,7 @@ class Kirchhoff(LinearOperator):
             velii = vel[ii]
             angle_srcsii = angles_srcs[ii]
             angle_recsii = angles_recs[ii]
-            # identify x-index of image point
+            # identify z-index of image point
             iz = ii % nz
             for isrc in range(ns):
                 trav_srcii = trav_srcsii[isrc]
@@ -995,10 +1074,9 @@ class Kirchhoff(LinearOperator):
         return y
 
     def _register_multiplications(self, engine: str) -> None:
-        if engine not in ["numpy", "numba"]:
-            raise KeyError("engine must be numpy or numba")
+        if engine not in ["numpy", "numba", "cuda"]:
+            raise KeyError("engine must be numpy or numba or cuda")
         if engine == "numba" and jit_message is None:
-            # numba
             numba_opts = dict(
                 nopython=True, nogil=True, parallel=parallel
             )  # fastmath=True,
@@ -1011,10 +1089,25 @@ class Kirchhoff(LinearOperator):
             elif not self.travsrcrec:
                 self._kirch_matvec = jit(**numba_opts)(self._trav_kirch_matvec)
                 self._kirch_rmatvec = jit(**numba_opts)(self._trav_kirch_rmatvec)
-
+        elif engine == "cuda":
+            if self.dynamic and self.travsrcrec:
+                self.cuda_helper = _KirchhoffCudaHelper(
+                    self.ns, self.nr, self.nt, self.ni, True
+                )
+            elif self.travsrcrec:
+                self.cuda_helper = _KirchhoffCudaHelper(
+                    self.ns, self.nr, self.nt, self.ni, False
+                )
+            elif not self.travsrcrec:
+                raise NotImplementedError(
+                    "engine='cuda' not implemented for traveltimes "
+                    "provided in one table"
+                )
+            self._kirch_matvec = self.cuda_helper._matvec_cuda
+            self._kirch_rmatvec = self.cuda_helper._rmatvec_cuda
         else:
             if engine == "numba" and jit_message is not None:
-                logging.warning(jit_message)
+                logger.warning(jit_message)
             if self.dynamic and self.travsrcrec:
                 self._kirch_matvec = self._ampsrcrec_kirch_matvec
                 self._kirch_rmatvec = self._ampsrcrec_kirch_rmatvec
@@ -1027,7 +1120,8 @@ class Kirchhoff(LinearOperator):
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
-        y = np.zeros((self.nsnr, self.nt), dtype=self.dtype)
+        ncp = get_array_module(x)
+        y = ncp.zeros((self.nsnr, self.nt), dtype=self.dtype)
         if self.dynamic and self.travsrcrec:
             inputs = (
                 x.ravel(),
@@ -1074,9 +1168,10 @@ class Kirchhoff(LinearOperator):
 
     @reshaped
     def _rmatvec(self, x: NDArray) -> NDArray:
+        ncp = get_array_module(x)
         x = self.cop._rmatvec(x.ravel())
         x = x.reshape(self.nsnr, self.nt)
-        y = np.zeros(self.ni, dtype=self.dtype)
+        y = ncp.zeros(self.ni, dtype=self.dtype)
         if self.dynamic and self.travsrcrec:
             inputs = (
                 x,

@@ -13,9 +13,10 @@ for the creation of complex operators as well as in the definition of various
 types of optimization problems with regularization or preconditioning.
 
 Some of this operators naturally lend to embarassingly parallel computations.
-Within PyLops we leverage the multiprocessing module to run multiple processes
-at the same time evaluating a subset of the operators involved in one of the
-stacking operations.
+Within PyLops we leverage the
+`Multiprocessing <https://docs.python.org/3/library/multiprocessing.html>`_
+module to run multiple processes at the same time evaluating a subset of the
+operators involved in one of the stacking operations.
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,8 +36,9 @@ D2vop = pylops.SecondDerivative(dims=(11, 21), axis=0, dtype="float32")
 # can be performed between two or more linear operators.
 # This can be easily achieved using the ``*`` symbol
 #
-#    .. math::
-#       \mathbf{D_{cat}}=  \mathbf{D_v} \mathbf{D_h}
+# .. math::
+#    \mathbf{D_{cat}}=  \mathbf{D_v} \mathbf{D_h}
+
 Nv, Nh = 11, 21
 X = np.zeros((Nv, Nh))
 X[int(Nv / 2), int(Nh / 2)] = 1
@@ -60,17 +62,18 @@ plt.subplots_adjust(top=0.8)
 ###############################################################################
 # We now want to *vertically stack* three operators
 #
-#    .. math::
-#       \mathbf{D_{Vstack}} =
-#        \begin{bmatrix}
-#          \mathbf{D_v}    \\
-#          \mathbf{D_h}
-#        \end{bmatrix}, \qquad
-#       \mathbf{y} =
-#        \begin{bmatrix}
-#          \mathbf{D_v}\mathbf{x}    \\
-#          \mathbf{D_h}\mathbf{x}
-#        \end{bmatrix}
+# .. math::
+#    \mathbf{D_{Vstack}} =
+#     \begin{bmatrix}
+#       \mathbf{D_v}    \\
+#       \mathbf{D_h}
+#     \end{bmatrix}, \qquad
+#    \mathbf{y} =
+#     \begin{bmatrix}
+#       \mathbf{D_v}\mathbf{x}    \\
+#       \mathbf{D_h}\mathbf{x}
+#     \end{bmatrix}
+
 Nv, Nh = 11, 21
 X = np.zeros((Nv, Nh))
 X[int(Nv / 2), int(Nh / 2)] = 1
@@ -92,16 +95,53 @@ plt.tight_layout()
 plt.subplots_adjust(top=0.8)
 
 ###############################################################################
+# If one now wants to have one or more null operators in the stack, it is
+# reccomended to use the :py:class:`pylops.Zero` operator (instead of, for example,
+# a :py:class:`pylops.MatrixMult` filled with a zero matrix); under the hood, a
+# :py:class:`pylops.Zero` operator will be simply by-passed both in the forward and
+# adjoint steps.
+#
+# .. math::
+#    \mathbf{D_{Vstack}} =
+#     \begin{bmatrix}
+#       \mathbf{D_v}    \\
+#       \mathbf{0}      \\
+#       \mathbf{D_h}
+#     \end{bmatrix}, \qquad
+#    \mathbf{y} =
+#     \begin{bmatrix}
+#       \mathbf{D_v}\mathbf{x}    \\
+#       \mathbf{0}                \\
+#       \mathbf{D_h}\mathbf{x}
+#     \end{bmatrix}
+#
+# Note that this feature will become particularly handy when defining
+# :py:class:`pylops.Block` operators with large zero blocks.
+
+# With MatrixMult operator filled with zeros
+Zop = pylops.MatrixMult(np.zeros((Nv * Nh, Nv * Nh)))
+Dstack = pylops.VStack([D2vop, Zop, D2hop])
+Y = np.reshape(Dstack * X.ravel(), (Nv * 3, Nh))
+
+# With Zero operator
+Zop = pylops.Zero(Nv * Nh)
+D1stack = pylops.VStack([D2vop, Zop, D2hop])
+Y1 = np.reshape(D1stack * X.ravel(), (Nv * 3, Nh))
+
+print("Y == Y1:", np.allclose(Y, Y1))
+
+###############################################################################
 # Similarly we can now *horizontally stack* three operators
 #
-#    .. math::
-#       \mathbf{D_{Hstack}} =
-#        \begin{bmatrix}
-#           \mathbf{D_v}  & 0.5*\mathbf{D_v} & -1*\mathbf{D_h}
-#        \end{bmatrix}, \qquad
-#       \mathbf{y} =
-#        \mathbf{D_v}\mathbf{x}_1 + 0.5*\mathbf{D_v}\mathbf{x}_2 -
-#        \mathbf{D_h}\mathbf{x}_3
+# .. math::
+#    \mathbf{D_{Hstack}} =
+#     \begin{bmatrix}
+#        \mathbf{D_v}  & 0.5*\mathbf{D_v} & -1*\mathbf{D_h}
+#     \end{bmatrix}, \qquad
+#    \mathbf{y} =
+#     \mathbf{D_v}\mathbf{x}_1 + 0.5*\mathbf{D_v}\mathbf{x}_2 -
+#     \mathbf{D_h}\mathbf{x}_3
+
 Nv, Nh = 11, 21
 X = np.zeros((Nv * 3, Nh))
 X[int(Nv / 2), int(Nh / 2)] = 1
@@ -128,19 +168,20 @@ plt.subplots_adjust(top=0.8)
 # We can even stack them both *horizontally* and *vertically* such that we
 # create a *block* operator
 #
-#    .. math::
-#       \mathbf{D_{Block}} =
-#        \begin{bmatrix}
-#           \mathbf{D_v} & 0.5*\mathbf{D_v} & -1*\mathbf{D_h} \\
-#           \mathbf{D_h} & 2*\mathbf{D_h}   & \mathbf{D_v} \\
-#        \end{bmatrix}, \qquad
-#       \mathbf{y} =
-#        \begin{bmatrix}
-#           \mathbf{D_v} \mathbf{x_1} + 0.5*\mathbf{D_v} \mathbf{x_2} -
-#           \mathbf{D_h} \mathbf{x_3} \\
-#           \mathbf{D_h} \mathbf{x_1} + 2*\mathbf{D_h} \mathbf{x_2} +
-#           \mathbf{D_v} \mathbf{x_3}
-#        \end{bmatrix}
+# .. math::
+#    \mathbf{D_{Block}} =
+#     \begin{bmatrix}
+#        \mathbf{D_v} & 0.5*\mathbf{D_v} & -1*\mathbf{D_h} \\
+#        \mathbf{D_h} & 2*\mathbf{D_h}   & \mathbf{D_v} \\
+#     \end{bmatrix}, \qquad
+#    \mathbf{y} =
+#     \begin{bmatrix}
+#        \mathbf{D_v} \mathbf{x_1} + 0.5*\mathbf{D_v} \mathbf{x_2} -
+#        \mathbf{D_h} \mathbf{x_3} \\
+#        \mathbf{D_h} \mathbf{x_1} + 2*\mathbf{D_h} \mathbf{x_2} +
+#        \mathbf{D_v} \mathbf{x_3}
+#     \end{bmatrix}
+
 Bop = pylops.Block([[D2vop, 0.5 * D2vop, -1 * D2hop], [D2hop, 2 * D2hop, D2vop]])
 Y = np.reshape(Bop * X.ravel(), (2 * Nv, Nh))
 
@@ -158,22 +199,50 @@ plt.tight_layout()
 plt.subplots_adjust(top=0.8)
 
 ###############################################################################
+# And here with some Zero blocks
+#
+# .. math::
+#    \mathbf{D_{Block}} =
+#     \begin{bmatrix}
+#        \mathbf{D_v} & \mathbf{0} & -1*\mathbf{D_h} \\
+#        \mathbf{D_h} & 2*\mathbf{D_h}   & \mathbf{0} \\
+#     \end{bmatrix}, \qquad
+#    \mathbf{y} =
+#     \begin{bmatrix}
+#        \mathbf{D_v} \mathbf{x_1} - \mathbf{D_h} \mathbf{x_3} \\
+#        \mathbf{D_h} \mathbf{x_1} + 2*\mathbf{D_h} \mathbf{x_2}
+#     \end{bmatrix}
+
+# With MatrixMult operator filled with zeros
+Zop = pylops.MatrixMult(np.zeros(D2vop.shape))
+Bop = pylops.Block([[D2vop, Zop, -1 * D2hop], [D2hop, 2 * D2hop, Zop]])
+Y = np.reshape(Bop * X.ravel(), (2 * Nv, Nh))
+
+# With Zero operator
+Zop = pylops.Zero(D2vop.shape[0])
+B1op = pylops.Block([[D2vop, Zop, -1 * D2hop], [D2hop, 2 * D2hop, Zop]])
+Y1 = np.reshape(B1op * X.ravel(), (2 * Nv, Nh))
+
+print("Y == Y1:", np.allclose(Y, Y1))
+
+###############################################################################
 # Finally we can use the *block-diagonal operator* to apply three operators
 # to three different subset of the model and data
 #
-#    .. math::
-#       \mathbf{D_{BDiag}} =
-#        \begin{bmatrix}
-#           \mathbf{D_v}  & \mathbf{0}       &  \mathbf{0}  \\
-#           \mathbf{0}    & 0.5*\mathbf{D_v} &  \mathbf{0}  \\
-#           \mathbf{0}    & \mathbf{0}       &  -\mathbf{D_h}
-#        \end{bmatrix}, \qquad
-#       \mathbf{y} =
-#        \begin{bmatrix}
-#           \mathbf{D_v}     \mathbf{x_1}  \\
-#           0.5*\mathbf{D_v} \mathbf{x_2}  \\
-#           -\mathbf{D_h}  \mathbf{x_3}
-#        \end{bmatrix}
+# .. math::
+#    \mathbf{D_{BDiag}} =
+#     \begin{bmatrix}
+#        \mathbf{D_v}  & \mathbf{0}       &  \mathbf{0}  \\
+#        \mathbf{0}    & 0.5*\mathbf{D_v} &  \mathbf{0}  \\
+#        \mathbf{0}    & \mathbf{0}       &  -\mathbf{D_h}
+#     \end{bmatrix}, \qquad
+#    \mathbf{y} =
+#     \begin{bmatrix}
+#        \mathbf{D_v}     \mathbf{x_1}  \\
+#        0.5*\mathbf{D_v} \mathbf{x_2}  \\
+#        -\mathbf{D_h}  \mathbf{x_3}
+#     \end{bmatrix}
+
 BD = pylops.BlockDiag([D2vop, 0.5 * D2vop, -1 * D2hop])
 Y = np.reshape(BD * X.ravel(), (3 * Nv, Nh))
 
@@ -195,6 +264,7 @@ plt.subplots_adjust(top=0.8)
 # blockdiagonal structure, it may be convenient to span multiple processes
 # handling subset of operators at the same time. This can be easily achieved
 # by simply defining the number of processes we want to use via ``nproc``.
+
 X = np.zeros((Nv * 10, Nh))
 for iv in range(10):
     X[int(Nv / 2) + iv * Nv, int(Nh / 2)] = 1
@@ -221,21 +291,21 @@ plt.subplots_adjust(top=0.8)
 # Finally we use the *Kronecker operator* and replicate this example on
 # `wiki <https://en.wikipedia.org/wiki/Kronecker_product>`_.
 #
-#    .. math::
-#       \begin{bmatrix}
-#           1  & 2  \\
-#           3  & 4 \\
-#       \end{bmatrix} \otimes
-#       \begin{bmatrix}
-#           0  & 5  \\
-#           6  & 7 \\
-#       \end{bmatrix} =
-#       \begin{bmatrix}
-#            0 &  5 &  0 & 10 \\
-#            6 &  7 & 12 & 14 \\
-#            0 & 15 &  0 & 20 \\
-#           18 & 21 & 24 & 28 \\
-#       \end{bmatrix}
+# .. math::
+#    \begin{bmatrix}
+#        1  & 2  \\
+#        3  & 4 \\
+#    \end{bmatrix} \otimes
+#    \begin{bmatrix}
+#        0  & 5  \\
+#        6  & 7 \\
+#    \end{bmatrix} =
+#    \begin{bmatrix}
+#         0 &  5 &  0 & 10 \\
+#         6 &  7 & 12 & 14 \\
+#         0 & 15 &  0 & 20 \\
+#        18 & 21 & 24 & 28 \\
+#    \end{bmatrix}
 A = np.array([[1, 2], [3, 4]])
 B = np.array([[0, 5], [6, 7]])
 AB = np.kron(A, B)

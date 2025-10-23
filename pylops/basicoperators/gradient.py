@@ -30,6 +30,19 @@ class Gradient(LinearOperator):
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
+    Attributes
+    ----------
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    shape : :obj:`tuple`
+        Operator shape.
+
     Notes
     -----
     The Gradient operator applies a first-order derivative to each dimension of
@@ -59,28 +72,34 @@ class Gradient(LinearOperator):
 
     """
 
-    def __init__(self,
-                 dims: Union[int, InputDimsLike],
-                 sampling: int = 1,
-                 edge: bool = False,
-                 kind: str = "centered",
-                 dtype: DTypeLike = "float64", name: str = 'G'):
+    def __init__(
+        self,
+        dims: Union[int, InputDimsLike],
+        sampling: int = 1,
+        edge: bool = False,
+        kind: str = "centered",
+        dtype: DTypeLike = "float64",
+        name: str = "G",
+    ):
         dims = _value_or_sized_to_tuple(dims)
         ndims = len(dims)
         sampling = _value_or_sized_to_tuple(sampling, repeat=ndims)
         self.sampling = sampling
         self.edge = edge
         self.kind = kind
-        Op = VStack([FirstDerivative(
-            dims=dims,
-            axis=iax,
-            sampling=sampling[iax],
-            edge=edge,
-            kind=kind,
-            dtype=dtype,
+        Op = VStack(
+            [
+                FirstDerivative(
+                    dims=dims,
+                    axis=iax,
+                    sampling=sampling[iax],
+                    edge=edge,
+                    kind=kind,
+                    dtype=dtype,
+                )
+                for iax in range(ndims)
+            ]
         )
-            for iax in range(ndims)
-        ])
         super().__init__(Op=Op, dims=dims, dimsd=(ndims, *dims), name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:

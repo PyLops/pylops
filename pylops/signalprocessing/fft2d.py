@@ -1,6 +1,5 @@
 __all__ = ["FFT2D"]
 
-import logging
 import warnings
 from typing import Dict, Optional, Sequence, Union
 
@@ -9,11 +8,16 @@ import scipy.fft
 
 from pylops import LinearOperator
 from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
+from pylops.utils import deps
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+mkl_fft_message = deps.mkl_fft_import("the mkl fft module")
+
+if mkl_fft_message is None:
+    import mkl_fft.interfaces.scipy_fft as mkl_backend
+    from mkl_fft.interfaces import _float_utils
 
 
 class _FFT2D_numpy(_BaseFFTND):
@@ -30,6 +34,7 @@ class _FFT2D_numpy(_BaseFFTND):
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
         dtype: DTypeLike = "complex128",
+        **kwargs_fft,
     ) -> None:
         super().__init__(
             dims=dims,
@@ -56,6 +61,7 @@ class _FFT2D_numpy(_BaseFFTND):
         self.f1, self.f2 = self.fs
         del self.fs
 
+        self._kwargs_fft = kwargs_fft
         self._norm_kwargs: Dict[str, Union[None, str]] = {
             "norm": None
         }  # equivalent to "backward" in Numpy/Scipy
@@ -74,13 +80,17 @@ class _FFT2D_numpy(_BaseFFTND):
         if not self.clinear:
             x = ncp.real(x)
         if self.real:
-            y = ncp.fft.rfft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.rfft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
             # Apply scaling to obtain a correct adjoint for this operator
             y = ncp.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= ncp.sqrt(2)
             y = ncp.swapaxes(y, self.axes[-1], -1)
         else:
-            y = ncp.fft.fft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.fft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         y = y.astype(self.cdtype)
@@ -99,9 +109,13 @@ class _FFT2D_numpy(_BaseFFTND):
             x = ncp.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= ncp.sqrt(2)
             x = ncp.swapaxes(x, self.axes[-1], -1)
-            y = ncp.fft.irfft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.irfft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         else:
-            y = ncp.fft.ifft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = ncp.fft.ifft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
         if self.nffts[0] > self.dims[self.axes[0]]:
@@ -137,6 +151,7 @@ class _FFT2D_scipy(_BaseFFTND):
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
         dtype: DTypeLike = "complex128",
+        **kwargs_fft,
     ) -> None:
         super().__init__(
             dims=dims,
@@ -159,6 +174,7 @@ class _FFT2D_scipy(_BaseFFTND):
         self.f1, self.f2 = self.fs
         del self.fs
 
+        self._kwargs_fft = kwargs_fft
         self._norm_kwargs: Dict[str, Union[None, str]] = {
             "norm": None
         }  # equivalent to "backward" in Numpy/Scipy
@@ -176,13 +192,17 @@ class _FFT2D_scipy(_BaseFFTND):
         if not self.clinear:
             x = np.real(x)
         if self.real:
-            y = scipy.fft.rfft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = scipy.fft.rfft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
             # Apply scaling to obtain a correct adjoint for this operator
             y = np.swapaxes(y, -1, self.axes[-1])
             y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
             y = np.swapaxes(y, self.axes[-1], -1)
         else:
-            y = scipy.fft.fft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = scipy.fft.fft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.ONE_OVER_N:
             y *= self._scale
         if self.fftshift_after.any():
@@ -199,15 +219,131 @@ class _FFT2D_scipy(_BaseFFTND):
             x = np.swapaxes(x, -1, self.axes[-1])
             x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
             x = np.swapaxes(x, self.axes[-1], -1)
-            y = scipy.fft.irfft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = scipy.fft.irfft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         else:
-            y = scipy.fft.ifft2(x, s=self.nffts, axes=self.axes, **self._norm_kwargs)
+            y = scipy.fft.ifft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
         if self.norm is _FFTNorms.NONE:
             y *= self._scale
         y = np.take(y, range(self.dims[self.axes[0]]), axis=self.axes[0])
         y = np.take(y, range(self.dims[self.axes[1]]), axis=self.axes[1])
         if not self.clinear:
             y = np.real(y)
+        if self.ifftshift_before.any():
+            y = scipy.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
+        return y
+
+    def __truediv__(self, y):
+        if self.norm is not _FFTNorms.ORTHO:
+            return self._rmatvec(y) / self._scale / self._scale
+        return self._rmatvec(y)
+
+
+class _FFT2D_mklfft(_BaseFFTND):
+    """Two-dimensional Fast-Fourier Transform using mkl_fft"""
+
+    def __init__(
+        self,
+        dims: InputDimsLike,
+        axes: InputDimsLike = (-2, -1),
+        nffts: Optional[Union[int, InputDimsLike]] = None,
+        sampling: Union[float, Sequence[float]] = 1.0,
+        norm: str = "ortho",
+        real: bool = False,
+        ifftshift_before: bool = False,
+        fftshift_after: bool = False,
+        dtype: DTypeLike = "complex128",
+        **kwargs_fft,
+    ) -> None:
+        super().__init__(
+            dims=dims,
+            axes=axes,
+            nffts=nffts,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+
+        # checks
+        if self.ndim < 2:
+            raise ValueError("FFT2D requires at least two input dimensions")
+        if self.naxes != 2:
+            raise ValueError("FFT2D must be applied along exactly two dimensions")
+
+        self.f1, self.f2 = self.fs
+        del self.fs
+
+        self._kwargs_fft = kwargs_fft
+        self._norm_kwargs: Dict[str, Union[None, str]] = {"norm": None}
+        if self.norm is _FFTNorms.ORTHO:
+            self._norm_kwargs["norm"] = "ortho"
+            self._scale = np.sqrt(1 / np.prod(np.sqrt(self.nffts)))
+        elif self.norm is _FFTNorms.NONE:
+            self._scale = np.sqrt(np.prod(self.nffts))
+        elif self.norm is _FFTNorms.ONE_OVER_N:
+            self._scale = np.sqrt(1.0 / np.prod(self.nffts))
+
+    @reshaped
+    def _matvec(self, x):
+        x = _float_utils._downcast_float128_array(x)
+        x = _float_utils._upcast_float16_array(x)
+        if self.ifftshift_before.any():
+            x = scipy.fft.ifftshift(x, axes=self.axes[self.ifftshift_before])
+        if not self.clinear:
+            x = np.real(x)
+        if self.real:
+            y = mkl_backend.rfft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
+            y = np.swapaxes(y, -1, self.axes[-1])
+            y[..., 1 : 1 + (self.nffts[-1] - 1) // 2] *= np.sqrt(2)
+            y = np.swapaxes(y, self.axes[-1], -1)
+        else:
+            y = mkl_backend.fft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
+        if self.norm is _FFTNorms.ONE_OVER_N:
+            y *= self._scale
+        y = y.astype(self.cdtype)
+        if self.fftshift_after.any():
+            y = scipy.fft.fftshift(y, axes=self.axes[self.fftshift_after])
+        return y
+
+    @reshaped
+    def _rmatvec(self, x):
+        x = _float_utils._downcast_float128_array(x)
+        x = _float_utils._upcast_float16_array(x)
+        if self.fftshift_after.any():
+            x = scipy.fft.ifftshift(x, axes=self.axes[self.fftshift_after])
+        if self.real:
+            x = x.copy()
+            x = np.swapaxes(x, -1, self.axes[-1])
+            x[..., 1 : 1 + (self.nffts[-1] - 1) // 2] /= np.sqrt(2)
+            x = np.swapaxes(x, self.axes[-1], -1)
+            y = mkl_backend.irfft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
+        else:
+            y = mkl_backend.ifft2(
+                x, s=self.nffts, axes=self.axes, **self._norm_kwargs, **self._kwargs_fft
+            )
+        if self.norm is _FFTNorms.NONE:
+            y *= self._scale
+        if self.nffts[0] > self.dims[self.axes[0]]:
+            y = np.take(y, np.arange(self.dims[self.axes[0]]), axis=self.axes[0])
+        if self.nffts[1] > self.dims[self.axes[1]]:
+            y = np.take(y, np.arange(self.dims[self.axes[1]]), axis=self.axes[1])
+        if self.doifftpad:
+            y = np.pad(y, self.ifftpad)
+        if not self.clinear:
+            y = np.real(y)
+        y = y.astype(self.rdtype)
         if self.ifftshift_before.any():
             y = scipy.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
@@ -230,6 +366,7 @@ def FFT2D(
     engine: str = "numpy",
     dtype: DTypeLike = "complex128",
     name: str = "F",
+    **kwargs_fft,
 ) -> LinearOperator:
     r"""Two dimensional Fast-Fourier Transform.
 
@@ -313,7 +450,7 @@ def FFT2D(
     engine : :obj:`str`, optional
         .. versionadded:: 1.17.0
 
-        Engine used for fft computation (``numpy`` or ``scipy``). Choose
+        Engine used for fft computation (``numpy`` or ``scipy`` or ``mkl_fft``). Choose
         ``numpy`` when working with cupy and jax arrays.
     dtype : :obj:`str`, optional
         Type of elements in input array. Note that the ``dtype`` of the operator
@@ -328,6 +465,10 @@ def FFT2D(
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+    **kwargs_fft
+        .. versionadded:: 2.5.0
+
+        Arbitrary keyword arguments to be passed to the selected fft method
 
     Attributes
     ----------
@@ -346,15 +487,12 @@ def FFT2D(
     cdtype : :obj:`bool`
         Output type of the forward. Complex equivalent to ``rdtype``.
     shape : :obj:`tuple`
-        Operator shape
+        Operator shape.
     clinear : :obj:`bool`
         .. versionadded:: 1.17.0
 
         Operator is complex-linear. Is false when either ``real=True`` or when
         ``dtype`` is not a complex type.
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
 
     Raises
     ------
@@ -365,7 +503,7 @@ def FFT2D(
           two elements.
         - If ``norm`` is not one of "ortho", "none", or "1/n".
     NotImplementedError
-        If ``engine`` is neither ``numpy``, nor ``scipy``.
+        If ``engine`` is neither ``numpy``, ``scipy`` nor ``mkl_fft``.
 
     See Also
     --------
@@ -398,7 +536,19 @@ def FFT2D(
     signals.
 
     """
-    if engine == "numpy":
+    if engine == "mkl_fft" and mkl_fft_message is None:
+        f = _FFT2D_mklfft(
+            dims=dims,
+            axes=axes,
+            nffts=nffts,
+            sampling=sampling,
+            norm=norm,
+            real=real,
+            ifftshift_before=ifftshift_before,
+            fftshift_after=fftshift_after,
+            dtype=dtype,
+        )
+    elif engine == "numpy" or (engine == "mkl_fft" and mkl_fft_message is not None):
         f = _FFT2D_numpy(
             dims=dims,
             axes=axes,
@@ -409,6 +559,7 @@ def FFT2D(
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
+            **kwargs_fft,
         )
     elif engine == "scipy":
         f = _FFT2D_scipy(
@@ -421,8 +572,9 @@ def FFT2D(
             ifftshift_before=ifftshift_before,
             fftshift_after=fftshift_after,
             dtype=dtype,
+            **kwargs_fft,
         )
     else:
-        raise NotImplementedError("engine must be numpy or scipy")
+        raise NotImplementedError("engine must be numpy, scipy or mkl_fft")
     f.name = name
     return f

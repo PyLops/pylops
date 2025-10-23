@@ -14,7 +14,7 @@ compressed and the sparse nature of the Seislet transform can also be used to
 precondition sparsity-promoting inverse problems.
 
 We will show examples of a variety of different settings, including a comparison
-with the original implementation in [1].
+with the original implementation in [1]_.
 
 .. [1] van Vliet, L. J.,  Verbeek, P. W., "Estimators for orientation and
     anisotropy in digitized images", Journal ASCI Imaging Workshop. 1995.
@@ -145,7 +145,7 @@ fig.tight_layout()
 ###############################################################################
 # Concentric circles
 # ------------------
-# The original paper by van Vliet and Verbeek [1] has an example with concentric
+# The original paper by van Vliet and Verbeek [1]_ has an example with concentric
 # circles. We recover their original images and compare our implementation with
 # theirs.
 
@@ -215,7 +215,7 @@ fig.tight_layout()
 ###############################################################################
 # Core samples
 # ------------------
-# The original paper by van Vliet and Verbeek [1] also has an example with images
+# The original paper by van Vliet and Verbeek [1]_ also has an example with images
 # of core samples. Since the original paper does not have a scale with which to
 # plot the angles, we have chosen ours it to match their image as closely as
 # possible.

@@ -22,7 +22,7 @@ class FirstDirectionalDerivative(LinearOperator):
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension.
-    v : :obj:`np.ndarray`, optional
+    v : :obj:`numpy.ndarray`, optional
         Single direction (array of size :math:`n_\text{dims}`) or group of directions
         (array of size :math:`[n_\text{dims} \times n_{d_0} \times ... \times n_{d_{n_\text{dims}}}]`)
     sampling : :obj:`tuple`, optional
@@ -34,6 +34,19 @@ class FirstDirectionalDerivative(LinearOperator):
         Derivative kind (``forward``, ``centered``, or ``backward``).
     dtype : :obj:`str`, optional
         Type of elements in input array.
+
+    Attributes
+    ----------
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    shape : :obj:`tuple`
+        Operator shape.
 
     Notes
     -----
@@ -60,18 +73,23 @@ class FirstDirectionalDerivative(LinearOperator):
 
     """
 
-    def __init__(self, dims: InputDimsLike,
-                 v: NDArray,
-                 sampling: int = 1,
-                 edge: bool = False,
-                 kind: str = "centered",
-                 dtype: DTypeLike = "float64",
-                 name: str = 'F'):
+    def __init__(
+        self,
+        dims: InputDimsLike,
+        v: NDArray,
+        sampling: int = 1,
+        edge: bool = False,
+        kind: str = "centered",
+        dtype: DTypeLike = "float64",
+        name: str = "F",
+    ):
         self.sampling = sampling
         self.edge = edge
         self.kind = kind
         self.v = v
-        Op = self._calc_first_ddop(dims=dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype, v=v)
+        Op = self._calc_first_ddop(
+            dims=dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype, v=v
+        )
         super().__init__(Op=Op, name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
@@ -81,7 +99,14 @@ class FirstDirectionalDerivative(LinearOperator):
         return super()._rmatvec(x)
 
     @staticmethod
-    def _calc_first_ddop(dims: InputDimsLike, v: NDArray, sampling: int, edge: bool, kind: str, dtype: DTypeLike):
+    def _calc_first_ddop(
+        dims: InputDimsLike,
+        v: NDArray,
+        sampling: int,
+        edge: bool,
+        kind: str,
+        dtype: DTypeLike,
+    ):
         Gop = Gradient(dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype)
         if v.ndim == 1:
             Dop = Diagonal(v, dims=[len(dims)] + list(dims), axis=0, dtype=dtype)
@@ -105,7 +130,7 @@ class SecondDirectionalDerivative(LinearOperator):
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension.
-    v : :obj:`np.ndarray`, optional
+    v : :obj:`numpy.ndarray`, optional
         Single direction (array of size :math:`n_\text{dims}`) or group of directions
         (array of size :math:`[n_\text{dims} \times n_{d_0} \times ... \times n_{d_{n_\text{dims}}}]`)
     sampling : :obj:`tuple`, optional
@@ -115,6 +140,19 @@ class SecondDirectionalDerivative(LinearOperator):
         ignore them (``False``).
     dtype : :obj:`str`, optional
         Type of elements in input array.
+
+    Attributes
+    ----------
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    shape : :obj:`tuple`
+        Operator shape.
 
     Notes
     -----
@@ -133,13 +171,22 @@ class SecondDirectionalDerivative(LinearOperator):
     in the literature.
     """
 
-    def __init__(self, dims: InputDimsLike, v: NDArray, sampling: int = 1, edge: bool = False,
-                 dtype: DTypeLike = "float64", name: str = 'S'):
+    def __init__(
+        self,
+        dims: InputDimsLike,
+        v: NDArray,
+        sampling: int = 1,
+        edge: bool = False,
+        dtype: DTypeLike = "float64",
+        name: str = "S",
+    ):
         self.dims = dims
         self.v = v
         self.sampling = sampling
         self.edge = edge
-        Op = self._calc_second_ddop(dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype)
+        Op = self._calc_second_ddop(
+            dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype
+        )
         super().__init__(Op=Op, name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
@@ -149,7 +196,11 @@ class SecondDirectionalDerivative(LinearOperator):
         return super()._rmatvec(x)
 
     @staticmethod
-    def _calc_second_ddop(dims: InputDimsLike, v: NDArray, sampling: int, edge: bool, dtype: DTypeLike):
-        Dop = FirstDirectionalDerivative(dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype)
+    def _calc_second_ddop(
+        dims: InputDimsLike, v: NDArray, sampling: int, edge: bool, dtype: DTypeLike
+    ):
+        Dop = FirstDirectionalDerivative(
+            dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype
+        )
         ddop = -Dop.H * Dop
         return ddop

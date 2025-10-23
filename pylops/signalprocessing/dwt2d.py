@@ -1,6 +1,5 @@
 __all__ = ["DWT2D"]
 
-import logging
 from math import ceil, log
 
 import numpy as np
@@ -16,8 +15,6 @@ pywt_message = deps.pywt_import("the dwt2d module")
 
 if pywt_message is None:
     import pywt
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class DWT2D(LinearOperator):
@@ -53,11 +50,24 @@ class DWT2D(LinearOperator):
 
     Attributes
     ----------
+    pad : :obj:`pylops.basicoperators.Pad`
+        Padding operator used to pad the input signal to the next power of 2
+        length.
+    waveletadj : :obj:`str`
+        Name of the adjoint wavelet type.
+    sl : :obj:`list`
+        List of slices to reconstruct the wavelet coefficients from the
+        raveled array.
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
+        Operator shape.
 
     Raises
     ------

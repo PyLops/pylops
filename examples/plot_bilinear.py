@@ -6,7 +6,7 @@ operator to perform bilinear interpolation to a 2-dimensional input vector.
 """
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import misc
+from scipy import datasets
 
 import pylops
 
@@ -15,8 +15,8 @@ np.random.seed(0)
 
 ###############################################################################
 # First of all, we create a 2-dimensional input vector containing an image
-# from the ``scipy.misc`` family.
-x = misc.face()[::5, ::5, 0]
+# from the ``scipy.datasets`` family.
+x = datasets.face()[::5, ::5, 0]
 nz, nx = x.shape
 
 ###############################################################################

@@ -1,4 +1,4 @@
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, inplace_set
 from pylops.utils.typing import NDArray
 
 
@@ -13,7 +13,7 @@ def _chirp_radon_2d(
 
     Parameters
     ----------
-    data : :obj:`np.ndarray`
+    data : :obj:`numpy.ndarray`
         2D input data of size :math:`[n_x \times n_t]`
     dt : :obj:`float`
         Time sampling :math:`dt`
@@ -29,7 +29,7 @@ def _chirp_radon_2d(
 
     Returns
     -------
-    g : :obj:`np.ndarray`
+    g : :obj:`numpy.ndarray`
         2D output of size :math:`[\times n_{x} \times n_t]`
 
     """
@@ -62,7 +62,7 @@ def _chirp_radon_2d(
 
     # perform transform
     h = ncp.zeros((2 * nx, nt)).astype(cdtype)
-    h[0:nx, :] = ncp.fft.fftn(data, axes=(1,)) * K
+    h = inplace_set(ncp.fft.fftn(data, axes=(1,)) * K, h, (slice(0, nx), slice(None)))
     g = ncp.fft.ifftn(
         ncp.fft.fftn(h, axes=(0,)) * ncp.fft.fftn(K0, axes=(0,)), axes=(0,)
     )

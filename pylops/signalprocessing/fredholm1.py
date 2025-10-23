@@ -46,11 +46,24 @@ class Fredholm1(LinearOperator):
 
     Attributes
     ----------
+    nsl :pylops/signalprocessing/fredholm1.py  :obj:`int`
+        Number of slices (first dimension of ``G``)
+    nx : :obj:`int`
+        Number of samples in ``x`` (second dimension of ``G``)
+    ny : :obj:`int`
+        Number of samples in ``y`` (third dimension of ``G``)
+    GT : :obj:`numpy.ndarray`
+        Adjoint of ``G`` (only if ``saveGt=True``)
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved
-        explicitly (``True``) or not (``False``)
+        Operator shape.
 
     Notes
     -----

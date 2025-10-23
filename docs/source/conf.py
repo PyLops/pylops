@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-import sys
-import os
 import datetime
+import os
+import sys
+
 from sphinx_gallery.sorting import ExampleTitleSortKey
+
 from pylops import __version__
 
 # Sphinx needs to be able to import the package to use autodoc and get the version number
@@ -37,6 +39,8 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/", None),
     "pyfftw": ("https://pyfftw.readthedocs.io/en/latest/", None),
     "spgl1": ("https://spgl1.readthedocs.io/en/latest/", None),
+    "pymc": ("https://www.pymc.io/", None),
+    "arviz": ("https://python.arviz.org/en/latest/", None),
 }
 
 # Generate autodoc stubs with summaries from code
@@ -56,14 +60,16 @@ numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
 
 sphinx_gallery_conf = {
-    # path to your examples scripts
+    # Path to examples scripts
     "examples_dirs": [
         "../../examples",
         "../../tutorials",
     ],
-    # path where to save gallery generated examples
+    # Path where to save gallery generated examples
     "gallery_dirs": ["gallery", "tutorials"],
     "filename_pattern": r"\.py",
+    # Examples to skip when building the gallery
+    "ignore_pattern": r"plot_dtcwt\.py$",
     # Remove the "Download all examples" button from the top level gallery
     "download_all_examples": False,
     # Sort gallery example by file name instead of number of lines (default)
@@ -103,9 +109,7 @@ if len(version.split("+")) > 1 or version == "unknown":
 # These enable substitutions using |variable| in the rst files
 rst_epilog = """
 .. |year| replace:: {year}
-""".format(
-    year=year
-)
+""".format(year=year)
 html_static_path = ["_static"]
 html_last_updated_fmt = "%b %d, %Y"
 html_title = "PyLops"
@@ -122,15 +126,16 @@ html_show_copyright = True
 # Theme config
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
-    "logo_only": True,
-    "display_version": True,
+    "github_url": "https://github.com/PyLops/pylops",
+    # "logo_only": True,
+    # "display_version": True,
     "logo": {
         "image_light": "pylops_b.png",
         "image_dark": "pylops.png",
     }
 }
 html_css_files = [
-    'css/custom.css',
+    "css/custom.css",
 ]
 
 html_context = {

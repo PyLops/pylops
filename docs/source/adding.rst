@@ -47,7 +47,7 @@ Initialization (``__init__``)
 We then need to create the ``__init__`` where the input parameters are passed and saved as members of our class.
 While the input parameters change from operator to operator, it is always required to create three members:
 
-- ``dtype``: data type object (of type :obj:`str` or :obj:`np.dtype`) of the model and data;
+- ``dtype``: data type object (of type :obj:`str` or :obj:`numpy.dtype`) of the model and data;
 - ``shape``: a tuple containing the dimensions of the operator in the data and model space;
 - ``explicit``: a boolean (``True`` or ``False``) identifying if the operator can be inverted by a direct solver or
   requires an iterative solver. This member is ``True`` if the operator has also a member ``A`` that contains

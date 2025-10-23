@@ -10,7 +10,7 @@ from pylops.utils.backend import get_add_at, get_array_module, to_numpy
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 def _checkunique(iava: npt.ArrayLike) -> None:
@@ -52,11 +52,28 @@ class Bilinear(LinearOperator):
 
     Attributes
     ----------
+    iava_t : :obj:`numpy.ndarray`
+        Indices of points above `iava` for bilinear interpolation.
+    iava_b : :obj:`numpy.ndarray`
+        Indices of points below `iava` for bilinear interpolation.
+    iava_l : :obj:`numpy.ndarray`
+        Indices of points left of `iava` for bilinear interpolation.
+    iava_r : :obj:`numpy.ndarray`
+        Indices of points right of `iava` for bilinear interpolation.
+    weights_tb : :obj:`numpy.ndarray`
+        Weights for top/bottom points for bilinear interpolation.
+    weights_lr : :obj:`numpy.ndarray`
+        Weights for left/right points for bilinear interpolation.
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     Raises
     ------
@@ -106,8 +123,8 @@ class Bilinear(LinearOperator):
         # check if forceflat is needed and set it back to None otherwise
         if ndims > 2:
             if forceflat is not None:
-                logging.warning(
-                    f"setting forceflat=None since len(dims)={len(dims)}>2. "
+                logger.warning(
+                    f"Setting forceflat=None since len(dims)={len(dims)}>2. "
                     f"PyLops will automatically detect whether to return "
                     f"a 1d or nd array based on the shape of the input"
                     f"array."

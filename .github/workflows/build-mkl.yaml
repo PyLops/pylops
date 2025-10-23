@@ -1,0 +1,41 @@
+name: PyLops Testing with Intel oneAPI Math Kernel Library(oneMKL)
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Get history and tags for SCM versioning to work
+      run: |
+        git fetch --prune --unshallow
+        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+    - uses: conda-incubator/setup-miniconda@v3.2.0
+      with:
+        use-mamba: true
+        channels: https://software.repos.intel.com/python/conda, conda-forge
+        conda-remove-defaults: true
+        python-version: ${{ matrix.python-version }}
+        activate-environment: mkl-test-env
+    - name: Install dependencies
+      run: |
+        conda install -y pyfftw
+        pip install -r requirements-intel-mkl.txt
+        pip install -r requirements-dev.txt
+        pip install -r requirements-torch.txt
+    - name: Install pylops
+      run: |
+        python -m setuptools_scm
+        pip install .
+    - name: Tests with pytest
+      run: |
+        pytest

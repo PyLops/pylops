@@ -11,16 +11,22 @@
         ~{{ objname }}.{{ item }}
     {%- endfor %}
 
-{#    .. rubric:: Attributes#}
-{##}
-{#    .. autosummary::#}
-{#    {% for item in attributes %}#}
-{#        ~{{ objname }}.{{ item }}#}
-{#    {%- endfor %}#}
+{% set allowed_classes = [
+    "pylops.LinearOperator",
+    "pylops.optimization.basesolver.Solver",
+    "pylops.optimization.callback.Callbacks"
+] %}
+
+{% if fullname in allowed_classes %}
+    {% for method in methods | reject("equalto", "__init__") %}
+.. automethod:: {{ objname }}.{{ method }}
+    {% endfor %}
+{% endif %}
+
 
 .. raw:: html
 
-     <div style='clear:both'></div>
+    <div style='clear:both'></div>
 
 
 .. include:: backreferences/{{ fullname }}.examples
@@ -28,15 +34,4 @@
 .. raw:: html
 
      <div style='clear:both'></div>
-
-
-{#{% for item in methods %} #}
-{#{% if item != '__init__' %} #}
-{#.. automethod:: {{ objname }}.{{ item }} #}
-{#{% endif %} #}
-{#{% endfor %} #}
-
-{#.. raw:: html #}
-{# #}
-{#     <div style='clear:both'></div> #}
 

@@ -1,4 +1,4 @@
-# import multiprocessing
+import os
 
 import numpy as np
 import pytest
@@ -141,6 +141,9 @@ par3_3d.update(par)
 par4_3d.update(par)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1_2d), (par2_2d), (par3_2d), (par4_2d)])
 def test_SeismicInterpolation2d(par):
     """Dot-test and inversion for SeismicInterpolation in 2d"""
@@ -158,7 +161,9 @@ def test_SeismicInterpolation2d(par):
     assert np.linalg.norm(x2d - xinv) / np.linalg.norm(xinv) < 2e-1
 
 
-# , (par3_3d), (par4_3d)])
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1_3d), (par2_3d)])
 def test_SeismicInterpolation3d(par):
     """Dot-test and inversion for SeismicInterpolation in 3d"""

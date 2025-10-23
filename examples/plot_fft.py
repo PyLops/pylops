@@ -6,6 +6,7 @@ This example shows how to use the :py:class:`pylops.signalprocessing.FFT`,
 and :py:class:`pylops.signalprocessing.FFTND` operators to apply the Fourier
 Transform to the model and the inverse Fourier Transform to the data.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -15,7 +16,7 @@ plt.close("all")
 
 ###############################################################################
 # Let's start by applying the one dimensional FFT to a one dimensional
-# sinusoidal signal :math:`d(t)=sin(2 \pi f_0t)` using a time axis of
+# sinusoidal signal :math:`d(t)=\sin(2 \pi f_0t)` using a time axis of
 # lenght :math:`nt` and sampling :math:`dt`
 dt = 0.005
 nt = 100
@@ -67,7 +68,31 @@ axs[1].set_xlim([0, 3 * f0])
 plt.tight_layout()
 
 ###############################################################################
-# We can also apply the one dimensional FFT to to a two-dimensional
+# PyLops also has a third FFT engine (``engine='mkl_fft'``) that uses the well-known
+# `Intel MKL FFT <https://github.com/IntelPython/mkl_fft>`_. This is a Python wrapper around
+# the `Intel® oneAPI Math Kernel Library (oneMKL) <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-c/2025-2/fourier-transform-functions.html>`_
+# Fourier Transform functions. It lets PyLops run discrete Fourier transforms faster
+# by using Intel’s highly optimized math routines.
+
+FFTop = pylops.signalprocessing.FFT(dims=nt, nfft=nfft, sampling=dt, engine="mkl_fft")
+D = FFTop * d
+
+# Inverse for FFT
+dinv = FFTop.H * D
+dinv = FFTop / D
+
+fig, axs = plt.subplots(1, 2, figsize=(10, 4))
+axs[0].plot(t, d, "k", lw=2, label="True")
+axs[0].plot(t, dinv.real, "--r", lw=2, label="Inverted")
+axs[0].legend()
+axs[0].set_title("Signal")
+axs[1].plot(FFTop.f[: int(FFTop.nfft / 2)], np.abs(D[: int(FFTop.nfft / 2)]), "k", lw=2)
+axs[1].set_title("Fourier Transform with MKL FFT")
+axs[1].set_xlim([0, 3 * f0])
+plt.tight_layout()
+
+###############################################################################
+# We can also apply the one dimensional FFT to a two-dimensional
 # signal (along one of the first axis)
 dt = 0.005
 nt, nx = 100, 20
@@ -100,7 +125,7 @@ axs[1][1].axis("tight")
 fig.tight_layout()
 
 ###############################################################################
-# We can also apply the two dimensional FFT to to a two-dimensional signal
+# We can also apply the two dimensional FFT to a two-dimensional signal
 dt, dx = 0.005, 5
 nt, nx = 100, 201
 t = np.arange(nt) * dt
@@ -137,7 +162,7 @@ fig.tight_layout()
 
 
 ###############################################################################
-# Finally can apply the three dimensional FFT to to a three-dimensional signal
+# Finally can apply the three dimensional FFT to a three-dimensional signal
 dt, dx, dy = 0.005, 5, 3
 nt, nx, ny = 30, 21, 11
 t = np.arange(nt) * dt
@@ -176,3 +201,21 @@ axs[1][1].imshow(d[:, :, ny // 2] - dinv[:, :, ny // 2], vmin=-20, vmax=20, cmap
 axs[1][1].set_title("Error")
 axs[1][1].axis("tight")
 fig.tight_layout()
+
+###############################################################################
+# To conclude, we provide a summary table of the different backends
+# supported by :py:class:`pylops.signalprocessing.FFT`,
+# :py:class:`pylops.signalprocessing.FFT2D`
+# and :py:class:`pylops.signalprocessing.FFTND` operators and
+# third-party dependencies are required to be able to use them.
+#
+# Supported Backends
+# ~~~~~~~~~~~~~~~~~~
+# ==========  ====================  ====================================================================================
+# Backend     Supported Dimensions  Dependency
+# ==========  ====================  ====================================================================================
+# Numpy/CuPy  1D, 2D, ND            ``numpy`` (included)
+# Scipy       1D, 2D, ND            ``scipy`` (included)
+# FFTW        1D                    ``pyfftw``
+# MKL         1D, 2D, ND            ``mkl_fft``, or ``intel-numpy``/``intel-scipy`` via standard "numpy"/"scipy" engines
+# ==========  ====================  ====================================================================================

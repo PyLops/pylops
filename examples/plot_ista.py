@@ -12,7 +12,9 @@ a sparse representation in a certain domain. MP and OMP use a L0 norm and
 mathematically translates to solving the following constrained problem:
 
 .. math::
-    \quad \|\mathbf{Op}\mathbf{x}-  \mathbf{b}\|_2 <= \sigma,
+    \|\mathbf{x}\|_0 \quad  \text{subject to} \quad
+    \|\mathbf{Op}\,\mathbf{x}-\mathbf{y}\|_2^2 \leq \sigma^2,
+
 
 while IRLS, ISTA and FISTA solve an uncostrained problem with a L1
 regularization term:
@@ -51,24 +53,26 @@ y = Aop * x
 # MP/OMP
 eps = 1e-2
 maxit = 500
-x_mp = pylops.optimization.sparsity.omp(
+x_mp, nitermp, costmp = pylops.optimization.sparsity.omp(
     Aop, y, niter_outer=maxit, niter_inner=0, sigma=1e-4
-)[0]
-x_omp = pylops.optimization.sparsity.omp(Aop, y, niter_outer=maxit, sigma=1e-4)[0]
+)
+x_omp, niteromp, costomp = pylops.optimization.sparsity.omp(
+    Aop, y, niter_outer=maxit, sigma=1e-4
+)
 
 # IRLS
 x_irls = pylops.optimization.sparsity.irls(
-    Aop, y, nouter=50, epsI=1e-5, kind="model", **dict(iter_lim=10)
+    Aop, y, nouter=maxit, epsI=1e-5, kind="model", **dict(iter_lim=10)
 )[0]
 
 # ISTA
-x_ista = pylops.optimization.sparsity.ista(
+x_ista, niteri, costi = pylops.optimization.sparsity.ista(
     Aop,
     y,
     niter=maxit,
     eps=eps,
     tol=1e-3,
-)[0]
+)
 
 fig, ax = plt.subplots(1, 1, figsize=(8, 3))
 m, s, b = ax.stem(x, linefmt="k", basefmt="k", markerfmt="ko", label="True")
@@ -84,6 +88,17 @@ plt.setp(m, markersize=3)
 ax.set_title("Model", size=15, fontweight="bold")
 ax.legend()
 plt.tight_layout()
+
+fig, ax = plt.subplots(1, 1, figsize=(8, 3))
+ax.plot(costmp, "c", lw=2, label=r"$x_{MP} (niter=%d)$" % nitermp)
+ax.plot(costomp, "g", lw=2, label=r"$x_{OMP} (niter=%d)$" % niteromp)
+ax.plot(costi[: nitermp + 5], "r", lw=2, label=r"$x_{ISTA} (niter=%d)$" % niteri)
+ax.set_title("Cost function", size=15, fontweight="bold")
+ax.set_xlabel("Iteration")
+ax.legend()
+ax.grid(True, which="both")
+plt.tight_layout()
+
 
 ###############################################################################
 # We now consider a more interesting problem problem, *wavelet deconvolution*

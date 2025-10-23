@@ -1,4 +1,14 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+
+    backend = "cupy"
+else:
+    import numpy as np
+
+    backend = "numpy"
+import numpy as npp
 import pytest
 
 from pylops.utils import dottest
@@ -13,14 +23,15 @@ dt = 0.004
 @pytest.mark.parametrize("par", [(par)])
 def test_Blending_continuous(par):
     """Dot-test for continuous Blending operator"""
-    np.random.seed(0)
+    npp.random.seed(0)
     # ignition times
     overlap = 0.5
-    ignition_times = 2.0 * np.random.rand(par["ns"]) - 1.0
+    ignition_times = 2.0 * npp.random.rand(par["ns"]) - 1.0
     ignition_times += (
-        np.arange(0, overlap * par["nt"] * par["ns"], overlap * par["nt"]) * dt
+        npp.arange(0, overlap * par["nt"] * par["ns"], overlap * par["nt"]) * dt
     )
     ignition_times[0] = 0.0
+
     Bop = BlendingContinuous(
         par["nt"],
         par["nr"],
@@ -33,16 +44,17 @@ def test_Blending_continuous(par):
         Bop,
         Bop.nttot * par["nr"],
         par["nt"] * par["ns"] * par["nr"],
+        backend=backend,
     )
 
 
 @pytest.mark.parametrize("par", [(par)])
 def test_Blending_group(par):
     """Dot-test for group Blending operator"""
-    np.random.seed(0)
+    npp.random.seed(0)
     group_size = 2
     n_groups = par["ns"] // group_size
-    ignition_times = 0.8 * np.random.rand(par["ns"])
+    ignition_times = 0.8 * npp.random.rand(par["ns"])
 
     Bop = BlendingGroup(
         par["nt"],
@@ -58,16 +70,17 @@ def test_Blending_group(par):
         Bop,
         par["nt"] * n_groups * par["nr"],
         par["nt"] * par["ns"] * par["nr"],
+        backend=backend,
     )
 
 
 @pytest.mark.parametrize("par", [(par)])
 def test_Blending_half(par):
     """Dot-test for half Blending operator"""
-    np.random.seed(0)
+    npp.random.seed(0)
     group_size = 2
     n_groups = par["ns"] // group_size
-    ignition_times = 0.8 * np.random.rand(par["ns"])
+    ignition_times = 0.8 * npp.random.rand(par["ns"])
 
     Bop = BlendingHalf(
         par["nt"],
@@ -83,4 +96,5 @@ def test_Blending_half(par):
         Bop,
         par["nt"] * n_groups * par["nr"],
         par["nt"] * par["ns"] * par["nr"],
+        backend=backend,
     )

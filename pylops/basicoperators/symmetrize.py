@@ -34,11 +34,18 @@ class Symmetrize(LinearOperator):
 
     Attributes
     ----------
+    nsym : :obj:`int`
+        Number of samples along the symmetrized axis.
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
+        Operator shape.
 
     Notes
     -----
@@ -80,11 +87,11 @@ class Symmetrize(LinearOperator):
         self.nsym = dims[self.axis]
         dimsd = list(dims)
         dimsd[self.axis] = 2 * dims[self.axis] - 1
-        self.slice1 = tuple([slice(None, None)] * (len(dims) - 1) + [slice(1, None)])
-        self.slicensym_1 = tuple(
+        self._slice1 = tuple([slice(None, None)] * (len(dims) - 1) + [slice(1, None)])
+        self._slicensym_1 = tuple(
             [slice(None, None)] * (len(dims) - 1) + [slice(self.nsym - 1, None)]
         )
-        self.slice_nsym_1 = tuple(
+        self._slice_nsym_1 = tuple(
             [slice(None, None)] * (len(dims) - 1) + [slice(None, self.nsym - 1)]
         )
 
@@ -95,12 +102,12 @@ class Symmetrize(LinearOperator):
         ncp = get_array_module(x)
         y = ncp.zeros(self.dimsd, dtype=self.dtype)
         y = y.swapaxes(self.axis, -1)
-        y = inplace_set(x, y, self.slicensym_1)
-        y = inplace_set(x[..., -1:0:-1], y, self.slice_nsym_1)
+        y = inplace_set(x, y, self._slicensym_1)
+        y = inplace_set(x[..., -1:0:-1], y, self._slice_nsym_1)
         return y
 
     @reshaped(swapaxis=True)
     def _rmatvec(self, x: NDArray) -> NDArray:
         y = x[..., self.nsym - 1 :].copy()
-        y = inplace_add(x[..., self.nsym - 2 :: -1], y, self.slice1)
+        y = inplace_add(x[..., self.nsym - 2 :: -1], y, self._slice1)
         return y

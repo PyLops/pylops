@@ -16,7 +16,7 @@ from pylops.utils.backend import (
 )
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 def _compute_iavamask(dims, axis, iava, ncp):
@@ -68,11 +68,21 @@ class Restriction(LinearOperator):
 
     Attributes
     ----------
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    iavamask : :obj:`numpy.ndarray`
+        Mask of indices used in adjoint mode when ``iava`` is a
+        CuPy array.
+    iavareshape : :obj:`numpy.ndarray`
+        Shape used to reshape ``iava`` to be compatible with ``dims``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved
-        explicitly (``True``) or not (``False``)
+        Operator shape.
 
     See Also
     --------
@@ -123,8 +133,8 @@ class Restriction(LinearOperator):
         # check if forceflat is needed and set it back to None otherwise
         if len(dims) > 2:
             if forceflat is not None:
-                logging.warning(
-                    f"setting forceflat=None since len(dims)={len(dims)}>2. "
+                logger.warning(
+                    f"Setting forceflat=None since len(dims)={len(dims)}>2. "
                     f"PyLops will automatically detect whether to return "
                     f"a 1d or nd array based on the shape of the input"
                     f"array."
@@ -189,7 +199,7 @@ class Restriction(LinearOperator):
             Input array (can be either flattened or not)
 
         Returns
-        ----------
+        -------
         y : :obj:`numpy.ma.core.MaskedArray`
             Masked array.
 

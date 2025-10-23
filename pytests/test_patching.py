@@ -1,6 +1,16 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import MatrixMult
 from pylops.signalprocessing import Patch2D, Patch3D
@@ -149,6 +159,7 @@ def test_Patch2D(par):
         Pop,
         par["npy"] * par["npt"],
         par["ny"] * par["nt"] * nwins[0] * nwins[1],
+        backend=backend,
     )
     x = np.ones((par["ny"] * nwins[0], par["nt"] * nwins[1]))
     y = Pop * x.ravel()
@@ -184,6 +195,7 @@ def test_Patch2D_scalings(par):
         Pop,
         par["npy"] * par["npt"],
         par["ny"] * par["nt"] * nwins[0] * nwins[1],
+        backend=backend,
     )
     x = np.ones((par["ny"] * nwins[0], par["nt"] * nwins[1]))
     y = Pop * x.ravel()
@@ -229,6 +241,7 @@ def test_Patch3D(par):
         Pop,
         par["npy"] * par["npx"] * par["npt"],
         par["ny"] * par["nx"] * par["nt"] * nwins[0] * nwins[1] * nwins[2],
+        backend=backend,
     )
     x = np.ones((par["ny"] * nwins[0], par["nx"] * nwins[1], par["nt"] * nwins[2]))
     y = Pop * x.ravel()

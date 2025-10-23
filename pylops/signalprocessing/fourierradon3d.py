@@ -1,6 +1,5 @@
 __all__ = ["FourierRadon3D"]
 
-import logging
 from typing import Optional, Tuple
 
 import numpy as np
@@ -13,12 +12,12 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, NDArray
 
 jit_message = deps.numba_import("the radon2d module")
+cupy_message = deps.cupy_import("the radon2d module")
 
 if jit_message is None:
-    from ._fourierradon3d_cuda import _aradon_inner_3d_cuda, _radon_inner_3d_cuda
     from ._fourierradon3d_numba import _aradon_inner_3d, _radon_inner_3d
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+if jit_message is None and cupy_message is None:
+    from ._fourierradon3d_cuda import _aradon_inner_3d_cuda, _radon_inner_3d_cuda
 
 
 class FourierRadon3D(LinearOperator):
@@ -33,41 +32,84 @@ class FourierRadon3D(LinearOperator):
 
     Parameters
     ----------
-    taxis : :obj:`np.ndarray`
+    taxis : :obj:`numpy.ndarray`
         Time axis
-    hyaxis : :obj:`np.ndarray`
+    hyaxis : :obj:`numpy.ndarray`
         Slow spatial axis
-    hxaxis : :obj:`np.ndarray`
+    hxaxis : :obj:`numpy.ndarray`
         Fast spatial axis
-    pyaxis : :obj:`np.ndarray`
+    pyaxis : :obj:`numpy.ndarray`
         Axis of scanning variable :math:`p_y` of parametric curve
-    pxaxis : :obj:`np.ndarray`
+    pxaxis : :obj:`numpy.ndarray`
         Axis of scanning variable :math:`p_x` of parametric curve
     nfft : :obj:`int`
         Number of samples in Fourier transform
     flims : :obj:`tuple`, optional
         Indices of lower and upper limits of Fourier axis to be used in
         the application of the Radon matrix (when ``None``, use entire axis)
-    kind : :obj:`tuple`
+    kind : :obj:`tuple`, optional
         Curves to be used for stacking/spreading along the y- and x- axes
         (``("linear", "linear")``, ``("linear", "parabolic")``,
-         ``("parabolic", "linear")``, or  ``("parabolic", "parabolic")``)
-    engine : :obj:`str`
+        ``("parabolic", "linear")``, or  ``("parabolic", "parabolic")``)
+    engine : :obj:`str`, optional
         Engine used for computation (``numpy`` or ``numba`` or ``cuda``)
-    num_threads_per_blocks : :obj:`tuple`
+    num_threads_per_blocks : :obj:`tuple`, optional
         Number of threads in each block (only when ``engine=cuda``)
-    dtype : :obj:`str`
+    dtype : :obj:`str`, optional
         Type of elements in input array.
-    name : :obj:`str`
+    name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
     Attributes
     ----------
+    hyaxis : :obj:`numpy.ndarray`
+        Slow spatial axis (or squared axis when ``kind='parabolic'``)
+    hxaxis : :obj:`numpy.ndarray`
+        Fast spatial axis (or squared axis when ``kind='parabolic'``)
+    nhy : :obj:`int`
+        Number of samples in slow spatial axis.
+    nhx : :obj:`int`
+        Number of samples in fast spatial axis.
+    nt : :obj:`int`
+        Number of samples in time axis.
+    dhy : :obj:`float`
+        Sampling step in slow spatial axis.
+    dhx : :obj:`float`
+        Sampling step in fast spatial axis.
+    dt : :obj:`float`
+        Sampling step in time axis.
+    py : :obj:`numpy.ndarray`
+        Axis of scanning variable :math:`p_y` of parametric curve
+    px : :obj:`numpy.ndarray`
+        Axis of scanning variable :math:`p_x` of parametric curve
+    npy : :obj:`int`
+        Number of samples in :math:`p_y` axis.
+    npx : :obj:`int`
+        Number of samples in :math:`p_x` axis.
+    f : :obj:`numpy.ndarray`
+        Fourier axis.
+    nfft2 : :obj:`int`
+        Number of samples in positive Fourier axis.
+    cdtype : :obj:`str`
+        Complex type associated with ``dtype``.
+    flims : :obj:`tuple`
+        Indices of lower and upper limits of Fourier axis to be used in
+    num_blocks_matvec : :obj:`tuple`
+        Number of blocks in each dimension for ``matvec`` (only when
+        ``engine=cuda``)
+    num_blocks_rmatvec : :obj:`tuple`
+        Number of blocks in each dimension for ``rmatvec`` (only when
+        ``engine=cuda``)
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     Raises
     ------
@@ -126,7 +168,7 @@ class FourierRadon3D(LinearOperator):
         flims: Optional[Tuple[int, int]] = None,
         kind: Tuple[str, str] = ("linear", "linear"),
         engine: str = "numpy",
-        num_threads_per_blocks: Tuple[int, int] = (32, 32),
+        num_threads_per_blocks: Tuple[int, int, int] = (2, 16, 16),
         dtype: DTypeLike = "float64",
         name: str = "R",
     ) -> None:
@@ -192,7 +234,7 @@ class FourierRadon3D(LinearOperator):
         self._register_multiplications(engine)
 
     def _register_multiplications(self, engine: str) -> None:
-        if engine == "numba" and jit_message is None:
+        if engine == "numba":
             self._matvec = self._matvec_numba
             self._rmatvec = self._rmatvec_numba
         elif engine == "cuda":

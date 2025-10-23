@@ -9,8 +9,14 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 import numpy as np
 
-from pylops.optimization.basesolver import Solver
-from pylops.utils.backend import get_array_module, to_numpy
+from pylops.optimization.basesolver import Solver, _units
+from pylops.optimization.callback import _callback_stop
+from pylops.utils.backend import (
+    get_array_module,
+    get_module_name,
+    to_numpy,
+    to_numpy_conditional,
+)
 from pylops.utils.typing import NDArray
 
 if TYPE_CHECKING:
@@ -27,6 +33,35 @@ class CG(Solver):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert of size :math:`[N \times N]`
+
+    Attributes
+    ----------
+    ncp : :obj:`module`
+        Array module used by the solver (obtained via
+        :func:`pylops.utils.backend.get_array_module`)
+        ). Available only after ``setup`` is called.
+    isjax : :obj:`bool`
+        True if the input data is a JAX array. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    r : :obj:`numpy.ndarray`
+        Residual vector of size :math:`[N \times 1]`. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    c : :obj:`numpy.ndarray`
+        Conjugate direction vector of size :math:`[N \times 1]`. Available
+        only after ``setup`` is called and updated at each call to ``step``.
+    c1 : :obj:`numpy.ndarray`
+        Pre-allocated vector of size :math:`[N \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    kold : :obj:`float`
+        Squared norm of the residual at previous iteration. Available
+        only after ``setup`` is called and updated at each call to ``step``.
+    cost : :obj:`list`
+        History of the L2 norm of the residual. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    iiter : :obj:`int`
+        Current iteration number. Available only after
+        ``setup`` is called and updated at each call to ``step``.
 
     Notes
     -----
@@ -59,41 +94,88 @@ class CG(Solver):
         msg = f"{self.iiter:6g}        " + strx + f"{self.cost[self.iiter]:11.4e}"
         print(msg)
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0 - y, self.r, self.c
+        memuse = (self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): c1 - Opc
+        memuse += (self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        if show:
+            print(f"CG predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
         x0: Optional[NDArray] = None,
         niter: Optional[int] = None,
         tol: float = 1e-4,
+        preallocate: bool = False,
         show: bool = False,
     ) -> NDArray:
         r"""Setup solver
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
-        x0 : :obj:`np.ndarray`, optional
+        x0 : :obj:`numpy.ndarray`, optional
             Initial guess of size :math:`[N \times 1]`. If ``None``, initialize
             internally as zero vector
         niter : :obj:`int`, optional
             Number of iterations (default to ``None`` in case a user wants to
             manually step over the solver)
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
+
         show : :obj:`bool`, optional
             Display setup log
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Initial guess of size :math:`[N \times 1]`
 
         """
         self.y = y
         self.niter = niter
         self.tol = tol
+
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # initialize solver
         if x0 is None:
@@ -101,9 +183,17 @@ class CG(Solver):
             self.r = self.y.copy()
         else:
             x = x0.copy()
-            self.r = self.y - self.Op.matvec(x)
+            if not self.preallocate:
+                self.r = self.y - self.Op.matvec(x)
+            else:
+                self.r = self.ncp.empty_like(self.y)
+                self.ncp.subtract(self.y, self.Op.matvec(x), out=self.r)
         self.c = self.r.copy()
         self.kold = self.ncp.abs(self.r.dot(self.r.conj()))
+
+        # initialize other internal variabled
+        if self.preallocate:
+            self.c1 = self.ncp.empty_like(x)
 
         # create variables to track the residual norm and iterations
         self.cost: List = []
@@ -120,25 +210,35 @@ class CG(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by a step of CG
         show : :obj:`bool`, optional
             Display iteration log
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Updated model vector
 
         """
         Opc = self.Op.matvec(self.c)
         cOpc = self.ncp.abs(self.c.dot(Opc.conj()))
         a = self.kold / cOpc
-        x += a * self.c
-        self.r -= a * Opc
+        if not self.preallocate:
+            x += a * self.c
+            self.r -= a * Opc
+        else:
+            self.ncp.multiply(self.c, a, out=self.c1)
+            self.ncp.add(x, self.c1, out=x)
+            self.ncp.multiply(Opc, a, out=Opc)
+            self.ncp.subtract(self.r, Opc, out=self.r)
         k = self.ncp.abs(self.r.dot(self.r.conj()))
         b = k / self.kold
-        self.c = self.r + b * self.c
+        if not self.preallocate:
+            self.c = self.r + b * self.c
+        else:
+            self.ncp.multiply(self.c, b, out=self.c)
+            self.ncp.add(self.c, self.r, out=self.c)
         self.kold = k
         self.iiter += 1
         self.cost.append(float(np.sqrt(self.kold)))
@@ -157,7 +257,7 @@ class CG(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by multiple steps of CG
         niter : :obj:`int`, optional
             Number of iterations. Can be set to ``None`` if already
@@ -171,7 +271,7 @@ class CG(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
 
         """
@@ -191,6 +291,10 @@ class CG(Solver):
             )
             x = self.step(x, showstep)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         return x
 
     def finalize(self, show: bool = False) -> None:
@@ -214,6 +318,7 @@ class CG(Solver):
         x0: Optional[NDArray] = None,
         niter: int = 10,
         tol: float = 1e-4,
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, NDArray]:
@@ -221,15 +326,22 @@ class CG(Solver):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
-        x0 : :obj:`np.ndarray`, optional
+        x0 : :obj:`numpy.ndarray`, optional
             Initial guess of size :math:`[N \times 1]`. If ``None``, initialize
             internally as zero vector
         niter : :obj:`int`, optional
             Number of iterations
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -239,7 +351,7 @@ class CG(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[N \times 1]`
         iit : :obj:`int`
             Number of executed iterations
@@ -247,7 +359,9 @@ class CG(Solver):
             History of the L2 norm of the residual
 
         """
-        x = self.setup(y=y, x0=x0, niter=niter, tol=tol, show=show)
+        x = self.setup(
+            y=y, x0=x0, niter=niter, tol=tol, preallocate=preallocate, show=show
+        )
         x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)
         return x, self.iiter, self.cost
@@ -263,6 +377,50 @@ class CGLS(Solver):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert of size :math:`[N \times M]`
+
+    Attributes
+    ----------
+    ncp : :obj:`module`
+        Array module used by the solver (obtained via
+        :func:`pylops.utils.backend.get_array_module`)
+        ). Available only after ``setup`` is called.
+    isjax : :obj:`bool`
+        True if the input data is a JAX array. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    s : :obj:`numpy.ndarray`
+        Temporary vector of size :math:`[N \times 1]`. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    c : :obj:`numpy.ndarray`
+        Conjugate direction vector of size :math:`[N \times 1]`. Available
+        only after ``setup`` is called and updated at each call to ``step``.
+    q : :obj:`numpy.ndarray`
+        Temporary vector of size :math:`[M \times 1]`. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    c1 : :obj:`numpy.ndarray`
+        Pre-allocated vector of size :math:`[N \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    x1 : :obj:`numpy.ndarray`
+        Pre-allocated vector of size :math:`[M \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    r : :obj:`numpy.ndarray`
+        Residual vector of size :math:`[N \times 1]` used in the
+        solver when ``preallocate=True``. Available only after ``setup``
+        is called and updated at each call to ``step``.
+    kold : :obj:`float`
+        Squared norm of the residual at previous iteration. Available
+        only after ``setup`` is called and updated at each call to ``step``.
+    cost : :obj:`list`
+        History of the L2 norm of the residual. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    cost1 : :obj:`list`
+        History of the L2 norm of the entire objective function (residual
+        plus regularization). Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    iiter : :obj:`int`
+        Current iteration number. Available only after
+        ``setup`` is called and updated at each call to ``step``.
 
     Notes
     -----
@@ -302,6 +460,41 @@ class CGLS(Solver):
         )
         print(msg)
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0, self.c - y, self.s, self.q
+        memuse = (2 * self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): r, x1, c1
+        memuse += (3 * self.Op.shape[1]) * nbytes
+
+        if show:
+            print(f"CGLS predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -309,16 +502,17 @@ class CGLS(Solver):
         niter: Optional[int] = None,
         damp: float = 0.0,
         tol: float = 1e-4,
+        preallocate: bool = False,
         show: bool = False,
     ) -> NDArray:
         r"""Setup solver
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
-        x0 : :obj:`np.ndarray`, optional
-            Initial guess  of size :math:`[M \times 1]`. If ``None``, initialize
+        x0 : :obj:`numpy.ndarray`, optional
+            Initial guess of size :math:`[M \times 1]`. If ``None``, initialize
             internally as zero vector
         niter : :obj:`int`, optional
             Number of iterations (default to ``None`` in case a user wants to
@@ -326,34 +520,57 @@ class CGLS(Solver):
         damp : :obj:`float`, optional
             Damping coefficient
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Initial guess of size :math:`[N \times 1]`
 
         """
         self.y = y
-        self.damp = damp**2
+        self.damp = damp**2.0
         self.tol = tol
         self.niter = niter
+
         self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
 
         # initialize solver
         if x0 is None:
             x = self.ncp.zeros(self.Op.shape[1], dtype=y.dtype)
             self.s = self.y.copy()
-            r = self.Op.rmatvec(self.s)
+            self.c = self.Op.rmatvec(self.s)
         else:
             x = x0.copy()
-            self.s = self.y - self.Op.matvec(x)
-            r = self.Op.rmatvec(self.s) - damp * x
-        self.c = r.copy()
+            if not self.preallocate:
+                self.s = self.y - self.Op.matvec(x)
+                self.c = self.Op.rmatvec(self.s) - damp * x
+            else:
+                self.s = self.ncp.empty_like(self.y)
+                self.ncp.subtract(self.y, self.Op.matvec(x), out=self.s)
+                x1 = self.ncp.empty_like(x)
+                self.c = self.ncp.empty_like(x)
+                self.ncp.multiply(x, damp, out=x1)
+                self.ncp.subtract(self.Op.rmatvec(self.s), x1, out=self.c)
         self.q = self.Op.matvec(self.c)
-        self.kold = self.ncp.abs(r.dot(r.conj()))
+        self.kold = self.ncp.abs(self.c.dot(self.c.conj()))
+
+        # initialize other internal variables
+        if self.preallocate:
+            self.c1 = self.ncp.empty_like(self.c)
+            self.x1 = self.ncp.empty_like(x)
+            self.r = self.ncp.empty_like(x)
 
         # create variables to track the residual norm and iterations
         self.cost = []
@@ -361,7 +578,9 @@ class CGLS(Solver):
         self.cost.append(float(self.ncp.linalg.norm(self.s)))
         self.cost1.append(
             float(
-                self.ncp.sqrt(self.cost[0] ** 2 + damp * self.ncp.abs(x.dot(x.conj())))
+                self.ncp.sqrt(
+                    self.cost[0] ** 2.0 + damp * self.ncp.abs(x.dot(x.conj()))
+                )
             )
         )
         self.iiter = 0
@@ -376,7 +595,7 @@ class CGLS(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by a step of CG
         show : :obj:`bool`, optional
             Display iteration log
@@ -385,12 +604,32 @@ class CGLS(Solver):
         a = self.kold / (
             self.q.dot(self.q.conj()) + self.damp * self.c.dot(self.c.conj())
         )
-        x = x + a * self.c
-        self.s = self.s - a * self.q
-        r = self.Op.rmatvec(self.s) - self.damp * x
-        k = self.ncp.abs(r.dot(r.conj()))
+        if not self.preallocate:
+            x = x + a * self.c
+            self.s = self.s - a * self.q
+            r = self.Op.rmatvec(self.s) - self.damp * x
+        else:
+            self.ncp.multiply(self.c, a, out=self.c1)
+            self.ncp.add(x, self.c1, out=x)
+
+            self.ncp.multiply(self.q, a, out=self.q)
+            self.ncp.subtract(self.s, self.q, out=self.s)
+
+            self.ncp.multiply(x, self.damp, out=self.x1)
+            self.ncp.subtract(
+                self.Op.rmatvec(self.s),
+                self.x1,
+                out=self.r,
+            )
+        k = self.ncp.abs(
+            self.r.dot(self.r.conj()) if self.preallocate else r.dot(r.conj())
+        )
         b = k / self.kold
-        self.c = r + b * self.c
+        if not self.preallocate:
+            self.c = r + b * self.c
+        else:
+            self.ncp.multiply(self.c, b, out=self.c)
+            self.ncp.add(self.c, self.r, out=self.c)
         self.q = self.Op.matvec(self.c)
         self.kold = k
         self.iiter += 1
@@ -398,7 +637,7 @@ class CGLS(Solver):
         self.cost1.append(
             self.ncp.sqrt(
                 float(
-                    self.cost[self.iiter] ** 2
+                    self.cost[self.iiter] ** 2.0
                     + self.damp * self.ncp.abs(x.dot(x.conj()))
                 )
             )
@@ -418,7 +657,7 @@ class CGLS(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by multiple steps of CGLS
         niter : :obj:`int`, optional
             Number of iterations. Can be set to ``None`` if already
@@ -432,26 +671,30 @@ class CGLS(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
 
         """
-        niter = self.niter if niter is None else niter
-        if niter is None:
+        self.niter = self.niter if niter is None else niter
+        if self.niter is None:
             raise ValueError("niter must not be None")
-        while self.iiter < niter and self.kold > self.tol:
+        while self.iiter < self.niter and self.kold > self.tol:
             showstep = (
                 True
                 if show
                 and (
                     self.iiter < itershow[0]
-                    or niter - self.iiter < itershow[1]
+                    or self.niter - self.iiter < itershow[1]
                     or self.iiter % itershow[2] == 0
                 )
                 else False
             )
             x = self.step(x, showstep)
             self.callback(x)
+            # check if any callback has raised a stop flag
+            stop = _callback_stop(self.callbacks)
+            if stop:
+                break
         return x
 
     def finalize(self, show: bool = False) -> None:
@@ -466,7 +709,12 @@ class CGLS(Solver):
         self.tend = time.time()
         self.telapsed = self.tend - self.tstart
         # reason for termination
-        self.istop = 1 if self.kold < self.tol else 2
+        if self.kold < self.tol:
+            self.istop = 1
+        elif self.iiter >= self.niter:
+            self.istop = 2
+        else:
+            self.istop = 3
         self.r1norm = self.kold
         self.r2norm = self.cost1[self.iiter]
         if show:
@@ -480,6 +728,7 @@ class CGLS(Solver):
         niter: int = 10,
         damp: float = 0.0,
         tol: float = 1e-4,
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[NDArray, int, int, float, float, NDArray]:
@@ -487,9 +736,9 @@ class CGLS(Solver):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
-        x0 : :obj:`np.ndarray`
+        x0 : :obj:`numpy.ndarray`
             Initial guess  of size :math:`[M \times 1]`. If ``None``, initialize
             internally as zero vector
         niter : :obj:`int`, optional
@@ -498,7 +747,14 @@ class CGLS(Solver):
         damp : :obj:`float`, optional
             Damping coefficient
         tol : :obj:`float`, optional
-            Tolerance on residual norm
+            Absolute tolerance on residual norm. Stops the solver when the
+            residual norm is below this value.
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -508,16 +764,20 @@ class CGLS(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
         Estimated model of size :math:`[M \times 1]`
         istop : :obj:`int`
             Gives the reason for termination
 
             ``1`` means :math:`\mathbf{x}` is an approximate solution to
-            :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}`
+            :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}` with the provided
+            tolerance ``tol``
 
             ``2`` means :math:`\mathbf{x}` approximately solves the least-squares
-            problem
+            problem (reached the maximum number of iterations ``niter``)
+
+            ``3`` means another stopping criterion implemented via a callback
+            was reached
         iit : :obj:`int`
             Iteration number upon termination
         r1norm : :obj:`float`
@@ -531,7 +791,15 @@ class CGLS(Solver):
             History of r1norm through iterations
 
         """
-        x = self.setup(y=y, x0=x0, niter=niter, damp=damp, tol=tol, show=show)
+        x = self.setup(
+            y=y,
+            x0=x0,
+            niter=niter,
+            damp=damp,
+            tol=tol,
+            preallocate=preallocate,
+            show=show,
+        )
         x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)
         return x, self.istop, self.iiter, self.r1norm, self.r2norm, self.cost
@@ -550,6 +818,92 @@ class LSQR(Solver):
     ----------
     Op : :obj:`pylops.LinearOperator`
         Operator to invert of size :math:`[N \times M]`
+
+    Attributes
+    ----------
+    ncp : :obj:`module`
+        Array module used by the solver (obtained via
+        :func:`pylops.utils.backend.get_array_module`)
+        ). Available only after ``setup`` is called.
+    isjax : :obj:`bool`
+        True if the input data is a JAX array. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    var : :obj:`numpy.ndarray` or :obj:`None`
+        Variance vector of size :math:`[M \times 1]`. Available only after
+        ``setup`` is called and updated at each call to ``step``. Set to
+        ``None`` if ``calc_var=False``.
+    istop : :obj:`int`
+        Gives the reason for termination. Available only after ``setup`` is
+        called and updated at each call to ``step``.
+    ctol : :obj:`float`
+        Tolerance on the condition number of the augmented system (defined as
+        reciprocal of ``conlim`). Available only after ``setup`` is called
+        and updated at each call to ``step``.
+    anorm : :obj:`float`
+        Estimate of Frobenius norm of :math:`\overline{\mathbf{Op}} =
+        [\mathbf{Op} \; \epsilon \mathbf{I}]`. Available only after ``setup`` is
+        called and updated at each call to ``step``.
+    acond : :obj:`float`
+        Estimate of :math:`\cond(\overline{\mathbf{Op}})`. Available only after ``setup`` is
+        called and updated at each call to ``step``.
+    arnorm : :obj:`float`
+        Estimate of norm of :math:`\cond(\mathbf{Op}^H\mathbf{r}-
+        \epsilon^2\mathbf{x})`. Available only after ``step`` is
+        called for the first time and updated at each subsequent call to ``step``.
+    xnorm : :obj:`float`
+        :math:`||\mathbf{x}||_2`. Available only after ``setup`` is
+        called and updated at each call to ``step``.
+    u : :obj:`numpy.ndarray`
+        Temporary vector of size :math:`[N \times 1]`. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    v : :obj:`numpy.ndarray`
+        Temporary vector of size :math:`[M \times 1]`. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    w : :obj:`numpy.ndarray`
+        Temporary vector of size :math:`[M \times 1]`. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    dk : :obj:`numpy.ndarray`
+        Temporary vector of size :math:`[M \times 1]`. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    w1 : :obj:`numpy.ndarray`
+        Temporary vector of size :math:`[M \times 1]`. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    alfa : :obj:`float`
+        :math:`\alpha` parameter of the bidiagonalization process. Available only
+        after ``setup`` is called and updated at each call to ``step``.
+    beta : :obj:`float`
+        :math:`\beta` parameter of the bidiagonalization process. Available only
+        after ``setup`` is called and updated at each call to ``step``.
+    arnorm0 : :obj:`float`
+        Initial value of ``arnorm``. Available only after ``setup`` is
+        called.
+    rhobar : :obj:`float`
+        Parameter of the QR factorization of the bidiagonal matrix.
+        Available only after ``setup`` is called and updated at each
+        call to ``step``.
+    phibar : :obj:`float`
+        Parameter of the QR factorization of the bidiagonal matrix.
+        Available only after ``setup`` is called and updated at each
+        call to ``step``.
+    bnorm : :obj:`float`
+        :math:`||\mathbf{y}||_2`. Available only after ``setup`` is
+        called and updated at each call to ``step``.
+    rnorm : :obj:`float`
+        :math:`||\mathbf{r}||_2`. Available only after ``setup`` is
+        called and updated at each call to ``step``.
+    r1norm : :obj:`float`
+        :math:`||\mathbf{r}||_2`, where
+        :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    r2norm : :obj:`float`
+        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  + \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
+        Equal to ``r1norm`` if :math:`\epsilon=0`. Available only after
+        ``setup`` is called and updated at each call to ``step``.
+    cost : :obj:`numpy.ndarray`, optional
+        History of r1norm through iterations
+    iiter : :obj:`int`
+        Current iteration number. Available only after
+        ``setup`` is called and updated at each call to ``step``.
 
     Notes
     -----
@@ -626,6 +980,41 @@ class LSQR(Solver):
         print(str5)
         print("-" * 90 + "\n")
 
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in Bytes
+
+        """
+        # Get number of bytes of dtype used in the solver
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup: x0, self.v, self.w, self.dk - y, self.u
+        memuse = (4 * self.Op.shape[1] + 2 * self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup): w1
+        memuse += self.Op.shape[1] * nbytes
+
+        if show:
+            print(f"LSQR predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
     def setup(
         self,
         y: NDArray,
@@ -636,15 +1025,16 @@ class LSQR(Solver):
         conlim: float = 100000000.0,
         niter: int = 10,
         calc_var: bool = True,
+        preallocate: bool = False,
         show: bool = False,
     ) -> NDArray:
         r"""Setup solver
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
-        x0 : :obj:`np.ndarray`, optional
+        x0 : :obj:`numpy.ndarray`, optional
             Initial guess of size :math:`[M \times 1]`. If ``None``, initialize
             internally as zero vector
         damp : :obj:`float`, optional
@@ -665,13 +1055,19 @@ class LSQR(Solver):
             Number of iterations
         calc_var : :obj:`bool`, optional
             Estimate diagonals of :math:`(\mathbf{Op}^H\mathbf{Op} +
-            \epsilon^2\mathbf{I})^{-1}`.
+            \epsilon^2\mathbf{I})^{-1}`
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Initial guess of size :math:`[N \times 1]`
 
         """
@@ -682,9 +1078,12 @@ class LSQR(Solver):
         self.conlim = conlim
         self.niter = niter
         self.calc_var = calc_var
-        self.ncp = get_array_module(y)
 
-        m, n = self.Op.shape
+        self.ncp = get_array_module(y)
+        self.isjax = get_module_name(self.ncp) == "jax"
+        self._setpreallocate(preallocate)
+
+        _, n = self.Op.shape
 
         # initialize solver
         self.var = None
@@ -698,7 +1097,7 @@ class LSQR(Solver):
             self.ctol = 1.0 / conlim
         self.anorm = 0
         self.acond = 0
-        self.dampsq = damp**2
+        self.dampsq = damp**2.0
         self.ddnorm = 0
         self.res2 = 0
         self.xnorm = 0
@@ -714,15 +1113,25 @@ class LSQR(Solver):
             self.u = y.copy()
         else:
             x = x0.copy()
-            self.u = self.y - self.Op.matvec(x0)
+            if not self.preallocate:
+                self.u = self.y - self.Op.matvec(x0)
+            else:
+                self.u = self.ncp.empty_like(self.y)
+                self.ncp.subtract(self.y, self.Op.matvec(x0), out=self.u)
         self.alfa = 0.0
         self.beta = self.ncp.linalg.norm(self.u)
         if self.beta > 0.0:
-            self.u = self.u / self.beta
+            if not self.preallocate:
+                self.u = self.u / self.beta
+            else:
+                self.ncp.divide(self.u, self.beta, out=self.u)
             self.v = self.Op.rmatvec(self.u)
             self.alfa = self.ncp.linalg.norm(self.v)
             if self.alfa > 0:
-                self.v = self.v / self.alfa
+                if not self.preallocate:
+                    self.v = self.v / self.alfa
+                else:
+                    self.ncp.divide(self.v, self.alfa, out=self.v)
         else:
             self.v = x.copy()
             self.alfa = 0
@@ -730,6 +1139,11 @@ class LSQR(Solver):
 
         # check if solution is already found
         self.arnorm: float = self.alfa * self.beta
+
+        # initialize other internal variables
+        if self.preallocate:
+            self.dk = self.ncp.empty_like(self.w)
+            self.w1 = self.ncp.empty_like(self.w)
 
         # finalize setup
         self.arnorm0: float = self.arnorm
@@ -758,14 +1172,14 @@ class LSQR(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by a step of CG
         show : :obj:`bool`, optional
             Display iteration log
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
 
         """
@@ -773,17 +1187,31 @@ class LSQR(Solver):
         # next beta, u, alfa, v. These satisfy the relations
         # beta*u = Op*v - alfa*u,
         # alfa*v = Op'*u - beta*v'
-        self.u = self.Op.matvec(self.v) - self.alfa * self.u
+        if not self.preallocate:
+            self.u = self.Op.matvec(self.v) - self.alfa * self.u
+        else:
+            self.ncp.multiply(self.u, self.alfa, out=self.u)
+            self.ncp.subtract(self.Op.matvec(self.v), self.u, out=self.u)
         self.beta = self.ncp.linalg.norm(self.u)
         if self.beta > 0:
-            self.u = self.u / self.beta
+            if not self.preallocate:
+                self.u = self.u / self.beta
+            else:
+                self.ncp.divide(self.u, self.beta, out=self.u)
             self.anorm = np.linalg.norm(
                 [self.anorm, to_numpy(self.alfa), to_numpy(self.beta), self.damp]
             )
-            self.v = self.Op.rmatvec(self.u) - self.beta * self.v
+            if not self.preallocate:
+                self.v = self.Op.rmatvec(self.u) - self.beta * self.v
+            else:
+                self.ncp.multiply(self.v, self.beta, out=self.v)
+                self.ncp.subtract(self.Op.rmatvec(self.u), self.v, out=self.v)
             self.alfa = self.ncp.linalg.norm(self.v)
             if self.alfa > 0:
-                self.v = self.v / self.alfa
+                if not self.preallocate:
+                    self.v = self.v / self.alfa
+                else:
+                    self.ncp.divide(self.v, self.alfa, out=self.v)
 
         # use a plane rotation to eliminate the damping parameter.
         # This alters the diagonal (rhobar) of the lower-bidiagonal matrix.
@@ -807,12 +1235,21 @@ class LSQR(Solver):
         # update x and w.
         self.t1 = self.phi / self.rho
         self.t2 = -self.theta / self.rho
-        self.dk = self.w / self.rho
-        x = x + self.t1 * self.w
-        self.w = self.v + self.t2 * self.w
-        self.ddnorm = self.ddnorm + self.ncp.linalg.norm(self.dk) ** 2
+        if not self.preallocate:
+            self.dk = self.w / self.rho
+            x = x + self.t1 * self.w
+            self.w = self.v + self.t2 * self.w
+        else:
+            self.ncp.divide(self.w, self.rho, out=self.dk)
+            self.ncp.multiply(self.w, self.t1, out=self.w1)
+            self.ncp.add(x, self.w1, out=x)
+            self.ncp.multiply(self.w, self.t2, out=self.w)
+            self.ncp.add(self.v, self.w, out=self.w)
+        self.ddnorm = self.ddnorm + self.ncp.linalg.norm(self.dk) ** 2.0
         if self.calc_var:
-            self.var = self.var + self.ncp.dot(self.dk, self.dk)
+            self.var = self.var + to_numpy_conditional(
+                self.var, self.ncp.dot(self.dk, self.dk)
+            )
 
         # use a plane rotation on the right to eliminate the
         # super-diagonal element (theta) of the upper-bidiagonal matrix.
@@ -821,7 +1258,7 @@ class LSQR(Solver):
         self.gambar = -self.cs2 * self.rho
         self.rhs = self.phi - self.delta * self.z
         self.zbar = self.rhs / self.gambar
-        self.xnorm = self.ncp.sqrt(self.xxnorm + self.zbar**2)
+        self.xnorm = self.ncp.sqrt(self.xxnorm + self.zbar**2.0)
         self.gamma = np.linalg.norm([self.gambar, to_numpy(self.theta)])
         self.cs2 = self.gambar / self.gamma
         self.sn2 = self.theta / self.gamma
@@ -831,8 +1268,8 @@ class LSQR(Solver):
         # test for convergence. First, estimate the condition of the matrix
         # Opbar, and the norms of rbar and Opbar'rbar
         self.acond = self.anorm * self.ncp.sqrt(self.ddnorm)
-        self.res1 = self.phibar**2
-        self.res2 = self.res2 + self.psi**2
+        self.res1 = self.phibar**2.0
+        self.res2 = self.res2 + self.psi**2.0
         self.rnorm = self.ncp.sqrt(self.res1 + self.res2)
         self.arnorm = self.alfa * abs(self.tau)
 
@@ -840,7 +1277,7 @@ class LSQR(Solver):
         # r2norm = sqrt(r1norm^2 + damp^2*||x||^2).
         # Estimate r1norm = sqrt(r2norm^2 - damp^2*||x||^2).
         # Although there is cancellation, it might be accurate enough.
-        self.r1sq = self.rnorm**2 - self.dampsq * self.xxnorm
+        self.r1sq = self.rnorm**2.0 - self.dampsq * self.xxnorm
         self.r1norm = self.ncp.sqrt(self.ncp.abs(self.r1sq))
         self.cost.append(float(self.r1norm))
         if self.r1sq < 0:
@@ -892,7 +1329,7 @@ class LSQR(Solver):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by multiple steps of LSQR
         niter : :obj:`int`, optional
             Number of iterations. Can be set to ``None`` if already
@@ -906,7 +1343,7 @@ class LSQR(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
 
         """
@@ -956,6 +1393,7 @@ class LSQR(Solver):
         conlim: float = 100000000.0,
         niter: int = 10,
         calc_var: bool = True,
+        preallocate: bool = False,
         show: bool = False,
         itershow: Tuple[int, int, int] = (10, 10, 10),
     ) -> Tuple[
@@ -975,9 +1413,9 @@ class LSQR(Solver):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
-        x0 : :obj:`np.ndarray`, optional
+        x0 : :obj:`numpy.ndarray`, optional
             Initial guess of size :math:`[M \times 1]`. If ``None``, initialize
             internally as zero vector
         damp : :obj:`float`, optional
@@ -999,6 +1437,12 @@ class LSQR(Solver):
         calc_var : :obj:`bool`, optional
             Estimate diagonals of :math:`(\mathbf{Op}^H\mathbf{Op} +
             \epsilon^2\mathbf{I})^{-1}`.
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver. Note that if ``y``
+            is a JAX array, this option is ignored and variables are not
+            pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -1008,7 +1452,7 @@ class LSQR(Solver):
 
         Returns
         -------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Estimated model of size :math:`[M \times 1]`
         istop : :obj:`int`
             Gives the reason for termination
@@ -1034,6 +1478,8 @@ class LSQR(Solver):
 
             ``7`` means the iteration limit has been reached
 
+        iiter : :obj:`int`
+            Iteration number upon termination
         r1norm : :obj:`float`
             :math:`||\mathbf{r}||_2^2`, where
             :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
@@ -1049,6 +1495,8 @@ class LSQR(Solver):
         arnorm : :obj:`float`
             Estimate of norm of :math:`\cond(\mathbf{Op}^H\mathbf{r}-
             \epsilon^2\mathbf{x})`
+        xnorm : :obj:`float`
+            :math:`||\mathbf{x}||_2`
         var : :obj:`float`
             Diagonals of :math:`(\mathbf{Op}^H\mathbf{Op})^{-1}` (if ``damp=0``)
             or more generally :math:`(\mathbf{Op}^H\mathbf{Op} +
@@ -1066,6 +1514,7 @@ class LSQR(Solver):
             conlim=conlim,
             niter=niter,
             calc_var=calc_var,
+            preallocate=preallocate,
             show=show,
         )
         x = self.run(x, niter=niter, show=show, itershow=itershow)

@@ -66,11 +66,22 @@ class AcousticWave2D(LinearOperator):
 
     Attributes
     ----------
+    space_order : :obj:`int`
+        Spatial ordering of FD stencil.
+    model : :obj:`examples.seismic.Model`
+        Devito model object.
+    geometry : :obj:`examples.seismic.AcquisitionGeometry`
+        Devito acquisition geometry object.
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     """
 
@@ -229,37 +240,30 @@ class AcousticWave2D(LinearOperator):
             time_range=self.geometry.time_axis,
         )
 
-    def _srcillumination_oneshot(self, isrc: int) -> Tuple[NDArray, NDArray]:
+    def _srcillumination_oneshot(
+        self, solver: AcousticWaveSolverType, isrc: int
+    ) -> Tuple[NDArray, NDArray]:
         """Source wavefield and illumination for one shot
 
         Parameters
         ----------
+        solver : :obj:`AcousticWaveSolver`
+            Devito's solver object.
         isrc : :obj:`int`
             Index of source to model
 
         Returns
         -------
-        u0 : :obj:`np.ndarray`
+        u0 : :obj:`numpy.ndarray`
             Source wavefield
-        src_ill : :obj:`np.ndarray`
+        src_ill : :obj:`numpy.ndarray`
             Source illumination
 
         """
-        # create geometry for single source
-        geometry = AcquisitionGeometry(
-            self.model,
-            self.geometry.rec_positions,
-            self.geometry.src_positions[isrc, :],
-            self.geometry.t0,
-            self.geometry.tn,
-            f0=self.geometry.f0,
-            src_type=self.geometry.src_type,
-        )
-        solver = AcousticWaveSolver(self.model, geometry, space_order=self.space_order)
 
         # assign source location to source object with custom wavelet
         if hasattr(self, "wav"):
-            self.wav.coordinates.data[0, :] = self.geometry.src_positions[isrc, :]
+            self.wav.coordinates.data[0, :] = solver.geometry.src_positions[:]
 
         # source wavefield
         u0 = solver.forward(
@@ -279,13 +283,27 @@ class AcousticWave2D(LinearOperator):
             Save source wavefield (``True``) or not (``False``)
 
         """
+        # create geometry for single source
+        geometry = AcquisitionGeometry(
+            self.model,
+            self.geometry.rec_positions,
+            self.geometry.src_positions[0, :],
+            self.geometry.t0,
+            self.geometry.tn,
+            f0=self.geometry.f0,
+            src_type=self.geometry.src_type,
+        )
+
+        solver = AcousticWaveSolver(self.model, geometry, space_order=self.space_order)
+
         nsrc = self.geometry.src_positions.shape[0]
         if savewav:
             self.src_wavefield = []
         self.src_illumination = np.zeros(self.model.shape)
 
         for isrc in range(nsrc):
-            src_wav, src_ill = self._srcillumination_oneshot(isrc)
+            solver.geometry.src_positions = self.geometry.src_positions[isrc, :]
+            src_wav, src_ill = self._srcillumination_oneshot(solver, isrc)
             if savewav:
                 self.src_wavefield.append(src_wav)
             self.src_illumination += src_ill
@@ -297,12 +315,12 @@ class AcousticWave2D(LinearOperator):
         ----------
         solver : :obj:`AcousticWaveSolver`
             Devito's solver object.
-        dm : :obj:`np.ndarray`
+        dm : :obj:`numpy.ndarray`
             Model perturbation
 
         Returns
         -------
-        d : :obj:`np.ndarray`
+        d : :obj:`numpy.ndarray`
             Data
 
         """
@@ -326,12 +344,12 @@ class AcousticWave2D(LinearOperator):
 
         Parameters
         -----------
-        dm : :obj:`np.ndarray`
+        dm : :obj:`numpy.ndarray`
             Model perturbation
 
         Returns
         -------
-        dtot : :obj:`np.ndarray`
+        dtot : :obj:`numpy.ndarray`
             Data for all shots
 
         """
@@ -359,41 +377,31 @@ class AcousticWave2D(LinearOperator):
         dtot = np.array(dtot).reshape(nsrc, d.shape[0], d.shape[1])
         return dtot
 
-    def _bornadj_oneshot(self, isrc, dobs):
+    def _bornadj_oneshot(self, solver: AcousticWaveSolverType, isrc, dobs):
         """Adjoint born modelling for one shot
 
         Parameters
         ----------
+        solver : :obj:`AcousticWaveSolver`
+            Devito's solver object.
         isrc : :obj:`float`
             Index of source to model
-        dobs : :obj:`np.ndarray`
+        dobs : :obj:`numpy.ndarray`
             Observed data to inject
 
         Returns
         -------
-        model : :obj:`np.ndarray`
+        model : :obj:`numpy.ndarray`
             Model
 
         """
-        # create geometry for single source
-        geometry = AcquisitionGeometry(
-            self.model,
-            self.geometry.rec_positions,
-            self.geometry.src_positions[isrc, :],
-            self.geometry.t0,
-            self.geometry.tn,
-            f0=self.geometry.f0,
-            src_type=self.geometry.src_type,
-        )
         # create boundary data
         recs = self.geometry.rec.copy()
         recs.data[:] = dobs.T[:]
 
-        solver = AcousticWaveSolver(self.model, geometry, space_order=self.space_order)
-
         # assign source location to source object with custom wavelet
         if hasattr(self, "wav"):
-            self.wav.coordinates.data[0, :] = self.geometry.src_positions[isrc, :]
+            self.wav.coordinates.data[0, :] = solver.geometry.src_positions[:]
 
         # source wavefield
         if hasattr(self, "src_wavefield"):
@@ -414,20 +422,34 @@ class AcousticWave2D(LinearOperator):
 
         Parameters
         ----------
-        dobs : :obj:`np.ndarray`
+        dobs : :obj:`numpy.ndarray`
             Observed data to inject
 
         Returns
         -------
-        model : :obj:`np.ndarray`
+        model : :obj:`numpy.ndarray`
             Model
 
         """
+        # create geometry for single source
+        geometry = AcquisitionGeometry(
+            self.model,
+            self.geometry.rec_positions,
+            self.geometry.src_positions[0, :],
+            self.geometry.t0,
+            self.geometry.tn,
+            f0=self.geometry.f0,
+            src_type=self.geometry.src_type,
+        )
+
         nsrc = self.geometry.src_positions.shape[0]
         mtot = np.zeros(self.model.shape, dtype=np.float32)
 
+        solver = AcousticWaveSolver(self.model, geometry, space_order=self.space_order)
+
         for isrc in range(nsrc):
-            m = self._bornadj_oneshot(isrc, dobs[isrc])
+            solver.geometry.src_positions = self.geometry.src_positions[isrc, :]
+            m = self._bornadj_oneshot(solver, isrc, dobs[isrc])
             mtot += self._crop_model(m.data, self.model.nbl)
         return mtot
 

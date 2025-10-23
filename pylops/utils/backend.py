@@ -17,8 +17,10 @@ __all__ = [
     "get_sp_fft",
     "get_complex_dtype",
     "get_real_dtype",
+    "to_cupy",
     "to_numpy",
     "to_cupy_conditional",
+    "to_numpy_conditional",
     "inplace_set",
     "inplace_add",
     "inplace_multiply",
@@ -80,7 +82,7 @@ def get_module(backend: str = "numpy") -> ModuleType:
 
     Returns
     -------
-    mod : :obj:`func`
+    mod : :obj:`callable`
         Module to be used to process array (:mod:`numpy` or :mod:`cupy` or :mod:`jax`)
 
     """
@@ -100,7 +102,7 @@ def get_module_name(mod: ModuleType) -> str:
 
     Parameters
     ----------
-    mod : :obj:`func`
+    mod : :obj:`callable`
         Module to be used to process array (:mod:`numpy` or :mod:`cupy` or :mod:`jax`)
 
     Returns
@@ -112,9 +114,9 @@ def get_module_name(mod: ModuleType) -> str:
     """
     if mod == np:
         backend = "numpy"
-    elif mod == cp:
+    elif deps.cupy_enabled and mod == cp:
         backend = "cupy"
-    elif mod == jnp:
+    elif deps.jax_enabled and mod == jnp:
         backend = "jax"
     else:
         raise ValueError("module must be numpy, cupy, or jax")
@@ -131,7 +133,7 @@ def get_array_module(x: npt.ArrayLike) -> ModuleType:
 
     Returns
     -------
-    mod : :obj:`func`
+    mod : :obj:`callable`
         Module to be used to process array
         (:mod:`numpy`, :mod:`cupy`, or , :mod:`jax`)
 
@@ -152,7 +154,7 @@ def get_normalize_axis_index() -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -169,7 +171,7 @@ def get_convolve(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -194,7 +196,7 @@ def get_fftconvolve(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -219,7 +221,7 @@ def get_oaconvolve(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -248,7 +250,7 @@ def get_correlate(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -273,7 +275,7 @@ def get_add_at(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -296,7 +298,7 @@ def get_sliding_window_view(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -319,7 +321,7 @@ def get_block_diag(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -344,7 +346,7 @@ def get_toeplitz(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -369,7 +371,7 @@ def get_csc_matrix(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -392,7 +394,7 @@ def get_sparse_eye(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -415,7 +417,7 @@ def get_lstsq(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -438,7 +440,7 @@ def get_sp_fft(x: npt.ArrayLike) -> Callable:
 
     Returns
     -------
-    f : :obj:`func`
+    f : :obj:`callable`
         Function to be used to process array
 
     """
@@ -484,6 +486,26 @@ def get_real_dtype(dtype: DTypeLike) -> DTypeLike:
     return np.real(np.ones(1, dtype)).dtype
 
 
+def to_cupy(x: NDArray) -> NDArray:
+    """Convert x to cupy array
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray` or :obj:`cupy.ndarray`
+        Array to evaluate
+
+    Returns
+    -------
+    x : :obj:`numpy.ndarray`
+        Converted array
+
+    """
+    if deps.cupy_enabled:
+        if cp.get_array_module(x) == np:
+            x = cp.asarray(x)
+    return x
+
+
 def to_numpy(x: NDArray) -> NDArray:
     """Convert x to numpy array
 
@@ -527,17 +549,39 @@ def to_cupy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> NDArray:
     return y
 
 
+def to_numpy_conditional(x: npt.ArrayLike, y: npt.ArrayLike) -> NDArray:
+    """Convert y to numpy array conditional to x being a numpy array
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray` or :obj:`cupy.ndarray`
+        Array to evaluate
+    y : :obj:`numpy.ndarray`
+        Array to convert
+
+    Returns
+    -------
+    y : :obj:`cupy.ndarray`
+        Converted array
+
+    """
+    if deps.cupy_enabled:
+        if cp.get_array_module(x) == np and cp.get_array_module(y) == cp:
+            y = cp.asnumpy(y)
+    return y
+
+
 def inplace_set(x: npt.ArrayLike, y: npt.ArrayLike, idx: list) -> NDArray:
     """Perform inplace set based on input
 
     Parameters
     ----------
     x : :obj:`numpy.ndarray` or :obj:`jax.Array`
-        Array to sum
+        Array whose values are placed at indices ``idx``
     y : :obj:`numpy.ndarray` or :obj:`jax.Array`
         Output array
     idx : :obj:`list`
-        Indices to sum at
+        Indices where values ``x`` are set
 
     Returns
     -------

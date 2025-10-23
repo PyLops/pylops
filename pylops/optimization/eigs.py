@@ -42,7 +42,7 @@ def power_iteration(
     -------
     maxeig : :obj:`float`
         Largest eigenvalue
-    b_k : :obj:`np.ndarray` or :obj:`cp.ndarray`
+    b_k : :obj:`numpy.ndarray` or :obj:`cupy.ndarray`
         Largest eigenvector
     iiter : :obj:`int`
         Effective number of iterations

@@ -10,7 +10,7 @@ from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 class Sum(LinearOperator):
@@ -43,11 +43,16 @@ class Sum(LinearOperator):
 
     Attributes
     ----------
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     Notes
     -----
@@ -84,8 +89,8 @@ class Sum(LinearOperator):
         dimsd.pop(self.axis)
         # check if forceflat is needed and set it back to None otherwise
         if len(dims) > 2 and forceflat is not None:
-            logging.warning(
-                f"setting forceflat=None since len(dims)={len(dims)}>2. "
+            logger.warning(
+                f"Setting forceflat=None since len(dims)={len(dims)}>2. "
                 f"PyLops will automatically detect whether to return "
                 f"a 1d or nd array based on the shape of the input"
                 f"array."
@@ -100,8 +105,8 @@ class Sum(LinearOperator):
         )
 
         # array of ones with dims of model in self.axis for np.tile in adjoint mode
-        self.tile = np.ones(len(self.dims), dtype=int)
-        self.tile[self.axis] = self.dims[self.axis]
+        self._tile = np.ones(len(self.dims), dtype=int)
+        self._tile[self.axis] = self.dims[self.axis]
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
@@ -111,5 +116,5 @@ class Sum(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
         y = ncp.expand_dims(x, self.axis)
-        y = ncp.tile(y, self.tile)
+        y = ncp.tile(y, self._tile)
         return y

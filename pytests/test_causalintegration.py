@@ -1,11 +1,23 @@
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
 import itertools
 
-import numpy as np
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.basicoperators import CausalIntegration, FirstDerivative
+from pylops.optimization.basic import lsqr
 from pylops.utils import dottest
+from pylops.utils.backend import get_module_name
 
 par1 = {
     "nt": 20,
@@ -76,6 +88,7 @@ def test_CausalIntegration1d(par):
     x = t + par["imag"] * t
 
     for kind, rf in itertools.product(("full", "half", "trapezoidal"), (False, True)):
+        rf = rf if get_module_name == "numpy" else False
         Cop = CausalIntegration(
             par["nt"],
             sampling=par["dt"],
@@ -85,7 +98,11 @@ def test_CausalIntegration1d(par):
         )
         rf1 = 1 if rf else 0
         assert dottest(
-            Cop, par["nt"] - rf1, par["nt"], complexflag=0 if par["imag"] == 0 else 3
+            Cop,
+            par["nt"] - rf1,
+            par["nt"],
+            complexflag=0 if par["imag"] == 0 else 3,
+            backend=backend,
         )
 
         # test analytical integration and derivative inversion only for
@@ -109,7 +126,16 @@ def test_CausalIntegration1d(par):
             xder = Dop * y.ravel()
 
             # derivative by inversion
-            xinv = Cop / y
+            xinv = lsqr(
+                Cop,
+                y,
+                x0=np.zeros_like(x),
+                niter=100,
+                atol=0,
+                btol=0,
+                conlim=np.inf,
+                show=0,
+            )[0]
 
             assert_array_almost_equal(x[:-1], xder[:-1], decimal=4)
             assert_array_almost_equal(x, xinv, decimal=4)
@@ -127,6 +153,7 @@ def test_CausalIntegration2d(par):
     )
 
     for kind, rf in itertools.product(("full", "half", "trapezoidal"), (False, True)):
+        rf = rf if get_module_name == "numpy" else False
         Cop = CausalIntegration(
             (par["nt"], par["nx"]),
             sampling=dt,
@@ -141,6 +168,7 @@ def test_CausalIntegration2d(par):
             (par["nt"] - rf1) * par["nx"],
             par["nt"] * par["nx"],
             complexflag=0 if par["imag"] == 0 else 3,
+            backend=backend,
         )
 
         # test analytical integration and derivative inversion only for
@@ -169,7 +197,16 @@ def test_CausalIntegration2d(par):
             xder = xder.reshape(par["nt"], par["nx"])
 
             # derivative by inversion
-            xinv = Cop / y.ravel()
+            xinv = lsqr(
+                Cop,
+                y.ravel(),
+                x0=np.zeros_like(x).ravel(),
+                niter=100,
+                atol=0,
+                btol=0,
+                conlim=np.inf,
+                show=0,
+            )[0]
             xinv = xinv.reshape(par["nt"], par["nx"])
 
             assert_array_almost_equal(x[:-1], xder[:-1], decimal=2)

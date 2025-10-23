@@ -20,7 +20,7 @@ from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import tapernd
 from pylops.utils.typing import InputDimsLike, NDArray
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 def patch3d_design(
@@ -53,8 +53,8 @@ def patch3d_design(
     nop : :obj:`tuple`
         Size of model in the transformed domain.
     verb : :obj:`bool`, optional
-        Verbosity flag. If ``verb==True``, print the data
-        and model windows start-end indices
+        *Deprecated*, will be removed in v3.0.0. Simply kept for
+        back-compatibility with previous implementation
 
     Returns
     -------
@@ -94,26 +94,25 @@ def patch3d_design(
     )
 
     # print information about patching
-    if verb:
-        logging.warning("%d-%d-%d windows required...", nwins0, nwins1, nwins2)
-        logging.warning(
-            "data wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
-            dwin0_ins,
-            dwin0_ends,
-            dwin1_ins,
-            dwin1_ends,
-            dwin2_ins,
-            dwin2_ends,
-        )
-        logging.warning(
-            "model wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
-            mwin0_ins,
-            mwin0_ends,
-            mwin1_ins,
-            mwin1_ends,
-            mwin2_ins,
-            mwin2_ends,
-        )
+    logger.info("%d-%d-%d windows required...", nwins0, nwins1, nwins2)
+    logger.info(
+        "Data wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
+        dwin0_ins,
+        dwin0_ends,
+        dwin1_ins,
+        dwin1_ends,
+        dwin2_ins,
+        dwin2_ends,
+    )
+    logger.info(
+        "Model wins - start:%s, end:%s / start:%s, end:%s / start:%s, end:%s",
+        mwin0_ins,
+        mwin0_ends,
+        mwin1_ins,
+        mwin1_ends,
+        mwin2_ins,
+        mwin2_ends,
+    )
     return nwins, dims, mwins_inends, dwins_inends
 
 
@@ -172,10 +171,23 @@ class Patch3D(LinearOperator):
     name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
-    Returns
-    -------
-    Sop : :obj:`pylops.LinearOperator`
-        Sliding operator
+    Attributes
+    ----------
+    taps: :obj:`numpy.ndarray`
+        Set of tapers to be applied to each patch (if ``tapertype`` is not ``None``)
+    simOp : :obj:`bool`
+        Operator ``Op`` is applied to all patches simultaneously (``True``)
+        or to each patch individually (``False``)
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
+    shape : :obj:`tuple`
+        Operator shape.
 
     Raises
     ------

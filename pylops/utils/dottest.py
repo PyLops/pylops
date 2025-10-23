@@ -88,7 +88,7 @@ def dottest(
         nc = Op.shape[1]
 
     if (nr, nc) != Op.shape:
-        raise AssertionError("Provided nr and nc do not match operator shape")
+        raise AssertionError("Provided nr and nc do not match Operator shape.")
 
     # make u and v vectors
     rdtype = np.ones(1, Op.dtype).real.dtype

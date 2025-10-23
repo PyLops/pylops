@@ -1,9 +1,10 @@
 """
 Blending
 ========
-This example shows how to use the :py:class:`pylops.waveeqprocessing.blending.Blending`
-operator to blend seismic data to mimic state-of-the-art simultaneous shooting
-acquisition systems.
+This example shows how to use the :py:class:`pylops.waveeqprocessing.BlendingContinuous`,
+:py:class:`pylops.waveeqprocessing.BlendingGroup` and
+:py:class:`pylops.waveeqprocessing.BlendingHalf` operators to blend seismic data
+to mimic state-of-the-art simultaneous shooting acquisition systems.
 """
 import matplotlib.pyplot as plt
 import numpy as np

@@ -1,11 +1,44 @@
 Changelog
 =========
 
+# 2.5.0
+* Added `cuda` engine to `pylops.waveeqprocessing.Kirchhoff`
+  operator
+* Added `Opbasis` and `optimal_coeff` to
+  `pylops.optimization.cls_sparsity.OMP`
+* Added `solver` to the input parameters of the `_oneshot`
+  internal methods of `pylops.waveeqprocessing.AcousticWave2D`
+  to avoid recreating it for every shot
+* Added `kwargs_fft` to `pylops.signalprocessing.FFT`,
+  `pylops.signalprocessing.FFT2D`, and
+  `pylops.signalprocessing.FFTND`
+* Fix bug in `pylops.waveeqprocessing.MDD` when using
+  CuPy arrays for `G` and `d` with `twosided=True` and `add_negative=True`
+* Fix bug in `pylops.signalprocessing.FourierRadon3D`
+  in the default choice of `num_threads_per_blocks`
+* Fix bug in `pylops.signalprocessing.Convolve1D`
+  in the definition of `pad` and `padd` when applying the
+  operator to a CuPy array
+* Fix bug in `pylops.optimization.cls_sparsity.OMP` avoiding
+  passing `explicit` in the creation of `_ColumnLinearOperator`
+* Fix bug in `pylops.optimization.cls_sparsity.OMP` callback
+  method as `cols` was not passed not allowing ``x`` to be
+  properly reconstructed
+* Fix bug in `pylops.waveeqprocessing.SeismicInterpolation`
+  in calculation of `sampling` when not passed
+
+# 2.4.0
+* Added `pylops.signalprocessing.FourierRadon2d` and
+  `pylops.signalprocessing.FourierRadon3d` operators
+* Added `pylops.PyTensorOperator` operator
+* Added `pylops.ToCupy` operator
+* Added `pylops.utils.seismicevents.parabolic3d` method
+* Fix bug in `pylops.Restriction` when passing iava as cupy array
+
 # 2.3.1
 * Fixed bug in `pylops.utils.backend` (see [Issue #606](https://github.com/PyLops/pylops/issues/606))
 
 # 2.3.0
-
 * Added `pylops.JaxOperator`, `pylops.signalprocessing.DWTND`, and `pylops.signalprocessing.DTCWT` operators.
 * Added `updatesrc` method to `pylops.waveeqprocessing.AcousticWave2D`.
 * Added `verb` to `pylops.signalprocessing.Sliding1D.sliding1d_design`, `pylops.signalprocessing.Sliding2D.sliding2d_design`, `pylops.signalprocessing.Sliding3D.sliding3d_design`, `pylops.signalprocessing.Patch2D.patch2d_design`, and `pylops.signalprocessing.Patch3D.patch3d_design`.
@@ -29,7 +62,6 @@ is now unmantained and merged into `cupy`).
 
 
 # 2.2.0
-
 * Added `pylops.signalprocessing.NonStationaryConvolve3D` operator
 * Added nd-array capabilities to `pylops.basicoperators.Identity` and `pylops.basicoperators.Zero`
 * Added second implementation in `pylops.waveeqprocessing.BlendingContinuous` which is more

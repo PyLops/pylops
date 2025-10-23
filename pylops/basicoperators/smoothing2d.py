@@ -17,7 +17,8 @@ class Smoothing2D(Convolve2D):
     Parameters
     ----------
     nsmooth : :obj:`tuple` or :obj:`list`
-        Length of smoothing operator in 1st and 2nd dimensions (must be odd)
+        Length of smoothing operator in 1st and 2nd dimensions
+        (must be odd, if even it will be increased by 1).
     dims : :obj:`tuple`
         Number of samples for each dimension
     axes : :obj:`int`, optional
@@ -29,11 +30,21 @@ class Smoothing2D(Convolve2D):
 
     Attributes
     ----------
+    nh : :obj:`int`
+        Length of the filter
+    convolve : :obj:`callable`
+        Convolution function
+    correlate : :obj:`callable`
+        Correlation function
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening. In
+        this case, same as ``dims``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
 
     See Also
     --------
@@ -57,10 +68,14 @@ class Smoothing2D(Convolve2D):
 
     """
 
-    def __init__(self, nsmooth: InputDimsLike,
-                 dims: Union[int, InputDimsLike],
-                 axes: InputDimsLike = (-2, -1),
-                 dtype: DTypeLike = "float64", name: str = 'S'):
+    def __init__(
+        self,
+        nsmooth: InputDimsLike,
+        dims: Union[int, InputDimsLike],
+        axes: InputDimsLike = (-2, -1),
+        dtype: DTypeLike = "float64",
+        name: str = "S",
+    ):
         nsmooth = list(nsmooth)
         if nsmooth[0] % 2 == 0:
             nsmooth[0] += 1
@@ -68,4 +83,6 @@ class Smoothing2D(Convolve2D):
             nsmooth[1] += 1
         h = np.ones((nsmooth[0], nsmooth[1])) / float(nsmooth[0] * nsmooth[1])
         offset = [(nsmooth[0] - 1) // 2, (nsmooth[1] - 1) // 2]
-        super().__init__(dims=dims, h=h, offset=offset, axes=axes, dtype=dtype, name=name)
+        super().__init__(
+            dims=dims, h=h, offset=offset, axes=axes, dtype=dtype, name=name
+        )

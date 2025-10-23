@@ -9,7 +9,7 @@ The PyLops project strives to create a library that is easy to install in
 any environment and has a very limited number of dependencies.
 Required dependencies are limited to:
 
-* Python 3.9 or greater
+* Python 3.10 or greater
 * `NumPy <http://www.numpy.org>`_
 * `SciPy <http://www.scipy.org/scipylib/index.html>`_
 
@@ -52,6 +52,14 @@ to install the PyPI distribution:
 
 Note that when installing via ``pip``, only *required* dependencies are installed.
 
+From Source
+===========
+To access the latest source from github:
+
+.. code-block:: bash
+
+   >> pip install https://github.com/PyLops/pylops.git@dev
+
 Docker
 ======
 If you want to try PyLops but do not have Python in your
@@ -87,11 +95,11 @@ Fork the `PyLops repository <https://github.com/PyLops/pylops>`_ and clone it by
 
    >> git clone https://github.com/YOUR-USERNAME/pylops.git
 
-We recommend installing dependencies into a separate environment.
-For that end, we provide a `Makefile` with useful commands for setting up the environment.
-
 Install dependencies
 ====================
+
+We recommend installing dependencies into a separate environment.
+For that end, we provide a `Makefile` with useful commands for setting up the environment.
 
 Conda (recommended)
 -------------------
@@ -201,7 +209,7 @@ library will ensure optimal performance of PyLops when using only *required depe
 
 We strongly encourage using the Anaconda Python distribution as
 NumPy and SciPy will, when available, be automatically linked to `Intel MKL <https://software.intel.com/en-us/mkl>`_, the most performant library for basic linear algebra
-operations to date (see `Markus Beuckelmann's benchmarks <http://markus-beuckelmann.de/blog/boosting-numpy-blas.html>`_).
+operations to date.
 The PyPI version installed with ``pip``, however, will default to `OpenBLAS <https://www.openblas.net/>`_.
 For more information, see `NumPy's section on BLAS <https://numpy.org/install/#numpy-packages--accelerated-linear-algebra-libraries>`_.
 
@@ -216,14 +224,13 @@ run the following commands in a Python interpreter:
    print(sp.__config__.show())
 
 
-Intel also provides `NumPy <https://pypi.org/project/intel-numpy/>`__ and `SciPy <https://pypi.org/project/intel-scipy/>`__ replacement packages in PyPI ``intel-numpy`` and ``intel-scipy``, respectively, which link to Intel MKL.
+Intel also provides `NumPy <https://pypi.org/project/intel-numpy/>`__ and `SciPy <https://pypi.org/project/intel-scipy/>`__ replacement packages in PyPI, namely ``intel-numpy`` and ``intel-scipy``, which link to Intel MKL.
 These are an option for an environment without ``conda`` that needs Intel MKL without requiring manual compilation.
 
 .. warning::
 
    ``intel-numpy`` and ``intel-scipy`` not only link against Intel MKL, but also substitute NumPy and
-   SciPy FFTs for `Intel MKL FFT <https://pypi.org/project/mkl-fft/>`_. **MKL FFT is not supported
-   and may break PyLops**.
+   SciPy FFTs with `Intel MKL FFT <https://pypi.org/project/mkl-fft/>`_.
 
 
 Multithreading
@@ -264,7 +271,7 @@ and run the following code in Python:
    B = np.random.random((size, size))
    print("Time with %s threads: %f s" \
          %(os.environ.get("OMP_NUM_THREADS"),
-           timeit(lambda: np.dot(A, B), number=4)))
+           timeit(lambda: np.matmul(A, B), number=4)))
 
 Subsequently set the environment variables to ``2`` or any higher number of threads available
 in your hardware (multi-threaded), and run the same code.
@@ -289,7 +296,7 @@ of PyLops in such a way that if an *optional* dependency is not present in your 
 a safe fallback to one of the required dependencies will be enforced.
 
 When available in your system, we recommend using the Conda package manager and install all the
-required and optional dependencies of PyLops at once using the command:
+required and some of the optional dependencies of PyLops at once using the command:
 
 .. code-block:: bash
 
@@ -297,17 +304,19 @@ required and optional dependencies of PyLops at once using the command:
 
 in this case all dependencies will be installed from their Conda distributions.
 
-Alternatively, from version ``1.4.0`` optional dependencies can also be installed as
-part of the pip installation via:
+Alternatively, from version ``1.4.0`` some of the optional dependencies can also be 
+installed as part of the pip installation via:
 
 .. code-block:: bash
 
    >> pip install pylops[advanced]
 
 Dependencies are however installed from their PyPI wheels.
-An exception is however represented by CuPy. This library is **not** installed
+
+Finally, note that CuPy and JAX are not **not** installed
 automatically. Users interested to accelerate their computations with the aid
-of GPUs should install it prior to installing PyLops as described in :ref:`OptionalGPU`.
+of GPUs should install either or both of them prior to installing PyLops as 
+described in :ref:`OptionalGPU`.
 
 .. note::
 
@@ -316,15 +325,28 @@ of GPUs should install it prior to installing PyLops as described in :ref:`Optio
    PyLops via ``make dev-install_conda`` (``conda``) or ``make dev-install`` (``pip``).
 
 
-In alphabetic order:
+More details about the installation process for the different optional dependencies are described 
+in the following (an asterisc is used to indicate those dependencies that are automatically installed
+when installing PyLops from conda-forge or via ``pip install pylops[advanced]``):
 
-
-dtcwt
+ASTRA
 -----
+`ASTRA <https://www.astra-toolbox.com>`_ is library used to perform computerized
+tomography. It is used in PyLops in the operator :py:class:`pylops.medical.CT2D`
 
-.. warning::
+To use this library, install it manually either via ``conda``:
 
-   ``dtcwt`` is not yet supported with Numpy 2.
+.. code-block:: bash
+   >> conda install --channel astra-toolbox astra-toolbox
+
+or via pip:
+
+.. code-block:: bash
+   >> pip install astra-toolbox
+
+
+dtcwt*
+------
 
 `dtcwt <https://dtcwt.readthedocs.io/en/0.12.0/>`_ is a library used to implement the DT-CWT operators.
 
@@ -334,6 +356,9 @@ Install it via ``pip`` with:
 
    >> pip install dtcwt
 
+.. warning::
+   ``dtcwt`` does not support NumPy 2 yet, so make sure you use NumPy 1.x 
+   to be able to use the ``DTCWT`` operator.
 
 
 Devito
@@ -342,7 +367,6 @@ Devito
 the finite-difference method. It is used in PyLops to compute wavefields
 :py:class:`pylops.waveeqprocessing.AcousticWave2D`
 
-
 Install it via ``pip`` with
 
 .. code-block:: bash
@@ -350,13 +374,16 @@ Install it via ``pip`` with
    >> pip install devito
 
 
-FFTW
-----
-Three different "engines" are provided by the :py:class:`pylops.signalprocessing.FFT` operator:
-``engine="numpy"`` (default), ``engine="scipy"`` and ``engine="fftw"``.
+FFTW* and MKL-FFT
+-----------------
+Four different "engines" are provided by the :py:class:`pylops.signalprocessing.FFT` operator:
+``engine="numpy"`` (default), ``engine="scipy"``, ``engine="fftw"`` and ``engine="mkl_fft"``.
+Similarly, the :py:class:`pylops.signalprocessing.FFT2D` and 
+the :py:class:`pylops.signalprocessing.FFTND` operators come with three "engines", namely
+``engine="numpy"`` (default), ``engine="scipy"``, and ``engine="mkl_fft"``.
 
 The first two engines are part of the required PyLops dependencies.
-The latter implements the well-known `FFTW <http://www.fftw.org>`_
+The third implements the well-known `FFTW <http://www.fftw.org>`_
 via the Python wrapper :py:class:`pyfftw.FFTW`. While this optimized FFT tends to
 outperform the other two in many cases, it is not included by default.
 To use this library, install it manually either via ``conda``:
@@ -371,16 +398,52 @@ or via pip:
 
    >> pip install pyfftw
 
+The fourth implements **Intel MKL FFT** via the Python interface `mkl_fft <https://github.com/IntelPython/mkl_fft>`_.
+This provides access to Intel’s oneMKL Fourier Transform routines, enabling efficient FFT computations with performance
+close to native C/Intel® oneMKL
+
+To use this library, you can install it using ``conda``:
+
+.. code-block:: bash
+
+   >> conda install --channel https://software.repos.intel.com/python/conda --channel conda-forge mkl_fft
+
+or via pip:
+
+.. code-block:: bash
+
+   >> pip install --index-url https://software.repos.intel.com/python/pypi --extra-index-url https://pypi.org/simple mkl_fft
+
+Installing ``mkl-fft`` triggers the installation of Intel-optimized versions of `NumPy <https://pypi.org/project/intel-numpy/>`__ and
+`SciPy <https://pypi.org/project/intel-scipy/>`__, which redirects ``numpy.fft`` and ``scipy.fft`` to use MKL FFT routines.
+As a result, all FFT operations and computational backends leverage Intel MKL for optimal performance.
+
+Although the library can run without Intel-optimized NumPy and SciPy, maximum performance is achieved when using NumPy and
+SciPy built with Intel’s Math Kernel Library (MKL) alongside Intel Python.
+
 .. note::
-   FFTW is only available for :py:class:`pylops.signalprocessing.FFT`,
-   not :py:class:`pylops.signalprocessing.FFT2D` or :py:class:`pylops.signalprocessing.FFTND`.
+   `mkl_fft` is not supported on macOS
 
 .. warning::
-   Intel MKL FFT is not supported.
 
+   ``pyFFTW`` may not work correctly with NumPy + MKL. To avoid issues, it is recommended to build ``pyFFTW`` from
+   source after setting the ``STATIC_FFTW_DIR`` environment variable to the absolute path of the static FFTW
+   libraries.
 
-Numba
------
+   If the following environment variables are set before installing ``pyFFTW``, compatibility problems with MKL
+   should not occur:
+
+   1. ``export STATIC_FFTW_DIR=${PREFIX}/lib``
+      (where ``${PREFIX}`` is the base of the current Anaconda environment with
+      the ``fftw`` package installed)
+
+   2. ``export CFLAGS="$CFLAGS -Wl,-Bsymbolic"``
+
+   Alternatively, you can install ``pyFFTW`` directly with ``conda``, since the updated recipe is already available
+   and works without any manual adjustments.
+
+Numba*
+------
 Although we always strive to write code for forward and adjoint operators that takes advantage of
 the perks of NumPy and SciPy (e.g., broadcasting, ufunc), in some case we may end up using for loops
 that may lead to poor performance. In those cases we may decide to implement alternative (optional)
@@ -437,8 +500,28 @@ You may need to set the environment variable ``NUMBA_NUM_THREADS`` define how ma
 It can also be checked dynamically with ``numba.config.NUMBA_DEFAULT_NUM_THREADS``.
 
 
-PyWavelets
-----------
+PyMC and PyTensor
+-----------------
+`PyTensor <https://pytensor.readthedocs.io/en/latest/>`_ is used to allow seamless integration between PyLops and 
+`PyMC <https://www.pymc.io/welcome.html>`_ operators.
+Install both of them via ``conda`` with:
+
+.. code-block:: bash
+
+   conda install -c conda-forge pytensor pymc
+
+or via ``pip`` with
+
+.. code-block:: bash
+
+   >> pip install pytensor pymc
+
+.. warning::
+   OSX users may experience a ``CompileError`` error when using PyTensor. This can be solved by adding 
+   ``pytensor.config.gcc__cxxflags = "-Wno-c++11-narrowing"`` after ``import pytensor``.
+
+PyWavelets*
+-----------
 `PyWavelets <https://pywavelets.readthedocs.io/en/latest/>`_ is used to implement the wavelet operators.
 Install it via ``conda`` with:
 
@@ -453,8 +536,8 @@ or via ``pip`` with
    >> pip install PyWavelets
 
 
-scikit-fmm
-----------
+scikit-fmm*
+-----------
 `scikit-fmm <https://github.com/scikit-fmm/scikit-fmm>`_ is a library which implements the
 fast marching method. It is used in PyLops to compute traveltime tables in the
 initialization of :py:class:`pylops.waveeqprocessing.Kirchhoff`
@@ -472,8 +555,8 @@ or with ``pip`` via
    >> pip install scikit-fmm
 
 
-SPGL1
------
+SPGL1*
+------
 `SPGL1 <https://spgl1.readthedocs.io/en/latest/>`_ is used to solve sparsity-promoting
 basis pursuit, basis pursuit denoise, and Lasso problems
 in :py:func:`pylops.optimization.sparsity.SPGL1` solver.

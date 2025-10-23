@@ -1,0 +1,33 @@
+numpy>=2.0.0
+scipy>=1.13.0
+jax
+numba
+pyfftw
+PyWavelets
+spgl1
+scikit-fmm
+sympy
+devito
+# dtcwt (until numpy>=2.0.0 is supported)
+# astra-toolbox (not available on arm-osx)
+matplotlib
+ipython
+pytest
+pytest-runner
+setuptools_scm
+docutils<0.18
+Sphinx
+pooch
+pydata-sphinx-theme
+sphinx-gallery
+sphinxemoji
+numpydoc
+nbsphinx
+image
+pre-commit
+autopep8
+isort
+black
+flake8
+mypy
+pytensor>=2.28.0

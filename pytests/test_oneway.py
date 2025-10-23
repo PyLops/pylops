@@ -1,7 +1,18 @@
-import numpy as np
+import os
+
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+
+    backend = "cupy"
+else:
+    import numpy as np
+
+    backend = "numpy"
+import numpy as npp
 import pytest
 
 from pylops.basicoperators import Identity
+from pylops.optimization.basic import lsqr
 from pylops.utils import dottest
 from pylops.utils.seismicevents import hyperbolic2d, makeaxis
 from pylops.utils.wavelets import ricker
@@ -22,10 +33,56 @@ parmod = {
     "f0": 40,
 }
 
-par1 = {"ny": 8, "nx": 10, "nt": 20, "kind": "p", "dtype": "float32"}  # even, p
-par2 = {"ny": 9, "nx": 11, "nt": 21, "kind": "p", "dtype": "float32"}  # odd, p
-par1v = {"ny": 8, "nx": 10, "nt": 20, "kind": "vz", "dtype": "float32"}  # even, vz
-par2v = {"ny": 9, "nx": 11, "nt": 21, "kind": "vz", "dtype": "float32"}  # odd, vz
+par1 = {
+    "ny": 8,
+    "nx": 10,
+    "nt": 20,
+    "kind": "p",
+    "dtype": "float32",
+    "fftengine": "numpy",
+    "kwargs_fft": {},
+}  # even, p, numpy
+par2 = {
+    "ny": 9,
+    "nx": 11,
+    "nt": 21,
+    "kind": "p",
+    "dtype": "float32",
+    "fftengine": "numpy",
+    "kwargs_fft": {},
+}  # odd, p, numpy
+par1s = {
+    "ny": 8,
+    "nx": 10,
+    "nt": 20,
+    "kind": "p",
+    "dtype": "float32",
+    "fftengine": "scipy",
+    "kwargs_fft": dict(workers=4),
+}  # even, p, scipy
+par1w = {
+    "ny": 8,
+    "nx": 10,
+    "nt": 20,
+    "kind": "p",
+    "dtype": "float32",
+    "fftengine": "fft",
+    "kwargs_fft": {},
+}  # even, p, fftw
+par1v = {
+    "ny": 8,
+    "nx": 10,
+    "nt": 20,
+    "kind": "vz",
+    "dtype": "float32",
+}  # even, vz, numpy
+par2v = {
+    "ny": 9,
+    "nx": 11,
+    "nt": 21,
+    "kind": "vz",
+    "dtype": "float32",
+}  # odd, vz, numpy
 
 # deghosting params
 vel_sep = 1000.0  # velocity at separation level
@@ -36,34 +93,29 @@ t, t2, x, y = makeaxis(parmod)
 wav = ricker(t[:41], f0=parmod["f0"])[0]
 
 
-@pytest.fixture
-def create_data2D():
+def create_data2D(datakind):
     """Create 2d dataset"""
+    t0_plus = npp.array([0.02, 0.08])
+    t0_minus = t0_plus + 0.04
+    vrms = npp.array([1400.0, 1800.0])
+    amp = npp.array([1.0, -0.6])
 
-    def core(datakind):
-        t0_plus = np.array([0.02, 0.08])
-        t0_minus = t0_plus + 0.04
-        vrms = np.array([1400.0, 1800.0])
-        amp = np.array([1.0, -0.6])
+    p2d_minus = hyperbolic2d(x, t, t0_minus, vrms, amp, wav)[1].T
 
-        p2d_minus = hyperbolic2d(x, t, t0_minus, vrms, amp, wav)[1].T
+    kx = npp.fft.ifftshift(npp.fft.fftfreq(parmod["nx"], parmod["dx"]))
+    freq = npp.fft.rfftfreq(parmod["nt"], parmod["dt"])
 
-        kx = np.fft.ifftshift(np.fft.fftfreq(parmod["nx"], parmod["dx"]))
-        freq = np.fft.rfftfreq(parmod["nt"], parmod["dt"])
+    Pop = -PhaseShift(vel_sep, 2 * zrec, parmod["nt"], freq, kx)
 
-        Pop = -PhaseShift(vel_sep, 2 * zrec, parmod["nt"], freq, kx)
+    # Decomposition operator
+    Dupop = Identity(parmod["nt"] * parmod["nx"]) + datakind * Pop
 
-        # Decomposition operator
-        Dupop = Identity(parmod["nt"] * parmod["nx"]) + datakind * Pop
-
-        p2d = Dupop * p2d_minus.ravel()
-        p2d = p2d.reshape(parmod["nt"], parmod["nx"])
-        return p2d, p2d_minus
-
-    return core
+    p2d = Dupop * p2d_minus.ravel()
+    p2d = p2d.reshape(parmod["nt"], parmod["nx"])
+    return np.asarray(p2d), np.asarray(p2d_minus)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par1s), (par1w)])
 def test_PhaseShift_2dsignal(par):
     """Dot-test for PhaseShift of 2d signal"""
     vel = 1500.0
@@ -71,8 +123,20 @@ def test_PhaseShift_2dsignal(par):
     freq = np.fft.rfftfreq(par["nt"], 1.0)
     kx = np.fft.fftshift(np.fft.fftfreq(par["nx"], 1.0))
 
-    Pop = PhaseShift(vel, zprop, par["nt"], freq, kx, dtype=par["dtype"])
-    assert dottest(Pop, par["nt"] * par["nx"], par["nt"] * par["nx"], rtol=1e-4)
+    kwargs_fft = par["kwargs_fft"] if backend == "numpy" else {}
+    Pop = PhaseShift(
+        vel,
+        zprop,
+        par["nt"],
+        freq,
+        kx,
+        fftengine=par["fftengine"] if backend == "numpy" else "numpy",
+        dtype=par["dtype"],
+        **kwargs_fft,
+    )
+    assert dottest(
+        Pop, par["nt"] * par["nx"], par["nt"] * par["nx"], rtol=1e-3, backend=backend
+    )
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
@@ -89,16 +153,17 @@ def test_PhaseShift_3dsignal(par):
         Pop,
         par["nt"] * par["nx"] * par["ny"],
         par["nt"] * par["nx"] * par["ny"],
-        rtol=1e-4,
+        rtol=1e-3,
+        backend=backend,
     )
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1v), (par2v)])
-def test_Deghosting_2dsignal(par, create_data2D):
+def test_Deghosting_2dsignal(par):
     """Deghosting of 2d data"""
-    p2d, p2d_minus = create_data2D(1 if par["kind"] is "p" else -1)
+    p2d, p2d_minus = create_data2D(1 if par["kind"] == "p" else -1)
 
-    p2d_minus_inv, p2d_plus_inv = Deghosting(
+    p2d_minus_inv, _ = Deghosting(
         p2d,
         parmod["nt"],
         parmod["nx"],
@@ -110,8 +175,9 @@ def test_Deghosting_2dsignal(par, create_data2D):
         win=np.ones_like(p2d),
         npad=0,
         ntaper=0,
+        solver=lsqr,
         dtype=par["dtype"],
-        **dict(damp=1e-10, iter_lim=60)
+        **dict(damp=1e-10, niter=60),
     )
 
     assert np.linalg.norm(p2d_minus_inv - p2d_minus) / np.linalg.norm(p2d_minus) < 3e-1

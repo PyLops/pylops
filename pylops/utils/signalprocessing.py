@@ -30,7 +30,7 @@ def convmtx(h: npt.ArrayLike, n: int, offset: int = 0) -> NDArray:
 
     Parameters
     ----------
-    h : :obj:`np.ndarray`
+    h : :obj:`numpy.ndarray`
         Convolution filter (1D array)
     n : :obj:`int`
         Number of columns of convolution matrix
@@ -39,7 +39,7 @@ def convmtx(h: npt.ArrayLike, n: int, offset: int = 0) -> NDArray:
 
     Returns
     -------
-    C : :obj:`np.ndarray`
+    C : :obj:`numpy.ndarray`
         Convolution matrix of size :math:`\text{len}(h)+n-1 \times n`
 
     """
@@ -77,21 +77,21 @@ def nonstationary_convmtx(
 
     Parameters
     ----------
-    H : :obj:`np.ndarray`
+    H : :obj:`numpy.ndarray`
         Convolution filters (2D array of shape
         :math:`[n_\text{filters} \times n_{h}]`
     n : :obj:`int`
         Number of columns of convolution matrix
-    hc : :obj:`np.ndarray`, optional
+    hc : :obj:`numpy.ndarray`, optional
         Index of center of first filter
-    pad : :obj:`np.ndarray`
+    pad : :obj:`numpy.ndarray`
         Zero-padding to apply to the bank of filters before and after the
         provided values (use it to avoid wrap-around or pass filters with
         enough padding)
 
     Returns
     -------
-    C : :obj:`np.ndarray`
+    C : :obj:`numpy.ndarray`
         Convolution matrix
 
     """
@@ -122,7 +122,7 @@ def slope_estimate(
 
     Parameters
     ----------
-    d : :obj:`np.ndarray`
+    d : :obj:`numpy.ndarray`
         Input dataset of size :math:`n_z \times n_x`
     dz : :obj:`float`, optional
         Sampling in :math:`z`-axis, :math:`\Delta z`
@@ -136,7 +136,7 @@ def slope_estimate(
         .. warning::
             Since version 1.17.0, defaults to 1.0.
 
-    smooth : :obj:`float` or :obj:`np.ndarray`, optional
+    smooth : :obj:`float` or :obj:`numpy.ndarray`, optional
         Standard deviation for Gaussian kernel. The standard deviations of the
         Gaussian filter are given for each axis as a sequence, or as a single number,
         in which case it is equal for all axes.
@@ -161,14 +161,14 @@ def slope_estimate(
 
     Returns
     -------
-    slopes : :obj:`np.ndarray`
+    slopes : :obj:`numpy.ndarray`
         Estimated local slopes. The unit is that of
         :math:`\Delta z/\Delta x`.
 
         .. warning::
             Prior to version 1.17.0, always returned dips.
 
-    anisotropies : :obj:`np.ndarray`
+    anisotropies : :obj:`numpy.ndarray`
         Estimated local anisotropies: :math:`1-\lambda_\text{min}/\lambda_\text{max}`
 
         .. note::
@@ -271,13 +271,13 @@ def dip_estimate(
 
     Parameters
     ----------
-    d : :obj:`np.ndarray`
+    d : :obj:`numpy.ndarray`
         Input dataset of size :math:`n_z \times n_x`
     dz : :obj:`float`, optional
         Sampling in :math:`z`-axis, :math:`\Delta z`
     dx : :obj:`float`, optional
         Sampling in :math:`x`-axis, :math:`\Delta x`
-    smooth : :obj:`float` or :obj:`np.ndarray`, optional
+    smooth : :obj:`float` or :obj:`numpy.ndarray`, optional
         Standard deviation for Gaussian kernel. The standard deviations of the
         Gaussian filter are given for each axis as a sequence, or as a single number,
         in which case it is equal for all axes.
@@ -289,10 +289,10 @@ def dip_estimate(
 
     Returns
     -------
-    dips : :obj:`np.ndarray`
+    dips : :obj:`numpy.ndarray`
         Estimated local dips. The unit is radians,
         in the range of :math:`-\frac{\pi}{2}` to :math:`\frac{\pi}{2}`.
-    anisotropies : :obj:`np.ndarray`
+    anisotropies : :obj:`numpy.ndarray`
         Estimated local anisotropies: :math:`1-\lambda_\text{min}/\lambda_\text{max}`
 
 

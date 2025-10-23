@@ -28,6 +28,7 @@ Templates
     LinearOperator
     FunctionOperator
     MemoizeOperator
+    PyTensorOperator
     TorchOperator
     JaxOperator
 
@@ -62,6 +63,8 @@ Basic operators
     Real
     Imag
     Conj
+    ToCupy
+    
 
 Smoothing and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -155,6 +158,17 @@ Geophysical subsurface characterization
     prestack.PrestackWaveletModelling
 
 
+Medical imaging
+~~~~~~~~~~~~~~~
+
+.. currentmodule:: pylops.medical
+
+.. autosummary::
+   :toctree: generated/
+
+    CT2D
+
+
 Solvers
 -------
 Template
@@ -246,6 +260,9 @@ Callbacks
    :toctree: generated/
 
     Callbacks
+    CostNanInfCallback
+    CostToDataCallback
+    CostToInitialCallback
     MetricsCallback
 
 

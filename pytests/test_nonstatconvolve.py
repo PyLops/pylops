@@ -1,9 +1,20 @@
-import numpy as np
-import pytest
-from numpy.testing import assert_array_almost_equal
-from scipy.signal.windows import triang
-from scipy.sparse.linalg import lsqr
+import os
 
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+    from cupyx.scipy.signal.windows import triang
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+    from scipy.signal.windows import triang
+
+    backend = "numpy"
+import pytest
+
+from pylops.optimization.basic import lsqr
 from pylops.signalprocessing import (
     Convolve1D,
     Convolve2D,
@@ -170,12 +181,19 @@ def test_NonStationaryConvolve1D(par):
             ih=(int(par["nx"] // 4), int(2 * par["nx"] // 4), int(3 * par["nx"] // 4)),
             dtype="float64",
         )
-        assert dottest(Cop, par["nx"], par["nx"])
+        assert dottest(Cop, par["nx"], par["nx"], backend=backend)
 
         x = np.zeros((par["nx"]))
         x[par["nx"] // 2] = 1.0
         xlsqr = lsqr(
-            Cop, Cop * x, damp=1e-20, iter_lim=200, atol=1e-8, btol=1e-8, show=0
+            Cop,
+            Cop * x,
+            x0=np.zeros_like(x),
+            damp=1e-20,
+            niter=200,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
         )[0]
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
@@ -188,7 +206,7 @@ def test_NonStationaryConvolve1D(par):
         axis=par["axis"],
         dtype="float64",
     )
-    assert dottest(Cop, par["nx"] * par["nz"], par["nx"] * par["nz"])
+    assert dottest(Cop, par["nx"] * par["nz"], par["nx"] * par["nz"], backend=backend)
 
     x = np.zeros((par["nx"], par["nz"]))
     x[
@@ -196,9 +214,16 @@ def test_NonStationaryConvolve1D(par):
         int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
     ] = 1.0
     x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[
-        0
-    ]
+    xlsqr = lsqr(
+        Cop,
+        Cop * x,
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=400,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
@@ -232,9 +257,10 @@ def test_NonStationaryConvolve2D(par):
         hs=h2ns,
         ihx=(int(par["nx"] // 4), int(2 * par["nx"] // 4), int(3 * par["nx"] // 4)),
         ihz=(int(par["nz"] // 4), int(3 * par["nz"] // 4)),
+        engine="numpy" if backend == "numpy" else "cuda",
         dtype="float64",
     )
-    assert dottest(Cop, par["nx"] * par["nz"], par["nx"] * par["nz"])
+    assert dottest(Cop, par["nx"] * par["nz"], par["nx"] * par["nz"], backend=backend)
 
     x = np.zeros((par["nx"], par["nz"]))
     x[
@@ -242,9 +268,16 @@ def test_NonStationaryConvolve2D(par):
         int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
     ] = 1.0
     x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=400, atol=1e-8, btol=1e-8, show=0)[
-        0
-    ]
+    xlsqr = lsqr(
+        Cop,
+        Cop * x,
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=300,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
@@ -257,6 +290,7 @@ def test_StationaryConvolve2D(par):
         hs=h2stat,
         ihx=(int(par["nx"] // 4), int(2 * par["nx"] // 4), int(3 * par["nx"] // 4)),
         ihz=(int(par["nz"] // 4), int(3 * par["nz"] // 4)),
+        engine="numpy" if backend == "numpy" else "cuda",
         dtype="float64",
     )
     Cop_stat = Convolve2D(
@@ -286,12 +320,17 @@ def test_NonStationaryFilters1D(par):
         ih=(int(par["nx"] // 4), int(2 * par["nx"] // 4), int(3 * par["nx"] // 4)),
         dtype="float64",
     )
-    assert dottest(Cop, par["nx"], 3 * nfilts[0])
+    assert dottest(Cop, par["nx"], 3 * nfilts[0], backend=backend)
 
-    h1lsqr = lsqr(Cop, Cop * h1ns, damp=1e-20, iter_lim=200, show=0)[0]
-    assert_array_almost_equal(h1ns.ravel(), h1lsqr, decimal=1)
+    h1lsqr = lsqr(
+        Cop, Cop * h1ns, x0=np.zeros_like(h1ns), damp=1e-20, niter=200, show=0
+    )[0]
+    assert_array_almost_equal(h1ns, h1lsqr, decimal=1)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par_2d)])
 def test_NonStationaryFilters2D(par):
     """Dot-test and inversion for NonStationaryFilters2D operator"""
@@ -307,9 +346,18 @@ def test_NonStationaryFilters2D(par):
         ihz=(int(par["nz"] // 4), int(3 * par["nz"] // 4)),
         dtype="float64",
     )
-    assert dottest(Cop, par["nx"] * par["nz"], 6 * nfilts[0] * nfilts[1])
+    assert dottest(
+        Cop, par["nx"] * par["nz"], 6 * nfilts[0] * nfilts[1], backend=backend
+    )
 
-    h2lsqr = lsqr(Cop, Cop * h2ns.ravel(), damp=1e-20, iter_lim=400, show=0)[0]
+    h2lsqr = lsqr(
+        Cop,
+        Cop * h2ns.ravel(),
+        x0=np.zeros_like(h2ns).ravel(),
+        damp=1e-20,
+        niter=400,
+        show=0,
+    )[0]
     assert_array_almost_equal(h2ns.ravel(), h2lsqr, decimal=1)
 
 
@@ -322,10 +370,14 @@ def test_NonStationaryConvolve3D(par):
         ihx=(int(par["nx"] // 4), int(3 * par["nx"] // 4)),
         ihy=(int(par["nx"] // 4), int(3 * par["nx"] // 4)),
         ihz=(int(par["nz"] // 4), int(3 * par["nz"] // 4)),
+        engine="numpy" if backend == "numpy" else "cuda",
         dtype="float64",
     )
     assert dottest(
-        Cop, par["nx"] * par["nx"] * par["nz"], par["nx"] * par["nx"] * par["nz"]
+        Cop,
+        par["nx"] * par["nx"] * par["nz"],
+        par["nx"] * par["nx"] * par["nz"],
+        backend=backend,
     )
 
     x = np.zeros((par["nx"], par["nx"], par["nz"]))
@@ -335,7 +387,16 @@ def test_NonStationaryConvolve3D(par):
         int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
     ] = 1.0
     x = x.ravel()
-    xlsqr = lsqr(Cop, Cop * x, damp=1e-20, iter_lim=40, atol=1e-8, btol=1e-8, show=0)[0]
+    xlsqr = lsqr(
+        Cop,
+        Cop * x,
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=40,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
     # given the size of the problem, we can only run few iterations and test accuracy up to 30%
     assert np.linalg.norm(x - xlsqr) / np.linalg.norm(x) < 0.3
 
@@ -350,6 +411,7 @@ def test_StationaryConvolve3D(par):
         ihx=(int(par["nx"] // 4), int(3 * par["nx"] // 4)),
         ihy=(int(par["nx"] // 4), int(3 * par["nx"] // 4)),
         ihz=(int(par["nz"] // 4), int(3 * par["nz"] // 4)),
+        engine="numpy" if backend == "numpy" else "cuda",
         dtype="float64",
     )
     Cop_stat = ConvolveND(

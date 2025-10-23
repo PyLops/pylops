@@ -1,20 +1,22 @@
 __all__ = ["Shift"]
 
-from typing import Tuple, Union
+from typing import TYPE_CHECKING, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops.basicoperators import Diagonal
 from pylops.signalprocessing import FFT
 from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.backend import get_normalize_axis_index
-from pylops.utils.typing import DTypeLike
+from pylops.utils.typing import DTypeLike, NDArray
+
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
 
 
 def Shift(
     dims: Tuple,
-    shift: Union[float, npt.ArrayLike],
+    shift: Union[float, NDArray],
     axis: int = -1,
     nfft: int = None,
     sampling: float = 1.0,
@@ -22,8 +24,8 @@ def Shift(
     engine: str = "numpy",
     dtype: DTypeLike = "complex128",
     name: str = "S",
-    **kwargs_fftw
-):
+    **kwargs_fft,
+) -> "LinearOperator":
     r"""Shift operator
 
     Apply fractional shift in the frequency domain along an ``axis``
@@ -58,17 +60,13 @@ def Shift(
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
-    **kwargs_fftw
-            Arbitrary keyword arguments
-            for :py:class:`pyfftw.FTTW`
+    **kwargs_fft
+        Arbitrary keyword arguments to be passed to the selected fft method
 
-    Attributes
-    ----------
-    shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly
-        (``True``) or not (``False``)
+    Returns
+    -------
+    Op : :obj:`pylops.LinearOperator`
+        Shift operator.
 
     Raises
     ------
@@ -98,7 +96,7 @@ def Shift(
         real=real,
         engine=engine,
         dtype=dtype,
-        **kwargs_fftw
+        **kwargs_fft,
     )
     if isinstance(dims, int):
         dimsdiag = None

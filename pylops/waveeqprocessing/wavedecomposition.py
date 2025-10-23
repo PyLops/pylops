@@ -5,7 +5,6 @@ __all__ = [
     "WavefieldDecomposition",
 ]
 
-import logging
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -17,8 +16,6 @@ from pylops.signalprocessing import FFT2D, FFTND
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import get_array_module, get_module, get_module_name
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 def _filter_obliquity(
@@ -34,11 +31,11 @@ def _filter_obliquity(
 
     Parameters
     ----------
-    OBL : :obj:`np.ndarray`
+    OBL : :obj:`numpy.ndarray`
         Obliquity factor
-    F : :obj:`np.ndarray`
+    F : :obj:`numpy.ndarray`
         Frequency grid
-    Kx : :obj:`np.ndarray`
+    Kx : :obj:`numpy.ndarray`
         Horizonal wavenumber grid
     vel : :obj:`float`
         Velocity along the receiver array (must be constant)
@@ -47,12 +44,12 @@ def _filter_obliquity(
     ntaper : :obj:`float`, optional
         Number of samples of taper applied to obliquity factor around critical
         angle
-    Ky : :obj:`np.ndarray`, optional
+    Ky : :obj:`numpy.ndarray`, optional
         Second horizonal wavenumber grid
 
     Returns
     -------
-    OBL : :obj:`np.ndarray`
+    OBL : :obj:`numpy.ndarray`
         Filtered obliquity factor
 
     """
@@ -704,14 +701,14 @@ def WavefieldDecomposition(
 
     Parameters
     ----------
-    p : :obj:`np.ndarray`
+    p : :obj:`numpy.ndarray`
         Pressure data of size :math:`\lbrack n_{r_x} \,(\times n_{r_y})
         \times n_t \rbrack` (or :math:`\lbrack n_{r_{x,\text{sub}}}
         \,(\times n_{r_{y,\text{sub}}}) \times n_t \rbrack`
         in case a ``restriction`` operator is provided. Note that
         :math:`n_{r_{x,\text{sub}}}` (and :math:`n_{r_{y,\text{sub}}}`)
         must agree with the size of the output of this operator.)
-    vz : :obj:`np.ndarray`
+    vz : :obj:`numpy.ndarray`
         Vertical particle velocity data of same size as pressure data
     nt : :obj:`int`
         Number of samples along the time axis
@@ -755,9 +752,9 @@ def WavefieldDecomposition(
 
     Returns
     -------
-    pup : :obj:`np.ndarray`
+    pup : :obj:`numpy.ndarray`
         Up-going wavefield
-    pdown : :obj:`np.ndarray`
+    pdown : :obj:`numpy.ndarray`
         Down-going wavefield
 
     Raises
@@ -787,7 +784,7 @@ def WavefieldDecomposition(
         \end{bmatrix}(k_x, \omega)
 
     if ``kind='analytical'`` or alternatively by solving the equation in
-    :func:`ptcpy.waveeqprocessing.UpDownComposition2D` as an inverse problem,
+    :func:`pylops.waveeqprocessing.UpDownComposition2D` as an inverse problem,
     if ``kind='inverse'``.
 
     The latter approach has several advantages as data regularization
@@ -807,9 +804,9 @@ def WavefieldDecomposition(
             0 & \mathbf{F}^H \mathbf{S}
         \end{bmatrix}  \mathbf{p^{\pm}}
 
-    where :math:`\mathbf{R}` is a :class:`ptcpy.basicoperators.Restriction`
+    where :math:`\mathbf{R}` is a :class:`pylops.basicoperators.Restriction`
     operator and :math:`\mathbf{S}` is sparsyfing transform operator (e.g.,
-    :class:`ptcpy.signalprocessing.Radon2D`).
+    :class:`pylops.signalprocessing.Radon2D`).
 
     .. [1] Wapenaar, K. "Reciprocity properties of one-way propagators",
        Geophysics, vol. 63, pp. 1795-1798. 1998.

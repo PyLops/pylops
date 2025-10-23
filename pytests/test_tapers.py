@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
@@ -54,6 +56,9 @@ par8 = {
 }  # cosinesqrt, even samples and taper
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par5), (par6), (par7), (par8)]
 )
@@ -68,6 +73,9 @@ def test_taper2d(par):
     assert_array_equal(tap[par["nspat"][0] // 2], np.ones(par["nt"]))
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par5), (par6), (par7), (par8)]
 )

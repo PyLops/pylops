@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
@@ -40,6 +42,9 @@ par2 = {
 }  # odd axis, centered to 0
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_makeaxis(par):
     """Verify makeaxis creation"""
@@ -60,6 +65,9 @@ def test_makeaxis(par):
     assert y[-1] == par["oy"] + par["dy"] * (par["ny"] - 1)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_linear2d(par):
     """Create small dataset with an horizontal event and check that output
@@ -88,6 +96,9 @@ def test_linear2d(par):
     assert_array_equal(d[:, t0], amp * np.ones(par["nx"]))
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_multilinear2d(par):
     """Create small dataset with several horizontal events and check that output
@@ -117,6 +128,9 @@ def test_multilinear2d(par):
     assert_array_equal(d[:, t0[1]], amp[1] * np.ones(par["nx"]))
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par2)])
 def test_parabolic2d(par):
     """Create small dataset with a parabolic event and check that output
@@ -145,6 +159,9 @@ def test_parabolic2d(par):
     assert_array_equal(d[par["nx"] // 2, t0], amp)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par2)])
 def test_hyperbolic2d(par):
     """Create small dataset with a hyperbolic event and check that output
@@ -173,6 +190,9 @@ def test_hyperbolic2d(par):
     assert_array_equal(dwav[par["nx"] // 2, t0], amp)
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_linear3d(par):
     """Create small dataset with an horizontal event and check output
@@ -205,6 +225,9 @@ def test_linear3d(par):
     assert_array_equal(dwav[:, :, t0], amp * np.ones((par["ny"], par["nx"])))
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par1), (par2)])
 def test_multilinear3d(par):
     """Create small dataset with several linear events and check output
@@ -237,6 +260,9 @@ def test_multilinear3d(par):
     assert_array_equal(d[:, :, t0[1]], amp[1] * np.ones((par["ny"], par["nx"])))
 
 
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize("par", [(par2)])
 def test_hyperbolic3d(par):
     """Create small dataset with several hyperbolic events and check output

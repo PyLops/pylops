@@ -2,6 +2,7 @@ __all__ = ["Solver"]
 
 import functools
 import time
+import warnings
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Any
 
@@ -11,6 +12,8 @@ from pylops.utils.typing import NDArray
 if TYPE_CHECKING:
     from pylops.linearoperator import LinearOperator
 
+_units = {"B": 1, "KB": 1024, "MB": 1024**2, "GB": 1024**3}
+
 
 class Solver(metaclass=ABCMeta):
     r"""Solver
@@ -19,6 +22,8 @@ class Solver(metaclass=ABCMeta):
     This class comprises of the following mandatory methods:
 
     - ``__init__``: initialization method to which the operator `Op` must be passed
+    - ``memory_usage``: a method to compute upfront the memory used by each
+      step of the solver
     - ``setup``: a method that is invoked to setup the solver, basically it will create
       anything required prior to applying a step of the solver
     - ``step``: a method applying a single step of the solver
@@ -44,6 +49,24 @@ class Solver(metaclass=ABCMeta):
         Operator to invert of
     callbacks : :obj:`pylops.optimization.callback.Callbacks`
         Callbacks object used to implement custom callbacks
+
+    Attributes
+    ----------
+    iiter : :obj:`int`
+        Iteration counter.
+    preallocate : :obj:`bool`
+        Whether to preallocate all variables used by the solver (``True``)
+        or not (``False``). Available only after ``setup`` is called.
+        Note that preallocation is not always possible, for example when
+        using JAX arrays.
+    tstart : :obj:`float`
+        Time at the start of the optimization process.
+    tend : :obj:`float`
+        Time at the end of the optimization process. Available
+        only after ``finalize`` is called.
+    telapsed : :obj:`float`
+        Total time elapsed during the optimization process. Available
+        only after ``finalize`` is called.
 
     """
 
@@ -121,11 +144,55 @@ class Solver(metaclass=ABCMeta):
                 ),
             )
 
+    def _setpreallocate(self, preallocate: bool) -> None:
+        # Check if the solver can work in preallocate mode
+        # (basically all the time except when JAX arrays are
+        # used) and force it to be False otherwise.
+        self.preallocate = preallocate if not self.isjax else False
+
+        if preallocate and self.isjax:
+            warnings.warn(
+                "Preallocation is not supported for JAX arrays. "
+                "Setting preallocate to False."
+            )
+
+    @abstractmethod
+    def memory_usage(
+        self,
+        show: bool = False,
+        unit: str = "B",
+    ) -> float:
+        """Compute memory usage of the solver
+
+        This method computes an estimate of the memory required by the solver given
+        the shape of the operator. This is useful to assess upfront if the solver
+        will run out of memory.
+
+        Note, that the memory usage of the operator itself is not taken into account
+        in this estimate.
+
+        Parameters
+        ----------
+        show : :obj:`bool`, optional
+            Display memory usage
+        unit: :obj:`str`, optional
+            Unit used to display memory usage (
+            ``B``, ``KB``, ``MB`` or ``GB``)
+
+        Returns
+        -------
+        memuse :obj:`float`
+            Memory usage in bytes
+
+        """
+        pass
+
     @abstractmethod
     def setup(
         self,
         y: NDArray,
         *args,
+        preallocate: bool = False,
         show: bool = False,
         **kwargs,
     ) -> None:
@@ -136,8 +203,12 @@ class Solver(metaclass=ABCMeta):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data of size :math:`[N \times 1]`
+        preallocate : :obj:`bool`, optional
+            .. versionadded:: 2.6.0
+
+            Pre-allocate all variables used by the solver.
         show : :obj:`bool`, optional
             Display setup log
 
@@ -160,7 +231,7 @@ class Solver(metaclass=ABCMeta):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by a step of the solver
         show : :obj:`bool`, optional
             Display step log
@@ -184,7 +255,7 @@ class Solver(metaclass=ABCMeta):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current model vector to be updated by multiple steps of the solver
         show : :obj:`bool`, optional
             Display step log
@@ -230,7 +301,7 @@ class Solver(metaclass=ABCMeta):
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`
+        y : :obj:`numpy.ndarray`
             Data
         show : :obj:`bool`, optional
             Display finalize log
@@ -252,7 +323,7 @@ class Solver(metaclass=ABCMeta):
 
         Parameters
         ----------
-        x : :obj:`np.ndarray`
+        x : :obj:`numpy.ndarray`
             Current solution
 
         Examples

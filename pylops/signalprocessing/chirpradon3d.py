@@ -1,7 +1,5 @@
 __all__ = ["ChirpRadon3D"]
 
-import logging
-
 import numpy as np
 
 from pylops import LinearOperator
@@ -15,8 +13,6 @@ pyfftw_message = deps.pyfftw_import("the chirpradon3d module")
 
 if pyfftw_message is None:
     from ._chirpradon3d import _chirp_radon_3d_fftw
-
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.WARNING)
 
 
 class ChirpRadon3D(LinearOperator):
@@ -32,13 +28,13 @@ class ChirpRadon3D(LinearOperator):
 
     Parameters
     ----------
-    taxis : :obj:`np.ndarray`
+    taxis : :obj:`numpy.ndarray`
         Time axis
-    hxaxis : :obj:`np.ndarray`
+    hxaxis : :obj:`numpy.ndarray`
         Fast patial axis
-    hyaxis : :obj:`np.ndarray`
+    hyaxis : :obj:`numpy.ndarray`
         Slow spatial axis
-    pmax : :obj:`np.ndarray`
+    pmax : :obj:`numpy.ndarray`
         Two element array :math:`(p_{y,\text{max}}, p_{x,\text{max}})` of :math:`\tan`
         of maximum stacking angles in :math:`y` and :math:`x` directions
         :math:`(\tan(\alpha_{y,\text{max}}), \tan(\alpha_{x,\text{max}}))`. If one operates
@@ -58,11 +54,28 @@ class ChirpRadon3D(LinearOperator):
 
     Attributes
     ----------
+    ny : :obj:`int`
+        Number of samples in the first spatial axis.
+    nx : :obj:`int`
+        Number of samples in the second spatial axis.
+    nt : :obj:`int`
+        Number of samples in time axis.
+    dy : :obj:`int`
+        Sampling step in the first spatial axis.
+    dx : :obj:`int`
+        Sampling step in the second spatial axis.
+    dt : :obj:`float`
+        Sampling step in time axis.
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening. In
+        this case, same as ``dims``.
     shape : :obj:`tuple`
-        Operator shape
-    explicit : :obj:`bool`
-        Operator contains a matrix that can be solved explicitly (``True``) or
-        not (``False``)
+        Operator shape.
+
 
     Notes
     -----
