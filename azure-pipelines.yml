@@ -48,7 +48,7 @@ jobs:
   displayName: 'Mac'
 
   pool:
-    vmImage: 'macOS-latest'
+    vmImage: 'macOS-15-arm64'
 
   variables:
     NUMBA_NUM_THREADS: 1
@@ -56,7 +56,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.10'
+      versionSpec: '3.11'
       architecture: 'arm64'
 
   - script: |
@@ -87,7 +87,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.10'
+      versionSpec: '3.11'
       architecture: 'x64'
 
   - script: |
