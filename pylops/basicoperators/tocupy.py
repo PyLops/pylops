@@ -24,7 +24,7 @@ class ToCupy(LinearOperator):
         Type of elements in input array.
     device : :obj:`int`, optional
        GPU device where the array will be transferred to.
-       By default, device 0 is used. 
+       By default, device 0 is used.
     name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
