@@ -485,13 +485,16 @@ def get_real_dtype(dtype: DTypeLike) -> DTypeLike:
     return np.real(np.ones(1, dtype)).dtype
 
 
-def to_cupy(x: ArrayLike) -> ArrayLike:
+def to_cupy(x: ArrayLike, device: int = 0) -> ArrayLike:
     """Convert x to cupy array if cupy is available
 
     Parameters
     ----------
     x : :obj:`numpy.ndarray`, :obj:`cupy.ndarray` or :obj:`jax.Array`
         Array to evaluate
+    device : :obj:`int`, optional
+        GPU device where the array will be transferred to.
+        by default, device 0 is used.
 
     Returns
     -------
@@ -501,7 +504,8 @@ def to_cupy(x: ArrayLike) -> ArrayLike:
     """
     if deps.cupy_enabled:
         if cp.get_array_module(x) != cp:
-            x = cp.asarray(x)
+            with cp.cuda.Device(device):
+                x = cp.asarray(x)
     return x
 
 

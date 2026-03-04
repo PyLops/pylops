@@ -22,6 +22,9 @@ class ToCupy(LinearOperator):
         Number of samples for each dimension
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    device : :obj:`int`, optional
+       GPU device where the array will be transferred to.
+       By default, device 0 is used. 
     name : :obj:`str`, optional
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
@@ -52,13 +55,15 @@ class ToCupy(LinearOperator):
         self,
         dims: Union[int, InputDimsLike],
         dtype: DTypeLike = "float64",
+        device: int = 0,
         name: str = "C",
     ) -> None:
+        self.device = device
         dims = _value_or_sized_to_tuple(dims)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
     def _matvec(self, x: NDArray) -> NDArray:
-        return to_cupy(x)
+        return to_cupy(x, device=self.device)
 
     def _rmatvec(self, x: NDArray) -> NDArray:
         return to_numpy(x)

@@ -718,3 +718,19 @@ def test_ToCupy(par):
     xadj = Top.H * y
     assert_array_equal(x, xadj)
     assert_array_equal(y, np.asarray(x))
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j), (par3)])
+def test_ToCupy_device(par):
+    """Forward and adjoint for ToCupy operator with explicit device parameter
+    (checking device is correctly stored and used)
+    """
+    Top = ToCupy(par["nx"], dtype=par["dtype"], device=0)
+
+    np.random.seed(10)
+    x = npp.random.randn(par["nx"]) + par["imag"] * npp.random.randn(par["nx"])
+    y = Top * x
+    xadj = Top.H * y
+    assert_array_equal(x, xadj)
+    assert_array_equal(y, np.asarray(x))
+    assert Top.device == 0
