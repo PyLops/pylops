@@ -13,7 +13,6 @@ from math import sqrt
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
-from scipy.sparse.linalg import lsqr
 
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, Identity, VStack
@@ -25,6 +24,7 @@ from pylops.optimization.leastsquares import regularized_inversion
 from pylops.utils import deps
 from pylops.utils.backend import (
     get_array_module,
+    get_lsqr,
     get_module_name,
     get_real_dtype,
     inplace_set,
@@ -570,15 +570,15 @@ class IRLS(Solver):
             kwargs_solver["preallocate"] = True
         if self.iiter == 0:
             # first iteration (unweighted least-squares)
-            if engine == "scipy" and self.ncp == np:
+            if engine == "scipy":
                 x = self.Op.rmatvec(
-                    lsqr(
+                    get_lsqr(x)(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
                         self.y,
                         **kwargs_solver,
                     )[0]
                 )
-            elif engine == "pylops" or self.ncp != np:
+            elif engine == "pylops":
                 x = self.Op.rmatvec(
                     cgls(
                         self.Op @ self.Op.H + (self.epsI**2) * self.Iop,
@@ -599,17 +599,17 @@ class IRLS(Solver):
                 self.ncp.divide(self.rw, self.rw.max(), out=self.rw)
 
             R = Diagonal(self.rw, dtype=self.rw.dtype)
-            if engine == "scipy" and self.ncp == np:
+            if engine == "scipy":
                 x = R.matvec(
                     self.Op.rmatvec(
-                        lsqr(
+                        get_lsqr(x)(
                             self.Op @ R @ self.Op.H + self.epsI**2 * self.Iop,
                             self.y,
                             **kwargs_solver,
                         )[0]
                     )
                 )
-            elif engine == "pylops" or self.ncp != np:
+            elif engine == "pylops":
                 x = R.matvec(
                     self.Op.rmatvec(
                         cgls(
@@ -643,11 +643,8 @@ class IRLS(Solver):
             Display iteration log
         **kwargs_solver
             Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
-            :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS when using
-            numpy data and ``engine='scipy'`` (or
-            :py:func:`pylops.optimization.solver.cg` and
-            :py:func:`pylops.optimization.solver.cgls` when using cupy data or
+            :py:func:`scipy.sparse.linalg.lsqr` when ``engine='scipy'`` (or
+            :py:func:`pylops.optimization.solver.cgls` when using
             ``engine='pylops'``)
 
         Returns
@@ -702,11 +699,8 @@ class IRLS(Solver):
             three element of the list.
         **kwargs_solver
             Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
-            :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS when using
-            numpy data and ``engine='scipy'`` (or
-            :py:func:`pylops.optimization.solver.cg` and
-            :py:func:`pylops.optimization.solver.cgls` when using cupy data or
+            :py:func:`scipy.sparse.linalg.lsqr` when ``engine='scipy'`` (or
+            :py:func:`pylops.optimization.solver.cgls` when using
             ``engine='pylops'``)
 
         Returns
@@ -822,10 +816,9 @@ class IRLS(Solver):
             three element of the list.
         **kwargs_solver
             Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
-            :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS when using
-            numpy data(or :py:func:`pylops.optimization.solver.cg` and
-            :py:func:`pylops.optimization.solver.cgls` when using cupy data)
+            :py:func:`scipy.sparse.linalg.lsqr` when ``engine='scipy'`` (or
+            :py:func:`pylops.optimization.solver.cgls` when using
+            ``engine='pylops'``)
 
         Returns
         -------
@@ -1192,9 +1185,11 @@ class OMP(Solver):
         else:
             # OMP update
             Opcol = self.Op.apply_columns(cols)
-            if engine == "scipy" and self.ncp == np:
-                x = lsqr(Opcol, self.y, iter_lim=self.niter_inner, **kwargs_solver)[0]
-            elif engine == "pylops" or self.ncp != np:
+            if engine == "scipy":
+                x = get_lsqr(x)(
+                    Opcol, self.y, iter_lim=self.niter_inner, **kwargs_solver
+                )[0]
+            elif engine == "pylops":
                 x = cgls(
                     Opcol,
                     self.y,
@@ -3038,9 +3033,10 @@ class SplitBregman(Solver):
         **kwargs_solver
             Arbitrary keyword arguments for chosen solver
             used to solve the first subproblem in the first step of the
-            Split Bregman algorithm (:py:func:`scipy.sparse.linalg.lsqr` and
-            :py:func:`pylops.optimization.solver.cgls` are used as default
-            for numpy and cupy `data`, respectively).
+            Split Bregman algorithm (:py:func:`scipy.sparse.linalg.lsqr` is
+            used if ``engine='scipy'`` and
+            :py:func:`pylops.optimization.solver.cgls` is used if engine is
+            ``engine='pylops'``).
 
         Returns
         -------
@@ -3149,9 +3145,12 @@ class SplitBregman(Solver):
         show_inner : :obj:`bool`, optional
             Display inner iteration logs of lsqr
         **kwargs_lsqr
-            Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-            subproblem in the first step of the Split Bregman algorithm.
+            Arbitrary keyword arguments for chosen solver
+            used to solve the first subproblem in the first step of the
+            Split Bregman algorithm (:py:func:`scipy.sparse.linalg.lsqr` is
+            used if ``engine='scipy'`` and
+            :py:func:`pylops.optimization.solver.cgls` is used if engine is
+            ``engine='pylops'``).
 
         Returns
         -------
@@ -3285,9 +3284,12 @@ class SplitBregman(Solver):
         show_inner : :obj:`bool`, optional
             Display inner iteration logs of lsqr
         **kwargs_lsqr
-            Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-            subproblem in the first step of the Split Bregman algorithm.
+            Arbitrary keyword arguments for chosen solver
+            used to solve the first subproblem in the first step of the
+            Split Bregman algorithm (:py:func:`scipy.sparse.linalg.lsqr` is
+            used if ``engine='scipy'`` and
+            :py:func:`pylops.optimization.solver.cgls` is used if engine is
+            ``engine='pylops'``).
 
         Returns
         -------

@@ -8,13 +8,11 @@ __all__ = [
 from typing import TYPE_CHECKING, Optional, Sequence, Tuple
 
 import numpy as np
-from scipy.sparse.linalg import cg as sp_cg
-from scipy.sparse.linalg import lsqr as sp_lsqr
 
 from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.basesolver import Solver, _units
 from pylops.optimization.basic import cg, cgls
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, get_cg, get_lsqr
 from pylops.utils.typing import NDArray, Tmemunit, Tsolverengine
 
 if TYPE_CHECKING:
@@ -294,12 +292,14 @@ class NormalEquationsInversion(Solver):
             ``<0``: illegal input or breakdown
 
         """
-        if engine == "scipy" and self.ncp == np:
+        if engine == "scipy":
             if "tol" in kwargs_solver:
                 kwargs_solver["atol"] = kwargs_solver["tol"]
                 kwargs_solver.pop("tol")
-            xinv, istop = sp_cg(self.Op_normal, self.y_normal, x0=x, **kwargs_solver)
-        elif engine == "pylops" or self.ncp != np:
+            xinv, istop = get_cg(x)(
+                self.Op_normal, self.y_normal, x0=x, **kwargs_solver
+            )
+        elif engine == "pylops":
             if show:
                 kwargs_solver["show"] = True
             xinv = cg(
@@ -703,13 +703,13 @@ class RegularizedInversion(Solver):
             Equal to ``r1norm`` if :math:`\epsilon=0`
 
         """
-        if engine == "scipy" and self.ncp == np:
+        if engine == "scipy":
             if show:
                 kwargs_solver["show"] = 1
-            xinv, istop, itn, r1norm, r2norm = sp_lsqr(
+            xinv, istop, itn, r1norm, r2norm = get_lsqr(x)(
                 self.RegOp, self.datatot, x0=x, **kwargs_solver
             )[0:5]
-        elif engine == "pylops" or self.ncp != np:
+        elif engine == "pylops":
             if show:
                 kwargs_solver["show"] = True
             xinv, istop, itn, r1norm, r2norm = cgls(
@@ -974,16 +974,16 @@ class PreconditionedInversion(Solver):
             Equal to ``r1norm`` if :math:`\epsilon=0`
 
         """
-        if engine == "scipy" and self.ncp == np:
+        if engine == "scipy":
             if show:
                 kwargs_solver["show"] = 1
-            pinv, istop, itn, r1norm, r2norm = sp_lsqr(
+            pinv, istop, itn, r1norm, r2norm = get_lsqr(x)(
                 self.POp,
                 self.y,
                 x0=x,
                 **kwargs_solver,
             )[0:5]
-        elif engine == "pylops" or self.ncp != np:
+        elif engine == "pylops":
             if show:
                 kwargs_solver["show"] = True
             pinv, istop, itn, r1norm, r2norm = cgls(
