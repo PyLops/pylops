@@ -28,8 +28,8 @@ Nz, Nx = im.shape
 nh = [15, 25]
 hz = np.exp(-0.1 * np.linspace(-(nh[0] // 2), nh[0] // 2, nh[0]) ** 2)
 hx = np.exp(-0.03 * np.linspace(-(nh[1] // 2), nh[1] // 2, nh[1]) ** 2)
-hz /= np.trapz(hz)  # normalize the integral to 1
-hx /= np.trapz(hx)  # normalize the integral to 1
+hz /= np.trapezoid(hz)  # normalize the integral to 1
+hx /= np.trapezoid(hx)  # normalize the integral to 1
 h = hz[:, np.newaxis] * hx[np.newaxis, :]
 
 fig, ax = plt.subplots(1, 1, figsize=(5, 3))
