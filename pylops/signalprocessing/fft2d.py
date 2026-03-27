@@ -1,7 +1,7 @@
 __all__ = ["FFT2D"]
 
 import warnings
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict, Literal, Optional, Sequence, Union
 
 import numpy as np
 import scipy.fft
@@ -11,7 +11,7 @@ from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
 from pylops.utils import deps
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
-from pylops.utils.typing import DTypeLike, InputDimsLike
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, Tfftnorm
 
 mkl_fft_message = deps.mkl_fft_import("the mkl fft module")
 
@@ -29,7 +29,7 @@ class _FFT2D_numpy(_BaseFFTND):
         axes: InputDimsLike = (-2, -1),
         nffts: Optional[Union[int, InputDimsLike]] = None,
         sampling: Union[float, Sequence[float]] = 1.0,
-        norm: str = "ortho",
+        norm: Tfftnorm = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
@@ -131,7 +131,7 @@ class _FFT2D_numpy(_BaseFFTND):
             y = ncp.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
-    def __truediv__(self, y):
+    def __truediv__(self, y: NDArray) -> NDArray:
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
@@ -146,7 +146,7 @@ class _FFT2D_scipy(_BaseFFTND):
         axes: InputDimsLike = (-2, -1),
         nffts: Optional[Union[int, InputDimsLike]] = None,
         sampling: Union[float, Sequence[float]] = 1.0,
-        norm: str = "ortho",
+        norm: Tfftnorm = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
@@ -236,7 +236,7 @@ class _FFT2D_scipy(_BaseFFTND):
             y = scipy.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
-    def __truediv__(self, y):
+    def __truediv__(self, y: NDArray) -> NDArray:
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale / self._scale
         return self._rmatvec(y)
@@ -251,7 +251,7 @@ class _FFT2D_mklfft(_BaseFFTND):
         axes: InputDimsLike = (-2, -1),
         nffts: Optional[Union[int, InputDimsLike]] = None,
         sampling: Union[float, Sequence[float]] = 1.0,
-        norm: str = "ortho",
+        norm: Tfftnorm = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
@@ -348,7 +348,7 @@ class _FFT2D_mklfft(_BaseFFTND):
             y = scipy.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
-    def __truediv__(self, y):
+    def __truediv__(self, y: NDArray) -> NDArray:
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale / self._scale
         return self._rmatvec(y)
@@ -359,11 +359,11 @@ def FFT2D(
     axes: InputDimsLike = (-2, -1),
     nffts: Optional[Union[int, InputDimsLike]] = None,
     sampling: Union[float, Sequence[float]] = 1.0,
-    norm: str = "ortho",
+    norm: Tfftnorm = "ortho",
     real: bool = False,
     ifftshift_before: bool = False,
     fftshift_after: bool = False,
-    engine: str = "numpy",
+    engine: Literal["numpy", "scipy", "mkl_fft"] = "numpy",
     dtype: DTypeLike = "complex128",
     name: str = "F",
     **kwargs_fft,
@@ -502,7 +502,7 @@ def FFT2D(
         - If ``nffts`` or ``sampling`` are not either a single value or a tuple with
           two elements.
         - If ``norm`` is not one of "ortho", "none", or "1/n".
-    NotImplementedError
+    ValueError
         If ``engine`` is neither ``numpy``, ``scipy`` nor ``mkl_fft``.
 
     See Also
@@ -575,6 +575,6 @@ def FFT2D(
             **kwargs_fft,
         )
     else:
-        raise NotImplementedError("engine must be numpy, scipy or mkl_fft")
+        raise ValueError("engine must be numpy, scipy or mkl_fft")
     f.name = name
     return f

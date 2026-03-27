@@ -74,6 +74,7 @@ def reshaped(
     func: Optional[Callable] = None,
     forward: Optional[bool] = None,
     swapaxis: bool = False,
+    axis: int = -1,
 ) -> Callable:
     """Decorator for the common reshape/flatten pattern used in many operators.
 
@@ -87,8 +88,10 @@ def reshaped(
         with 'rmat' as substring or whose name is 'div' or '__truediv__' will reshape
         to ``dimsd``.
     swapaxis : :obj:`bool`, optional
-        If True, swaps the last axis of the input array of the decorated function with
+        If True, swaps the ``axis`` of the input array of the decorated function with
         ``self.axis``. Only use if the decorated LinearOperator has ``axis`` attribute.
+    axis : :obj:`int`, optional
+        Axis to be swapped when ``swapaxis`` is True.
 
     Notes
     -----
@@ -108,7 +111,7 @@ def reshaped(
 
     .. code-block:: python
 
-        @reshaped(swapaxis=True)
+        @reshaped(swapaxis=True, axis=-1)
         def _matvec(self, x):
             y = do_things_to_reshaped_swapped(y)
             return y
@@ -139,10 +142,10 @@ def reshaped(
         def wrapper(self, x):
             x = x.reshape(getattr(self, inp_dims))
             if swapaxis:
-                x = x.swapaxes(self.axis, -1)
+                x = x.swapaxes(self.axis, axis)
             y = f(self, x)
             if swapaxis:
-                y = y.swapaxes(self.axis, -1)
+                y = y.swapaxes(self.axis, axis)
             y = y.ravel()
             return y
 

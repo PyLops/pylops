@@ -3,9 +3,11 @@ __all__ = [
     "SecondDirectionalDerivative",
 ]
 
+from typing import Union
+
 from pylops import LinearOperator
 from pylops.basicoperators import Diagonal, Gradient, Sum
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, Tderivkind
 
 
 class FirstDirectionalDerivative(LinearOperator):
@@ -25,8 +27,9 @@ class FirstDirectionalDerivative(LinearOperator):
     v : :obj:`numpy.ndarray`, optional
         Single direction (array of size :math:`n_\text{dims}`) or group of directions
         (array of size :math:`[n_\text{dims} \times n_{d_0} \times ... \times n_{d_{n_\text{dims}}}]`)
-    sampling : :obj:`tuple`, optional
-        Sampling steps for each direction.
+    sampling : :obj:`tuple` or :obj:`float`, optional
+        Sampling steps for each direction. If a single float
+        is provided, it is used for all directions.
     edge : :obj:`bool`, optional
         Use reduced order derivative at edges (``True``) or
         ignore them (``False``).
@@ -77,9 +80,9 @@ class FirstDirectionalDerivative(LinearOperator):
         self,
         dims: InputDimsLike,
         v: NDArray,
-        sampling: int = 1,
+        sampling: Union[float, InputDimsLike] = 1.0,
         edge: bool = False,
-        kind: str = "centered",
+        kind: Tderivkind = "centered",
         dtype: DTypeLike = "float64",
         name: str = "F",
     ):
@@ -88,7 +91,12 @@ class FirstDirectionalDerivative(LinearOperator):
         self.kind = kind
         self.v = v
         Op = self._calc_first_ddop(
-            dims=dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype, v=v
+            dims=dims,
+            v=v,
+            sampling=sampling,
+            edge=edge,
+            kind=kind,
+            dtype=dtype,
         )
         super().__init__(Op=Op, name=name)
 
@@ -102,9 +110,9 @@ class FirstDirectionalDerivative(LinearOperator):
     def _calc_first_ddop(
         dims: InputDimsLike,
         v: NDArray,
-        sampling: int,
+        sampling: Union[float, InputDimsLike],
         edge: bool,
-        kind: str,
+        kind: Tderivkind,
         dtype: DTypeLike,
     ):
         Gop = Gradient(dims, sampling=sampling, edge=edge, kind=kind, dtype=dtype)
@@ -133,11 +141,16 @@ class SecondDirectionalDerivative(LinearOperator):
     v : :obj:`numpy.ndarray`, optional
         Single direction (array of size :math:`n_\text{dims}`) or group of directions
         (array of size :math:`[n_\text{dims} \times n_{d_0} \times ... \times n_{d_{n_\text{dims}}}]`)
-    sampling : :obj:`tuple`, optional
-        Sampling steps for each direction.
+    sampling : :obj:`tuple` or :obj:`float`, optional
+        Sampling steps for each direction. If a single float
+        is provided, it is used for all directions.
     edge : :obj:`bool`, optional
         Use reduced order derivative at edges (``True``) or
         ignore them (``False``).
+    kind : :obj:`str`, optional
+        .. versionadded:: 2.7.0
+
+        Derivative kind (``forward``, ``centered``, or ``backward``).
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -175,17 +188,18 @@ class SecondDirectionalDerivative(LinearOperator):
         self,
         dims: InputDimsLike,
         v: NDArray,
-        sampling: int = 1,
+        sampling: Union[float, InputDimsLike] = 1.0,
         edge: bool = False,
+        kind: Tderivkind = "centered",
         dtype: DTypeLike = "float64",
         name: str = "S",
     ):
-        self.dims = dims
-        self.v = v
         self.sampling = sampling
         self.edge = edge
+        self.kind = kind
+        self.v = v
         Op = self._calc_second_ddop(
-            dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype
+            dims=dims, v=v, sampling=sampling, edge=edge, kind=kind, dtype=dtype
         )
         super().__init__(Op=Op, name=name)
 
@@ -197,10 +211,15 @@ class SecondDirectionalDerivative(LinearOperator):
 
     @staticmethod
     def _calc_second_ddop(
-        dims: InputDimsLike, v: NDArray, sampling: int, edge: bool, dtype: DTypeLike
+        dims: InputDimsLike,
+        v: NDArray,
+        sampling: int,
+        edge: bool,
+        kind: Tderivkind,
+        dtype: DTypeLike,
     ):
         Dop = FirstDirectionalDerivative(
-            dims=dims, v=v, sampling=sampling, edge=edge, dtype=dtype
+            dims=dims, v=v, sampling=sampling, edge=edge, kind=kind, dtype=dtype
         )
         ddop = -Dop.H * Dop
         return ddop

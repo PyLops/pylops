@@ -1,9 +1,7 @@
 __all__ = ["LinearRegression"]
 
-import numpy.typing as npt
-
 from pylops.basicoperators import Regression
-from pylops.utils.typing import DTypeLike
+from pylops.utils.typing import DTypeLike, NDArray
 
 
 class LinearRegression(Regression):
@@ -70,7 +68,5 @@ class LinearRegression(Regression):
     ``order=1``.
     """
 
-    def __init__(
-        self, taxis: npt.ArrayLike, dtype: DTypeLike = "float64", name: str = "L"
-    ):
+    def __init__(self, taxis: NDArray, dtype: DTypeLike = "float64", name: str = "L"):
         super().__init__(taxis=taxis, order=1, dtype=dtype, name=name)

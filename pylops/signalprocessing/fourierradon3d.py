@@ -1,6 +1,6 @@
 __all__ = ["FourierRadon3D"]
 
-from typing import Optional, Tuple
+from typing import Literal, Optional, Tuple
 
 import numpy as np
 import scipy as sp
@@ -9,7 +9,7 @@ from pylops import LinearOperator
 from pylops.utils import deps
 from pylops.utils.backend import get_array_module, get_complex_dtype
 from pylops.utils.decorators import reshaped
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops.utils.typing import DTypeLike, NDArray, Tengine_nnc
 
 jit_message = deps.numba_import("the radon2d module")
 cupy_message = deps.cupy_import("the radon2d module")
@@ -113,7 +113,7 @@ class FourierRadon3D(LinearOperator):
 
     Raises
     ------
-    NotImplementedError
+    ValueError
         If ``engine`` is neither ``numpy``, ``numba``, nor ``cuda``.
     ValueError
         If ``kind`` is not a tuple of two elements.
@@ -166,15 +166,18 @@ class FourierRadon3D(LinearOperator):
         pxaxis: NDArray,
         nfft: int,
         flims: Optional[Tuple[int, int]] = None,
-        kind: Tuple[str, str] = ("linear", "linear"),
-        engine: str = "numpy",
+        kind: Tuple[Literal["linear", "parabolic"], Literal["linear", "parabolic"]] = (
+            "linear",
+            "linear",
+        ),
+        engine: Tengine_nnc = "numpy",
         num_threads_per_blocks: Tuple[int, int, int] = (2, 16, 16),
         dtype: DTypeLike = "float64",
         name: str = "R",
     ) -> None:
         # engine
         if engine not in ["numpy", "numba", "cuda"]:
-            raise NotImplementedError("engine must be numpy or numba or cuda")
+            raise ValueError("engine must be numpy or numba or cuda")
         if engine == "numba" and jit_message is not None:
             engine = "numpy"
 

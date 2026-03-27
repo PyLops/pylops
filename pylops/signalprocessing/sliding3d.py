@@ -4,7 +4,7 @@ __all__ = [
 ]
 
 import logging
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -18,7 +18,7 @@ from pylops.utils.backend import (
 )
 from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper3d
-from pylops.utils.typing import InputDimsLike, NDArray
+from pylops.utils.typing import InputDimsLike, NDArray, Ttaper
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +168,7 @@ class Sliding3D(LinearOperator):
 
     Attributes
     ----------
-    taps: :obj:`numpy.ndarray`
+    taps : :obj:`numpy.ndarray`
         Set of tapers applied to each window (only if ``tapertype`` is not ``None``)
     simOp : :obj:`bool`
         Operator ``Op`` is applied to all windows simultaneously (``True``)
@@ -200,7 +200,7 @@ class Sliding3D(LinearOperator):
         nwin: Tuple[int, int],
         nover: Tuple[int, int],
         nop: Tuple[int, int, int],
-        tapertype: str = "hanning",
+        tapertype: Optional[Ttaper] = "hanning",
         savetaper: bool = True,
         nproc: int = 1,
         name: str = "P",

@@ -5,7 +5,6 @@ import warnings
 from typing import Optional, Union
 
 import numpy as np
-import numpy.typing as npt
 import scipy.fft
 
 from pylops import LinearOperator
@@ -13,7 +12,13 @@ from pylops.signalprocessing._baseffts import _BaseFFT, _FFTNorms
 from pylops.utils import deps
 from pylops.utils.backend import get_array_module, inplace_divide, inplace_multiply
 from pylops.utils.decorators import reshaped
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from pylops.utils.typing import (
+    DTypeLike,
+    InputDimsLike,
+    NDArray,
+    Tfftengine_nfsm,
+    Tfftnorm,
+)
 
 pyfftw_message = deps.pyfftw_import("the fft module")
 mkl_fft_message = deps.mkl_fft_import("the fft module")
@@ -37,7 +42,7 @@ class _FFT_numpy(_BaseFFT):
         axis: int = -1,
         nfft: Optional[int] = None,
         sampling: float = 1.0,
-        norm: str = "ortho",
+        norm: Tfftnorm = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
@@ -134,7 +139,7 @@ class _FFT_numpy(_BaseFFT):
         y = y.astype(self.rdtype)
         return y
 
-    def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
+    def __truediv__(self, y: NDArray) -> NDArray:
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
@@ -149,7 +154,7 @@ class _FFT_scipy(_BaseFFT):
         axis: int = -1,
         nfft: Optional[int] = None,
         sampling: float = 1.0,
-        norm: str = "ortho",
+        norm: Tfftnorm = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
@@ -232,7 +237,7 @@ class _FFT_scipy(_BaseFFT):
             y = scipy.fft.fftshift(y, axes=self.axis)
         return y
 
-    def __truediv__(self, y):
+    def __truediv__(self, y: NDArray) -> NDArray:
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
@@ -247,7 +252,7 @@ class _FFT_fftw(_BaseFFT):
         axis: int = -1,
         nfft: Optional[int] = None,
         sampling: float = 1.0,
-        norm: str = "ortho",
+        norm: Tfftnorm = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
@@ -393,7 +398,7 @@ class _FFT_fftw(_BaseFFT):
             y = np.real(y)
         return y
 
-    def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
+    def __truediv__(self, y: NDArray) -> NDArray:
         if self.norm is _FFTNorms.ORTHO:
             return self._rmatvec(y)
         return self._rmatvec(y) / self._scale
@@ -408,7 +413,7 @@ class _FFT_mklfft(_BaseFFT):
         axis: int = -1,
         nfft: Optional[int] = None,
         sampling: float = 1.0,
-        norm: str = "ortho",
+        norm: Tfftnorm = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
@@ -485,7 +490,7 @@ class _FFT_mklfft(_BaseFFT):
             y = scipy.fft.fftshift(y, axes=self.axis)
         return y
 
-    def __truediv__(self, y):
+    def __truediv__(self, y: NDArray) -> NDArray:
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
@@ -496,11 +501,11 @@ def FFT(
     axis: int = -1,
     nfft: Optional[int] = None,
     sampling: float = 1.0,
-    norm: str = "ortho",
+    norm: Tfftnorm = "ortho",
     real: bool = False,
     ifftshift_before: bool = False,
     fftshift_after: bool = False,
-    engine: str = "numpy",
+    engine: Tfftengine_nfsm = "numpy",
     dtype: DTypeLike = "complex128",
     name: str = "F",
     **kwargs_fft,
@@ -626,7 +631,7 @@ def FFT(
     ValueError
         - If ``dims`` is provided and ``axis`` is bigger than ``len(dims)``.
         - If ``norm`` is not one of "ortho", "none", or "1/n".
-    NotImplementedError
+    ValueError
         If ``engine`` is neither ``numpy``, ``fftw``, ``scipy`` nor ``mkl_fft``.
 
     See Also
@@ -720,6 +725,6 @@ def FFT(
             **kwargs_fft,
         )
     else:
-        raise NotImplementedError("engine must be numpy, scipy, fftw, or mkl_fft")
+        raise ValueError("engine must be numpy, scipy, fftw, or mkl_fft")
     f.name = name
     return f

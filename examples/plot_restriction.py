@@ -47,20 +47,41 @@ iava = np.sort(np.random.permutation(np.arange(nt))[:ntsub])
 # We then create the restriction and interpolation operators and display
 # the original signal as well as the subsampled signal.
 
-Rop = pylops.Restriction(nt, iava, dtype="float64")
+Rop = pylops.Restriction(
+    nt,
+    iava,
+    dtype="float64",
+)
 NNop, iavann = pylops.signalprocessing.Interp(
-    nt, iava + 0.4, kind="nearest", dtype="float64"
+    nt,
+    iava + 0.4,
+    kind="nearest",
+    dtype="float64",
 )
 LIop, iavali = pylops.signalprocessing.Interp(
-    nt, iava + 0.4, kind="linear", dtype="float64"
+    nt,
+    iava + 0.4,
+    kind="linear",
+    dtype="float64",
 )
 SIop, iavasi = pylops.signalprocessing.Interp(
-    nt, iava + 0.4, kind="sinc", dtype="float64"
+    nt,
+    iava + 0.4,
+    kind="sinc",
+    dtype="float64",
 )
+CuSIop, iavacusi = pylops.signalprocessing.Interp(
+    nt,
+    iava + 0.4,
+    kind="cubic_spline",
+    dtype="float64",
+)
+
 y = Rop * x
 ynn = NNop * x
 yli = LIop * x
 ysi = SIop * x
+ycusi = CuSIop * x
 ymask = Rop.mask(x)
 
 # Visualize data
@@ -70,6 +91,7 @@ plt.plot(isample, ymask, ".g", ms=35, label="available samples")
 plt.plot(iavann, ynn, ".r", ms=25, label="NN interp samples")
 plt.plot(iavali, yli, ".m", ms=20, label="Linear interp samples")
 plt.plot(iavasi, ysi, ".y", ms=15, label="Sinc interp samples")
+plt.plot(iavasi, ysi, "cyan", linestyle="none", marker="D", ms=4, label="Cubic Spline interp samples")
 plt.legend(loc="right")
 plt.title("Data restriction")
 
@@ -79,6 +101,7 @@ subax.plot(isample, ymask, ".g", ms=35)
 subax.plot(iavann, ynn, ".r", ms=25)
 subax.plot(iavali, yli, ".m", ms=20)
 subax.plot(iavasi, ysi, ".y", ms=15)
+subax.plot(iavasi, ysi, "cyan", linestyle="none", marker="D", ms=4)
 subax.set_xlim([120, 127])
 subax.set_ylim([-0.5, 0.5])
 plt.tight_layout()

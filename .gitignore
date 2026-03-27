@@ -50,3 +50,6 @@ ASV
 .asv/
 asv.conf.json
 benchmarks/
+
+# Virtual Environments
+.venv**

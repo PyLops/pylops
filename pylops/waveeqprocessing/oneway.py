@@ -13,7 +13,7 @@ from pylops.signalprocessing import FFT
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import to_cupy_conditional
 from pylops.utils.tapers import taper2d, taper3d
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops.utils.typing import DTypeLike, NDArray, Tfftengine_nsf
 
 
 class _PhaseShift(LinearOperator):
@@ -80,7 +80,7 @@ def PhaseShift(
     ky: Optional[NDArray] = None,
     dtype: DTypeLike = "float64",
     name: str = "P",
-    fftengine: str = "numpy",
+    fftengine: Tfftengine_nsf = "numpy",
     **kwargs_fft,
 ) -> LinearOperator:
     r"""Phase shift operator

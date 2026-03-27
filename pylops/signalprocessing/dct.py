@@ -1,6 +1,6 @@
 __all__ = ["DCT"]
 
-from typing import List, Optional, Union
+from typing import List, Literal, Optional, Union
 
 import numpy as np
 from scipy import fft
@@ -70,7 +70,7 @@ class DCT(LinearOperator):
     def __init__(
         self,
         dims: Union[int, InputDimsLike],
-        type: int = 2,
+        type: Literal[1, 2, 3, 4] = 2,
         axes: Union[int, List[int]] = None,
         dtype: DTypeLike = "float64",
         workers: Optional[int] = None,

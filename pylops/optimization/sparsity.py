@@ -16,7 +16,13 @@ from pylops.optimization.callback import (
 )
 from pylops.optimization.cls_sparsity import FISTA, IRLS, ISTA, OMP, SPGL1, SplitBregman
 from pylops.utils.decorators import add_ndarray_support_to_solver
-from pylops.utils.typing import NDArray, SamplingLike
+from pylops.utils.typing import (
+    NDArray,
+    SamplingLike,
+    Tirlskind,
+    Tsolverengine,
+    Tthreshkind,
+)
 
 if TYPE_CHECKING:
     from pylops.linearoperator import LinearOperator
@@ -32,8 +38,8 @@ def irls(
     epsI: float = 1e-10,
     tolIRLS: float = 1e-10,
     warm: bool = False,
-    kind: str = "data",
-    engine: str = "scipy",
+    kind: Tirlskind = "data",
+    engine: Tsolverengine = "scipy",
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
@@ -150,7 +156,7 @@ def omp(
     normalizecols: bool = False,
     Opbasis: Optional["LinearOperator"] = None,
     optimal_coeff: bool = False,
-    engine: str = "scipy",
+    engine: Tsolverengine = "scipy",
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     callback: Optional[Callable] = None,
@@ -280,7 +286,7 @@ def ista(
     tol: float = 1e-10,
     rtol: float = 0.0,
     rtol1: float = 0.0,
-    threshkind: str = "soft",
+    threshkind: Tthreshkind = "soft",
     perc: Optional[float] = None,
     decay: Optional[NDArray] = None,
     monitorres: bool = False,
@@ -434,7 +440,7 @@ def fista(
     tol: float = 1e-10,
     rtol: float = 0.0,
     rtol1: float = 0.0,
-    threshkind: str = "soft",
+    threshkind: Tthreshkind = "soft",
     perc: Optional[float] = None,
     decay: Optional[NDArray] = None,
     monitorres: bool = False,
@@ -708,7 +714,7 @@ def splitbregman(
     rtol1: float = 0.0,
     tau: float = 1.0,
     restart: bool = False,
-    engine: str = "scipy",
+    engine: Tsolverengine = "scipy",
     show: bool = False,
     itershow: Tuple[int, int, int] = (10, 10, 10),
     show_inner: bool = False,

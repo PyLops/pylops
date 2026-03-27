@@ -21,7 +21,7 @@ from pylops.utils.backend import (
     get_normalize_axis_index,
     get_toeplitz,
 )
-from pylops.utils.typing import NDArray
+from pylops.utils.typing import NDArray, Tpwdsmoothing
 
 
 def convmtx(h: NDArray, n: int, offset: int = 0) -> NDArray:
@@ -321,7 +321,7 @@ def pwd_slope_estimate(
     niter: int = 5,
     liter: int = 20,
     order: int = 2,
-    smoothing: str = "triangle",
+    smoothing: Tpwdsmoothing = "triangle",
     nsmooth: Union[int, Sequence[int]] = 10,
     damp: float = 0.0,
     axis: int = -1,

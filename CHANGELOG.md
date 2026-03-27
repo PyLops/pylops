@@ -1,6 +1,11 @@
 Changelog
 =========
 
+# 2.7.0
+* Added cubic spline interpolation operator via
+  `pylops.signalprocessing.interpspline.InterpCubicSpline` (also interfaceable via
+  `pylops.signalprocessing.interp.Interp(..., kind="cubic_spline"`)
+
 # 2.6.0
 * Added `pylops.medical` module and `pylops.medical.CT2D` operator
 * Added `pylops.utils.signalprocessing.pwd_slope_estimate` and

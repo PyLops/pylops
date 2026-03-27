@@ -29,7 +29,7 @@ np.random.seed(10)
 @pytest.mark.parametrize("par", [(par1)])
 def test_unknown_wavelet(par):
     """Check error is raised if unknown wavelet is chosen is passed"""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="not in family set"):
         _ = DWT(dims=par["nt"], wavelet="foo")
 
 

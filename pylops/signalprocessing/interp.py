@@ -1,39 +1,36 @@
 __all__ = ["Interp"]
 
-import warnings
-from typing import Tuple, Union
+from typing import Literal, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator, aslinearoperator
 from pylops.basicoperators import Diagonal, MatrixMult, Restriction, Transpose
+from pylops.signalprocessing._interp_utils import (
+    _clip_iava_above_last_sample_index,
+    _ensure_iava_is_unique,
+)
+from pylops.signalprocessing.interpspline import InterpCubicSpline
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
-from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray
-
-
-def _checkunique(iava: npt.ArrayLike) -> None:
-    _, count = np.unique(iava, return_counts=True)
-    if np.any(count > 1):
-        raise ValueError("Repeated values in iava array")
+from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, SamplingLike
 
 
 def _nearestinterp(
     dims: Union[int, InputDimsLike],
-    iava: IntNDArray,
+    iava: SamplingLike,
     axis: int = -1,
     dtype: DTypeLike = "float64",
 ):
     """Nearest neighbour interpolation."""
     iava = np.round(iava).astype(int)
-    _checkunique(iava)
+    _ensure_iava_is_unique(iava=iava)
     return Restriction(dims, iava, axis=axis, dtype=dtype), iava
 
 
 def _linearinterp(
     dims: InputDimsLike,
-    iava: IntNDArray,
+    iava: SamplingLike,
     axis: int = -1,
     dtype: DTypeLike = "float64",
 ):
@@ -43,21 +40,14 @@ def _linearinterp(
     if np.issubdtype(iava.dtype, np.integer):
         iava = iava.astype(np.float64)
 
-    lastsample = dims[axis]
+    sample_size = dims[axis]
     dimsd = list(dims)
     dimsd[axis] = len(iava)
     dimsd = tuple(dimsd)
 
     # ensure that samples are not beyond the last sample, in that case set to
     # penultimate sample and raise a warning
-    outside = iava >= lastsample - 1
-    if sum(outside) > 0:
-        warnings.warn(
-            "At least one value is beyond the penultimate sample, "
-            "forced to be at penultimate sample"
-        )
-    iava[outside] = lastsample - 1 - 1e-10
-    _checkunique(iava)
+    _clip_iava_above_last_sample_index(iava=iava, sample_size=sample_size)
 
     # find indices and weights
     iva_l = ncp.floor(iava).astype(int)
@@ -75,13 +65,14 @@ def _linearinterp(
 
 def _sincinterp(
     dims: InputDimsLike,
-    iava: IntNDArray,
+    iava: SamplingLike,
     axis: int = 0,
     dtype: DTypeLike = "float64",
 ):
     """Sinc interpolation."""
     ncp = get_array_module(iava)
-    _checkunique(iava)
+
+    _ensure_iava_is_unique(iava=iava)
 
     # create sinc interpolation matrix
     nreg = dims[axis]
@@ -109,9 +100,9 @@ def _sincinterp(
 
 def Interp(
     dims: Union[int, InputDimsLike],
-    iava: IntNDArray,
+    iava: SamplingLike,
     axis: int = -1,
-    kind: str = "linear",
+    kind: Literal["linear", "nearest", "sinc", "cubic_spline"] = "linear",
     dtype: DTypeLike = "float64",
     name: str = "I",
 ) -> Tuple[LinearOperator, IntNDArray]:
@@ -136,11 +127,19 @@ def Interp(
       cost as it involves multiplying the input data by a matrix of size
       :math:`N \times M`.
 
+    - *Cubic Spline interpolation* relies on a cubic spline, i.e., a 2-times
+      continuously differentiable piecewise third order polynomial with equally spaced
+      knots. It is interpolated at the locations ``iava`` by evaluating the respective
+      polynomial fitted between ``np.floor(iava)`` and ``np.floor(iava) + 1``.
+      It offers an excellent tradeoff between accuracy and computational complexity
+      and its results oscillate less than those obtained from sinc interpolation.
+      It can also be accessed directly via :class:`pylops.singalprocessing.InterpCubicSpline`.
+
     .. note:: The vector ``iava`` should contain unique values. If the same
       index is repeated twice an error will be raised. This also applies when
       values beyond the last element of the input array for
-      *linear interpolation* as those values are forced to be just before this
-      element.
+      *linear interpolation* and *cubic spline interpolation* as those values are forced
+      to be just before this element.
 
     Parameters
     ----------
@@ -153,8 +152,13 @@ def Interp(
 
         Axis along which interpolation is applied.
     kind : :obj:`str`, optional
-        Kind of interpolation (``nearest``, ``linear``, and ``sinc`` are
-        currently supported)
+        Kind of interpolation.
+        Currently, ``"nearest"``, ``"linear"``, ``"sinc"``, and ``"cubic_spline"`` are
+        available.
+
+        .. versionadded:: 2.7.0
+
+        The ``"cubic_spline"``-interpolation was added.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -165,7 +169,7 @@ def Interp(
     Returns
     -------
     op : :obj:`pylops.LinearOperator`
-        Linear intepolation operator
+        Linear interpolation operator
     iava : :obj:`list` or :obj:`numpy.ndarray`
         Corrected indices of locations of available samples
         (samples at ``M-1`` or beyond are forced to be at ``M-1-eps``)
@@ -216,6 +220,11 @@ def Interp(
     :math:`i,j` possible combinations.
 
     """
+
+    kind = kind.lower()  # type: ignore
+    if kind not in {"nearest", "linear", "sinc", "cubic_spline"}:
+        raise NotImplementedError(f"{kind} interpolation could not be found.")
+
     dims = _value_or_sized_to_tuple(dims)
 
     if kind == "nearest":
@@ -224,11 +233,19 @@ def Interp(
         interpop, iava, dims, dimsd = _linearinterp(dims, iava, axis=axis, dtype=dtype)
     elif kind == "sinc":
         interpop, dims, dimsd = _sincinterp(dims, iava, axis=axis, dtype=dtype)
-    else:
-        raise NotImplementedError("kind is not correct...")
+    elif kind == "cubic_spline":
+        interpop = InterpCubicSpline(
+            dims=dims,
+            iava=iava,
+            axis=axis,
+            dtype=dtype,
+            name=name,
+        )
+        iava = interpop.iava
+
     # add dims and dimsd to composite operators (not needed for neareast as
     # interpop is a Restriction operator already
-    if kind != "nearest":
+    if kind not in {"nearest", "cubic_spline"}:
         interpop = aslinearoperator(interpop)
         interpop.dims = dims
         interpop.dimsd = dimsd

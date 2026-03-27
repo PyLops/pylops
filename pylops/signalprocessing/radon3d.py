@@ -1,12 +1,12 @@
 __all__ = ["Radon3D"]
 
-from typing import Callable, Optional, Tuple
+from typing import Callable, Literal, Optional, Tuple
 
 import numpy as np
 
 from pylops.basicoperators import Spread
 from pylops.utils import deps
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops.utils.typing import DTypeLike, NDArray, Tengine_nn
 
 jit_message = deps.numba_import("the radon3d module")
 
@@ -163,11 +163,11 @@ def Radon3D(
     hxaxis: NDArray,
     pyaxis: NDArray,
     pxaxis: NDArray,
-    kind: str = "linear",
+    kind: Literal["linear", "parabolic", "hyperbolic"] = "linear",
     centeredh: bool = True,
     interp: bool = True,
     onthefly: bool = False,
-    engine: str = "numpy",
+    engine: Tengine_nn = "numpy",
     dtype: DTypeLike = "float64",
     name: str = "R",
 ):
@@ -224,10 +224,10 @@ def Radon3D(
 
     Raises
     ------
-    KeyError
-        If ``engine`` is neither ``numpy`` nor ``numba``
     NotImplementedError
         If ``kind`` is not ``linear``, ``parabolic``, or ``hyperbolic``
+    ValueError
+        If ``engine`` is neither ``numpy`` nor ``numba``
 
     See Also
     --------
@@ -267,7 +267,7 @@ def Radon3D(
     """
     # engine
     if engine not in ["numpy", "numba"]:
-        raise KeyError("engine must be numpy or numba")
+        raise ValueError("engine must be numpy or numba")
     if engine == "numba" and jit_message is not None:
         engine = "numpy"
 

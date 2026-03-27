@@ -1,10 +1,9 @@
 __all__ = ["FFTND"]
 
 import warnings
-from typing import Optional, Sequence, Union
+from typing import Literal, Optional, Sequence, Union
 
 import numpy as np
-import numpy.typing as npt
 import scipy.fft
 
 from pylops import LinearOperator
@@ -12,7 +11,7 @@ from pylops.signalprocessing._baseffts import _BaseFFTND, _FFTNorms
 from pylops.utils import deps
 from pylops.utils.backend import get_array_module, get_sp_fft
 from pylops.utils.decorators import reshaped
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, Tfftnorm
 
 mkl_fft_message = deps.mkl_fft_import("the mkl fft module")
 
@@ -30,7 +29,7 @@ class _FFTND_numpy(_BaseFFTND):
         axes: Union[int, InputDimsLike] = (-3, -2, -1),
         nffts: Optional[Union[int, InputDimsLike]] = None,
         sampling: Union[float, Sequence[float]] = 1.0,
-        norm: str = "ortho",
+        norm: Tfftnorm = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
@@ -120,7 +119,7 @@ class _FFTND_numpy(_BaseFFTND):
             y = ncp.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
-    def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
+    def __truediv__(self, y: NDArray) -> NDArray:
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
@@ -135,7 +134,7 @@ class _FFTND_scipy(_BaseFFTND):
         axes: Union[int, InputDimsLike] = (-3, -2, -1),
         nffts: Optional[Union[int, InputDimsLike]] = None,
         sampling: Union[float, Sequence[float]] = 1.0,
-        norm: str = "ortho",
+        norm: Tfftnorm = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
@@ -218,7 +217,7 @@ class _FFTND_scipy(_BaseFFTND):
             y = sp_fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
-    def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
+    def __truediv__(self, y: NDArray) -> NDArray:
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
@@ -233,7 +232,7 @@ class _FFTND_mklfft(_BaseFFTND):
         axes: Union[int, InputDimsLike] = (-3, -2, -1),
         nffts: Optional[Union[int, InputDimsLike]] = None,
         sampling: Union[float, Sequence[float]] = 1.0,
-        norm: str = "ortho",
+        norm: Tfftnorm = "ortho",
         real: bool = False,
         ifftshift_before: bool = False,
         fftshift_after: bool = False,
@@ -318,7 +317,7 @@ class _FFTND_mklfft(_BaseFFTND):
             y = scipy.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
-    def __truediv__(self, y: npt.ArrayLike) -> npt.ArrayLike:
+    def __truediv__(self, y: NDArray) -> NDArray:
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
@@ -329,11 +328,11 @@ def FFTND(
     axes: Union[int, InputDimsLike] = (-3, -2, -1),
     nffts: Optional[Union[int, InputDimsLike]] = None,
     sampling: Union[float, Sequence[float]] = 1.0,
-    norm: str = "ortho",
+    norm: Tfftnorm = "ortho",
     real: bool = False,
     ifftshift_before: bool = False,
     fftshift_after: bool = False,
-    engine: str = "scipy",
+    engine: Literal["numpy", "scipy", "mkl_fft"] = "scipy",
     dtype: DTypeLike = "complex128",
     name: str = "F",
     **kwargs_fft,
@@ -479,7 +478,7 @@ def FFTND(
         - If ``nffts`` or ``sampling`` are not either a single value or tuple with
           the same dimension ``axes``.
         - If ``norm`` is not one of "ortho", "none", or "1/n".
-    NotImplementedError
+    ValueError
         If ``engine`` is neither ``numpy``, ``scipy`` nor ``mkl_fft``.
 
     Notes
@@ -555,6 +554,6 @@ def FFTND(
             **kwargs_fft,
         )
     else:
-        raise NotImplementedError("engine must be numpy, scipy or mkl_fft")
+        raise ValueError("engine must be numpy, scipy or mkl_fft")
     f.name = name
     return f

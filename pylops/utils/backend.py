@@ -38,7 +38,7 @@ from scipy.signal import convolve, correlate, fftconvolve, oaconvolve
 from scipy.sparse import csc_matrix, eye
 
 from pylops.utils import deps
-from pylops.utils.typing import DTypeLike, NDArray, ArrayLike
+from pylops.utils.typing import ArrayLike, DTypeLike, NDArray, Tfftengine_ncj
 
 if deps.cupy_enabled:
     import cupy as cp
@@ -70,7 +70,7 @@ else:
     from numpy.core.multiarray import normalize_axis_index
 
 
-def get_module(backend: str = "numpy") -> ModuleType:
+def get_module(backend: Tfftengine_ncj = "numpy") -> ModuleType:
     """Returns correct numerical module based on backend string
 
     Parameters
@@ -680,7 +680,7 @@ def inplace_divide(x: ArrayLike, y: ArrayLike, idx: list) -> NDArray:
         return y
 
 
-def randn(*n: int, backend: str = "numpy") -> NDArray:
+def randn(*n: int, backend: Tfftengine_ncj = "numpy") -> NDArray:
     """Returns randomly generated number
 
     Parameters

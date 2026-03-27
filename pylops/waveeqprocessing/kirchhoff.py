@@ -4,7 +4,7 @@ __all__ = ["Kirchhoff"]
 import logging
 import os
 import warnings
-from typing import Optional, Tuple, Union
+from typing import Literal, Optional, Tuple, Union
 
 import numpy as np
 
@@ -15,7 +15,7 @@ from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops.utils.typing import DTypeLike, NDArray, Tengine_nnc
 
 skfmm_message = deps.skfmm_import("the kirchhoff module")
 jit_message = deps.numba_import("the kirchhoff module")
@@ -203,10 +203,9 @@ class Kirchhoff(LinearOperator):
     Raises
     ------
     NotImplementedError
-        If ``mode`` is neither ``analytic``, ``eikonal``, or ``byot``.
-
-    NotImplementedError
         If ``engine="cuda"`` and ``trav`` is provided as a single table
+    ValueError
+        If ``mode`` is neither ``analytic``, ``eikonal``, or ``byot``.
 
     Notes
     -----
@@ -315,7 +314,7 @@ class Kirchhoff(LinearOperator):
         wav: NDArray,
         wavcenter: int,
         y: Optional[NDArray] = None,
-        mode: str = "eikonal",
+        mode: Literal["analytic", "eikonal", "byot"] = "eikonal",
         wavfilter: bool = False,
         dynamic: bool = False,
         trav: Optional[Union[NDArray, Tuple[NDArray, NDArray]]] = None,
@@ -323,7 +322,7 @@ class Kirchhoff(LinearOperator):
         aperture: Optional[Tuple[float, float]] = None,
         angleaperture: Union[float, Tuple[float, float]] = 90.0,
         snell: Optional[Tuple[float, float]] = None,
-        engine: str = "numpy",
+        engine: Tengine_nnc = "numpy",
         dtype: DTypeLike = "float64",
         name: str = "K",
     ) -> None:
@@ -432,7 +431,7 @@ class Kirchhoff(LinearOperator):
                             axis=np.arange(self.ndims),
                         )
         else:
-            raise NotImplementedError("method must be analytic, eikonal or byot")
+            raise ValueError("method must be analytic, eikonal or byot")
 
         # compute angles with vertical
         if self.dynamic:
@@ -580,7 +579,7 @@ class Kirchhoff(LinearOperator):
         recs: NDArray,
         vel: Union[float, NDArray],
         y: Optional[NDArray] = None,
-        mode: str = "eikonal",
+        mode: Literal["analytic", "eikonal"] = "eikonal",
     ) -> Tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
         r"""Traveltime table
 
@@ -710,7 +709,7 @@ class Kirchhoff(LinearOperator):
             else:
                 raise NotImplementedError(skfmm_message)
         else:
-            raise NotImplementedError("method must be analytic or eikonal")
+            raise ValueError("method must be analytic or eikonal")
 
         # compute traveltime gradients at image points
         trav_srcs_grad = np.gradient(
@@ -1073,9 +1072,9 @@ class Kirchhoff(LinearOperator):
                                 )
         return y
 
-    def _register_multiplications(self, engine: str) -> None:
+    def _register_multiplications(self, engine: Tengine_nnc) -> None:
         if engine not in ["numpy", "numba", "cuda"]:
-            raise KeyError("engine must be numpy or numba or cuda")
+            raise ValueError("engine must be numpy or numba or cuda")
         if engine == "numba" and jit_message is None:
             numba_opts = dict(
                 nopython=True, nogil=True, parallel=parallel

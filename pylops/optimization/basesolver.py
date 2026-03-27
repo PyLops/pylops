@@ -7,7 +7,7 @@ from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 from pylops.optimization.callback import Callbacks
-from pylops.utils.typing import NDArray
+from pylops.utils.typing import NDArray, Tmemunit
 
 if TYPE_CHECKING:
     from pylops.linearoperator import LinearOperator
@@ -160,7 +160,7 @@ class Solver(metaclass=ABCMeta):
     def memory_usage(
         self,
         show: bool = False,
-        unit: str = "B",
+        unit: Tmemunit = "B",
     ) -> float:
         """Compute memory usage of the solver
 

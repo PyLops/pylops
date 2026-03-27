@@ -13,7 +13,7 @@ from pylops.utils.backend import (
     inplace_set,
 )
 from pylops.utils.decorators import reshaped
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, Tderivkind
 
 
 class SecondDerivative(LinearOperator):
@@ -86,7 +86,7 @@ class SecondDerivative(LinearOperator):
         dims: Union[int, InputDimsLike],
         axis: int = -1,
         sampling: float = 1.0,
-        kind: str = "centered",
+        kind: Tderivkind = "centered",
         edge: bool = False,
         dtype: DTypeLike = "float64",
         name: str = "S",

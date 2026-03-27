@@ -1,6 +1,6 @@
 __all__ = ["ConvolveND"]
 
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 
@@ -36,7 +36,8 @@ class ConvolveND(LinearOperator):
 
         Axes along which convolution is applied
     method : :obj:`str`, optional
-        Method used to calculate the convolution (``direct`` or ``fft``).
+        Method used to calculate the convolution (``auto``, ``direct`` or ``fft``)
+        - see :func:`scipy.signal.convolve` for details.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -78,7 +79,7 @@ class ConvolveND(LinearOperator):
         h: NDArray,
         offset: Optional[InputDimsLike] = None,
         axes: InputDimsLike = (-2, -1),
-        method: str = "fft",
+        method: Optional[Literal["auto", "direct", "fft"]] = "fft",
         dtype: DTypeLike = "float64",
         name: str = "C",
     ):

@@ -1,6 +1,6 @@
 __all__ = ["FirstDerivative"]
 
-from typing import Callable, Union
+from typing import Callable, Literal, Union
 
 import numpy as np
 
@@ -13,7 +13,7 @@ from pylops.utils.backend import (
     inplace_set,
 )
 from pylops.utils.decorators import reshaped
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, Tderivkind
 
 
 class FirstDerivative(LinearOperator):
@@ -94,9 +94,9 @@ class FirstDerivative(LinearOperator):
         dims: Union[int, InputDimsLike],
         axis: int = -1,
         sampling: float = 1.0,
-        kind: str = "centered",
+        kind: Tderivkind = "centered",
         edge: bool = False,
-        order: int = 3,
+        order: Literal[3, 5] = 3,
         dtype: DTypeLike = "float64",
         name: str = "F",
     ) -> None:
@@ -122,8 +122,8 @@ class FirstDerivative(LinearOperator):
 
     def _register_multiplications(
         self,
-        kind: str,
-        order: int,
+        kind: Tderivkind,
+        order: Literal[3, 5],
     ) -> None:
         # choose _matvec and _rmatvec kind
         self._hmatvec: Callable

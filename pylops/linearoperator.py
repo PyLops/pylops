@@ -675,7 +675,7 @@ class LinearOperator(_LinearOperator):
                 x.ndim > 2 or (x.ndim == 2 and x.shape[0] != self.shape[1])
             ):
                 raise ValueError(
-                    "Operator can only be applied 1D vectors or 2D matrices. "
+                    "Operator can only be applied to 1D vectors or 2D matrices. "
                     "Enable ndarray multiplication with pylops.set_ndarray_multiplication(True)."
                 )
             is_dims_shaped = x.shape == self.dims

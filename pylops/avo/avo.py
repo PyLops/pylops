@@ -12,14 +12,13 @@ __all__ = [
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 from numpy import cos, sin, tan
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops.utils.typing import DTypeLike, NDArray, Tavolinearization
 
 
 def zoeppritz_scattering(
@@ -29,7 +28,7 @@ def zoeppritz_scattering(
     vp0: float,
     vs0: float,
     rho0: float,
-    theta1: Union[float, npt.ArrayLike],
+    theta1: Union[float, NDArray],
 ) -> NDArray:
     r"""Zoeppritz solution.
 
@@ -250,12 +249,12 @@ def zoeppritz_pp(
 
 
 def approx_zoeppritz_pp(
-    vp1: Union[List, Tuple, npt.ArrayLike],
-    vs1: Union[List, Tuple, npt.ArrayLike],
-    rho1: Union[List, Tuple, npt.ArrayLike],
-    vp0: Union[List, Tuple, npt.ArrayLike],
-    vs0: Union[List, Tuple, npt.ArrayLike],
-    rho0: Union[List, Tuple, npt.ArrayLike],
+    vp1: Union[List, Tuple, NDArray],
+    vs1: Union[List, Tuple, NDArray],
+    rho1: Union[List, Tuple, NDArray],
+    vp0: Union[List, Tuple, NDArray],
+    vs0: Union[List, Tuple, NDArray],
+    rho0: Union[List, Tuple, NDArray],
     theta1: Union[float, NDArray],
 ) -> NDArray:
     """PP reflection coefficient from the approximate Zoeppritz equation.
@@ -335,7 +334,7 @@ def approx_zoeppritz_pp(
 
 
 def akirichards(
-    theta: npt.ArrayLike,
+    theta: NDArray,
     vsvp: Union[float, NDArray],
     n: int = 1,
 ) -> Tuple[NDArray, NDArray, NDArray]:
@@ -409,7 +408,7 @@ def akirichards(
 
 
 def fatti(
-    theta: npt.ArrayLike,
+    theta: NDArray,
     vsvp: Union[float, NDArray],
     n: int = 1,
 ) -> Tuple[NDArray, NDArray, NDArray]:
@@ -485,7 +484,7 @@ def fatti(
 
 
 def ps(
-    theta: npt.ArrayLike,
+    theta: NDArray,
     vsvp: Union[float, NDArray],
     n: int = 1,
 ) -> Tuple[NDArray, NDArray, NDArray]:
@@ -650,7 +649,7 @@ class AVOLinearModelling(LinearOperator):
         vsvp: Union[float, NDArray] = 0.5,
         nt0: int = 1,
         spatdims: Optional[Union[int, Tuple[int]]] = None,
-        linearization: str = "akirich",
+        linearization: Tavolinearization = "akirich",
         dtype: DTypeLike = "float64",
         name: str = "A",
     ) -> None:

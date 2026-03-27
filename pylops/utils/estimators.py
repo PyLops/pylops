@@ -9,20 +9,20 @@ from types import ModuleType
 from typing import Optional, Tuple
 
 import numpy
-import numpy.typing as npt
 
 from pylops.utils.backend import get_module
+from pylops.utils.typing import NDArray, Tbackend, Tsampler, Tsampler2
 
 
 def _sampler_gaussian(
     m: float, batch_size: int, backend_module: ModuleType = numpy
-) -> Tuple[float, npt.ArrayLike]:
+) -> Tuple[float, NDArray]:
     return backend_module.random.randn(m, batch_size)
 
 
 def _sampler_rayleigh(
     m: float, batch_size: int, backend_module: ModuleType = numpy
-) -> npt.ArrayLike:
+) -> NDArray:
     z = backend_module.random.randn(m, batch_size)
     for i in range(batch_size):
         z[:, i] *= m / backend_module.dot(z[:, i].T, z[:, i])
@@ -31,7 +31,7 @@ def _sampler_rayleigh(
 
 def _sampler_rademacher(
     m: float, batch_size: int, backend_module: ModuleType = numpy
-) -> npt.ArrayLike:
+) -> NDArray:
     return 2 * backend_module.random.binomial(1, 0.5, size=(m, batch_size)) - 1
 
 
@@ -46,8 +46,8 @@ def trace_hutchinson(
     Op,
     neval: Optional[int] = None,
     batch_size: Optional[int] = None,
-    sampler: str = "rademacher",
-    backend: str = "numpy",
+    sampler: Tsampler = "rademacher",
+    backend: Tbackend = "numpy",
 ) -> float:
     r"""Trace of linear operator using the Hutchinson method.
 
@@ -161,8 +161,8 @@ def trace_hutchinson(
 def trace_hutchpp(
     Op,
     neval: Optional[int] = None,
-    sampler: str = "rademacher",
-    backend: str = "numpy",
+    sampler: Tsampler2 = "rademacher",
+    backend: Tbackend = "numpy",
 ) -> float:
     r"""Trace of linear operator using the Hutch++ method.
 
@@ -254,10 +254,10 @@ def trace_hutchpp(
 def trace_nahutchpp(
     Op,
     neval: Optional[int] = None,
-    sampler: str = "rademacher",
+    sampler: Tsampler2 = "rademacher",
     c1: float = 1.0 / 6.0,
     c2: float = 1.0 / 3.0,
-    backend: str = "numpy",
+    backend: Tbackend = "numpy",
 ) -> float:
     r"""Trace of linear operator using the NA-Hutch++ method.
 

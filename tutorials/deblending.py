@@ -42,7 +42,6 @@ for which we will use the :py:class:`pylops.optimization.sparsity.fista` solver.
 """
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.sparse.linalg import lobpcg as sp_lobpcg
 
 import pylops
 
@@ -147,6 +146,7 @@ p_inv = pylops.optimization.sparsity.fista(
 )[0]
 data_inv = Sop * p_inv
 data_inv = data_inv.reshape(ns, nt)
+snr_inv = pylops.utils.metrics.snr(data, data_inv)
 
 fig, axs = plt.subplots(1, 4, sharey=False, figsize=(12, 8))
 axs[0].imshow(
@@ -181,7 +181,7 @@ axs[2].imshow(
     interpolation="none",
 )
 axs[2].set_xlabel("#Src")
-axs[2].set_title("Deblended CRG")
+axs[2].set_title(f"Deblended CRG (SNR: {snr_inv:.2f} dB)")
 axs[2].axis("tight")
 axs[3].imshow(
     data.T.real - data_inv.T.real,

@@ -76,7 +76,7 @@ class MatrixMult(LinearOperator):
         self,
         A: NDArray,
         otherdims: Optional[Union[int, InputDimsLike]] = None,
-        forceflat: bool = None,
+        forceflat: Optional[bool] = None,
         dtype: DTypeLike = "float64",
         name: str = "M",
     ) -> None:

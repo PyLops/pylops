@@ -15,7 +15,7 @@ from pylops.basicoperators import Diagonal, VStack
 from pylops.optimization.basesolver import Solver, _units
 from pylops.optimization.basic import cg, cgls
 from pylops.utils.backend import get_array_module
-from pylops.utils.typing import NDArray
+from pylops.utils.typing import NDArray, Tmemunit, Tsolverengine
 
 if TYPE_CHECKING:
     from pylops.linearoperator import LinearOperator
@@ -104,7 +104,7 @@ class NormalEquationsInversion(Solver):
         self,
         nopRegs: Optional[Tuple[int]] = None,
         show: bool = False,
-        unit: str = "B",
+        unit: Tmemunit = "B",
     ) -> float:
         """Compute memory usage of the solver
 
@@ -256,7 +256,7 @@ class NormalEquationsInversion(Solver):
     def run(
         self,
         x: NDArray,
-        engine: str = "scipy",
+        engine: Tsolverengine = "scipy",
         show: bool = False,
         **kwargs_solver,
     ) -> Tuple[NDArray, int]:
@@ -324,7 +324,7 @@ class NormalEquationsInversion(Solver):
         epsRs: Optional[Sequence[float]] = None,
         NRegs: Optional[Sequence["LinearOperator"]] = None,
         epsNRs: Optional[Sequence[float]] = None,
-        engine: str = "scipy",
+        engine: Tsolverengine = "scipy",
         show: bool = False,
         **kwargs_solver,
     ) -> Tuple[NDArray, int]:
@@ -521,7 +521,7 @@ class RegularizedInversion(Solver):
         self,
         nopRegs: Optional[Tuple[int]] = None,
         show: bool = False,
-        unit: str = "B",
+        unit: Tmemunit = "B",
     ) -> float:
         """Compute memory usage of the solver
 
@@ -659,7 +659,7 @@ class RegularizedInversion(Solver):
     def run(
         self,
         x: NDArray,
-        engine: str = "scipy",
+        engine: Tsolverengine = "scipy",
         show: bool = False,
         **kwargs_solver,
     ) -> Tuple[NDArray, int, int, float, float]:
@@ -730,7 +730,7 @@ class RegularizedInversion(Solver):
         Weight: Optional["LinearOperator"] = None,
         dataregs: Optional[Sequence[NDArray]] = None,
         epsRs: Optional[Sequence[float]] = None,
-        engine: str = "scipy",
+        engine: Tsolverengine = "scipy",
         show: bool = False,
         **kwargs_solver,
     ) -> Tuple[NDArray, int, int, float, float]:
@@ -848,7 +848,7 @@ class PreconditionedInversion(Solver):
     def memory_usage(
         self,
         show: bool = False,
-        unit: str = "B",
+        unit: Tmemunit = "B",
     ) -> float:
         """Compute memory usage of the solver
 
@@ -930,7 +930,7 @@ class PreconditionedInversion(Solver):
     def run(
         self,
         x: NDArray,
-        engine: str = "scipy",
+        engine: Tsolverengine = "scipy",
         show: bool = False,
         **kwargs_solver,
     ) -> Tuple[NDArray, int, int, float, float]:
@@ -1004,7 +1004,7 @@ class PreconditionedInversion(Solver):
         y: NDArray,
         P: "LinearOperator",
         x0: Optional[NDArray] = None,
-        engine: str = "scipy",
+        engine: Tsolverengine = "scipy",
         show: bool = False,
         **kwargs_solver,
     ) -> Tuple[NDArray, int, int, float, float]:

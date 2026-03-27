@@ -64,7 +64,7 @@ Basic operators
     Imag
     Conj
     ToCupy
-    
+
 
 Smoothing and derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -100,6 +100,7 @@ Signal processing
     NonStationaryFilters1D
     NonStationaryFilters2D
     Interp
+    InterpCubicSpline
     Bilinear
     FFT
     FFT2D
@@ -170,6 +171,7 @@ Medical imaging
    :toctree: generated/
 
     CT2D
+    MRI2D
 
 
 Solvers

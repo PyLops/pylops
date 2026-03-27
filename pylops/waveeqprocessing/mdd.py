@@ -21,7 +21,7 @@ from pylops.utils.backend import (
     get_module_name,
     to_cupy_conditional,
 )
-from pylops.utils.typing import NDArray
+from pylops.utils.typing import NDArray, Tfftengine_nsf
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +134,7 @@ def MDC(
     dt: float = 1.0,
     dr: float = 1.0,
     twosided: bool = True,
-    fftengine: str = "numpy",
+    fftengine: Tfftengine_nsf = "numpy",
     saveGt: bool = True,
     conj: bool = False,
     usematmul: bool = False,
@@ -276,7 +276,7 @@ def MDD(
     saveGt: bool = True,
     add_negative: bool = True,
     smooth_precond: int = 0,
-    fftengine: str = "numpy",
+    fftengine: Tfftengine_nsf = "numpy",
     **kwargs_solver,
 ) -> Union[
     Tuple[NDArray, NDArray],

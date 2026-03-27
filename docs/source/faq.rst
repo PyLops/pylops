@@ -14,7 +14,7 @@ working with linear operators is indeed that you don't really need to access the
 of an operator.
 
 
-**2. Can I have an older version of** ``cupy`` **installed in my system (** ``cupy-cudaXX<10.6.0``)?**
+**2. Can I have an older version of** ``cupy`` **installed in my system (** ``cupy-cudaXX<10.6.0``**)?**
 
 Yes. Nevertheless you need to tell PyLops that you don't want to use its ``cupy``
 backend by setting the environment variable ``CUPY_PYLOPS=0``.

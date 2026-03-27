@@ -18,7 +18,7 @@ from pylops.utils.backend import (
 )
 from pylops.utils.decorators import reshaped
 from pylops.utils.tapers import taper2d
-from pylops.utils.typing import InputDimsLike, NDArray
+from pylops.utils.typing import InputDimsLike, NDArray, Ttaper
 
 logger = logging.getLogger(__name__)
 
@@ -199,7 +199,7 @@ class Patch2D(LinearOperator):
         nwin: Tuple[int, int],
         nover: Tuple[int, int],
         nop: Tuple[int, int],
-        tapertype: str = "hanning",
+        tapertype: Optional[Ttaper] = "hanning",
         savetaper: bool = True,
         scalings: Optional[Sequence[float]] = None,
         name: str = "P",

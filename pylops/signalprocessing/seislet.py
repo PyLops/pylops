@@ -1,7 +1,7 @@
 __all__ = ["Seislet"]
 
 from math import ceil, log
-from typing import Optional, Sequence
+from typing import Literal, Optional, Sequence
 
 import numpy as np
 
@@ -425,7 +425,7 @@ class Seislet(LinearOperator):
         slopes: NDArray,
         sampling: Sequence[float] = (1.0, 1.0),
         level: Optional[int] = None,
-        kind: str = "haar",
+        kind: Literal["haar", "linear"] = "haar",
         inv: bool = False,
         dtype: DTypeLike = "float64",
         name: str = "S",

@@ -122,7 +122,7 @@ class Identity(LinearOperator):
         N: Union[int, InputDimsLike],
         M: Optional[Union[int, InputDimsLike]] = None,
         inplace: bool = True,
-        forceflat: bool = None,
+        forceflat: Optional[bool] = None,
         dtype: DTypeLike = "float64",
         name: str = "I",
     ) -> None:

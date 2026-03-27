@@ -1,9 +1,8 @@
 from typing import Sized, Tuple
 
 import numpy as np
-import numpy.typing as npt
 
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops.utils.typing import ArrayLike, DTypeLike, NDArray
 
 
 def _value_or_sized_to_array(value_or_sized, repeat: int = 1) -> NDArray:
@@ -52,7 +51,7 @@ def _value_or_sized_to_tuple(value_or_sized, repeat: int = 1) -> Tuple:
     return tuple(_value_or_sized_to_array(value_or_sized, repeat=repeat))
 
 
-def _raise_on_wrong_dtype(arr: npt.ArrayLike, dtype: DTypeLike, name: str) -> None:
+def _raise_on_wrong_dtype(arr: ArrayLike, dtype: DTypeLike, name: str) -> None:
     """Raises an error if dtype of `arr` is not a subdtype of `dtype`.
 
     Parameters

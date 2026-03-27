@@ -1,6 +1,6 @@
 r"""
 AVO modelling
-===================
+=============
 This example shows how to create pre-stack angle gathers using
 the :py:class:`pylops.avo.avo.AVOLinearModelling` operator.
 """

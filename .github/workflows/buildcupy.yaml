@@ -1,6 +1,12 @@
 name: PyLops Testing (CuPy)
 
-on: [push, pull_request]
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+      - dev
 
 jobs:
   build:
@@ -18,7 +24,7 @@ jobs:
           PIP=.venv-pylops/bin/pip
           ls $PYTHON
           ls $PIP
-          $PIP install 
+          $PIP install
           $PIP install --upgrade pip setuptools
           $PIP install install flake8 pytest setuptools-scm
           $PIP install -r requirements-dev-gpu.txt
@@ -27,7 +33,7 @@ jobs:
           $PIP install .
           EOF
           srun --account=yuxilab -n 1 -N 1 --gres=gpu:L40S:1 bash pylops_tests.sh
-      - name: Tests with pytest 
+      - name: Tests with pytest
         run: |
           export CUPY_PYLOPS=1; export TEST_CUPY_PYLOPS=1;
           export PYTEST=.venv-pylops/bin/pytest

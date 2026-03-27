@@ -1,5 +1,7 @@
 __all__ = ["ChirpRadon3D"]
 
+from typing import Literal
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -76,6 +78,10 @@ class ChirpRadon3D(LinearOperator):
     shape : :obj:`tuple`
         Operator shape.
 
+    Raises
+    ------
+    ValueError
+        If ``engine`` is neither ``numpy`` nor ``fftw``
 
     Notes
     -----
@@ -92,7 +98,7 @@ class ChirpRadon3D(LinearOperator):
         hyaxis: NDArray,
         hxaxis: NDArray,
         pmax: NDArray,
-        engine: str = "numpy",
+        engine: Literal["numpy", "fftw"] = "numpy",
         dtype: DTypeLike = "float64",
         name: str = "C",
         **kwargs_fftw,
@@ -107,7 +113,7 @@ class ChirpRadon3D(LinearOperator):
         self.pmax = pmax
         self.engine = engine
         if self.engine not in ["fftw", "numpy"]:
-            raise NotImplementedError("engine must be 'numpy' or 'fftw'")
+            raise ValueError("engine must be 'numpy' or 'fftw'")
         self.kwargs_fftw = kwargs_fftw
 
     @reshaped

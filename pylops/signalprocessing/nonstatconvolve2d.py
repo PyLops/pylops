@@ -13,7 +13,7 @@ from pylops.utils import deps
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module
 from pylops.utils.decorators import reshaped
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, Tengine_nnc
 
 jit_message = deps.numba_import("the nonstatconvolve2d module")
 
@@ -153,13 +153,13 @@ class NonStationaryConvolve2D(LinearOperator):
         hs: NDArray,
         ihx: InputDimsLike,
         ihz: InputDimsLike,
-        engine: str = "numpy",
+        engine: Tengine_nnc = "numpy",
         num_threads_per_blocks: Tuple[int, int] = (32, 32),
         dtype: DTypeLike = "float64",
         name: str = "C",
     ) -> None:
         if engine not in ["numpy", "numba", "cuda"]:
-            raise NotImplementedError("engine must be numpy or numba or cuda")
+            raise ValueError("engine must be numpy or numba or cuda")
         if hs.shape[2] % 2 == 0 or hs.shape[3] % 2 == 0:
             raise ValueError("filters hs must have odd length")
         if len(np.unique(np.diff(ihx))) > 1 or len(np.unique(np.diff(ihz))) > 1:
@@ -398,7 +398,7 @@ class NonStationaryFilters2D(LinearOperator):
         name: str = "C",
     ) -> None:
         if engine not in ["numpy", "numba", "cuda"]:
-            raise NotImplementedError("engine must be numpy or numba or cuda")
+            raise ValueError("engine must be numpy or numba or cuda")
         if hshape[0] % 2 == 0 or hshape[1] % 2 == 0:
             raise ValueError("filters hs must have odd length")
         if len(np.unique(np.diff(ihx))) > 1 or len(np.unique(np.diff(ihz))) > 1:

@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 
 from pylops.utils.backend import get_module, randn, to_numpy
+from pylops.utils.typing import Tbackend
 
 
 def dottest(
@@ -16,7 +17,7 @@ def dottest(
     complexflag: int = 0,
     raiseerror: bool = True,
     verb: bool = False,
-    backend: str = "numpy",
+    backend: Tbackend = "numpy",
 ) -> bool:
     r"""Dot test.
 

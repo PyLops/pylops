@@ -17,7 +17,7 @@ from pylops.utils.backend import (
     to_numpy,
     to_numpy_conditional,
 )
-from pylops.utils.typing import NDArray
+from pylops.utils.typing import NDArray, Tmemunit
 
 if TYPE_CHECKING:
     from pylops.linearoperator import LinearOperator
@@ -97,7 +97,7 @@ class CG(Solver):
     def memory_usage(
         self,
         show: bool = False,
-        unit: str = "B",
+        unit: Tmemunit = "B",
     ) -> float:
         """Compute memory usage of the solver
 
@@ -463,7 +463,7 @@ class CGLS(Solver):
     def memory_usage(
         self,
         show: bool = False,
-        unit: str = "B",
+        unit: Tmemunit = "B",
     ) -> float:
         """Compute memory usage of the solver
 
@@ -983,7 +983,7 @@ class LSQR(Solver):
     def memory_usage(
         self,
         show: bool = False,
-        unit: str = "B",
+        unit: Tmemunit = "B",
     ) -> float:
         """Compute memory usage of the solver
 

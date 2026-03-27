@@ -51,7 +51,7 @@ par2j = {
 @pytest.mark.parametrize("par", [(par1)])
 def test_unknown_engine(par):
     """Check error is raised if unknown engine is passed"""
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError, match="engine must be numpy"):
         _ = Shift(
             par["nt"],
             1.0,

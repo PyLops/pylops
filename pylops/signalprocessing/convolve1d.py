@@ -1,10 +1,9 @@
 __all__ = ["Convolve1D"]
 
 from functools import partial
-from typing import Callable, Tuple, Union
+from typing import Callable, Literal, Optional, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
@@ -20,8 +19,8 @@ from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
 
 def _choose_convfunc(
-    x: npt.ArrayLike,
-    method: Union[None, str],
+    x: NDArray,
+    method: Optional[Literal["direct", "fft", "overlapadd"]],
     dims: Union[int, InputDimsLike],
     axis: int = -1,
 ) -> Tuple[Callable, str]:
@@ -33,7 +32,7 @@ def _choose_convfunc(
         if method is None:
             method = "direct"
         if method not in ("direct", "fft"):
-            raise NotImplementedError("method must be direct or fft")
+            raise ValueError("method must be direct or fft")
         convfunc = get_convolve(x)
     else:
         if method is None:
@@ -43,7 +42,7 @@ def _choose_convfunc(
         elif method == "overlapadd":
             convfunc = partial(get_oaconvolve(x), axes=axis)(x)
         else:
-            raise NotImplementedError("method must be fft or overlapadd")
+            raise ValueError("method must be fft or overlapadd")
     return convfunc, method
 
 
@@ -63,7 +62,7 @@ class _Convolve1Dshort(LinearOperator):
         h: NDArray,
         offset: int = 0,
         axis: int = -1,
-        method: str = None,
+        method: Optional[Literal["direct", "fft", "overlapadd"]] = None,
         dtype: DTypeLike = "float64",
         name: str = "C",
     ) -> None:
@@ -124,7 +123,7 @@ class _Convolve1Dlong(LinearOperator):
         h: NDArray,
         offset: int = 0,
         axis: int = -1,
-        method: str = None,
+        method: Optional[Literal["direct", "fft", "overlapadd"]] = None,
         dtype: DTypeLike = "float64",
         name: str = "C",
     ) -> None:
@@ -228,7 +227,9 @@ class Convolve1D(LinearOperator):
         Method used to calculate the convolution (``direct``, ``fft``,
         or ``overlapadd``). Note that only ``direct`` and ``fft`` are allowed
         when ``dims=None``, whilst ``fft`` and ``overlapadd`` are allowed
-        when ``dims`` is provided.
+        when ``dims`` is provided. If ``None``, the method is chosen
+        automatically (``direct`` for 1-dimensional inputs and ``fft``
+        for N-dimensional inputs)
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -258,7 +259,7 @@ class Convolve1D(LinearOperator):
     ------
     ValueError
         If ``offset`` is bigger than ``len(h) - 1``
-    NotImplementedError
+    ValueError
         If ``method`` provided is not allowed
 
     Notes
@@ -307,7 +308,7 @@ class Convolve1D(LinearOperator):
         h: NDArray,
         offset: int = 0,
         axis: int = -1,
-        method: str = None,
+        method: Optional[Literal["direct", "fft", "overlapadd"]] = None,
         dtype: DTypeLike = "float64",
         name: str = "C",
     ) -> None:

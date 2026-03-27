@@ -95,7 +95,7 @@ par5j = {
 
 def test_IRLS_unknown_kind():
     """Check error is raised if unknown kind is passed"""
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(NotImplementedError, match="kind must be model"):
         _ = irls(Identity(5), np.ones(5), 10, kind="foo")
 
 
@@ -331,17 +331,19 @@ def test_OMP_stopping(par):
 
 def test_ISTA_FISTA_unknown_threshkind():
     """Check error is raised if unknown threshkind is passed"""
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError, match="threshkind must be"):
         _ = ista(Identity(5), np.ones(5), 10, threshkind="foo")
-    with pytest.raises(NotImplementedError):
+
+    with pytest.raises(ValueError, match="threshkind must be"):
         _ = fista(Identity(5), np.ones(5), 10, threshkind="foo")
 
 
 def test_ISTA_FISTA_missing_perc():
     """Check error is raised if perc=None and threshkind is percentile based"""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Provide a percentile"):
         _ = ista(Identity(5), np.ones(5), 10, perc=None, threshkind="soft-percentile")
-    with pytest.raises(ValueError):
+
+    with pytest.raises(ValueError, match="Provide a percentile"):
         _ = fista(Identity(5), np.ones(5), 10, perc=None, threshkind="soft-percentile")
 
 
@@ -361,7 +363,7 @@ def test_ISTA_FISTA_alpha_too_high(par):
 
     for solver in [ista, fista]:
         # check that exception is raised
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="due to residual increasing"):
             _, _, _ = solver(
                 Aop,
                 y,

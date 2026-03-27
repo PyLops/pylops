@@ -11,7 +11,14 @@ from pylops import LinearOperator
 from pylops.utils import deps
 from pylops.utils.backend import get_array_module, get_module_name, to_numpy
 from pylops.utils.decorators import reshaped
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
+from pylops.utils.typing import (
+    DTypeLike,
+    InputDimsLike,
+    NDArray,
+    Tctengine,
+    Tctprojectortype,
+    Tctprojgeom,
+)
 
 astra_message = deps.astra_import("the astra module")
 
@@ -63,6 +70,14 @@ class CT2D(LinearOperator):
 
     Attributes
     ----------
+    dims : :obj:`tuple`
+        Shape of the array after the adjoint, but before flattening.
+
+        For example, ``x_reshaped = (Op.H * y.ravel()).reshape(Op.dims)``.
+    dimsd : :obj:`tuple`
+        Shape of the array after the forward, but before flattening.
+
+        For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     shape : :obj:`tuple`
         Operator shape
     explicit : :obj:`bool`
@@ -102,11 +117,11 @@ class CT2D(LinearOperator):
         det_width: float,
         det_count: int,
         thetas: NDArray,
-        engine: str,
-        proj_geom_type: str = "parallel",
+        engine: Tctengine,
+        proj_geom_type: Tctprojgeom = "parallel",
         source_origin_dist: Optional[float] = None,
         origin_detector_dist: Optional[float] = None,
-        projector_type: Optional[str] = None,
+        projector_type: Optional[Tctprojectortype] = None,
         dtype: DTypeLike = "float32",
         name: str = "C",
     ) -> None:

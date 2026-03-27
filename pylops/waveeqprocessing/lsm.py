@@ -1,6 +1,6 @@
 __all__ = ["LSM"]
 
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
 
 from scipy.sparse.linalg import lsqr
 
@@ -104,7 +104,7 @@ class LSM:
         wav: NDArray,
         wavcenter: int,
         y: Optional[NDArray] = None,
-        kind: str = "kirchhoff",
+        kind: Literal["kirchhoff", "twowayac"] = "kirchhoff",
         dottest: bool = False,
         **kwargs_mod,
     ) -> None:

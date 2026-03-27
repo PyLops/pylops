@@ -11,7 +11,7 @@ from pylops.optimization.cls_leastsquares import (
     PreconditionedInversion,
     RegularizedInversion,
 )
-from pylops.utils.typing import NDArray, SamplingLike
+from pylops.utils.typing import NDArray, SamplingLike, Tsolverengine
 
 if TYPE_CHECKING:
     from pylops.linearoperator import LinearOperator
@@ -28,7 +28,7 @@ def normal_equations_inversion(
     epsRs: Optional[SamplingLike] = None,
     NRegs: Optional[Sequence["LinearOperator"]] = None,
     epsNRs: Optional[SamplingLike] = None,
-    engine: str = "scipy",
+    engine: Tsolverengine = "scipy",
     show: bool = False,
     **kwargs_solver,
 ) -> Tuple[NDArray, int]:
@@ -129,7 +129,7 @@ def regularized_inversion(
     Weight: Optional["LinearOperator"] = None,
     dataregs: Optional[List[NDArray]] = None,
     epsRs: Optional[SamplingLike] = None,
-    engine: str = "scipy",
+    engine: Tsolverengine = "scipy",
     show: bool = False,
     **kwargs_solver,
 ) -> Tuple[NDArray, int, int, float, float]:
@@ -219,7 +219,7 @@ def preconditioned_inversion(
     y: NDArray,
     P: "LinearOperator",
     x0: Optional[NDArray] = None,
-    engine: str = "scipy",
+    engine: Tsolverengine = "scipy",
     show: bool = False,
     **kwargs_solver,
 ) -> Tuple[NDArray, int, int, float, float]:

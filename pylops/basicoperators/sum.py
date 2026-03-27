@@ -1,6 +1,7 @@
 __all__ = ["Sum"]
 
 import logging
+from typing import Optional
 
 import numpy as np
 
@@ -76,7 +77,7 @@ class Sum(LinearOperator):
         self,
         dims: InputDimsLike,
         axis: int = -1,
-        forceflat: bool = None,
+        forceflat: Optional[bool] = None,
         dtype: DTypeLike = "float64",
         name: str = "S",
     ) -> None:

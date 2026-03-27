@@ -1,7 +1,7 @@
 __all__ = ["Marchenko"]
 
 import logging
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Literal, Optional, Tuple, Union
 
 import numpy as np
 from scipy.signal import filtfilt
@@ -12,7 +12,7 @@ from pylops import Block, BlockDiag, Diagonal, Identity, Roll
 from pylops.optimization.basic import cgls
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import get_array_module, get_module_name, to_cupy_conditional
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops.utils.typing import DTypeLike, NDArray, Tfftengine_nsf
 from pylops.waveeqprocessing.mdd import MDC
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def directwave(
     dt: float,
     nfft: Optional[int] = None,
     dist: Optional[NDArray] = None,
-    kind: str = "2d",
+    kind: Literal["2d", "3d"] = "2d",
     derivative: bool = True,
 ) -> NDArray:
     r"""Analytical direct wave in acoustic media
@@ -262,7 +262,7 @@ class Marchenko:
         nsmooth: int = 10,
         saveRt: bool = True,
         prescaled: bool = False,
-        fftengine: str = "numpy",
+        fftengine: Tfftengine_nsf = "numpy",
         dtype: DTypeLike = "float64",
         kwargs_fft: Optional[Dict[str, Any]] = None,
     ) -> None:

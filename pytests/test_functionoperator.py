@@ -129,5 +129,5 @@ def test_FunctionOperator_NoAdjoint(par):
     assert_array_equal(F_x, G_x)
 
     # check error is raised when applying the adjoint
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(NotImplementedError, match="Adjoint not implemented"):
         _ = Fop.H @ y

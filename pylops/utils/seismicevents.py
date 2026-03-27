@@ -15,10 +15,11 @@ import numpy.typing as npt
 import scipy.signal as filt
 
 from pylops.utils._internal import _value_or_sized_to_array
+from pylops.utils.typing import NDArray
 
 
 def _filterdata(
-    d: npt.NDArray, nt: int, wav: npt.ArrayLike, wcenter: int
+    d: NDArray, nt: int, wav: npt.ArrayLike, wcenter: int
 ) -> Tuple[npt.ArrayLike, npt.ArrayLike]:
     r"""Apply filtering to data with wavelet wav"""
     dwav = filt.lfilter(wav, 1, d, axis=-1)
@@ -27,7 +28,7 @@ def _filterdata(
     return d, dwav
 
 
-def makeaxis(par: Dict) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]:
+def makeaxis(par: Dict) -> Tuple[NDArray, NDArray, NDArray, NDArray]:
     r"""Create axes t, x, and y axes
 
     Create space and time axes from dictionary containing initial values ``ot``, ``ox``, ``oy``,
@@ -70,14 +71,14 @@ def makeaxis(par: Dict) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDAr
 
 
 def linear2d(
-    x: npt.NDArray,
-    t: npt.NDArray,
+    x: NDArray,
+    t: NDArray,
     v: float,
     t0: Union[float, Tuple[float]],
     theta: Union[float, Tuple[float]],
     amp: Union[float, Tuple[float]],
-    wav: npt.NDArray,
-) -> Tuple[npt.NDArray, npt.NDArray]:
+    wav: NDArray,
+) -> Tuple[NDArray, NDArray]:
     r"""Linear 2D events
 
     Create 2d linear events given propagation velocity, intercept time, angle,
@@ -149,14 +150,14 @@ def linear2d(
 
 
 def parabolic2d(
-    x: npt.NDArray,
-    t: npt.NDArray,
+    x: NDArray,
+    t: NDArray,
     t0: Union[float, Tuple[float]],
     px: Union[float, Tuple[float]],
     pxx: Union[float, Tuple[float]],
     amp: Union[float, Tuple[float]],
-    wav: npt.NDArray,
-) -> Tuple[npt.NDArray, npt.NDArray]:
+    wav: NDArray,
+) -> Tuple[NDArray, NDArray]:
     r"""Parabolic 2D events
 
     Create 2d parabolic events given intercept time,
@@ -226,13 +227,13 @@ def parabolic2d(
 
 
 def hyperbolic2d(
-    x: npt.NDArray,
-    t: npt.NDArray,
+    x: NDArray,
+    t: NDArray,
     t0: Union[float, Tuple[float]],
     vrms: Union[float, Tuple[float]],
     amp: Union[float, Tuple[float]],
-    wav: npt.NDArray,
-) -> Tuple[npt.NDArray, npt.NDArray]:
+    wav: NDArray,
+) -> Tuple[NDArray, NDArray]:
     r"""Hyperbolic 2D events
 
     Create 2d hyperbolic events given intercept time, root-mean-square
@@ -297,16 +298,16 @@ def hyperbolic2d(
 
 
 def linear3d(
-    x: npt.NDArray,
-    y: npt.NDArray,
-    t: npt.NDArray,
+    x: NDArray,
+    y: NDArray,
+    t: NDArray,
     v: Union[float, Tuple[float]],
     t0: Union[float, Tuple[float]],
     theta: Union[float, Tuple[float]],
     phi: Union[float, Tuple[float]],
     amp: Union[float, Tuple[float]],
-    wav: npt.NDArray,
-) -> Tuple[npt.NDArray, npt.NDArray]:
+    wav: NDArray,
+) -> Tuple[NDArray, NDArray]:
     r"""Linear 3D events
 
     Create 3d linear events given propagation velocity, intercept time, angles,
@@ -387,17 +388,17 @@ def linear3d(
 
 
 def parabolic3d(
-    x: npt.NDArray,
-    y: npt.NDArray,
-    t: npt.NDArray,
+    x: NDArray,
+    y: NDArray,
+    t: NDArray,
     t0: Union[float, Tuple[float]],
     px: Union[float, Tuple[float]],
     py: Union[float, Tuple[float]],
     pxx: Union[float, Tuple[float]],
     pyy: Union[float, Tuple[float]],
     amp: Union[float, Tuple[float]],
-    wav: npt.NDArray,
-) -> Tuple[npt.NDArray, npt.NDArray]:
+    wav: NDArray,
+) -> Tuple[NDArray, NDArray]:
     r"""Parabolic 3D events
 
     Create 3d parabolic events given intercept time,
@@ -481,14 +482,14 @@ def parabolic3d(
 
 
 def hyperbolic3d(
-    x: npt.NDArray,
-    y: npt.NDArray,
-    t: npt.NDArray,
+    x: NDArray,
+    y: NDArray,
+    t: NDArray,
     t0: Union[float, Tuple[float]],
     vrms_x: Union[float, Tuple[float]],
     vrms_y: Union[float, Tuple[float]],
     amp: Union[float, Tuple[float]],
-    wav: npt.NDArray,
+    wav: NDArray,
 ):
     r"""Hyperbolic 3D events
 

@@ -16,6 +16,7 @@ A list of operators present in pylops.signalprocessing:
     NonStationaryFilters1D          1D nonstationary filter estimation operator.
     NonStationaryFilters2D          2D nonstationary filter estimation operator.
     Interp                          Interpolation operator.
+    InterpCubicSpline               Cubic Spline Interpolation operator.
     Bilinear                        Bilinear interpolation operator.
     FFT                             One dimensional Fast-Fourier Transform.
     FFT2D                           Two dimensional Fast-Fourier Transform.
@@ -55,6 +56,7 @@ from .nonstatconvolve2d import *
 from .nonstatconvolve3d import *
 from .shift import *
 from .interp import *
+from .interpspline import *
 from .bilinear import *
 from .radon2d import *
 from .radon3d import *
@@ -90,6 +92,7 @@ __all__ = [
     "NonStationaryFilters1D",
     "NonStationaryFilters2D",
     "Interp",
+    "InterpCubicSpline",
     "Bilinear",
     "Radon2D",
     "Radon3D",

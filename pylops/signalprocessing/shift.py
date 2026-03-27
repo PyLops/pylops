@@ -8,7 +8,7 @@ from pylops.basicoperators import Diagonal
 from pylops.signalprocessing import FFT
 from pylops.utils._internal import _value_or_sized_to_array
 from pylops.utils.backend import get_normalize_axis_index
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops.utils.typing import DTypeLike, NDArray, Tfftengine_nfsm
 
 if TYPE_CHECKING:
     from pylops.linearoperator import LinearOperator
@@ -21,7 +21,7 @@ def Shift(
     nfft: int = None,
     sampling: float = 1.0,
     real: bool = False,
-    engine: str = "numpy",
+    engine: Tfftengine_nfsm = "numpy",
     dtype: DTypeLike = "complex128",
     name: str = "S",
     **kwargs_fft,

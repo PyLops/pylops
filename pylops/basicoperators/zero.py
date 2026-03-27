@@ -71,7 +71,7 @@ class Zero(LinearOperator):
         self,
         N: Union[int, InputDimsLike],
         M: Optional[Union[int, InputDimsLike]] = None,
-        forceflat: bool = None,
+        forceflat: Optional[bool] = None,
         dtype: DTypeLike = "float64",
         name: str = "Z",
     ) -> None:

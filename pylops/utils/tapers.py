@@ -12,7 +12,7 @@ from typing import Optional, Tuple, Union
 import numpy as np
 import numpy.typing as npt
 
-from pylops.utils.typing import InputDimsLike, NDArray
+from pylops.utils.typing import InputDimsLike, NDArray, Ttaper
 
 
 def hanningtaper(
@@ -115,7 +115,7 @@ def cosinetaper(
 def taper(
     nmask: int,
     ntap: int,
-    tapertype: str,
+    tapertype: Optional[Ttaper],
 ) -> NDArray:
     r"""1D taper
 
@@ -155,7 +155,7 @@ def taper2d(
     nt: int,
     nmask: int,
     ntap: Union[int, Tuple[int, int]],
-    tapertype: str = "hanning",
+    tapertype: Optional[Ttaper] = "hanning",
 ) -> NDArray:
     r"""2D taper
 
@@ -206,7 +206,7 @@ def taper3d(
     nt: int,
     nmask: Tuple[int, int],
     ntap: Tuple[int, int],
-    tapertype: str = "hanning",
+    tapertype: Optional[Ttaper] = "hanning",
 ) -> NDArray:
     r"""3D taper
 
@@ -263,7 +263,7 @@ def taper3d(
 def tapernd(
     nmask: InputDimsLike,
     ntap: InputDimsLike,
-    tapertype: str = "hanning",
+    tapertype: Optional[Ttaper] = "hanning",
 ) -> NDArray:
     r"""ND taper
 

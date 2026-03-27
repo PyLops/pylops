@@ -602,6 +602,10 @@ Medical:
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
+   * - :class:`pylops.medical.mri.MRI2D`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:white_check_mark:|
 
 .. warning::
 

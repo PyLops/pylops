@@ -6,7 +6,7 @@ import numpy as np
 
 from pylops import LinearOperator
 from pylops.utils.backend import get_module
-from pylops.utils.typing import NDArray
+from pylops.utils.typing import NDArray, Tbackend
 
 
 def power_iteration(
@@ -14,7 +14,7 @@ def power_iteration(
     niter: int = 10,
     tol: float = 1e-5,
     dtype: str = "float32",
-    backend: str = "numpy",
+    backend: Tbackend = "numpy",
 ) -> Tuple[float, NDArray, int]:
     """Power iteration algorithm.
 

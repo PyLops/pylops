@@ -63,7 +63,7 @@ par2d = {"mode": "eikonal", "dynamic": True}
 )
 def test_unknown_mode():
     """Check error is raised if unknown mode is passed"""
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError, match="method must be analytic,"):
         _ = LSM(z, x, t, s2d, r2d, 0, np.ones(3), 1, mode="foo")
 
 
