@@ -26,7 +26,7 @@ jobs:
           ls $PIP
           $PIP install
           $PIP install --upgrade pip setuptools
-          $PIP install install flake8 pytest setuptools-scm cuda-bindings==12.9.4
+          $PIP install install flake8 pytest setuptools-scm
           $PIP install -r requirements-dev-gpu.txt
           $PIP install cupy-cuda12x
           $PYTHON -m setuptools_scm
