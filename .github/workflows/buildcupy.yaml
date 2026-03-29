@@ -28,7 +28,7 @@ jobs:
           $PIP install --upgrade pip setuptools
           $PIP install install flake8 pytest setuptools-scm
           $PIP install -r requirements-dev-gpu.txt
-          $PIP install cupy-cuda12x
+          $PIP install cupy-cuda13x
           $PYTHON -m setuptools_scm
           $PIP install .
           EOF
