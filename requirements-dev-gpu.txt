@@ -1,7 +1,7 @@
 numpy>=2.0.0
 scipy>=1.13.0
 cupy-cuda12x
-torch
+torch<2.11.0
 numba
 sympy
 astra-toolbox>=2.3.0
