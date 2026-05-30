@@ -26,11 +26,18 @@ jobs:
             uv sync --locked  --extra advanced \
               --extra stat --extra gpu-cu12 \
               --extra deep-cu128 --all-groups
+            # numba resolves libNVVM via CUDA_HOME and needs a versioned
+            # libnvvm.so.N (the pip wheel only ships a bare libnvvm.so), so
+            # add the symlink once here against the wheel-provided toolkit.
+            ln -sf libnvvm.so .venv/lib/python3.11/site-packages/nvidia/cuda_nvcc/nvvm/lib64/libnvvm.so.4
           '
           echo "done!"
       - name: Test with pytest
         run: |
           srun --account=yuxilab -n 1 -N 1 --gres=gpu:L40S:1 bash -c '
+            # Use the pip-installed CUDA 12.8 toolkit (matches the 12.8 driver),
+            # not any system CUDA on the runner, so numba emits PTX <= 8.7.
+            export CUDA_HOME="$PWD/.venv/lib/python3.11/site-packages/nvidia/cuda_nvcc"
             export CUPY_PYLOPS=1
             export TEST_CUPY_PYLOPS=1
             uv run pytest --color=yes pytests/

@@ -47,7 +47,7 @@ advanced = [
     "astra-toolbox; sys_platform == 'linux'",
     "devito"
 ]
-gpu-cu12 = ["cupy-cuda12x"]
+gpu-cu12 = ["cupy-cuda12x", "nvidia-cuda-nvcc-cu12<12.9"]
 gpu-cu13 = ["cupy-cuda13x"]
 stat = ["pytensor", "pymc"]
 deep = ["torch", "jax"]
