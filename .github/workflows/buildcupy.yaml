@@ -10,7 +10,9 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on:
+      - self-hosted
+      - exouser
     steps:
       - name: Check out source repository
         uses: actions/checkout@v6
