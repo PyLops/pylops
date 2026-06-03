@@ -24,27 +24,31 @@ jobs:
           python-version: 3.11
       - name: Install dependencies and pylops
         run: |
-          uv sync --locked  --extra advanced \
-          --extra stat --extra gpu-cu12 \
-          --extra deep-cu128 --all-groups
+          uv sync --locked --extra advanced \
+            --extra stat --extra gpu-cu12 \
+            --extra deep-cu128 --all-groups
           echo "done!"
-      - name: Install CUDA 12.8 toolkit
+      - name: Install CUDA 12.2 toolkit
         run: |
-          # Currently, the NVIDIA GPU drivers on the self-hosted runner
-          # and the CUDA installation in CUDA_HOME require different PTX versions
-          # (8.7 and 8.8, respectively). CUDA and NVCC are temporarely
-          # installed in the uv environment, and the CUDA paths are set in
-          # the test command, to work around this issue.
-          uv add nvidia-cuda-nvcc-cu12==12.8.*
-          # Numba resolves libNVVM via CUDA_HOME and needs a versioned
-          # libnvvm.so.N (the pip wheel only ships a bare libnvvm.so), so
-          # add the symlink once here against the wheel-provided toolkit.
-          ln -sf libnvvm.so .venv/lib/python3.11/site-packages/nvidia/cuda_nvcc/nvvm/lib64/libnvvm.so.4
+          # Install a consistent CUDA 12.2 toolchain in the uv environment so
+          # NVCC/NVRTC/Runtime agree with each other and numba can resolve
+          # both libnvvm and libcudart from a single CUDA_HOME.
+          uv add nvidia-cuda-nvcc-cu12==12.2.128
+          uv add nvidia-cuda-runtime-cu12==12.2.140
+          uv add nvidia-cuda-nvrtc-cu12==12.2.140
+          # The wheel layout splits nvvm (in cuda_nvcc) and cudart (in cuda_runtime),
+          # so create the lib64 view expected by numba in CUDA_HOME.
+          CUDA_NVCC_ROOT="$PWD/.venv/lib/python3.11/site-packages/nvidia/cuda_nvcc"
+          CUDA_RUNTIME_ROOT="$PWD/.venv/lib/python3.11/site-packages/nvidia/cuda_runtime"
+          mkdir -p "$CUDA_NVCC_ROOT/lib64"
+          ln -sf libnvvm.so "$CUDA_NVCC_ROOT/nvvm/lib64/libnvvm.so.4"
+          ln -sf "$CUDA_RUNTIME_ROOT/lib/libcudart.so.12" "$CUDA_NVCC_ROOT/lib64/libcudart.so.12"
+          ln -sf libcudart.so.12 "$CUDA_NVCC_ROOT/lib64/libcudart.so"
           echo "done!"
       - name: Test with pytest
         run: |
-          # Use the pip-installed CUDA 12.8 toolkit (matches the 12.8 driver),
-          # not any system CUDA on the runner, so numba emits PTX <= 8.7.
+          # Use the pip-installed pinned CUDA 12.2 toolchain from uv, not any
+          # system CUDA on the runner.
           export CUDA_HOME="$PWD/.venv/lib/python3.11/site-packages/nvidia/cuda_nvcc"
           export CUPY_PYLOPS=1
           export TEST_CUPY_PYLOPS=1
