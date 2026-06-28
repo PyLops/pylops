@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         platform: [ ubuntu-latest, macos-latest ]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.13t"]
 
     runs-on: ${{ matrix.platform }}
 
@@ -28,5 +28,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies and pylops
         run: uv sync --locked  --extra advanced  --extra stat --extra deep --all-groups
+      - name: Verify free threading
+        run: |
+          uv run python - <<'PY'
+          import sys
+          import numpy
+
+          assert not sys._is_gil_enabled(), "GIL is enabled!"
+          print("Free-threaded Python with NumPy:", numpy.__version__)
+          PY
       - name: Test with pytest
         run: uv run pytest --color=yes pytests/
