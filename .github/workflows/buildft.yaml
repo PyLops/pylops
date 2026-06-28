@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies and pylops
-        run: uv sync --locked --all-groups
+        run: uv sync --locked --extra deep --all-groups
       - name: Verify free threading
         run: |
           uv run python - <<'PY'
