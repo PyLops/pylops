@@ -40,7 +40,8 @@ jobs:
           print("Free-threaded Python with NumPy:", numpy.__version__)
           PY
       - name: Test with pytest
-        run: uv run pytest --color=yes \
-          --ignore=pytests/test_ct.py \
-          --ignore=pytests/test_pytensoroperator.py \
-          pytests/
+        run: |
+          uv run pytest --color=yes \
+            --ignore=pytests/test_ct.py \
+            --ignore=pytests/test_pytensoroperator.py \
+            pytests/
