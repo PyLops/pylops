@@ -14,6 +14,8 @@ __all__ = [
     "get_csc_matrix",
     "get_sparse_eye",
     "get_lstsq",
+    "get_cg",
+    "get_lsqr",
     "get_sp_fft",
     "get_complex_dtype",
     "get_real_dtype",
@@ -36,6 +38,7 @@ import scipy.fft as sp_fft
 from scipy.linalg import block_diag, lstsq, toeplitz
 from scipy.signal import convolve, correlate, fftconvolve, oaconvolve
 from scipy.sparse import csc_matrix, eye
+from scipy.sparse.linalg import cg, lsqr
 
 from pylops.utils import deps
 from pylops.utils.typing import ArrayLike, DTypeLike, NDArray, Tfftengine_ncj
@@ -52,6 +55,8 @@ if deps.cupy_enabled:
     from cupyx.scipy.signal import oaconvolve as cp_oaconvolve
     from cupyx.scipy.sparse import csc_matrix as cp_csc_matrix
     from cupyx.scipy.sparse import eye as cp_eye
+    from cupyx.scipy.sparse.linalg import cg as cp_cg
+    from cupyx.scipy.sparse.linalg import lsqr as cp_lsqr
 
 if deps.jax_enabled:
     import jax
@@ -426,6 +431,52 @@ def get_lstsq(x: ArrayLike) -> Callable:
         return lstsq
     else:
         return cp.linalg.lstsq
+
+
+def get_cg(x: ArrayLike) -> Callable:
+    """Returns correct cg module based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Array
+
+    Returns
+    -------
+    f : :obj:`callable`
+        Function to be used to process array
+
+    """
+    if not deps.cupy_enabled:
+        return cg
+
+    if cp.get_array_module(x) == np:
+        return cg
+    else:
+        return cp_cg
+
+
+def get_lsqr(x: ArrayLike) -> Callable:
+    """Returns correct lsqr module based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Array
+
+    Returns
+    -------
+    f : :obj:`callable`
+        Function to be used to process array
+
+    """
+    if not deps.cupy_enabled:
+        return lsqr
+
+    if cp.get_array_module(x) == np:
+        return lsqr
+    else:
+        return cp_lsqr
 
 
 def get_sp_fft(x: ArrayLike) -> Callable:

@@ -20,7 +20,6 @@ This library must be installed *before* PyLops is installed.
    ``cupy`` and ``jax`` backends. This can be also used if a previous version of ``cupy``
    or ``jax`` is installed in your system, otherwise you will get an error when importing PyLops.
 
-
 Apart from a few exceptions, all operators and solvers in PyLops can
 seamlessly work with ``numpy`` arrays on CPU as well as with ``cupy/jax`` arrays
 on GPU. For CuPy, users simply need to consistently create operators and

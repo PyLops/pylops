@@ -107,10 +107,9 @@ def irls(
             pre-allocated since JAX does not support in-place operations.
     **kwargs_solver
         Arbitrary keyword arguments for
-        :py:func:`scipy.sparse.linalg.cg` solver for data IRLS and
-        :py:func:`scipy.sparse.linalg.lsqr` solver for model IRLS when using
-        numpy data(or :py:func:`pylops.optimization.solver.cg` and
-        :py:func:`pylops.optimization.solver.cgls` when using cupy data)
+        :py:func:`scipy.sparse.linalg.lsqr` when ``engine='scipy'`` (or
+        :py:func:`pylops.optimization.solver.cgls` when using
+        ``engine='pylops'``)
 
     Returns
     -------
@@ -794,15 +793,18 @@ def splitbregman(
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
     preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.6.0
+        .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver. Note that if ``y``
-            is a JAX array, this option is ignored and variables are not
-            pre-allocated since JAX does not support in-place operations.
+        Pre-allocate all variables used by the solver. Note that if ``y``
+        is a JAX array, this option is ignored and variables are not
+        pre-allocated since JAX does not support in-place operations.
     **kwargs_lsqr
-        Arbitrary keyword arguments for
-        :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-        subproblem in the first step of the Split Bregman algorithm.
+        Arbitrary keyword arguments for chosen solver
+            used to solve the first subproblem in the first step of the
+            Split Bregman algorithm (:py:func:`scipy.sparse.linalg.lsqr` is
+            used if ``engine='scipy'`` and
+            :py:func:`pylops.optimization.solver.cgls` is used if engine is
+            ``engine='pylops'``).
 
     Returns
     -------
