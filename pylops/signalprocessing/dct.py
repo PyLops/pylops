@@ -17,8 +17,8 @@ class DCT(LinearOperator):
     Apply 1D or ND-Cosine Transform along one or more ``axes`` of a multi-dimensional
     array of size ``dims``.
 
-    This operator is an overload of :py:func:`scipy.fft.dctn` in forward mode and :py:func:`scipy.fft.idctn`
-    in adjoint mode.
+    Note that the DCT operator is an overload of :py:func:`scipy.fft.dctn` in
+    forward mode and :py:func:`scipy.fft.idctn` in adjoint mode.
 
     Parameters
     ----------
@@ -71,7 +71,7 @@ class DCT(LinearOperator):
         self,
         dims: int | InputDimsLike,
         type: Literal[1, 2, 3, 4] = 2,
-        axes: int | list[int] = None,
+        axes: InputDimsLike | None = None,
         dtype: DTypeLike = "float64",
         workers: int | None = None,
         name: str = "C",
