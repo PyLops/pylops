@@ -15,11 +15,11 @@ from pylops.basicoperators import Diagonal, Smoothing2D, SmoothingND
 from pylops.optimization.leastsquares import preconditioned_inversion
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils._pwd2d import _conv_allpass, _triangular_smoothing_from_boxcars
+from pylops.utils._structuretensor import _structure_tensor_2d, _structure_tensor_3d
 from pylops.utils.backend import (
     get_array_module,
     get_csr_matrix,
     get_dia_matrix,
-    get_gaussian_filter,
     get_normalize_axis_index,
     get_toeplitz,
 )
@@ -154,10 +154,13 @@ def slope_estimate(
     d: NDArray,
     dz: float = 1.0,
     dx: float = 1.0,
+    dy: float | None = None,
     smooth: float = 5.0,
     eps: float = 0.0,
     dips: bool = False,
-) -> tuple[NDArray, NDArray]:
+    anisotropies: bool | None = None,
+    batch_size: int | None = 1_000_000,
+) -> tuple[NDArray | tuple[NDArray, NDArray], NDArray | tuple[NDArray, NDArray] | None]:
     r"""Local slope estimation
 
     Local slopes are estimated using the *Structure Tensor* algorithm [1]_.
@@ -170,7 +173,8 @@ def slope_estimate(
     Parameters
     ----------
     d : :obj:`numpy.ndarray`
-        Input dataset of size :math:`n_z \times n_x`
+        Input dataset of size :math:`n_z \times n_x` for 2d or
+        of size :math:`n_y \times n_x \times n_z` for 3d.
     dz : :obj:`float`, optional
         Sampling in :math:`z`-axis, :math:`\Delta z`
 
@@ -182,6 +186,13 @@ def slope_estimate(
 
         .. warning::
             Since version 1.17.0, defaults to 1.0.
+
+    dx : :obj:`float`, optional
+        Sampling in :math:`y`-axis, :math:`\Delta y`. Ignored when ``d``
+        is 2d.
+
+        .. warning::
+            Since version 2.8.0, defaults to 1.0.
 
     smooth : :obj:`float` or :obj:`numpy.ndarray`, optional
         Standard deviation for Gaussian kernel. The standard deviations of the
@@ -200,23 +211,39 @@ def slope_estimate(
         are also set to zero. See Notes. When using with small values of ``smooth``,
         start from a very small number (e.g. 1e-10) and start increasing by a power
         of 10 until results are satisfactory.
-
     dips : :obj:`bool`, optional
         .. versionadded:: 2.0.0
 
         Return dips (``True``) instead of slopes (``False``).
+    anisotropies : :obj:`bool`, optional
+        .. versionadded:: 2.8.0
+
+        Return anisotropies (``True``) or not (``False``). Ignored when ``d``
+        is 2d as anisotropies are always returned.
+    batch_size : :obj:`int`, optional
+        .. versionadded:: 2.8.0
+
+        Number of grid points being processed together if ``dips==False``
+        and/or ``anisotropies=True``; this is done to avoid forming
+        the smoothed gradient-square tensor for all grid points at once
+        and computing the corresponding eigenvalues and eigenvectors.
+        If ``None``, operates on all points at once.
 
     Returns
     -------
-    slopes : :obj:`numpy.ndarray`
-        Estimated local slopes. The unit is that of
-        :math:`\Delta z/\Delta x`.
+    slopes : :obj:`numpy.ndarray` or :obj:`tuple`
+        Estimated local slopes (in 2d) or set of local slopes
+        along :math:`y`-axis and :math:`y`-axis (in 3d). The unit
+        is that of :math:`\Delta z/\Delta x` (and :math:`\Delta z/\Delta y`).
 
         .. warning::
             Prior to version 1.17.0, always returned dips.
 
     anisotropies : :obj:`numpy.ndarray`
-        Estimated local anisotropies: :math:`1-\lambda_\text{min}/\lambda_\text{max}`
+        Estimated local linearities (:math:`1-\lambda_2/\lambda_1`)
+        (in 2d) or set of local linearities and planarities
+        (:math:`(\lambda_2-\lambda_3)/\lambda_1`) in 3d, where
+        :math:`\lambda_1 \ge \lambda_2 \ge \lambda_3`.
 
         .. note::
             Since 1.17.0, changed name from ``linearity`` to ``anisotropies``.
@@ -224,8 +251,8 @@ def slope_estimate(
 
     Notes
     -----
-    For each pixel of the input dataset :math:`\mathbf{d}` the local gradients
-    :math:`g_z = \frac{\partial \mathbf{d}}{\partial z}` and
+    In 2d, for each pixel of the input dataset :math:`\mathbf{d}`, the
+    local gradients :math:`g_z = \frac{\partial \mathbf{d}}{\partial z}` and
     :math:`g_x = \frac{\partial \mathbf{d}}{\partial x}` are computed
     and used to define the following three quantities:
 
@@ -251,9 +278,10 @@ def slope_estimate(
     :math:`p = \frac{\lambda_\text{max} - g_{zz}}{g_{zx}}`,
     where :math:`\lambda_\text{max}` is the largest eigenvalue of :math:`\mathbf{G}`.
 
-    Similarly, local dips can be expressed as :math:`\tan(2\theta) = 2g_{zx} / (g_{zz} - g_{xx})`.
+    Similarly, local dips can be expressed as
+    :math:`\tan(2\theta) = 2g_{zx} / (g_{zz} - g_{xx})`.
 
-    Moreover, we can obtain a measure of local anisotropy, defined as
+    Moreover, a measure of local anisotropy can be defined as
 
     .. math::
         a = 1-\lambda_\text{min}/\lambda_\text{max}
@@ -262,45 +290,43 @@ def slope_estimate(
     A value of :math:`a = 0`  indicates perfect isotropy whereas :math:`a = 1`
     indicates perfect anisotropy.
 
+    In 3d, the same procedure is applied to the
+    local gradients :math:`g_y = \frac{\partial \mathbf{d}}{\partial y}` and
+    :math:`g_x = \frac{\partial \mathbf{d}}{\partial x}` and
+    :math:`g_z = \frac{\partial \mathbf{d}}{\partial z}`, which form a
+    :math:`3 \times 3` *smoothed gradient-square tensor*.
+
+    Local dips are computed as :math:`\tan(2\theta_x) = 2g_{zx} / (g_{zz} - g_{xx})`
+    and :math:`\tan(2\theta_y) = 2g_{zy} / (g_{zz} - g_{yy})`, whilst local
+    slopes are defined :math:`p_x = -\frac{v_x}{v_z}` and :math:`p_y = -\frac{v_y}{v_z}`,
+    where :math:`v_y`, :math:`v_x`, and :math:`v_z` are the components of the eigenvector
+    of `\mathbf{G}` associated with the largest eigenvalue.
+
+    Finally a measure of local linearity (same as anisotropy) is computed as
+
+    .. math::
+        l = 1-\lambda_\text{min}/\lambda_\text{max}
+
+    whilst a measure of local planarity is computed as
+
+    .. math::
+        l = (\lambda_2-\lambda_3)/\lambda_1
+
     .. [1] Van Vliet, L. J.,  Verbeek, P. W., "Estimators for orientation and
         anisotropy in digitized images", Journal ASCI Imaging Workshop. 1995.
 
     """
-    ncp = get_array_module(d)
-
-    slopes = ncp.zeros_like(d)
-    anisos = ncp.zeros_like(d)
-
-    gz, gx = ncp.gradient(d, dz, dx)
-    gzz, gzx, gxx = gz * gz, gz * gx, gx * gx
-
-    # smoothing
-    gzz = get_gaussian_filter(d)(gzz, sigma=smooth)
-    gzx = get_gaussian_filter(d)(gzx, sigma=smooth)
-    gxx = get_gaussian_filter(d)(gxx, sigma=smooth)
-
-    gmax = max(gzz.max(), gxx.max(), ncp.abs(gzx).max())
-    if gmax <= eps:
-        return ncp.zeros_like(d), anisos
-
-    gzz /= gmax
-    gzx /= gmax
-    gxx /= gmax
-
-    lcommon1 = 0.5 * (gzz + gxx)
-    lcommon2 = 0.5 * ncp.sqrt((gzz - gxx) ** 2 + 4 * gzx**2)
-    l1 = lcommon1 + lcommon2
-    l2 = lcommon1 - lcommon2
-
-    regdata = l1 > eps
-    anisos[regdata] = 1 - l2[regdata] / l1[regdata]
-
-    if dips:
-        slopes = 0.5 * ncp.arctan2(2 * gzx, gzz - gxx)
+    if d.ndim == 2:
+        slopes, anisos = _structure_tensor_2d(d, dz, dx, smooth, eps, dips)
     else:
-        regdata = ncp.abs(gzx) > eps
-        slopes[regdata] = (l1 - gzz)[regdata] / gzx[regdata]
-
+        outs = _structure_tensor_3d(
+            d, dy, dx, dx, smooth, eps, dips, anisotropies, batch_size
+        )
+        slopes = (outs[0], outs[1])
+        if anisotropies:
+            anisos = (outs[2], outs[3])
+        else:
+            anisos = None
     return slopes, anisos
 
 
