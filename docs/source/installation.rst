@@ -433,12 +433,16 @@ them as part of the installation process of PyLops provided in the table below.
      - :py:class:`pylops.medical.CT2D`
      - |:white_check_mark:|
      - `pip install pylops[advanced]` / `uv add "pylops[advanced]"`
-   * - dtcwt
-     - :py:class:`pylops.signalprocessing.DTCWT`
+   * - Curvelets
+     - :py:class:`pylops.signalprocessing.UDCT`
      - |:white_check_mark:|
      - `pip install pylops[advanced]` / `uv add "pylops[advanced]"`
    * - Devito
      - :py:class:`pylops.waveeqprocessing.AcousticWave2D`
+     - |:white_check_mark:|
+     - `pip install pylops[advanced]` / `uv add "pylops[advanced]"`
+   * - dtcwt
+     - :py:class:`pylops.signalprocessing.DTCWT`
      - |:white_check_mark:|
      - `pip install pylops[advanced]` / `uv add "pylops[advanced]"`
    * - FFTW

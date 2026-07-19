@@ -6,6 +6,7 @@ PyWavelets
 spgl1
 scikit-fmm
 sympy
+curvelets
 devito
 # dtcwt (until numpy>=2.0.0 is supported)
 astra-toolbox>=2.2.0

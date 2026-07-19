@@ -27,6 +27,7 @@ dependencies:
   - mkl_fft
   - pip:
     - torch
+    - curvelets
     - devito
     # - dtcwt (until numpy>=2.0.0 is supported)
     - scikit-fmm
