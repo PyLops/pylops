@@ -1439,7 +1439,7 @@ class _ProductLinearOperator(LinearOperator):
             )
             raise ValueError(msg)
         if A.shape[1] != B.shape[0]:
-            msg = f"Cannot add {A} and {B}: shape mismatch"
+            msg = f"Cannot multiply {A} and {B}: shape mismatch"
             raise ValueError(msg)
         super().__init__(dtype=_get_dtype([A, B]), shape=(A.shape[0], B.shape[1]))
         self.args = (A, B)
