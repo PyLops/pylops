@@ -1,5 +1,6 @@
 __all__ = ["UDCT"]
 
+from math import prod
 from typing import Literal
 
 import numpy as np
@@ -14,6 +15,7 @@ curvelets_message = deps.udct_import("the curvelets module")
 
 if curvelets_message is None:
     from curvelets.numpy import UDCT as cUDCT
+    from curvelets.utils import deepflatten
 else:
     cUDCT = None
 
@@ -108,11 +110,6 @@ class UDCT(LinearOperator):
         self.dims = _value_or_sized_to_tuple(dims)
 
         # initialize transform
-        input_dtype = (
-            np.empty(1, dtype=np.dtype(dtype)).real.dtype
-            if transform_kind == "real"
-            else dtype
-        )
         self.transform = cUDCT(
             self.dims,
             num_scales=num_scales,
@@ -123,10 +120,10 @@ class UDCT(LinearOperator):
             high_frequency_mode=high_frequency_mode,
             transform_kind=transform_kind,
         )
-        dimsd = self.transform.vect(
-            self.transform.forward(np.zeros(self.dims, dtype=input_dtype))
-        ).shape
 
+        # identify total size of coefficients
+        coeffs_shapes = self.transform.coefficient_shapes()
+        dimsd = (sum(prod(shape) for shape in deepflatten(coeffs_shapes)),)
         super().__init__(
             dtype=np.dtype(dtype), dims=self.dims, dimsd=dimsd, clinear=False, name=name
         )
