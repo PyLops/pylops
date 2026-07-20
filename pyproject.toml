@@ -46,7 +46,7 @@ advanced = [
     "dtcwt",
     "astra-toolbox; sys_platform == 'linux'",
     "devito",
-    "curvelets"
+    "curvelets >= 1.2"
 ]
 gpu-cu12 = ["cupy-cuda12x"]
 gpu-cu13 = ["cupy-cuda13x"]

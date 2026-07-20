@@ -25,7 +25,7 @@ dependencies:
   - autopep8
   - pip:
     - torch
-    - curvelets
+    - curvelets>=1.2
     - devito
     # - dtcwt (until numpy>=2.0.0 is supported)
     - scikit-fmm

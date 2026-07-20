@@ -1372,16 +1372,16 @@ wheels = [
 
 [[package]]
 name = "curvelets"
-version = "1.1"
+version = "1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'extra-6-pylops-deep' and extra == 'extra-6-pylops-deep-cu126') or (extra == 'extra-6-pylops-deep' and extra == 'extra-6-pylops-deep-cu128') or (extra == 'extra-6-pylops-deep' and extra == 'extra-6-pylops-deep-cu13') or (extra == 'extra-6-pylops-deep-cu126' and extra == 'extra-6-pylops-deep-cu128') or (extra == 'extra-6-pylops-deep-cu126' and extra == 'extra-6-pylops-deep-cu13') or (extra == 'extra-6-pylops-deep-cu128' and extra == 'extra-6-pylops-deep-cu13') or (extra == 'extra-6-pylops-gpu-cu12' and extra == 'extra-6-pylops-gpu-cu13')" },
     { name = "numpy", version = "2.4.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'extra-6-pylops-deep' and extra == 'extra-6-pylops-deep-cu126') or (extra == 'extra-6-pylops-deep' and extra == 'extra-6-pylops-deep-cu128') or (extra == 'extra-6-pylops-deep' and extra == 'extra-6-pylops-deep-cu13') or (extra == 'extra-6-pylops-deep-cu126' and extra == 'extra-6-pylops-deep-cu128') or (extra == 'extra-6-pylops-deep-cu126' and extra == 'extra-6-pylops-deep-cu13') or (extra == 'extra-6-pylops-deep-cu128' and extra == 'extra-6-pylops-deep-cu13') or (extra == 'extra-6-pylops-gpu-cu12' and extra == 'extra-6-pylops-gpu-cu13')" },
     { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-6-pylops-deep' and extra == 'extra-6-pylops-deep-cu126') or (extra == 'extra-6-pylops-deep' and extra == 'extra-6-pylops-deep-cu128') or (extra == 'extra-6-pylops-deep' and extra == 'extra-6-pylops-deep-cu13') or (extra == 'extra-6-pylops-deep-cu126' and extra == 'extra-6-pylops-deep-cu128') or (extra == 'extra-6-pylops-deep-cu126' and extra == 'extra-6-pylops-deep-cu13') or (extra == 'extra-6-pylops-deep-cu128' and extra == 'extra-6-pylops-deep-cu13') or (extra == 'extra-6-pylops-gpu-cu12' and extra == 'extra-6-pylops-gpu-cu13')" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a6/e1/db862950554f4d023a0a08b319a39090a58768084c9213eb584530731be2/curvelets-1.1.tar.gz", hash = "sha256:649386514592e80259b643d0a6060398558607d3dcfcebdf6d5cd92d82d6f955", size = 220488, upload-time = "2025-12-30T02:45:28.783Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/50/26a62de2d7e065f82f761cba0f176313bc7ae18348a124ee8b7be46fb6ec/curvelets-1.2.tar.gz", hash = "sha256:afebbaa7e21874d274bf35d1390e72643926027a5e51fc89571700503f45e56e", size = 240722, upload-time = "2026-07-20T04:33:58.562Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c8/85/2a9fe553d557fa12a35b637fbda213cc2385c25e9268083dce27d12540b2/curvelets-1.1-py3-none-any.whl", hash = "sha256:9491257c871f2a15597a7cb33502a3b2fd3c430a4a9e3fe31ce606010b522c04", size = 98754, upload-time = "2025-12-30T02:45:27.41Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/f0/e7ae99864b7270c758e1ad62d0323284c2f04c9ac51d9432d444c4bd27e6/curvelets-1.2-py3-none-any.whl", hash = "sha256:829e18d181d0dac79171c18820f4cb7f0dbf3b1d6ea4b198c7e7720b421967f5", size = 109239, upload-time = "2026-07-20T04:33:57.251Z" },
 ]
 
 [[package]]
@@ -6414,7 +6414,7 @@ requires-dist = [
     { name = "astra-toolbox", marker = "sys_platform == 'linux' and extra == 'advanced'" },
     { name = "cupy-cuda12x", marker = "extra == 'gpu-cu12'" },
     { name = "cupy-cuda13x", marker = "extra == 'gpu-cu13'" },
-    { name = "curvelets", marker = "extra == 'advanced'" },
+    { name = "curvelets", marker = "extra == 'advanced'", specifier = ">=1.2" },
     { name = "devito", marker = "extra == 'advanced'" },
     { name = "dtcwt", marker = "extra == 'advanced'" },
     { name = "jax", marker = "extra == 'deep'" },
