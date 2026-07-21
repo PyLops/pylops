@@ -47,6 +47,21 @@ par4j = {
 np.random.seed(10)
 
 
+def _plane_wave(x, y, f, c, theta):
+    """Plane wave modelling"""
+    # Define x-y grid
+    Y, X = np.meshgrid(y, x, indexing="ij")
+
+    # Slowness vector
+    p = (np.sin(np.deg2rad(theta)) / c, np.cos(np.deg2rad(theta)) / c)
+
+    # Construct plane wave
+    pw = np.exp(-1j * (2 * np.pi * f * (-(p[0] * X + p[1] * Y))))
+    pw = np.real(pw)
+
+    return pw
+
+
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
 @pytest.mark.parametrize("sparse", [False, True])
 def test_convmtx(par, sparse):
@@ -112,7 +127,34 @@ def test_nonstationary_convmtx(par, sparse):
     assert_array_almost_equal(y, y1, decimal=4)
 
 
-def test_slope_estimation_dips():
+@pytest.mark.parametrize("angle", [-45, -20, 0, 20, 45])
+def test_slope_estimation_analytical(angle):
+    """Slope estimation using the Structure tensor algorithm for
+    plane wave - test against analytical solution."""
+
+    # Define x and y axes
+    ox, dx, nx = 0, 5, 101
+    oy, dy, ny = 0, 5, 101
+    x, y = np.arange(nx) * dx + ox, np.arange(ny) * dy + oy
+
+    # Compute plane wave
+    f = 10  # frequency
+    c = 1500  # Velocity
+    pw = _plane_wave(x, y, f, c, angle)
+
+    # Slopes
+    slopes, _ = slope_estimate(
+        pw,
+        smooth=11,
+        eps=0.0,
+        dips=False,
+        anisotropies=False,
+    )
+
+    assert_array_almost_equal(np.median(slopes), np.tan(np.deg2rad(angle)), decimal=2)
+
+
+def test_slope_estimation_reg():
     """Slope estimation using the Structure tensor algorithm should
     apply regularisation (some slopes are set to zero)
     while dips should not use regularisation."""
