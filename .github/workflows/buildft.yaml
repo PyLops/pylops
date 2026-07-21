@@ -29,7 +29,7 @@ jobs:
       - name: Install dependencies and pylops
         run: uv sync --locked --extra deep --all-groups
       - name: Add more dependencies
-        run: uv add PyWavelets spgl1 devito
+        run: uv add PyWavelets spgl1 curvelets devito
       - name: Verify free threading
         run: |
           uv run python - <<'PY'

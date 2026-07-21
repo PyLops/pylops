@@ -112,6 +112,7 @@ Signal processing
     DCT
     DTCWT
     Seislet
+    UDCT
     Radon2D
     Radon3D
     FourierRadon2D
