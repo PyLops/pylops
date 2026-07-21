@@ -57,6 +57,14 @@ class UDCT(LinearOperator):
         "wavelet" creates a single ring-shaped window (bandpass filter only,
         no angular components) at the highest scale with decimation=1.
         Default is "curvelet".
+    transform_kind : {"real", "complex", "monogenic"}, optional
+        Type of transform to use:
+
+        - "real" (default): Real transform where each band captures both
+          positive and negative frequencies combined.
+        - "complex": Complex transform which separates positive and negative
+          frequency components into different bands. Each band is scaled by
+          :math:`\\sqrt{0.5}`.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -64,6 +72,8 @@ class UDCT(LinearOperator):
 
     Attributes
     ----------
+    transform : :obj:`curvelets.numpy.UDCT`
+        Curvelets transform object.
     dims : :obj:`tuple`
         Shape of the array after the adjoint, but before flattening.
 
