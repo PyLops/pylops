@@ -24,5 +24,7 @@ routines that we use are not available in earlier version of ``cupy``.
 
 **3. What can I do if my system Python does not allow** `caching Numba compiled functions <https://numba.pydata.org/numba-doc/dev/developer/caching.html>`_ **?**
 
-From PyLops 2.8.0, this is turned off by default. However, it can be enabled by setting ``NUMBA_CACHE_PYLOPS=1``, 
+Prir to PyLops v2.8.0, you must set ``NUMBA_CACHE_DIR`` to a non read-only directory.
+
+From PyLops v2.8.0, this is turned off by default. However, it can be enabled by setting ``NUMBA_CACHE_PYLOPS=1``, 
 and Numba JIT-ed functions will be automatically cached into ``NUMBA_CACHE_DIR``.
