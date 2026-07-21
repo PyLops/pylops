@@ -1,3 +1,5 @@
+import os
+
 from pylops.utils.typing import NDArray
 
 # Remap numba njit to no-ops and prange to range
@@ -16,7 +18,11 @@ except ImportError:  # pragma: no cover - executed only without numba
         return range(*args, **kwargs)
 
 
-@njit(fastmath=True, cache=True)
+# Detect whether to cache or not
+cache = bool(int(os.getenv("NUMBA_CACHE_PYLOPS", 0)))
+
+
+@njit(fastmath=True, cache=cache)
 def _B3(sigma: float) -> tuple[float, float, float]:
     """Quadratic B-spline coefficients (3 taps)."""
     b0 = (1.0 - sigma) * (2.0 - sigma) / 12.0
@@ -25,7 +31,7 @@ def _B3(sigma: float) -> tuple[float, float, float]:
     return b0, b1, b2
 
 
-@njit(fastmath=True, cache=True)
+@njit(fastmath=True, cache=cache)
 def _B3d(sigma: float) -> tuple[float, float, float]:
     """Derivatives of quadratic B-spline coefficients."""
     b0 = -(2.0 - sigma) / 12.0 - (1.0 - sigma) / 12.0
@@ -34,7 +40,7 @@ def _B3d(sigma: float) -> tuple[float, float, float]:
     return b0, b1, b2
 
 
-@njit(fastmath=True, cache=True)
+@njit(fastmath=True, cache=cache)
 def _B5(sigma: float) -> tuple[float, float, float, float, float]:
     """Quartic B-spline coefficients (5 taps)."""
     s = sigma
@@ -46,7 +52,7 @@ def _B5(sigma: float) -> tuple[float, float, float, float, float]:
     return b0, b1, b2, b3, b4
 
 
-@njit(fastmath=True, cache=True)
+@njit(fastmath=True, cache=cache)
 def _B5d(sigma: float) -> tuple[float, float, float, float, float]:
     """Derivatives of quartic B-spline coefficients."""
     s = sigma
@@ -88,7 +94,7 @@ def _B5d(sigma: float) -> tuple[float, float, float, float, float]:
     return b0, b1, b2, b3, b4
 
 
-@njit(parallel=True, fastmath=True, cache=True)
+@njit(parallel=True, fastmath=True, cache=cache)
 def _conv_allpass_numba(
     din: NDArray,
     dip: NDArray,

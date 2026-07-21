@@ -1,3 +1,4 @@
+import os
 from math import floor
 
 from pylops.utils.typing import NDArray
@@ -18,7 +19,11 @@ except ImportError:  # pragma: no cover - executed only in no-numba builds
         return range(*args, **kwargs)
 
 
-@njit(cache=True, fastmath=True, parallel=False)
+# Detect whether to cache or not
+cache = bool(int(os.getenv("NUMBA_CACHE_PYLOPS", 0)))
+
+
+@njit(cache=cache, fastmath=True, parallel=False)
 def _spray_forward_numba(
     m: NDArray, sigma: NDArray, radius: int, alpha: float, out: NDArray
 ) -> None:
@@ -69,7 +74,7 @@ def _spray_forward_numba(
                 out[zi1, x] += t * amp
 
 
-@njit(cache=True, fastmath=True, parallel=True)
+@njit(cache=cache, fastmath=True, parallel=True)
 def _spray_adjoint_numba(
     d: NDArray, sigma: NDArray, radius: int, alpha: float, out: NDArray
 ) -> None:

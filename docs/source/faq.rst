@@ -20,3 +20,9 @@ Yes. Nevertheless you need to tell PyLops that you don't want to use its ``cupy`
 backend by setting the environment variable ``CUPY_PYLOPS=0``.
 Failing to do so will lead to an error when you import ``pylops`` because some of the ``cupyx``
 routines that we use are not available in earlier version of ``cupy``.
+
+
+**3. What can I do if my system Python does not allow** `caching Numba compiled functions <https://numba.pydata.org/numba-doc/dev/developer/caching.html>`_ **?**
+
+From PyLops 2.8.0, this is turned off by default. However, it can be enabled by setting ``NUMBA_CACHE_PYLOPS=1``, 
+and Numba JIT-ed functions will be automatically cached into ``NUMBA_CACHE_DIR``.

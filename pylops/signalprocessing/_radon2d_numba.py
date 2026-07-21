@@ -3,27 +3,28 @@ import os
 import numpy as np
 from numba import jit
 
-# detect whether to use parallel or not
+# Detect whether to use parallel and cache or not
 numba_threads = int(os.getenv("NUMBA_NUM_THREADS", "1"))
 parallel = True if numba_threads != 1 else False
+cache = bool(int(os.getenv("NUMBA_CACHE_PYLOPS", 0)))
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=cache)
 def _linear_numba(x, t, px):
     return t + px * x
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=cache)
 def _parabolic_numba(x, t, px):
     return t + px * x**2
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=cache)
 def _hyperbolic_numba(x, t, px):
     return np.sqrt(t**2 + (x / px) ** 2)
 
 
-@jit(nopython=True, nogil=True)
+@jit(nopython=True, nogil=True, cache=cache)
 def _indices_2d_numba(f, x, px, t, nt, interp=True):
     """Compute time and space indices of parametric line in ``f`` function
     using numba. Refer to ``_indices_2d`` for full documentation.
@@ -44,7 +45,7 @@ def _indices_2d_numba(f, x, px, t, nt, interp=True):
     return xscan, tscan, dtscan
 
 
-@jit(nopython=True, parallel=parallel, nogil=True)
+@jit(nopython=True, parallel=parallel, nogil=True, cache=cache)
 def _indices_2d_onthefly_numba(f, x, px, ip, t, nt, interp=True):
     """Wrapper around _indices_2d to allow on-the-fly computation of
     parametric curves using numba
@@ -61,7 +62,7 @@ def _indices_2d_onthefly_numba(f, x, px, ip, t, nt, interp=True):
     return xscan, tscan, dtscan
 
 
-@jit(nopython=True, parallel=parallel, nogil=True)
+@jit(nopython=True, parallel=parallel, nogil=True, cache=cache)
 def _create_table_numba(f, x, pxaxis, nt, npx, nx, interp):
     """Create look up table using numba"""
     table = np.full((npx, nt, nx), np.nan, dtype=np.float32)

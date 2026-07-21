@@ -4,12 +4,13 @@ from math import pi
 
 from numba import jit, prange
 
-# detect whether to use parallel or not
+# Detect whether to use parallel and cache or not
 numba_threads = int(os.getenv("NUMBA_NUM_THREADS", "1"))
 parallel = True if numba_threads != 1 else False
+cache = bool(int(os.getenv("NUMBA_CACHE_PYLOPS", 0)))
 
 
-@jit(nopython=True, parallel=parallel, nogil=True, cache=True, fastmath=True)
+@jit(nopython=True, parallel=parallel, nogil=True, cache=cache, fastmath=True)
 def _radon_inner_3d(X, Y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy, nhx):
     for ihy in prange(nhy):
         for ihx in prange(nhx):
@@ -25,7 +26,7 @@ def _radon_inner_3d(X, Y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy, nhx):
                         )
 
 
-@jit(nopython=True, parallel=parallel, nogil=True, cache=True, fastmath=True)
+@jit(nopython=True, parallel=parallel, nogil=True, cache=cache, fastmath=True)
 def _aradon_inner_3d(X, Y, f, py, px, hy, hx, flim0, flim1, npy, npx, nhy, nhx):
     for ipy in prange(npy):
         for ipx in range(npx):
