@@ -193,20 +193,20 @@ def _structure_tensor_3d(
         batch_end[-1] = min(batch_end[-1], ngrid_points)
 
         # instantiated objects
-        vy = np.empty(d.size, dtype=d.dtype)
-        vx = np.empty(d.size, dtype=d.dtype)
-        vz = np.empty(d.size, dtype=d.dtype)
+        vy = ncp.empty(d.size, dtype=d.dtype)
+        vx = ncp.empty(d.size, dtype=d.dtype)
+        vz = ncp.empty(d.size, dtype=d.dtype)
 
-        regdata = np.zeros(d.size, dtype=bool)
+        regdata = ncp.zeros(d.size, dtype=bool)
         if anisotropies:
-            l1 = np.empty(d.size, dtype=d.dtype)
-            l2 = np.empty(d.size, dtype=d.dtype)
-            l3 = np.empty(d.size, dtype=d.dtype)
+            l1 = ncp.empty(d.size, dtype=d.dtype)
+            l2 = ncp.empty(d.size, dtype=d.dtype)
+            l3 = ncp.empty(d.size, dtype=d.dtype)
 
         # compute eigenvalues/eigenvectors
         for b_in, b_end in zip(batch_in, batch_end, strict=True):
             # create matrices of second-order derivatives
-            G = np.empty(((b_end - b_in), 3, 3), dtype=d.dtype)
+            G = ncp.empty(((b_end - b_in), 3, 3), dtype=d.dtype)
 
             G[:, 0, 0] = gyy.ravel()[b_in:b_end]
             G[:, 0, 1] = gyx.ravel()[b_in:b_end]
@@ -220,10 +220,10 @@ def _structure_tensor_3d(
             G[:, 2, 1] = gxz.ravel()[b_in:b_end]
             G[:, 2, 2] = gzz.ravel()[b_in:b_end]
 
-            evalues, evectors = np.linalg.eigh(G)
+            evalues, evectors = ncp.linalg.eigh(G)
 
             # extract the eigenvectors corresponding to the largest eigenvalue
-            idx = np.argmax(evalues, axis=1)
+            idx = ncp.argmax(evalues, axis=1)
             largest_evectors = evectors[np.arange(G.shape[0]), :, idx]
 
             vy[b_in:b_end] = largest_evectors[:, 0]
@@ -232,15 +232,15 @@ def _structure_tensor_3d(
 
             if anisotropies or eps > 0:
                 # re-order eigenvalues
-                evalues = np.sort(evalues, axis=1)
+                evalues = ncp.sort(evalues, axis=1)
                 l1[b_in:b_end] = evalues[:, 2]
                 l2[b_in:b_end] = evalues[:, 1]
                 l3[b_in:b_end] = evalues[:, 0]
                 regdata[b_in:b_end] = l1[b_in:b_end] > eps
 
     if anisotropies:
-        linearity = np.zeros(d.size, dtype=d.dtype)
-        planarity = np.zeros(d.size, dtype=d.dtype)
+        linearity = ncp.zeros(d.size, dtype=d.dtype)
+        planarity = ncp.zeros(d.size, dtype=d.dtype)
 
         linearity[regdata] = 1 - l2[regdata] / l1[regdata]
         planarity[regdata] = (l2[regdata] - l3[regdata]) / l1[regdata]
