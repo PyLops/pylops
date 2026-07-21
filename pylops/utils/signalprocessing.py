@@ -187,13 +187,11 @@ def slope_estimate(
         .. warning::
             Since version 1.17.0, defaults to 1.0.
 
-    dx : :obj:`float`, optional
+    dy : :obj:`float`, optional
+        .. versionadded:: 2.8.0
+
         Sampling in :math:`y`-axis, :math:`\Delta y`. Ignored when ``d``
         is 2d.
-
-        .. warning::
-            Since version 2.8.0, defaults to 1.0.
-
     smooth : :obj:`float` or :obj:`numpy.ndarray`, optional
         Standard deviation for Gaussian kernel. The standard deviations of the
         Gaussian filter are given for each axis as a sequence, or as a single number,
@@ -334,8 +332,10 @@ def dip_estimate(
     d: NDArray,
     dz: float = 1.0,
     dx: float = 1.0,
+    dy: float | None = None,
     smooth: int = 5,
     eps: float = 0.0,
+    batch_size: int | None = 1_000_000,
 ) -> tuple[NDArray, NDArray]:
     r"""Local dip estimation
 
@@ -352,6 +352,11 @@ def dip_estimate(
         Sampling in :math:`z`-axis, :math:`\Delta z`
     dx : :obj:`float`, optional
         Sampling in :math:`x`-axis, :math:`\Delta x`
+    dy : :obj:`float`, optional
+        .. versionadded:: 2.8.0
+
+        Sampling in :math:`y`-axis, :math:`\Delta y`. Ignored when ``d``
+        is 2d.
     smooth : :obj:`float` or :obj:`numpy.ndarray`, optional
         Standard deviation for Gaussian kernel. The standard deviations of the
         Gaussian filter are given for each axis as a sequence, or as a single number,
@@ -361,6 +366,14 @@ def dip_estimate(
         are also set to zero. See Notes. When using with small values of ``smooth``,
         start from a very small number (e.g. 1e-10) and start increasing by a power
         of 10 until results are satisfactory.
+    batch_size : :obj:`int`, optional
+        .. versionadded:: 2.8.0
+
+        Number of grid points being processed together if ``dips==False``
+        and/or ``anisotropies=True``; this is done to avoid forming
+        the smoothed gradient-square tensor for all grid points at once
+        and computing the corresponding eigenvalues and eigenvectors.
+        If ``None``, operates on all points at once.
 
     Returns
     -------
@@ -379,7 +392,9 @@ def dip_estimate(
         anisotropy in digitized images", Journal ASCI Imaging Workshop. 1995.
 
     """
-    dips, anisos = slope_estimate(d, dz=dz, dx=dx, smooth=smooth, eps=eps, dips=True)
+    dips, anisos = slope_estimate(
+        d, dz=dz, dx=dx, dy=dy, smooth=smooth, eps=eps, dips=True, batch_size=batch_size
+    )
     return dips, anisos
 
 
