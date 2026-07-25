@@ -24,5 +24,13 @@
 *  `Alex Rakowski <https://github.com/alex-rakowski>`_, alex-rakowski
 *  `David Sollberger <https://github.com/solldavid>`_, solldavid
 *  `Gustavo Coelho <https://github.com/guaacoelho>`_, guaacoelho
+*  `Bram De Jaegher <https://github.com/Beramos>`_, Beramos
 *  `Shaowen Wang <https://github.com/GeophyAI>`_, GeophyAI
 *  `Francesco Brandolin <https://github.com/FB-I>`_, FB-I
+*  `Sun Data Scientist <https://github.com/IruNikZe>`_, IruNikZe
+*  `Amir Mardan <https://github.com/AmirMardan>`_, AmirMardan
+*  `Alexander Skorikov <https://github.com/askorikov>`_, askorikov
+*  `Niklas Zell <https://github.com/othNik>`_, othNik
+*  `Yuxi Hong <https://github.com/hongyx11>`_, hongyx11
+*  `Vincent Gao <https://github.com/gaoflow>`_, gaoflow
+*  `Barkure <https://github.com/barkure>`_, barkure

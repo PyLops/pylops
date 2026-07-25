@@ -3,6 +3,29 @@
 |:newspaper_roll:| Changelog
 ############################
 
+Version 2.8.0
+-------------
+
+*Released on: 25/07/2026*
+
+* Added :py:class:`pylops.signalprocessing.UDCT` operator
+* Added ``forward``, ``adjoint``, and ``__repr__`` methods to :py:class:`pylops.TorchOperator`
+* Added ``sparse`` to :py:func:`pylops.utils.signalprocessing.convmtx`
+  and :py:func:`pylops.utils.signalprocessing.nonstationary_convmtx`
+* Added ``damp`` to :py:class:`pylops.optimization.cls_basic.CG` and :py:func:`pylops.optimization.basic.cgls`
+* Added ``tol`` to :py:class:`pylops.signalprocessing.Interp` to limit extension of sinc interpolation
+  and implemented CuPy backend
+* Added CuPy support to :py:func:`pylops.utils.signalprocessing.slope_estimate`
+* Enabled repeated indices :py:class:`pylops.Restriction`
+* Fixed call to ``on_end`` callback in :py:class:`pylops.optimization.basesolver.Solver` to pass
+  output of step instead of input
+* Fixed handling of ``decay`` in :py:class:`pylops.optimization.cls_sparsity.ISTA` and
+  :py:class:`pylops.optimization.cls_sparsity.FISTA` when ``niter`` is not passed 
+  to setup method
+* Fixed element-wise variance accumulation in :py:class:`pylops.optimization.cls_basic.LSQR` 
+  and :py:func:`pylops.optimization.basic.lsqr`, which previously assigned the same value to 
+  every entry of `var`
+
 
 Version 2.7.0
 -------------
@@ -24,6 +47,7 @@ Version 2.7.0
   and :py:class:`pylops.waveeqprocessing.Marchenko`
 * Improved typing annotations across all operators (and enforced use of 
   Literal for parameters with multiple options)
+
 
 Version 2.6.0
 -------------
