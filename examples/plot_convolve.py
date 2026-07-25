@@ -20,6 +20,7 @@ to be able to better interpret the response of the subsurface. Similar examples
 can be found in telecommunication and speech analysis.
 
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
@@ -226,8 +227,8 @@ fig, ax = plt.subplots(1, 1, figsize=(10, 3))
 ax.plot(t, x, "k", lw=2, label=r"$x$")
 ax.plot(t, y, "r", lw=2, label=r"$y$")
 ax.plot(t, ymatched, "--g", lw=2, label=r"$y_{matched}$")
-ax.plot(t, x - ymatched, "--k", lw=2, label=r"$x-y_{matched,sparse}$")
-ax.plot(t, ymatchedsparse, "--m", lw=2, label=r"$y_{matched}$")
+ax.plot(t, x - ymatched, "--k", lw=2, label=r"$x-y_{matched}$")
+ax.plot(t, ymatchedsparse, "--m", lw=2, label=r"$y_{matched,sparse}$")
 ax.plot(t, x - ymatchedsparse, "--k", lw=2, label=r"$x-y_{matched,sparse}$")
 ax.set_title("Signals to match", fontsize=14, fontweight="bold")
 ax.legend(loc="upper right")

@@ -23,7 +23,7 @@ class MatrixMult(LinearOperator):
 
     Parameters
     ----------
-    A : :obj:`numpy.ndarray` or :obj:`scipy.sparse` matrix
+    A : :obj:`numpy.ndarray` or :obj:`scipy.sparse.spmatrix`
         Matrix.
     otherdims : :obj:`tuple`, optional
         Number of samples for each other dimension of model

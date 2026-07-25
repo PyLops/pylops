@@ -66,22 +66,52 @@ Now you can make your changes locally.
 :ref:`addingoperator` or :ref:`addingsolver` and that both old and new tests pass 
 successfully:
 
-.. code-block:: bash
+.. tab-set::
+   
+   .. tab-item::  conda
 
-   >> make tests
+        .. code-block:: bash
+
+            >> make tests
+
+   .. tab-item:: :iconify:`material-icon-theme:uv` uv
+
+        .. code-block:: bash
+
+            >> make tests_uv
 
 If you have access to a GPU, it is advised also that old and new tests run with the CuPy 
 backend pass successfully:
 
-.. code-block:: bash
+.. tab-set::
+   
+   .. tab-item::  conda
 
-   >> make tests_gpu
+        .. code-block:: bash
 
-4. Run flake8 to check the quality of your code:
+            >> make tests_gpu
 
-.. code-block:: bash
+   .. tab-item:: :iconify:`material-icon-theme:uv` uv
 
-   >> make lint
+        .. code-block:: bash
+
+            >> make tests_gpu_uv
+
+4. Run ruff to check the quality of your code:
+
+.. tab-set::
+   
+   .. tab-item::  conda
+
+        .. code-block:: bash
+
+            >> make typeannot
+
+   .. tab-item:: :iconify:`material-icon-theme:uv` uv
+
+        .. code-block:: bash
+
+            >> make typeannot_uv
 
 Note that PyLops does not enforce full compliance with flake8, rather this is used as a
 guideline and will also be run as part of our CI.
@@ -89,10 +119,19 @@ Make sure to limit to a minimum flake8 warnings before making a PR.
 
 5. Update the docs
 
-.. code-block:: bash
+.. tab-set::
+   
+   .. tab-item::  conda
 
-   >> make docupdate
+        .. code-block:: bash
 
+            >> make docupdate
+
+   .. tab-item:: :iconify:`material-icon-theme:uv` uv
+
+        .. code-block:: bash
+
+            >> make docupdate_uv
 
 6. Commit your changes and push your branch to GitHub:
 

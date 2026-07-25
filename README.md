@@ -174,5 +174,13 @@ A list of video tutorials to learn more about PyLops:
 * Alex Rakowski, alex-rakowski
 * David Sollberger, solldavid
 * Gustavo Coelho, guaacoelho
+* Bram De Jaegher, Beramos
 * Shaowen Wang, GeophyAI
 * Francesco Brandolin, FB-I
+* Sun Data Scientist, IruNikZe
+* Amir Mardan, AmirMardan
+* Alexander Skorikov, askorikov
+* Niklas Zell, MothNik
+* Yuxi Hong, hongyx11
+* Vincent Gao, gaoflow
+* Barkure, barkure

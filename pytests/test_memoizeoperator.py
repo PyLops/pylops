@@ -72,11 +72,11 @@ def test_memoize_evals_2(par):
     # Approach 1
     Aop1 = Aop.toreal(forw=False, adj=True)
     xinv1 = Aop1.div(y).real
-    assert_array_almost_equal(x, xinv1)
+    assert_array_almost_equal(xinv1, x, decimal=2 if rdtype == np.float32 else 4)
 
     # Approach 2
     Amop = MemoizeOperator(Aop, max_neval=10)
     Aop2 = VStack([Amop.toreal(), Amop.toimag()])
     y2 = np.concatenate([np.real(y), np.imag(y)])
     xinv2 = Aop2.div(y2)
-    assert_array_almost_equal(x, xinv2)
+    assert_array_almost_equal(xinv2, x, decimal=2 if rdtype == np.float32 else 4)

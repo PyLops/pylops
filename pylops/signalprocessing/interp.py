@@ -12,7 +12,7 @@ from pylops.signalprocessing._interp_utils import (
 )
 from pylops.signalprocessing.interpspline import InterpCubicSpline
 from pylops.utils._internal import _value_or_sized_to_tuple
-from pylops.utils.backend import get_array_module
+from pylops.utils.backend import get_array_module, get_csr_matrix
 from pylops.utils.typing import DTypeLike, InputDimsLike, IntNDArray, SamplingLike
 
 
@@ -37,9 +37,6 @@ def _linearinterp(
     """Linear interpolation."""
     ncp = get_array_module(iava)
 
-    if np.issubdtype(iava.dtype, np.integer):
-        iava = iava.astype(np.float64)
-
     sample_size = dims[axis]
     dimsd = list(dims)
     dimsd[axis] = len(iava)
@@ -47,6 +44,8 @@ def _linearinterp(
 
     # ensure that samples are not beyond the last sample, in that case set to
     # penultimate sample and raise a warning
+    if ncp.issubdtype(iava.dtype, ncp.integer):
+        iava = iava.astype(ncp.float64)
     iava = _clip_iava_above_last_sample_index(  # type: ignore
         iava=iava,  # type: ignore
         sample_size=sample_size,
@@ -70,6 +69,7 @@ def _sincinterp(
     dims: InputDimsLike,
     iava: SamplingLike,
     axis: int = 0,
+    tol: float | None = None,
     dtype: DTypeLike = "float64",
 ):
     """Sinc interpolation."""
@@ -82,6 +82,11 @@ def _sincinterp(
     ireg = ncp.arange(nreg)
     sinc = ncp.tile(iava[:, np.newaxis], (1, nreg)) - ncp.tile(ireg, (len(iava), 1))
     sinc = ncp.sinc(sinc).astype(dtype)
+
+    # sparsify sinc interpolation matrix
+    if tol is not None:
+        sinc[np.abs(sinc) < tol] = 0.0
+        sinc = get_csr_matrix(sinc)(sinc)
 
     # identify additional dimensions and create MatrixMult operator
     otherdims = np.array(dims)
@@ -106,6 +111,7 @@ def Interp(
     iava: SamplingLike,
     axis: int = -1,
     kind: Literal["linear", "nearest", "sinc", "cubic_spline"] = "linear",
+    tol: float | None = None,
     dtype: DTypeLike = "float64",
     name: str = "I",
 ) -> tuple[LinearOperator, IntNDArray]:
@@ -162,6 +168,13 @@ def Interp(
         .. versionadded:: 2.7.0
 
         The ``"cubic_spline"``-interpolation was added.
+
+    tol : :obj:`float`, optional
+        .. versionadded:: 2.8.0
+
+        Tolerance for sinc interpolation values to be retained (values
+        below ``tol`` are set to zero and a sparse matrix is created). If ``None``,
+        all values are retained and a dense matrix is created.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -236,7 +249,7 @@ def Interp(
     elif kind == "linear":
         interpop, iava, dims, dimsd = _linearinterp(dims, iava, axis=axis, dtype=dtype)
     elif kind == "sinc":
-        interpop, dims, dimsd = _sincinterp(dims, iava, axis=axis, dtype=dtype)
+        interpop, dims, dimsd = _sincinterp(dims, iava, axis=axis, tol=tol, dtype=dtype)
     elif kind == "cubic_spline":
         interpop = InterpCubicSpline(
             dims=dims,

@@ -1,0 +1,58 @@
+name: PyLops Testing (CuPy)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build:
+    runs-on:
+      - self-hosted
+      - uni
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install uv with Python 3.11
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: 3.11
+      - name: Install dependencies and pylops
+        run: |
+          srun --account=yuxilab -n 1 -N 1 --gres=gpu:L40S:1 bash -c '
+            uv sync --locked  --extra advanced \
+              --extra stat --extra gpu-cu12 \
+              --extra deep-cu128 --all-groups
+          '
+          echo "done!"
+      - name: Install CUDA 12.8 toolkit
+        run: |
+          srun --account=yuxilab -n 1 -N 1 --gres=gpu:L40S:1 bash -c '
+            # Currently, the NVIDIA GPU drivers on the self-hosted runner
+            # and the CUDA installation in CUDA_HOME require different PTX versions
+            # (8.7 and 8.8, respectively). CUDA and NVCC are temporarely
+            # installed in the uv environment, and the CUDA paths are set in
+            # the test command, to work around this issue.
+            uv add nvidia-cuda-nvcc-cu12==12.8.*
+            # Numba resolves libNVVM via CUDA_HOME and needs a versioned
+            # libnvvm.so.N (the pip wheel only ships a bare libnvvm.so), so
+            # add the symlink once here against the wheel-provided toolkit.
+            ln -sf libnvvm.so .venv/lib/python3.11/site-packages/nvidia/cuda_nvcc/nvvm/lib64/libnvvm.so.4
+          '
+          echo "done!"
+      - name: Test with pytest
+        run: |
+          srun --account=yuxilab -n 1 -N 1 --gres=gpu:L40S:1 bash -c '
+            # Use the pip-installed CUDA 12.8 toolkit (matches the 12.8 driver),
+            # not any system CUDA on the runner, so numba emits PTX <= 8.7.
+            export CUDA_HOME="$PWD/.venv/lib/python3.11/site-packages/nvidia/cuda_nvcc"
+            export CUPY_PYLOPS=1
+            export TEST_CUPY_PYLOPS=1
+            uv run pytest --color=yes pytests/
+          '
+          echo "done!"

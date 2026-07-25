@@ -1,6 +1,24 @@
 Changelog
 =========
 
+# 2.8.0
+* Added `pylops.signalprocessing.UDCT` operator
+* Added `forward`, `adjoint`, and `__repr__` methods to `pylops.TorchOperator`
+* Added `sparse` to `pylops.utils.signalprocessing.convmtx`
+  and `pylops.utils.signalprocessing.nonstationary_convmtx`
+* Added `damp` to `pylops.optimization.cls_basic.CG` and `pylops.optimization.basic.cgls`
+* Added `tol` to `pylops.signalprocessing.Interp` to limit extension of sinc interpolation
+  and implemented CuPy backend
+* Added CuPy support to `pylops.utils.signalprocessing.slope_estimate`
+* Enabled repeated indices `pylops.Restriction`
+* Fixed call to `on_end` callback in `pylops.optimization.basesolver.Solver` to pass
+  output of step instead of input
+* Fixed handling of `decay` in `pylops.optimization.cls_sparsity.ISTA` and
+  `pylops.optimization.cls_sparsity.FISTA` when `niter` is not passed to setup method
+* Fixed element-wise variance accumulation in `pylops.optimization.cls_basic.LSQR`
+  and `pylops.optimization.basic.lsqr`, which previously assigned the same value to
+  every entry of `var`
+
 # 2.7.0
 * Added cubic spline interpolation operator via
   `pylops.signalprocessing.interpspline.InterpCubicSpline` (also interfaceable via

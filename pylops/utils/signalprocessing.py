@@ -10,7 +10,6 @@ import warnings
 from collections.abc import Sequence
 
 import numpy as np
-from scipy.ndimage import gaussian_filter
 
 from pylops.basicoperators import Diagonal, Smoothing2D, SmoothingND
 from pylops.optimization.leastsquares import preconditioned_inversion
@@ -18,13 +17,16 @@ from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils._pwd2d import _conv_allpass, _triangular_smoothing_from_boxcars
 from pylops.utils.backend import (
     get_array_module,
+    get_csr_matrix,
+    get_dia_matrix,
+    get_gaussian_filter,
     get_normalize_axis_index,
     get_toeplitz,
 )
 from pylops.utils.typing import NDArray, Tpwdsmoothing
 
 
-def convmtx(h: NDArray, n: int, offset: int = 0) -> NDArray:
+def convmtx(h: NDArray, n: int, offset: int = 0, sparse: bool = False) -> NDArray:
     r"""Convolution matrix
 
     Makes a dense convolution matrix :math:`\mathbf{C}`
@@ -42,12 +44,16 @@ def convmtx(h: NDArray, n: int, offset: int = 0) -> NDArray:
         Convolution filter (1D array)
     n : :obj:`int`
         Number of columns of convolution matrix
-    offset : :obj:`int`
+    offset : :obj:`int`, optional
         Index of the center of the filter
+    sparse : :obj:`bool`, optional
+        .. versionadded:: 2.8.0
+
+        Return dense (``False``) or sparse (``True``) matrix
 
     Returns
     -------
-    C : :obj:`numpy.ndarray`
+    C : :obj:`numpy.ndarray` or :obj:`scipy.sparse.spmatrix`
         Convolution matrix of size :math:`\text{len}(h)+n-1 \times n`
 
     """
@@ -62,12 +68,26 @@ def convmtx(h: NDArray, n: int, offset: int = 0) -> NDArray:
     )
 
     ncp = get_array_module(h)
+
+    # create Toeplitz matrix
     nh = len(h)
     col_1 = ncp.r_[h, ncp.zeros(n + nh - 2, dtype=h.dtype)]
     row_1 = ncp.r_[h[0], ncp.zeros(n - 1, dtype=h.dtype)]
     C = get_toeplitz(h)(col_1, row_1)
+
     # apply offset
     C = C[offset : offset + nh + n - 1]
+
+    # convert to sparse using the following rule-of-thumb:
+    # - DIA format very short filters (<= 11)
+    # - CSR format for other filters
+    if sparse:
+        if ncp == np:
+            C = get_dia_matrix(h)(C) if nh <= 11 else get_csr_matrix(h)(C)
+        else:
+            # For CuPy DIA cannot take a dense matrix, so the dense matrix is
+            # always converted to CSR format
+            C = get_csr_matrix(h)(C)
     return C
 
 
@@ -76,6 +96,7 @@ def nonstationary_convmtx(
     n: int,
     hc: int = 0,
     pad: tuple[int] = (0, 0),
+    sparse: bool = False,
 ) -> NDArray:
     r"""Convolution matrix from a bank of filters
 
@@ -97,18 +118,35 @@ def nonstationary_convmtx(
         Zero-padding to apply to the bank of filters before and after the
         provided values (use it to avoid wrap-around or pass filters with
         enough padding)
+    sparse : :obj:`bool`, optional
+        .. versionadded:: 2.8.0
+
+        Return dense (``False``) or sparse (``True``) matrix
 
     Returns
     -------
-    C : :obj:`numpy.ndarray`
+    C : :obj:`numpy.ndarray` or :obj:`scipy.sparse.spmatrix`
         Convolution matrix
 
     """
     ncp = get_array_module(H)
 
+    # create Toeplitz matrix
+    nh = H.shape[1]
     H = ncp.pad(H, ((0, 0), pad), mode="constant")
     C = ncp.array([ncp.roll(h, ih) for ih, h in enumerate(H)])
     C = C[:, pad[0] + hc : pad[0] + hc + n].T  # take away edges
+
+    # convert to sparse using the following rule-of-thumb:
+    # - DIA format very short filters (<= 11)
+    # - CSR format for other filters
+    if sparse:
+        if ncp == np:
+            C = get_dia_matrix(H)(C) if nh <= 11 else get_csr_matrix(H)(C)
+        else:
+            # For CuPy DIA cannot take a dense matrix, so the dense matrix is
+            # always converted to CSR format
+            C = get_csr_matrix(H)(C)
     return C
 
 
@@ -228,27 +266,29 @@ def slope_estimate(
         anisotropy in digitized images", Journal ASCI Imaging Workshop. 1995.
 
     """
-    slopes = np.zeros_like(d)
-    anisos = np.zeros_like(d)
+    ncp = get_array_module(d)
 
-    gz, gx = np.gradient(d, dz, dx)
+    slopes = ncp.zeros_like(d)
+    anisos = ncp.zeros_like(d)
+
+    gz, gx = ncp.gradient(d, dz, dx)
     gzz, gzx, gxx = gz * gz, gz * gx, gx * gx
 
     # smoothing
-    gzz = gaussian_filter(gzz, sigma=smooth)
-    gzx = gaussian_filter(gzx, sigma=smooth)
-    gxx = gaussian_filter(gxx, sigma=smooth)
+    gzz = get_gaussian_filter(d)(gzz, sigma=smooth)
+    gzx = get_gaussian_filter(d)(gzx, sigma=smooth)
+    gxx = get_gaussian_filter(d)(gxx, sigma=smooth)
 
-    gmax = max(gzz.max(), gxx.max(), np.abs(gzx).max())
+    gmax = max(gzz.max(), gxx.max(), ncp.abs(gzx).max())
     if gmax <= eps:
-        return np.zeros_like(d), anisos
+        return ncp.zeros_like(d), anisos
 
     gzz /= gmax
     gzx /= gmax
     gxx /= gmax
 
     lcommon1 = 0.5 * (gzz + gxx)
-    lcommon2 = 0.5 * np.sqrt((gzz - gxx) ** 2 + 4 * gzx**2)
+    lcommon2 = 0.5 * ncp.sqrt((gzz - gxx) ** 2 + 4 * gzx**2)
     l1 = lcommon1 + lcommon2
     l2 = lcommon1 - lcommon2
 
@@ -256,9 +296,9 @@ def slope_estimate(
     anisos[regdata] = 1 - l2[regdata] / l1[regdata]
 
     if dips:
-        slopes = 0.5 * np.arctan2(2 * gzx, gzz - gxx)
+        slopes = 0.5 * ncp.arctan2(2 * gzx, gzz - gxx)
     else:
-        regdata = np.abs(gzx) > eps
+        regdata = ncp.abs(gzx) > eps
         slopes[regdata] = (l1 - gzz)[regdata] / gzx[regdata]
 
     return slopes, anisos

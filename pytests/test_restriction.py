@@ -99,6 +99,46 @@ def test_Restriction_1dsignal(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par1s), (par1j), (par2), (par2s), (par2j)])
+def test_Restriction_1dsignal_repeated(par):
+    """Dot-test, forward and adjoint for Restriction operator for 1d signal
+    with repeated incides (adjoint must sum over them)"""
+    np.random.seed(10)
+    dtype = np.empty(0, dtype=par["dtype"]).real.dtype
+
+    Nsub = int(np.round(par["nx"] * perc_subsampling))
+    iava = np.sort(np.random.permutation(np.arange(par["nx"]))[:Nsub])
+
+    # Force 2 repetitions
+    iava[1] = iava[0]
+    iava[-1] = iava[-2]
+
+    Rop = Restriction(par["nx"], iava, inplace=par["inplace"], dtype=par["dtype"])
+    assert dottest(
+        Rop,
+        Nsub,
+        par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+
+    x = np.arange(par["nx"], dtype=dtype) + par["imag"] * np.arange(
+        par["nx"], dtype=dtype
+    )
+    y = Rop * x
+    x1 = Rop.H * y
+
+    x1ana_iava = np.zeros_like(x)
+    x1ana_iava[iava[1:-1]] = x[iava[1:-1]]
+    x1ana_iava[iava[0]] += x[iava[0]]
+    x1ana_iava[iava[-1]] += x[iava[-1]]
+
+    assert y.dtype == par["dtype"]
+    assert x1.dtype == par["dtype"]
+    assert_array_almost_equal(x1, x1ana_iava)
+
+
+@pytest.mark.parametrize("par", [(par1), (par1s), (par1j), (par2), (par2s), (par2j)])
 def test_Restriction_2dsignal(par):
     """Dot-test, forward and adjoint for Restriction operator for 2d signal"""
     np.random.seed(10)

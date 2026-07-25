@@ -457,6 +457,10 @@ Signal processing:
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
+   * - :class:`pylops.signalprocessing.UDCT`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
    * - :class:`pylops.signalprocessing.Radon2D`
      - |:white_check_mark:|
      - |:red_circle:|

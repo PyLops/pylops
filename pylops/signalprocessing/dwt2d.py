@@ -32,10 +32,10 @@ class DWT2D(LinearOperator):
     ----------
     dims : :obj:`tuple`
         Number of samples for each dimension
-    axes : :obj:`int`, optional
+    axes : :obj:`tuple`, optional
         .. versionadded:: 2.0.0
 
-        Axis along which DWT2D is applied
+        Axes along which DWT2D is applied
     wavelet : :obj:`str`, optional
         Name of wavelet type. Use :func:`pywt.wavelist(kind='discrete')` for
         a list of available wavelets.

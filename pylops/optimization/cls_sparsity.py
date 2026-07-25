@@ -1037,7 +1037,7 @@ class OMP(Solver):
             Number of iterations of inner loop. By choosing ``niter_inner=0``, the
             Matching Pursuit (MP) algorithm is implemented.
         sigma : :obj:`list`
-            Maximum :math:`L^2` norm of residual. When smaller stop iterations.
+            Maximum :math:`L_2` norm of residual. When smaller stop iterations.
         normalizecols : :obj:`list`, optional
             Normalize columns (``True``) or not (``False``). Note that this can be
             expensive as it requires applying the forward operator
@@ -1331,7 +1331,7 @@ class OMP(Solver):
             Number of iterations of inner loop. By choosing ``niter_inner=0``, the
             Matching Pursuit (MP) algorithm is implemented.
         sigma : :obj:`list`
-            Maximum :math:`L^2` norm of residual. When smaller stop iterations.
+            Maximum :math:`L_2` norm of residual. When smaller stop iterations.
         normalizecols : :obj:`list`, optional
             Normalize columns (``True``) or not (``False``). Note that this can be
             expensive as it requires applying the forward operator
@@ -1733,7 +1733,11 @@ class ISTA(Solver):
 
         # prepare decay (if not passed)
         if perc is None and decay is None:
-            self.decay = self.ncp.ones(niter, dtype=get_real_dtype(self.Op.dtype))
+            self.decay = (
+                1.0
+                if niter is None
+                else self.ncp.ones(niter, dtype=get_real_dtype(self.Op.dtype))
+            )
 
         # step size
         if alpha is not None:
@@ -1889,9 +1893,14 @@ class ISTA(Solver):
                 self.SOpx_unthesh if self.preallocate else SOpx_unthesh
             )
         if self.perc is None:
+            decay = (
+                self.decay
+                if isinstance(self.decay, (int, float))
+                else self.decay[self.iiter]
+            ) * self.thresh  # single-valued decay when niter is not set in setup
             x = self.threshf(
                 x_unthesh_or_SOpx_unthesh,
-                self.decay[self.iiter] * self.thresh,
+                decay,
             )
         else:
             x = self.threshf(x_unthesh_or_SOpx_unthesh, 100 - self.perc)
@@ -2317,9 +2326,14 @@ class FISTA(ISTA):
                 self.SOpx_unthesh if self.preallocate else SOpx_unthesh
             )
         if self.perc is None:
+            decay = (
+                self.decay
+                if isinstance(self.decay, (int, float))
+                else self.decay[self.iiter]
+            ) * self.thresh  # single-valued decay when niter is not set in setup
             x = self.threshf(
                 x_unthesh_or_SOpx_unthesh,
-                self.decay[self.iiter] * self.thresh,
+                decay,
             )
         else:
             x = self.threshf(x_unthesh_or_SOpx_unthesh, 100 - self.perc)
@@ -2753,7 +2767,7 @@ class SplitBregman(Solver):
     -----
     Solve the following system of unconstrained, regularized equations
     given the operator :math:`\mathbf{Op}` and a set of mixed norm
-    (:math:`L^2` and :math:`L_1`)
+    (:math:`L_2` and :math:`L_1`)
     regularization terms :math:`\mathbf{R}_{2,i}` and
     :math:`\mathbf{R}_{1,i}`, respectively:
 
@@ -2764,7 +2778,7 @@ class SplitBregman(Solver):
         \sum_i \epsilon_{\mathbf{R}_{1,i}} \| \mathbf{R}_{1,i} \textbf{x} \|_1
 
     where :math:`\mu` is the reconstruction damping, :math:`\epsilon_{\mathbf{R}_{2,i}}`
-    are the damping factors used to weight the different :math:`L^2` regularization
+    are the damping factors used to weight the different :math:`L_2` regularization
     terms of the cost function and :math:`\epsilon_{\mathbf{R}_{1,i}}`
     are the damping factors used to weight the different :math:`L_1` regularization
     terms of the cost function.
@@ -2924,10 +2938,10 @@ class SplitBregman(Solver):
             for many applications optimal efficiency is obtained when only one
             iteration is performed.
         RegsL2 : :obj:`list`, optional
-            Additional :math:`L^2` regularization operators
-            (if ``None``, :math:`L^2` regularization is not added to the problem)
+            Additional :math:`L_2` regularization operators
+            (if ``None``, :math:`L_2` regularization is not added to the problem)
         dataregsL2 : :obj:`list`, optional
-            :math:`L^2` Regularization data (must have the same number of elements
+            :math:`L_2` Regularization data (must have the same number of elements
             of ``RegsL2`` or equal to ``None`` to use a zero data for every
             regularization operator in ``RegsL2``)
         mu : :obj:`float`, optional
@@ -2936,7 +2950,7 @@ class SplitBregman(Solver):
              :math:`L_1` Regularization dampings (must have the same number of elements
              as ``RegsL1``)
         epsRL2s : :obj:`list`
-             :math:`L^2` Regularization dampings (must have the same number of elements
+             :math:`L_2` Regularization dampings (must have the same number of elements
              as ``RegsL2``)
         tol : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
@@ -3252,10 +3266,10 @@ class SplitBregman(Solver):
             for many applications optimal efficiency is obtained when only one
             iteration is performed.
         RegsL2 : :obj:`list`, optional
-            Additional :math:`L^2` regularization operators
-            (if ``None``, :math:`L^2` regularization is not added to the problem)
+            Additional :math:`L_2` regularization operators
+            (if ``None``, :math:`L_2` regularization is not added to the problem)
         dataregsL2 : :obj:`list`, optional
-            :math:`L^2` Regularization data (must have the same number of elements
+            :math:`L_2` Regularization data (must have the same number of elements
             of ``RegsL2`` or equal to ``None`` to use a zero data for every
             regularization operator in ``RegsL2``)
         mu : :obj:`float`, optional
@@ -3264,7 +3278,7 @@ class SplitBregman(Solver):
              :math:`L_1` Regularization dampings (must have the same number of elements
              as ``RegsL1``)
         epsRL2s : :obj:`list`
-             :math:`L^2` Regularization dampings (must have the same number of elements
+             :math:`L_2` Regularization dampings (must have the same number of elements
              as ``RegsL2``)
         tol : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model

@@ -5,7 +5,7 @@ from typing import Literal
 
 import numpy as np
 
-from pylops import Laplacian, Restriction, SecondDerivative
+from pylops import Laplacian, Real, Restriction, SecondDerivative
 from pylops.optimization.leastsquares import regularized_inversion
 from pylops.optimization.sparsity import fista
 from pylops.signalprocessing import (
@@ -209,7 +209,11 @@ def SeismicInterpolation(
           in 3-dimensional case
 
     """
+    # identify dtypes
     dtype = data.dtype
+    cdtype = (np.ones(1, dtype=dtype) + 1j * np.ones(1, dtype=dtype)).dtype
+    ropdtype = cdtype if kind == "fk" else dtype
+
     ndims = data.ndim
     if ndims == 1 or ndims > 3:
         msg = f"data must have 2 or 3 dimensions, got {ndims}"
@@ -231,17 +235,22 @@ def SeismicInterpolation(
 
     # create restriction/interpolation operator
     if iava.dtype == float:
-        Rop = Interp(dims, iava, axis=0, kind="linear", dtype=dtype)
+        Rop = Interp(dims, iava, axis=0, kind="linear", dtype=ropdtype)
         if ndims == 3 and iava1 is not None:
             dims1 = (len(iava), nrec[1], dimsd[2])
-            Rop1 = Interp(dims1, iava1, axis=1, kind="linear", dtype=dtype)
+            Rop1 = Interp(dims1, iava1, axis=1, kind="linear", dtype=ropdtype)
             Rop = Rop1 * Rop
     else:
-        Rop = Restriction(dims, iava, axis=0, dtype=dtype)
+        Rop = Restriction(dims, iava, axis=0, dtype=ropdtype)
         if ndims == 3 and iava1 is not None:
             dims1 = (len(iava), nrec[1], dimsd[2])
-            Rop1 = Restriction(dims1, iava1, axis=1, dtype=dtype)
+            Rop1 = Restriction(dims1, iava1, axis=1, dtype=ropdtype)
             Rop = Rop1 * Rop
+
+    # convert output to real when using fk transform
+    if kind == "fk":
+        Realop = Real(dimsd, dtype=ropdtype)
+        Rop = Realop * Rop
 
     # create other operators for inversion
     if kind == "spatial":
@@ -263,7 +272,7 @@ def SeismicInterpolation(
                     raise ValueError(msg)
                 else:
                     sampling = (dspat, dspat1, dt)
-            Pop = FFTND(dims=dims, nffts=nffts, sampling=sampling)
+            Pop = FFTND(dims=dims, nffts=nffts, sampling=sampling, dtype=cdtype)
             Pop = Pop.H
         else:
             if sampling is None:
@@ -274,7 +283,7 @@ def SeismicInterpolation(
                     raise ValueError(msg)
                 else:
                     sampling = (dspat, dt)
-            Pop = FFT2D(dims=dims, nffts=nffts, sampling=sampling)
+            Pop = FFT2D(dims=dims, nffts=nffts, sampling=sampling, dtype=cdtype)
             Pop = Pop.H
         SIop = Rop * Pop
         # Force data to be of same dtype of operator
@@ -288,10 +297,13 @@ def SeismicInterpolation(
                 spataxis,
                 spat1axis,
                 (np.max(paxis) * dspat / dt, np.max(p1axis) * dspat1 / dt),
+                dtype=dtype,
             ).H
             dimsp = (spataxis.size, spat1axis.size, taxis.size)
         else:
-            Pop = ChirpRadon2D(taxis, spataxis, np.max(paxis) * dspat / dt).H
+            Pop = ChirpRadon2D(
+                taxis, spataxis, np.max(paxis) * dspat / dt, dtype=dtype
+            ).H
             dimsp = (spataxis.size, taxis.size)
         SIop = Rop * Pop
     elif "radon" in kind:
@@ -308,6 +320,7 @@ def SeismicInterpolation(
                 centeredh=centeredh,
                 kind=kindradon,
                 engine=engine,
+                dtype=dtype,
             )
             dimsp = (paxis.size, p1axis.size, taxis.size)
 
@@ -319,6 +332,7 @@ def SeismicInterpolation(
                 centeredh=centeredh,
                 kind=kindradon,
                 engine=engine,
+                dtype=dtype,
             )
             dimsp = (paxis.size, taxis.size)
         SIop = Rop * Pop
@@ -345,6 +359,7 @@ def SeismicInterpolation(
                     centeredh=True,
                     kind="linear",
                     engine=engine,
+                    dtype=dtype,
                 )
             else:
                 npaxis, np1axis = nwin[0], nwin[1]
@@ -353,6 +368,7 @@ def SeismicInterpolation(
                     spataxis_local,
                     spat1axis_local,
                     (np.max(paxis) * dspat / dt, np.max(p1axis) * dspat1 / dt),
+                    dtype=dtype,
                 ).H
             dimsp = (nwins[0] * npaxis, nwins[1] * np1axis, dimsslid[2])
             Pop = Sliding3D(
@@ -373,6 +389,7 @@ def SeismicInterpolation(
                     centeredh=True,
                     kind="linear",
                     engine=engine,
+                    dtype=dtype,
                 )
             else:
                 npaxis = nwin

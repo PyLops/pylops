@@ -109,3 +109,40 @@ def test_TorchOperator_batch_nd(par, dtype):
 
     assert yt.dtype == dtype
     assert_array_equal(y, yt)
+
+
+@pytest.mark.skipif(platform.system() == "Darwin", reason="Not OSX enabled")
+@pytest.mark.parametrize("par", [(par1)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_TorchOperator_forward_adjoint(par, dtype):
+    """Compute gradient of L2 norm (chain of forward and adjoint) and
+    compare Jacobian vector product with analytical solution"""
+    device = "cpu" if backend == "numpy" else "cuda"
+
+    Dop = MatrixMult(
+        np.random.normal(0.0, 1.0, (par["ny"], par["nx"])).astype(dtype), dtype=dtype
+    )
+    Top = TorchOperator(Dop, batch=False, device="cpu" if backend == "numpy" else "gpu")
+
+    x = np.random.normal(0.0, 1.0, par["nx"]).astype(dtype)
+    xt = torch.from_numpy(to_numpy(x)).to(device).view(-1)
+    xt.requires_grad = True
+    y = -2 * np.arange(par["ny"], dtype=dtype)
+    yt = torch.from_numpy(to_numpy(y)).to(device).view(-1)
+    v = np.random.normal(0.0, 1.0, par["ny"]).astype(dtype)
+    vt = torch.from_numpy(to_numpy(v)).to(device).view(-1)
+
+    # pylops operator
+    f = Dop.H * (y - Dop * x)
+    jvt = -Dop.H * Dop * v
+
+    # torch operator
+    ft = Top.adjoint(yt - Top.forward(xt))
+    ft.backward(vt, retain_graph=True)
+    jvtt = xt.grad.cpu().numpy()
+    ft = ft.detach().cpu().numpy()
+
+    assert ft.dtype == x.dtype
+    assert jvtt.dtype == x.dtype
+    assert_array_equal(f, ft)
+    assert_array_equal(jvt, jvtt)

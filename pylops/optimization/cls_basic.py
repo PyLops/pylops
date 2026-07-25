@@ -65,8 +65,9 @@ class CG(Solver):
 
     Notes
     -----
-    Solve the :math:`\mathbf{y} = \mathbf{Op}\,\mathbf{x}` problem using conjugate gradient
-    iterations [1]_.
+    Solve the :math:`\mathbf{y} = (\mathbf{Op} + \epsilon\mathbf{I})\,\mathbf{x}` problem
+    using conjugate gradient iterations [1]_, where :math:`\epsilon` is the damping
+    coefficient.
 
     .. [1] Hestenes, M R., Stiefel, E., “Methods of Conjugate Gradients for Solving
        Linear Systems”, Journal of Research of the National Bureau of Standards.
@@ -134,6 +135,7 @@ class CG(Solver):
         y: NDArray,
         x0: NDArray | None = None,
         niter: int | None = None,
+        damp: float = 0.0,
         tol: float = 1e-4,
         preallocate: bool = False,
         show: bool = False,
@@ -150,6 +152,8 @@ class CG(Solver):
         niter : :obj:`int`, optional
             Number of iterations (default to ``None`` in case a user wants to
             manually step over the solver)
+        damp : :obj:`float`, optional
+            Damping coefficient
         tol : :obj:`float`, optional
             Absolute tolerance on residual norm. Stops the solver when the
             residual norm is below this value.
@@ -170,6 +174,7 @@ class CG(Solver):
         """
         self.y = y
         self.niter = niter
+        self.damp = damp
         self.tol = tol
 
         self.ncp = get_array_module(y)
@@ -187,6 +192,12 @@ class CG(Solver):
             else:
                 self.r = self.ncp.empty_like(self.y)
                 self.ncp.subtract(self.y, self.Op.matvec(x), out=self.r)
+            # account for the damping term in the initial residual
+            if self.damp != 0.0:
+                if not self.preallocate:
+                    self.r = self.r - self.damp * x
+                else:
+                    self.ncp.subtract(self.r, self.damp * x, out=self.r)
         self.c = self.r.copy()
         self.kold = self.ncp.abs(self.r.dot(self.r.conj()))
 
@@ -221,6 +232,9 @@ class CG(Solver):
 
         """
         Opc = self.Op.matvec(self.c)
+        # add damping contribution
+        if self.damp != 0.0:
+            Opc = Opc + self.damp * self.c
         cOpc = self.ncp.abs(self.c.dot(Opc.conj()))
         a = self.kold / cOpc
         if not self.preallocate:
@@ -317,6 +331,7 @@ class CG(Solver):
         y: NDArray,
         x0: NDArray | None = None,
         niter: int = 10,
+        damp: float = 0.0,
         tol: float = 1e-4,
         preallocate: bool = False,
         show: bool = False,
@@ -333,6 +348,8 @@ class CG(Solver):
             internally as zero vector
         niter : :obj:`int`, optional
             Number of iterations
+        damp : :obj:`float`, optional
+            Damping coefficient
         tol : :obj:`float`, optional
             Absolute tolerance on residual norm. Stops the solver when the
             residual norm is below this value.
@@ -360,7 +377,13 @@ class CG(Solver):
 
         """
         x = self.setup(
-            y=y, x0=x0, niter=niter, tol=tol, preallocate=preallocate, show=show
+            y=y,
+            x0=x0,
+            niter=niter,
+            damp=damp,
+            tol=tol,
+            preallocate=preallocate,
+            show=show,
         )
         x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)
@@ -1248,8 +1271,9 @@ class LSQR(Solver):
             self.ncp.add(self.v, self.w, out=self.w)
         self.ddnorm = self.ddnorm + self.ncp.linalg.norm(self.dk) ** 2.0
         if self.calc_var:
+            # accumulate the element-wise square of dk (one variance per unknown)
             self.var = self.var + to_numpy_conditional(
-                self.var, self.ncp.dot(self.dk, self.dk)
+                self.var, self.ncp.square(self.dk)
             )
 
         # use a plane rotation on the right to eliminate the

@@ -3,6 +3,8 @@ __all__ = [
 ]
 
 
+from math import prod
+
 import numpy as np
 
 from pylops import LinearOperator
@@ -91,6 +93,15 @@ class TorchOperator:
     def __call__(self, x):
         return self.apply(x)
 
+    def __repr__(self):
+        M, N = prod(self.dimsd), prod(self.dims)
+        if self.dtype is None:
+            dt = "unspecified dtype"
+        else:
+            dt = "dtype=" + str(self.dtype)
+
+        return "<%dx%d %s with %s>" % (M, N, self.__class__.__name__, dt)
+
     def apply(self, x: TensorTypeLike) -> TensorTypeLike:
         """Apply forward pass to input vector
 
@@ -106,3 +117,22 @@ class TorchOperator:
 
         """
         return self.Top(x, self.matvec, self.rmatvec, self.device, self.devicetorch)
+
+    # alias for forward pass
+    forward = apply
+
+    def adjoint(self, x: TensorTypeLike) -> TensorTypeLike:
+        """Apply adjoint pass to input vector
+
+        Parameters
+        ----------
+        x : :obj:`torch.Tensor`
+            Input array
+
+        Returns
+        -------
+        y : :obj:`torch.Tensor`
+            Output array resulting from the application of the adjoint operator to ``x``.
+
+        """
+        return self.Top(x, self.rmatvec, self.matvec, self.device, self.devicetorch)

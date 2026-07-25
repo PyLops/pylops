@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import pytest
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import assert_array_almost_equal
 
 from pylops import JaxOperator, MatrixMult
 from pylops.utils import deps
@@ -43,8 +43,8 @@ def test_JaxOperator(par):
     assert y.dtype == par["dtype"]
     assert xadj.dtype == par["dtype"]
 
-    assert_array_equal(y, np.array(yjnp))
-    assert_array_equal(xadj, np.array(xadjnp))
+    assert_array_almost_equal(y, np.array(yjnp), decimal=5)
+    assert_array_almost_equal(xadj, np.array(xadjnp), decimal=5)
 
 
 @pytest.mark.skipif(

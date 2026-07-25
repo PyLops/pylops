@@ -301,7 +301,7 @@ def ista(
 ) -> tuple[NDArray, int, NDArray]:
     r"""Iterative Shrinkage-Thresholding Algorithm (ISTA).
 
-    Solve an optimization problem with :math:`L^p, \; p=0, 0.5, 1`
+    Solve an optimization problem with :math:`L_p, \; p=0, 0.5, 1`
     regularization, given the operator ``Op`` and data ``y``. The operator
     can be real or complex, and should ideally be either square :math:`N=M`
     or underdetermined :math:`N<M`.
@@ -312,7 +312,7 @@ def ista(
         Operator to invert
     y : :obj:`numpy.ndarray`
         Data of size :math:`[N \times 1]`
-    x0: :obj:`numpy.ndarray`, optional
+    x0 : :obj:`numpy.ndarray`, optional
         Initial guess
     niter : :obj:`int`
         Number of iterations
@@ -455,7 +455,7 @@ def fista(
 ) -> tuple[NDArray, int, NDArray]:
     r"""Fast Iterative Shrinkage-Thresholding Algorithm (FISTA).
 
-    Solve an optimization problem with :math:`L^p, \; p=0, 0.5, 1`
+    Solve an optimization problem with :math:`L_p, \; p=0, 0.5, 1`
     regularization, given the operator ``Op`` and data ``y``.
     The operator can be real or complex, and should ideally be either square
     :math:`N=M` or underdetermined :math:`N<M`.
@@ -466,7 +466,7 @@ def fista(
         Operator to invert
     y : :obj:`numpy.ndarray`
         Data
-    x0: :obj:`numpy.ndarray`, optional
+    x0 : :obj:`numpy.ndarray`, optional
         Initial guess
     niter : :obj:`int`, optional
         Number of iterations

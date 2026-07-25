@@ -53,8 +53,9 @@ As for any Python class, our solver will need an ``__init__`` method. In this ca
 of the base class. Two input parameters are passed to the ``__init__`` method and saved as members of our class,
 namely the operator :math:`\mathbf{Op}` associated with the system of equations we wish to solve,
 :math:`\mathbf{y}=\mathbf{Op}\,\mathbf{x}`, and optionally a :class:`pylops.optimization.callback.Callbacks` object. Moreover,
-an additional parameters is created that contains the current time (this is used later to report the execution time
-of the solver). Here is the ``__init__`` method of the base class:
+two additional parameters are created that contains the counter of the iterations (which will be incremented every time the
+``step`` method is called) and the current time (this is used later to report the execution time of the solver). Here is the
+``__init__`` method of the base class:
 
 .. code-block:: python
 
@@ -62,7 +63,33 @@ of the solver). Here is the ``__init__`` method of the base class:
         self.Op = Op
         self.callbacks = callbacks
         self._registercallbacks()
+        self.iiter = 0
         self.tstart = time.time()
+
+Next, we will write the *memory_usage* method. This method allows users to get a prediction of the memory usage of
+the solver ahead of time (before running any of the methods of the solver as described below). It is very useful, especially
+for large problems, to get a feeling whether the current hardware resources (of the CPU or GPU if the user plans to run the solver on 
+CuPy arrays and with a CuPy-enabled operator) will be sufficient to succesfully carry out the optimization process.
+
+.. code-block:: python
+
+    def memory_usage(self, show: False,  unit = "B"):
+        nbytes = np.dtype(self.Op.dtype).itemsize
+
+        # Setup
+        memuse = (self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
+
+        # Step (additional variables to those in setup)
+        memuse += (self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        if show:
+            print(f"CG predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
+
+        return memuse
+
+Note that, although very useful, this method is not strictly needed to run the solver; so at the beginning you could just 
+add a ``pass`` to the core of this method. However, since this method is marked as ``@abstractmethod`` in the base class,
+you can't simply skip it.
 
 We can now move onto writing the *setup* of the solver in the method ``setup``. We will need to write
 a piece of code that prepares the solver prior to being able to apply a step. In general, this requires defining the

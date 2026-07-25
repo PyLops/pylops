@@ -1,8 +1,16 @@
 import os
 
-import numpy as np
+if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
+    import cupy as np
+    from cupy.testing import assert_array_almost_equal
+
+    backend = "cupy"
+else:
+    import numpy as np
+    from numpy.testing import assert_array_almost_equal
+
+    backend = "numpy"
 import pytest
-from numpy.testing import assert_array_almost_equal
 
 from pylops.utils.signalprocessing import convmtx, nonstationary_convmtx, slope_estimate
 
@@ -39,29 +47,25 @@ par4j = {
 np.random.seed(10)
 
 
-@pytest.mark.skipif(
-    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
-)
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
-def test_convmtx(par):
+@pytest.mark.parametrize("sparse", [False, True])
+def test_convmtx(par, sparse):
     """Compare convmtx with np.convolve (small filter)"""
     x = np.random.normal(0, 1, par["nt"]) + par["imag"] * np.random.normal(
         0, 1, par["nt"]
     )
 
     h = np.hanning(par["nh"])
-    H = convmtx(h, par["nt"], par["nh"] // 2)
+    H = convmtx(h, par["nt"], par["nh"] // 2, sparse=sparse)
 
     y = np.convolve(x, h, mode="same")
-    y1 = np.dot(H[: par["nt"]], x)
+    y1 = (H @ x)[: par["nt"]]
     assert_array_almost_equal(y, y1, decimal=4)
 
 
-@pytest.mark.skipif(
-    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
-)
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
-def test_convmtx1(par):
+@pytest.mark.parametrize("sparse", [False, True])
+def test_convmtx1(par, sparse):
     """Compare convmtx with np.convolve (large filter)"""
     x = np.random.normal(0, 1, par["nt"]) + par["imag"] * np.random.normal(
         0, 1, par["nt"]
@@ -69,19 +73,20 @@ def test_convmtx1(par):
 
     h = np.hanning(par["nh"])
     X = convmtx(
-        x, par["nh"], par["nh"] // 2 - 1 if par["nh"] % 2 == 0 else par["nh"] // 2
+        x,
+        par["nh"],
+        par["nh"] // 2 - 1 if par["nh"] % 2 == 0 else par["nh"] // 2,
+        sparse=sparse,
     )
 
     y = np.convolve(x, h, mode="same")
-    y1 = np.dot(X[: par["nt"]], h)
+    y1 = (X @ h)[: par["nt"]]
     assert_array_almost_equal(y, y1, decimal=4)
 
 
-@pytest.mark.skipif(
-    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
-)
 @pytest.mark.parametrize("par", [(par1), (par1j)])
-def test_nonstationary_convmtx(par):
+@pytest.mark.parametrize("sparse", [False, True])
+def test_nonstationary_convmtx(par, sparse):
     """Compare nonstationary_convmtx with convmtx for stationary filter"""
     x = np.random.normal(0, 1, par["nt"]) + par["imag"] * np.random.normal(
         0, 1, par["nt"]
@@ -89,7 +94,10 @@ def test_nonstationary_convmtx(par):
 
     h = np.hanning(par["nh"])
     H = convmtx(
-        h, par["nt"], par["nh"] // 2 - 1 if par["nh"] % 2 == 0 else par["nh"] // 2
+        h,
+        par["nt"],
+        par["nh"] // 2 - 1 if par["nh"] % 2 == 0 else par["nh"] // 2,
+        sparse=sparse,
     )
 
     H1 = nonstationary_convmtx(
@@ -98,14 +106,12 @@ def test_nonstationary_convmtx(par):
         hc=par["nh"] // 2,
         pad=(par["nt"], par["nt"]),
     )
-    y = np.dot(H[: par["nt"]], x)
+
+    y = (H @ x)[: par["nt"]]
     y1 = np.dot(H1, x)
     assert_array_almost_equal(y, y1, decimal=4)
 
 
-@pytest.mark.skipif(
-    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
-)
 def test_slope_estimation_dips():
     """Slope estimation using the Structure tensor algorithm should
     apply regularisation (some slopes are set to zero)

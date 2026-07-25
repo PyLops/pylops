@@ -1,0 +1,47 @@
+name: PyLops Testing with Free-Threaded Python
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [ ubuntu-latest, macos-latest ]
+        python-version: ["3.13t"]
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install uv with Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies and pylops
+        run: uv sync --locked --extra deep --all-groups
+      - name: Add more dependencies
+        run: uv add PyWavelets spgl1 curvelets devito
+      - name: Verify free threading
+        run: |
+          uv run python - <<'PY'
+          import sys
+          import numpy
+
+          assert not sys._is_gil_enabled(), "GIL is enabled!"
+          print("Free-threaded Python with NumPy:", numpy.__version__)
+          PY
+      - name: Test with pytest
+        run: |
+          uv run pytest --color=yes \
+            --ignore=pytests/test_ct.py \
+            --ignore=pytests/test_pytensoroperator.py \
+            pytests/

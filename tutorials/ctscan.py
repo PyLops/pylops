@@ -18,6 +18,7 @@ are in fact not easy to parametrize using the convention chosen in Radon2D.
 The sinogram created by the :class:`pylops.medical.CT2D` operator is further
 inverted using both a L2 solver and a TV-regularized solver like Split-Bregman.
 """
+
 import matplotlib.pyplot as plt
 
 # sphinx_gallery_thumbnail_number = 2
@@ -96,7 +97,7 @@ fig.tight_layout()
 
 ###############################################################################
 # Let's now repeat the same exercise, this time using the CT2D operator
-Cop = pylops.medical.CT2D((ny, nx), 1.0, ny, theta, engine='cpu')
+Cop = pylops.medical.CT2D((ny, nx), 1.0, ny, theta, engine="cpu")
 
 y = Cop * x.T
 xrec = Cop.H * y
@@ -149,7 +150,7 @@ xinv = pylops.optimization.sparsity.splitbregman(
     tol=1e-4,
     tau=1.0,
     show=False,
-    **dict(iter_lim=20, damp=1e-2)
+    **dict(iter_lim=20, damp=1e-2),
 )[0]
 xinv = np.real(xinv.reshape(ny, nx)).T
 

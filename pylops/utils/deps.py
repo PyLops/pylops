@@ -1,18 +1,19 @@
 __all__ = [
-    "astra_enabled",
     "cupy_enabled",
     "jax_enabled",
+    "astra_enabled",
+    "curvelets_enabled",
     "devito_enabled",
     "dtcwt_enabled",
+    "mkl_fft_enabled",
     "numba_enabled",
     "pyfftw_enabled",
+    "pytensor_enabled",
     "pywt_enabled",
     "skfmm_enabled",
     "spgl1_enabled",
     "sympy_enabled",
     "torch_enabled",
-    "pytensor_enabled",
-    "mkl_fft_enabled",
 ]
 
 import os
@@ -98,6 +99,23 @@ def astra_import(message: str | None = None) -> str | None:
             f'"conda install -c astra-toolbox astra-toolbox".'
         )
     return astra_message
+
+
+def udct_import(message: str | None = None) -> str | None:
+    if curvelets_enabled:
+        try:
+            import_module("curvelets")  # noqa: F401
+
+            curvelets_message = None
+        except Exception as e:
+            curvelets_message = f"Failed to import curvelets (error:{e})."
+    else:
+        curvelets_message = (
+            f"Curvelets not available. "
+            f"In order to be able to use "
+            f'{message} run "pip install curvelets".'
+        )
+    return curvelets_message
 
 
 def devito_import(message: str | None = None) -> str | None:
@@ -295,6 +313,7 @@ jax_enabled: bool = (
     True if (jax_import() is None and int(os.getenv("JAX_PYLOPS", 1)) == 1) else False
 )
 astra_enabled = util.find_spec("astra") is not None
+curvelets_enabled = util.find_spec("curvelets") is not None
 devito_enabled = util.find_spec("devito") is not None
 dtcwt_enabled = util.find_spec("dtcwt") is not None
 numba_enabled = util.find_spec("numba") is not None

@@ -122,7 +122,9 @@ def _PoststackLinearModelling(
             )
         else:
             Cop = _MatrixMult(
-                nonstationary_convmtx(wav, nt0, hc=wav.shape[1] // 2, pad=(nt0, nt0)),
+                nonstationary_convmtx(
+                    wav, nt0, hc=wav.shape[1] // 2, pad=(nt0, nt0), sparse=sparse
+                ),
                 otherdims=spatdims,
                 dtype=dtype,
                 **args_MatrixMult,

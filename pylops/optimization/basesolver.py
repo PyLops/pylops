@@ -129,7 +129,9 @@ class Solver(metaclass=ABCMeta):
                                 self, kwargs.get("x0", None)
                             )
                         else:
-                            getattr(cb, f"on_{func.__name__}_end")(self, args[0])
+                            getattr(cb, f"on_{func.__name__}_end")(
+                                self, ret[0] if isinstance(ret, tuple) else ret
+                            )
                 return ret
 
             return wrapper

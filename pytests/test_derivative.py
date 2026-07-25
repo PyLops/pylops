@@ -98,6 +98,16 @@ par4e = {
 np.random.seed(10)
 
 
+def test_FirstDerivative_invalid():
+    """FirstDerivative raises NotImplementedError for invalid kind/order"""
+    # invalid centered order
+    with pytest.raises(NotImplementedError, match="order must be"):
+        FirstDerivative(10, kind="centered", order=4)
+    # invalid kind
+    with pytest.raises(NotImplementedError, match="kind must be"):
+        FirstDerivative(10, kind="invalid")
+
+
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par1e), (par2e), (par3e), (par4e)]
 )

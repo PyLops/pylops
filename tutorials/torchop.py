@@ -149,7 +149,13 @@ axs[1].axis("tight")
 plt.tight_layout()
 
 ###############################################################################
-# And finally we do the same with a batch of 3 training samples.
+# And we can do the same with a batch of 3 training samples. Note that under
+# the hood, this effectively calls the matrix-matrix version of the forward
+# and adjoint operator (i.e., `matmat` and `rmatmat`); for operators that do
+# not implement these methods directly, this is simply implemented by calling
+# the matrix-vector of the forward and adjoint operator (i.e., `matvec` and
+# `rmatvec`)multiple times, which is less efficient.
+
 net = Network(4)
 Cop = pylops.TorchOperator(pylops.Smoothing2D((5, 5), dims=(32, 32)), batch=True)
 
@@ -169,3 +175,53 @@ axs[1].imshow(x.grad[0].reshape(4 * 32, 32).T)
 axs[1].set_title("Gradient")
 axs[1].axis("tight")
 plt.tight_layout()
+
+###############################################################################
+# Finally, whilst :class:`pylops.TorchOperator` is designed such that
+# when a PyLops linear operator is inserted into a Torch graph, the backward
+# pass will automatically call the adjoint of the operator, it is also possible to
+# explicitly call the forward and adjoint of the operator in the forward pass of
+# an AD chain. This can be useful in some scenarios, for example in the
+# implementation of so-called unrolled networks. In this case, we can simply
+# use the ``forward`` and ``adjoint`` methods of the :class:`pylops.TorchOperator`
+# class; Torch's AD will instead call the two methods swapped, namely ``adjoint``
+# and ``forward``.
+#
+# Let's consider the following example:
+#
+#   .. math::
+#        \mathbf{y}=\textbf{A}^H (\textbf{A} \mathbf{x} - \mathbf{d})
+#
+# whose Jacobian is given by:
+#
+#   .. math::
+#        \mathbf{J}=-\textbf{A}^H \textbf{A}
+#
+# Let's once again verify that the result of the product between
+# the transposed Jacobian and a vector :math:`\mathbf{v}` matches
+# with the analytical one.
+
+nx, ny = 10, 6
+xt0 = torch.arange(nx, dtype=torch.double, requires_grad=True)
+x0 = xt0.detach().numpy()
+yt0 = -2 * torch.arange(ny, dtype=torch.double)
+y0 = xt0.detach().numpy()
+
+# Forward
+A = np.random.normal(0.0, 1.0, (ny, nx))
+At = torch.from_numpy(A)
+Atop = pylops.TorchOperator(pylops.MatrixMult(A))
+yt = Atop.adjoint(yt0 - Atop.forward(xt0))
+
+# AD
+v = torch.ones(nx, dtype=torch.double)
+yt.backward(v, retain_graph=True)
+adgrad = xt0.grad
+
+# Analytical
+JT = -At.T @ At
+anagrad = torch.matmul(JT, v)
+
+print("Input: ", x0)
+print("AD gradient: ", adgrad)
+print("Analytical gradient: ", anagrad)
