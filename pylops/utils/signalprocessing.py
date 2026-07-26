@@ -156,20 +156,19 @@ def slope_estimate(
     d: NDArray,
     dz: float = 1.0,
     dx: float = 1.0,
-    dy: float | None = None,
+    dy: None = None,
     smooth: float = 5.0,
     eps: float = 0.0,
     dips: bool = False,
-    *,
-    anisotropies: Literal[True],
+    anisotropies: Literal[False] | None = None,
     batch_size: int | None = 1_000_000,
-) -> tuple[tuple[NDArray, NDArray], tuple[NDArray, NDArray]]: ...
+) -> tuple[NDArray, NDArray]: ...
 @overload
 def slope_estimate(
     d: NDArray,
     dz: float,
     dx: float,
-    dy: float,
+    dy: float | None = None,
     smooth: float = 5.0,
     eps: float = 0.0,
     dips: bool = False,
@@ -181,13 +180,14 @@ def slope_estimate(
     d: NDArray,
     dz: float = 1.0,
     dx: float = 1.0,
-    dy: None = None,
+    dy: float | None = None,
     smooth: float = 5.0,
     eps: float = 0.0,
     dips: bool = False,
-    anisotropies: Literal[False] | None = None,
+    *,
+    anisotropies: Literal[True],
     batch_size: int | None = 1_000_000,
-) -> tuple[NDArray, NDArray]: ...
+) -> tuple[tuple[NDArray, NDArray], tuple[NDArray, NDArray]]: ...
 def slope_estimate(
     d: NDArray,
     dz: float = 1.0,
@@ -226,7 +226,7 @@ def slope_estimate(
             Since version 1.17.0, defaults to 1.0.
 
     dy : :obj:`float`, optional
-        .. versionadded:: 2.8.0
+        .. versionadded:: 2.9.0
 
         Sampling in :math:`y`-axis, :math:`\Delta y`. Defaults to 1.0 when ``d``
         is 3d; ignored when ``d`` is 2d.
@@ -252,12 +252,12 @@ def slope_estimate(
 
         Return dips (``True``) instead of slopes (``False``).
     anisotropies : :obj:`bool`, optional
-        .. versionadded:: 2.8.0
+        .. versionadded:: 2.9.0
 
         Return anisotropies (``True``) or not (``False``). Ignored when ``d``
         is 2d as anisotropies are always returned.
     batch_size : :obj:`int`, optional
-        .. versionadded:: 2.8.0
+        .. versionadded:: 2.9.0
 
         Number of grid points being processed together if ``dips==False``
         and/or ``anisotropies=True``; this is done to avoid forming
@@ -269,7 +269,7 @@ def slope_estimate(
     -------
     slopes : :obj:`numpy.ndarray` or :obj:`tuple`
         Estimated local slopes (in 2d) or set of local slopes
-        along :math:`y`-axis and :math:`y`-axis (in 3d). The unit
+        along :math:`y`-axis and :math:`x`-axis (in 3d). The unit
         is that of :math:`\Delta z/\Delta x` (and :math:`\Delta z/\Delta y`).
 
         .. warning::
@@ -358,7 +358,7 @@ def slope_estimate(
     dy_3d = 1.0 if dy is None else dy
     anisotropies_3d = bool(anisotropies)
     outs = _structure_tensor_3d(
-        d, dy_3d, dx, dx, smooth, eps, dips, anisotropies_3d, batch_size
+        d, dy_3d, dx, dz, smooth, eps, dips, anisotropies_3d, batch_size
     )
     slopes_3d = (outs[0], outs[1])
     anisos_3d = (outs[2], outs[3]) if anisotropies_3d and len(outs) == 4 else None
@@ -368,23 +368,37 @@ def slope_estimate(
 @overload
 def dip_estimate(
     d: NDArray,
-    dz: float,
-    dx: float,
-    dy: float,
-    smooth: int = 5,
-    eps: float = 0.0,
-    batch_size: int | None = 1_000_000,
-) -> tuple[tuple[NDArray, NDArray], None]: ...
-@overload
-def dip_estimate(
-    d: NDArray,
     dz: float = 1.0,
     dx: float = 1.0,
     dy: None = None,
     smooth: int = 5,
     eps: float = 0.0,
+    anisotropies: Literal[False] | None = None,
     batch_size: int | None = 1_000_000,
 ) -> tuple[NDArray, NDArray]: ...
+@overload
+def dip_estimate(
+    d: NDArray,
+    dz: float,
+    dx: float,
+    dy: float | None = None,
+    smooth: int = 5,
+    eps: float = 0.0,
+    anisotropies: Literal[False] | None = None,
+    batch_size: int | None = 1_000_000,
+) -> tuple[tuple[NDArray, NDArray], None]: ...
+@overload
+def dip_estimate(
+    d: NDArray,
+    dz: float,
+    dx: float,
+    dy: float | None = None,
+    smooth: int = 5,
+    eps: float = 0.0,
+    *,
+    anisotropies: Literal[True],
+    batch_size: int | None = 1_000_000,
+) -> tuple[tuple[NDArray, NDArray], tuple[NDArray, NDArray]]: ...
 def dip_estimate(
     d: NDArray,
     dz: float = 1.0,
@@ -392,6 +406,7 @@ def dip_estimate(
     dy: float | None = None,
     smooth: int = 5,
     eps: float = 0.0,
+    anisotropies: bool | None = None,
     batch_size: int | None = 1_000_000,
 ) -> tuple[NDArray | tuple[NDArray, NDArray], NDArray | tuple[NDArray, NDArray] | None]:
     r"""Local dip estimation
@@ -410,7 +425,7 @@ def dip_estimate(
     dx : :obj:`float`, optional
         Sampling in :math:`x`-axis, :math:`\Delta x`
     dy : :obj:`float`, optional
-        .. versionadded:: 2.8.0
+        .. versionadded:: 2.9.0
 
         Sampling in :math:`y`-axis, :math:`\Delta y`. Defaults to 1.0 when ``d``
         is 3d; ignored when ``d`` is 2d.
@@ -423,8 +438,13 @@ def dip_estimate(
         are also set to zero. See Notes. When using with small values of ``smooth``,
         start from a very small number (e.g. 1e-10) and start increasing by a power
         of 10 until results are satisfactory.
+    anisotropies : :obj:`bool`, optional
+        .. versionadded:: 2.9.0
+
+        Return anisotropies (``True``) or not (``False``). Ignored when ``d``
+        is 2d as anisotropies are always returned.
     batch_size : :obj:`int`, optional
-        .. versionadded:: 2.8.0
+        .. versionadded:: 2.9.0
 
         Number of grid points being processed together if ``dips==False``
         and/or ``anisotropies=True``; this is done to avoid forming
@@ -438,7 +458,10 @@ def dip_estimate(
         Estimated local dips. The unit is radians,
         in the range of :math:`-\frac{\pi}{2}` to :math:`\frac{\pi}{2}`.
     anisotropies : :obj:`numpy.ndarray`
-        Estimated local anisotropies: :math:`1-\lambda_\text{min}/\lambda_\text{max}`
+        Estimated local linearities (:math:`1-\lambda_2/\lambda_1`)
+        (in 2d) or set of local linearities and planarities
+        (:math:`(\lambda_2-\lambda_3)/\lambda_1`) in 3d, where
+        :math:`\lambda_1 \ge \lambda_2 \ge \lambda_3`.
 
     Notes
     -----
@@ -450,7 +473,15 @@ def dip_estimate(
 
     """
     dips, anisos = slope_estimate(
-        d, dz=dz, dx=dx, dy=dy, smooth=smooth, eps=eps, dips=True, batch_size=batch_size
+        d,
+        dz=dz,
+        dx=dx,
+        dy=dy,
+        smooth=smooth,
+        eps=eps,
+        dips=True,
+        anisotropies=anisotropies,
+        batch_size=batch_size,
     )
     return dips, anisos
 
