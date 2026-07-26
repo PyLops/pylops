@@ -75,17 +75,16 @@ def _structure_tensor_2d(
     """
     ncp = get_array_module(d)
 
-    slopes = ncp.zeros_like(d)
-    anisos = ncp.zeros_like(d)
-
     gz, gx = ncp.gradient(d, dz, dx)
     gzz, gzx, gxx = gz * gz, gz * gx, gx * gx
 
     # smoothing
-    gzz = get_gaussian_filter(d)(gzz, sigma=smooth)
-    gzx = get_gaussian_filter(d)(gzx, sigma=smooth)
-    gxx = get_gaussian_filter(d)(gxx, sigma=smooth)
+    gaussian_filter = get_gaussian_filter(d)
+    gzz = gaussian_filter(gzz, sigma=smooth)
+    gzx = gaussian_filter(gzx, sigma=smooth)
+    gxx = gaussian_filter(gxx, sigma=smooth)
 
+    anisos = ncp.zeros_like(d)
     gmax = max(gzz.max(), gxx.max(), ncp.abs(gzx).max())
     if gmax <= eps:
         return ncp.zeros_like(d), anisos
@@ -99,14 +98,15 @@ def _structure_tensor_2d(
     l1 = lcommon1 + lcommon2
     l2 = lcommon1 - lcommon2
 
-    regdata = l1 > eps
-    anisos[regdata] = 1 - l2[regdata] / l1[regdata]
+    regdata_aniso = l1 > eps
+    anisos[regdata_aniso] = 1 - l2[regdata_aniso] / l1[regdata_aniso]
 
     if dips:
         slopes = 0.5 * ncp.arctan2(2 * gzx, gzz - gxx)
     else:
-        regdata = ncp.abs(gzx) > eps
-        slopes[regdata] = (l1 - gzz)[regdata] / gzx[regdata]
+        slopes = ncp.zeros_like(d)
+        regdata_slope = ncp.abs(gzx) > eps
+        slopes[regdata_slope] = (l1 - gzz)[regdata_slope] / gzx[regdata_slope]
 
     return slopes, anisos
 
@@ -167,76 +167,87 @@ def _structure_tensor_3d(
 
     gy, gx, gz = ncp.gradient(d, dy, dx, dz)
 
-    gxx, gzz = gx * gx, gz * gz
+    gxx, gyy, gzz = gx * gx, gy * gy, gz * gz
     gyx, gyz, gxz = gy * gx, gy * gz, gx * gz
 
     # smoothing
-    gxx = get_gaussian_filter(d)(gxx, sigma=smooth)
-    gzz = get_gaussian_filter(d)(gzz, sigma=smooth)
-    gyx = get_gaussian_filter(d)(gyx, sigma=smooth)
-    gyz = get_gaussian_filter(d)(gyz, sigma=smooth)
-    gxz = get_gaussian_filter(d)(gxz, sigma=smooth)
+    gaussian_filter = get_gaussian_filter(d)
+    gxx = gaussian_filter(gxx, sigma=smooth)
+    gyy = gaussian_filter(gyy, sigma=smooth)
+    gzz = gaussian_filter(gzz, sigma=smooth)
+    gyx = gaussian_filter(gyx, sigma=smooth)
+    gyz = gaussian_filter(gyz, sigma=smooth)
+    gxz = gaussian_filter(gxz, sigma=smooth)
 
-    if not dips or anisotropies:
-        # additional paramets (not needed for dips)
-        gyy = gy * gy
-        gyy = get_gaussian_filter(d)(gyy, sigma=smooth)
+    if dips:
+        slopes_x = (0.5 * ncp.arctan2(2 * gxz, gzz - gxx)).reshape(d.shape)
+        slopes_y = (0.5 * ncp.arctan2(2 * gyz, gzz - gyy)).reshape(d.shape)
+        if not anisotropies:
+            return slopes_x, slopes_y
+    else:
+        slopes_x = slopes_y = ncp.empty(0, dtype=d.dtype)  # needed for typing only
 
-        # define batches
-        batch_size = int(batch_size)
-        ngrid_points = d.size
-        if batch_size is None or batch_size > ngrid_points:
-            batch_size = ngrid_points
+    # batch calculation for structure tensor (needed when dips=False or anisotropies=True)
+    bsize = d.size if batch_size is None else min(int(batch_size), d.size)
+    batch_in = np.arange(0, d.size, bsize, dtype=np.int64)
+    batch_end = np.minimum(batch_in + bsize, d.size)
 
-        batch_in = np.arange(0, ngrid_points, batch_size, dtype=np.int64)
-        batch_end = batch_in + batch_size
-        batch_end[-1] = min(batch_end[-1], ngrid_points)
-
-        # instantiated objects
+    if not dips:
         vy = ncp.empty(d.size, dtype=d.dtype)
         vx = ncp.empty(d.size, dtype=d.dtype)
         vz = ncp.empty(d.size, dtype=d.dtype)
+    else:
+        vy = vx = vz = ncp.empty(0, dtype=d.dtype)  # needed for typing only
 
+    if anisotropies or eps > 0:
         regdata = ncp.zeros(d.size, dtype=bool)
-        if anisotropies:
-            l1 = ncp.empty(d.size, dtype=d.dtype)
-            l2 = ncp.empty(d.size, dtype=d.dtype)
-            l3 = ncp.empty(d.size, dtype=d.dtype)
+        l1 = ncp.empty(d.size, dtype=d.dtype)
+        l2 = ncp.empty(d.size, dtype=d.dtype)
+        l3 = ncp.empty(d.size, dtype=d.dtype)
+    else:
+        regdata = ncp.empty(0, dtype=bool)
+        l1 = l2 = l3 = ncp.empty(0, dtype=d.dtype)  # needed for typing only
 
-        # compute eigenvalues/eigenvectors
-        for b_in, b_end in zip(batch_in, batch_end, strict=True):
-            # create matrices of second-order derivatives
-            G = ncp.empty(((b_end - b_in), 3, 3), dtype=d.dtype)
+    # flatten smoothed gradient tensors for batch slicing
+    gyy_r, gxx_r, gzz_r = gyy.ravel(), gxx.ravel(), gzz.ravel()
+    gyx_r, gyz_r, gxz_r = gyx.ravel(), gyz.ravel(), gxz.ravel()
 
-            G[:, 0, 0] = gyy.ravel()[b_in:b_end]
-            G[:, 0, 1] = gyx.ravel()[b_in:b_end]
-            G[:, 0, 2] = gyz.ravel()[b_in:b_end]
+    # compute eigenvalues/eigenvectors in batches
+    for b_in, b_end in zip(batch_in, batch_end, strict=True):
+        G = ncp.empty((b_end - b_in, 3, 3), dtype=d.dtype)
+        G[:, 0, 0], G[:, 0, 1], G[:, 0, 2] = (
+            gyy_r[b_in:b_end],
+            gyx_r[b_in:b_end],
+            gyz_r[b_in:b_end],
+        )
+        G[:, 1, 0], G[:, 1, 1], G[:, 1, 2] = (
+            gyx_r[b_in:b_end],
+            gxx_r[b_in:b_end],
+            gxz_r[b_in:b_end],
+        )
+        G[:, 2, 0], G[:, 2, 1], G[:, 2, 2] = (
+            gyz_r[b_in:b_end],
+            gxz_r[b_in:b_end],
+            gzz_r[b_in:b_end],
+        )
 
-            G[:, 1, 0] = gyx.ravel()[b_in:b_end]
-            G[:, 1, 1] = gxx.ravel()[b_in:b_end]
-            G[:, 1, 2] = gxz.ravel()[b_in:b_end]
+        evalues, evectors = ncp.linalg.eigh(G)
 
-            G[:, 2, 0] = gyz.ravel()[b_in:b_end]
-            G[:, 2, 1] = gxz.ravel()[b_in:b_end]
-            G[:, 2, 2] = gzz.ravel()[b_in:b_end]
+        if not dips:
+            # largest eigenvalue eigenvector is evectors[:, :, 2] (eigh sorts in ascending order)
+            vy[b_in:b_end] = evectors[:, 0, 2]
+            vx[b_in:b_end] = evectors[:, 1, 2]
+            vz[b_in:b_end] = -evectors[:, 2, 2]
 
-            evalues, evectors = ncp.linalg.eigh(G)
+        if anisotropies or eps > 0:
+            l1[b_in:b_end] = evalues[:, 2]
+            l2[b_in:b_end] = evalues[:, 1]
+            l3[b_in:b_end] = evalues[:, 0]
+            regdata[b_in:b_end] = l1[b_in:b_end] > eps
 
-            # extract the eigenvectors corresponding to the largest eigenvalue
-            idx = ncp.argmax(evalues, axis=1)
-            largest_evectors = evectors[np.arange(G.shape[0]), :, idx]
-
-            vy[b_in:b_end] = largest_evectors[:, 0]
-            vx[b_in:b_end] = largest_evectors[:, 1]
-            vz[b_in:b_end] = -largest_evectors[:, 2]
-
-            if anisotropies or eps > 0:
-                # re-order eigenvalues
-                evalues = ncp.sort(evalues, axis=1)
-                l1[b_in:b_end] = evalues[:, 2]
-                l2[b_in:b_end] = evalues[:, 1]
-                l3[b_in:b_end] = evalues[:, 0]
-                regdata[b_in:b_end] = l1[b_in:b_end] > eps
+    if not dips:
+        slopes_x = -(vx / vz).reshape(d.shape)
+        slopes_y = -(vy / vz).reshape(d.shape)
 
     if anisotropies:
         linearity = ncp.zeros(d.size, dtype=d.dtype)
@@ -245,19 +256,11 @@ def _structure_tensor_3d(
         linearity[regdata] = 1 - l2[regdata] / l1[regdata]
         planarity[regdata] = (l2[regdata] - l3[regdata]) / l1[regdata]
 
-        linearity = linearity.reshape(d.shape)
-        planarity = planarity.reshape(d.shape)
+        return (
+            slopes_x,
+            slopes_y,
+            linearity.reshape(d.shape),
+            planarity.reshape(d.shape),
+        )
 
-    if dips:
-        slopes_x = 0.5 * ncp.arctan2(2 * gxz, gzz - gxx)
-        slopes_y = 0.5 * ncp.arctan2(2 * gyz, gzz - gyy)
-        slopes_x = slopes_x.reshape(d.shape)
-        slopes_y = slopes_y.reshape(d.shape)
-    else:
-        slopes_x = -(vx / vz).reshape(d.shape)
-        slopes_y = -(vy / vz).reshape(d.shape)
-
-    if anisotropies:
-        return slopes_x, slopes_y, linearity, planarity
-    else:
-        return slopes_x, slopes_y
+    return slopes_x, slopes_y
