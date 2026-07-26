@@ -28,6 +28,7 @@ Templates
     LinearOperator
     FunctionOperator
     MemoizeOperator
+    MultiOperator
     PyTensorOperator
     TorchOperator
     JaxOperator

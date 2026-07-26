@@ -51,6 +51,7 @@ import logging
 
 from .config import *
 from .linearoperator import *
+from .multioperator import *
 from .torchoperator import *
 from .pytensoroperator import *
 from .jaxoperator import *
