@@ -1393,11 +1393,11 @@ class _ScaledLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return np.conj(self.args[1]) * self.args[0].rmatvec(x)
 
-    def _rmatmat(self, x: NDArray) -> NDArray:
-        return np.conj(self.args[1]) * self.args[0].rmatmat(x)
+    def _matmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[1] * self.args[0]._matmat(x, pool=pool)
 
-    def _matmat(self, x: NDArray) -> NDArray:
-        return self.args[1] * self.args[0].matmat(x)
+    def _rmatmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return np.conj(self.args[1]) * self.args[0]._rmatmat(x, pool=pool)
 
     def _adjoint(self) -> LinearOperator:
         A, alpha = self.args
