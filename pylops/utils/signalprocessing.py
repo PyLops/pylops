@@ -8,6 +8,7 @@ __all__ = [
 
 import warnings
 from collections.abc import Sequence
+from typing import Literal, overload
 
 import numpy as np
 
@@ -95,7 +96,7 @@ def nonstationary_convmtx(
     H: NDArray,
     n: int,
     hc: int = 0,
-    pad: tuple[int] = (0, 0),
+    pad: tuple[int, ...] = (0, 0),
     sparse: bool = False,
 ) -> NDArray:
     r"""Convolution matrix from a bank of filters
@@ -150,6 +151,43 @@ def nonstationary_convmtx(
     return C
 
 
+@overload
+def slope_estimate(
+    d: NDArray,
+    dz: float = 1.0,
+    dx: float = 1.0,
+    dy: float | None = None,
+    smooth: float = 5.0,
+    eps: float = 0.0,
+    dips: bool = False,
+    *,
+    anisotropies: Literal[True],
+    batch_size: int | None = 1_000_000,
+) -> tuple[tuple[NDArray, NDArray], tuple[NDArray, NDArray]]: ...
+@overload
+def slope_estimate(
+    d: NDArray,
+    dz: float,
+    dx: float,
+    dy: float,
+    smooth: float = 5.0,
+    eps: float = 0.0,
+    dips: bool = False,
+    anisotropies: Literal[False] | None = None,
+    batch_size: int | None = 1_000_000,
+) -> tuple[tuple[NDArray, NDArray], None]: ...
+@overload
+def slope_estimate(
+    d: NDArray,
+    dz: float = 1.0,
+    dx: float = 1.0,
+    dy: None = None,
+    smooth: float = 5.0,
+    eps: float = 0.0,
+    dips: bool = False,
+    anisotropies: Literal[False] | None = None,
+    batch_size: int | None = 1_000_000,
+) -> tuple[NDArray, NDArray]: ...
 def slope_estimate(
     d: NDArray,
     dz: float = 1.0,
@@ -190,8 +228,8 @@ def slope_estimate(
     dy : :obj:`float`, optional
         .. versionadded:: 2.8.0
 
-        Sampling in :math:`y`-axis, :math:`\Delta y`. Ignored when ``d``
-        is 2d.
+        Sampling in :math:`y`-axis, :math:`\Delta y`. Defaults to 1.0 when ``d``
+        is 3d; ignored when ``d`` is 2d.
     smooth : :obj:`float` or :obj:`numpy.ndarray`, optional
         Standard deviation for Gaussian kernel. The standard deviations of the
         Gaussian filter are given for each axis as a sequence, or as a single number,
@@ -315,19 +353,38 @@ def slope_estimate(
 
     """
     if d.ndim == 2:
-        slopes, anisos = _structure_tensor_2d(d, dz, dx, smooth, eps, dips)
-    else:
-        outs = _structure_tensor_3d(
-            d, dy, dx, dx, smooth, eps, dips, anisotropies, batch_size
-        )
-        slopes = (outs[0], outs[1])
-        if anisotropies:
-            anisos = (outs[2], outs[3])
-        else:
-            anisos = None
-    return slopes, anisos
+        return _structure_tensor_2d(d, dz, dx, smooth, eps, dips)
+
+    dy_3d = 1.0 if dy is None else dy
+    anisotropies_3d = bool(anisotropies)
+    outs = _structure_tensor_3d(
+        d, dy_3d, dx, dx, smooth, eps, dips, anisotropies_3d, batch_size
+    )
+    slopes_3d = (outs[0], outs[1])
+    anisos_3d = (outs[2], outs[3]) if anisotropies_3d and len(outs) == 4 else None
+    return slopes_3d, anisos_3d
 
 
+@overload
+def dip_estimate(
+    d: NDArray,
+    dz: float,
+    dx: float,
+    dy: float,
+    smooth: int = 5,
+    eps: float = 0.0,
+    batch_size: int | None = 1_000_000,
+) -> tuple[tuple[NDArray, NDArray], None]: ...
+@overload
+def dip_estimate(
+    d: NDArray,
+    dz: float = 1.0,
+    dx: float = 1.0,
+    dy: None = None,
+    smooth: int = 5,
+    eps: float = 0.0,
+    batch_size: int | None = 1_000_000,
+) -> tuple[NDArray, NDArray]: ...
 def dip_estimate(
     d: NDArray,
     dz: float = 1.0,
@@ -336,7 +393,7 @@ def dip_estimate(
     smooth: int = 5,
     eps: float = 0.0,
     batch_size: int | None = 1_000_000,
-) -> tuple[NDArray, NDArray]:
+) -> tuple[NDArray | tuple[NDArray, NDArray], NDArray | tuple[NDArray, NDArray] | None]:
     r"""Local dip estimation
 
     Local dips are estimated using the *Structure Tensor* algorithm [1]_.
@@ -355,8 +412,8 @@ def dip_estimate(
     dy : :obj:`float`, optional
         .. versionadded:: 2.8.0
 
-        Sampling in :math:`y`-axis, :math:`\Delta y`. Ignored when ``d``
-        is 2d.
+        Sampling in :math:`y`-axis, :math:`\Delta y`. Defaults to 1.0 when ``d``
+        is 3d; ignored when ``d`` is 2d.
     smooth : :obj:`float` or :obj:`numpy.ndarray`, optional
         Standard deviation for Gaussian kernel. The standard deviations of the
         Gaussian filter are given for each axis as a sequence, or as a single number,
