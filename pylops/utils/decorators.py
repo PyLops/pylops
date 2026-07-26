@@ -196,13 +196,11 @@ def count(
             if fwd:
                 if mat:
                     self.matmat_count += 1
-                    self.matvec_count -= x.shape[-1]
                 else:
                     self.matvec_count += 1
             else:
                 if mat:
                     self.rmatmat_count += 1
-                    self.rmatvec_count -= x.shape[-1]
                 else:
                     self.rmatvec_count += 1
             return y

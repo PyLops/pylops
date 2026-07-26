@@ -36,7 +36,7 @@ from pylops.optimization.basic import cgls
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.decorators import count
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike, Tpool
 
 
 def _matvec_rmatvec_map(op: Callable, x: NDArray) -> NDArray:
@@ -494,9 +494,7 @@ class LinearOperator(_LinearOperator):
         y = np.vstack(ys).T
         return y
 
-    def _matmat(
-        self, X: NDArray, pool: ThreadPoolExecutor | Pool | None = None
-    ) -> NDArray:
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix multiplication handler.
 
         Modified version of scipy _matmat to avoid having trailing dimension
@@ -544,7 +542,7 @@ class LinearOperator(_LinearOperator):
         y = np.vstack(ys).T
         return y
 
-    def _rmatmat(self, X: NDArray, pool: ThreadPoolExecutor | None = None) -> NDArray:
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix adjoint multiplication handler.
 
         Modified version of scipy _rmatmat to avoid having trailing dimension
@@ -662,9 +660,7 @@ class LinearOperator(_LinearOperator):
         return y
 
     @count(forward=True, matmat=True)
-    def matmat(
-        self, X: NDArray, pool: ThreadPoolExecutor | Pool | None = None
-    ) -> NDArray:
+    def matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix multiplication.
 
         Modified version of scipy matmat which does not consider the case
@@ -694,9 +690,7 @@ class LinearOperator(_LinearOperator):
         return Y
 
     @count(forward=False, matmat=True)
-    def rmatmat(
-        self, X: NDArray, pool: ThreadPoolExecutor | Pool | None = None
-    ) -> NDArray:
+    def rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix multiplication.
 
         Modified version of scipy rmatmat which does not consider the case
@@ -1487,11 +1481,11 @@ class _AdjointLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return self.A._matvec(x)
 
-    def _matmat(self, X: NDArray) -> NDArray:
-        return self.A._rmatmat(X)
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.A._rmatmat(X, pool=pool)
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
-        return self.A._matmat(X)
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.A._matmat(X, pool=pool)
 
 
 class _TransposedLinearOperator(LinearOperator):
@@ -1509,11 +1503,11 @@ class _TransposedLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return np.conj(self.A._matvec(np.conj(x)))
 
-    def _matmat(self, X: NDArray) -> NDArray:
-        return np.conj(self.A._rmatmat(np.conj(X)))
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return np.conj(self.A._rmatmat(np.conj(X), pool=pool))
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
-        return np.conj(self.A._matmat(np.conj(X)))
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return np.conj(self.A._matmat(np.conj(X), pool=pool))
 
 
 class _ProductLinearOperator(LinearOperator):
@@ -1532,16 +1526,16 @@ class _ProductLinearOperator(LinearOperator):
         self.args = (A, B)
 
     def _matvec(self, x: NDArray) -> NDArray:
-        return self.args[0].matvec(self.args[1].matvec(x))
+        return self.args[0]._matvec(self.args[1]._matvec(x))
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        return self.args[1].rmatvec(self.args[0].rmatvec(x))
+        return self.args[1]._rmatvec(self.args[0]._rmatvec(x))
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
-        return self.args[1].rmatmat(self.args[0].rmatmat(X))
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[0]._matmat(self.args[1]._matmat(X), pool=pool)
 
-    def _matmat(self, X: NDArray) -> NDArray:
-        return self.args[0].matmat(self.args[1].matmat(X))
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[1]._rmatmat(self.args[0]._rmatmat(X), pool=pool)
 
     def _adjoint(self):
         A, B = self.args
@@ -1564,16 +1558,16 @@ class _SumLinearOperator(LinearOperator):
         super().__init__(dtype=_get_dtype([A, B]), shape=A.shape)
 
     def _matvec(self, x: NDArray) -> NDArray:
-        return self.args[0].matvec(x) + self.args[1].matvec(x)
+        return self.args[0]._matvec(x) + self.args[1]._matvec(x)
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        return self.args[0].rmatvec(x) + self.args[1].rmatvec(x)
+        return self.args[0]._rmatvec(x) + self.args[1]._rmatvec(x)
 
-    def _rmatmat(self, x: NDArray) -> NDArray:
-        return self.args[0].rmatmat(x) + self.args[1].rmatmat(x)
+    def _matmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[0]._matmat(x, pool=pool) + self.args[1]._matmat(x, pool=pool)
 
-    def _matmat(self, x: NDArray) -> NDArray:
-        return self.args[0].matmat(x) + self.args[1].matmat(x)
+    def _rmatmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[0]._rmatmat(x, pool=pool) + self.args[1]._rmatmat(x, pool=pool)
 
     def _adjoint(self) -> LinearOperator:
         A, B = self.args
@@ -1595,10 +1589,10 @@ class _PowerLinearOperator(LinearOperator):
         super().__init__(dtype=A.dtype, shape=A.shape)
         self.args = (A, p)
 
-    def _power(self, fun: Callable, x: NDArray) -> NDArray:
+    def _power(self, fun: Callable, x: NDArray, **kwargs) -> NDArray:
         res = x.copy()
         for _ in range(self.args[1]):
-            res = fun(res)
+            res = fun(res, **kwargs)
         return res
 
     def _matvec(self, x: NDArray) -> NDArray:
@@ -1607,11 +1601,11 @@ class _PowerLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return self._power(self.args[0].rmatvec, x)
 
-    def _rmatmat(self, x: NDArray) -> NDArray:
-        return self._power(self.args[0].rmatmat, x)
+    def _matmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self._power(self.args[0]._matmat, x, pool=pool)
 
-    def _matmat(self, x: NDArray) -> NDArray:
-        return self._power(self.args[0].matmat, x)
+    def _rmatmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self._power(self.args[0]._rmatmat, x, pool=pool)
 
     def _adjoint(self) -> LinearOperator:
         A, p = self.args
