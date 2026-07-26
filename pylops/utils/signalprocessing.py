@@ -293,11 +293,11 @@ def slope_estimate(
     and used to define the following three quantities:
 
     .. math::
-        \begin{align}
+        \begin{aligned}
         g_{zz} &= \left(\frac{\partial \mathbf{d}}{\partial z}\right)^2\\
         g_{xx} &= \left(\frac{\partial \mathbf{d}}{\partial x}\right)^2\\
         g_{zx} &= \frac{\partial \mathbf{d}}{\partial z}\cdot\frac{\partial \mathbf{d}}{\partial x}
-        \end{align}
+        \end{aligned}
 
     They are then spatially smoothed and at each pixel their smoothed versions are
     arranged in a :math:`2 \times 2` matrix called the *smoothed
