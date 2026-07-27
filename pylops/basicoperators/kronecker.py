@@ -1,12 +1,17 @@
 __all__ = ["Kronecker"]
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
-from pylops import LinearOperator
-from pylops.utils.typing import DTypeLike, NDArray
+from pylops import MultiOperator
+from pylops.utils.typing import DTypeLike, NDArray, Tparallel_kind
+
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
 
 
-class Kronecker(LinearOperator):
+class Kronecker(MultiOperator):
     r"""Kronecker operator.
 
     Perform Kronecker product of two operators. Note that the combined operator
@@ -22,6 +27,18 @@ class Kronecker(LinearOperator):
         Second operator
     dtype : :obj:`str`, optional
         Type of elements in input array.
+    nproc : :obj:`int`, optional
+        .. versionadded:: 2.9.0
+
+        Number of processes/threads used to evaluate the N operators in parallel
+        using ``multiprocessing``/``concurrent.futures``. If ``nproc=1``, work in serial mode.
+    parallel_kind : :obj:`str`, optional
+        .. versionadded:: 2.9.0
+
+        Parallelism kind when ``nproc>1``. Can be ``multiproc`` (using
+        :mod:`multiprocessing`) or ``multithread`` (using
+        :class:`concurrent.futures.ThreadPoolExecutor`). Defaults
+        to ``multiproc``.
     name : :obj:`str`, optional
         .. versionadded:: 2.0.0
 
@@ -65,8 +82,10 @@ class Kronecker(LinearOperator):
 
     def __init__(
         self,
-        Op1: LinearOperator,
-        Op2: LinearOperator,
+        Op1: "LinearOperator",
+        Op2: "LinearOperator",
+        nproc: int = 1,
+        parallel_kind: Tparallel_kind = "multiproc",
         dtype: DTypeLike = "float64",
         name: str = "K",
     ) -> None:
@@ -74,6 +93,10 @@ class Kronecker(LinearOperator):
         self.Op2 = Op2
         self.Op1H = self.Op1.H
         self.Op2H = self.Op2.H
+
+        # create pool for multithreading / multiprocessing
+        self._setup_pool(nproc, parallel_kind=parallel_kind)
+
         shape = (
             self.Op1.shape[0] * self.Op2.shape[0],
             self.Op1.shape[1] * self.Op2.shape[1],
@@ -82,12 +105,12 @@ class Kronecker(LinearOperator):
 
     def _matvec(self, x: NDArray) -> NDArray:
         x = x.reshape(self.Op1.shape[1], self.Op2.shape[1])
-        y = self.Op2.matmat(x.T).T
-        y = self.Op1.matmat(y).ravel()
+        y = self.Op2.matmat(x.T, pool=self.pool).T
+        y = self.Op1.matmat(y, pool=self.pool).ravel()
         return y
 
     def _rmatvec(self, x: NDArray) -> NDArray:
         x = x.reshape(self.Op1.shape[0], self.Op2.shape[0])
-        y = self.Op2H.matmat(x.T).T
-        y = self.Op1H.matmat(y).ravel()
+        y = self.Op2H.matmat(x.T, pool=self.pool).T
+        y = self.Op1H.matmat(y, pool=self.pool).ravel()
         return y
