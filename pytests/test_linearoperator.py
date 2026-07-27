@@ -396,6 +396,8 @@ def test_counts(par):
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
 def test_matmul_multiproc_multithread(par):
     """Single and multiprocess/multithreading consistency for matmat/rmatmat"""
+    dtype = np.empty(0, dtype=par["dtype"]).real.dtype
+
     for parallel_kind in ["multiproc", "multithread"]:
         np.random.seed(0)
         nproc = 2
@@ -406,16 +408,30 @@ def test_matmul_multiproc_multithread(par):
         else:
             pool = mt.ThreadPoolExecutor(max_workers=nproc)
 
-        M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
-        x = np.ones((par["nx"], 4)) + par["imag"] * np.ones((par["nx"], 4))
-        y = np.ones((par["ny"], 4)) + par["imag"] * np.ones((par["ny"], 4))
+        M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
+            "imag"
+        ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
+        x = np.ones((par["nx"], 4), dtype=dtype) + par["imag"] * np.ones(
+            (par["nx"], 4), dtype=dtype
+        )
+        y = np.ones((par["ny"], 4), dtype=dtype) + par["imag"] * np.ones(
+            (par["ny"], 4), dtype=dtype
+        )
 
         Mop = MatrixMult(M, dtype=par["dtype"])
 
         # forward
-        assert_array_almost_equal(Mop.matmat(x), Mop.matmat(x, pool=pool), decimal=4)
+        assert_array_almost_equal(
+            Mop.matmat(x),
+            Mop.matmat(x, pool=pool),
+            decimal=3 if dtype == np.float32 else 8,
+        )
         # adjoint
-        assert_array_almost_equal(Mop.rmatmat(y), Mop.rmatmat(y, pool=pool), decimal=4)
+        assert_array_almost_equal(
+            Mop.rmatmat(y),
+            Mop.rmatmat(y, pool=pool),
+            decimal=3 if dtype == np.float32 else 8,
+        )
 
         # close pool
         if parallel_kind == "multiproc":

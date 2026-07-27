@@ -152,9 +152,13 @@ def test_Kroneker_multiproc_multithread(par):
         )
 
         # forward
-        assert_array_almost_equal(Kop * x, Kmultiop * x, decimal=4)
+        assert_array_almost_equal(
+            Kop * x, Kmultiop * x, decimal=3 if dtype == np.float32 else 8
+        )
         # adjoint
-        assert_array_almost_equal(Kop.H * y, Kmultiop.H * y, decimal=4)
+        assert_array_almost_equal(
+            Kop.H * y, Kmultiop.H * y, decimal=3 if dtype == np.float32 else 8
+        )
 
         # close pool
         Kmultiop.close()
