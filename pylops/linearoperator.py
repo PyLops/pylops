@@ -32,16 +32,12 @@ else:
     from scipy.sparse._sputils import isintlike, isshape
 
 from pylops import get_ndarray_multiplication
+from pylops._multioperator import _matvec_rmatvec_map
 from pylops.optimization.basic import cgls
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.decorators import count
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike, Tpool
-
-
-def _matvec_rmatvec_map(op: Callable, x: NDArray) -> NDArray:
-    """matvec/rmatvec for multiprocessing / multithreading"""
-    return op(x).squeeze()
 
 
 class _LinearOperator(ABC):

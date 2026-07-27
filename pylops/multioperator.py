@@ -5,24 +5,9 @@ __all__ = ["MultiOperator"]
 import concurrent.futures as mt
 import multiprocessing as mp
 import threading
-from collections.abc import Callable
 
 from pylops import LinearOperator
 from pylops.utils.typing import NDArray, Tparallel_kind, Tpool
-
-
-def _matvec_rmatvec_map(op: Callable[[NDArray], NDArray], x: NDArray) -> NDArray:
-    """matvec/rmatvec for multiprocessing / multithreading"""
-    return op(x).squeeze()
-
-
-def _matvec_rmatvec_map_mt(
-    op: Callable[[NDArray], NDArray], x: NDArray, y: NDArray, lock: threading.Lock
-) -> None:
-    """rmatvec for multithreading with lock"""
-    ylocal = op(x).squeeze()
-    with lock:
-        y[:] += ylocal
 
 
 class MultiOperator(LinearOperator):

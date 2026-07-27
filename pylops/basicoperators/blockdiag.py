@@ -20,8 +20,8 @@ else:
 from collections.abc import Sequence
 
 from pylops import LinearOperator, MultiOperator
+from pylops._multioperator import _matvec_rmatvec_map
 from pylops.basicoperators import MatrixMult
-from pylops.multioperator import _matvec_rmatvec_map
 from pylops.utils.backend import get_array_module, get_module, inplace_set
 from pylops.utils.typing import DTypeLike, NDArray, Tinoutengine, Tparallel_kind
 
