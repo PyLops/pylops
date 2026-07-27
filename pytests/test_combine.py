@@ -467,7 +467,7 @@ def test_BlockDiag(par):
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_VStack_multiproc_multithread(par):
-    """Single and multiprocess/multithreading consistentcy for VStack operator"""
+    """Single and multiprocess/multithreading consistency for VStack operator"""
     for parallel_kind in ["multiproc", "multithread"]:
         np.random.seed(0)
         nproc = 2
@@ -503,7 +503,7 @@ def test_VStack_multiproc_multithread(par):
 )
 @pytest.mark.parametrize("par", [(par2), (par2j)])
 def test_HStack_multiproc_multithread(par):
-    """Single and multiprocess/multithreading  consistentcy for HStack operator"""
+    """Single and multiprocess/multithreading consistency for HStack operator"""
     for parallel_kind in ["multiproc", "multithread"]:
         np.random.seed(0)
         nproc = 2
@@ -539,7 +539,7 @@ def test_HStack_multiproc_multithread(par):
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_Block_multiproc_multithread(par):
-    """Single and multiprocess/multithreading  consistentcy for Block operator"""
+    """Single and multiprocess/multithreading consistency for Block operator"""
     for parallel_kind in ["multiproc", "multithread"]:
         np.random.seed(0)
         nproc = 2
@@ -574,7 +574,7 @@ def test_Block_multiproc_multithread(par):
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_BlockDiag_multiproc_multithread(par):
-    """Single and multiprocess/multithreading consistentcy for BlockDiag operator"""
+    """Single and multiprocess/multithreading consistency for BlockDiag operator"""
     for parallel_kind in ["multiproc", "multithread"]:
         np.random.seed(0)
         nproc = 2

@@ -103,3 +103,58 @@ def test_Kroneker_Derivative(par):
 
     y = D2op * x.ravel()
     assert_array_equal(y, yk)
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
+@pytest.mark.parametrize("par", [(par1), (par2), (par1s), (par2s), (par1j), (par2j)])
+def test_Kroneker_multiproc_multithread(par):
+    """Single and multiprocess/multithreading consistency for Kroneker operator"""
+    for parallel_kind in ["multiproc", "multithread"]:
+        np.random.seed(10)
+        nproc = 2
+
+        dtype = np.empty(0, dtype=par["dtype"]).real.dtype
+
+        G1 = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
+            "imag"
+        ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
+        G2 = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
+            "imag"
+        ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
+        x = np.ones((par["nx"] ** 2, 4), dtype=dtype) + par["imag"] * np.ones(
+            (par["nx"] ** 2, 4), dtype=dtype
+        )
+        y = np.ones((par["ny"] ** 2, 4), dtype=dtype) + par["imag"] * np.ones(
+            (par["ny"] ** 2, 4), dtype=dtype
+        )
+
+        Kop = Kronecker(
+            MatrixMult(G1, dtype=par["dtype"]),
+            MatrixMult(G2, dtype=par["dtype"]),
+            dtype=par["dtype"],
+        )
+        Kmultiop = Kronecker(
+            MatrixMult(G1, dtype=par["dtype"]),
+            MatrixMult(G2, dtype=par["dtype"]),
+            nproc=nproc,
+            parallel_kind=parallel_kind,
+            dtype=par["dtype"],
+        )
+        assert dottest(
+            Kmultiop,
+            par["ny"] ** 2,
+            par["nx"] ** 2,
+            complexflag=0 if par["imag"] == 0 else 3,
+            rtol=1e-4 if dtype == np.float32 else 1e-6,
+            backend=backend,
+        )
+
+        # forward
+        assert_array_almost_equal(Kop * x, Kmultiop * x, decimal=4)
+        # adjoint
+        assert_array_almost_equal(Kop.H * y, Kmultiop.H * y, decimal=4)
+
+        # close pool
+        Kmultiop.close()

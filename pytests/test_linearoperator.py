@@ -1,3 +1,5 @@
+import concurrent.futures as mt
+import multiprocessing as mp
 import os
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
@@ -386,3 +388,38 @@ def test_counts(par):
     assert Aop.rmatvec_count == 0
     assert Aop.matmat_count == 0
     assert Aop.rmatmat_count == 0
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
+@pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
+def test_matmul_multiproc_multithread(par):
+    """Single and multiprocess/multithreading consistency for matmat/rmatmat"""
+    for parallel_kind in ["multiproc", "multithread"]:
+        np.random.seed(0)
+        nproc = 2
+
+        # create pool
+        if parallel_kind == "multiproc":
+            pool = mp.Pool(processes=nproc)
+        else:
+            pool = mt.ThreadPoolExecutor(max_workers=nproc)
+
+        M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
+        x = np.ones((par["nx"], 4)) + par["imag"] * np.ones((par["nx"], 4))
+        y = np.ones((par["ny"], 4)) + par["imag"] * np.ones((par["ny"], 4))
+
+        Mop = MatrixMult(M, dtype=par["dtype"])
+
+        # forward
+        assert_array_almost_equal(Mop.matmat(x), Mop.matmat(x, pool=pool), decimal=4)
+        # adjoint
+        assert_array_almost_equal(Mop.rmatmat(y), Mop.rmatmat(y, pool=pool), decimal=4)
+
+        # close pool
+        if parallel_kind == "multiproc":
+            pool.close()
+            pool.join()
+        else:
+            pool.shutdown()
