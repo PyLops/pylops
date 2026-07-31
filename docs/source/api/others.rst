@@ -102,7 +102,11 @@ Sliding and Patching
     sliding3d.sliding3d_design
     patch2d.patch2d_design
     patch3d.patch3d_design
-
+    sliding1d.sliding1d_pad_to_next
+    sliding2d.sliding2d_pad_to_next
+    sliding3d.sliding3d_pad_to_next
+    patch2d.patch2d_pad_to_next
+    patch3d.patch3d_pad_to_next
 
 
 Synthetics
