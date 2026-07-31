@@ -1,5 +1,6 @@
 __all__ = [
     "patch2d_design",
+    "patch2d_pad_to_next",
     "Patch2D",
 ]
 
@@ -99,6 +100,67 @@ def patch2d_design(
         mwin1_ends,
     )
     return nwins, dims, mwins_inends, dwins_inends
+
+
+def patch2d_pad_to_next(
+    inpt: NDArray,
+    nwin: tuple[int, int],
+    nover: tuple[int, int],
+    nop: tuple[int, int],
+) -> tuple[
+    NDArray,
+    tuple[int, int],
+    tuple[int, int],
+    tuple[tuple[NDArray, NDArray], tuple[NDArray, NDArray]],
+    tuple[tuple[NDArray, NDArray], tuple[NDArray, NDArray]],
+]:
+    """Pad input to next set of patches
+
+    Pad ``inpt`` to the next set of patches such that the padded input is completely
+    filled by overlapping patches.
+
+    Parameters
+    ----------
+     inpt : :obj:`numpy.ndarray`
+        3-dimensional input data.
+    nwin : :obj:`tuple`
+        Number of samples of window.
+    nover : :obj:`tuple`
+        Number of samples of overlapping part of window.
+    nop : :obj:`tuple`
+        Size of model in the transformed domain.
+
+    Returns
+    -------
+    inpt_pad : :obj:`numpy.ndarray`
+        3-dimensional input data after padding along the first and second dimensions
+    nwins : :obj:`tuple`
+        Number of windows.
+    dims : :obj:`tuple`
+        Shape of 2-dimensional model.
+    mwins_inends : :obj:`tuple`
+        Start and end indices for model patches (stored as tuple of tuples).
+    dwins_inends : :obj:`tuple`
+        Start and end indices for data patches (stored as tuple of tuples).
+
+    """
+    # Identify current sliding design
+    dimsd = inpt.shape
+    nwins, dims, mwins_inends, dwins_inends = patch2d_design(dimsd, nwin, nover, nop)
+
+    # Pad to next slice
+    pad = [0, 0]
+    if dwins_inends[0][1][-1] != dimsd[0]:
+        pad[0] = dwins_inends[0][1][-1] - nover[0] + nwin[0] - dimsd[0]
+    if dwins_inends[1][1][-1] != dimsd[1]:
+        pad[1] = dwins_inends[1][1][-1] - nover[1] + nwin[1] - dimsd[1]
+    inpt_pad = np.pad(inpt, ((0, pad[0]), (0, pad[1])))
+    if pad[0] > 0 or pad[1] > 0:
+        dimsd_pad = inpt_pad.shape
+        nwins, dims, mwins_inends, dwins_inends = patch2d_design(
+            dimsd_pad, nwin, nover, nop
+        )
+    return inpt_pad, nwins, dims, mwins_inends, dwins_inends
 
 
 class Patch2D(LinearOperator):

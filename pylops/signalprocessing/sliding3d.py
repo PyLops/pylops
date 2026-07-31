@@ -1,5 +1,6 @@
 __all__ = [
     "sliding3d_design",
+    "sliding3d_pad_to_next",
     "Sliding3D",
 ]
 
@@ -44,7 +45,7 @@ def sliding3d_design(
     Parameters
     ----------
     dimsd : :obj:`tuple`
-        Shape of 2-dimensional data.
+        Shape of 3-dimensional data.
     nwin : :obj:`tuple`
         Number of samples of window.
     nover : :obj:`tuple`
@@ -98,6 +99,67 @@ def sliding3d_design(
         mwin1_ends,
     )
     return nwins, dims, mwins_inends, dwins_inends
+
+
+def sliding3d_pad_to_next(
+    inpt: NDArray,
+    nwin: tuple[int, int],
+    nover: tuple[int, int],
+    nop: tuple[int, int, int],
+) -> tuple[
+    NDArray,
+    tuple[int, int],
+    tuple[int, int, int],
+    tuple[tuple[NDArray, NDArray], tuple[NDArray, NDArray]],
+    tuple[tuple[NDArray, NDArray], tuple[NDArray, NDArray]],
+]:
+    """Pad input to next set of slices
+
+    Pad ``inpt`` to the next set of slices such that the padded input is completely
+    filled by overlapping slices.
+
+    Parameters
+    ----------
+    inpt : :obj:`numpy.ndarray`
+        3-dimensional input data.
+    nwin : :obj:`tuple`
+        Number of samples of window.
+    nover : :obj:`tuple`
+        Number of samples of overlapping part of window.
+    nop : :obj:`tuple`
+        Size of model in the transformed domain.
+
+    Returns
+    -------
+    inpt_pad : :obj:`numpy.ndarray`
+        3-dimensional input data after padding along the first and second dimensions
+    nwins : :obj:`tuple`
+        Number of windows of padded input.
+    dims : :obj:`tuple`
+        Shape of 3-dimensional model of padded input.
+    mwins_inends : :obj:`tuple`
+        Start and end indices for model patches of padded input (stored as tuple of tuples).
+    dwins_inends : :obj:`tuple`
+        Start and end indices for data patches of padded input (stored as tuple of tuples).
+
+    """
+    # Identify current sliding design
+    dimsd = inpt.shape
+    nwins, dims, mwins_inends, dwins_inends = sliding3d_design(dimsd, nwin, nover, nop)
+
+    # Pad to next slice
+    pad = [0, 0]
+    if dwins_inends[0][1][-1] != dimsd[0]:
+        pad[0] = dwins_inends[0][1][-1] - nover[0] + nwin[0] - dimsd[0]
+    if dwins_inends[1][1][-1] != dimsd[1]:
+        pad[1] = dwins_inends[1][1][-1] - nover[1] + nwin[1] - dimsd[1]
+    inpt_pad = np.pad(inpt, ((0, pad[0]), (0, pad[1]), (0, 0)))
+    if pad[0] > 0 or pad[1] > 0:
+        dimsd_pad = inpt_pad.shape
+        nwins, dims, mwins_inends, dwins_inends = sliding3d_design(
+            dimsd_pad, nwin, nover, nop
+        )
+    return inpt_pad, nwins, dims, mwins_inends, dwins_inends
 
 
 class Sliding3D(LinearOperator):

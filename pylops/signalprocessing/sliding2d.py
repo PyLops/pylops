@@ -1,5 +1,6 @@
 __all__ = [
     "sliding2d_design",
+    "sliding2d_pad_to_next",
     "Sliding2D",
 ]
 
@@ -118,6 +119,61 @@ def sliding2d_design(
         mwin_ends,
     )
     return nwins, dims, mwins_inends, dwins_inends
+
+
+def sliding2d_pad_to_next(
+    inpt: NDArray,
+    nwin: int,
+    nover: int,
+    nop: tuple[int, int],
+) -> tuple[
+    NDArray, int, tuple[int, int], tuple[NDArray, NDArray], tuple[NDArray, NDArray]
+]:
+    """Pad input to next slice
+
+    Pad ``inpt`` to the next slice such that the padded input is completely
+    filled by overlapping slices.
+
+    Parameters
+    ----------
+    inpt : :obj:`numpy.ndarray`
+        2-dimensional input data.
+    nwin : :obj:`tuple`
+        Number of samples of window.
+    nover : :obj:`int`
+        Number of samples of overlapping part of window.
+    nop : :obj:`tuple`
+        Size of model in the transformed domain.
+
+    Returns
+    -------
+    inpt_pad : :obj:`numpy.ndarray`
+        2-dimensional input data after padding along the first dimension
+    nwins : :obj:`int`
+        Number of windows of padded input.
+    dims : :obj:`tuple`
+        Shape of 2-dimensional model of padded input.
+    mwins_inends : :obj:`tuple`
+        Start and end indices for model patches of padded input (stored as tuple of tuples).
+    dwins_inends : :obj:`tuple`
+        Start and end indices for data patches of padded input (stored as tuple of tuples).
+
+    """
+    # Identify current sliding design
+    dimsd = inpt.shape
+    nwins, dims, mwins_inends, dwins_inends = sliding2d_design(dimsd, nwin, nover, nop)
+
+    # Pad to next slice
+    if dwins_inends[1][-1] != dimsd[0]:
+        pad = dwins_inends[1][-1] - nover + nwin - dimsd[0]
+        inpt_pad = np.pad(inpt, ((0, pad), (0, 0)))
+        dimsd_pad = inpt_pad.shape
+        nwins, dims, mwins_inends, dwins_inends = sliding2d_design(
+            dimsd_pad, nwin, nover, nop
+        )
+    else:
+        inpt_pad = inpt
+    return inpt_pad, nwins, dims, mwins_inends, dwins_inends
 
 
 class Sliding2D(LinearOperator):

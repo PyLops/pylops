@@ -1,5 +1,6 @@
 __all__ = [
     "sliding1d_design",
+    "sliding1d_design",
     "Sliding1D",
 ]
 
@@ -38,13 +39,13 @@ def sliding1d_design(
 
     Parameters
     ----------
-    dimsd : :obj:`tuple`
-        Shape of 2-dimensional data.
-    nwin : :obj:`tuple`
+    dimd : :obj:`int`
+        Shape of 1-dimensional data.
+    nwin : :obj:`int`
         Number of samples of window.
-    nover : :obj:`tuple`
+    nover : :obj:`int`
         Number of samples of overlapping part of window.
-    nop : :obj:`tuple`
+    nop : :obj:`int`
         Size of model in the transformed domain.
     verb : :obj:`bool`, optional
         *Deprecated*, will be removed in v3.0.0. Simply kept for
@@ -85,6 +86,59 @@ def sliding1d_design(
         mwin_ends,
     )
     return nwins, dim, mwins_inends, dwins_inends
+
+
+def sliding1d_pad_to_next(
+    inpt: NDArray,
+    nwin: int,
+    nover: int,
+    nop: int,
+) -> tuple[NDArray, int, int, tuple[NDArray, NDArray], tuple[NDArray, NDArray]]:
+    """Pad input to next slice
+
+    Pad ``inpt`` to the next slice such that the padded input is completely
+    filled by overlapping slices.
+
+    Parameters
+    ----------
+    inpt : :obj:`numpy.ndarray`
+        1-dimensional input data.
+    nwin : :obj:`tuple`
+        Number of samples of window.
+    nover : :obj:`int`
+        Number of samples of overlapping part of window.
+    nop : :obj:`int`
+        Size of model in the transformed domain.
+
+    Returns
+    -------
+    inpt_pad : :obj:`numpy.ndarray`
+        1-dimensional input data after padding
+    nwins : :obj:`int`
+        Number of windows of padded input.
+    dim : :obj:`int`
+        Shape of 2-dimensional model of padded input.
+    mwins_inends : :obj:`tuple`
+        Start and end indices for model patches of padded input.
+    dwins_inends : :obj:`tuple`
+        Start and end indices for data patches of padded input.
+
+    """
+    # Identify current sliding design
+    dimd = inpt.size
+    nwins, dim, mwins_inends, dwins_inends = sliding1d_design(dimd, nwin, nover, nop)
+
+    # Pad to next slice
+    if dwins_inends[1][-1] != dimd:
+        pad = dwins_inends[1][-1] - nover + nwin - dimd
+        inpt_pad = np.pad(inpt, (0, pad))
+        dimd_pad = inpt_pad.size
+        nwins, dim, mwins_inends, dwins_inends = sliding1d_design(
+            dimd_pad, nwin, nover, nop
+        )
+    else:
+        inpt_pad = inpt
+    return inpt_pad, nwins, dim, mwins_inends, dwins_inends
 
 
 class Sliding1D(LinearOperator):
