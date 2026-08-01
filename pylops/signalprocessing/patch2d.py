@@ -46,7 +46,7 @@ def patch2d_design(
     Parameters
     ----------
     dimsd : :obj:`tuple`
-        Shape of 2-dimensional data.
+        Shape of the 2-dimensional data.
     nwin : :obj:`tuple`
         Number of samples of window.
     nover : :obj:`tuple`
@@ -62,7 +62,7 @@ def patch2d_design(
     nwins : :obj:`tuple`
         Number of windows.
     dims : :obj:`tuple`
-        Shape of 2-dimensional model.
+        Shape of the 2-dimensional model.
     mwins_inends : :obj:`tuple`
         Start and end indices for model patches (stored as tuple of tuples).
     dwins_inends : :obj:`tuple`
@@ -137,7 +137,7 @@ def patch2d_pad_to_next(
     nwins : :obj:`tuple`
         Number of windows.
     dims : :obj:`tuple`
-        Shape of 2-dimensional model.
+        Shape of the 2-dimensional model.
     mwins_inends : :obj:`tuple`
         Start and end indices for model patches (stored as tuple of tuples).
     dwins_inends : :obj:`tuple`
@@ -194,11 +194,11 @@ class Patch2D(LinearOperator):
     Op : :obj:`pylops.LinearOperator`
         Transform operator
     dims : :obj:`tuple`
-        Shape of 2-dimensional model. Note that ``dims[0]`` and ``dims[1]``
+        Shape of the 2-dimensional model. Note that ``dims[0]`` and ``dims[1]``
         should be multiple of the model size of the transform in their
         respective dimensions
     dimsd : :obj:`tuple`
-        Shape of 2-dimensional data
+        Shape of the 2-dimensional data
     nwin : :obj:`tuple`
         Number of samples of window
     nover : :obj:`tuple`

@@ -40,7 +40,7 @@ def sliding1d_design(
     Parameters
     ----------
     dimd : :obj:`int`
-        Shape of 1-dimensional data.
+        Shape of the 1-dimensional data.
     nwin : :obj:`int`
         Number of samples of window.
     nover : :obj:`int`
@@ -56,7 +56,7 @@ def sliding1d_design(
     nwins : :obj:`int`
         Number of windows.
     dim : :obj:`int`
-        Shape of 2-dimensional model.
+        Shape of the 1-dimensional model.
     mwins_inends : :obj:`tuple`
         Start and end indices for model patches.
     dwins_inends : :obj:`tuple`
@@ -117,7 +117,7 @@ def sliding1d_pad_to_next(
     nwins : :obj:`int`
         Number of windows of padded input.
     dim : :obj:`int`
-        Shape of 2-dimensional model of padded input.
+        Shape of the 1-dimensional model of padded input.
     mwins_inends : :obj:`tuple`
         Start and end indices for model patches of padded input.
     dwins_inends : :obj:`tuple`
@@ -175,9 +175,9 @@ class Sliding1D(LinearOperator):
     Op : :obj:`pylops.LinearOperator`
         Transform operator
     dim : :obj:`tuple`
-        Shape of 1-dimensional model.
+        Shape of the 1-dimensional model
     dimd : :obj:`tuple`
-        Shape of 1-dimensional data
+        Shape of the 1-dimensional data
     nwin : :obj:`int`
         Number of samples of window
     nover : :obj:`int`

@@ -73,7 +73,7 @@ def sliding2d_design(
     Parameters
     ----------
     dimsd : :obj:`tuple`
-        Shape of 2-dimensional data.
+        Shape of the 2-dimensional data.
     nwin : :obj:`int`
         Number of samples of window.
     nover : :obj:`int`
@@ -152,7 +152,7 @@ def sliding2d_pad_to_next(
     nwins : :obj:`int`
         Number of windows of padded input.
     dims : :obj:`tuple`
-        Shape of 2-dimensional model of padded input.
+        Shape of the 2-dimensional model of padded input.
     mwins_inends : :obj:`tuple`
         Start and end indices for model patches of padded input (stored as tuple of tuples).
     dwins_inends : :obj:`tuple`
@@ -213,10 +213,10 @@ class Sliding2D(LinearOperator):
     Op : :obj:`pylops.LinearOperator`
         Transform operator
     dims : :obj:`tuple`
-        Shape of 2-dimensional model. Note that ``dims[0]`` should be multiple
-        of the model size of the transform in the first dimension
+        Shape of the 2-dimensional model. Note that ``dims[0]`` should be
+        multiple of the model size of the transform in the first dimension
     dimsd : :obj:`tuple`
-        Shape of 2-dimensional data
+        Shape of the 2-dimensional data
     nwin : :obj:`int`
         Number of samples of window
     nover : :obj:`int`

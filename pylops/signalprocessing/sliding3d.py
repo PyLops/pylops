@@ -45,7 +45,7 @@ def sliding3d_design(
     Parameters
     ----------
     dimsd : :obj:`tuple`
-        Shape of 3-dimensional data.
+        Shape of the 3-dimensional data.
     nwin : :obj:`tuple`
         Number of samples of window.
     nover : :obj:`tuple`
@@ -61,7 +61,7 @@ def sliding3d_design(
     nwins : :obj:`tuple`
         Number of windows.
     dims : :obj:`tuple`
-        Shape of 2-dimensional model.
+        Shape of the 3-dimensional model.
     mwins_inends : :obj:`tuple`
         Start and end indices for model patches (stored as tuple of tuples).
     dwins_inends : :obj:`tuple`
@@ -136,7 +136,7 @@ def sliding3d_pad_to_next(
     nwins : :obj:`tuple`
         Number of windows of padded input.
     dims : :obj:`tuple`
-        Shape of 3-dimensional model of padded input.
+        Shape of the 3-dimensional model of padded input.
     mwins_inends : :obj:`tuple`
         Start and end indices for model patches of padded input (stored as tuple of tuples).
     dwins_inends : :obj:`tuple`
@@ -200,11 +200,11 @@ class Sliding3D(LinearOperator):
     Op : :obj:`pylops.LinearOperator`
         Transform operator
     dims : :obj:`tuple`
-        Shape of 3-dimensional model. Note that ``dims[0]`` and ``dims[1]``
+        Shape of the 3-dimensional model. Note that ``dims[0]`` and ``dims[1]``
         should be multiple of the model sizes of the transform in the
         first and second dimensions
     dimsd : :obj:`tuple`
-        Shape of 3-dimensional data
+        Shape of the 3-dimensional data
     nwin : :obj:`tuple`
         Number of samples of window
     nover : :obj:`tuple`

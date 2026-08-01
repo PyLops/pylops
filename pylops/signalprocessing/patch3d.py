@@ -46,7 +46,7 @@ def patch3d_design(
     Parameters
     ----------
     dimsd : :obj:`tuple`
-        Shape of 3-dimensional data.
+        Shape of the 3-dimensional data.
     nwin : :obj:`tuple`
         Number of samples of window.
     nover : :obj:`tuple`
@@ -62,7 +62,7 @@ def patch3d_design(
     nwins : :obj:`tuple`
         Number of windows.
     dims : :obj:`tuple`
-        Shape of 3-dimensional model.
+        Shape of the 3-dimensional model
     mwins_inends : :obj:`tuple`
         Start and end indices for model patches (stored as tuple of tuples).
     dwins_inends : :obj:`tuple`
@@ -152,7 +152,7 @@ def patch3d_pad_to_next(
     nwins : :obj:`tuple`
         Number of windows.
     dims : :obj:`tuple`
-        Shape of 3-dimensional model.
+        Shape of the 3-dimensional model
     mwins_inends : :obj:`tuple`
         Start and end indices for model patches (stored as tuple of tuples).
     dwins_inends : :obj:`tuple`
@@ -211,11 +211,11 @@ class Patch3D(LinearOperator):
     Op : :obj:`pylops.LinearOperator`
         Transform operator
     dims : :obj:`tuple`
-        Shape of 3-dimensional model. Note that ``dims[0]``, ``dims[1]``
+        Shape of the 3-dimensional model. Note that ``dims[0]``, ``dims[1]``
         and ``dims[2]`` should be multiple of the model size of the
         transform in their respective dimensions
     dimsd : :obj:`tuple`
-        Shape of 3-dimensional data
+        Shape of the 3-dimensional data
     nwin : :obj:`tuple`
         Number of samples of window
     nover : :obj:`tuple`
