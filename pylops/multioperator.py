@@ -17,13 +17,13 @@ class MultiOperator(LinearOperator):
     support multiprocessing/multithreading in their ``matvec``/``rmatvec``
     methods.
 
-    Implements basic methods to instantiate and tear down a pool or workers,
+    Implements basic methods to instantiate and tear down a pool of workers
     and ``_matvec``/``_rmatvec`` interfaces that dispatch to the actual
     implementations for serial/multiprocess/multithread, namely:
 
-    - ``_matvec_serial`` / ``_rmatvec_serial``: serial implementation
-    - ``_matvec_multiproc`` / ``_rmatvec_multiproc``: multiprocess implementation
-    - ``_matvec_multithread`` / ``_matvec_multithread``: multithreading implementation
+    - ``_matvec_serial`` / ``_rmatvec_serial``: serial implementation;
+    - ``_matvec_multiproc`` / ``_rmatvec_multiproc``: multiprocess implementation;
+    - ``_matvec_multithread`` / ``_matvec_multithread``: multithreading implementation.
 
     Developers are in charge of implementing these methods for specific operators or
     overwriting ``_matvec``/``_rmatvec`` if not all of the implementations are available.
