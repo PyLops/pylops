@@ -64,6 +64,7 @@ jobs:
           ln -sf "$CUDA_HOME/lib64/libnvrtc.so.12" "$CUDA_HOME/lib64/libnvrtc.so"
 
           echo "CUDA_HOME=$CUDA_HOME" >> "$GITHUB_ENV"
+          echo "CUDA_PATH=$CUDA_RUNTIME_ROOT" >> "$GITHUB_ENV"
           echo "CUDA_NVVM_LIB=$CUDA_HOME/nvvm/lib64" >> "$GITHUB_ENV"
           echo "done!"
       - name: Test with pytest
