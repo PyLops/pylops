@@ -472,21 +472,35 @@ class LinearOperator(_LinearOperator):
 
     def _matmat_multithread(self, X: NDArray, pool: ThreadPoolExecutor) -> NDArray:
         """Matrix-matrix multiplication (multithreaded version)"""
-        ys = list(
-            pool.map(
-                lambda args: _matvec_rmatvec_map(*args),
-                [(self._matvec, col.reshape(-1)) for col in X.T],
+        if sp.sparse.issparse(X):
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._matvec, col.toarray().reshape(-1)) for col in X.T],
+                )
             )
-        )
+        else:
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._matvec, col.reshape(-1)) for col in X.T],
+                )
+            )
         y = np.vstack(ys).T
         return y
 
     def _matmat_multiproc(self, X: NDArray, pool: Pool) -> NDArray:
         """Matrix-matrix multiplication (multiprocess version)"""
-        ys = pool.starmap(
-            _matvec_rmatvec_map,
-            [(self._matvec, col.reshape(-1)) for col in X.T],
-        )
+        if sp.sparse.issparse(X):
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._matvec, col.toarray().reshape(-1)) for col in X.T],
+            )
+        else:
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._matvec, col.reshape(-1)) for col in X.T],
+            )
         y = np.vstack(ys).T
         return y
 
@@ -520,21 +534,35 @@ class LinearOperator(_LinearOperator):
 
     def _rmatmat_multithread(self, X: NDArray, pool: ThreadPoolExecutor) -> NDArray:
         """Matrix-matrix adjoint multiplication (multithreaded version)"""
-        ys = list(
-            pool.map(
-                lambda args: _matvec_rmatvec_map(*args),
-                [(self._rmatvec, col.reshape(-1)) for col in X.T],
+        if sp.sparse.issparse(X):
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._rmatvec, col.toarray().reshape(-1)) for col in X.T],
+                )
             )
-        )
+        else:
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._rmatvec, col.reshape(-1)) for col in X.T],
+                )
+            )
         y = np.vstack(ys).T
         return y
 
     def _rmatmat_multiproc(self, X: NDArray, pool: Pool) -> NDArray:
         """Matrix-matrix adjoint multiplication (multiprocess version)"""
-        ys = pool.starmap(
-            _matvec_rmatvec_map,
-            [(self._rmatvec, col.reshape(-1)) for col in X.T],
-        )
+        if sp.sparse.issparse(X):
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._rmatvec, col.toarray().reshape(-1)) for col in X.T],
+            )
+        else:
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._rmatvec, col.reshape(-1)) for col in X.T],
+            )
         y = np.vstack(ys).T
         return y
 
