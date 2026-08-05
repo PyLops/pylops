@@ -189,20 +189,18 @@ def count(
             mat = matmat
 
         @wraps(f)
-        def wrapper(self, x):
+        def wrapper(self, x, *args, **kwargs):
             # perform operation
-            y = f(self, x)
+            y = f(self, x, *args, **kwargs)
             # increase count of the associated operation
             if fwd:
                 if mat:
                     self.matmat_count += 1
-                    self.matvec_count -= x.shape[-1]
                 else:
                     self.matvec_count += 1
             else:
                 if mat:
                     self.rmatmat_count += 1
-                    self.rmatvec_count -= x.shape[-1]
                 else:
                     self.rmatvec_count += 1
             return y

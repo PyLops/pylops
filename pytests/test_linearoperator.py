@@ -1,3 +1,5 @@
+import concurrent.futures as mt
+import multiprocessing as mp
 import os
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
@@ -11,6 +13,7 @@ else:
 
     backend = "numpy"
 import pytest
+from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
 
 import pylops
@@ -386,3 +389,112 @@ def test_counts(par):
     assert Aop.rmatvec_count == 0
     assert Aop.matmat_count == 0
     assert Aop.rmatmat_count == 0
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
+@pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
+def test_matmat_multiproc_multithread(par):
+    """Single and multiprocess/multithreading consistency for matmat/rmatmat"""
+    dtype = np.empty(0, dtype=par["dtype"]).real.dtype
+
+    for parallel_kind in ["multiproc", "multithread"]:
+        np.random.seed(0)
+        nproc = 2
+
+        # create pool
+        if parallel_kind == "multiproc":
+            pool = mp.Pool(processes=nproc)
+        else:
+            pool = mt.ThreadPoolExecutor(max_workers=nproc)
+
+        M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
+            "imag"
+        ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
+        x = np.ones((par["nx"], 4), dtype=dtype) + par["imag"] * np.ones(
+            (par["nx"], 4), dtype=dtype
+        )
+        y = np.ones((par["ny"], 4), dtype=dtype) + par["imag"] * np.ones(
+            (par["ny"], 4), dtype=dtype
+        )
+
+        Mop = MatrixMult(M, dtype=par["dtype"])
+
+        # forward
+        assert_array_almost_equal(
+            Mop.matmat(x),
+            Mop.matmat(x, pool=pool),
+            decimal=3 if dtype == np.float32 else 8,
+        )
+        # adjoint
+        assert_array_almost_equal(
+            Mop.rmatmat(y),
+            Mop.rmatmat(y, pool=pool),
+            decimal=3 if dtype == np.float32 else 8,
+        )
+
+        # close pool
+        if parallel_kind == "multiproc":
+            pool.close()
+            pool.join()
+        else:
+            pool.shutdown()
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
+@pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
+def test_matmat_sparse_multiproc_multithread(par):
+    """Single and multiprocess/multithreading consistency for matmat/rmatmat
+    with sparse X"""
+    dtype = np.empty(0, dtype=par["dtype"]).real.dtype
+
+    for parallel_kind in ["multiproc", "multithread"]:
+        np.random.seed(0)
+        nproc = 2
+
+        # create pool
+        if parallel_kind == "multiproc":
+            pool = mp.Pool(processes=nproc)
+        else:
+            pool = mt.ThreadPoolExecutor(max_workers=nproc)
+
+        M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
+            "imag"
+        ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
+        x = np.zeros((par["nx"], 4), dtype=dtype) + par["imag"] * np.zeros(
+            (par["nx"], 4), dtype=dtype
+        )
+        y = np.zeros((par["ny"], 4), dtype=dtype) + par["imag"] * np.zeros(
+            (par["ny"], 4), dtype=dtype
+        )
+        for ix in range(par["nx"]):
+            x[ix, np.random.randint(0, 4)] = 1.0 + par["imag"] * 1.0
+        for iy in range(par["ny"]):
+            y[iy, np.random.randint(0, 4)] = 1.0 + par["imag"] * 1.0
+        x = csr_matrix(x)
+        y = csr_matrix(y)
+
+        Mop = MatrixMult(M, dtype=par["dtype"])
+
+        # forward
+        assert_array_almost_equal(
+            Mop.matmat(x),
+            Mop.matmat(x, pool=pool),
+            decimal=3 if dtype == np.float32 else 8,
+        )
+        # adjoint
+        assert_array_almost_equal(
+            Mop.rmatmat(y),
+            Mop.rmatmat(y, pool=pool),
+            decimal=3 if dtype == np.float32 else 8,
+        )
+
+        # close pool
+        if parallel_kind == "multiproc":
+            pool.close()
+            pool.join()
+        else:
+            pool.shutdown()

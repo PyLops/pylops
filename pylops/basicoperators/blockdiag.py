@@ -1,8 +1,5 @@
 __all__ = ["BlockDiag"]
 
-import concurrent.futures as mt
-import multiprocessing as mp
-
 import numpy as np
 import scipy as sp
 
@@ -22,18 +19,14 @@ else:
 
 from collections.abc import Sequence
 
-from pylops import LinearOperator
+from pylops import LinearOperator, MultiOperator
+from pylops._multioperator import _matvec_rmatvec_map
 from pylops.basicoperators import MatrixMult
 from pylops.utils.backend import get_array_module, get_module, inplace_set
 from pylops.utils.typing import DTypeLike, NDArray, Tinoutengine, Tparallel_kind
 
 
-def _matvec_rmatvec_map(op, x: NDArray) -> NDArray:
-    """matvec/rmatvec for multiprocessing"""
-    return op(x).squeeze()
-
-
-class BlockDiag(LinearOperator):
+class BlockDiag(MultiOperator):
     r"""Block-diagonal operator.
 
     Create a block-diagonal operator from N linear operators.
@@ -149,9 +142,6 @@ class BlockDiag(LinearOperator):
         parallel_kind: Tparallel_kind = "multiproc",
         dtype: DTypeLike | None = None,
     ) -> None:
-        if parallel_kind not in ["multiproc", "multithread"]:
-            msg = "parallel_kind must be 'multiproc' or 'multithread'"
-            raise ValueError(msg)
         # identify dimensions
         self.ops = ops
         mops = np.zeros(len(ops), dtype=int)
@@ -181,15 +171,10 @@ class BlockDiag(LinearOperator):
         else:
             dimsd = (self.nops,)
             forceflat = True
+
         # create pool for multithreading / multiprocessing
-        self.parallel_kind = parallel_kind
-        self._nproc = nproc
-        self.pool: mp.pool.Pool | None = None
-        if self.nproc > 1:
-            if self.parallel_kind == "multiproc":
-                self.pool = mp.Pool(processes=nproc)
-            else:
-                self.pool = mt.ThreadPoolExecutor(max_workers=nproc)
+        self._setup_pool(nproc, parallel_kind=parallel_kind)
+
         self.inoutengine = inoutengine
         dtype = _get_dtype(ops) if dtype is None else np.dtype(dtype)
         clinear = all([getattr(oper, "clinear", True) for oper in self.ops])
@@ -200,25 +185,6 @@ class BlockDiag(LinearOperator):
             clinear=clinear,
             forceflat=forceflat,
         )
-
-    @property
-    def nproc(self) -> int:
-        return self._nproc
-
-    @nproc.setter
-    def nproc(self, nprocnew: int) -> None:
-        if self._nproc > 1 and self.pool is not None:
-            if self.parallel_kind == "multiproc":
-                self.pool.close()
-                self.pool.join()
-            else:
-                self.pool.shutdown()
-        if nprocnew > 1:
-            if self.parallel_kind == "multiproc":
-                self.pool = mp.Pool(processes=nprocnew)
-            else:
-                self.pool = mt.ThreadPoolExecutor(max_workers=nprocnew)
-        self._nproc = nprocnew
 
     def _matvec_serial(self, x: NDArray) -> NDArray:
         ncp = (
@@ -297,35 +263,3 @@ class BlockDiag(LinearOperator):
         )
         y = np.hstack(ys)
         return y
-
-    def _matvec(self, x: NDArray) -> NDArray:
-        if self.nproc == 1:
-            y = self._matvec_serial(x)
-        else:
-            if self.parallel_kind == "multiproc":
-                y = self._matvec_multiproc(x)
-            else:
-                y = self._matvec_multithread(x)
-        return y
-
-    def _rmatvec(self, x: NDArray) -> NDArray:
-        if self.nproc == 1:
-            y = self._rmatvec_serial(x)
-        else:
-            if self.parallel_kind == "multiproc":
-                y = self._rmatvec_multiproc(x)
-            else:
-                y = self._rmatvec_multithread(x)
-        return y
-
-    def close(self):
-        """Close the pool of workers used for multiprocessing
-        / multithreading.
-        """
-        if self.pool is not None:
-            if self.parallel_kind == "multiproc":
-                self.pool.close()
-                self.pool.join()
-            else:
-                self.pool.shutdown()
-            self.pool = None

@@ -6,6 +6,10 @@ __all__ = [
 ]
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Pool
+from multiprocessing.pool import Pool as PoolClass
 
 import numpy as np
 import scipy as sp
@@ -27,14 +31,13 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
 else:
     from scipy.sparse._sputils import isintlike, isshape
 
-from collections.abc import Callable, Sequence
-
 from pylops import get_ndarray_multiplication
+from pylops._multioperator import _matvec_rmatvec_map
 from pylops.optimization.basic import cgls
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.decorators import count
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike
+from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike, Tpool
 
 
 class _LinearOperator(ABC):
@@ -458,31 +461,129 @@ class LinearOperator(_LinearOperator):
         if self.Op is not None:
             return self.Op._rmatvec(x)
 
-    def _matmat(self, X: NDArray) -> NDArray:
+    def _matmat_serial(self, X: NDArray) -> NDArray:
+        """Matrix-matrix multiplication (serial version)"""
+        ncp = get_array_module(X)
+        if sp.sparse.issparse(X):
+            y = ncp.vstack([self._matvec(col.toarray().reshape(-1)) for col in X.T]).T
+        else:
+            y = ncp.vstack([self._matvec(col.reshape(-1)) for col in X.T]).T
+        return y
+
+    def _matmat_multithread(self, X: NDArray, pool: ThreadPoolExecutor) -> NDArray:
+        """Matrix-matrix multiplication (multithreaded version)"""
+        if sp.sparse.issparse(X):
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._matvec, col.toarray().reshape(-1)) for col in X.T],
+                )
+            )
+        else:
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._matvec, col.reshape(-1)) for col in X.T],
+                )
+            )
+        y = np.vstack(ys).T
+        return y
+
+    def _matmat_multiproc(self, X: NDArray, pool: Pool) -> NDArray:
+        """Matrix-matrix multiplication (multiprocess version)"""
+        if sp.sparse.issparse(X):
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._matvec, col.toarray().reshape(-1)) for col in X.T],
+            )
+        else:
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._matvec, col.reshape(-1)) for col in X.T],
+            )
+        y = np.vstack(ys).T
+        return y
+
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix multiplication handler.
 
         Modified version of scipy _matmat to avoid having trailing dimension
         in col when provided to matvec
         """
+        if pool is None:
+            # serial
+            return self._matmat_serial(X)
+        elif isinstance(pool, ThreadPoolExecutor):
+            # multithread
+            return self._matmat_multithread(X, pool)
+        elif isinstance(pool, PoolClass):
+            # multiprocess
+            return self._matmat_multiproc(X, pool)
+        else:
+            msg = f"Received pool of unsupported type ({type(pool)})"
+            raise NotImplementedError(msg)
+
+    def _rmatmat_serial(self, X: NDArray) -> NDArray:
+        """Matrix-matrix adjoint multiplication (serial version)"""
         ncp = get_array_module(X)
         if sp.sparse.issparse(X):
-            y = ncp.vstack([self.matvec(col.toarray().reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self._rmatvec(col.toarray().reshape(-1)) for col in X.T]).T
         else:
-            y = ncp.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self._rmatvec(col.reshape(-1)) for col in X.T]).T
         return y
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
+    def _rmatmat_multithread(self, X: NDArray, pool: ThreadPoolExecutor) -> NDArray:
+        """Matrix-matrix adjoint multiplication (multithreaded version)"""
+        if sp.sparse.issparse(X):
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._rmatvec, col.toarray().reshape(-1)) for col in X.T],
+                )
+            )
+        else:
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._rmatvec, col.reshape(-1)) for col in X.T],
+                )
+            )
+        y = np.vstack(ys).T
+        return y
+
+    def _rmatmat_multiproc(self, X: NDArray, pool: Pool) -> NDArray:
+        """Matrix-matrix adjoint multiplication (multiprocess version)"""
+        if sp.sparse.issparse(X):
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._rmatvec, col.toarray().reshape(-1)) for col in X.T],
+            )
+        else:
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._rmatvec, col.reshape(-1)) for col in X.T],
+            )
+        y = np.vstack(ys).T
+        return y
+
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix adjoint multiplication handler.
 
         Modified version of scipy _rmatmat to avoid having trailing dimension
         in col when provided to rmatvec
         """
-        ncp = get_array_module(X)
-        if sp.sparse.issparse(X):
-            y = ncp.vstack([self.rmatvec(col.toarray().reshape(-1)) for col in X.T]).T
+        if pool is None:
+            # serial
+            return self._rmatmat_serial(X)
+        elif isinstance(pool, ThreadPoolExecutor):
+            # multithread
+            return self._rmatmat_multithread(X, pool)
+        elif isinstance(pool, PoolClass):
+            # multiprocess
+            return self._rmatmat_multiproc(X, pool)
         else:
-            y = ncp.vstack([self.rmatvec(col.reshape(-1)) for col in X.T]).T
-        return y
+            msg = f"Received pool of unsupported type ({type(pool)})"
+            raise NotImplementedError(msg)
 
     def _adjoint(self) -> LinearOperator:
         Op = _AdjointLinearOperator(self)
@@ -583,7 +684,7 @@ class LinearOperator(_LinearOperator):
         return y
 
     @count(forward=True, matmat=True)
-    def matmat(self, X: NDArray) -> NDArray:
+    def matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix multiplication.
 
         Modified version of scipy matmat which does not consider the case
@@ -594,6 +695,8 @@ class LinearOperator(_LinearOperator):
         ----------
         x : :obj:`numpy.ndarray`
             Input array of shape (N,K)
+        pool : :obj:`multiprocessing.Pool` or :obj:`concurrent.futures.ThreadPoolExecutor` or :obj:`None`
+            Pool of workers used to evaluate the operator on different columns of ``X`` in parallel.
 
         Returns
         -------
@@ -607,11 +710,11 @@ class LinearOperator(_LinearOperator):
         if X.shape[0] != self.shape[1]:
             msg = f"Dimension mismatch: {self.shape}, {X.shape}"
             raise ValueError(msg)
-        Y = self._matmat(X)
+        Y = self._matmat(X, pool=pool)
         return Y
 
     @count(forward=False, matmat=True)
-    def rmatmat(self, X: NDArray) -> NDArray:
+    def rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix multiplication.
 
         Modified version of scipy rmatmat which does not consider the case
@@ -622,6 +725,8 @@ class LinearOperator(_LinearOperator):
         ----------
         x : :obj:`numpy.ndarray`
             Input array of shape (M,K)
+        pool : :obj:`multiprocessing.Pool` or :obj:`concurrent.futures.ThreadPoolExecutor` or :obj:`None`
+            Pool of workers used to evaluate the operator on different columns of ``X`` in parallel.
 
         Returns
         -------
@@ -633,9 +738,9 @@ class LinearOperator(_LinearOperator):
             msg = f"Expected 2-d ndarray or matrix, not {X.ndim}-d ndarray"
             raise ValueError(msg)
         if X.shape[0] != self.shape[0]:
-            f"Dimension mismatch: {self.shape}, {X.shape}"
+            msg = f"Dimension mismatch: {self.shape}, {X.shape}"
             raise ValueError(msg)
-        Y = self._rmatmat(X)
+        Y = self._rmatmat(X, pool=pool)
         return Y
 
     def dot(self, x: NDArray) -> NDArray:
@@ -1312,11 +1417,11 @@ class _ScaledLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return np.conj(self.args[1]) * self.args[0].rmatvec(x)
 
-    def _rmatmat(self, x: NDArray) -> NDArray:
-        return np.conj(self.args[1]) * self.args[0].rmatmat(x)
+    def _matmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[1] * self.args[0]._matmat(x, pool=pool)
 
-    def _matmat(self, x: NDArray) -> NDArray:
-        return self.args[1] * self.args[0].matmat(x)
+    def _rmatmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return np.conj(self.args[1]) * self.args[0]._rmatmat(x, pool=pool)
 
     def _adjoint(self) -> LinearOperator:
         A, alpha = self.args
@@ -1400,11 +1505,11 @@ class _AdjointLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return self.A._matvec(x)
 
-    def _matmat(self, X: NDArray) -> NDArray:
-        return self.A._rmatmat(X)
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.A._rmatmat(X, pool=pool)
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
-        return self.A._matmat(X)
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.A._matmat(X, pool=pool)
 
 
 class _TransposedLinearOperator(LinearOperator):
@@ -1422,11 +1527,11 @@ class _TransposedLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return np.conj(self.A._matvec(np.conj(x)))
 
-    def _matmat(self, X: NDArray) -> NDArray:
-        return np.conj(self.A._rmatmat(np.conj(X)))
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return np.conj(self.A._rmatmat(np.conj(X), pool=pool))
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
-        return np.conj(self.A._matmat(np.conj(X)))
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return np.conj(self.A._matmat(np.conj(X), pool=pool))
 
 
 class _ProductLinearOperator(LinearOperator):
@@ -1445,16 +1550,16 @@ class _ProductLinearOperator(LinearOperator):
         self.args = (A, B)
 
     def _matvec(self, x: NDArray) -> NDArray:
-        return self.args[0].matvec(self.args[1].matvec(x))
+        return self.args[0]._matvec(self.args[1]._matvec(x))
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        return self.args[1].rmatvec(self.args[0].rmatvec(x))
+        return self.args[1]._rmatvec(self.args[0]._rmatvec(x))
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
-        return self.args[1].rmatmat(self.args[0].rmatmat(X))
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[0]._matmat(self.args[1]._matmat(X), pool=pool)
 
-    def _matmat(self, X: NDArray) -> NDArray:
-        return self.args[0].matmat(self.args[1].matmat(X))
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[1]._rmatmat(self.args[0]._rmatmat(X), pool=pool)
 
     def _adjoint(self):
         A, B = self.args
@@ -1477,16 +1582,16 @@ class _SumLinearOperator(LinearOperator):
         super().__init__(dtype=_get_dtype([A, B]), shape=A.shape)
 
     def _matvec(self, x: NDArray) -> NDArray:
-        return self.args[0].matvec(x) + self.args[1].matvec(x)
+        return self.args[0]._matvec(x) + self.args[1]._matvec(x)
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        return self.args[0].rmatvec(x) + self.args[1].rmatvec(x)
+        return self.args[0]._rmatvec(x) + self.args[1]._rmatvec(x)
 
-    def _rmatmat(self, x: NDArray) -> NDArray:
-        return self.args[0].rmatmat(x) + self.args[1].rmatmat(x)
+    def _matmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[0]._matmat(x, pool=pool) + self.args[1]._matmat(x, pool=pool)
 
-    def _matmat(self, x: NDArray) -> NDArray:
-        return self.args[0].matmat(x) + self.args[1].matmat(x)
+    def _rmatmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[0]._rmatmat(x, pool=pool) + self.args[1]._rmatmat(x, pool=pool)
 
     def _adjoint(self) -> LinearOperator:
         A, B = self.args
@@ -1508,10 +1613,10 @@ class _PowerLinearOperator(LinearOperator):
         super().__init__(dtype=A.dtype, shape=A.shape)
         self.args = (A, p)
 
-    def _power(self, fun: Callable, x: NDArray) -> NDArray:
+    def _power(self, fun: Callable, x: NDArray, **kwargs) -> NDArray:
         res = x.copy()
         for _ in range(self.args[1]):
-            res = fun(res)
+            res = fun(res, **kwargs)
         return res
 
     def _matvec(self, x: NDArray) -> NDArray:
@@ -1520,11 +1625,11 @@ class _PowerLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return self._power(self.args[0].rmatvec, x)
 
-    def _rmatmat(self, x: NDArray) -> NDArray:
-        return self._power(self.args[0].rmatmat, x)
+    def _matmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self._power(self.args[0]._matmat, x, pool=pool)
 
-    def _matmat(self, x: NDArray) -> NDArray:
-        return self._power(self.args[0].matmat, x)
+    def _rmatmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self._power(self.args[0]._rmatmat, x, pool=pool)
 
     def _adjoint(self) -> LinearOperator:
         A, p = self.args
