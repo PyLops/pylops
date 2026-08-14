@@ -23,17 +23,16 @@ classifiers = [
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
-    "numpy >= 1.21.0",
-    "scipy >= 1.11.0",
+    "numpy >= 2.0.0",
+    "scipy >= 1.13.0",
 ]
 dynamic = ["version"]
 
@@ -50,13 +49,13 @@ advanced = [
     "devito",
     "curvelets >= 1.2"
 ]
-gpu-cu12 = ["cupy-cuda12x"]
-gpu-cu13 = ["cupy-cuda13x"]
+gpu-cu12 = ["cupy-cuda12x", "numba-cuda[cu12]>=0.30.0"]
+gpu-cu13 = ["cupy-cuda13x", "numba-cuda[cu13]>=0.30.0"]
 stat = ["pytensor", "pymc"]
 deep = ["torch", "jax"]
 deep-cu126 = ["torch<2.11.0", "jax[cuda12]"]
 deep-cu128 = ["torch<2.11.0", "jax[cuda12]"]
-deep-cu13 = ["torch>=2.11.0", "jax[cuda13]"]
+deep-cu13 = ["torch>=2.11.0", "jax[cuda13]>=0.8.0"]
 
 [dependency-groups]
 dev = [
@@ -120,6 +119,18 @@ conflicts = [
     { extra = "deep-cu126" },
     { extra = "deep-cu128" },
     { extra = "deep-cu13" },
+  ],
+  [
+    { extra = "gpu-cu12" },
+    { extra = "deep-cu13" },
+  ],
+  [
+    { extra = "gpu-cu13" },
+    { extra = "deep-cu126" },
+  ],
+  [
+    { extra = "gpu-cu13" },
+    { extra = "deep-cu128" },
   ],
 ]
 
