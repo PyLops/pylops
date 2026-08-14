@@ -4,7 +4,7 @@
 
 - [The Short Version](#the-short-version)
 - [The Longer Version](#the-longer-version)
-  - [Philosophy](#ai-philosophy)
+  - [Philosophy](#philosophy)
   - [Coding Agents](#coding-agents)
 
 
@@ -12,7 +12,7 @@
 
 Use AI like you used Google and StackOverflow. Own the final solution like you owned it before.
 
-However, since AI still behaves differently from humans (it is undoubtedly better at certain tasks and worse at others), always acknowledge directly - e.g., let Claude Code author a PR that was strongly driven by it - or indirectly - e.g., explain in the PR where and how AI was used. This helps reviewers and mantainers to pay attention in different ways when reviewing a human-driven code vs a AI-driven code.
+However, since AI still behaves differently from humans (it is undoubtedly better at certain tasks and worse at others), always acknowledge directly - e.g., let Claude Code author a PR that was strongly driven by it - or indirectly - e.g., explain in the PR where and how AI was used. This helps reviewers and maintainers to pay attention in different ways when reviewing a human-driven code vs an AI-driven code.
 
 ## The Longer Version
 
@@ -22,9 +22,9 @@ PyLops has always been a forward-thinking and inclusive project. At a time when 
 
 With the emergence of coding agents, the way we approach software development is changing, and we do not intend to be one of those communities that buries its head in the sand and carries on with business as usual. We instead encourage everyone to experiment with AI and Coding Agents and benefit from them in all stages of development.
 
-This however does not mean that we encourage our developers (especially new comers) to vibe-code complex solutions with little to no control on the physical outcome - lines of code! AI and Coding Agents should be treated as colleagues during pair-coding sessions: they can help in the initial phases of ideation, during development, and in later stages to ensure consistency and acting as additional attentive reviewers.
+This however does not mean that we encourage our developers (especially newcomers) to vibe-code complex solutions with little to no control on the physical outcome - lines of code! AI and Coding Agents should be treated as colleagues during pair-coding sessions: they can help in the initial phases of ideation, during development, and in later stages to ensure consistency and act as additional attentive reviewers.
 
-The only **strong reccomandation** that we provide to anyone contributing code to PyLops is to be transparent about their use of AI/Coding Agents. We must recognize that AI still behaves differently from humans - it is undoubtedly better than us in certain tasks but it is still worse in other tasks. If we, reviewers and mantainers, know how a piece of code was generated, we can approach the review process slightly differently whether we review a human-driven code vs a AI-driven code development.
+The only **strong recommendation** that we provide to anyone contributing code to PyLops is to be transparent about their use of AI/Coding Agents. We must recognize that AI still behaves differently from humans - it is undoubtedly better than us in certain tasks but it is still worse in other tasks. If we, reviewers and maintainers, know how a piece of code was generated, we can approach the review process slightly differently whether we review a human-driven code vs an AI-driven code development.
 
 ### Coding Agents
 
@@ -37,4 +37,4 @@ More specifically, we currently provide:
 - ``.pi/prompts/optest.md`` / ``.claude/skills/optest``: a skill to increase the test coverage of an operator;
 
 
-** This Policy was written by humans and polished by AI **
+**This Policy was written by humans and polished by AI**
