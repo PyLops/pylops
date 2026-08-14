@@ -164,7 +164,7 @@ python_files = ["pytests/*.py"]
 src = ["pylops"]
 exclude = ["pylops/version.py", ]
 line-length = 88
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
