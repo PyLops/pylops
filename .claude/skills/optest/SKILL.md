@@ -50,7 +50,7 @@ Follow this workflow precisely:
    added/changed, and any lines deliberately left uncovered with the reason.
 
 The coverage-measurement tool lives at `.pi/tools/operator_coverage.sh` (repo
-root, two levels up from `pylops/`/`pytests/`) — it locates the operator's
+root, two levels up from the script's own location) — it locates the operator's
 source module, runs pytest scoped to it, and prints coverage % plus missing
 line numbers. Usage: `.pi/tools/operator_coverage.sh <OperatorName> [extra
 pytest args...]`. Runner selection: `$RUNNER` env var, else `uv run` if `uv`
