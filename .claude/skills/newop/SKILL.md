@@ -68,8 +68,6 @@ Use `reference/operator_template.py` as the skeleton. Key rules:
   `__init__` validates inputs), and a `Notes` section giving the maths of forward
   and adjoint in `.. math::` blocks. Match the level of detail of neighbouring
   operators.
-- Add `.. versionadded:: <next release>` to the class docstring for a brand-new
-  operator (check the current version in `pylops/version.py` / `pyproject.toml`).
 
 ## 3. Add tests
 
