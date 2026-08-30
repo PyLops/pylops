@@ -36,5 +36,6 @@ More specifically, we currently provide:
 
 - ``.pi/prompts/optest.md`` / ``.claude/skills/optest``: a skill to increase the test coverage of an operator;
 
+- ``.claude/skills/newop``: a skill to create a new operator from a mathematical description or a plain implementation of forward and adjoint from file or URL;
 
 🤖🤖 **This Policy was written by humans and polished by AI** 🤖🤖
