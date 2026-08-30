@@ -103,6 +103,7 @@ Signal processing
     Interp
     InterpCubicSpline
     Bilinear
+    Downsample2D
     FFT
     FFT2D
     FFTND

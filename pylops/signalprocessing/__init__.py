@@ -18,6 +18,7 @@ A list of operators present in pylops.signalprocessing:
     Interp                          Interpolation operator.
     InterpCubicSpline               Cubic Spline Interpolation operator.
     Bilinear                        Bilinear interpolation operator.
+    Downsample2D                    2D downsampling operator.
     FFT                             One dimensional Fast-Fourier Transform.
     FFT2D                           Two dimensional Fast-Fourier Transform.
     FFTND                           N-dimensional Fast-Fourier Transform.
@@ -59,6 +60,7 @@ from .shift import *
 from .interp import *
 from .interpspline import *
 from .bilinear import *
+from .downsample2d import *
 from .radon2d import *
 from .radon3d import *
 from .fourierradon2d import *
@@ -96,6 +98,7 @@ __all__ = [
     "Interp",
     "InterpCubicSpline",
     "Bilinear",
+    "Downsample2D",
     "Radon2D",
     "Radon3D",
     "FourierRadon2D",
