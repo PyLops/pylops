@@ -27,6 +27,34 @@ def _gaussian_kernel1d(sigma: float, truncate: float) -> NDArray:
     return h / h.sum()
 
 
+def standard_deviation_from_attenuation(
+    factor: int,
+    attenuation: float,
+) -> float:
+    """Calculate the standard deviation of a Gaussian filter from the desired
+    attenuation at the new Nyquist frequency after downsampling.
+
+    Parameters
+    ----------
+    factor : :obj:`int`
+        Downsampling factor.
+    attenuation : :obj:`float`
+        Desired attenuation (in dB) at the new Nyquist frequency. Although
+        the attenuation is effectively a negative quantity (e.g. :math:`-3dB`),
+        it must be provided here as a positive value.
+
+    Returns
+    -------
+    sigma : :obj:`float`
+        Standard deviation of the Gaussian filter (in number of samples).
+    """
+    if attenuation <= 0:
+        msg = "attenuation must be positive"
+        raise ValueError(msg)
+    sigma = np.sqrt(-2 * np.log(10 ** (-attenuation / 20)) / (np.pi**2)) * factor
+    return sigma
+
+
 class Downsample2D(LinearOperator):
     r"""2D downsampling operator.
 
@@ -45,7 +73,8 @@ class Downsample2D(LinearOperator):
         Standard deviations (in number of samples) of the Gaussian filter along
         each of the two ``axes``. If a single value is provided, the same
         standard deviation is used in both directions. If ``None``, the
-        standard deviations are set to ``(factor - 1) / 2`` for each direction.
+        standard deviations are set to a value corresponding to :math:`-10dB`
+        attenuation at the new Nyquist frequency (see more details in Notes).
     truncate : :obj:`float`, optional
         Number of standard deviations at which the Gaussian filter is
         truncated. The filter has ``2 * int(truncate * sigma + 0.5) + 1``
@@ -136,6 +165,20 @@ class Downsample2D(LinearOperator):
     is effectively the composition of a self-adjoint smoothing operator and a
     restriction operator.
 
+    Finally, the choice of the standard deviations of the Gaussian filter
+    (:math:`\sigma`) must depend on the amount of signal attenuation at the new
+    Nyquist frequency (i.e., original Nyquist frequency divided by the
+    downsampling factor). More precisely, given the amount of signal attenuation
+    in dB at the new Nyquist frequency, :math:`A`, we have:
+
+    .. math::
+        -\frac{\sigma^2 \pi^2}{2 f^2} = ln(10^{-A / 20})
+
+    where :math:`f` is the downsampling factor. The standard deviation
+    can be calculated using the :func:`standard_deviation_from_attenuation`
+    function and defaults to :math:`-10dB` attenuation at the new Nyquist frequency
+    if not specified by the user.
+
     """
 
     def __init__(
@@ -179,7 +222,7 @@ class Downsample2D(LinearOperator):
                 raise ValueError(msg)
 
         if sigma is None:
-            sigma = tuple((f - 1) / 2.0 for f in factors)
+            sigma = tuple(standard_deviation_from_attenuation(f, 10) for f in factors)
         else:
             sigma = _value_or_sized_to_tuple(sigma, repeat=2)
         if len(sigma) != 2:
