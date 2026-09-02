@@ -17,6 +17,7 @@ from scipy.ndimage import gaussian_filter
 
 from pylops.optimization.basic import lsqr
 from pylops.signalprocessing import Downsample2D
+from pylops.signalprocessing.downsample2d import standard_deviation_from_attenuation
 from pylops.utils import dottest
 
 par1 = {
@@ -124,7 +125,7 @@ def test_Downsample2D_scipy(par):
         if isinstance(par["factors"], int)
         else par["factors"]
     )
-    sigma = tuple((f - 1) / 2.0 for f in factors)
+    sigma = tuple(standard_deviation_from_attenuation(f, 10) for f in factors)
 
     shape = (par["ny"], par["nx"])
     x = np.random.normal(0.0, 1.0, shape) + par["imag"] * np.random.normal(

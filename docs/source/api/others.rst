@@ -39,6 +39,16 @@ Describe
 
     describe
 
+Downsample
+----------
+
+.. currentmodule:: pylops.signalprocessing.downsample2d
+
+.. autosummary::
+   :toctree: generated/
+
+    standard_deviation_from_attenuation
+
 Estimators
 ----------
 
@@ -107,7 +117,6 @@ Sliding and Patching
     sliding3d.sliding3d_pad_to_next
     patch2d.patch2d_pad_to_next
     patch3d.patch3d_pad_to_next
-
 
 Synthetics
 ----------
