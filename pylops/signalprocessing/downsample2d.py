@@ -1,4 +1,7 @@
-__all__ = ["Downsample2D"]
+__all__ = [
+    "standard_deviation_from_attenuation",
+    "Downsample2D",
+]
 
 from typing import Literal
 
@@ -222,7 +225,10 @@ class Downsample2D(LinearOperator):
                 raise ValueError(msg)
 
         if sigma is None:
-            sigma = tuple(standard_deviation_from_attenuation(f, 10) for f in factors)
+            sigma = tuple(
+                standard_deviation_from_attenuation(f, 10) if f > 1 else 0
+                for f in factors
+            )
         else:
             sigma = _value_or_sized_to_tuple(sigma, repeat=2)
         if len(sigma) != 2:
