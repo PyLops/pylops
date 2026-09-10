@@ -203,3 +203,6 @@ adheres to the guidelines of PyLops:
 - the new operator is used within at least one *example* (in ``examples`` directory) or one *tutorial*
   (in ``tutorials`` directory).
 
+- a new benchmark has been added to the `pylops-asv <https://github.com/PyLops/pylops-asv>`_ repository
+  (companion pull request, see :ref:`benchmarks`). The benchmark will be used from now on to verify that
+  the operator is performing as expected in terms of speed and memory usage.

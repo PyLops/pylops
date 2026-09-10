@@ -6,6 +6,7 @@
 [![AzureDevOps Status](https://dev.azure.com/matteoravasi/PyLops/_apis/build/status/PyLops.pylops?branchName=dev)](https://dev.azure.com/matteoravasi/PyLops/_build/latest?definitionId=9&branchName=dev)
 [![GithubAction Status](https://github.com/PyLops/pylops/actions/workflows/build.yaml/badge.svg?branch=dev)](https://github.com/PyLops/pylops/actions/workflows/build.yaml)
 [![Documentation Status](https://readthedocs.org/projects/pylops/badge/?version=stable)](https://pylops.readthedocs.io/en/stable/?badge=stable)
+[![Benchmarks](https://img.shields.io/badge/benchmarks-asv-blue.svg)](https://pylops.github.io/pylops-asv/)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/17fd60b4266347d8890dd6b64f2c0807)](https://www.codacy.com/gh/PyLops/pylops/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=PyLops/pylops&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/17fd60b4266347d8890dd6b64f2c0807)](https://www.codacy.com/gh/PyLops/pylops/dashboard?utm_source=github.com&utm_medium=referral&utm_content=PyLops/pylops&utm_campaign=Badge_Coverage)
 ![OS-support](https://img.shields.io/badge/OS-linux,win,osx-850A8B.svg)
@@ -125,6 +126,10 @@ Follow the instructions detailed in the [CONTRIBUTING](CONTRIBUTING.md) file bef
 
 ## Documentation
 The official documentation of PyLops is available [here](https://pylops.readthedocs.io/).
+
+Performance benchmarks (forward and adjoint time and peak memory of every operator, tracked nightly with
+[airspeed velocity](https://asv.readthedocs.io) in the [pylops-asv](https://github.com/PyLops/pylops-asv) repository)
+are published [here](https://pylops.github.io/pylops-asv/).
 
 Visit this page to get started learning about different operators and their applications as well as how to
 create new operators yourself and make it to the ``Contributors`` list.
