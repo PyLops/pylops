@@ -19,7 +19,6 @@
 PyLops is an open-source Python library focused on providing a backend-agnostic, idiomatic, matrix-free library of linear operators and related computations.
 It is inspired by the iconic MATLAB [Spot – A Linear-Operator Toolbox](http://www.cs.ubc.ca/labs/scl/spot/) project.
 
-
 ## Installation
 To get the most out of PyLops straight out of the box, we recommend using
 the PyPI distribution via `uv`:
@@ -117,7 +116,6 @@ print(np.allclose(xinv, xinv_op)) # True
 Note how the code becomes even more compact and expressive than in the previous case letting the user focus on the formulation of equations of the forward problem to be solved by inversion.
 PyLops offers many other linear operators, as well as the ability to implement your own in a way that seamlessly interfaces with the rest of the ecosystem.
 
-
 ## Contributing
 
 *Feel like contributing to the project? Adding new operators or tutorial?*
@@ -127,12 +125,12 @@ Follow the instructions detailed in the [CONTRIBUTING](CONTRIBUTING.md) file bef
 ## Documentation
 The official documentation of PyLops is available [here](https://pylops.readthedocs.io/).
 
+Visit this page to get started learning about different operators and their applications as well as how to
+create new operators yourself and make it to the ``Contributors`` list.
+
 Performance benchmarks (forward and adjoint time and peak memory of every operator, tracked nightly with
 [airspeed velocity](https://asv.readthedocs.io) in the [pylops-asv](https://github.com/PyLops/pylops-asv) repository)
 are published [here](https://pylops.github.io/pylops-asv/).
-
-Visit this page to get started learning about different operators and their applications as well as how to
-create new operators yourself and make it to the ``Contributors`` list.
 
 ## History
 PyLops was initially written by [Equinor](https://www.equinor.com).
