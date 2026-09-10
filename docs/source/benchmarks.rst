@@ -9,8 +9,7 @@ suite measures the wall time and the peak memory of the forward (``matvec``) and
 adjoint (``rmatvec``) passes.
 
 The benchmark suite lives in a dedicated repository,
-`PyLops/pylops-asv <https://github.com/PyLops/pylops-asv>`_, so that the library
-itself stays free of benchmarking code, results and CI. A GitHub Action in that
+`PyLops/pylops-asv <https://github.com/PyLops/pylops-asv>`_. A GitHub Action in that
 repository benchmarks the heads of the ``master`` and ``dev`` branches every night
 (as well as the latest release), and the resulting website is published at
 https://pylops.github.io/pylops-asv/. Older releases can be benchmarked retroactively
