@@ -101,6 +101,7 @@ PyLops is a `NUMFOCUS <https://numfocus.org/sponsored-projects/affiliated-projec
 
    adding.rst
    addingsolver.rst
+   benchmarks.rst
    contributing.rst
    changelog.rst
    papers.rst
