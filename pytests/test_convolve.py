@@ -12,7 +12,7 @@ else:
     from scipy.signal.windows import triang
 
     backend = "numpy"
-
+import numpy as npp
 import pytest
 
 from pylops import VStack
@@ -41,7 +41,7 @@ def _broadcast_filter(h, dims, axis):
     returning a filter with the same number of dimensions as the model"""
     shape = list(dims)
     shape[axis] = h.size
-    hdims = np.ones(len(dims), dtype=int)
+    hdims = npp.ones(len(dims), dtype=int)
     hdims[axis] = h.size
     return (h.reshape(tuple(hdims)) * np.ones(tuple(shape), dtype=h.dtype)).astype(
         h.dtype
@@ -160,6 +160,26 @@ par2_3d = {
     "offset": (nfilt[0] // 2 - 1, nfilt[1] // 2 + 1, nfilt[2] // 2 + 1),
     "axis": 0,
 }  # non-zero phase, first direction
+
+
+def test_Convolve1D_shape_error():
+    """Error raised by Convolve1D operator when the filter cannot be broadcast
+    against the model"""
+    # filter with more dimensions than the model
+    with pytest.raises(ValueError, match="must have either 1 or 2 dimensions"):
+        Convolve1D((100, 200), h=np.zeros((20, 10, 10)), offset=5, axis=0)
+
+    # filter with fewer dimensions than the model (but not 1d)
+    with pytest.raises(ValueError, match="must have either 1 or 3 dimensions"):
+        Convolve1D((10, 100, 200), h=np.zeros((20, 10)), offset=5, axis=0)
+
+    # right number of dimensions, incompatible size away from axis (compact filter)
+    with pytest.raises(ValueError, match="cannot be broadcast"):
+        Convolve1D((100, 200), h=np.zeros((20, 10)), offset=5, axis=0)
+
+    # same, for an extended filter
+    with pytest.raises(ValueError, match="cannot be broadcast"):
+        Convolve1D((100, 200), h=np.zeros((300, 10)), offset=5, axis=0)
 
 
 def test_Convolve1D_method_error():

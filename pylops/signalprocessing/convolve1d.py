@@ -75,9 +75,17 @@ def _broadcast_dimsd(
     """
     mshape = list(dims)
     mshape[axis] = 1
-    hshape = [1] * len(dims) if len(hshape) == 1 else list(hshape)
-    hshape[axis] = 1
-    dimsd = list(np.broadcast_shapes(tuple(mshape), tuple(hshape)))
+    bshape = [1] * len(dims) if len(hshape) == 1 else list(hshape)
+    bshape[axis] = 1
+    try:
+        dimsd = list(np.broadcast_shapes(tuple(mshape), tuple(bshape)))
+    except ValueError:
+        msg = (
+            f"`h` of shape {tuple(int(n) for n in hshape)} cannot be broadcast "
+            f"against a model of shape {tuple(int(d) for d in dims)} over the "
+            f"dimensions other than axis={axis}"
+        )
+        raise ValueError(msg) from None
     dimsd[axis] = nsize
     return tuple(dimsd)
 
@@ -338,6 +346,8 @@ class Convolve1D(LinearOperator):
     ValueError
         If ``method`` provided is not allowed
     ValueError
+        If ``h`` has neither 1 nor ``len(dims)`` dimensions
+    ValueError
         If the shape of ``h`` cannot be broadcast against ``dims`` over the
         dimensions other than ``axis``
 
@@ -394,8 +404,15 @@ class Convolve1D(LinearOperator):
         dtype: DTypeLike = "float64",
         name: str = "C",
     ) -> None:
+        dims = _value_or_sized_to_tuple(dims)
+        if h.ndim not in (1, len(dims)):
+            msg = (
+                f"`h` must have either 1 or {len(dims)} dimensions (the same as the "
+                f"model), got {h.ndim}"
+            )
+            raise ValueError(msg)
         nh = h.size if h.ndim == 1 else h.shape[axis]
-        if nh <= _value_or_sized_to_tuple(dims)[axis]:
+        if nh <= dims[axis]:
             convop = _Convolve1Dshort
         else:
             convop = _Convolve1Dlong
