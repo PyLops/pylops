@@ -157,7 +157,10 @@ class _Convolve1Dshort(LinearOperator):
                 (max(self.offset, 0), -min(self.offset, 0)),
                 axis=haxis,
             )
-        self.hstar = ncp.flip(self.h, axis=haxis)
+        # ``flip`` returns a view with negative strides, which the direct
+        # convolution of some backends (notably cupy) reads incorrectly, so the
+        # flipped filter is made contiguous before it reaches ``convfunc``
+        self.hstar = ncp.ascontiguousarray(ncp.flip(self.h, axis=haxis))
 
         # add dimensions to filter to match dimensions of model and data
         if self.h.ndim == 1:
@@ -226,7 +229,10 @@ class _Convolve1Dlong(LinearOperator):
         self.offset = 2 * (self.dims[self.axis] // 2 - int(offset))
         if self.dims[self.axis] % 2 == 0:
             self.offset -= 1
-        self.hstar = ncp.flip(self.h, axis=haxis)
+        # ``flip`` returns a view with negative strides, which the direct
+        # convolution of some backends (notably cupy) reads incorrectly, so the
+        # flipped filter is made contiguous before it reaches ``convfunc``
+        self.hstar = ncp.ascontiguousarray(ncp.flip(self.h, axis=haxis))
 
         self.pad = np.zeros((len(dims), 2), dtype=int)
         self.pad[self.axis, 0] = max(self.offset, 0)
