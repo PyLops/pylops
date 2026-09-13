@@ -238,7 +238,9 @@ def Deghosting(
     nt : :obj:`int`
         Number of samples along the time axis
     nr : :obj:`int` or :obj:`tuple`
-        Number of samples along the receiver axis (or axes)
+        Number of samples along the receiver axis (or axes) of the separated
+        pressure consituents. If ``restriction`` is not provided, this equals
+        to the number of samples along the receiver axis (or axes) of ``p``.
     dt : :obj:`float`
         Sampling along the time axis
     dr : :obj:`float` or :obj:`tuple`
@@ -267,9 +269,10 @@ def Deghosting(
     restriction : :obj:`pylops.LinearOperator`, optional
         Restriction operator
     sptransf : :obj:`pylops.LinearOperator`, optional
-        Sparsifying operator
+        Sparsifying operator used to represent the model in a
+        compressed domain.
     solver : :obj:`float`, optional
-        Function handle of solver to be used if ``kind='inverse'``
+        Function handle of solver
     dottest : :obj:`bool`, optional
         Apply dot-test
     dtype : :obj:`str`, optional
@@ -283,7 +286,11 @@ def Deghosting(
     pup : :obj:`numpy.ndarray`
         Up-going pressure (or particle velocity) wavefield
     pdown : :obj:`numpy.ndarray`
-        Down-going (or particle velocity) wavefield
+        Down-going (or particle velocity) wavefield. Note that when a ``restriction``
+        operator is provided, this is the down-going wavefield reconstructed at the
+        finely sampled spatial axes by applying the ghosting operator to the estimated
+        up-going wavefield (therefore it does not contain the direct arrival and
+        its source ghost).
 
     Raises
     ------
@@ -316,6 +323,14 @@ def Deghosting(
     :class:`pylops.waveeqprocessing.PhaseShift` operator. Note that :math:`+` is
     used for the pressure data, whilst :math:`-` is used for the vertical velocity
     data.
+
+    In the case of densely sampled data, the above equation can be solved in a
+    least-squares sense via a linear solver (e.g., :func:`scipy.sparse.linalg.lsqr`).
+    Conversely, in the case of sparsely sampled data, a restriction operator can be
+    applied to the propagator to account for the missing data. In this case, the
+    solution can be regularized by applying a sparsifying transform to the
+    model (e.g., a patched FK transform) and solving the problem in a compressed
+    domain via a sparse solver (e.g., :func:`pylops.optimization.sparsity.ista`).
 
     .. [1] Amundsen, L., 1993, Wavenumber-based filtering of marine point-source
        data: GEOPHYSICS, 58, 1335–1348.
@@ -370,8 +385,8 @@ def Deghosting(
         Dottest(Dupop, nt * nrs, nt * nrs, verb=True)
 
     # Add restriction
+    Dupop_norestr = Dupop
     if restriction is not None:
-        Dupop_norestr = Dupop
         Dupop = restriction * Dupop
 
     # Add sparsify transform
@@ -388,11 +403,14 @@ def Deghosting(
     # Inversion
     pup = solver(Dupop, d.ravel(), **kwargs_solver)[0]
 
-    # Apply sparse transform
-    if sptransf is not None:
-        p = Dupop_norestr * pup  # reconstruct p at finely sampled spatial axes
-        pup = sptransf * pup
+    # Reconstruct total wavefield at finely sampled spatial axes
+    if restriction is not None:
+        p = Dupop_norestr * pup
         p = np.real(p).reshape(dims)
+
+    # Reconstruct up-going wavefield (apply sparsifying transform if provided)
+    if sptransf is not None:
+        pup = sptransf * pup
 
     # Finalize estimates
     pup = np.real(pup).reshape(dims)

@@ -11,8 +11,10 @@ else:
 import numpy as npp
 import pytest
 
-from pylops.basicoperators import Identity
+from pylops.basicoperators import Identity, Restriction
 from pylops.optimization.basic import lsqr
+from pylops.optimization.sparsity import fista
+from pylops.signalprocessing import FFT2D
 from pylops.utils import dottest
 from pylops.utils.seismicevents import hyperbolic2d, makeaxis
 from pylops.utils.wavelets import ricker
@@ -193,3 +195,78 @@ def test_Deghosting_2dsignal(par):
     )
 
     assert np.linalg.norm(p2d_minus_inv - p2d_minus) / np.linalg.norm(p2d_minus) < 3e-1
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1v), (par2v)])
+def test_Deghosting_2dsignal_sptransf(par):
+    """Deghosting of 2d data with FK sparsifying transform"""
+    p2d, p2d_minus = create_data2D(1 if par["kind"] == "p" else -1)
+
+    FOp = FFT2D(
+        dims=(parmod["nt"], parmod["nx"]),
+        sampling=(parmod["dt"], parmod["dx"]),
+        dtype=np.complex128,
+    )
+
+    p2d_minus_inv, _ = Deghosting(
+        p2d,
+        parmod["nt"],
+        parmod["nx"],
+        parmod["dt"],
+        parmod["dx"],
+        vel_sep,
+        zrec,
+        kind=par["kind"],
+        win=np.ones_like(p2d),
+        npad=0,
+        ntaper=0,
+        sptransf=FOp.H,
+        solver=fista,
+        dtype=np.float32,
+        **dict(eps=1e-4, niter=100),
+    )
+
+    assert np.linalg.norm(p2d_minus_inv - p2d_minus) / np.linalg.norm(p2d_minus) < 2e-1
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1v), (par2v)])
+def test_Deghosting_2dsignal_restr(par):
+    """Deghosting of 2d data with restriction and FK sparsifying transform"""
+    np.random.seed(10)
+
+    p2d, p2d_minus = create_data2D(1 if par["kind"] == "p" else -1)
+
+    # Restriction operator (90% of available traces)
+    nsub = int(npp.round(0.9 * parmod["nx"]))
+    iava = np.asarray(npp.sort(npp.random.permutation(parmod["nx"])[:nsub]))
+    Rop = Restriction((parmod["nt"], parmod["nx"]), iava, axis=1, dtype=np.complex128)
+    p2d_sub = np.real(Rop * p2d.ravel()).reshape(parmod["nt"], nsub)
+
+    FOp = FFT2D(
+        dims=(parmod["nt"], parmod["nx"]),
+        sampling=(parmod["dt"], parmod["dx"]),
+        dtype=np.complex128,
+    )
+
+    p2d_minus_inv, p2d_plus_inv = Deghosting(
+        p2d_sub,
+        parmod["nt"],
+        parmod["nx"],
+        parmod["dt"],
+        parmod["dx"],
+        vel_sep,
+        zrec,
+        kind=par["kind"],
+        win=np.ones_like(p2d_sub),
+        npad=0,
+        ntaper=0,
+        restriction=Rop,
+        sptransf=FOp.H,
+        solver=fista,
+        dtype=np.float32,
+        **dict(eps=1e-4, niter=100),
+    )
+
+    assert p2d_minus_inv.shape == (parmod["nt"], parmod["nx"])
+    assert p2d_plus_inv.shape == (parmod["nt"], parmod["nx"])
+    assert np.linalg.norm(p2d_minus_inv - p2d_minus) / np.linalg.norm(p2d_minus) < 4e-1
