@@ -12,7 +12,7 @@ else:
     from scipy.signal.windows import triang
 
     backend = "numpy"
-import numpy as npp
+
 import pytest
 
 from pylops import VStack
@@ -41,11 +41,11 @@ def _broadcast_filter(h, dims, axis):
     returning a filter with the same number of dimensions as the model"""
     shape = list(dims)
     shape[axis] = h.size
-    hdims = npp.ones(len(dims), dtype=int)
+    hdims = [
+        1,
+    ] * len(dims)
     hdims[axis] = h.size
-    return (h.reshape(tuple(hdims)) * np.ones(tuple(shape), dtype=h.dtype)).astype(
-        h.dtype
-    )
+    return (h.reshape(hdims) * np.ones(shape, dtype=h.dtype)).astype(h.dtype)
 
 
 def _apply_along_axis(Op, x, axis):
@@ -385,7 +385,14 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
     """
     np.random.seed(10)
 
+    def nsamples(n):
+        """Number of samples of the data along ``axis``: an extended filter
+        lengthens the model, a compact one leaves it unchanged"""
+        return n if hlen == "short" else n + nheven
+
     def make_filter(dims, axis):
+        """Make a filter of length ``nheven`` along ``axis``, either as a 1d
+        array or with the same number of dimensions as the model"""
         nh = nheven if hlen == "short" else dims[axis] + nheven
         h = triang(nh, sym=True).astype(dtype)
         return h, (h if hndim == "1d" else _broadcast_filter(h, dims, axis))
@@ -404,10 +411,12 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
             method=method,
             dtype=dtype,
         )
+        nyd = nsamples(par["ny"]) if par["axis"] == 0 else par["ny"]
+        nxd = nsamples(par["nx"]) if par["axis"] == 1 else par["nx"]
         assert dottest(
             Cop,
-            np.prod(Cop.dimsd),
-            np.prod(Cop.dims),
+            nyd * nxd,
+            par["ny"] * par["nx"],
             rtol=1e-4 if dtype == np.float32 else 1e-6,
             backend=backend,
         )
@@ -446,10 +455,13 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
         method=method,
         dtype=dtype,
     )
+    nzd = nsamples(par["nz"]) if par["axis"] == 0 else par["nz"]
+    nyd = nsamples(par["ny"]) if par["axis"] == 1 else par["ny"]
+    nxd = nsamples(par["nx"]) if par["axis"] == 2 else par["nx"]
     assert dottest(
         Cop,
-        np.prod(Cop.dimsd),
-        np.prod(Cop.dims),
+        nzd * nyd * nxd,
+        par["nz"] * par["ny"] * par["nx"],
         rtol=1e-4 if dtype == np.float32 else 1e-6,
         backend=backend,
     )
@@ -473,13 +485,14 @@ def test_Convolve1D_broadcast(par, dtype, method, hlen):
     )
     offset = par["offset"] if hlen == "short" else nx // 2
 
+    nxd = nh if hlen == "long" else nx
     Cop = Convolve1D((1, nx), h=hs, offset=offset, axis=-1, method=method, dtype=dtype)
     assert Cop.dims == (1, nx)
-    assert tuple(Cop.dimsd) == (ntraces, nh if hlen == "long" else nx)
+    assert tuple(Cop.dimsd) == (ntraces, nxd)
     assert dottest(
         Cop,
-        np.prod(Cop.dimsd),
-        np.prod(Cop.dims),
+        ntraces * nxd,
+        1 * nx,
         rtol=1e-4 if dtype == np.float32 else 1e-6,
         backend=backend,
     )
@@ -498,7 +511,7 @@ def test_Convolve1D_broadcast(par, dtype, method, hlen):
         ]
     )
     x = np.random.normal(0.0, 1.0, nx).astype(dtype)
-    y = np.random.normal(0.0, 1.0, int(np.prod(Cop.dimsd))).astype(dtype)
+    y = np.random.normal(0.0, 1.0, ntraces * nxd).astype(dtype)
     assert_array_almost_equal(Cop * x, Vop * x, decimal=3)
     assert_array_almost_equal(Cop.H * y, Vop.H * y, decimal=3)
 
