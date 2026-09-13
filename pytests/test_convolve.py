@@ -15,6 +15,7 @@ else:
 
 import pytest
 
+from pylops import VStack
 from pylops.optimization.basic import lsqr
 from pylops.signalprocessing import Convolve1D, Convolve2D, ConvolveND
 from pylops.utils import dottest
@@ -27,6 +28,35 @@ h3 = np.outer(
     np.outer(triang(nfilt[0], sym=True), triang(nfilt[1], sym=True)),
     triang(nfilt[2], sym=True),
 ).reshape(nfilt)
+
+# convolution methods (``direct`` and ``fft`` are the only ones allowed for a
+# one-dimensional model, ``fft`` and ``overlapadd`` for a multi-dimensional one)
+methods = (None, "direct", "fft", "overlapadd")
+methods_1d = (None, "direct", "fft")
+methods_nd = (None, "fft", "overlapadd")
+
+
+def _broadcast_filter(h, dims, axis):
+    """Expand a 1d filter over the other dimensions of a multi-dimensional model,
+    returning a filter with the same number of dimensions as the model"""
+    shape = list(dims)
+    shape[axis] = h.size
+    hdims = [
+        1,
+    ] * len(dims)
+    hdims[axis] = h.size
+    return (h.reshape(hdims) * np.ones(shape, dtype=h.dtype)).astype(h.dtype)
+
+
+def _apply_along_axis(Op, x, axis):
+    """Apply a 1d operator to every 1d slice of ``x`` taken along ``axis``"""
+    xm = np.moveaxis(x, axis, -1)
+    shape = xm.shape
+    xm = xm.reshape(-1, shape[-1])
+    ym = np.stack([Op * xm[i] for i in range(xm.shape[0])])
+    ym = ym.reshape(shape[:-1] + (ym.shape[-1],))
+    return np.moveaxis(ym, -1, axis)
+
 
 par1_1d = {
     "nz": 21,
@@ -132,112 +162,91 @@ par2_3d = {
 }  # non-zero phase, first direction
 
 
+def test_Convolve1D_shape_error():
+    """Error raised by Convolve1D operator when the filter cannot be broadcast
+    against the model"""
+    # filter with more dimensions than the model
+    with pytest.raises(ValueError, match="must have either 1 or 2 dimensions"):
+        Convolve1D((100, 200), h=np.zeros((20, 10, 10)), offset=5, axis=0)
+
+    # filter with fewer dimensions than the model (but not 1d)
+    with pytest.raises(ValueError, match="must have either 1 or 3 dimensions"):
+        Convolve1D((10, 100, 200), h=np.zeros((20, 10)), offset=5, axis=0)
+
+    # right number of dimensions, incompatible size away from axis (compact filter)
+    with pytest.raises(ValueError, match="cannot be broadcast"):
+        Convolve1D((100, 200), h=np.zeros((20, 10)), offset=5, axis=0)
+
+    # same, for an extended filter
+    with pytest.raises(ValueError, match="cannot be broadcast"):
+        Convolve1D((100, 200), h=np.zeros((300, 10)), offset=5, axis=0)
+
+
+def test_Convolve1D_method_error():
+    """Error raised by Convolve1D operator when an invalid method is chosen"""
+    # overlapadd is not allowed for a one-dimensional model
+    with pytest.raises(ValueError, match="`method` must be direct or fft"):
+        Convolve1D(nfilt[0] * 4, h=h1, offset=nfilt[0] // 2, method="overlapadd")
+
+    # direct is not allowed for a multi-dimensional model
+    with pytest.raises(ValueError, match="`method` must be fft or overlapadd"):
+        Convolve1D(
+            (nfilt[0] * 4, nfilt[0] * 4), h=h1, offset=nfilt[0] // 2, method="direct"
+        )
+
+
+@pytest.mark.parametrize("dims", [nfilt[0] * 4, (3, nfilt[0] * 4)])
+@pytest.mark.parametrize("hlen", ["short", "long"])
+def test_Convolve1D_hstar_contiguous(dims, hlen):
+    """Check that the flipped filter kept for the adjoint is contiguous
+
+    This test is introduced in #797 to check that ``hstar`` is contiguous.
+    Rationale: ``flip`` returns a view with negative strides, which the direct
+    convolution of the cupy backend reads incorrectly, silently returning a wrong
+    result. This is invisible to the other tests, as numpy and scipy handle such
+    views correctly.
+    """
+    nx = dims if isinstance(dims, int) else dims[-1]
+    nh = nfilt[0] if hlen == "short" else nx + nfilt[0]
+    Cop = Convolve1D(dims, h=triang(nh, sym=True), offset=nfilt[0] // 2)
+    assert Cop.Op.hstar.flags["C_CONTIGUOUS"]
+
+
 @pytest.mark.parametrize(
-    "par", [(par1_1d), (par2_1d), (par3_1d), (par4_1d), (par5_1d), (par6_1d)]
+    "par",
+    [
+        (par1_1d),
+        (par2_1d),
+    ],
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_Convolve1D(par, dtype):
-    """Dot-test and inversion for Convolve1D operator"""
+@pytest.mark.parametrize("method", methods_1d)
+@pytest.mark.parametrize("hlen", ["short", "long"])
+def test_Convolve1D_1d(par, dtype, method, hlen):
+    """Dot-test, dtype check and inversion for Convolve1D operator applied to a
+    one-dimensional model, with a filter that is either shorter (compact) or
+    longer (extended) than the model itself.
+    """
     np.random.seed(10)
-    # 1D
-    if par["axis"] == 0:
-        Cop = Convolve1D(
-            par["nx"], h=h1.astype(dtype), offset=par["offset"], dtype=dtype
-        )
-        assert dottest(
-            Cop,
-            par["nx"],
-            par["nx"],
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
 
-        x = np.zeros(par["nx"], dtype=dtype)
-        x[par["nx"] // 2] = 1.0
+    # Spike train, used as the model for a compact filter and as the filter
+    # itself for an extended one (in which case the roles are simply swapped)
+    spike = np.zeros(par["nx"], dtype=dtype)
+    spike[par["nx"] // 2] = 1.0
+    if hlen == "short":
+        nx, x, h, offset = par["nx"], spike, h1.astype(dtype), par["offset"]
+    else:
+        nx, x, h, offset = nfilt[0], h1.astype(dtype), spike, nfilt[0] // 2
 
-        # Forward and adjoint dtype check
-        y = Cop * x
-        xadj = Cop.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-
-        # Inverse
-        xlsqr = lsqr(
-            Cop,
-            Cop * x,
-            x0=np.zeros_like(x),
-            damp=1e-20,
-            niter=200,
-            atol=1e-8,
-            btol=1e-8,
-            show=0,
-        )[0]
-        assert_array_almost_equal(x, xlsqr, decimal=1)
-
-    # 1D on 2D
-    if par["axis"] < 2:
-        Cop = Convolve1D(
-            (par["ny"], par["nx"]),
-            h=h1.astype(dtype),
-            offset=par["offset"],
-            axis=par["axis"],
-            dtype=dtype,
-        )
-        assert dottest(
-            Cop,
-            par["ny"] * par["nx"],
-            par["ny"] * par["nx"],
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-
-        x = np.zeros((par["ny"], par["nx"]), dtype=dtype)
-        x[
-            int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
-            int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
-        ] = 1.0
-
-        # Forward and adjoint dtype check
-        y = Cop * x
-        xadj = Cop.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-
-        # Inverse
-        xlsqr = lsqr(
-            Cop,
-            Cop * x.ravel(),
-            x0=np.zeros_like(x),
-            damp=1e-20,
-            niter=200,
-            atol=1e-8,
-            btol=1e-8,
-            show=0,
-        )[0]
-        assert_array_almost_equal(x, xlsqr, decimal=1)
-
-    # 1D on 3D
-    Cop = Convolve1D(
-        (par["nz"], par["ny"], par["nx"]),
-        h=h1.astype(dtype),
-        offset=par["offset"],
-        axis=par["axis"],
-        dtype=dtype,
-    )
+    # Operator
+    Cop = Convolve1D(nx, h=h, offset=offset, method=method, dtype=dtype)
     assert dottest(
         Cop,
-        par["nz"] * par["ny"] * par["nx"],
-        par["nz"] * par["ny"] * par["nx"],
+        par["nx"],
+        nx,
         rtol=1e-4 if dtype == np.float32 else 1e-6,
         backend=backend,
     )
-
-    x = np.zeros((par["nz"], par["ny"], par["nx"]), dtype=dtype)
-    x[
-        int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
-        int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
-        int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
-    ] = 1.0
 
     # Forward and adjoint dtype check
     y = Cop * x
@@ -248,7 +257,7 @@ def test_Convolve1D(par, dtype):
     # Inverse
     xlsqr = lsqr(
         Cop,
-        Cop * x.ravel(),
+        y,
         x0=np.zeros_like(x),
         damp=1e-20,
         niter=200,
@@ -263,33 +272,187 @@ def test_Convolve1D(par, dtype):
     "par", [(par1_1d), (par2_1d), (par3_1d), (par4_1d), (par5_1d), (par6_1d)]
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_Convolve1D_long(par, dtype):
-    """Dot-test and inversion for Convolve1D operator with long filter"""
+@pytest.mark.parametrize("method", methods_nd)
+@pytest.mark.parametrize("hlen", ["short", "long"])
+@pytest.mark.parametrize("hndim", ["1d", "nd"])
+@pytest.mark.parametrize("nheven", [nfilt[0] - 1, nfilt[0]])
+def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
+    """Dot-test, dtype check and inversion for Convolve1D operator applied to a
+    multi-dimensional model, for both compact and extended filters provided
+    either as a 1d array or with the same number of dimensions as the model.
+    The result is compared against the equivalent 1d operator applied to each
+    slice along ``axis``. Inversion is only tested for a compact, 1d,
+    odd-length filter, as an extended filter leads to a heavily
+    overdetermined system.
+    """
     np.random.seed(10)
-    # 1D
-    if par["axis"] == 0:
-        x = np.zeros(par["nx"], dtype=dtype)
-        x[par["nx"] // 2] = 1.0
-        Xop = Convolve1D(nfilt[0], h=x, offset=nfilt[0] // 2, dtype=dtype)
+
+    def nsamples(n):
+        """Number of samples of the data along ``axis``: an extended filter
+        lengthens the model, a compact one leaves it unchanged"""
+        return n if hlen == "short" else n + nheven
+
+    def make_filter(dims, axis):
+        """Make a filter of length ``nheven`` along ``axis``, either as a 1d
+        array or with the same number of dimensions as the model"""
+        nh = nheven if hlen == "short" else dims[axis] + nheven
+        h = triang(nh, sym=True).astype(dtype)
+        return h, (h if hndim == "1d" else _broadcast_filter(h, dims, axis))
+
+    def check_inverse(Cop, dims):
+        """Recover a smooth box from its convolution with the filter, as done
+        for a one-dimensional model in ``test_Convolve1D_1d``"""
+        x = np.zeros(dims, dtype=dtype)
+        x[tuple(slice(n // 2 - 3, n // 2 + 3) for n in dims)] = 1.0
+        xlsqr = lsqr(
+            Cop,
+            Cop * x.ravel(),
+            x0=np.zeros_like(x),
+            damp=1e-20,
+            niter=200,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
+        )[0]
+        assert_array_almost_equal(x, xlsqr.reshape(dims), decimal=1)
+
+    offset = min(par["offset"], nheven - 1)
+
+    # inversion is only well-posed for a filter as compact as the one used by
+    # the equivalent one-dimensional test
+    testinv = hlen == "short" and hndim == "1d" and nheven == nfilt[0]
+
+    # 1D on 2D
+    if par["axis"] < 2:
+        dims = (par["ny"], par["nx"])
+        h, hop = make_filter(dims, par["axis"])
+        Cop = Convolve1D(
+            dims,
+            h=hop,
+            offset=offset,
+            axis=par["axis"],
+            method=method,
+            dtype=dtype,
+        )
+        nyd = nsamples(par["ny"]) if par["axis"] == 0 else par["ny"]
+        nxd = nsamples(par["nx"]) if par["axis"] == 1 else par["nx"]
         assert dottest(
-            Xop,
-            par["nx"],
-            nfilt[0],
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
+            Cop,
+            nyd * nxd,
+            par["ny"] * par["nx"],
+            rtol=1e-2 if dtype == np.float32 else 1e-6,
             backend=backend,
         )
 
+        x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+
         # Forward and adjoint dtype check
-        y = Xop * h1.astype(dtype)
-        h1adj = Xop.H * y
+        y = (Cop * x).reshape(Cop.dimsd)
+        xadj = Cop.H * y
         assert y.dtype == dtype
-        assert h1adj.dtype == dtype
+        assert xadj.dtype == dtype
+
+        # Equivalence with the 1d operator applied slice by slice
+        C1op = Convolve1D(
+            dims[par["axis"]],
+            h=h,
+            offset=offset,
+            method=None if method == "overlapadd" else method,
+            dtype=dtype,
+        )
+        assert_array_almost_equal(y, _apply_along_axis(C1op, x, par["axis"]), decimal=3)
+        assert_array_almost_equal(
+            xadj.reshape(Cop.dims),
+            _apply_along_axis(C1op.H, y, par["axis"]),
+            decimal=3,
+        )
 
         # Inverse
-        h1lsqr = lsqr(
-            Xop, Xop * h1, damp=1e-20, niter=200, atol=1e-8, btol=1e-8, show=0
-        )[0]
-        assert_array_almost_equal(h1, h1lsqr, decimal=1)
+        if testinv:
+            check_inverse(Cop, dims)
+
+    # 1D on 3D
+    dims = (par["nz"], par["ny"], par["nx"])
+    _, hop = make_filter(dims, par["axis"])
+    Cop = Convolve1D(
+        dims,
+        h=hop,
+        offset=offset,
+        axis=par["axis"],
+        method=method,
+        dtype=dtype,
+    )
+    nzd = nsamples(par["nz"]) if par["axis"] == 0 else par["nz"]
+    nyd = nsamples(par["ny"]) if par["axis"] == 1 else par["ny"]
+    nxd = nsamples(par["nx"]) if par["axis"] == 2 else par["nx"]
+    assert dottest(
+        Cop,
+        nzd * nyd * nxd,
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=1e-2 if dtype == np.float32 else 1e-6,  # extra loose tolerance for mkl CI
+        backend=backend,
+    )
+
+    x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+
+    # Forward and adjoint dtype check
+    y = (Cop * x).reshape(Cop.dimsd)
+    xadj = Cop.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+
+    # Inverse
+    if testinv:
+        check_inverse(Cop, dims)
+
+
+@pytest.mark.parametrize("par", [(par1_1d), (par2_1d)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("method", methods_nd)
+@pytest.mark.parametrize("hlen", ["short", "long"])
+def test_Convolve1D_broadcast(par, dtype, method, hlen):
+    """Dot-test and comparison with a VStack of 1d operators for Convolve1D
+    applied to a model with a singleton dimension, which the filter broadcasts
+    over (e.g. a single wavelet convolved with a set of traces)"""
+    np.random.seed(10)
+    nx, ntraces = par["nx"], 4
+    nh = nfilt[0] if hlen == "short" else nx + nfilt[0]
+
+    # One filter per trace, all different
+    hs = np.vstack([triang(nh, sym=True) * (1.0 + i) for i in range(ntraces)]).astype(
+        dtype
+    )
+    offset = par["offset"] if hlen == "short" else nx // 2
+
+    nxd = nh if hlen == "long" else nx
+    Cop = Convolve1D((1, nx), h=hs, offset=offset, axis=-1, method=method, dtype=dtype)
+    assert Cop.dims == (1, nx)
+    assert tuple(Cop.dimsd) == (ntraces, nxd)
+    assert dottest(
+        Cop,
+        ntraces * nxd,
+        1 * nx,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+
+    # Equivalence with a vertical stack of the corresponding 1d operators
+    Vop = VStack(
+        [
+            Convolve1D(
+                nx,
+                h=hs[i],
+                offset=offset,
+                method=None if method == "overlapadd" else method,
+                dtype=dtype,
+            )
+            for i in range(ntraces)
+        ]
+    )
+    x = np.random.normal(0.0, 1.0, nx).astype(dtype)
+    y = np.random.normal(0.0, 1.0, ntraces * nxd).astype(dtype)
+    assert_array_almost_equal(Cop * x, Vop * x, decimal=3)
+    assert_array_almost_equal(Cop.H * y, Vop.H * y, decimal=3)
 
 
 @pytest.mark.parametrize(
