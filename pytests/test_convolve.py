@@ -196,174 +196,59 @@ def test_Convolve1D_method_error():
 
 
 @pytest.mark.parametrize(
-    "par", [(par1_1d), (par2_1d), (par3_1d), (par4_1d), (par5_1d), (par6_1d)]
-)
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("method", methods)
-def test_Convolve1D_short(par, dtype, method):
-    """Dot-test and inversion for Convolve1D operator with short filter"""
-    np.random.seed(10)
-    # 1D
-    if par["axis"] == 0 and method in methods_1d:
-        Cop = Convolve1D(
-            par["nx"],
-            h=h1.astype(dtype),
-            offset=par["offset"],
-            method=method,
-            dtype=dtype,
-        )
-        assert dottest(
-            Cop,
-            par["nx"],
-            par["nx"],
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-
-        x = np.zeros(par["nx"], dtype=dtype)
-        x[par["nx"] // 2] = 1.0
-
-        # Forward and adjoint dtype check
-        y = Cop * x
-        xadj = Cop.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-
-        # Inverse
-        xlsqr = lsqr(
-            Cop,
-            Cop * x,
-            x0=np.zeros_like(x),
-            damp=1e-20,
-            niter=200,
-            atol=1e-8,
-            btol=1e-8,
-            show=0,
-        )[0]
-        assert_array_almost_equal(x, xlsqr, decimal=1)
-
-    # 1D on 2D
-    if par["axis"] < 2 and method in methods_nd:
-        Cop = Convolve1D(
-            (par["ny"], par["nx"]),
-            h=h1.astype(dtype),
-            offset=par["offset"],
-            axis=par["axis"],
-            method=method,
-            dtype=dtype,
-        )
-        assert dottest(
-            Cop,
-            par["ny"] * par["nx"],
-            par["ny"] * par["nx"],
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-
-        x = np.zeros((par["ny"], par["nx"]), dtype=dtype)
-        x[
-            int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
-            int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
-        ] = 1.0
-
-        # Forward and adjoint dtype check
-        y = Cop * x
-        xadj = Cop.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-
-        # Inverse
-        xlsqr = lsqr(
-            Cop,
-            Cop * x.ravel(),
-            x0=np.zeros_like(x),
-            damp=1e-20,
-            niter=200,
-            atol=1e-8,
-            btol=1e-8,
-            show=0,
-        )[0]
-        assert_array_almost_equal(x, xlsqr, decimal=1)
-
-    # 1D on 3D
-    if method in methods_nd:
-        Cop = Convolve1D(
-            (par["nz"], par["ny"], par["nx"]),
-            h=h1.astype(dtype),
-            offset=par["offset"],
-            axis=par["axis"],
-            method=method,
-            dtype=dtype,
-        )
-        assert dottest(
-            Cop,
-            par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-
-        x = np.zeros((par["nz"], par["ny"], par["nx"]), dtype=dtype)
-        x[
-            int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
-            int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
-            int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
-        ] = 1.0
-
-        # Forward and adjoint dtype check
-        y = Cop * x
-        xadj = Cop.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-
-        # Inverse
-        xlsqr = lsqr(
-            Cop,
-            Cop * x.ravel(),
-            x0=np.zeros_like(x),
-            damp=1e-20,
-            niter=200,
-            atol=1e-8,
-            btol=1e-8,
-            show=0,
-        )[0]
-        assert_array_almost_equal(x, xlsqr, decimal=1)
-
-
-@pytest.mark.parametrize(
-    "par", [(par1_1d), (par2_1d), (par3_1d), (par4_1d), (par5_1d), (par6_1d)]
+    "par",
+    [
+        (par1_1d),
+        (par2_1d),
+    ],
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("method", methods_1d)
-def test_Convolve1D_long(par, dtype, method):
-    """Dot-test and inversion for Convolve1D operator with long filter"""
+@pytest.mark.parametrize("hlen", ["short", "long"])
+def test_Convolve1D_1d(par, dtype, method, hlen):
+    """Dot-test, dtype check and inversion for Convolve1D operator applied to a
+    one-dimensional model, with a filter that is either shorter (compact) or
+    longer (extended) than the model itself.
+    """
     np.random.seed(10)
-    # 1D
-    if par["axis"] == 0:
-        x = np.zeros(par["nx"], dtype=dtype)
-        x[par["nx"] // 2] = 1.0
-        Xop = Convolve1D(
-            nfilt[0], h=x, offset=nfilt[0] // 2, method=method, dtype=dtype
-        )
-        assert dottest(
-            Xop,
-            par["nx"],
-            nfilt[0],
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
 
-        # Forward and adjoint dtype check
-        y = Xop * h1.astype(dtype)
-        h1adj = Xop.H * y
-        assert y.dtype == dtype
-        assert h1adj.dtype == dtype
+    # Spike train, used as the model for a compact filter and as the filter
+    # itself for an extended one (in which case the roles are simply swapped)
+    spike = np.zeros(par["nx"], dtype=dtype)
+    spike[par["nx"] // 2] = 1.0
+    if hlen == "short":
+        nx, x, h, offset = par["nx"], spike, h1.astype(dtype), par["offset"]
+    else:
+        nx, x, h, offset = nfilt[0], h1.astype(dtype), spike, nfilt[0] // 2
 
-        # Inverse
-        h1lsqr = lsqr(
-            Xop, Xop * h1, damp=1e-20, niter=200, atol=1e-8, btol=1e-8, show=0
-        )[0]
-        assert_array_almost_equal(h1, h1lsqr, decimal=1)
+    # Operator
+    Cop = Convolve1D(nx, h=h, offset=offset, method=method, dtype=dtype)
+    assert dottest(
+        Cop,
+        par["nx"],
+        nx,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+
+    # Forward and adjoint dtype check
+    y = Cop * x
+    xadj = Cop.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+
+    # Inverse
+    xlsqr = lsqr(
+        Cop,
+        y,
+        x0=np.zeros_like(x),
+        damp=1e-20,
+        niter=200,
+        atol=1e-8,
+        btol=1e-8,
+        show=0,
+    )[0]
+    assert_array_almost_equal(x, xlsqr, decimal=1)
 
 
 @pytest.mark.parametrize(
@@ -375,13 +260,13 @@ def test_Convolve1D_long(par, dtype, method):
 @pytest.mark.parametrize("hndim", ["1d", "nd"])
 @pytest.mark.parametrize("nheven", [nfilt[0] - 1, nfilt[0]])
 def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
-    """Dot-test for Convolve1D operator applied to a multi-dimensional model,
-    for both compact and extended filters provided either as a 1d array or with
-    the same number of dimensions as the model. The result is compared against
-    the equivalent 1d operator applied to each slice along ``axis``. Note that
-    inversion is not tested here as it is already covered by
-    ``test_Convolve1D_*`` and, for extended filters, the system is
-    heavily overdetermined.
+    """Dot-test, dtype check and inversion for Convolve1D operator applied to a
+    multi-dimensional model, for both compact and extended filters provided
+    either as a 1d array or with the same number of dimensions as the model.
+    The result is compared against the equivalent 1d operator applied to each
+    slice along ``axis``. Inversion is only tested for a compact, 1d,
+    odd-length filter, as an extended filter leads to a heavily
+    overdetermined system.
     """
     np.random.seed(10)
 
@@ -397,7 +282,28 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
         h = triang(nh, sym=True).astype(dtype)
         return h, (h if hndim == "1d" else _broadcast_filter(h, dims, axis))
 
+    def check_inverse(Cop, dims):
+        """Recover a smooth box from its convolution with the filter, as done
+        for a one-dimensional model in ``test_Convolve1D_1d``"""
+        x = np.zeros(dims, dtype=dtype)
+        x[tuple(slice(n // 2 - 3, n // 2 + 3) for n in dims)] = 1.0
+        xlsqr = lsqr(
+            Cop,
+            Cop * x.ravel(),
+            x0=np.zeros_like(x),
+            damp=1e-20,
+            niter=200,
+            atol=1e-8,
+            btol=1e-8,
+            show=0,
+        )[0]
+        assert_array_almost_equal(x, xlsqr.reshape(dims), decimal=1)
+
     offset = min(par["offset"], nheven - 1)
+
+    # inversion is only well-posed for a filter as compact as the one used by
+    # the equivalent one-dimensional test
+    testinv = hlen == "short" and hndim == "1d" and nheven == nfilt[0]
 
     # 1D on 2D
     if par["axis"] < 2:
@@ -444,6 +350,10 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
             decimal=3,
         )
 
+        # Inverse
+        if testinv:
+            check_inverse(Cop, dims)
+
     # 1D on 3D
     dims = (par["nz"], par["ny"], par["nx"])
     _, hop = make_filter(dims, par["axis"])
@@ -465,6 +375,18 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
         rtol=1e-4 if dtype == np.float32 else 1e-6,
         backend=backend,
     )
+
+    x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+
+    # Forward and adjoint dtype check
+    y = (Cop * x).reshape(Cop.dimsd)
+    xadj = Cop.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+
+    # Inverse
+    if testinv:
+        check_inverse(Cop, dims)
 
 
 @pytest.mark.parametrize("par", [(par1_1d), (par2_1d)])
