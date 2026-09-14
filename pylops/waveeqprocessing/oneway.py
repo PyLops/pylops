@@ -3,7 +3,7 @@ __all__ = [
     "Deghosting",
 ]
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 
 import numpy as np
 from scipy.sparse.linalg import lsqr
@@ -13,7 +13,7 @@ from pylops.signalprocessing import FFT
 from pylops.utils import dottest as Dottest
 from pylops.utils.backend import to_cupy_conditional
 from pylops.utils.tapers import taper2d, taper3d
-from pylops.utils.typing import DTypeLike, NDArray, Tfftengine_nsf
+from pylops.utils.typing import DTypeLike, NDArray, SamplingLike, Tfftengine_nsf
 
 
 class _PhaseShift(LinearOperator):
@@ -204,7 +204,7 @@ def Deghosting(
     nt: int,
     nr: int | tuple[int, int],
     dt: float,
-    dr: Sequence[float],
+    dr: float | SamplingLike,
     vel: float,
     zrec: float,
     kind: str | None = "p",
@@ -355,7 +355,7 @@ def Deghosting(
         nkx = nr[0] + 2 * npad[0]
         kx = np.fft.ifftshift(np.fft.fftfreq(nkx, dr[0]))
         nky = nr[1] + 2 * npad[1]
-        ky = np.fft.ifftshift(np.fft.fftfreq(nky, dr))
+        ky = np.fft.ifftshift(np.fft.fftfreq(nky, dr[1]))
     nf = nt
     freq = np.fft.rfftfreq(nf, dt)
 
