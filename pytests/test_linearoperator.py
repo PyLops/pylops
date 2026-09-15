@@ -12,6 +12,7 @@ else:
     from numpy.testing import assert_array_almost_equal, assert_array_equal
 
     backend = "numpy"
+import numpy as npp
 import pytest
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
@@ -19,6 +20,7 @@ from scipy.sparse.linalg import LinearOperator as spLinearOperator
 import pylops
 from pylops import LinearOperator
 from pylops.basicoperators import (
+    BlockDiag,
     Diagonal,
     FirstDerivative,
     HStack,
@@ -28,7 +30,9 @@ from pylops.basicoperators import (
     VStack,
     Zero,
 )
+from pylops.signalprocessing import Shift
 from pylops.utils import dottest
+from pylops.utils._internal import _get_dtype
 
 par1 = {"ny": 11, "nx": 11, "imag": 0, "dtype": "float64"}  # square real
 par2 = {"ny": 21, "nx": 11, "imag": 0, "dtype": "float64"}  # overdetermined real
@@ -82,7 +86,52 @@ def test_scaled(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
-def test_scipyop(par):
+def test_dtype_normalization(par):
+    """Verify that dtype is always stored as a numpy dtype (also when
+    provided as a string) and that it is correctly inferred when combining
+    operators
+    """
+    diag = (np.arange(par["nx"]) + par["imag"] * np.arange(par["nx"])).astype(
+        par["dtype"]
+    )
+    Dop = Diagonal(diag, dtype=par["dtype"])
+    assert isinstance(Dop.dtype, npp.dtype)
+    assert Dop.dtype == npp.dtype(par["dtype"])
+
+    # dtype assigned after operator creation
+    D1op = Diagonal(diag, dtype=par["dtype"])
+    D1op.dtype = "complex128"
+    assert isinstance(D1op.dtype, npp.dtype)
+    assert D1op.dtype == npp.dtype("complex128")
+
+    # dtype inference from operators with string dtype (Shift overwrites
+    # its dtype after creation)
+    Sop = Shift(par["nx"], 1.5, real=False, dtype=par["dtype"])
+    assert isinstance(Sop.dtype, npp.dtype)
+    assert _get_dtype([Dop, Sop]) == npp.dtype(par["dtype"])
+    assert _get_dtype([], ["float32", par["dtype"]]) == npp.dtype(par["dtype"])
+    for Op in (HStack([Dop, Sop]), VStack([Dop, Sop]), BlockDiag([Dop, Sop])):
+        assert isinstance(Op.dtype, npp.dtype)
+        assert Op.dtype == npp.dtype(par["dtype"])
+
+
+def test_dtype_default():
+    """Verify that dtype defaults to float64 when not provided (also
+    overwriting a dtype set before calling super().__init__)
+    """
+
+    # dtype not provided
+    Lop = LinearOperator(shape=(10, 20), dtype=None)
+    assert isinstance(Lop.dtype, npp.dtype)
+    assert Lop.dtype == npp.dtype("float64")
+    assert "dtype=float64" in repr(Lop)
+
+    # dtype set to None after operator creation
+    Lop.dtype = None
+    assert Lop.dtype == npp.dtype("float64")
+
+
+def test_scipyop():
     """Verify interaction between pylops and scipy Linear operators"""
 
     class spDiag(spLinearOperator):
