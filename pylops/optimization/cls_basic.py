@@ -805,7 +805,7 @@ class CGLS(Solver):
         iit : :obj:`int`
             Iteration number upon termination
         r1norm : :obj:`float`
-            :math:`||\mathbf{r}||_2`, where
+            :math:`||\mathbf{r}||_2^2`, where
             :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
         r2norm : :obj:`float`
             :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +

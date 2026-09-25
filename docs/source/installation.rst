@@ -494,7 +494,7 @@ them as part of the installation process of PyLops provided in the table below.
      - |:red_circle:|
      - `pip install pylops[gpu-cu12]` / `uv add "pylops[gpu-cu12]"`
    * - JAX
-     - :py:class:`pylops.JAXOperator`
+     - :py:class:`pylops.JaxOperator`
      - |:red_circle:|
      - `pip install pylops[deep]` / `uv add "pylops[deep]"` (or GPU equivalents)
 
