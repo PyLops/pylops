@@ -114,6 +114,9 @@ Signal processing
     DCT
     DTCWT
     Seislet
+    SWT
+    SWT2D
+    SWTND
     UDCT
     Radon2D
     Radon3D

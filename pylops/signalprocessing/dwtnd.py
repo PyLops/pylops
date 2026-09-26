@@ -9,7 +9,7 @@ from pylops.basicoperators import Pad
 from pylops.utils import deps
 from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray
 
-from .dwt import _adjointwavelet, _checkwavelet
+from .dwt import _adjointwavelet, _checklevel, _checkwavelet
 
 pywt_message = deps.pywt_import("the dwtnd module")
 
@@ -74,6 +74,8 @@ class DWTND(LinearOperator):
         If ``pywt`` is not installed
     ValueError
         If ``wavelet`` does not belong to ``pywt.families``
+    ValueError
+        If ``level`` is smaller than 0
 
     Notes
     -----
@@ -95,6 +97,7 @@ class DWTND(LinearOperator):
         if pywt_message is not None:
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
+        _checklevel(level)
 
         # define padding for length to be power of 2
         ndimpow2 = [max(2 ** ceil(log(dims[ax], 2)), 2**level) for ax in axes]

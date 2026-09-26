@@ -449,11 +449,27 @@ Signal processing:
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
+   * - :class:`pylops.signalprocessing.DWTND`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
    * - :class:`pylops.signalprocessing.DCT`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
    * - :class:`pylops.signalprocessing.Seislet`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.SWT`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.SWT2D`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.SWTND`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|

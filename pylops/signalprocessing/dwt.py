@@ -24,6 +24,13 @@ def _checkwavelet(wavelet: str) -> None:
         raise ValueError(msg)
 
 
+def _checklevel(level: int, minlevel: int = 0) -> None:
+    """Check that level is larger or equal than minlevel"""
+    if level < minlevel:
+        msg = f"level={level} must be >= {minlevel}"
+        raise ValueError(msg)
+
+
 def _adjointwavelet(wavelet: str) -> str:
     """Define adjoint wavelet"""
     waveletadj = wavelet
@@ -92,6 +99,8 @@ class DWT(LinearOperator):
         If ``pywt`` is not installed
     ValueError
         If ``wavelet`` does not belong to ``pywt.families``
+    ValueError
+        If ``level`` is smaller than 0
 
     Notes
     -----
@@ -118,6 +127,7 @@ class DWT(LinearOperator):
         if pywt_message is not None:
             raise ModuleNotFoundError(pywt_message)
         _checkwavelet(wavelet)
+        _checklevel(level)
 
         dims = _value_or_sized_to_tuple(dims)
         # define padding for length to be power of 2
