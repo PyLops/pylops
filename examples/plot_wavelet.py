@@ -1,9 +1,11 @@
 """
 Wavelet transform
 =================
-This example shows how to use the :py:class:`pylops.DWT`,
-:py:class:`pylops.DWT2D`, and :py:class:`pylops.DWTND` operators
-to perform 1-, 2-, and N-dimensional DWT.
+This example shows how to use the :py:class:`pylops.signalprocessing.DWT`,
+:py:class:`pylops.signalprocessing.DWT2D`, and
+:py:class:`pylops.signalprocessing.DWTND` operators to perform 1-, 2-,
+and N-dimensional DWT. Finally, the :py:class:`pylops.signalprocessing.SWT2D`
+operator is used to perform a 2-dimensional Stationary Wavelet Transform (SWT).
 """
 
 import matplotlib.pyplot as plt
@@ -114,4 +116,23 @@ axs[1, 0].axis("tight")
 axs[1, 1].imshow(yf[:, :, 90], cmap="gray_r")
 axs[1, 1].set_title("DWTNT coefficients (zeroed)")
 axs[1, 1].axis("tight")
+plt.tight_layout()
+
+###############################################################################
+# Finally, we consider the Stationary Wavelet Transform (SWT). Contrarily to
+# the DWT, the SWT does not decimate the coefficients at each level, making
+# it shift-invariant at the cost of redundancy (the number of coefficients is
+# larger than the number of samples in the input). The coefficients of the SWT
+# are stacked along a new leading axis, starting with the approximation
+# coefficients at the coarsest level followed by the horizontal, vertical,
+# and diagonal details of each level (from the coarsest to the finest).
+Nz, Nx = im.shape
+SWTop = pylops.signalprocessing.SWT2D((Nz, Nx), wavelet="haar", level=3)
+ys = SWTop * im
+
+fig, axs = plt.subplots(1, 4, figsize=(12, 3))
+for iax, (ax, title) in enumerate(zip(axs, ["cA3", "cH3", "cV3", "cD3"], strict=True)):
+    ax.imshow(ys[iax], cmap="gray" if iax == 0 else "gray_r")
+    ax.set_title(title)
+    ax.axis("tight")
 plt.tight_layout()
