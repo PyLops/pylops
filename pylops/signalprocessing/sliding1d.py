@@ -1,6 +1,6 @@
 __all__ = [
     "sliding1d_design",
-    "sliding1d_design",
+    "sliding1d_pad_to_next",
     "Sliding1D",
 ]
 

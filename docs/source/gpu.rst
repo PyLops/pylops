@@ -529,39 +529,39 @@ Wave-Equation processing
      - CPU
      - GPU with CuPy
      - GPU/TPU with JAX
-   * - :class:`pylops.avo.avo.PressureToVelocity`
+   * - :class:`pylops.waveeqprocessing.PressureToVelocity`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.UpDownComposition2D`
+   * - :class:`pylops.waveeqprocessing.UpDownComposition2D`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.UpDownComposition3D`
+   * - :class:`pylops.waveeqprocessing.UpDownComposition3D`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.BlendingContinuous`
+   * - :class:`pylops.waveeqprocessing.BlendingContinuous`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.BlendingGroup`
+   * - :class:`pylops.waveeqprocessing.BlendingGroup`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.BlendingHalf`
+   * - :class:`pylops.waveeqprocessing.BlendingHalf`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.MDC`
+   * - :class:`pylops.waveeqprocessing.MDC`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.Kirchhoff`
+   * - :class:`pylops.waveeqprocessing.Kirchhoff`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
-   * - :class:`pylops.avo.avo.AcousticWave2D`
+   * - :class:`pylops.waveeqprocessing.AcousticWave2D`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
