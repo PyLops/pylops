@@ -6,7 +6,7 @@ __all__ = [
 ]
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Pool
 from multiprocessing.pool import Pool as PoolClass
@@ -34,6 +34,7 @@ else:
 from pylops import get_ndarray_multiplication
 from pylops._multioperator import _matvec_rmatvec_map
 from pylops.optimization.basic import cgls
+from pylops.utils._internal import _get_dtype
 from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
 from pylops.utils.decorators import count
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
@@ -73,8 +74,14 @@ class LinearOperator(_LinearOperator):
     ----------
     Op : :obj:`scipy.sparse.linalg.LinearOperator` or :obj:`pylops.linearoperator.LinearOperator`
         Operator. If other arguments are provided, they will overwrite those obtained from ``Op``.
-    dtype : :obj:`str`, optional
-        Type of elements in input array.
+    dtype : :obj:`str` or :obj:`numpy.dtype`, optional
+        Type of elements in input array. Any ``numpy.dtype``-like input
+        (e.g., ``"float64"`` or ``np.float64``) is always cast to a
+        :obj:`numpy.dtype` via ``np.dtype(dtype)``, both at initialization
+        and when ``dtype`` is set afterwards. If ``None``, ``dtype`` is taken
+        from ``Op`` or, if ``Op`` is not provided, defaults to ``numpy.float64``
+        (following ``np.dtype(None)``); the same applies when setting ``dtype``
+        to ``None`` afterwards.
     shape : :obj:`tuple(int, int)`, optional
         Shape of operator. If not provided, obtained from ``dims`` and ``dimsd``.
     dims : :obj:`tuple(int, ..., int)`, optional
@@ -152,8 +159,11 @@ class LinearOperator(_LinearOperator):
             )
             name = getattr(Op, "name", None) if name is None else name
 
-        if dtype is not None:
-            self.dtype = dtype
+        # set dtype to np.float64 when neither Op not dtype is provided
+        # (consistent with np.dtype(None))
+        self.dtype = np.float64 if dtype is None else dtype
+
+        # set other params
         if shape is not None:
             self.shape = shape
         if dims is not None:
@@ -173,6 +183,19 @@ class LinearOperator(_LinearOperator):
         self.rmatvec_count = 0
         self.matmat_count = 0
         self.rmatmat_count = 0
+
+    @property
+    def dtype(self) -> np.dtype:
+        return self._dtype
+
+    @dtype.setter
+    def dtype(self, new_dtype: DTypeLike) -> None:
+        # always store a numpy dtype
+        self._dtype = np.dtype(new_dtype)
+
+    @dtype.deleter
+    def dtype(self) -> None:
+        del self._dtype
 
     @property
     def shape(self):
@@ -1371,18 +1394,6 @@ class LinearOperator(_LinearOperator):
         self.rmatvec_count = 0
         self.matmat_count = 0
         self.rmatmat_count = 0
-
-
-def _get_dtype(
-    operators: Sequence[LinearOperator],
-    dtypes: Sequence[DTypeLike] | None = None,
-) -> DTypeLike:
-    if dtypes is None:
-        dtypes = []
-    for obj in operators:
-        if obj is not None and hasattr(obj, "dtype"):
-            dtypes.append(obj.dtype)
-    return np.result_type(*dtypes)
 
 
 class _ScaledLinearOperator(LinearOperator):
