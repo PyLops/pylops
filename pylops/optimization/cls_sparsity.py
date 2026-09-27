@@ -2800,21 +2800,19 @@ class SplitBregman(Solver):
     and solved as follows:
 
     .. math::
-        \DeclareMathOperator*{\argmin}{arg\,min}
-        \begin{align}
-        (\textbf{x}^{k+1}, \textbf{y}_i^{k+1}) =
-        \argmin_{\mathbf{x}, \mathbf{y}_i}
-        \|\textbf{y} - \textbf{Op}\,\textbf{x}\|_2^2
-        &+ \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{y}_{\mathbf{R}_{2,i}} -
+        \begin{aligned}
+        (\textbf{x}^{k+1}, \textbf{y}_i^{k+1}) = \operatorname*{arg\,min}_{\mathbf{x}, \mathbf{y}_i}
+        \; & \frac{\mu}{2} \|\textbf{y} - \textbf{Op}\,\textbf{x}\|_2^2 \\
+        & + \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{y}_{\mathbf{R}_{2,i}} -
         \mathbf{R}_{2,i} \textbf{x}\|_2^2 \\
-        &+ \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{1,i}} \|\textbf{y}_i -
+        & + \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{1,i}} \|\textbf{y}_i -
         \mathbf{R}_{1,i} \textbf{x} - \textbf{b}_i^k\|_2^2 \\
-        &+ \sum_i \| \textbf{y}_i \|_1
-        \end{align}
+        & + \sum_i \| \textbf{y}_i \|_1
+        \end{aligned}
 
     .. math::
         \textbf{b}_i^{k+1}=\textbf{b}_i^k +
-        (\mathbf{R}_{1,i} \textbf{x}^{k+1} - \textbf{y}^{k+1})
+        (\mathbf{R}_{1,i} \textbf{x}^{k+1} - \textbf{y}_i^{k+1})
 
     The :py:func:`scipy.sparse.linalg.lsqr` solver and a fast shrinkage
     algorithm are used within a inner loop to solve the first step. The entire
