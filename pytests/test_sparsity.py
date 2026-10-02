@@ -13,7 +13,13 @@ else:
 import numpy as npp
 import pytest
 
-from pylops.basicoperators import FirstDerivative, Identity, MatrixMult
+from pylops.basicoperators import (
+    FirstDerivative,
+    Identity,
+    MatrixMult,
+    Smoothing2D,
+    VStack,
+)
 from pylops.optimization.callback import CostToInitialCallback
 from pylops.optimization.cls_sparsity import IRLS
 from pylops.optimization.sparsity import fista, irls, ista, omp, spgl1, splitbregman
@@ -327,6 +333,39 @@ def test_OMP_stopping(par):
         _, _, cost = omp(Aop, y, maxit, sigma=0.0, rtol1=rtol, preallocate=preallocate)
         assert cost[-2] / ynorm >= rtol
         assert cost[-1] / ynorm < rtol
+
+
+@pytest.mark.parametrize("dtype", ["float64", "complex128"])
+@pytest.mark.parametrize("preallocate", [False, True])
+@pytest.mark.parametrize("nrhs", [None, 2])
+def test_FISTA_flat_model_nd_data(dtype, preallocate, nrhs):
+    """Cost computation must use the same flat dispatch as solver iterations."""
+    dims = (4, 5)
+    rng = npp.random.default_rng(0)
+    values = rng.standard_normal(dims)
+    if dtype == "complex128":
+        values = values + 1j * rng.standard_normal(dims)
+    values = np.asarray(values, dtype=dtype)
+    smoothing = Smoothing2D((3, 3), dims, dtype=dtype)
+    synthesis = VStack([Identity(dims, dtype=dtype), Identity(dims, dtype=dtype)])
+    op = smoothing @ synthesis.H
+    data = (smoothing @ values).ravel()
+    if nrhs is not None:
+        data = np.column_stack([data, 2 * data])
+
+    result, niter, cost = fista(
+        op, data, niter=3, eps=0.01, alpha=0.1, preallocate=preallocate
+    )
+
+    # The same linear map with flat shape metadata provides a reference.
+    op.dimsd = (op.shape[0],)
+    expected, expected_niter, expected_cost = fista(
+        op, data, niter=3, eps=0.01, alpha=0.1, preallocate=preallocate
+    )
+    assert_array_almost_equal(result, expected)
+    assert_array_almost_equal(cost, expected_cost)
+    assert niter == expected_niter == 3
+
 
 
 def test_ISTA_FISTA_unknown_threshkind():
