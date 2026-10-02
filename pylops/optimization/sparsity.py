@@ -311,7 +311,8 @@ def ista(
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
     y : :obj:`numpy.ndarray`
-        Data of size :math:`[N \times 1]`
+        Data vector, or matrix with one right-hand side per column.
+        Multidimensional data must be flattened before calling the solver.
     x0 : :obj:`numpy.ndarray`, optional
         Initial guess
     niter : :obj:`int`
