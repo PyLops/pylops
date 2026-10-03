@@ -1,4 +1,5 @@
 import os
+from copy import copy
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
@@ -344,6 +345,40 @@ def test_ISTA_FISTA_unknown_threshkind():
         _ = fista(Identity(5), np.ones(5), 10, threshkind="foo")
 
 
+@pytest.mark.parametrize("dtype", ["float64", "complex128"])
+@pytest.mark.parametrize("preallocate", [False, True])
+@pytest.mark.parametrize("nrhs", [None, 2])
+@pytest.mark.parametrize("solver", [ista, fista])
+def test_ISTA_FISTA_flat_model_nd_data(dtype, preallocate, nrhs, solver):
+    """Check that ista/fista can handle nd data with flat models."""
+    dims = (4, 5)
+    rng = npp.random.default_rng(0)
+    values = rng.standard_normal(dims)
+    if dtype == "complex128":
+        values = values + 1j * rng.standard_normal(dims)
+    values = np.asarray(values, dtype=dtype)
+    smoothing = Smoothing2D((3, 3), dims, dtype=dtype)
+    synthesis = VStack([Identity(dims, dtype=dtype), Identity(dims, dtype=dtype)])
+    op = smoothing @ synthesis.H
+    data = (smoothing @ values).ravel()
+    if nrhs is not None:
+        data = np.column_stack([data, 2 * data])
+
+    result, niter, cost = solver(
+        op, data, niter=3, eps=0.01, alpha=0.1, preallocate=preallocate
+    )
+
+    # Use a shallow operator copy so the original shape metadata stays intact.
+    flat_op = copy(op)
+    flat_op.dimsd = (op.shape[0],)
+    expected, expected_niter, expected_cost = solver(
+        flat_op, data, niter=3, eps=0.01, alpha=0.1, preallocate=preallocate
+    )
+    assert_array_almost_equal(result, expected)
+    assert_array_almost_equal(cost, expected_cost)
+    assert niter == expected_niter == 3
+
+
 def test_ISTA_FISTA_missing_perc():
     """Check error is raised if perc=None and threshkind is percentile based"""
     with pytest.raises(ValueError, match="Provide a percentile"):
@@ -390,39 +425,6 @@ def test_ISTA_FISTA_alpha_too_high(par):
             tol=0,
         )
         assert np.isinf(cost[-1])
-
-
-@pytest.mark.parametrize("dtype", ["float64", "complex128"])
-@pytest.mark.parametrize("preallocate", [False, True])
-@pytest.mark.parametrize("nrhs", [None, 2])
-@pytest.mark.parametrize("solver", [ista, fista])
-def test_ISTA_FISTA_flat_model_nd_data(dtype, preallocate, nrhs, solver):
-    """Check that ista/fista can handle nd data with flat models."""
-    dims = (4, 5)
-    rng = npp.random.default_rng(0)
-    values = rng.standard_normal(dims)
-    if dtype == "complex128":
-        values = values + 1j * rng.standard_normal(dims)
-    values = np.asarray(values, dtype=dtype)
-    smoothing = Smoothing2D((3, 3), dims, dtype=dtype)
-    synthesis = VStack([Identity(dims, dtype=dtype), Identity(dims, dtype=dtype)])
-    op = smoothing @ synthesis.H
-    data = (smoothing @ values).ravel()
-    if nrhs is not None:
-        data = np.column_stack([data, 2 * data])
-
-    result, niter, cost = solver(
-        op, data, niter=3, eps=0.01, alpha=0.1, preallocate=preallocate
-    )
-
-    # The same linear map with flat shape metadata provides a reference.
-    op.dimsd = (op.shape[0],)
-    expected, expected_niter, expected_cost = solver(
-        op, data, niter=3, eps=0.01, alpha=0.1, preallocate=preallocate
-    )
-    assert_array_almost_equal(result, expected)
-    assert_array_almost_equal(cost, expected_cost)
-    assert niter == expected_niter == 3
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
