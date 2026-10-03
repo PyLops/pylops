@@ -2367,7 +2367,7 @@ class FISTA(ISTA):
             xupdate = np.linalg.norm(self.xold)
 
         # cost functions
-        costdata = 0.5 * np.linalg.norm(self.y - self.Op @ x) ** 2
+        costdata = 0.5 * np.linalg.norm(self.y - self.Opmatvec(x)) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
         self.cost.append(float(costdata + costreg))
 
