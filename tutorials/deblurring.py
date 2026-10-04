@@ -80,6 +80,8 @@ imdeblurfista = Wop.H * imdeblurfista
 
 Sop = pylops.signalprocessing.SWT2D((Nz, Nx), wavelet="haar", level=3)
 
+# The SWT synthesis model is a flat coefficient vector, while the convolution
+# output is a 2D image. Pass the blurred image flattened to FISTA.
 imdeblurfistaswt = pylops.optimization.sparsity.fista(
     Cop * Sop.H, imblur.ravel(), eps=3e-2, niter=100
 )[0]
