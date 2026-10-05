@@ -4,6 +4,7 @@ AVO modelling
 This example shows how to create pre-stack angle gathers using
 the :py:class:`pylops.avo.avo.AVOLinearModelling` operator.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
@@ -84,7 +85,7 @@ dPP_variant = PPop_variant * m
 
 ###############################################################################
 # To visualize these responses, we will plot their anomaly - how much they
-# deveiate from their mean
+# deviate from their mean
 mean_dPP_const = dPP_const.mean()
 dPP_const -= mean_dPP_const
 mean_dPP_variant = dPP_variant.mean()
