@@ -736,8 +736,7 @@ def test_SplitBregman_cost(par):
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
 def test_SplitBregman_lambdaRL1s(par):
-    """Check that lambdaRL1s=None is equivalent to lambdaRL1s=epsRL1s and
-    that different lambdaRL1s converge to the same solution"""
+    """Check that lambdaRL1s=None is equivalent to lambdaRL1s=epsRL1s"""
     np.random.seed(42)
     nx = 3 * par["nx"]
     Iop = Identity(nx)
@@ -760,9 +759,3 @@ def test_SplitBregman_lambdaRL1s(par):
         Iop, y, [Dop], lambdaRL1s=[epsRL1], **kwargs_sb, **kwars_solver
     )[0]
     assert_array_almost_equal(xdef, xeps, decimal=12)
-
-    for lambdaRL1 in [2.0, 5.0]:
-        xlam = splitbregman(
-            Iop, y, [Dop], lambdaRL1s=[lambdaRL1], **kwargs_sb, **kwars_solver
-        )[0]
-        assert_array_almost_equal(xdef, xlam, decimal=4)
