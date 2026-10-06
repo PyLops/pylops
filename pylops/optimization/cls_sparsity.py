@@ -2938,12 +2938,12 @@ class SplitBregman(Solver):
         mu: float = 1.0,
         epsRL1s: SamplingLike | None = None,
         epsRL2s: SamplingLike | None = None,
+        lambdaRL1s: SamplingLike | None = None,
         tol: float = 1e-10,
         tau: float = 1.0,
         restart: bool = False,
         preallocate: bool = False,
         show: bool = False,
-        lambdaRL1s: SamplingLike | None = None,
     ) -> NDArray:
         r"""Setup solver
 
@@ -2971,14 +2971,21 @@ class SplitBregman(Solver):
             of ``RegsL2`` or equal to ``None`` to use a zero data for every
             regularization operator in ``RegsL2``)
         mu : :obj:`float`, optional
-             Data term damping
+            Data term damping
         epsRL1s : :obj:`list`
-             :math:`L_1` Regularization dampings (must have the same number of elements
-             as ``RegsL1``). Note that the effective weight of each :math:`L_1`
-             regularization term in the cost function is ``epsRL1s[i]**2``
+            :math:`L_1` Regularization dampings (must have the same number of elements
+            as ``RegsL1``). Note that the effective weight of each :math:`L_1`
+            regularization term in the cost function is ``epsRL1s[i]**2``
         epsRL2s : :obj:`list`
-             :math:`L_2` Regularization dampings (must have the same number of elements
-             as ``RegsL2``)
+            :math:`L_2` Regularization dampings (must have the same number of elements
+            as ``RegsL2``)
+        lambdaRL1s : :obj:`list`, optional
+            .. versionadded:: 2.9.0
+
+            Weights of the splitting terms (must have the same number of
+            elements as ``RegsL1``). They do not change the solution of the
+            problem, but affect the convergence speed of the algorithm. If
+            ``None``, they are set equal to ``epsRL1s``
         tol : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
             at subsequent iterations is smaller than ``tol``
@@ -2997,13 +3004,6 @@ class SplitBregman(Solver):
             pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
-        lambdaRL1s : :obj:`list`, optional
-            .. versionadded:: 2.9.0
-
-            Weights of the splitting terms (must have the same number of
-            elements as ``RegsL1``). They do not change the solution of the
-            problem, but affect the convergence speed of the algorithm. If
-            ``None``, they are set equal to ``epsRL1s``
 
         Returns
         -------
@@ -3020,9 +3020,7 @@ class SplitBregman(Solver):
         self.mu = mu
         self.epsRL1s = list(epsRL1s) if epsRL1s is not None else []
         self.epsRL2s = list(epsRL2s) if epsRL2s is not None else []
-        self.lambdaRL1s = (
-            list(lambdaRL1s) if lambdaRL1s is not None else list(self.epsRL1s)
-        )
+        self.lambdaRL1s = list(lambdaRL1s) if lambdaRL1s is not None else self.epsRL1s
         self.tol = tol
         self.tau = tau
         self.restart = restart
@@ -3295,6 +3293,7 @@ class SplitBregman(Solver):
         mu: float = 1.0,
         epsRL1s: SamplingLike | None = None,
         epsRL2s: SamplingLike | None = None,
+        lambdaRL1s: SamplingLike | None = None,
         tol: float = 1e-10,
         tau: float = 1.0,
         restart: bool = False,
@@ -3303,7 +3302,6 @@ class SplitBregman(Solver):
         show: bool = False,
         itershow: tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
-        lambdaRL1s: SamplingLike | None = None,
         **kwargs_lsqr,
     ) -> tuple[NDArray, int, NDArray]:
         r"""Run entire solver
@@ -3332,14 +3330,21 @@ class SplitBregman(Solver):
             of ``RegsL2`` or equal to ``None`` to use a zero data for every
             regularization operator in ``RegsL2``)
         mu : :obj:`float`, optional
-             Data term damping
+            Data term damping
         epsRL1s : :obj:`list`
-             :math:`L_1` Regularization dampings (must have the same number of elements
-             as ``RegsL1``). Note that the effective weight of each :math:`L_1`
-             regularization term in the cost function is ``epsRL1s[i]**2``
+            :math:`L_1` Regularization dampings (must have the same number of elements
+            as ``RegsL1``). Note that the effective weight of each :math:`L_1`
+            regularization term in the cost function is ``epsRL1s[i]**2``
         epsRL2s : :obj:`list`
-             :math:`L_2` Regularization dampings (must have the same number of elements
-             as ``RegsL2``)
+            :math:`L_2` Regularization dampings (must have the same number of elements
+            as ``RegsL2``)
+        lambdaRL1s : :obj:`list`, optional
+            .. versionadded:: 2.9.0
+
+            Weights of the splitting terms (must have the same number of
+            elements as ``RegsL1``). They do not change the solution of the
+            problem, but affect the convergence speed of the algorithm. If
+            ``None``, they are set equal to ``epsRL1s``
         tol : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
             at subsequent iterations is smaller than ``tol``
@@ -3370,13 +3375,6 @@ class SplitBregman(Solver):
             three element of the list.
         show_inner : :obj:`bool`, optional
             Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
-        lambdaRL1s : :obj:`list`, optional
-            .. versionadded:: 2.9.0
-
-            Weights of the splitting terms (must have the same number of
-            elements as ``RegsL1``). They do not change the solution of the
-            problem, but affect the convergence speed of the algorithm. If
-            ``None``, they are set equal to ``epsRL1s``
         **kwargs_lsqr
             Arbitrary keyword arguments for the solver of the
             :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
@@ -3404,12 +3402,12 @@ class SplitBregman(Solver):
             mu=mu,
             epsRL1s=epsRL1s,
             epsRL2s=epsRL2s,
+            lambdaRL1s=lambdaRL1s,
             tol=tol,
             tau=tau,
             restart=restart,
             preallocate=preallocate,
             show=show,
-            lambdaRL1s=lambdaRL1s,
         )
         x = self.run(
             x,

@@ -715,6 +715,7 @@ def splitbregman(
     mu: float = 1.0,
     epsRL1s: SamplingLike | None = None,
     epsRL2s: SamplingLike | None = None,
+    lambdaRL1s: SamplingLike | None = None,
     tol: float = 1e-10,
     rtol: float = 0.0,
     rtol1: float = 0.0,
@@ -726,7 +727,6 @@ def splitbregman(
     show_inner: bool = False,
     callback: Callable | None = None,
     preallocate: bool = False,
-    lambdaRL1s: SamplingLike | None = None,
     **kwargs_lsqr,
 ) -> tuple[NDArray, int, NDArray]:
     r"""Split Bregman for mixed L2-L1 norms.
@@ -761,14 +761,21 @@ def splitbregman(
         of ``RegsL2`` or equal to ``None`` to use a zero data for every
         regularization operator in ``RegsL2``)
     mu : :obj:`float`, optional
-         Data term damping
+        Data term damping
     epsRL1s : :obj:`list`
-         :math:`L_1` Regularization dampings (must have the same number of elements
-         as ``RegsL1``). Note that the effective weight of each :math:`L_1`
-         regularization term in the cost function is ``epsRL1s[i]**2``
+        :math:`L_1` Regularization dampings (must have the same number of elements
+        as ``RegsL1``). Note that the effective weight of each :math:`L_1`
+        regularization term in the cost function is ``epsRL1s[i]**2``
     epsRL2s : :obj:`list`
-         :math:`L_2` Regularization dampings (must have the same number of elements
-         as ``RegsL2``)
+        :math:`L_2` Regularization dampings (must have the same number of elements
+        as ``RegsL2``)
+    lambdaRL1s : :obj:`list`, optional
+        .. versionadded:: 2.9.0
+
+        Weights of the splitting terms (must have the same number of
+        elements as ``RegsL1``). They do not change the solution of the
+        problem, but affect the convergence speed of the algorithm. If
+        ``None``, they are set equal to ``epsRL1s``
     tol : :obj:`float`, optional
         Tolerance. Stop the solver if difference between inverted model
         at subsequent iterations is smaller than ``tol``
@@ -807,13 +814,6 @@ def splitbregman(
         Pre-allocate all variables used by the solver. Note that if ``y``
         is a JAX array, this option is ignored and variables are not
         pre-allocated since JAX does not support in-place operations.
-    lambdaRL1s : :obj:`list`, optional
-        .. versionadded:: 2.9.0
-
-        Weights of the splitting terms (must have the same number of
-        elements as ``RegsL1``). They do not change the solution of the
-        problem, but affect the convergence speed of the algorithm. If
-        ``None``, they are set equal to ``epsRL1s``
     **kwargs_lsqr
         Arbitrary keyword arguments for the solver of the
         :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
@@ -858,6 +858,7 @@ def splitbregman(
         mu=mu,
         epsRL1s=epsRL1s,
         epsRL2s=epsRL2s,
+        lambdaRL1s=lambdaRL1s,
         tol=tol,
         tau=tau,
         restart=restart,
@@ -866,7 +867,6 @@ def splitbregman(
         show=show,
         itershow=itershow,
         show_inner=show_inner,
-        lambdaRL1s=lambdaRL1s,
         **kwargs_lsqr,
     )
     return xinv, itn_out, cost
