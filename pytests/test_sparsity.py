@@ -604,6 +604,20 @@ def test_SPGL1(par):
     assert_array_almost_equal(x, xinv, decimal=1)
 
 
+@pytest.mark.parametrize("par", [(par1)])
+def test_SplitBregman_lambdaRL1s_wrong(par):
+    """Check errors for lambdaRL1s with wrong number of elements or values"""
+    nx = 3 * par["nx"]
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+    y = np.ones(nx)
+
+    with pytest.raises(ValueError, match="same number of elements"):
+        splitbregman(Iop, y, [Dop], epsRL1s=[0.3], lambdaRL1s=[0.3, 0.3])
+    with pytest.raises(ValueError, match="strictly positive"):
+        splitbregman(Iop, y, [Dop], epsRL1s=[0.3], lambdaRL1s=[0.0])
+
+
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_SplitBregman(par):
     """Invert denoise problem with SplitBregman"""
@@ -718,3 +732,37 @@ def test_SplitBregman_cost(par):
         + epsRL1**2 * np.linalg.norm(D1op @ xinv, ord=1)
     )
     assert_array_almost_equal(cost[0], J, decimal=6)
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_SplitBregman_lambdaRL1s(par):
+    """Check that lambdaRL1s=None is equivalent to lambdaRL1s=epsRL1s and
+    that different lambdaRL1s converge to the same solution"""
+    np.random.seed(42)
+    nx = 3 * par["nx"]
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+
+    x = np.zeros(nx)
+    x[: nx // 2] = 10
+    x[nx // 2 : 3 * nx // 4] = -5
+    y = x + np.random.normal(0, 1, nx)
+    epsRL1 = 1.0
+
+    kwars_solver = (
+        dict(iter_lim=20, damp=0) if backend == "numpy" else dict(niter=20, damp=0)
+    )
+    kwargs_sb = dict(
+        niter_outer=2000, niter_inner=5, mu=1.0, epsRL1s=[epsRL1], tol=1e-10
+    )
+    xdef = splitbregman(Iop, y, [Dop], **kwargs_sb, **kwars_solver)[0]
+    xeps = splitbregman(
+        Iop, y, [Dop], lambdaRL1s=[epsRL1], **kwargs_sb, **kwars_solver
+    )[0]
+    assert_array_almost_equal(xdef, xeps, decimal=12)
+
+    for lambdaRL1 in [2.0, 5.0]:
+        xlam = splitbregman(
+            Iop, y, [Dop], lambdaRL1s=[lambdaRL1], **kwargs_sb, **kwars_solver
+        )[0]
+        assert_array_almost_equal(xdef, xlam, decimal=4)

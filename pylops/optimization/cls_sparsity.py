@@ -2758,6 +2758,9 @@ class SplitBregman(Solver):
         List of L1 and L2 regularization terms.
     epsRs : :obj:`list`
         List of L1 and L2 regularization dampings.
+    threshRL1s : :obj:`list`
+        List of thresholds of the shrinkage steps (one per :math:`L_1`
+        regularization term).
     cost : :obj:`numpy.ndarray`, optional
         History of total cost function through iterations.
     iiter : :obj:`int`
@@ -2782,11 +2785,8 @@ class SplitBregman(Solver):
     are the damping factors used to weight the different :math:`L_2` regularization
     terms of the cost function and :math:`\epsilon_{\mathbf{R}_{1,i}}`
     are the damping factors of the different :math:`L_1` regularization
-    terms of the cost function. Note that :math:`\epsilon_{\mathbf{R}_{1,i}}` is used
-    both as weight of the augmented :math:`L_2` term and as threshold of the
-    shrinkage step of the Split-Bregman algorithm (see below): as a consequence,
-    the effective weight of each :math:`L_1` regularization term is
-    :math:`\epsilon_{\mathbf{R}_{1,i}}^2`.
+    terms of the cost function. Note that the effective weight of each
+    :math:`L_1` regularization term is :math:`\epsilon_{\mathbf{R}_{1,i}}^2`.
 
     The generalized Split-Bregman algorithm [1]_ is used to solve such cost
     function: the algorithm is composed of a sequence of unconstrained
@@ -2810,7 +2810,7 @@ class SplitBregman(Solver):
         \; & \frac{\mu}{2} \|\textbf{y} - \textbf{Op}\,\textbf{x}\|_2^2 \\
         & + \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{y}_{\mathbf{R}_{2,i}} -
         \mathbf{R}_{2,i} \textbf{x}\|_2^2 \\
-        & + \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{1,i}} \|\textbf{d}_i -
+        & + \frac{1}{2}\sum_i \lambda_{\mathbf{R}_{1,i}} \|\textbf{d}_i -
         \mathbf{R}_{1,i} \textbf{x} - \textbf{b}_i^k\|_2^2 \\
         & + \sum_i \epsilon_{\mathbf{R}_{1,i}}^2 \| \textbf{d}_i \|_1
         \end{aligned}
@@ -2820,8 +2820,14 @@ class SplitBregman(Solver):
         \tau (\mathbf{R}_{1,i} \textbf{x}^{k+1} - \textbf{d}_i^{k+1})
 
     where :math:`\textbf{d}_i` are the split variables, :math:`\textbf{b}_i`
-    are the Bregman variables, and :math:`\tau` is a scaling factor of the
-    Bregman update (:math:`\tau=1` in the original algorithm [1]_).
+    are the Bregman variables, :math:`\lambda_{\mathbf{R}_{1,i}}` are the
+    weights of the splitting terms, and :math:`\tau` is a scaling factor of the
+    Bregman update (:math:`\tau=1` in the original algorithm [1]_). The
+    weights :math:`\lambda_{\mathbf{R}_{1,i}}` do not change the solution of
+    the problem, but affect the conditioning of the
+    :math:`\textbf{x}`-subproblem and the convergence speed of the algorithm.
+    When not provided, :math:`\lambda_{\mathbf{R}_{1,i}} =
+    \epsilon_{\mathbf{R}_{1,i}}`.
 
     The first step is solved by alternating ``niter_inner`` times the
     minimization over :math:`\textbf{x}` and over :math:`\textbf{d}_i`. The
@@ -2832,7 +2838,8 @@ class SplitBregman(Solver):
     any other array type, e.g., CuPy or JAX arrays). The
     :math:`\textbf{d}_i`-subproblems are solved in closed form by soft
     thresholding :math:`\mathbf{R}_{1,i} \textbf{x}^{k+1} + \textbf{b}_i^k`
-    with threshold :math:`\epsilon_{\mathbf{R}_{1,i}}`. The entire
+    with threshold :math:`\epsilon_{\mathbf{R}_{1,i}}^2 /
+    \lambda_{\mathbf{R}_{1,i}}`. The entire
     procedure is repeated ``niter_outer`` times, or until the norm of the
     difference between the models of two subsequent outer iterations is
     smaller than ``tol``.
@@ -2848,7 +2855,8 @@ class SplitBregman(Solver):
 
         strpar = (
             f"niter_outer = {self.niter_outer:3d}     niter_inner = {self.niter_inner:3d}   tol = {self.tol:2.2e}\n"
-            f"mu = {self.mu:2.2e}         epsL1 = {self.epsRL1s}\t  epsL2 = {self.epsRL2s}"
+            f"mu = {self.mu:2.2e}         epsL1 = {self.epsRL1s}\t  epsL2 = {self.epsRL2s}\n"
+            f"lambdaL1 = {self.lambdaRL1s}"
         )
         print(strpar)
         print("-" * 65)
@@ -2935,6 +2943,7 @@ class SplitBregman(Solver):
         restart: bool = False,
         preallocate: bool = False,
         show: bool = False,
+        lambdaRL1s: SamplingLike | None = None,
     ) -> NDArray:
         r"""Setup solver
 
@@ -2988,6 +2997,13 @@ class SplitBregman(Solver):
             pre-allocated since JAX does not support in-place operations.
         show : :obj:`bool`, optional
             Display setup log
+        lambdaRL1s : :obj:`list`, optional
+            .. versionadded:: 2.9.0
+
+            Weights of the splitting terms (must have the same number of
+            elements as ``RegsL1``). They do not change the solution of the
+            problem, but affect the convergence speed of the algorithm. If
+            ``None``, they are set equal to ``epsRL1s``
 
         Returns
         -------
@@ -3004,6 +3020,9 @@ class SplitBregman(Solver):
         self.mu = mu
         self.epsRL1s = list(epsRL1s) if epsRL1s is not None else []
         self.epsRL2s = list(epsRL2s) if epsRL2s is not None else []
+        self.lambdaRL1s = (
+            list(lambdaRL1s) if lambdaRL1s is not None else list(self.epsRL1s)
+        )
         self.tol = tol
         self.tau = tau
         self.restart = restart
@@ -3014,6 +3033,20 @@ class SplitBregman(Solver):
 
         # L1 regularizations
         self.nregsL1 = len(RegsL1)
+        if lambdaRL1s is not None:
+            if len(self.lambdaRL1s) != self.nregsL1:
+                msg = (
+                    f"lambdaRL1s must have the same number of elements as RegsL1 "
+                    f"({len(self.lambdaRL1s)} != {self.nregsL1})"
+                )
+                raise ValueError(msg)
+            if any(lambdaRL1 <= 0 for lambdaRL1 in self.lambdaRL1s):
+                msg = "lambdaRL1s must be strictly positive"
+                raise ValueError(msg)
+        self.threshRL1s = [
+            epsRL1 * (epsRL1 / lambdaRL1)
+            for epsRL1, lambdaRL1 in zip(self.epsRL1s, self.lambdaRL1s, strict=True)
+        ]
         self.b = [
             self.ncp.zeros(RegL1.shape[0], dtype=self.Op.dtype) for RegL1 in RegsL1
         ]
@@ -3039,10 +3072,9 @@ class SplitBregman(Solver):
             self.epsRs += [
                 sqrt(epsRL2s[ireg] / 2) / sqrt(mu / 2) for ireg in range(self.nregsL2)
             ]
-        if epsRL1s is not None:
-            self.epsRs += [
-                sqrt(epsRL1s[ireg] / 2) / sqrt(mu / 2) for ireg in range(self.nregsL1)
-            ]
+        self.epsRs += [
+            sqrt(lambdaRL1 / 2) / sqrt(mu / 2) for lambdaRL1 in self.lambdaRL1s
+        ]
 
         self.x0 = x0
         x = self.ncp.zeros(self.Op.shape[1], dtype=self.Op.dtype) if x0 is None else x0
@@ -3122,14 +3154,15 @@ class SplitBregman(Solver):
             if not self.preallocate:
                 for ireg in range(self.nregsL1):
                     self.d[ireg] = _softthreshold(
-                        self.RegsL1[ireg].matvec(x) + self.b[ireg], self.epsRL1s[ireg]
+                        self.RegsL1[ireg].matvec(x) + self.b[ireg],
+                        self.threshRL1s[ireg],
                     )
             else:
                 for ireg in range(self.nregsL1):
                     self.ncp.add(
                         self.RegsL1[ireg].matvec(x), self.b[ireg], out=self.d[ireg]
                     )
-                    self.d[ireg] = _softthreshold(self.d[ireg], self.epsRL1s[ireg])
+                    self.d[ireg] = _softthreshold(self.d[ireg], self.threshRL1s[ireg])
 
         # Bregman update
         for ireg in range(self.nregsL1):
@@ -3270,6 +3303,7 @@ class SplitBregman(Solver):
         show: bool = False,
         itershow: tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
+        lambdaRL1s: SamplingLike | None = None,
         **kwargs_lsqr,
     ) -> tuple[NDArray, int, NDArray]:
         r"""Run entire solver
@@ -3336,6 +3370,13 @@ class SplitBregman(Solver):
             three element of the list.
         show_inner : :obj:`bool`, optional
             Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
+        lambdaRL1s : :obj:`list`, optional
+            .. versionadded:: 2.9.0
+
+            Weights of the splitting terms (must have the same number of
+            elements as ``RegsL1``). They do not change the solution of the
+            problem, but affect the convergence speed of the algorithm. If
+            ``None``, they are set equal to ``epsRL1s``
         **kwargs_lsqr
             Arbitrary keyword arguments for the solver of the
             :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
@@ -3368,6 +3409,7 @@ class SplitBregman(Solver):
             restart=restart,
             preallocate=preallocate,
             show=show,
+            lambdaRL1s=lambdaRL1s,
         )
         x = self.run(
             x,

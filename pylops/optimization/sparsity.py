@@ -726,6 +726,7 @@ def splitbregman(
     show_inner: bool = False,
     callback: Callable | None = None,
     preallocate: bool = False,
+    lambdaRL1s: SamplingLike | None = None,
     **kwargs_lsqr,
 ) -> tuple[NDArray, int, NDArray]:
     r"""Split Bregman for mixed L2-L1 norms.
@@ -806,6 +807,13 @@ def splitbregman(
         Pre-allocate all variables used by the solver. Note that if ``y``
         is a JAX array, this option is ignored and variables are not
         pre-allocated since JAX does not support in-place operations.
+    lambdaRL1s : :obj:`list`, optional
+        .. versionadded:: 2.9.0
+
+        Weights of the splitting terms (must have the same number of
+        elements as ``RegsL1``). They do not change the solution of the
+        problem, but affect the convergence speed of the algorithm. If
+        ``None``, they are set equal to ``epsRL1s``
     **kwargs_lsqr
         Arbitrary keyword arguments for the solver of the
         :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
@@ -858,6 +866,7 @@ def splitbregman(
         show=show,
         itershow=itershow,
         show_inner=show_inner,
+        lambdaRL1s=lambdaRL1s,
         **kwargs_lsqr,
     )
     return xinv, itn_out, cost
