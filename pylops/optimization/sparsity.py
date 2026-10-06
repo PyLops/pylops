@@ -763,7 +763,8 @@ def splitbregman(
          Data term damping
     epsRL1s : :obj:`list`
          :math:`L_1` Regularization dampings (must have the same number of elements
-         as ``RegsL1``)
+         as ``RegsL1``). Note that the effective weight of each :math:`L_1`
+         regularization term in the cost function is ``epsRL1s[i]**2``
     epsRL2s : :obj:`list`
          :math:`L_2` Regularization dampings (must have the same number of elements
          as ``RegsL2``)
@@ -783,28 +784,33 @@ def splitbregman(
         The unconstrained inverse problem in inner loop is initialized with
         the initial guess (``True``) or with the last estimate (``False``)
     engine : :obj:`str`, optional
-        Solver to use (``scipy`` or ``pylops``)
+        Solver used for the :math:`\mathbf{x}`-subproblem of the Split
+        Bregman algorithm: ``scipy`` for :py:func:`scipy.sparse.linalg.lsqr`
+        or ``pylops`` for :py:func:`pylops.optimization.solver.cgls`.
+        Note that :py:func:`pylops.optimization.solver.cgls` is always
+        used when ``y`` is not a NumPy array (e.g., CuPy or JAX array)
     show : :obj:`bool`, optional
         Display iterations log
     itershow : :obj:`tuple`, optional
-            Display set log for the first N1 steps, last N2 steps,
-            and every N3 steps in between where N1, N2, N3 are the
-            three element of the list.
+        Display set log for the first N1 steps, last N2 steps,
+        and every N3 steps in between where N1, N2, N3 are the
+        three element of the list.
     show_inner : :obj:`bool`, optional
-        Display inner iteration logs of lsqr
+        Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
     preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.6.0
+        .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver. Note that if ``y``
-            is a JAX array, this option is ignored and variables are not
-            pre-allocated since JAX does not support in-place operations.
+        Pre-allocate all variables used by the solver. Note that if ``y``
+        is a JAX array, this option is ignored and variables are not
+        pre-allocated since JAX does not support in-place operations.
     **kwargs_lsqr
-        Arbitrary keyword arguments for
-        :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-        subproblem in the first step of the Split Bregman algorithm.
+        Arbitrary keyword arguments for the solver of the
+        :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
+        (:py:func:`scipy.sparse.linalg.lsqr` or
+        :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
 
     Returns
     -------

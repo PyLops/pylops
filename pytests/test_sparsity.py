@@ -18,6 +18,7 @@ from pylops.basicoperators import (
     FirstDerivative,
     Identity,
     MatrixMult,
+    SecondDerivative,
     Smoothing2D,
     VStack,
 )
@@ -644,3 +645,76 @@ def test_SplitBregman(par):
             **kwars_solver,
         )
         assert (np.linalg.norm(x - xinv) / np.linalg.norm(x)) < 1e-1
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_SplitBregman_tol0(par):
+    """Run SplitBregman with tol=0 and check that all outer iterations are run"""
+    np.random.seed(42)
+    nx = 3 * par["nx"]
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+
+    x = np.zeros(nx)
+    x[: nx // 2] = 10
+    x[nx // 2 : 3 * nx // 4] = -5
+    y = x + np.random.normal(0, 1, nx)
+    niter_end = 10
+
+    kwars_solver = (
+        dict(iter_lim=5, damp=1e-3) if backend == "numpy" else dict(niter=5, damp=1e-3)
+    )
+    xinv, iiter, cost = splitbregman(
+        Iop,
+        y,
+        [Dop],
+        niter_outer=niter_end,
+        niter_inner=3,
+        mu=0.05,
+        epsRL1s=[0.3],
+        tol=0.0,
+        **kwars_solver,
+    )
+    assert iiter == niter_end
+    assert len(cost) == niter_end
+    assert np.linalg.norm(xinv) > 0
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_SplitBregman_cost(par):
+    """Check that SplitBregman cost matches the documented cost function"""
+    np.random.seed(42)
+    nx = 3 * par["nx"]
+    Iop = Identity(nx)
+    D1op = FirstDerivative(nx, edge=True)
+    D2op = SecondDerivative(nx, edge=True)
+
+    x = np.zeros(nx)
+    x[: nx // 2] = 10
+    x[nx // 2 : 3 * nx // 4] = -5
+    y = x + np.random.normal(0, 1, nx)
+    yreg = np.random.normal(0, 1, nx)
+    mu, epsRL1, epsRL2 = 0.5, 0.3, 0.7
+
+    kwars_solver = (
+        dict(iter_lim=5, damp=1e-3) if backend == "numpy" else dict(niter=5, damp=1e-3)
+    )
+    xinv, _, cost = splitbregman(
+        Iop,
+        y,
+        [D1op],
+        RegsL2=[D2op],
+        dataregsL2=[yreg],
+        niter_outer=1,
+        niter_inner=3,
+        mu=mu,
+        epsRL1s=[epsRL1],
+        epsRL2s=[epsRL2],
+        **kwars_solver,
+    )
+    J = (
+        mu / 2 * np.linalg.norm(y - Iop @ xinv) ** 2
+        + epsRL2 / 2 * np.linalg.norm(yreg - D2op @ xinv) ** 2
+        + epsRL1**2 * np.linalg.norm(D1op @ xinv, ord=1)
+    )
+    assert_array_almost_equal(cost[0], J, decimal=6)

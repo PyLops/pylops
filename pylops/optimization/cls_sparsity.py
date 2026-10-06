@@ -2747,11 +2747,12 @@ class SplitBregman(Solver):
         Whether the input data is a JAX array or not.
     nregsL1 : :obj:`int`
         Number of L1 regularization terms.
-    b : :obj:`numpy.ndarray`
-        Bregman update vector.
-    d : :obj:`numpy.ndarray`
-        Shrinked vector.
-    nregsL1 : :obj:`int`
+    b : :obj:`list`
+        Bregman variables (one per :math:`L_1` regularization term).
+    d : :obj:`list`
+        Split variables obtained by shrinkage (one per :math:`L_1`
+        regularization term).
+    nregsL2 : :obj:`int`
         Number of L2 regularization terms.
     Regs : :obj:`list`
         List of L1 and L2 regularization terms.
@@ -2775,15 +2776,19 @@ class SplitBregman(Solver):
         J = \frac{\mu}{2} \|\textbf{y} - \textbf{Op}\,\textbf{x} \|_2^2 +
         \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{y}_{\mathbf{R}_{2,i}} -
         \mathbf{R}_{2,i} \textbf{x} \|_2^2 +
-        \sum_i \epsilon_{\mathbf{R}_{1,i}} \| \mathbf{R}_{1,i} \textbf{x} \|_1
+        \sum_i \epsilon_{\mathbf{R}_{1,i}}^2 \| \mathbf{R}_{1,i} \textbf{x} \|_1
 
     where :math:`\mu` is the reconstruction damping, :math:`\epsilon_{\mathbf{R}_{2,i}}`
     are the damping factors used to weight the different :math:`L_2` regularization
     terms of the cost function and :math:`\epsilon_{\mathbf{R}_{1,i}}`
-    are the damping factors used to weight the different :math:`L_1` regularization
-    terms of the cost function.
+    are the damping factors of the different :math:`L_1` regularization
+    terms of the cost function. Note that :math:`\epsilon_{\mathbf{R}_{1,i}}` is used
+    both as weight of the augmented :math:`L_2` term and as threshold of the
+    shrinkage step of the Split-Bregman algorithm (see below): as a consequence,
+    the effective weight of each :math:`L_1` regularization term is
+    :math:`\epsilon_{\mathbf{R}_{1,i}}^2`.
 
-    The generalized Split-Bergman algorithm [1]_ is used to solve such cost
+    The generalized Split-Bregman algorithm [1]_ is used to solve such cost
     function: the algorithm is composed of a sequence of unconstrained
     inverse problems and Bregman updates.
 
@@ -2794,29 +2799,43 @@ class SplitBregman(Solver):
         J = \frac{\mu}{2} \|\textbf{y} - \textbf{Op}\,\textbf{x}\|_2^2 +
         \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{y}_{\mathbf{R}_{2,i}} -
         \mathbf{R}_{2,i} \textbf{x}\|_2^2 +
-        \sum_i \| \textbf{y}_i \|_1 \quad \text{subject to} \quad
-        \textbf{y}_i = \mathbf{R}_{1,i} \textbf{x} \quad \forall i
+        \sum_i \epsilon_{\mathbf{R}_{1,i}}^2 \| \textbf{d}_i \|_1 \quad \text{subject to} \quad
+        \textbf{d}_i = \mathbf{R}_{1,i} \textbf{x} \quad \forall i
 
     and solved as follows:
 
     .. math::
         \begin{aligned}
-        (\textbf{x}^{k+1}, \textbf{y}_i^{k+1}) = \operatorname*{arg\,min}_{\mathbf{x}, \mathbf{y}_i}
+        (\textbf{x}^{k+1}, \textbf{d}_i^{k+1}) = \operatorname*{arg\,min}_{\mathbf{x}, \mathbf{d}_i}
         \; & \frac{\mu}{2} \|\textbf{y} - \textbf{Op}\,\textbf{x}\|_2^2 \\
         & + \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{y}_{\mathbf{R}_{2,i}} -
         \mathbf{R}_{2,i} \textbf{x}\|_2^2 \\
-        & + \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{1,i}} \|\textbf{y}_i -
+        & + \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{1,i}} \|\textbf{d}_i -
         \mathbf{R}_{1,i} \textbf{x} - \textbf{b}_i^k\|_2^2 \\
-        & + \sum_i \| \textbf{y}_i \|_1
+        & + \sum_i \epsilon_{\mathbf{R}_{1,i}}^2 \| \textbf{d}_i \|_1
         \end{aligned}
 
     .. math::
         \textbf{b}_i^{k+1}=\textbf{b}_i^k +
-        (\mathbf{R}_{1,i} \textbf{x}^{k+1} - \textbf{y}_i^{k+1})
+        \tau (\mathbf{R}_{1,i} \textbf{x}^{k+1} - \textbf{d}_i^{k+1})
 
-    The :py:func:`scipy.sparse.linalg.lsqr` solver and a fast shrinkage
-    algorithm are used within a inner loop to solve the first step. The entire
-    procedure is repeated ``niter_outer`` times until convergence.
+    where :math:`\textbf{d}_i` are the split variables, :math:`\textbf{b}_i`
+    are the Bregman variables, and :math:`\tau` is a scaling factor of the
+    Bregman update (:math:`\tau=1` in the original algorithm [1]_).
+
+    The first step is solved by alternating ``niter_inner`` times the
+    minimization over :math:`\textbf{x}` and over :math:`\textbf{d}_i`. The
+    :math:`\textbf{x}`-subproblem is an :math:`L_2`-regularized least-squares
+    problem, solved with :py:func:`scipy.sparse.linalg.lsqr`
+    (``engine="scipy"`` and NumPy arrays) or with
+    :py:func:`pylops.optimization.solver.cgls` (``engine="pylops"``, or
+    any other array type, e.g., CuPy or JAX arrays). The
+    :math:`\textbf{d}_i`-subproblems are solved in closed form by soft
+    thresholding :math:`\mathbf{R}_{1,i} \textbf{x}^{k+1} + \textbf{b}_i^k`
+    with threshold :math:`\epsilon_{\mathbf{R}_{1,i}}`. The entire
+    procedure is repeated ``niter_outer`` times, or until the norm of the
+    difference between the models of two subsequent outer iterations is
+    smaller than ``tol``.
 
     .. [1] Goldstein T. and Osher S., "The Split Bregman Method for
        L1-Regularized Problems", SIAM J. on Scientific Computing, vol. 2(2),
@@ -2946,7 +2965,8 @@ class SplitBregman(Solver):
              Data term damping
         epsRL1s : :obj:`list`
              :math:`L_1` Regularization dampings (must have the same number of elements
-             as ``RegsL1``)
+             as ``RegsL1``). Note that the effective weight of each :math:`L_1`
+             regularization term in the cost function is ``epsRL1s[i]**2``
         epsRL2s : :obj:`list`
              :math:`L_2` Regularization dampings (must have the same number of elements
              as ``RegsL2``)
@@ -2972,7 +2992,7 @@ class SplitBregman(Solver):
         Returns
         -------
         x : :obj:`numpy.ndarray`
-            Initial guess of size :math:`[N \times 1]`
+            Initial guess of size :math:`[M \times 1]`
 
         """
         self.y = y
@@ -3047,20 +3067,23 @@ class SplitBregman(Solver):
 
         Parameters
         ----------
-        x : :obj:`list` or :obj:`numpy.ndarray`
-            Current model vector to be updated by a step of OMP
+        x : :obj:`numpy.ndarray`
+            Current model vector to be updated by a step of Split Bregman
         engine : :obj:`str`, optional
-            Solver to use (``scipy`` or ``pylops``)
+            Solver used for the :math:`\mathbf{x}`-subproblem of the Split
+            Bregman algorithm: ``scipy`` for :py:func:`scipy.sparse.linalg.lsqr`
+            or ``pylops`` for :py:func:`pylops.optimization.solver.cgls`.
+            Note that :py:func:`pylops.optimization.solver.cgls` is always
+            used when ``y`` is not a NumPy array (e.g., CuPy or JAX array)
         show : :obj:`bool`, optional
             Display iteration log
         show_inner : :obj:`bool`, optional
-            Display inner iteration logs of lsqr
+            Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
         **kwargs_solver
-            Arbitrary keyword arguments for chosen solver
-            used to solve the first subproblem in the first step of the
-            Split Bregman algorithm (:py:func:`scipy.sparse.linalg.lsqr` and
-            :py:func:`pylops.optimization.solver.cgls` are used as default
-            for numpy and cupy `data`, respectively).
+            Arbitrary keyword arguments for the solver of the
+            :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
+            (:py:func:`scipy.sparse.linalg.lsqr` or
+            :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
 
         Returns
         -------
@@ -3120,15 +3143,15 @@ class SplitBregman(Solver):
             0
             if self.RegsL2 is None
             else [
-                epsRL2 * self.ncp.linalg.norm(dataregL2 - RegL2.matvec(x)) ** 2
+                epsRL2 / 2.0 * self.ncp.linalg.norm(dataregL2 - RegL2.matvec(x)) ** 2
                 for epsRL2, RegL2, dataregL2 in zip(
                     self.epsRL2s, self.RegsL2, self.dataregsL2, strict=True
                 )
             ]
         )
         self.costregL1 = [
-            self.ncp.linalg.norm(RegL1.matvec(x), ord=1)
-            for _, RegL1 in zip(self.epsRL1s, self.RegsL1, strict=True)
+            epsRL1**2 * self.ncp.linalg.norm(RegL1.matvec(x), ord=1)
+            for epsRL1, RegL1 in zip(self.epsRL1s, self.RegsL1, strict=True)
         ]
         self.costtot = (
             self.costdata
@@ -3157,9 +3180,13 @@ class SplitBregman(Solver):
         Parameters
         ----------
         x : :obj:`numpy.ndarray`
-            Current model vector to be updated by multiple steps of IRLS
+            Current model vector to be updated by multiple steps of Split Bregman
         engine : :obj:`str`, optional
-            Solver to use (``scipy`` or ``pylops``)
+            Solver used for the :math:`\mathbf{x}`-subproblem of the Split
+            Bregman algorithm: ``scipy`` for :py:func:`scipy.sparse.linalg.lsqr`
+            or ``pylops`` for :py:func:`pylops.optimization.solver.cgls`.
+            Note that :py:func:`pylops.optimization.solver.cgls` is always
+            used when ``y`` is not a NumPy array (e.g., CuPy or JAX array)
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -3167,11 +3194,12 @@ class SplitBregman(Solver):
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
         show_inner : :obj:`bool`, optional
-            Display inner iteration logs of lsqr
+            Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
         **kwargs_lsqr
-            Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-            subproblem in the first step of the Split Bregman algorithm.
+            Arbitrary keyword arguments for the solver of the
+            :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
+            (:py:func:`scipy.sparse.linalg.lsqr` or
+            :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
 
         Returns
         -------
@@ -3179,10 +3207,8 @@ class SplitBregman(Solver):
             Estimated model of size :math:`[M \times 1]`
 
         """
-        xold = x.copy() + 1.1 * self.tol
-        while (
-            self.ncp.linalg.norm(x - xold) > self.tol and self.iiter < self.niter_outer
-        ):
+        xupdate = np.inf
+        while xupdate > self.tol and self.iiter < self.niter_outer:
             xold = x.copy()
             showstep = (
                 True
@@ -3195,6 +3221,7 @@ class SplitBregman(Solver):
                 else False
             )
             x = self.step(x, engine, showstep, show_inner, **kwargs_lsqr)
+            xupdate = self.ncp.linalg.norm(x - xold)
             self.callback(x)
             # check if any callback has raised a stop flag
             stop = _callback_stop(self.callbacks)
@@ -3274,7 +3301,8 @@ class SplitBregman(Solver):
              Data term damping
         epsRL1s : :obj:`list`
              :math:`L_1` Regularization dampings (must have the same number of elements
-             as ``RegsL1``)
+             as ``RegsL1``). Note that the effective weight of each :math:`L_1`
+             regularization term in the cost function is ``epsRL1s[i]**2``
         epsRL2s : :obj:`list`
              :math:`L_2` Regularization dampings (must have the same number of elements
              as ``RegsL2``)
@@ -3289,7 +3317,11 @@ class SplitBregman(Solver):
             Note that when this is set to ``True``, the ``x0`` provided in the setup will
             be used in all iterations.
         engine : :obj:`str`, optional
-            Solver to use (``scipy`` or ``pylops``)
+            Solver used for the :math:`\mathbf{x}`-subproblem of the Split
+            Bregman algorithm: ``scipy`` for :py:func:`scipy.sparse.linalg.lsqr`
+            or ``pylops`` for :py:func:`pylops.optimization.solver.cgls`.
+            Note that :py:func:`pylops.optimization.solver.cgls` is always
+            used when ``y`` is not a NumPy array (e.g., CuPy or JAX array)
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
@@ -3303,11 +3335,12 @@ class SplitBregman(Solver):
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
         show_inner : :obj:`bool`, optional
-            Display inner iteration logs of lsqr
+            Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
         **kwargs_lsqr
-            Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-            subproblem in the first step of the Split Bregman algorithm.
+            Arbitrary keyword arguments for the solver of the
+            :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
+            (:py:func:`scipy.sparse.linalg.lsqr` or
+            :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
 
         Returns
         -------
