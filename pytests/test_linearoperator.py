@@ -81,6 +81,24 @@ def test_scaled(par):
         assert S3op.dtype == dtype
 
 
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
+def test_scalar_division(par):
+    """Verify that dividing by a scalar scales the operator, like ``Op * (1 / a)``,
+    instead of solving ``a = Op x``
+    """
+    shape = (par["ny"], par["nx"])
+    A = np.random.normal(0, 10, shape) + par["imag"] * np.random.normal(0, 10, shape)
+    x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
+    Mop = MatrixMult(A, dtype=par["dtype"])
+    # an explicit operator and one that is not
+    for Op in (Mop, VStack([Mop])):
+        for scalar in (2, 2.0, np.float64(2.0), np.array(2.0)):
+            Sop = Op / scalar
+            assert isinstance(Sop, LinearOperator)
+            assert Sop.shape == Op.shape
+            assert_array_almost_equal(Sop @ x, (Op @ x) / 2, decimal=6)
+
+
 @pytest.mark.parametrize("par", [(par1), (par1j)])
 def test_scipyop(par):
     """Verify interaction between pylops and scipy Linear operators"""

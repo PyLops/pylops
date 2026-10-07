@@ -137,6 +137,9 @@ class _FFT2D_numpy(_BaseFFTND):
         return y
 
     def __truediv__(self, y: NDArray) -> NDArray:
+        if np.ndim(y) == 0:
+            # A scalar divisor scales the operator (see LinearOperator.div)
+            return super().__truediv__(y)
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale
         return self._rmatvec(y)
@@ -244,6 +247,9 @@ class _FFT2D_scipy(_BaseFFTND):
         return y
 
     def __truediv__(self, y: NDArray) -> NDArray:
+        if np.ndim(y) == 0:
+            # A scalar divisor scales the operator (see LinearOperator.div)
+            return super().__truediv__(y)
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale / self._scale
         return self._rmatvec(y)
@@ -358,6 +364,9 @@ class _FFT2D_mklfft(_BaseFFTND):
         return y
 
     def __truediv__(self, y: NDArray) -> NDArray:
+        if np.ndim(y) == 0:
+            # A scalar divisor scales the operator (see LinearOperator.div)
+            return super().__truediv__(y)
         if self.norm is not _FFTNorms.ORTHO:
             return self._rmatvec(y) / self._scale / self._scale
         return self._rmatvec(y)
