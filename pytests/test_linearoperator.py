@@ -179,6 +179,34 @@ def test_eigs(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+def test_lipschitz(par):
+    """Lipschitz constant (and its square) of a linear operator"""
+    diag = np.arange(par["nx"], 0, -1) + par["imag"] * np.arange(par["nx"], 0, -1)
+    Op = Diagonal(diag, dtype=par["dtype"])
+    if par["ny"] > par["nx"]:
+        Op = VStack([Op, Zero(par["ny"] - par["nx"], par["nx"])])
+
+    # largest singular value of a diagonal (padded) matrix is the largest
+    # entry of the diagonal
+    lipschitz = Op.Lipschitz()
+    lipschitz_np = np.abs(diag).max()
+    assert_array_almost_equal(lipschitz, lipschitz_np, decimal=3)
+
+    # square=True returns the square of the Lipschitz constant
+    lipschitz_sq = Op.Lipschitz(square=True)
+    assert_array_almost_equal(lipschitz_sq, lipschitz**2, decimal=3)
+
+    # same result against a non-diagonal operator via the singular values
+    M = np.arange(par["ny"] * par["nx"]).reshape(par["ny"], par["nx"]) + par[
+        "imag"
+    ] * np.ones((par["ny"], par["nx"]))
+    Op = MatrixMult(M, dtype=par["dtype"])
+    lipschitz = Op.Lipschitz()
+    lipschitz_np = np.linalg.svd(M, compute_uv=False)[0]
+    assert_array_almost_equal(lipschitz, lipschitz_np, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
 def test_conj(par):
     """Complex conjugation operator"""
     M = 1j * np.ones((par["ny"], par["nx"]))

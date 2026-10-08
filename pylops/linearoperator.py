@@ -1211,6 +1211,73 @@ class LinearOperator(_LinearOperator):
 
         return cond
 
+    def Lipschitz(
+        self,
+        square: bool = False,
+        backend: str = "numpy",
+        **kwargs_eig: int | float | str,
+    ) -> float:
+        r"""Lipschitz constant of linear operator.
+
+        Return the Lipschitz constant of the linear operator, defined as the
+        largest singular value of the operator
+
+        .. math::
+            L = \|\mathbf{A}\|_2 = \sqrt{\lambda_{max}(\mathbf{A}^H\mathbf{A})}
+
+        i.e. the square root of the largest eigenvalue of the normal operator
+        :math:`\mathbf{A}^H\mathbf{A}`. This is the constant that appears in
+        the convergence condition of gradient-based solvers, so it is
+        frequently needed to select a step size (for example
+        :math:`\alpha = 1/L^2` in :func:`pylops.optimization.sparsity.ista`).
+
+        Parameters
+        ----------
+        square : :obj:`bool`, optional
+            Return the square of the Lipschitz constant
+            :math:`\lambda_{max}(\mathbf{A}^H\mathbf{A})` (``True``) instead of
+            the Lipschitz constant itself (``False``). The squared value can be
+            used directly where solvers need :math:`\lambda_{max}`.
+        backend : :obj:`str`, optional
+            Backend used to compute the largest eigenvalue (``numpy`` or
+            ``cupy`` or ``jax``). Note that this must be consistent with how the
+            operator has been created.
+        **kwargs_eig
+            Arbitrary keyword arguments for
+            :func:`pylops.LinearOperator.eigs` (``numpy`` backend) or
+            :func:`pylops.optimization.eigs.power_iteration` (``cupy``/``jax``
+            backends)
+
+        Returns
+        -------
+        lipschitz : :obj:`float`
+            Lipschitz constant (or its square if ``square=True``).
+
+        Notes
+        -----
+        For the ``numpy`` backend the largest eigenvalue of the normal operator
+        is estimated with :func:`pylops.LinearOperator.eigs` (which is
+        symmetric, as :math:`\mathbf{A}^H\mathbf{A}` is Hermitian). For the
+        ``cupy`` and ``jax`` backends it is estimated with
+        :func:`pylops.optimization.eigs.power_iteration`.
+
+        """
+        Op1 = self.H * self
+        if backend == "numpy":
+            maxeig = Op1.eigs(neigs=1, symmetric=True, **kwargs_eig)[0]
+        else:
+            from pylops.optimization.eigs import power_iteration
+
+            maxeig = power_iteration(
+                Op1,
+                dtype=Op1.dtype,
+                backend=backend,
+                **kwargs_eig,
+            )[0]
+
+        maxeig = np.abs(maxeig)
+        return float(maxeig) if square else float(np.sqrt(maxeig))
+
     def conj(self) -> LinearOperator:
         """Complex conjugate operator
 
