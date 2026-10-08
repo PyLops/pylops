@@ -36,7 +36,7 @@ class NonStationaryConvolve3D(LinearOperator):
 
     Parameters
     ----------
-    dims : :obj:`list` or :obj:`int`
+    dims : :obj:`list`
         Number of samples for each dimension (which we refer to as :math:`n_x \times n_y \times n_z`).
     hs : :obj:`numpy.ndarray`
         Bank of 3d compact filters of size
@@ -125,7 +125,7 @@ class NonStationaryConvolve3D(LinearOperator):
 
     def __init__(
         self,
-        dims: int | InputDimsLike,
+        dims: InputDimsLike,
         hs: NDArray,
         ihx: InputDimsLike,
         ihy: InputDimsLike,
