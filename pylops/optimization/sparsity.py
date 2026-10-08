@@ -746,14 +746,14 @@ def splitbregman(
         :math:`L_1` regularization operators
     x0 : :obj:`numpy.ndarray`, optional
         Initial guess
-    niter_outer : :obj:`int`
+    niter_outer : :obj:`int`, optional
         Number of iterations of outer loop
-    niter_inner : :obj:`int`
+    niter_inner : :obj:`int`, optional
         Number of iterations of inner loop of first step of the Split Bregman
         algorithm. A small number of iterations is generally sufficient and
         for many applications optimal efficiency is obtained when only one
         iteration is performed.
-    RegsL2 : :obj:`list`
+    RegsL2 : :obj:`list`, optional
         Additional :math:`L_2` regularization operators
         (if ``None``, :math:`L_2` regularization is not added to the problem)
     dataregsL2 : :obj:`list`, optional
@@ -762,11 +762,11 @@ def splitbregman(
         regularization operator in ``RegsL2``)
     mu : :obj:`float`, optional
         Data term damping
-    epsRL1s : :obj:`list`
+    epsRL1s : :obj:`list`, optional
         :math:`L_1` Regularization dampings (must have the same number of elements
         as ``RegsL1``). Note that the effective weight of each :math:`L_1`
         regularization term in the cost function is ``epsRL1s[i]**2``
-    epsRL2s : :obj:`list`
+    epsRL2s : :obj:`list`, optional
         :math:`L_2` Regularization dampings (must have the same number of elements
         as ``RegsL2``)
     lambdaRL1s : :obj:`list`, optional
