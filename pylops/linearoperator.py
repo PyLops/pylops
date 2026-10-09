@@ -835,14 +835,15 @@ class LinearOperator(_LinearOperator):
 
     def div(
         self,
-        y: NDArray,
+        y: NDArray | float,
         niter: int = 100,
         densesolver: str = "scipy",
-    ) -> NDArray:
+    ) -> NDArray | LinearOperator:
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
 
         Overloading of operator ``/`` to improve expressivity of `Pylops`
-        when solving inverse problems.
+        when solving inverse problems. Dividing by a scalar instead scales
+        the operator, so ``Op / a`` is the same as ``Op * (1 / a)``.
 
         Parameters
         ----------
@@ -864,10 +865,13 @@ class LinearOperator(_LinearOperator):
 
     def __truediv__(
         self,
-        y: NDArray,
+        y: NDArray | float,
         niter: int = 100,
         densesolver: str = "scipy",
-    ) -> NDArray:
+    ) -> NDArray | LinearOperator:
+        if np.isscalar(y):
+            # A scalar divisor scales the operator, symmetric with ``Op * a``
+            return self * (1 / y)
         if self.explicit is True:
             if sp.sparse.issparse(self.A):
                 # use scipy solver for sparse matrices
