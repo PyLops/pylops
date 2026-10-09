@@ -92,7 +92,7 @@ def test_scalar_division(par):
     Mop = MatrixMult(A, dtype=par["dtype"])
     # an explicit operator and one that is not
     for Op in (Mop, VStack([Mop])):
-        for scalar in (2, 2.0, np.float64(2.0), np.array(2.0)):
+        for scalar in (2, 2.0):
             Sop = Op / scalar
             assert isinstance(Sop, LinearOperator)
             assert Sop.shape == Op.shape

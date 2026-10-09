@@ -136,8 +136,8 @@ class _FFT2D_numpy(_BaseFFTND):
             y = ncp.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
-    def __truediv__(self, y: NDArray) -> NDArray:
-        if np.ndim(y) == 0:
+    def __truediv__(self, y: NDArray | float) -> NDArray | LinearOperator:
+        if np.isscalar(y):
             # A scalar divisor scales the operator (see LinearOperator.div)
             return super().__truediv__(y)
         if self.norm is not _FFTNorms.ORTHO:
@@ -246,8 +246,8 @@ class _FFT2D_scipy(_BaseFFTND):
             y = scipy.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
-    def __truediv__(self, y: NDArray) -> NDArray:
-        if np.ndim(y) == 0:
+    def __truediv__(self, y: NDArray | float) -> NDArray | LinearOperator:
+        if np.isscalar(y):
             # A scalar divisor scales the operator (see LinearOperator.div)
             return super().__truediv__(y)
         if self.norm is not _FFTNorms.ORTHO:
@@ -363,8 +363,8 @@ class _FFT2D_mklfft(_BaseFFTND):
             y = scipy.fft.fftshift(y, axes=self.axes[self.ifftshift_before])
         return y
 
-    def __truediv__(self, y: NDArray) -> NDArray:
-        if np.ndim(y) == 0:
+    def __truediv__(self, y: NDArray | float) -> NDArray | LinearOperator:
+        if np.isscalar(y):
             # A scalar divisor scales the operator (see LinearOperator.div)
             return super().__truediv__(y)
         if self.norm is not _FFTNorms.ORTHO:

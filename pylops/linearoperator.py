@@ -835,10 +835,10 @@ class LinearOperator(_LinearOperator):
 
     def div(
         self,
-        y: NDArray,
+        y: NDArray | float,
         niter: int = 100,
         densesolver: str = "scipy",
-    ) -> NDArray:
+    ) -> NDArray | LinearOperator:
         r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
 
         Overloading of operator ``/`` to improve expressivity of `Pylops`
@@ -869,7 +869,7 @@ class LinearOperator(_LinearOperator):
         niter: int = 100,
         densesolver: str = "scipy",
     ) -> NDArray | LinearOperator:
-        if np.ndim(y) == 0:
+        if np.isscalar(y):
             # A scalar divisor scales the operator, symmetric with ``Op * a``
             return self * (1 / y)
         if self.explicit is True:
