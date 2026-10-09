@@ -1054,7 +1054,9 @@ class LinearOperator(_LinearOperator):
         uselobpcg : :obj:`bool`, optional
             Use :func:`scipy.sparse.linalg.lobpcg`
         backend : :obj:`str`, optional
-                Backend to use (`numpy` or `cupy`)
+            .. versionadded:: 2.9.0
+
+            Backend to use (`numpy` or `cupy`)
         **kwargs_eig
             Arbitrary keyword arguments for :func:`scipy.sparse.linalg.eigs`,
             :func:`scipy.sparse.linalg.eigsh`, or
@@ -1249,6 +1251,7 @@ class LinearOperator(_LinearOperator):
     def cond(
         self,
         uselobpcg: bool = False,
+        backend: Tbackend = "numpy",
         **kwargs_eig: int | float | str,
     ) -> NDArray:
         r"""Condition number of linear operator.
@@ -1260,6 +1263,10 @@ class LinearOperator(_LinearOperator):
         ----------
         uselobpcg : :obj:`bool`, optional
             Use :func:`scipy.sparse.linalg.lobpcg` to compute eigenvalues
+        backend : :obj:`str`, optional
+            .. versionadded:: 2.9.0
+
+            Backend to use (`numpy` or `cupy`)
         **kwargs_eig
             Arbitrary keyword arguments for :func:`scipy.sparse.linalg.eigs`,
             :func:`scipy.sparse.linalg.eigsh`, or
@@ -1292,16 +1299,26 @@ class LinearOperator(_LinearOperator):
         """
         if not uselobpcg:
             cond = (
-                self.eigs(neigs=1, which="LM", **kwargs_eig).item()
-                / self.eigs(neigs=1, which="SM", **kwargs_eig).item()
+                self.eigs(neigs=1, which="LM", backend=backend, **kwargs_eig).item()
+                / self.eigs(neigs=1, which="SM", backend=backend, **kwargs_eig).item()
             )
         else:
             cond = (
                 self.eigs(
-                    neigs=1, symmetric=True, uselobpcg=True, largest=True, **kwargs_eig
+                    neigs=1,
+                    symmetric=True,
+                    uselobpcg=True,
+                    largest=True,
+                    backend=backend,
+                    **kwargs_eig,
                 ).item()
                 / self.eigs(
-                    neigs=1, symmetric=True, uselobpcg=True, largest=False, **kwargs_eig
+                    neigs=1,
+                    symmetric=True,
+                    uselobpcg=True,
+                    largest=False,
+                    backend=backend,
+                    **kwargs_eig,
                 ).item()
             )
 

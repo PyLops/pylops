@@ -151,11 +151,11 @@ def test_eigs_lobpcg_failures(par):
 
     # lobpcg cannot be used for non-symmetric operators
     with pytest.raises(ValueError, match="non real-symmetric or complex-hermitian"):
-        Op.eigs(neigs=2, symmetric=False, uselobpcg=True)
+        Op.eigs(neigs=2, symmetric=False, uselobpcg=True, backend=backend)
 
     # lobpcg cannot be used when neigs is too large
     with pytest.raises(ValueError, match="requires the operator size"):
-        Op.eigs(neigs=nx // 5 + 1, symmetric=True, uselobpcg=True)
+        Op.eigs(neigs=nx // 5 + 1, symmetric=True, uselobpcg=True, backend=backend)
     # constraints reduce the available size
     with pytest.raises(ValueError, match="number of constraints"):
         Op.eigs(
@@ -163,6 +163,7 @@ def test_eigs_lobpcg_failures(par):
             symmetric=True,
             uselobpcg=True,
             Y=np.eye(nx, 5, dtype=par["dtype"]),
+            backend=backend,
         )
 
 
@@ -173,26 +174,26 @@ def test_eigs(par):
     # explicit=True
     diag = np.arange(nx, 0, -1) + par["imag"] * np.arange(nx, 0, -1)
     Op = MatrixMult(np.vstack((np.diag(diag), np.zeros((ny - nx, nx)))))
-    eigs = Op.eigs()
+    eigs = Op.eigs(backend=backend)
     assert_array_almost_equal(diag[: eigs.size], eigs, decimal=3)
 
-    cond = Op.cond()
+    cond = Op.cond(backend=backend)
     assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
     # explicit=False
     Op = Diagonal(diag, dtype=par["dtype"])
     if ny > nx:
         Op = VStack([Op, Zero(ny - nx, nx)])
-    eigs = Op.eigs()
+    eigs = Op.eigs(backend=backend)
     assert_array_almost_equal(diag[: eigs.size], eigs, decimal=3)
 
-    cond = Op.cond()
+    cond = Op.cond(backend=backend)
     assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
     # uselobpcg with Op.H @ Op
     Op1 = Op.H @ Op
 
-    eigs1 = Op1.eigs(neigs=5, symmetric=True, uselobpcg=True, niter=50)
+    eigs1 = Op1.eigs(neigs=5, symmetric=True, uselobpcg=True, niter=50, backend=backend)
     assert_array_almost_equal(np.abs(eigs[: eigs1.size]) ** 2, eigs1, decimal=3)
 
     # cond1 = Op.cond(uselobpcg=True, niter=100)
