@@ -18,6 +18,9 @@ __all__ = [
     "get_sparse_eye",
     "get_lstsq",
     "get_sp_fft",
+    "get_eigvals",
+    "get_eigsh",
+    "get_lobpcg",
     "get_complex_dtype",
     "get_real_dtype",
     "to_cupy",
@@ -36,10 +39,11 @@ from types import ModuleType
 
 import numpy as np
 import scipy.fft as sp_fft
-from scipy.linalg import block_diag, lstsq, toeplitz
+from scipy.linalg import block_diag, eigvals, lstsq, toeplitz
 from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve, correlate, fftconvolve, oaconvolve
 from scipy.sparse import csc_matrix, csr_matrix, dia_matrix, eye
+from scipy.sparse.linalg import eigsh, lobpcg
 
 from pylops.utils import deps
 from pylops.utils.typing import ArrayLike, DTypeLike, NDArray, Tfftengine_ncj
@@ -48,6 +52,7 @@ if deps.cupy_enabled:
     import cupy as cp
     import cupyx
     import cupyx.scipy.fft as cp_fft
+    from cupy.linalg import eigvals as cp_eigvals
     from cupyx.scipy.linalg import block_diag as cp_block_diag
     from cupyx.scipy.linalg import toeplitz as cp_toeplitz
     from cupyx.scipy.ndimage import gaussian_filter as cp_gaussian_filter
@@ -59,6 +64,8 @@ if deps.cupy_enabled:
     from cupyx.scipy.sparse import csr_matrix as cp_csr_matrix
     from cupyx.scipy.sparse import dia_matrix as cp_dia_matrix
     from cupyx.scipy.sparse import eye as cp_eye
+    from cupyx.scipy.sparse.linalg import eigsh as cp_eigsh
+    from cupyx.scipy.sparse.linalg import lobpcg as cp_lobpcg
 
 if deps.jax_enabled:
     import jax
@@ -525,6 +532,75 @@ def get_sp_fft(x: ArrayLike) -> Callable:
         return sp_fft
     else:
         return cp_fft
+
+
+def get_eigvals(x: ArrayLike) -> Callable:
+    """Returns correct eigvals module based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Array
+
+    Returns
+    -------
+    f : :obj:`callable`
+        Function to be used to process array
+
+    """
+    if not deps.cupy_enabled:
+        return eigvals
+
+    if cp.get_array_module(x) == np:
+        return eigvals
+    else:
+        return cp_eigvals
+
+
+def get_eigsh(x: ArrayLike) -> Callable:
+    """Returns correct eigsh module based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Array
+
+    Returns
+    -------
+    f : :obj:`callable`
+        Function to be used to process array
+
+    """
+    if not deps.cupy_enabled:
+        return eigsh
+
+    if cp.get_array_module(x) == np:
+        return eigsh
+    else:
+        return cp_eigsh
+
+
+def get_lobpcg(x: ArrayLike) -> Callable:
+    """Returns correct lobpcg module based on input
+
+    Parameters
+    ----------
+    x : :obj:`numpy.ndarray`
+        Array
+
+    Returns
+    -------
+    f : :obj:`callable`
+        Function to be used to process array
+
+    """
+    if not deps.cupy_enabled:
+        return lobpcg
+
+    if cp.get_array_module(x) == np:
+        return lobpcg
+    else:
+        return cp_lobpcg
 
 
 def get_complex_dtype(dtype: DTypeLike) -> DTypeLike:

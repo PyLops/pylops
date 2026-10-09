@@ -141,41 +141,62 @@ def test_sparse(par):
     assert_array_equal(S.toarray(), D)
 
 
-@pytest.mark.skipif(
-    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
-)
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
+def test_eigs_lobpcg_failures(par):
+    """Fail uselobpcg when the operator is not symmetric or
+    when neigs is too large to avoid lobpcg dense solver
+    """
+    nx = 10 * par["nx"]
+    Op = Diagonal(np.arange(nx, 0, -1), dtype=par["dtype"])
+
+    # lobpcg cannot be used for non-symmetric operators
+    with pytest.raises(ValueError, match="non real-symmetric or complex-hermitian"):
+        Op.eigs(neigs=2, symmetric=False, uselobpcg=True)
+
+    # lobpcg cannot be used when neigs is too large
+    with pytest.raises(ValueError, match="requires the operator size"):
+        Op.eigs(neigs=nx // 5 + 1, symmetric=True, uselobpcg=True)
+    # constraints reduce the available size
+    with pytest.raises(ValueError, match="number of constraints"):
+        Op.eigs(
+            neigs=nx // 5,
+            symmetric=True,
+            uselobpcg=True,
+            Y=np.eye(nx, 5, dtype=par["dtype"]),
+        )
+
+
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
 def test_eigs(par):
     """Eigenvalues and condition number estimate with ARPACK"""
+    ny, nx = 10 * par["ny"], 10 * par["nx"]
     # explicit=True
-    diag = np.arange(par["nx"], 0, -1) + par["imag"] * np.arange(par["nx"], 0, -1)
-    Op = MatrixMult(
-        np.vstack((np.diag(diag), np.zeros((par["ny"] - par["nx"], par["nx"]))))
-    )
+    diag = np.arange(nx, 0, -1) + par["imag"] * np.arange(nx, 0, -1)
+    Op = MatrixMult(np.vstack((np.diag(diag), np.zeros((ny - nx, nx)))))
     eigs = Op.eigs()
     assert_array_almost_equal(diag[: eigs.size], eigs, decimal=3)
 
     cond = Op.cond()
-    assert_array_almost_equal(np.real(cond), par["nx"], decimal=3)
+    assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
     # explicit=False
     Op = Diagonal(diag, dtype=par["dtype"])
-    if par["ny"] > par["nx"]:
-        Op = VStack([Op, Zero(par["ny"] - par["nx"], par["nx"])])
+    if ny > nx:
+        Op = VStack([Op, Zero(ny - nx, nx)])
     eigs = Op.eigs()
     assert_array_almost_equal(diag[: eigs.size], eigs, decimal=3)
 
-    # uselobpcg cannot be used for square non-symmetric complex matrices
-    if np.iscomplex(Op):
-        eigs1 = Op.eigs(uselobpcg=True)
-        assert_array_almost_equal(eigs, eigs1, decimal=3)
-
     cond = Op.cond()
-    assert_array_almost_equal(np.real(cond), par["nx"], decimal=3)
+    assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
-    if np.iscomplex(Op):
-        cond1 = Op.cond(uselobpcg=True, niter=100)
-        assert_array_almost_equal(np.real(cond), np.real(cond1), decimal=3)
+    # uselobpcg with Op.H @ Op
+    Op1 = Op.H @ Op
+
+    eigs1 = Op1.eigs(neigs=5, symmetric=True, uselobpcg=True, niter=50)
+    assert_array_almost_equal(np.abs(eigs[: eigs1.size]) ** 2, eigs1, decimal=3)
+
+    # cond1 = Op.cond(uselobpcg=True, niter=100)
+    # assert_array_almost_equal(np.real(cond) ** 2, np.real(cond1), decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])

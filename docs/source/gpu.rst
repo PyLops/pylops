@@ -226,7 +226,7 @@ GPU with CuPy, and GPU with JAX):
      - GPU/TPU with JAX
    * - :meth:`pylops.LinearOperator.cond`
      - |:white_check_mark:|
-     - |:red_circle:|
+     - |:white_check_mark:|
      - |:red_circle:|
    * - :meth:`pylops.LinearOperator.conj`
      - |:white_check_mark:|
@@ -238,7 +238,7 @@ GPU with CuPy, and GPU with JAX):
      - |:white_check_mark:|
    * - :meth:`pylops.LinearOperator.eigs`
      - |:white_check_mark:|
-     - |:red_circle:|
+     - |:white_check_mark:|
      - |:red_circle:|
    * - :meth:`pylops.LinearOperator.todense`
      - |:white_check_mark:|
