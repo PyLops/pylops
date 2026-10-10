@@ -167,37 +167,92 @@ def test_eigs_lobpcg_failures(par):
         )
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
-def test_eigs(par):
-    """Eigenvalues and condition number estimate with ARPACK"""
-    ny, nx = 10 * par["ny"], 10 * par["nx"]
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+@pytest.mark.parametrize("symmetric", [True, False])
+def test_eigs_square(par, symmetric):
+    """Eigenvalues and conditioning number estimate of square
+    diagonal matrix (note: by construction this is a symmetric
+    matrix with real-valued entries but not hermitian with
+    complex valued-entries)
+    """
+    if symmetric and par["imag"] != 0:
+        pytest.skip(
+            "Skip complex symmetric case: cannot have complex-valued diagonal entries"
+        )
+
+    # increase matrix size to ensure converge of lobpcg dense solver
+    nx = 10 * par["nx"]
+
+    # explicit=True
+    diag = np.arange(nx, 0, -1) + par["imag"] * np.arange(nx, 0, -1)
+    Op = MatrixMult(np.diag(diag))
+
+    eigs = Op.eigs(symmetric=symmetric, backend=backend)  # all
+    assert_array_almost_equal(eigs, diag[: eigs.size], decimal=3)
+
+    eigs = Op.eigs(neigs=3, symmetric=symmetric, backend=backend)  # top-k
+    assert_array_almost_equal(eigs, diag[:3], decimal=3)
+
+    cond = Op.cond(symmetric=symmetric, backend=backend)
+    assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    # explicit=False
+    Op = Diagonal(diag, dtype=par["dtype"])
+
+    eigs = Op.eigs(symmetric=symmetric, backend=backend)
+    assert_array_almost_equal(eigs, diag[: eigs.size], decimal=3)
+
+    eigs = Op.eigs(neigs=3, symmetric=symmetric, backend=backend)  # top-k
+    assert_array_almost_equal(eigs, diag[:3], decimal=3)
+
+    if backend == "numpy":
+        # CuPy cannot compute a single eigenvalue for square,
+        # non-symmetric matrix
+        cond = Op.cond(backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    # uselobpcg
+    if symmetric:
+        eigs1 = Op.eigs(
+            neigs=3, symmetric=True, uselobpcg=True, niter=50, backend=backend
+        )
+        assert_array_almost_equal(eigs1, eigs, decimal=3)
+
+        cond1 = Op.cond(uselobpcg=True, niter=100)
+        assert_array_almost_equal(cond1, cond, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par2), (par2j)])
+def test_eigs_non_square(par):
+    """Eigenvalues and conditioning number estimate of non-square matrix"""
+
+    ny, nx = par["ny"], par["nx"]
+
     # explicit=True
     diag = np.arange(nx, 0, -1) + par["imag"] * np.arange(nx, 0, -1)
     Op = MatrixMult(np.vstack((np.diag(diag), np.zeros((ny - nx, nx)))))
-    eigs = Op.eigs(backend=backend)
-    assert_array_almost_equal(diag[: eigs.size], eigs, decimal=3)
+
+    eigs = Op.eigs(backend=backend)  # all
+    assert_array_almost_equal(eigs, np.abs(diag)[: eigs.size], decimal=3)
+
+    eigs = Op.eigs(neigs=3, backend=backend)  # top-k
+    assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
 
     cond = Op.cond(backend=backend)
     assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
     # explicit=False
     Op = Diagonal(diag, dtype=par["dtype"])
-    if ny > nx:
-        Op = VStack([Op, Zero(ny - nx, nx)])
+    Op = VStack([Op, Zero(ny - nx, nx)])
+
     eigs = Op.eigs(backend=backend)
-    assert_array_almost_equal(diag[: eigs.size], eigs, decimal=3)
+    assert_array_almost_equal(eigs, np.abs(diag)[: eigs.size], decimal=3)
+
+    eigs = Op.eigs(neigs=3, backend=backend)  # top-k
+    assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
 
     cond = Op.cond(backend=backend)
     assert_array_almost_equal(np.real(cond), nx, decimal=3)
-
-    # uselobpcg with Op.H @ Op
-    Op1 = Op.H @ Op
-
-    eigs1 = Op1.eigs(neigs=5, symmetric=True, uselobpcg=True, niter=50, backend=backend)
-    assert_array_almost_equal(np.abs(eigs[: eigs1.size]) ** 2, eigs1, decimal=3)
-
-    # cond1 = Op.cond(uselobpcg=True, niter=100)
-    # assert_array_almost_equal(np.real(cond) ** 2, np.real(cond1), decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
