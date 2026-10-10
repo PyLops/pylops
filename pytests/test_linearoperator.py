@@ -218,18 +218,15 @@ def test_eigs_square(par, symmetric):
         cond = Op.cond(backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
-    # use lobpcg
+    # use lobpcg for symmetric case
     if symmetric:
         eigs1 = Op.eigs(
             neigs=3, symmetric=True, uselobpcg=True, niter=50, backend=backend
         )
         assert_array_almost_equal(eigs1, eigs, decimal=3)
 
-        if backend == "numpy":
-            # CuPy cannot compute a single eigenvalue for square,
-            # non-symmetric matrix
-            cond1 = Op.cond(uselobpcg=True, niter=100)
-            assert_array_almost_equal(cond1, cond, decimal=3)
+        cond = Op.cond(uselobpcg=True, niter=100)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par2), (par2j)])

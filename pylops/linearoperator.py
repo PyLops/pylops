@@ -1034,11 +1034,11 @@ class LinearOperator(_LinearOperator):
         and the square-root values are returned.
 
         .. note::
-            When ``backend="cupy"``, the eigenvalues of a square operator
-            can be computed only if it is symmetric (``symmetric=True``),
+            If ``backend="cupy"``, the eigenvalues of a square operator
+            can be computed only when in symmetric (``symmetric=True``),
             since CuPy does not provide an equivalent
             of :func:`scipy.sparse.linalg.eigs`. A
-            :obj:`NotImplementedError` is raised otherwise.
+            :obj:`NotImplementedError` is raised.
 
         Parameters
         ----------
@@ -1076,7 +1076,8 @@ class LinearOperator(_LinearOperator):
             If ``uselobpcg=True`` for a non-symmetric square matrix with
             complex type, or if ``uselobpcg=True`` and the size of the operator
             minus the number of constraints ``Y`` is smaller than 5 times ``neigs``
-            (in which case :func:`scipy.sparse.linalg.lobpcg` would switch to a dense solver)
+            (in which case :func:`scipy.sparse.linalg.lobpcg` would switch to a
+            dense solver)
         NotImplementedError
             If ``backend="cupy"`` and ``symmetric=False`` for a square
             operator for which only a limited number of eigenvalues is
@@ -1260,6 +1261,11 @@ class LinearOperator(_LinearOperator):
 
         Return an estimate of the condition number of the linear operator as
         the ratio of the largest and lowest estimated eigenvalues.
+
+        .. note::
+            If ``backend="cupy"``, the condition number can only be computed
+            with the ``uselobpcg=True`` option (and therefore for symmetric
+            operators).
 
         Parameters
         ----------
