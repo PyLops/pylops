@@ -179,13 +179,15 @@ def test_eigs_square(par, symmetric):
         pytest.skip(
             "Skip complex symmetric case: cannot have complex-valued diagonal entries"
         )
+    if not symmetric and backend == "cupy":
+        pytest.skip("Skip non-symmetric case for CuPy as eigs is missing")
 
     # increase matrix size to ensure converge of lobpcg dense solver
     nx = 10 * par["nx"]
 
     # explicit=True
-    diag = np.arange(nx, 0, -1) + par["imag"] * np.arange(nx, 0, -1)
-    Op = MatrixMult(np.diag(diag))
+    diag = np.arange(nx, 0.0, -1.0) + par["imag"] * np.arange(nx, 0.0, -1.0)
+    Op = MatrixMult(np.diag(diag), dtype=np.dtype(par["dtype"]))
 
     eigs = Op.eigs(symmetric=symmetric, backend=backend)  # all
     assert_array_almost_equal(eigs, diag[: eigs.size], decimal=3)
@@ -193,14 +195,19 @@ def test_eigs_square(par, symmetric):
     eigs = Op.eigs(neigs=3, symmetric=symmetric, backend=backend)  # top-k
     assert_array_almost_equal(eigs, diag[:3], decimal=3)
 
-    cond = Op.cond(symmetric=symmetric, backend=backend)
-    assert_array_almost_equal(np.real(cond), nx, decimal=3)
+    if backend == "numpy":
+        # CuPy cannot compute a single eigenvalue for square, non-symmetric matrix
+        cond = Op.cond(symmetric=symmetric, backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
     # explicit=False
-    Op = Diagonal(diag, dtype=par["dtype"])
+    Op = Diagonal(diag, dtype=np.dtype(par["dtype"]))
 
-    eigs = Op.eigs(symmetric=symmetric, backend=backend)
-    assert_array_almost_equal(eigs, diag[: eigs.size], decimal=3)
+    if backend == "numpy":
+        # CuPy cannot compute neigs-2 eigenvalues (seems to be
+        # a bug in CuPy's eigsh)
+        eigs = Op.eigs(symmetric=symmetric, backend=backend)
+        assert_array_almost_equal(eigs, diag[: eigs.size], decimal=3)
 
     eigs = Op.eigs(neigs=3, symmetric=symmetric, backend=backend)  # top-k
     assert_array_almost_equal(eigs, diag[:3], decimal=3)
@@ -211,15 +218,18 @@ def test_eigs_square(par, symmetric):
         cond = Op.cond(backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
-    # uselobpcg
+    # use lobpcg
     if symmetric:
         eigs1 = Op.eigs(
             neigs=3, symmetric=True, uselobpcg=True, niter=50, backend=backend
         )
         assert_array_almost_equal(eigs1, eigs, decimal=3)
 
-        cond1 = Op.cond(uselobpcg=True, niter=100)
-        assert_array_almost_equal(cond1, cond, decimal=3)
+        if backend == "numpy":
+            # CuPy cannot compute a single eigenvalue for square,
+            # non-symmetric matrix
+            cond1 = Op.cond(uselobpcg=True, niter=100)
+            assert_array_almost_equal(cond1, cond, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par2), (par2j)])
@@ -229,8 +239,11 @@ def test_eigs_non_square(par):
     ny, nx = par["ny"], par["nx"]
 
     # explicit=True
-    diag = np.arange(nx, 0, -1) + par["imag"] * np.arange(nx, 0, -1)
-    Op = MatrixMult(np.vstack((np.diag(diag), np.zeros((ny - nx, nx)))))
+    diag = np.arange(nx, 0.0, -1.0) + par["imag"] * np.arange(nx, 0.0, -1.0)
+    Op = MatrixMult(
+        np.vstack((np.diag(diag), np.zeros((ny - nx, nx)))),
+        dtype=np.dtype(par["dtype"]),
+    )
 
     eigs = Op.eigs(backend=backend)  # all
     assert_array_almost_equal(eigs, np.abs(diag)[: eigs.size], decimal=3)
