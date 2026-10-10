@@ -5,6 +5,7 @@ __all__ = [
     "aslinearoperator",
 ]
 
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
@@ -14,13 +15,11 @@ from multiprocessing.pool import Pool as PoolClass
 import numpy as np
 import scipy as sp
 from numpy.linalg import solve as np_solve
-from scipy.linalg import eigvals, lstsq
+from scipy.linalg import lstsq
 from scipy.linalg import solve as sp_solve
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
 from scipy.sparse.linalg import eigs as sp_eigs
-from scipy.sparse.linalg import eigsh as sp_eigsh
-from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse.linalg import lsqr, spsolve
 
 # need to check scipy version since the interface submodule changed into
@@ -34,10 +33,24 @@ else:
 from pylops import get_ndarray_multiplication
 from pylops._multioperator import _matvec_rmatvec_map
 from pylops.optimization.basic import cgls
-from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
+from pylops.utils.backend import (
+    get_array_module,
+    get_eigsh,
+    get_eigvals,
+    get_lobpcg,
+    get_module,
+    get_sparse_eye,
+)
 from pylops.utils.decorators import count
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike, Tpool
+from pylops.utils.typing import (
+    DTypeLike,
+    InputDimsLike,
+    NDArray,
+    ShapeLike,
+    Tbackend,
+    Tpool,
+)
 
 
 class _LinearOperator(ABC):
@@ -1006,31 +1019,44 @@ class LinearOperator(_LinearOperator):
         symmetric: bool = False,
         niter: int | None = None,
         uselobpcg: bool = False,
+        backend: Tbackend = "numpy",
         **kwargs_eig: int | float | str,
     ) -> NDArray:
-        r"""Most significant eigenvalues of linear operator.
+        r"""N-most significant eigenvalues of a linear operator.
 
-        Return an estimate of the most significant eigenvalues
+        Return an estimate of the ``neigs`` most significant eigenvalues
         of the linear operator. If the operator has rectangular
-        shape (``shape[0]!=shape[1]``), eigenvalues are first
+        shape (``shape[0] != shape[1]``), eigenvalues are first
         computed for the square operator :math:`\mathbf{A^H}\mathbf{A}`
         and the square-root values are returned.
+
+        .. note::
+            If ``backend="cupy"``, the eigenvalues of a square operator
+            can be computed only when in symmetric (``symmetric=True``),
+            since CuPy does not provide an equivalent
+            of :func:`scipy.sparse.linalg.eigs`. A
+            :obj:`NotImplementedError` is raised.
 
         Parameters
         ----------
         neigs : :obj:`int`
             Number of eigenvalues to compute (if ``None``, return all). Note
-            that for ``explicit=False``, only :math:`N-1` eigenvalues can be
+            that for ``explicit=False``, only :math:`N-2` eigenvalues can be
             computed where :math:`N` is the size of the operator in the
             model space
         symmetric : :obj:`bool`, optional
-            Operator is symmetric (``True``) or not (``False``). User should
-            set this parameter to ``True`` only when it is guaranteed that the
-            operator is real-symmetric or complex-hermitian matrices
+            Operator is real-symmetric or complex-hermitian (``True``)
+            or not (``False``). User should set this parameter to ``True``
+            only when it is guaranteed that the operator is real-symmetric
+            or complex-hermitian
         niter : :obj:`int`, optional
             Number of iterations for eigenvalue estimation
         uselobpcg : :obj:`bool`, optional
             Use :func:`scipy.sparse.linalg.lobpcg`
+        backend : :obj:`str`, optional
+            .. versionadded:: 2.9.0
+
+            Backend to use (`numpy` or `cupy`)
         **kwargs_eig
             Arbitrary keyword arguments for :func:`scipy.sparse.linalg.eigs`,
             :func:`scipy.sparse.linalg.eigsh`, or
@@ -1045,7 +1071,16 @@ class LinearOperator(_LinearOperator):
         ------
         ValueError
             If ``uselobpcg=True`` for a non-symmetric square matrix with
-            complex type
+            complex type, or if ``uselobpcg=True`` and the size of the operator
+            minus the number of constraints ``Y`` is smaller than 5 times ``neigs``
+            (in which case :func:`scipy.sparse.linalg.lobpcg` would switch to a
+            dense solver)
+        NotImplementedError
+            If ``backend="cupy"`` and ``symmetric=False`` for a square
+            operator for which only a limited number of eigenvalues is
+            requested (``neigs`` smaller than the size of the operator, or
+            ``explicit=False``), as CuPy does not provide an equivalent of
+            :func:`scipy.sparse.linalg.eigs`
 
         Notes
         -----
@@ -1075,88 +1110,148 @@ class LinearOperator(_LinearOperator):
         .. [1] http://www.caam.rice.edu/software/ARPACK/
 
         """
-        if self.explicit and isinstance(self.A, np.ndarray):
+
+        def _check_lobpcg_size(n: int, neigs: int, Y: NDArray | None = None) -> None:
+            """Check that scipy's lobpcg will iterate rather than use a dense solver
+
+            :func:`scipy.sparse.linalg.lobpcg` falls back to a dense eigensolver
+            (which cannot be applied to PyLops operators) when
+            ``n - sizeY < 5 * neigs``, where ``sizeY`` is the number of
+            constraints (columns of ``Y``, which can be passed via ``kwargs_eig``).
+
+            """
+            sizeY = Y.shape[1] if Y is not None and Y.ndim == 2 else 0
+            if n - sizeY < 5 * neigs:
+                msg = (
+                    f"uselobpcg=True requires the operator size ({n}) minus the "
+                    f"number of constraints ({sizeY}) to be at least 5 times the "
+                    f"number of requested eigenvalues ({neigs}); reduce neigs to "
+                    f"at most {(n - sizeY) // 5} or use uselobpcg=False"
+                )
+                raise ValueError(msg)
+
+        ncp = get_module(backend)
+        if self.explicit and isinstance(self.A, ncp.ndarray):
             if self.shape[0] == self.shape[1]:
+                # Square, explicit operator
                 if neigs is None or neigs == self.shape[1]:
-                    eigenvalues = eigvals(self.A)
+                    # All eigenvalues
+                    eigenvalues = get_eigvals(ncp.ones(1))(self.A)
                 else:
-                    if not symmetric and np.iscomplexobj(self) and uselobpcg:
+                    if not symmetric and uselobpcg:
                         msg = (
                             "Cannot use scipy.sparse.linalg.lobpcg "
-                            "for non-symmetric square matrices of complex type..."
+                            "for non real-symmetric or complex-hermitian matrices..."
                         )
                         raise ValueError(msg)
+                    # Limited number of eigenvalues
                     if symmetric and uselobpcg:
-                        X = np.random.rand(self.shape[0], neigs).astype(self.dtype)
-                        eigenvalues = sp_lobpcg(
+                        X = ncp.random.rand(self.shape[0], neigs).astype(self.dtype)
+                        eigenvalues = get_lobpcg(ncp.ones(1))(
                             self.A, X=X, maxiter=niter, **kwargs_eig
                         )[0]
                     elif symmetric:
-                        eigenvalues = sp_eigsh(
+                        eigenvalues = get_eigsh(ncp.ones(1))(
                             self.A, k=neigs, maxiter=niter, **kwargs_eig
                         )[0]
                     else:
+                        if backend == "cupy":
+                            msg = (
+                                "Eigenvalues of non-symmetric square "
+                                "operators are not available with CuPy backend"
+                            )
+                            raise NotImplementedError(msg)
                         eigenvalues = sp_eigs(
                             self.A, k=neigs, maxiter=niter, **kwargs_eig
                         )[0]
-
             else:
+                # Non-square, explicit operator
                 if neigs is None or neigs == self.shape[1]:
-                    eigenvalues = np.sqrt(eigvals(np.dot(np.conj(self.A.T), self.A)))
+                    # All eigenvalues
+                    eigenvalues = ncp.sqrt(
+                        get_eigvals(ncp.ones(1))(ncp.dot(ncp.conj(self.A.T), self.A))
+                    )
                 else:
+                    # Limited number of eigenvalues
                     if uselobpcg:
-                        X = np.random.rand(self.shape[1], neigs).astype(self.dtype)
-                        eigenvalues = np.sqrt(
-                            sp_lobpcg(
-                                np.dot(np.conj(self.A.T), self.A),
+                        X = ncp.random.rand(self.shape[1], neigs).astype(self.dtype)
+                        eigenvalues = ncp.sqrt(
+                            get_lobpcg(ncp.ones(1))(
+                                ncp.dot(ncp.conj(self.A.T), self.A),
                                 X=X,
                                 maxiter=niter,
                                 **kwargs_eig,
                             )[0]
                         )
                     else:
-                        eigenvalues = np.sqrt(
-                            sp_eigsh(
-                                np.dot(np.conj(self.A.T), self.A),
+                        eigenvalues = ncp.sqrt(
+                            get_eigsh(ncp.ones(1))(
+                                ncp.dot(ncp.conj(self.A.T), self.A),
                                 k=neigs,
                                 maxiter=niter,
                                 **kwargs_eig,
                             )[0]
                         )
         else:
-            if neigs is None or neigs >= self.shape[1]:
+            # Check that the number of eigenvalues requested is not larger
+            # than the number of columns in the operator minus one
+            if neigs is None or neigs >= self.shape[1] - 1:
+                if neigs is not None:
+                    warnings.warn(
+                        "The provided neigs (%d) exceeds the number of columns "
+                        "in the operator minus one (%d), reset to %d"
+                        % (neigs, self.shape[1] - 1, self.shape[1] - 2),
+                        stacklevel=2,
+                    )
                 neigs = self.shape[1] - 2
             if self.shape[0] == self.shape[1]:
-                if not symmetric and np.iscomplexobj(self) and uselobpcg:
+                # Square, linear operator
+                if not symmetric and uselobpcg:
                     msg = (
-                        "Cannot use scipy.sparse.linalg.lobpcg for "
-                        "non symmetric square matrices of complex type..."
+                        "Cannot use scipy.sparse.linalg.lobpcg "
+                        "for non real-symmetric or complex-hermitian operators..."
                     )
                     raise ValueError(msg)
                 if symmetric and uselobpcg:
-                    X = np.random.rand(self.shape[0], neigs).astype(self.dtype)
-                    eigenvalues = sp_lobpcg(self, X=X, maxiter=niter, **kwargs_eig)[0]
+                    _check_lobpcg_size(self.shape[0], neigs, kwargs_eig.get("Y"))
+                    X = ncp.random.rand(self.shape[0], neigs).astype(self.dtype)
+                    eigenvalues = get_lobpcg(ncp.ones(1))(
+                        self, X=X, maxiter=niter, **kwargs_eig
+                    )[0]
                 elif symmetric:
-                    eigenvalues = sp_eigsh(self, k=neigs, maxiter=niter, **kwargs_eig)[
-                        0
-                    ]
+                    eigenvalues = get_eigsh(ncp.ones(1))(
+                        self, k=neigs, maxiter=niter, **kwargs_eig
+                    )[0]
                 else:
+                    if backend == "cupy":
+                        msg = (
+                            "Eigenvalues of non-symmetric square "
+                            "operators are not available with CuPy backend"
+                        )
+                        raise NotImplementedError(msg)
                     eigenvalues = sp_eigs(self, k=neigs, maxiter=niter, **kwargs_eig)[0]
             else:
+                # Non-square, linear operator
                 if uselobpcg:
-                    X = np.random.rand(self.shape[1], neigs).astype(self.dtype)
-                    eigenvalues = np.sqrt(
-                        sp_lobpcg(self.H * self, X=X, maxiter=niter, **kwargs_eig)[0]
+                    _check_lobpcg_size(self.shape[1], neigs, kwargs_eig.get("Y"))
+                    X = ncp.random.rand(self.shape[1], neigs).astype(self.dtype)
+                    eigenvalues = ncp.sqrt(
+                        get_lobpcg(ncp.ones(1))(
+                            self.H * self, X=X, maxiter=niter, **kwargs_eig
+                        )[0]
                     )
                 else:
-                    eigenvalues = np.sqrt(
-                        sp_eigs(self.H * self, k=neigs, maxiter=niter, **kwargs_eig)[0]
+                    eigenvalues = ncp.sqrt(
+                        get_eigsh(ncp.ones(1))(
+                            self.H * self, k=neigs, maxiter=niter, **kwargs_eig
+                        )[0]
                     )
-        return -np.sort(-eigenvalues)
+        return -ncp.sort(-eigenvalues)
 
     def cond(
         self,
         uselobpcg: bool = False,
+        backend: Tbackend = "numpy",
         **kwargs_eig: int | float | str,
     ) -> NDArray:
         r"""Condition number of linear operator.
@@ -1164,10 +1259,19 @@ class LinearOperator(_LinearOperator):
         Return an estimate of the condition number of the linear operator as
         the ratio of the largest and lowest estimated eigenvalues.
 
+        .. note::
+            If ``backend="cupy"``, the condition number can only be computed
+            with the ``uselobpcg=True`` option (and therefore for symmetric
+            operators).
+
         Parameters
         ----------
         uselobpcg : :obj:`bool`, optional
             Use :func:`scipy.sparse.linalg.lobpcg` to compute eigenvalues
+        backend : :obj:`str`, optional
+            .. versionadded:: 2.9.0
+
+            Backend to use (`numpy` or `cupy`)
         **kwargs_eig
             Arbitrary keyword arguments for :func:`scipy.sparse.linalg.eigs`,
             :func:`scipy.sparse.linalg.eigsh`, or
@@ -1199,15 +1303,27 @@ class LinearOperator(_LinearOperator):
 
         """
         if not uselobpcg:
-            cond = (
-                self.eigs(neigs=1, which="LM", **kwargs_eig).item()
-                / self.eigs(neigs=1, which="SM", **kwargs_eig).item()
-            )
+            lmax = self.eigs(neigs=1, which="LM", backend=backend, **kwargs_eig).item()
+            lmin = self.eigs(neigs=1, which="SM", backend=backend, **kwargs_eig).item()
+            cond = lmax / lmin
         else:
-            cond = (
-                self.eigs(neigs=1, uselobpcg=True, largest=True, **kwargs_eig).item()
-                / self.eigs(neigs=1, uselobpcg=True, largest=False, **kwargs_eig).item()
-            )
+            lmax = self.eigs(
+                neigs=1,
+                symmetric=True,
+                uselobpcg=True,
+                largest=True,
+                backend=backend,
+                **kwargs_eig,
+            ).item()
+            lmin = self.eigs(
+                neigs=1,
+                symmetric=True,
+                uselobpcg=True,
+                largest=False,
+                backend=backend,
+                **kwargs_eig,
+            ).item()
+            cond = lmax / lmin
 
         return cond
 
