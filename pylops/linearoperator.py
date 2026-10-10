@@ -181,6 +181,9 @@ class LinearOperator(_LinearOperator):
             self.forceflat = forceflat
         self.name = name
 
+        # ndim: required by some eigenvalue solvers
+        self.ndim = len(self.shape)
+
         # counters
         self.matvec_count = 0
         self.rmatvec_count = 0
@@ -1298,16 +1301,7 @@ class LinearOperator(_LinearOperator):
         """
         if not uselobpcg:
             lmax = self.eigs(neigs=1, which="LM", backend=backend, **kwargs_eig).item()
-            if backend == "numpy":
-                lmin = self.eigs(
-                    neigs=1, which="SM", backend=backend, **kwargs_eig
-                ).item()
-            else:
-                # CuPy does not support SM, so we compute the smallest eigenvalue
-                # as the largest eigenvalue of the inverse operator
-                lmin = self.eigs(
-                    neigs=1, sigma=0, which="LM", backend=backend, **kwargs_eig
-                ).item()
+            lmin = self.eigs(neigs=1, which="SM", backend=backend, **kwargs_eig).item()
             cond = lmax / lmin
         else:
             lmax = self.eigs(
