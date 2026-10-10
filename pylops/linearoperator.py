@@ -181,9 +181,6 @@ class LinearOperator(_LinearOperator):
             self.forceflat = forceflat
         self.name = name
 
-        # ndim: required by some eigenvalue solvers
-        self.ndim = len(self.shape)
-
         # counters
         self.matvec_count = 0
         self.rmatvec_count = 0
