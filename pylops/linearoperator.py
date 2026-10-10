@@ -1163,7 +1163,6 @@ class LinearOperator(_LinearOperator):
                         eigenvalues = sp_eigs(
                             self.A, k=neigs, maxiter=niter, **kwargs_eig
                         )[0]
-
             else:
                 # Non-square, explicit operator
                 if neigs is None or neigs == self.shape[1]:
@@ -1298,29 +1297,36 @@ class LinearOperator(_LinearOperator):
 
         """
         if not uselobpcg:
-            cond = (
-                self.eigs(neigs=1, which="LM", backend=backend, **kwargs_eig).item()
-                / self.eigs(neigs=1, which="SM", backend=backend, **kwargs_eig).item()
-            )
+            lmax = self.eigs(neigs=1, which="LM", backend=backend, **kwargs_eig).item()
+            if backend == "numpy":
+                lmin = self.eigs(
+                    neigs=1, which="SM", backend=backend, **kwargs_eig
+                ).item()
+            else:
+                # CuPy does not support SM, so we compute the smallest eigenvalue
+                # as the largest eigenvalue of the inverse operator
+                lmin = self.eigs(
+                    neigs=1, sigma=0, which="LM", backend=backend, **kwargs_eig
+                ).item()
+            cond = lmax / lmin
         else:
-            cond = (
-                self.eigs(
-                    neigs=1,
-                    symmetric=True,
-                    uselobpcg=True,
-                    largest=True,
-                    backend=backend,
-                    **kwargs_eig,
-                ).item()
-                / self.eigs(
-                    neigs=1,
-                    symmetric=True,
-                    uselobpcg=True,
-                    largest=False,
-                    backend=backend,
-                    **kwargs_eig,
-                ).item()
-            )
+            lmax = self.eigs(
+                neigs=1,
+                symmetric=True,
+                uselobpcg=True,
+                largest=True,
+                backend=backend,
+                **kwargs_eig,
+            ).item()
+            lmin = self.eigs(
+                neigs=1,
+                symmetric=True,
+                uselobpcg=True,
+                largest=False,
+                backend=backend,
+                **kwargs_eig,
+            ).item()
+            cond = lmax / lmin
 
         return cond
 
