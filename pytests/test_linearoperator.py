@@ -251,8 +251,11 @@ def test_eigs_non_square(par):
     eigs = Op.eigs(neigs=3, backend=backend)  # top-k
     assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
 
-    cond = Op.cond(backend=backend)
-    assert_array_almost_equal(np.real(cond), nx, decimal=3)
+    if backend == "numpy":
+        # CuPy cannot compute a single eigenvalue for square,
+        # non-symmetric matrix
+        cond = Op.cond(backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
     # explicit=False
     Op = Diagonal(diag, dtype=par["dtype"])
@@ -264,8 +267,11 @@ def test_eigs_non_square(par):
     eigs = Op.eigs(neigs=3, backend=backend)  # top-k
     assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
 
-    cond = Op.cond(backend=backend)
-    assert_array_almost_equal(np.real(cond), nx, decimal=3)
+    if backend == "numpy":
+        # CuPy cannot compute a single eigenvalue for square,
+        # non-symmetric matrix
+        cond = Op.cond(backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
