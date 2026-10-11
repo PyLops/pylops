@@ -357,8 +357,13 @@ def test_eigs_square_hermitian(par, explicit):
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
     # lobpcg
-    eigs = Op.eigs(neigs=3, symmetric=True, uselobpcg=True, niter=100, backend=backend)
-    assert_array_almost_equal(eigs, eigs_true[:3], decimal=3)
+    if backend == "numpy":
+        # CuPy cannot compute 2+ with lobpcg (seems to be
+        # a bug in CuPy's lobpcg)
+        eigs = Op.eigs(
+            neigs=3, symmetric=True, uselobpcg=True, niter=100, backend=backend
+        )
+        assert_array_almost_equal(eigs, eigs_true[:3], decimal=3)
 
     cond = Op.cond(uselobpcg=True, niter=200, backend=backend)
     assert_array_almost_equal(np.real(cond), nx, decimal=3)
@@ -390,11 +395,17 @@ def test_eigs_non_square(par):
     assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
 
     # neigs equal to size of operator minus one
-    eigs = Op.eigs(neigs=nx - 1, backend=backend)
-    assert_array_almost_equal(eigs, np.abs(diag)[: nx - 1], decimal=3)
+    if backend == "numpy":
+        # CuPy cannot compute neigs-1 eigenvalues (seems to be
+        # a bug in CuPy's eigsh)
+        eigs = Op.eigs(neigs=nx - 1, backend=backend)
+        assert_array_almost_equal(eigs, np.abs(diag)[: nx - 1], decimal=3)
 
-    eigs = Op.eigs(neigs=2, uselobpcg=True, niter=100, backend=backend)  # lobpcg
-    assert_array_almost_equal(eigs, np.abs(diag)[:2], decimal=3)
+    if backend == "numpy":
+        # CuPy cannot compute 2+ with lobpcg (seems to be
+        # a bug in CuPy's lobpcg)
+        eigs = Op.eigs(neigs=2, uselobpcg=True, niter=100, backend=backend)
+        assert_array_almost_equal(eigs, np.abs(diag)[:2], decimal=3)
 
     if backend == "numpy":
         cond = Op.cond(backend=backend)
