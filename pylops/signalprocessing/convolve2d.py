@@ -24,7 +24,8 @@ class Convolve2D(ConvolveND):
     axes : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
-        Axes along which convolution is applied
+        Axes along which convolution is applied. For a three-dimensional model,
+        filter dimension ``i`` is applied along model axis ``axes[i]``.
     method : :obj:`str`, optional
         Method used to calculate the convolution (``auto``, ``direct`` or ``fft``)
         - see :func:`scipy.signal.convolve` for details.

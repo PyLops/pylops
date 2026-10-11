@@ -19,6 +19,9 @@ Changelog
   and `pylops.optimization.basic.lsqr`, which previously assigned the same value to
   every entry of `var`
 
+* Fixed filter axis order in `pylops.signalprocessing.Convolve2D` and `ConvolveND`
+  when embedding a lower-dimensional filter along unsorted axes
+
 # 2.7.0
 * Added cubic spline interpolation operator via
   `pylops.signalprocessing.interpspline.InterpCubicSpline` (also interfaceable via

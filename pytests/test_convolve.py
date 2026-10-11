@@ -1,4 +1,5 @@
 import os
+from itertools import product
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
@@ -193,6 +194,43 @@ def test_Convolve1D_method_error():
         Convolve1D(
             (nfilt[0] * 4, nfilt[0] * 4), h=h1, offset=nfilt[0] // 2, method="direct"
         )
+
+
+@pytest.mark.parametrize(
+    "dims, hshape, axes",
+    [
+        ((5, 4, 6), (2, 3), (0, 2)),
+        ((5, 4, 6), (2, 3), (2, 0)),
+        ((5, 4, 6), (2, 3), (-1, -3)),
+        ((5, 4, 6, 3), (2, 3, 2), (2, 0, 3)),
+    ],
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.complex128])
+def test_ConvolveND_filter_axes(dims, hshape, axes, dtype):
+    """Embed each filter dimension along the requested model axis."""
+    np.random.seed(21)
+    h = (np.random.randn(*hshape) + 1).astype(dtype)
+    if dtype == np.complex128:
+        h += 1j * np.random.randn(*hshape)
+    x = np.random.randn(*dims).astype(dtype)
+    y = np.random.randn(*dims).astype(dtype)
+    offset = (1,) * len(hshape)
+    expected_y = np.zeros_like(x)
+    expected_x = np.zeros_like(y)
+    # Sum the individual shifted kernel contributions, with zero extension.
+    for index in product(*(range(n) for n in hshape)):
+        source = [slice(None)] * len(dims)
+        target = [slice(None)] * len(dims)
+        for i, axis in enumerate(axes):
+            shift = index[i] - offset[i]
+            source[axis] = slice(max(0, -shift), min(dims[axis], dims[axis] - shift))
+            target[axis] = slice(max(0, shift), min(dims[axis], dims[axis] + shift))
+        expected_y[tuple(target)] += h[index] * x[tuple(source)]
+        expected_x[tuple(source)] += h[index].conj() * y[tuple(target)]
+    operator = Convolve2D if len(hshape) == 2 else ConvolveND
+    Cop = operator(dims, h=h, offset=offset, axes=axes, dtype=dtype)
+    assert_array_almost_equal(Cop @ x.ravel(), expected_y.ravel(), decimal=4)
+    assert_array_almost_equal(Cop.H @ y.ravel(), expected_x.ravel(), decimal=4)
 
 
 @pytest.mark.parametrize("dims", [nfilt[0] * 4, (3, nfilt[0] * 4)])
