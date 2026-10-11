@@ -147,9 +147,14 @@ def test_eigs_lobpcg_failures(par):
     when neigs is too large to avoid lobpcg dense solver
     """
     nx = 10 * par["nx"]
-    Op = Diagonal(np.arange(nx, 0, -1), dtype=par["dtype"])
 
-    # lobpcg cannot be used for non-symmetric operators
+    # lobpcg cannot be used for non-symmetric explicit operators
+    Op = MatrixMult(np.diag(np.arange(nx, 0.0, -1.0)), dtype=np.dtype(par["dtype"]))
+    with pytest.raises(ValueError, match="non real-symmetric or complex-hermitian"):
+        Op.eigs(neigs=2, symmetric=False, uselobpcg=True, backend=backend)
+
+    # lobpcg cannot be used for non-symmetric linear operators
+    Op = Diagonal(np.arange(nx, 0, -1), dtype=par["dtype"])
     with pytest.raises(ValueError, match="non real-symmetric or complex-hermitian"):
         Op.eigs(neigs=2, symmetric=False, uselobpcg=True, backend=backend)
 
@@ -165,6 +170,36 @@ def test_eigs_lobpcg_failures(par):
             Y=np.eye(nx, 5, dtype=par["dtype"]),
             backend=backend,
         )
+
+    # lobpcg size check for non-square operators (based on number of columns)
+    Op = VStack([Op, Zero(par["ny"], nx)])
+    with pytest.raises(ValueError, match="uselobpcg=True requires the operator size"):
+        Op.eigs(neigs=nx // 5 + 1, uselobpcg=True, backend=backend)
+    with pytest.raises(ValueError, match="uselobpcg=True requires the operator size"):
+        Op.eigs(
+            neigs=nx // 5,
+            uselobpcg=True,
+            Y=np.eye(nx, 5, dtype=par["dtype"]),
+            backend=backend,
+        )
+
+
+@pytest.mark.skipif(int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 0, reason="CuPy only")
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_eigs_cupy_nonsymmetric_failures(par):
+    """Fail non-symmetric square operators with CuPy backend"""
+    nx = 10 * par["nx"]
+    diag = np.arange(nx, 0.0, -1.0)
+
+    # explicit=True (limited number of eigenvalues)
+    Op = MatrixMult(np.diag(diag), dtype=np.dtype(par["dtype"]))
+    with pytest.raises(NotImplementedError, match="not available with CuPy"):
+        Op.eigs(neigs=3, symmetric=False, backend="cupy")
+
+    # explicit=False
+    Op = Diagonal(diag, dtype=np.dtype(par["dtype"]))
+    with pytest.raises(NotImplementedError, match="not available with CuPy"):
+        Op.eigs(neigs=3, symmetric=False, backend="cupy")
 
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
@@ -190,15 +225,26 @@ def test_eigs_square(par, symmetric):
     Op = MatrixMult(np.diag(diag), dtype=np.dtype(par["dtype"]))
 
     eigs = Op.eigs(symmetric=symmetric, backend=backend)  # all
-    assert_array_almost_equal(eigs, diag[: eigs.size], decimal=3)
+    assert_array_almost_equal(eigs, diag, decimal=3)
 
     eigs = Op.eigs(neigs=3, symmetric=symmetric, backend=backend)  # top-k
     assert_array_almost_equal(eigs, diag[:3], decimal=3)
 
+    # neigs equal to size of operator returns all eigenvalues
+    eigs = Op.eigs(neigs=nx, symmetric=symmetric, backend=backend)
+    assert_array_almost_equal(eigs, diag, decimal=3)
+
     if backend == "numpy":
         # CuPy cannot compute a single eigenvalue for square, non-symmetric matrix
-        cond = Op.cond(symmetric=symmetric, backend=backend)
+        cond = Op.cond(backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    if symmetric:
+        # lobpcg
+        eigs = Op.eigs(
+            neigs=3, symmetric=True, uselobpcg=True, niter=50, backend=backend
+        )
+        assert_array_almost_equal(eigs, diag[:3], decimal=3)
 
     # explicit=False
     Op = Diagonal(diag, dtype=np.dtype(par["dtype"]))
@@ -207,7 +253,14 @@ def test_eigs_square(par, symmetric):
         # CuPy cannot compute neigs-2 eigenvalues (seems to be
         # a bug in CuPy's eigsh)
         eigs = Op.eigs(symmetric=symmetric, backend=backend)
+        assert eigs.size == nx - 2  # neigs=None is clamped to N-2 (no warning)
         assert_array_almost_equal(eigs, diag[: eigs.size], decimal=3)
+
+        # neigs too large is clamped to N-2 (with warning)
+        with pytest.warns(UserWarning, match="exceeds the number of columns"):
+            eigs = Op.eigs(neigs=nx, symmetric=symmetric, backend=backend)
+        assert eigs.size == nx - 2
+        assert_array_almost_equal(eigs, diag[: nx - 2], decimal=3)
 
     eigs = Op.eigs(neigs=3, symmetric=symmetric, backend=backend)  # top-k
     assert_array_almost_equal(eigs, diag[:3], decimal=3)
@@ -218,8 +271,8 @@ def test_eigs_square(par, symmetric):
         cond = Op.cond(backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
-    # use lobpcg for symmetric case
     if symmetric:
+        # lobpcg
         eigs1 = Op.eigs(
             neigs=3, symmetric=True, uselobpcg=True, niter=50, backend=backend
         )
@@ -227,6 +280,53 @@ def test_eigs_square(par, symmetric):
 
         cond = Op.cond(uselobpcg=True, niter=100, backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1j)])
+@pytest.mark.parametrize("explicit", [True, False])
+def test_eigs_square_hermitian(par, explicit):
+    """Eigenvalues and conditioning number estimate of complex-valued
+    hermitian matrix with known (real-valued) eigenvalues
+    """
+    nx = 5 * par["nx"]
+
+    # hermitian matrix A = U diag(eigs) U^H with U unitary
+    np.random.seed(0)
+    U, _ = np.linalg.qr(
+        np.random.normal(size=(nx, nx)) + 1j * np.random.normal(size=(nx, nx))
+    )
+    eigs_true = np.arange(nx, 0.0, -1.0)
+    A = (U * eigs_true) @ np.conj(U.T)
+    A = (A + np.conj(A.T)) / 2  # remove round-off asymmetry
+    Op = MatrixMult(A, dtype=np.dtype(par["dtype"]))
+    Op.explicit = explicit
+
+    # hermitian operator
+    assert_array_almost_equal(Op.H.todense(), Op.todense(), decimal=6)
+
+    # hermitian solver
+    if explicit:
+        eigs = Op.eigs(symmetric=True, backend=backend)  # all
+        assert_array_almost_equal(eigs, eigs_true, decimal=3)
+
+    eigs = Op.eigs(neigs=3, symmetric=True, backend=backend)  # top-k
+    assert_array_almost_equal(eigs, eigs_true[:3], decimal=3)
+
+    cond = Op.cond(symmetric=True, backend=backend)
+    assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    # lobpcg
+    eigs = Op.eigs(neigs=3, symmetric=True, uselobpcg=True, niter=100, backend=backend)
+    assert_array_almost_equal(eigs, eigs_true[:3], decimal=3)
+
+    cond = Op.cond(uselobpcg=True, niter=200, backend=backend)
+    assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    # general solver (not available for CuPy)
+    if backend == "numpy":
+        eigs = Op.eigs(neigs=3, symmetric=False, backend=backend)
+        assert_array_almost_equal(np.real(eigs), eigs_true[:3], decimal=3)
+        assert_array_almost_equal(np.imag(eigs), np.zeros(3), decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par2), (par2j)])
@@ -247,6 +347,9 @@ def test_eigs_non_square(par):
 
     eigs = Op.eigs(neigs=3, backend=backend)  # top-k
     assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
+
+    eigs = Op.eigs(neigs=2, uselobpcg=True, niter=100, backend=backend)  # lobpcg
+    assert_array_almost_equal(eigs, np.abs(diag)[:2], decimal=3)
 
     if backend == "numpy":
         # CuPy cannot compute a single eigenvalue for square,
@@ -272,6 +375,13 @@ def test_eigs_non_square(par):
         # non-symmetric matrix
         cond = Op.cond(backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    # use lobpcg
+    eigs = Op.eigs(neigs=2, uselobpcg=True, niter=100, backend=backend)
+    assert_array_almost_equal(eigs, np.abs(diag)[:2], decimal=3)
+
+    cond = Op.cond(uselobpcg=True, niter=200, backend=backend)
+    assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])

@@ -1055,7 +1055,8 @@ class LinearOperator(_LinearOperator):
         niter : :obj:`int`, optional
             Number of iterations for eigenvalue estimation
         uselobpcg : :obj:`bool`, optional
-            Use :func:`scipy.sparse.linalg.lobpcg`
+            Use :func:`scipy.sparse.linalg.lobpcg`. Note that this method
+            is only available for symmetric operators.
         backend : :obj:`str`, optional
             .. versionadded:: 2.9.0
 
@@ -1141,13 +1142,13 @@ class LinearOperator(_LinearOperator):
                     # All eigenvalues
                     eigenvalues = get_eigvals(ncp.ones(1))(self.A)
                 else:
+                    # Limited number of eigenvalues
                     if not symmetric and uselobpcg:
                         msg = (
                             "Cannot use scipy.sparse.linalg.lobpcg "
                             "for non real-symmetric or complex-hermitian matrices..."
                         )
                         raise ValueError(msg)
-                    # Limited number of eigenvalues
                     if symmetric and uselobpcg:
                         X = ncp.random.rand(self.shape[0], neigs).astype(self.dtype)
                         eigenvalues = get_lobpcg(ncp.ones(1))(
@@ -1264,8 +1265,8 @@ class LinearOperator(_LinearOperator):
 
         .. note::
             If ``backend="cupy"``, the condition number can only be computed
-            with the ``uselobpcg=True`` option (and therefore for symmetric
-            operators).
+            with the ``uselobpcg=True`` option (and therefore for square,
+            symmetric operators only).
 
         Parameters
         ----------
@@ -1274,7 +1275,7 @@ class LinearOperator(_LinearOperator):
         backend : :obj:`str`, optional
             .. versionadded:: 2.9.0
 
-            Backend to use (`numpy` or `cupy`)
+            Backend to use (`numpy` or `cupy`).
         **kwargs_eig
             Arbitrary keyword arguments for :func:`scipy.sparse.linalg.eigs`,
             :func:`scipy.sparse.linalg.eigsh`, or
