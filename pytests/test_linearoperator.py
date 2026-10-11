@@ -225,7 +225,7 @@ def test_eigs_square(par, symmetric):
         )
         assert_array_almost_equal(eigs1, eigs, decimal=3)
 
-        cond = Op.cond(uselobpcg=True, niter=100)
+        cond = Op.cond(uselobpcg=True, niter=100, backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
 
@@ -258,8 +258,11 @@ def test_eigs_non_square(par):
     Op = Diagonal(diag, dtype=par["dtype"])
     Op = VStack([Op, Zero(ny - nx, nx)])
 
-    eigs = Op.eigs(backend=backend)
-    assert_array_almost_equal(eigs, np.abs(diag)[: eigs.size], decimal=3)
+    if backend == "numpy":
+        # CuPy cannot compute neigs-2 eigenvalues (seems to be
+        # a bug in CuPy's eigsh)
+        eigs = Op.eigs(backend=backend)
+        assert_array_almost_equal(eigs, np.abs(diag)[: eigs.size], decimal=3)
 
     eigs = Op.eigs(neigs=3, backend=backend)  # top-k
     assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
