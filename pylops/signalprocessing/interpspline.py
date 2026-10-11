@@ -292,8 +292,8 @@ class _BandedLUDecomposition:
             The right-hand side(s) of the linear system of equations.
             It is processed along axis 0, i.e.,
 
-            - a 1D-Array is treated as a single right hand side.
-            - each colum of a 2D-Array is treated as a single right hand side.
+            - a 1d-array is treated as a single right hand side.
+            - each column of a 2d-array is treated as a single right hand side.
 
         lapack_solver : callable
             The LAPACK routine ``?gbtrs`` to use for solving the system.
@@ -302,7 +302,7 @@ class _BandedLUDecomposition:
         -------
         x : :obj:`numpy.ndarray` of shape ``(n,)``  or shape ``(m, n)``
             The solution of the linear system(s) of equations.
-            For 2D-Arrays, the ``j``-th column is the solution of the respective
+            For 2d-arrays, the ``j``-th column is the solution of the respective
             ``rhs[::, j]``.
 
         """
@@ -412,8 +412,8 @@ class _TridiagonalLUDecomposition:
             The right-hand side(s) of the linear system of equations.
             It is processed along axis 0, i.e.,
 
-            - a 1D-Array is treated as a single right hand side.
-            - each colum of a 2D-Array is treated as a single right hand side.
+            - a 1d-array is treated as a single right hand side.
+            - each column of a 2d-array is treated as a single right hand side.
 
         lapack_solver : callable
             The LAPACK routine ``?gttrs`` to use for solving the system.
@@ -422,7 +422,7 @@ class _TridiagonalLUDecomposition:
         -------
         x : :obj:`numpy.ndarray` of shape ``(n,)``  or shape ``(m, n)``
             The solution of the linear system(s) of equations.
-            For 2D-Arrays, the ``j``-th column is the solution of the respective
+            For 2d-arrays, the ``j``-th column is the solution of the respective
             ``rhs[::, j]``.
 
         """
