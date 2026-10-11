@@ -34,7 +34,9 @@ class ConvolveND(LinearOperator):
     axes : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
-        Axes along which convolution is applied
+        Axes along which convolution is applied. When the filter has fewer
+        dimensions than the model, filter dimension ``i`` is applied along
+        model axis ``axes[i]``.
     method : :obj:`str`, optional
         Method used to calculate the convolution (``auto``, ``direct`` or ``fft``)
         - see :func:`scipy.signal.convolve` for details.
@@ -123,7 +125,7 @@ class ConvolveND(LinearOperator):
             dimsh = np.ones(len(self.dims), dtype=int)
             for iax, ax in enumerate(self.axes):
                 dimsh[ax] = self.nh[iax]
-            self.h = self.h.reshape(dimsh)
+            self.h = self.h.transpose(tuple(np.argsort(self.axes))).reshape(dimsh)
 
         # convolve and correlate functions
         self.convolve = get_convolve(h)

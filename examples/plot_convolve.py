@@ -153,6 +153,16 @@ plt.tight_layout()
 plt.subplots_adjust(top=0.8)
 
 ###############################################################################
+# A stack of images can be filtered along a chosen pair of axes. The dimensions
+# of ``h`` follow the order of ``axes``, so reversing the axes requires
+# transposing the filter and reversing its offsets.
+xstack = np.stack((x, 2 * x), axis=1)
+Cstack = pylops.signalprocessing.Convolve2D(
+    xstack.shape, h=h.T, offset=(nh[1] // 2, nh[0] // 2), axes=(2, 0)
+)
+np.testing.assert_allclose(Cstack * xstack, np.stack((y, 2 * y), axis=1), atol=1e-12)
+
+###############################################################################
 # We now do the same using three dimensional signals and
 # filters taking advantage of the
 # :py:class:`pylops.signalprocessing.ConvolveND` operator.
