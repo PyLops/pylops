@@ -160,7 +160,7 @@ class _Convolve1Dshort(LinearOperator):
         # ``flip`` returns a view with negative strides, which the direct
         # convolution of some backends (notably cupy) reads incorrectly, so the
         # flipped filter is made contiguous before it reaches ``convfunc``
-        self.hstar = ncp.ascontiguousarray(ncp.flip(self.h, axis=haxis))
+        self.hstar = ncp.ascontiguousarray(ncp.flip(self.h, axis=haxis).conj())
 
         # add dimensions to filter to match dimensions of model and data
         if self.h.ndim == 1:
@@ -232,7 +232,7 @@ class _Convolve1Dlong(LinearOperator):
         # ``flip`` returns a view with negative strides, which the direct
         # convolution of some backends (notably cupy) reads incorrectly, so the
         # flipped filter is made contiguous before it reaches ``convfunc``
-        self.hstar = ncp.ascontiguousarray(ncp.flip(self.h, axis=haxis))
+        self.hstar = ncp.ascontiguousarray(ncp.flip(self.h, axis=haxis).conj())
 
         self.pad = np.zeros((len(dims), 2), dtype=int)
         self.pad[self.axis, 0] = max(self.offset, 0)
@@ -328,7 +328,7 @@ class Convolve1D(LinearOperator):
     nh : :obj:`int`
         Length of the filter
     hstar : :obj:`numpy.ndarray`
-        Time-reversed filter used in adjoint
+        Conjugate time-reversed filter used in adjoint
     convfunc : :obj:`callable`
         Function handler used to perform convolution
     dims : :obj:`tuple`
@@ -391,12 +391,12 @@ class Convolve1D(LinearOperator):
     In time domain:
 
     .. math::
-        x(t) = \int\limits_{-\infty}^{\infty} h(t+\tau) x(\tau) \,\mathrm{d}\tau
+        x(t) = \int\limits_{-\infty}^{\infty} h(\tau-t)^* y(\tau) \,\mathrm{d}\tau
 
     or in frequency domain:
 
     .. math::
-        y(t) = \mathscr{F}^{-1} (H(f)^* * X(f))
+        x(t) = \mathscr{F}^{-1} (H(f)^* * Y(f))
 
     """
 

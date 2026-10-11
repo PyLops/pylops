@@ -212,6 +212,53 @@ def test_Convolve1D_hstar_contiguous(dims, hlen):
     assert Cop.Op.hstar.flags["C_CONTIGUOUS"]
 
 
+@pytest.mark.parametrize("nx, nh", [(9, 4), (4, 9)])
+@pytest.mark.parametrize("dtype", [np.complex64, np.complex128])
+@pytest.mark.parametrize(
+    "axis, method, broadcast",
+    [
+        (None, "direct", False),
+        (None, "fft", False),
+        (0, "fft", False),
+        (1, "overlapadd", False),
+        (0, "overlapadd", True),
+        (1, "fft", True),
+    ],
+)
+def test_Convolve1D_complex_filter(nx, nh, dtype, axis, method, broadcast):
+    """Compare complex convolution and its adjoint with an explicit matrix."""
+    np.random.seed(20)
+    ntraces = 1 if axis is None else 2
+    nmodels = 1 if broadcast else ntraces
+    h = (np.random.randn(nh, ntraces) + 1j * np.random.randn(nh, ntraces)).astype(dtype)
+    x = (np.random.randn(nx, nmodels) + 1j * np.random.randn(nx, nmodels)).astype(dtype)
+    ny, offset = max(nx, nh), 2
+    y = (np.random.randn(ny, ntraces) + 1j * np.random.randn(ny, ntraces)).astype(dtype)
+    expected_y = np.zeros_like(y)
+    expected_x = np.zeros_like(x)
+    indices = np.arange(ny)[:, None] + offset - np.arange(nx)
+    for itrace in range(ntraces):
+        matrix = np.where(
+            (indices >= 0) & (indices < nh),
+            h[indices.clip(0, nh - 1), itrace],
+            0,
+        )
+        imodel = 0 if broadcast else itrace
+        expected_y[:, itrace] = matrix @ x[:, imodel]
+        expected_x[:, imodel] += matrix.conj().T @ y[:, itrace]
+
+    if axis is None:
+        h, x, y = h[:, 0], x[:, 0], y[:, 0]
+    elif axis == 1:
+        h, x, y = h.T, x.T, y.T
+        expected_y, expected_x = expected_y.T, expected_x.T
+    Cop = Convolve1D(
+        x.shape, h=h, offset=offset, axis=axis or 0, method=method, dtype=dtype
+    )
+    assert_array_almost_equal(Cop @ x.ravel(), expected_y.ravel(), decimal=4)
+    assert_array_almost_equal(Cop.H @ y.ravel(), expected_x.ravel(), decimal=4)
+
+
 @pytest.mark.parametrize(
     "par",
     [

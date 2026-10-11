@@ -60,6 +60,18 @@ ax.set_xlim(1.9, 2.1)
 plt.tight_layout()
 
 ###############################################################################
+# Complex filters also require a conjugate time reversal in the adjoint.
+# Here a short complex channel response filters the signal; LSQR recovers it
+# using the same forward and adjoint operators.
+hcomplex = np.array([0.1 - 0.05j, 1.0 + 0.3j, -0.1 + 0.05j])
+Ccomplex = pylops.signalprocessing.Convolve1D(
+    nt, h=hcomplex, offset=1, dtype="complex128"
+)
+ycomplex = Ccomplex * x.astype(np.complex128)
+xcomplex = lsqr(Ccomplex, ycomplex, atol=1e-10, btol=1e-10)[0]
+np.testing.assert_allclose(xcomplex, x, atol=1e-8)
+
+###############################################################################
 # We show now that also a filter with mixed phase (i.e., not centered
 # around zero) can be applied and inverted for using the
 # :py:class:`pylops.signalprocessing.Convolve1D`
