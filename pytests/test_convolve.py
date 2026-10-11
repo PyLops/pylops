@@ -208,12 +208,12 @@ def test_Convolve1D_method_error():
 @pytest.mark.parametrize("dtype", [np.float32, np.complex128])
 def test_ConvolveND_filter_axes(dims, hshape, axes, dtype):
     """Embed each filter dimension along the requested model axis."""
-    np.random.seed(21)
-    h = (np.random.randn(*hshape) + 1).astype(dtype)
+    rng = np.random.RandomState(21)
+    h = (rng.randn(*hshape) + 1).astype(dtype)
     if dtype == np.complex128:
-        h += 1j * np.random.randn(*hshape)
-    x = np.random.randn(*dims).astype(dtype)
-    y = np.random.randn(*dims).astype(dtype)
+        h += 1j * rng.randn(*hshape)
+    x = rng.randn(*dims).astype(dtype)
+    y = rng.randn(*dims).astype(dtype)
     offset = (1,) * len(hshape)
     expected_y = np.zeros_like(x)
     expected_x = np.zeros_like(y)
