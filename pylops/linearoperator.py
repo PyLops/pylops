@@ -1043,10 +1043,12 @@ class LinearOperator(_LinearOperator):
         Parameters
         ----------
         neigs : :obj:`int`
-            Number of eigenvalues to compute (if ``None``, return all). Note
-            that for ``explicit=False``, only :math:`N-2` eigenvalues can be
-            computed where :math:`N` is the size of the operator in the
-            model space
+            Number of eigenvalues to compute. Note that for ``explicit=False``,
+            only :math:`N-1` eigenvalues can be computed for real-valued
+            symmetric or non-square operators, and :math:`N-2` eigenvalues
+            otherwise, where :math:`N` is the size of the operator in the
+            model space. If ``None``, return :math:`N` for explicit case and
+            :math:`N-2` for implicit operators.
         symmetric : :obj:`bool`, optional
             Operator is real-symmetric or complex-hermitian (``True``)
             or not (``False``). User should set this parameter to ``True``
@@ -1097,9 +1099,12 @@ class LinearOperator(_LinearOperator):
         ``symmetric=True`` and the :func:`scipy.sparse.linalg.eigs` method
         is used ``symmetric=False``. However, when the matrix is represented
         explicitly within the linear operator (``explicit=True``) and all the
-        eigenvalues are requested (or ``neigs`` is larger than or equal to the
-        number of columns of the operator minus one) the
-        :func:`scipy.linalg.eigvals` is used instead.
+        eigenvalues are requested (or ``neigs`` is equal to the number of
+        columns of the operator minus one for a square, non-symmetric operator) the
+        :func:`scipy.linalg.eigvals` is used instead. Note that for
+        or a complex-valued operator, when ``neigs`` is equal to the number of
+        columns of the operator minus one, the eigenvalues are selected based on
+        ``which`` and ``sigma`` is ignored.
 
         Finally, when only a limited number of eigenvalues is required,
         it is also possible to explicitly choose to use the
@@ -1138,21 +1143,31 @@ class LinearOperator(_LinearOperator):
         ncp = get_module(backend)
         explicit = self.explicit and isinstance(self.A, ncp.ndarray)
         if neigs is None:
-            neigs = self.shape[1]
-        alleigs = explicit and neigs >= self.shape[1] - 1
+            neigs = self.shape[1] if explicit else self.shape[1] - 2
+        # scipy.sparse.linalg.eigs (also used by eigsh for complex operators)
+        # requires neigs < N - 1, use dense solver instead
+        square = self.shape[0] == self.shape[1]
+        useeigs = (square and not symmetric) or np.iscomplexobj(
+            np.ones(1, dtype=self.dtype)
+        )
+        alleigs = explicit and (
+            neigs >= self.shape[1] or (useeigs and neigs == self.shape[1] - 1)
+        )
 
-        if not explicit and neigs >= self.shape[1] - 1:
-            # Check that the number of eigenvalues requested is not larger
-            # than the number of columns in the operator minus one
+        # Check that the number of eigenvalues requested is not larger
+        # than the number of columns in the operator minus two (eigs) or
+        # minus one (eigsh)
+        neigsmax = self.shape[1] - 2 if useeigs else self.shape[1] - 1
+        if not explicit and neigs > neigsmax:
             warnings.warn(
-                "The provided neigs (%d) exceeds the number of columns "
-                "in the operator minus one (%d), reset to %d"
-                % (neigs, self.shape[1] - 1, self.shape[1] - 2),
+                f"The provided neigs ({neigs}) exceeds the number of columns "
+                f"in the operator minus {self.shape[1] - neigsmax}, "
+                f"reset to {neigsmax}",
                 stacklevel=2,
             )
-            neigs = self.shape[1] - 2
+            neigs = neigsmax
 
-        if self.shape[0] == self.shape[1]:
+        if square:
             # Square operator
             Op = self.A if explicit else self
             if alleigs:
@@ -1205,6 +1220,13 @@ class LinearOperator(_LinearOperator):
                     Op, k=neigs, maxiter=niter, **kwargs_eig
                 )[0]
             eigenvalues = ncp.sqrt(eigenvalues)
+        if alleigs and neigs == self.shape[1] - 1:
+            # dense solver returns all eigenvalues: select neigs based on which
+            which = kwargs_eig.get("which", "LM")
+            key = {"M": ncp.abs, "R": ncp.real, "A": ncp.real, "I": ncp.imag}[which[1]]
+            key = key(eigenvalues)
+            idx = ncp.argsort(key if which[0] == "S" else -key)[:neigs]
+            eigenvalues = eigenvalues[idx]
         return -ncp.sort(-eigenvalues)
 
     def cond(

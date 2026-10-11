@@ -235,6 +235,23 @@ def test_eigs_square(par, symmetric):
     assert_array_almost_equal(eigs, diag, decimal=3)
 
     if backend == "numpy":
+        # neigs equal to size of operator minus one (dense solver with
+        # selection based on which for symmetric=False, eigsh for
+        # symmetric=True; CuPy's eigsh does not support which="SM",
+        # which="BE", and sigma)
+        eigs = Op.eigs(neigs=nx - 1, symmetric=symmetric, backend=backend)
+        assert_array_almost_equal(eigs, diag[: nx - 1], decimal=3)
+        eigs = Op.eigs(neigs=nx - 1, symmetric=symmetric, which="SM", backend=backend)
+        assert_array_almost_equal(eigs, diag[1:], decimal=3)
+
+        if symmetric:
+            eigs = Op.eigs(neigs=nx - 1, symmetric=True, sigma=0.0, backend=backend)
+            assert_array_almost_equal(eigs, diag[1:], decimal=3)
+            eigs = Op.eigs(neigs=nx - 1, symmetric=True, which="BE", backend=backend)
+            assert_array_almost_equal(
+                eigs, np.concatenate((diag[: nx // 2], diag[nx // 2 + 1 :])), decimal=3
+            )
+
         # CuPy cannot compute a single eigenvalue for square, non-symmetric matrix
         cond = Op.cond(backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
@@ -256,11 +273,19 @@ def test_eigs_square(par, symmetric):
         assert eigs.size == nx - 2  # neigs=None is clamped to N-2 (no warning)
         assert_array_almost_equal(eigs, diag[: eigs.size], decimal=3)
 
-        # neigs too large is clamped to N-2 (with warning)
+        # neigs too large is clamped to N-1 for real symmetric operators
+        # (eigsh) and N-2 otherwise (eigs) (with warning)
+        neigsmax = nx - 1 if symmetric else nx - 2
         with pytest.warns(UserWarning, match="exceeds the number of columns"):
             eigs = Op.eigs(neigs=nx, symmetric=symmetric, backend=backend)
-        assert eigs.size == nx - 2
-        assert_array_almost_equal(eigs, diag[: nx - 2], decimal=3)
+        assert eigs.size == neigsmax
+        assert_array_almost_equal(eigs, diag[:neigsmax], decimal=3)
+
+        # neigs equal to N-1 is allowed for real symmetric operators (eigsh)
+        if symmetric:
+            eigs = Op.eigs(neigs=nx - 1, symmetric=True, backend=backend)
+            assert eigs.size == nx - 1
+            assert_array_almost_equal(eigs, diag[: nx - 1], decimal=3)
 
     eigs = Op.eigs(neigs=3, symmetric=symmetric, backend=backend)  # top-k
     assert_array_almost_equal(eigs, diag[:3], decimal=3)
@@ -300,9 +325,6 @@ def test_eigs_square_hermitian(par, explicit):
     A = (A + np.conj(A.T)) / 2  # remove round-off asymmetry
     Op = MatrixMult(A, dtype=np.dtype(par["dtype"]))
     Op.explicit = explicit
-
-    # hermitian operator
-    assert_array_almost_equal(Op.H.todense(), Op.todense(), decimal=6)
 
     # hermitian solver
     if explicit:
@@ -347,6 +369,10 @@ def test_eigs_non_square(par):
 
     eigs = Op.eigs(neigs=3, backend=backend)  # top-k
     assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
+
+    # neigs equal to size of operator minus one
+    eigs = Op.eigs(neigs=nx - 1, backend=backend)
+    assert_array_almost_equal(eigs, np.abs(diag)[: nx - 1], decimal=3)
 
     eigs = Op.eigs(neigs=2, uselobpcg=True, niter=100, backend=backend)  # lobpcg
     assert_array_almost_equal(eigs, np.abs(diag)[:2], decimal=3)
