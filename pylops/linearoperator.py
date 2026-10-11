@@ -1097,8 +1097,9 @@ class LinearOperator(_LinearOperator):
         ``symmetric=True`` and the :func:`scipy.sparse.linalg.eigs` method
         is used ``symmetric=False``. However, when the matrix is represented
         explicitly within the linear operator (``explicit=True``) and all the
-        eigenvalues are requested the :func:`scipy.linalg.eigvals` is used
-        instead.
+        eigenvalues are requested (or ``neigs`` is larger than or equal to the
+        number of columns of the operator minus one) the
+        :func:`scipy.linalg.eigvals` is used instead.
 
         Finally, when only a limited number of eigenvalues is required,
         it is also possible to explicitly choose to use the
@@ -1135,81 +1136,30 @@ class LinearOperator(_LinearOperator):
                 raise ValueError(msg)
 
         ncp = get_module(backend)
-        if self.explicit and isinstance(self.A, ncp.ndarray):
-            if self.shape[0] == self.shape[1]:
-                # Square, explicit operator
-                if neigs is None or neigs == self.shape[1]:
-                    # All eigenvalues
-                    eigenvalues = get_eigvals(ncp.ones(1))(self.A)
-                else:
-                    # Limited number of eigenvalues
-                    if not symmetric and uselobpcg:
-                        msg = (
-                            "Cannot use scipy.sparse.linalg.lobpcg "
-                            "for non real-symmetric or complex-hermitian matrices..."
-                        )
-                        raise ValueError(msg)
-                    if symmetric and uselobpcg:
-                        X = ncp.random.rand(self.shape[0], neigs).astype(self.dtype)
-                        eigenvalues = get_lobpcg(ncp.ones(1))(
-                            self.A, X=X, maxiter=niter, **kwargs_eig
-                        )[0]
-                    elif symmetric:
-                        eigenvalues = get_eigsh(ncp.ones(1))(
-                            self.A, k=neigs, maxiter=niter, **kwargs_eig
-                        )[0]
-                    else:
-                        if backend == "cupy":
-                            msg = (
-                                "Eigenvalues of non-symmetric square "
-                                "operators are not available with CuPy backend"
-                            )
-                            raise NotImplementedError(msg)
-                        eigenvalues = sp_eigs(
-                            self.A, k=neigs, maxiter=niter, **kwargs_eig
-                        )[0]
-            else:
-                # Non-square, explicit operator
-                if neigs is None or neigs == self.shape[1]:
-                    # All eigenvalues
-                    eigenvalues = ncp.sqrt(
-                        get_eigvals(ncp.ones(1))(ncp.dot(ncp.conj(self.A.T), self.A))
-                    )
-                else:
-                    # Limited number of eigenvalues
-                    if uselobpcg:
-                        X = ncp.random.rand(self.shape[1], neigs).astype(self.dtype)
-                        eigenvalues = ncp.sqrt(
-                            get_lobpcg(ncp.ones(1))(
-                                ncp.dot(ncp.conj(self.A.T), self.A),
-                                X=X,
-                                maxiter=niter,
-                                **kwargs_eig,
-                            )[0]
-                        )
-                    else:
-                        eigenvalues = ncp.sqrt(
-                            get_eigsh(ncp.ones(1))(
-                                ncp.dot(ncp.conj(self.A.T), self.A),
-                                k=neigs,
-                                maxiter=niter,
-                                **kwargs_eig,
-                            )[0]
-                        )
-        else:
+        explicit = self.explicit and isinstance(self.A, ncp.ndarray)
+        if neigs is None:
+            neigs = self.shape[1]
+        alleigs = explicit and neigs >= self.shape[1] - 1
+
+        if not explicit and neigs >= self.shape[1] - 1:
             # Check that the number of eigenvalues requested is not larger
             # than the number of columns in the operator minus one
-            if neigs is None or neigs >= self.shape[1] - 1:
-                if neigs is not None:
-                    warnings.warn(
-                        "The provided neigs (%d) exceeds the number of columns "
-                        "in the operator minus one (%d), reset to %d"
-                        % (neigs, self.shape[1] - 1, self.shape[1] - 2),
-                        stacklevel=2,
-                    )
-                neigs = self.shape[1] - 2
-            if self.shape[0] == self.shape[1]:
-                # Square, linear operator
+            warnings.warn(
+                "The provided neigs (%d) exceeds the number of columns "
+                "in the operator minus one (%d), reset to %d"
+                % (neigs, self.shape[1] - 1, self.shape[1] - 2),
+                stacklevel=2,
+            )
+            neigs = self.shape[1] - 2
+
+        if self.shape[0] == self.shape[1]:
+            # Square operator
+            Op = self.A if explicit else self
+            if alleigs:
+                # All eigenvalues (only reached for explicit=True)
+                eigenvalues = get_eigvals(ncp.ones(1))(Op)
+            else:
+                # Limited number of eigenvalues
                 if not symmetric and uselobpcg:
                     msg = (
                         "Cannot use scipy.sparse.linalg.lobpcg "
@@ -1217,14 +1167,15 @@ class LinearOperator(_LinearOperator):
                     )
                     raise ValueError(msg)
                 if symmetric and uselobpcg:
-                    _check_lobpcg_size(self.shape[0], neigs, kwargs_eig.get("Y"))
+                    if not explicit:
+                        _check_lobpcg_size(self.shape[0], neigs, kwargs_eig.get("Y"))
                     X = ncp.random.rand(self.shape[0], neigs).astype(self.dtype)
                     eigenvalues = get_lobpcg(ncp.ones(1))(
-                        self, X=X, maxiter=niter, **kwargs_eig
+                        Op, X=X, maxiter=niter, **kwargs_eig
                     )[0]
                 elif symmetric:
                     eigenvalues = get_eigsh(ncp.ones(1))(
-                        self, k=neigs, maxiter=niter, **kwargs_eig
+                        Op, k=neigs, maxiter=niter, **kwargs_eig
                     )[0]
                 else:
                     if backend == "cupy":
@@ -1233,23 +1184,27 @@ class LinearOperator(_LinearOperator):
                             "operators are not available with CuPy backend"
                         )
                         raise NotImplementedError(msg)
-                    eigenvalues = sp_eigs(self, k=neigs, maxiter=niter, **kwargs_eig)[0]
-            else:
-                # Non-square, linear operator
-                if uselobpcg:
+                    eigenvalues = sp_eigs(Op, k=neigs, maxiter=niter, **kwargs_eig)[0]
+        else:
+            # Non-square operator (square-root of eigenvalues of A^H A)
+            Op = ncp.dot(ncp.conj(self.A.T), self.A) if explicit else self.H * self
+            if alleigs:
+                # All eigenvalues (only reached for explicit=True)
+                eigenvalues = get_eigvals(ncp.ones(1))(Op)
+            elif uselobpcg:
+                # Limited number of eigenvalues
+                if not explicit:
                     _check_lobpcg_size(self.shape[1], neigs, kwargs_eig.get("Y"))
-                    X = ncp.random.rand(self.shape[1], neigs).astype(self.dtype)
-                    eigenvalues = ncp.sqrt(
-                        get_lobpcg(ncp.ones(1))(
-                            self.H * self, X=X, maxiter=niter, **kwargs_eig
-                        )[0]
-                    )
-                else:
-                    eigenvalues = ncp.sqrt(
-                        get_eigsh(ncp.ones(1))(
-                            self.H * self, k=neigs, maxiter=niter, **kwargs_eig
-                        )[0]
-                    )
+                X = ncp.random.rand(self.shape[1], neigs).astype(self.dtype)
+                eigenvalues = get_lobpcg(ncp.ones(1))(
+                    Op, X=X, maxiter=niter, **kwargs_eig
+                )[0]
+            else:
+                # Limited number of eigenvalues
+                eigenvalues = get_eigsh(ncp.ones(1))(
+                    Op, k=neigs, maxiter=niter, **kwargs_eig
+                )[0]
+            eigenvalues = ncp.sqrt(eigenvalues)
         return -ncp.sort(-eigenvalues)
 
     def cond(
