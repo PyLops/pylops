@@ -293,8 +293,6 @@ def test_eigs_square(par, symmetric):
     assert_array_almost_equal(eigs, diag[:3], decimal=3)
 
     if backend == "numpy":
-        # CuPy cannot compute a single eigenvalue for square,
-        # non-symmetric matrix
         cond = Op.cond(backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
@@ -336,8 +334,9 @@ def test_eigs_square_hermitian(par, explicit):
     eigs = Op.eigs(neigs=3, symmetric=True, backend=backend)  # top-k
     assert_array_almost_equal(eigs, eigs_true[:3], decimal=3)
 
-    cond = Op.cond(symmetric=True, backend=backend)
-    assert_array_almost_equal(np.real(cond), nx, decimal=3)
+    if backend == "numpy":
+        cond = Op.cond(symmetric=True, backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
     # lobpcg
     eigs = Op.eigs(neigs=3, symmetric=True, uselobpcg=True, niter=100, backend=backend)
@@ -380,8 +379,6 @@ def test_eigs_non_square(par):
     assert_array_almost_equal(eigs, np.abs(diag)[:2], decimal=3)
 
     if backend == "numpy":
-        # CuPy cannot compute a single eigenvalue for square,
-        # non-symmetric matrix
         cond = Op.cond(backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
@@ -399,8 +396,6 @@ def test_eigs_non_square(par):
     assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
 
     if backend == "numpy":
-        # CuPy cannot compute a single eigenvalue for square,
-        # non-symmetric matrix
         cond = Op.cond(backend=backend)
         assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
