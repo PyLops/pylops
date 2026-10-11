@@ -148,10 +148,12 @@ def test_eigs_lobpcg_failures(par):
     """
     nx = 10 * par["nx"]
 
-    # lobpcg cannot be used for non-symmetric explicit operators
+    # lobpcg cannot be used for non-symmetric explicit operators (also when
+    # all eigenvalues are requested and the dense solver would be used)
     Op = MatrixMult(np.diag(np.arange(nx, 0.0, -1.0)), dtype=np.dtype(par["dtype"]))
-    with pytest.raises(ValueError, match="non real-symmetric or complex-hermitian"):
-        Op.eigs(neigs=2, symmetric=False, uselobpcg=True, backend=backend)
+    for neigs in (2, nx - 1, None):
+        with pytest.raises(ValueError, match="non real-symmetric or complex-hermitian"):
+            Op.eigs(neigs=neigs, symmetric=False, uselobpcg=True, backend=backend)
 
     # lobpcg cannot be used for non-symmetric linear operators
     Op = Diagonal(np.arange(nx, 0, -1), dtype=par["dtype"])

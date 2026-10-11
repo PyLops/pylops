@@ -1140,16 +1140,25 @@ class LinearOperator(_LinearOperator):
                 )
                 raise ValueError(msg)
 
+        # Check if lobpcgc is feasible, raise error otherwise
+        square = self.shape[0] == self.shape[1]
+        if square and not symmetric and uselobpcg:
+            msg = (
+                "Cannot use scipy.sparse.linalg.lobpcg "
+                "for non real-symmetric or complex-hermitian operators..."
+            )
+            raise ValueError(msg)
+
         ncp = get_module(backend)
         explicit = self.explicit and isinstance(self.A, ncp.ndarray)
         if neigs is None:
             neigs = self.shape[1] if explicit else self.shape[1] - 2
         # scipy.sparse.linalg.eigs (also used by eigsh for complex operators)
         # requires neigs < N - 1, use dense solver instead
-        square = self.shape[0] == self.shape[1]
         useeigs = (square and not symmetric) or np.iscomplexobj(
             np.ones(1, dtype=self.dtype)
         )
+        # Check if all eigenvalues should be computed
         alleigs = explicit and (
             neigs >= self.shape[1] or (useeigs and neigs == self.shape[1] - 1)
         )
@@ -1175,12 +1184,6 @@ class LinearOperator(_LinearOperator):
                 eigenvalues = get_eigvals(ncp.ones(1))(Op)
             else:
                 # Limited number of eigenvalues
-                if not symmetric and uselobpcg:
-                    msg = (
-                        "Cannot use scipy.sparse.linalg.lobpcg "
-                        "for non real-symmetric or complex-hermitian operators..."
-                    )
-                    raise ValueError(msg)
                 if symmetric and uselobpcg:
                     if not explicit:
                         _check_lobpcg_size(self.shape[0], neigs, kwargs_eig.get("Y"))
