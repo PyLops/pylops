@@ -759,19 +759,42 @@ class LinearOperator(_LinearOperator):
         Y = self._rmatmat(X, pool=pool)
         return Y
 
-    def dot(self, x: NDArray) -> NDArray:
-        """Matrix-matrix or matrix-vector multiplication.
+    def dot(self, x: float | NDArray | LinearOperator) -> NDArray | LinearOperator:
+        """Dot-product
+
+        Dot-product between a PyLops operator and a:
+
+        - scalar: returns a scaled operator, i.e., ``alpha * Op``;
+        - 1d- or nd-array: applies the operator to the input and returns
+          an array. A 1d-array of size ``shape[1]`` (or an nd-array of shape
+          ``dims`` when ``dims`` is defined and ``forceflat`` is not set) is
+          treated as a vector and passed to :func:`pylops.LinearOperator.matvec`;
+          a 2d-array of shape ``(shape[1], P)`` (or an nd-array of shape
+          ``(*dims, P)``) is treated as a matrix of ``P`` vectors and passed to
+          :func:`pylops.LinearOperator.matmat`. Arrays with more than 2
+          dimensions are accepted only if nd-array multiplication is enabled
+          via :func:`pylops.set_ndarray_multiplication`, in which case the
+          output is reshaped to ``dimsd`` (or ``(*dimsd, P)``);
+        - linear operator: returns the product of the two
+          operators, i.e., ``Op1 @ Op2``.
 
         Parameters
         ----------
-        x : :obj:`numpy.ndarray`
-            Input array (or matrix)
+        x : :obj:`float`, :obj:`numpy.ndarray` or :obj:`pylops.LinearOperator`
+            Input scalar, array (or matrix) or linear operator
 
         Returns
         -------
-        y : :obj:`numpy.ndarray`
-            Output array (or matrix) that represents
-            the result of applying the linear operator on x.
+        y : :obj:`numpy.ndarray` or :obj:`pylops.LinearOperator`
+            Scaled operator (scalar input), array (or matrix) that represents
+            the result of applying the linear operator on ``x`` (array input),
+            or product operator (operator input).
+
+        Raises
+        ------
+        ValueError
+            If ``x`` is an array with an unsupported shape, or if the two
+            operators have conflicting ``forceflat``.
 
         """
         if isinstance(x, (LinearOperator, spLinearOperator)):
@@ -851,28 +874,38 @@ class LinearOperator(_LinearOperator):
 
     def div(
         self,
-        y: NDArray,
+        y: float | NDArray,
         niter: int = 100,
         densesolver: str = "scipy",
-    ) -> NDArray:
-        r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
+    ) -> NDArray | LinearOperator:
+        r"""Solve the linear problem or divide by a scalar
 
         Overloading of operator ``/`` to improve expressivity of `Pylops`
         when solving inverse problems.
 
+        Division of a PyLops operator by a:
+
+        - scalar: returns a scaled operator, so ``Op / a`` is the same as
+          ``Op * (1 / a)``.
+        - 1d-array: solves the linear problem
+          :math:`\mathbf{y}=\mathbf{A}\mathbf{x}` and returns the estimated
+          model. Explicit operators are solved with a sparse or dense direct
+          solver, whilst any other operator is solved iteratively;
+
         Parameters
         ----------
-        y : :obj:`numpy.ndarray`
-            Data
+        y : :obj:`float` or :obj:`numpy.ndarray`
+            Scalar or data of size ``shape[0]``.
         niter : :obj:`int`, optional
             Number of iterations (to be used only when ``explicit=False``)
         densesolver : :obj:`str`, optional
-            Use scipy (``scipy``) or numpy (``numpy``) dense solver
+            Use scipy (``scipy``) or numpy (``numpy``) dense solver (to be
+            used only for square explicit operators with dense matrix)
 
         Returns
         -------
-        xest : :obj:`numpy.ndarray`
-            Estimated model
+        xest : :obj:`pylops.LinearOperator` or :obj:`numpy.ndarray`
+            Scaled operator or estimated model.
 
         """
         xest = self.__truediv__(y, niter=niter, densesolver=densesolver)
@@ -880,10 +913,13 @@ class LinearOperator(_LinearOperator):
 
     def __truediv__(
         self,
-        y: NDArray,
+        y: NDArray | float,
         niter: int = 100,
         densesolver: str = "scipy",
-    ) -> NDArray:
+    ) -> NDArray | LinearOperator:
+        if np.isscalar(y):
+            # A scalar divisor scales the operator, symmetric with ``Op * a``
+            return self * (1 / y)
         if self.explicit is True:
             if sp.sparse.issparse(self.A):
                 # use scipy solver for sparse matrices
