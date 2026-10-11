@@ -227,13 +227,13 @@ def test_Convolve1D_hstar_contiguous(dims, hlen):
 )
 def test_Convolve1D_complex_filter(nx, nh, dtype, axis, method, broadcast):
     """Compare complex convolution and its adjoint with an explicit matrix."""
-    np.random.seed(20)
+    rng = np.random.RandomState(20)
     ntraces = 1 if axis is None else 2
     nmodels = 1 if broadcast else ntraces
-    h = (np.random.randn(nh, ntraces) + 1j * np.random.randn(nh, ntraces)).astype(dtype)
-    x = (np.random.randn(nx, nmodels) + 1j * np.random.randn(nx, nmodels)).astype(dtype)
+    h = (rng.randn(nh, ntraces) + 1j * rng.randn(nh, ntraces)).astype(dtype)
+    x = (rng.randn(nx, nmodels) + 1j * rng.randn(nx, nmodels)).astype(dtype)
     ny, offset = max(nx, nh), 2
-    y = (np.random.randn(ny, ntraces) + 1j * np.random.randn(ny, ntraces)).astype(dtype)
+    y = (rng.randn(ny, ntraces) + 1j * rng.randn(ny, ntraces)).astype(dtype)
     expected_y = np.zeros_like(y)
     expected_x = np.zeros_like(x)
     indices = np.arange(ny)[:, None] + offset - np.arange(nx)
