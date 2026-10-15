@@ -19,6 +19,7 @@ par3 = {"ny": 20, "nx": 20}
 @pytest.mark.parametrize("dct_type", [1, 2, 3, 4])
 def test_DCT1D(par, dtype, dct_type):
     """Dot test for Discrete Cosine Transform Operator 1D"""
+    np.random.seed(0)
 
     t = np.arange(par["ny"], dtype=dtype) + 1.0
 
@@ -44,6 +45,7 @@ def test_DCT1D(par, dtype, dct_type):
 @pytest.mark.parametrize("axes", [0, 1])
 def test_DCT2D(par, dtype, dct_type, axes):
     """Dot test for Discrete Cosine Transform Operator 2D"""
+    np.random.seed(0)
 
     t = np.outer(
         np.arange(par["ny"], dtype=dtype) + 1.0, np.arange(par["nx"], dtype=dtype) + 1.0
@@ -71,6 +73,7 @@ def test_DCT2D(par, dtype, dct_type, axes):
 @pytest.mark.parametrize("axes", [0, 1, 2])
 def test_DCT3D(par, dtype, dct_type, axes):
     """Dot test for Discrete Cosine Transform Operator 3D"""
+    np.random.seed(0)
 
     t = np.random.rand(par["nx"], par["nx"], par["nx"])
 
@@ -94,6 +97,8 @@ def test_DCT3D(par, dtype, dct_type, axes):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_DCT_workers(par, dtype):
     """Dot test for Discrete Cosine Transform Operator with workers"""
+    np.random.seed(0)
+
     t = np.arange(par["ny"]) + 1
 
     Dct = DCT(dims=(par["ny"],), type=1, dtype=dtype, workers=2)
