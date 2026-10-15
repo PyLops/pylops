@@ -13,7 +13,9 @@ class MemoizeOperator(LinearOperator):
     This operator can be used to wrap any PyLops operator and add a memoize
     functionality
     and stores the last ``max_neval`` model/data
-    vector pairs
+    vector pairs. Forward and adjoint evaluations are cached separately,
+    sharing the same ``max_neval`` limit. An adjoint is not assumed to be
+    the inverse of a forward evaluation.
 
     Parameters
     ----------
@@ -43,26 +45,35 @@ class MemoizeOperator(LinearOperator):
 
         self.max_neval = max_neval
         self.store: list[tuple[NDArray, NDArray]] = []  # Store a list of (x, y)
+        self._store_is_adjoint: list[bool] = []
         self.neval = 0  # Number of evaluations of the operator
 
     def _matvec(self, x: NDArray) -> NDArray:
-        for xstored, ystored in self.store:
-            if np.allclose(xstored, x):
+        for (xstored, ystored), is_adjoint in zip(
+            self.store, self._store_is_adjoint, strict=True
+        ):
+            if not is_adjoint and np.allclose(xstored, x):
                 return ystored
         if len(self.store) + 1 > self.max_neval:
             del self.store[0]  # Delete oldest
+            del self._store_is_adjoint[0]
         y = self.Op._matvec(x)
         self.neval += 1
         self.store.append((x.copy(), y.copy()))
+        self._store_is_adjoint.append(False)
         return y
 
     def _rmatvec(self, y: NDArray) -> NDArray:
-        for xstored, ystored in self.store:
-            if np.allclose(ystored, y):
+        for (xstored, ystored), is_adjoint in zip(
+            self.store, self._store_is_adjoint, strict=True
+        ):
+            if is_adjoint and np.allclose(ystored, y):
                 return xstored
         if len(self.store) + 1 > self.max_neval:
             del self.store[0]  # Delete oldest
+            del self._store_is_adjoint[0]
         x = self.Op._rmatvec(y)
         self.neval += 1
         self.store.append((x.copy(), y.copy()))
+        self._store_is_adjoint.append(True)
         return x
