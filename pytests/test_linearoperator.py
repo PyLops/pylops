@@ -61,28 +61,29 @@ def test_overloads(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
-def test_scaled(par):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_scaled(par, dtype):
     """Verify that _ScaledLinearOperator produces the correct type based
     on its inputs types
     """
-    dtypes = [np.float32, np.float64]
-    for dtype in dtypes:
-        diag = np.arange(par["nx"], dtype=dtype) + par["imag"] * np.arange(
-            par["nx"], dtype=dtype
-        )
-        Dop = Diagonal(diag, dtype=dtype)
-        Sop = 3.0 * Dop
-        S1op = -3.0 * Dop
-        S2op = Dop * 3.0
-        S3op = Dop * -3.0
-        assert Sop.dtype == dtype
-        assert S1op.dtype == dtype
-        assert S2op.dtype == dtype
-        assert S3op.dtype == dtype
+    diag = np.arange(par["nx"], dtype=dtype) + par["imag"] * np.arange(
+        par["nx"], dtype=dtype
+    )
+    Dop = Diagonal(diag, dtype=dtype)
+    Sop = 3.0 * Dop
+    S1op = -3.0 * Dop
+    S2op = Dop * 3.0
+    S3op = Dop * -3.0
+    assert Sop.dtype == dtype
+    assert S1op.dtype == dtype
+    assert S2op.dtype == dtype
+    assert S3op.dtype == dtype
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
-def test_scalar_division(par):
+@pytest.mark.parametrize("stacked", [False, True])
+@pytest.mark.parametrize("scalar", [2, 2.0])
+def test_scalar_division(par, stacked, scalar):
     """Verify that dividing by a scalar scales the operator, like ``Op * (1 / a)``,
     instead of solving ``a = Op x``
     """
@@ -90,13 +91,12 @@ def test_scalar_division(par):
     A = np.random.normal(0, 10, shape) + par["imag"] * np.random.normal(0, 10, shape)
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
     Mop = MatrixMult(A, dtype=par["dtype"])
-    # an explicit operator and one that is not
-    for Op in (Mop, VStack([Mop])):
-        for scalar in (2, 2.0):
-            Sop = Op / scalar
-            assert isinstance(Sop, LinearOperator)
-            assert Sop.shape == Op.shape
-            assert_array_almost_equal(Sop @ x, (Op @ x) / 2, decimal=6)
+    # an explicit operator (MatrixMult) and one that is not (VStack)
+    Op = VStack([Mop]) if stacked else Mop
+    Sop = Op / scalar
+    assert isinstance(Sop, LinearOperator)
+    assert Sop.shape == Op.shape
+    assert_array_almost_equal(Sop @ x, (Op @ x) / 2, decimal=6)
 
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
@@ -269,7 +269,8 @@ def test_realimag(par):
 
 
 @pytest.mark.parametrize("par", [(par1j)])
-def test_rlinear(par):
+@pytest.mark.parametrize("complexflag", [0, 1, 2, 3])
+def test_rlinear(par, complexflag):
     """R-linear"""
     np.random.seed(123)
     if np.dtype(par["dtype"]).kind == "c":
@@ -299,13 +300,12 @@ def test_rlinear(par):
     assert_array_equal(M @ np.real(x), y_right)
 
     # adjoint (dot product test)
-    for complexflag in range(4):
-        assert dottest(
-            Op_left, par["ny"], par["nx"], complexflag=complexflag, backend=backend
-        )
-        assert dottest(
-            Op_right, par["ny"], par["nx"], complexflag=complexflag, backend=backend
-        )
+    assert dottest(
+        Op_left, par["ny"], par["nx"], complexflag=complexflag, backend=backend
+    )
+    assert dottest(
+        Op_right, par["ny"], par["nx"], complexflag=complexflag, backend=backend
+    )
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
@@ -413,106 +413,106 @@ def test_counts(par):
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
-def test_matmat_multiproc_multithread(par):
+@pytest.mark.parametrize("parallel_kind", ["multiproc", "multithread"])
+def test_matmat_multiproc_multithread(par, parallel_kind):
     """Single and multiprocess/multithreading consistency for matmat/rmatmat"""
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
-    for parallel_kind in ["multiproc", "multithread"]:
-        np.random.seed(0)
-        nproc = 2
+    np.random.seed(0)
+    nproc = 2
 
-        # create pool
-        if parallel_kind == "multiproc":
-            pool = mp.Pool(processes=nproc)
-        else:
-            pool = mt.ThreadPoolExecutor(max_workers=nproc)
+    # create pool
+    if parallel_kind == "multiproc":
+        pool = mp.Pool(processes=nproc)
+    else:
+        pool = mt.ThreadPoolExecutor(max_workers=nproc)
 
-        M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
-            "imag"
-        ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
-        x = np.ones((par["nx"], 4), dtype=dtype) + par["imag"] * np.ones(
-            (par["nx"], 4), dtype=dtype
-        )
-        y = np.ones((par["ny"], 4), dtype=dtype) + par["imag"] * np.ones(
-            (par["ny"], 4), dtype=dtype
-        )
+    M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
+        "imag"
+    ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
+    x = np.ones((par["nx"], 4), dtype=dtype) + par["imag"] * np.ones(
+        (par["nx"], 4), dtype=dtype
+    )
+    y = np.ones((par["ny"], 4), dtype=dtype) + par["imag"] * np.ones(
+        (par["ny"], 4), dtype=dtype
+    )
 
-        Mop = MatrixMult(M, dtype=par["dtype"])
+    Mop = MatrixMult(M, dtype=par["dtype"])
 
-        # forward
-        assert_array_almost_equal(
-            Mop.matmat(x),
-            Mop.matmat(x, pool=pool),
-            decimal=3 if dtype == np.float32 else 8,
-        )
-        # adjoint
-        assert_array_almost_equal(
-            Mop.rmatmat(y),
-            Mop.rmatmat(y, pool=pool),
-            decimal=3 if dtype == np.float32 else 8,
-        )
+    # forward
+    assert_array_almost_equal(
+        Mop.matmat(x),
+        Mop.matmat(x, pool=pool),
+        decimal=3 if dtype == np.float32 else 8,
+    )
+    # adjoint
+    assert_array_almost_equal(
+        Mop.rmatmat(y),
+        Mop.rmatmat(y, pool=pool),
+        decimal=3 if dtype == np.float32 else 8,
+    )
 
-        # close pool
-        if parallel_kind == "multiproc":
-            pool.close()
-            pool.join()
-        else:
-            pool.shutdown()
+    # close pool
+    if parallel_kind == "multiproc":
+        pool.close()
+        pool.join()
+    else:
+        pool.shutdown()
 
 
 @pytest.mark.skipif(
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
-def test_matmat_sparse_multiproc_multithread(par):
+@pytest.mark.parametrize("parallel_kind", ["multiproc", "multithread"])
+def test_matmat_sparse_multiproc_multithread(par, parallel_kind):
     """Single and multiprocess/multithreading consistency for matmat/rmatmat
     with sparse X"""
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
-    for parallel_kind in ["multiproc", "multithread"]:
-        np.random.seed(0)
-        nproc = 2
+    np.random.seed(0)
+    nproc = 2
 
-        # create pool
-        if parallel_kind == "multiproc":
-            pool = mp.Pool(processes=nproc)
-        else:
-            pool = mt.ThreadPoolExecutor(max_workers=nproc)
+    # create pool
+    if parallel_kind == "multiproc":
+        pool = mp.Pool(processes=nproc)
+    else:
+        pool = mt.ThreadPoolExecutor(max_workers=nproc)
 
-        M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
-            "imag"
-        ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
-        x = np.zeros((par["nx"], 4), dtype=dtype) + par["imag"] * np.zeros(
-            (par["nx"], 4), dtype=dtype
-        )
-        y = np.zeros((par["ny"], 4), dtype=dtype) + par["imag"] * np.zeros(
-            (par["ny"], 4), dtype=dtype
-        )
-        for ix in range(par["nx"]):
-            x[ix, np.random.randint(0, 4)] = 1.0 + par["imag"] * 1.0
-        for iy in range(par["ny"]):
-            y[iy, np.random.randint(0, 4)] = 1.0 + par["imag"] * 1.0
-        x = csr_matrix(x)
-        y = csr_matrix(y)
+    M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
+        "imag"
+    ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
+    x = np.zeros((par["nx"], 4), dtype=dtype) + par["imag"] * np.zeros(
+        (par["nx"], 4), dtype=dtype
+    )
+    y = np.zeros((par["ny"], 4), dtype=dtype) + par["imag"] * np.zeros(
+        (par["ny"], 4), dtype=dtype
+    )
+    for ix in range(par["nx"]):
+        x[ix, np.random.randint(0, 4)] = 1.0 + par["imag"] * 1.0
+    for iy in range(par["ny"]):
+        y[iy, np.random.randint(0, 4)] = 1.0 + par["imag"] * 1.0
+    x = csr_matrix(x)
+    y = csr_matrix(y)
 
-        Mop = MatrixMult(M, dtype=par["dtype"])
+    Mop = MatrixMult(M, dtype=par["dtype"])
 
-        # forward
-        assert_array_almost_equal(
-            Mop.matmat(x),
-            Mop.matmat(x, pool=pool),
-            decimal=3 if dtype == np.float32 else 8,
-        )
-        # adjoint
-        assert_array_almost_equal(
-            Mop.rmatmat(y),
-            Mop.rmatmat(y, pool=pool),
-            decimal=3 if dtype == np.float32 else 8,
-        )
+    # forward
+    assert_array_almost_equal(
+        Mop.matmat(x),
+        Mop.matmat(x, pool=pool),
+        decimal=3 if dtype == np.float32 else 8,
+    )
+    # adjoint
+    assert_array_almost_equal(
+        Mop.rmatmat(y),
+        Mop.rmatmat(y, pool=pool),
+        decimal=3 if dtype == np.float32 else 8,
+    )
 
-        # close pool
-        if parallel_kind == "multiproc":
-            pool.close()
-            pool.join()
-        else:
-            pool.shutdown()
+    # close pool
+    if parallel_kind == "multiproc":
+        pool.close()
+        pool.join()
+    else:
+        pool.shutdown()

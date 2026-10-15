@@ -112,337 +112,337 @@ def test_FirstDerivative_invalid():
     "par", [(par1), (par2), (par3), (par4), (par1e), (par2e), (par3e), (par4e)]
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_FirstDerivative_centered(par, dtype):
+@pytest.mark.parametrize("order", [3, 5])
+def test_FirstDerivative_centered(par, dtype, order):
     """Dot-test and forward/adjoint for FirstDerivative operator (centered stencil)"""
     np.random.seed(10)
-    for order in (3, 5):
-        # 1d
-        D1op = FirstDerivative(
-            par["nx"],
-            sampling=par["dx"],
-            edge=par["edge"],
-            order=order,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["nx"],
-            par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 1d
+    D1op = FirstDerivative(
+        par["nx"],
+        sampling=par["dx"],
+        edge=par["edge"],
+        order=order,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["nx"],
+        par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        x = (par["dx"] * np.arange(par["nx"], dtype=dtype)) ** 2
-        yana = 2 * par["dx"] * np.arange(par["nx"], dtype=dtype)
-        y = D1op * x
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-        assert_array_almost_equal(
-            y[order // 2 : -order // 2], yana[order // 2 : -order // 2], decimal=1
-        )
+    x = (par["dx"] * np.arange(par["nx"], dtype=dtype)) ** 2
+    yana = 2 * par["dx"] * np.arange(par["nx"], dtype=dtype)
+    y = D1op * x
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(
+        y[order // 2 : -order // 2], yana[order // 2 : -order // 2], decimal=1
+    )
 
-        # 2d - derivative on 1st direction
-        D1op = FirstDerivative(
-            (par["ny"], par["nx"]),
-            axis=0,
-            sampling=par["dy"],
-            edge=par["edge"],
-            order=order,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["ny"] * par["nx"],
-            par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 2d - derivative on 1st direction
+    D1op = FirstDerivative(
+        (par["ny"], par["nx"]),
+        axis=0,
+        sampling=par["dy"],
+        edge=par["edge"],
+        order=order,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        x = np.outer(
-            (par["dy"] * np.arange(par["ny"], dtype=dtype)) ** 2,
-            np.ones(par["nx"], dtype=dtype),
-        )
-        yana = np.outer(
-            2 * par["dy"] * np.arange(par["ny"], dtype=dtype),
-            np.ones(par["nx"], dtype=dtype),
-        )
-        y = D1op * x
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-        assert_array_almost_equal(
-            y.reshape(par["ny"], par["nx"])[order // 2 : -order // 2],
-            yana[order // 2 : -order // 2],
-            decimal=1,
-        )
+    x = np.outer(
+        (par["dy"] * np.arange(par["ny"], dtype=dtype)) ** 2,
+        np.ones(par["nx"], dtype=dtype),
+    )
+    yana = np.outer(
+        2 * par["dy"] * np.arange(par["ny"], dtype=dtype),
+        np.ones(par["nx"], dtype=dtype),
+    )
+    y = D1op * x
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(
+        y.reshape(par["ny"], par["nx"])[order // 2 : -order // 2],
+        yana[order // 2 : -order // 2],
+        decimal=1,
+    )
 
-        # 2d - derivative on 2nd direction
-        D1op = FirstDerivative(
-            (par["ny"], par["nx"]),
-            axis=1,
-            sampling=par["dx"],
-            edge=par["edge"],
-            order=order,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["ny"] * par["nx"],
-            par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 2d - derivative on 2nd direction
+    D1op = FirstDerivative(
+        (par["ny"], par["nx"]),
+        axis=1,
+        sampling=par["dx"],
+        edge=par["edge"],
+        order=order,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        yana = np.zeros((par["ny"], par["nx"]), dtype=dtype)
-        y = D1op * x.ravel()
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-        assert_array_almost_equal(
-            y.reshape(par["ny"], par["nx"])[order // 2 : -order // 2],
-            yana[order // 2 : -order // 2],
-            decimal=1,
-        )
+    yana = np.zeros((par["ny"], par["nx"]), dtype=dtype)
+    y = D1op * x.ravel()
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(
+        y.reshape(par["ny"], par["nx"])[order // 2 : -order // 2],
+        yana[order // 2 : -order // 2],
+        decimal=1,
+    )
 
-        # 3d - derivative on 1st direction
-        D1op = FirstDerivative(
-            (par["nz"], par["ny"], par["nx"]),
-            axis=0,
-            sampling=par["dz"],
-            edge=par["edge"],
-            order=order,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 3d - derivative on 1st direction
+    D1op = FirstDerivative(
+        (par["nz"], par["ny"], par["nx"]),
+        axis=0,
+        sampling=par["dz"],
+        edge=par["edge"],
+        order=order,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        x = np.outer(
-            (par["dz"] * np.arange(par["nz"], dtype=dtype)) ** 2,
-            np.ones((par["ny"], par["nx"]), dtype=dtype),
-        ).reshape(par["nz"], par["ny"], par["nx"])
-        yana = np.outer(
-            2 * par["dz"] * np.arange(par["nz"], dtype=dtype),
-            np.ones((par["ny"], par["nx"]), dtype=dtype),
-        ).reshape(par["nz"], par["ny"], par["nx"])
-        y = D1op * x.ravel()
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-        assert_array_almost_equal(
-            y.reshape(par["nz"], par["ny"], par["nx"])[order // 2 : -order // 2],
-            yana[order // 2 : -order // 2],
-            decimal=1,
-        )
+    x = np.outer(
+        (par["dz"] * np.arange(par["nz"], dtype=dtype)) ** 2,
+        np.ones((par["ny"], par["nx"]), dtype=dtype),
+    ).reshape(par["nz"], par["ny"], par["nx"])
+    yana = np.outer(
+        2 * par["dz"] * np.arange(par["nz"], dtype=dtype),
+        np.ones((par["ny"], par["nx"]), dtype=dtype),
+    ).reshape(par["nz"], par["ny"], par["nx"])
+    y = D1op * x.ravel()
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(
+        y.reshape(par["nz"], par["ny"], par["nx"])[order // 2 : -order // 2],
+        yana[order // 2 : -order // 2],
+        decimal=1,
+    )
 
-        # 3d - derivative on 2nd direction
-        D1op = FirstDerivative(
-            (par["nz"], par["ny"], par["nx"]),
-            axis=1,
-            sampling=par["dy"],
-            edge=par["edge"],
-            order=order,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 3d - derivative on 2nd direction
+    D1op = FirstDerivative(
+        (par["nz"], par["ny"], par["nx"]),
+        axis=1,
+        sampling=par["dy"],
+        edge=par["edge"],
+        order=order,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        yana = np.zeros((par["nz"], par["ny"], par["nx"]), dtype=dtype)
-        y = D1op * x.ravel()
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-        assert_array_almost_equal(
-            y.reshape(par["nz"], par["ny"], par["nx"])[order // 2 : -order // 2],
-            yana[order // 2 : -order // 2],
-            decimal=1,
-        )
+    yana = np.zeros((par["nz"], par["ny"], par["nx"]), dtype=dtype)
+    y = D1op * x.ravel()
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(
+        y.reshape(par["nz"], par["ny"], par["nx"])[order // 2 : -order // 2],
+        yana[order // 2 : -order // 2],
+        decimal=1,
+    )
 
-        # 3d - derivative on 3rd direction
-        D1op = FirstDerivative(
-            (par["nz"], par["ny"], par["nx"]),
-            axis=2,
-            sampling=par["dx"],
-            edge=par["edge"],
-            order=order,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 3d - derivative on 3rd direction
+    D1op = FirstDerivative(
+        (par["nz"], par["ny"], par["nx"]),
+        axis=2,
+        sampling=par["dx"],
+        edge=par["edge"],
+        order=order,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        yana = np.zeros((par["nz"], par["ny"], par["nx"]), dtype=dtype)
-        y = D1op * x.ravel()
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-        assert_array_almost_equal(
-            y.reshape(par["nz"], par["ny"], par["nx"])[order // 2 : -order // 2],
-            yana[order // 2 : -order // 2],
-            decimal=1,
-        )
+    yana = np.zeros((par["nz"], par["ny"], par["nx"]), dtype=dtype)
+    y = D1op * x.ravel()
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(
+        y.reshape(par["nz"], par["ny"], par["nx"])[order // 2 : -order // 2],
+        yana[order // 2 : -order // 2],
+        decimal=1,
+    )
 
 
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par1e), (par2e), (par3e), (par4e)]
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_FirstDerivative_forwaback(par, dtype):
+@pytest.mark.parametrize("kind", ["forward", "backward"])
+def test_FirstDerivative_forwaback(par, dtype, kind):
     """Dot-test for FirstDerivative operator and forward/adjoint
     (forward and backward stencils). Note that the analytical
     expression cannot be validated in this case
     """
     np.random.seed(10)
-    for kind in ("forward", "backward"):
-        # 1d
-        D1op = FirstDerivative(
-            par["nx"], sampling=par["dx"], edge=par["edge"], kind=kind, dtype=dtype
-        )
-        assert dottest(
-            D1op,
-            par["nx"],
-            par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 1d
+    D1op = FirstDerivative(
+        par["nx"], sampling=par["dx"], edge=par["edge"], kind=kind, dtype=dtype
+    )
+    assert dottest(
+        D1op,
+        par["nx"],
+        par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        x = (par["dx"] * np.arange(par["nx"])) ** 2
-        y = D1op * x
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    x = (par["dx"] * np.arange(par["nx"])) ** 2
+    y = D1op * x
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 2d - derivative on 1st direction
-        D1op = FirstDerivative(
-            (par["ny"], par["nx"]),
-            axis=0,
-            sampling=par["dy"],
-            edge=par["edge"],
-            kind=kind,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["ny"] * par["nx"],
-            par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 2d - derivative on 1st direction
+    D1op = FirstDerivative(
+        (par["ny"], par["nx"]),
+        axis=0,
+        sampling=par["dy"],
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        x = np.outer(
-            (par["dy"] * np.arange(par["ny"], dtype=dtype)) ** 2,
-            np.ones(par["nx"], dtype=dtype),
-        )
-        y = D1op * x
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    x = np.outer(
+        (par["dy"] * np.arange(par["ny"], dtype=dtype)) ** 2,
+        np.ones(par["nx"], dtype=dtype),
+    )
+    y = D1op * x
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 2d - derivative on 2nd direction
-        D1op = FirstDerivative(
-            (par["ny"], par["nx"]),
-            axis=1,
-            sampling=par["dx"],
-            edge=par["edge"],
-            kind=kind,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["ny"] * par["nx"],
-            par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 2d - derivative on 2nd direction
+    D1op = FirstDerivative(
+        (par["ny"], par["nx"]),
+        axis=1,
+        sampling=par["dx"],
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        y = D1op * x.ravel()
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    y = D1op * x.ravel()
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 3d - derivative on 1st direction
-        D1op = FirstDerivative(
-            (par["nz"], par["ny"], par["nx"]),
-            axis=0,
-            sampling=par["dz"],
-            edge=par["edge"],
-            kind=kind,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 3d - derivative on 1st direction
+    D1op = FirstDerivative(
+        (par["nz"], par["ny"], par["nx"]),
+        axis=0,
+        sampling=par["dz"],
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        x = np.outer(
-            (par["dz"] * np.arange(par["nz"], dtype=dtype)) ** 2,
-            np.ones((par["ny"], par["nx"]), dtype=dtype),
-        ).reshape(par["nz"], par["ny"], par["nx"])
-        y = D1op * x.ravel()
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    x = np.outer(
+        (par["dz"] * np.arange(par["nz"], dtype=dtype)) ** 2,
+        np.ones((par["ny"], par["nx"]), dtype=dtype),
+    ).reshape(par["nz"], par["ny"], par["nx"])
+    y = D1op * x.ravel()
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 3d - derivative on 2nd direction
-        D1op = FirstDerivative(
-            (par["nz"], par["ny"], par["nx"]),
-            axis=1,
-            sampling=par["dy"],
-            edge=par["edge"],
-            kind=kind,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 3d - derivative on 2nd direction
+    D1op = FirstDerivative(
+        (par["nz"], par["ny"], par["nx"]),
+        axis=1,
+        sampling=par["dy"],
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        y = D1op * x.ravel()
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    y = D1op * x.ravel()
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 3d - derivative on 3rd direction
-        D1op = FirstDerivative(
-            (par["nz"], par["ny"], par["nx"]),
-            axis=2,
-            sampling=par["dx"],
-            edge=par["edge"],
-            kind=kind,
-            dtype=dtype,
-        )
-        assert dottest(
-            D1op,
-            par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    # 3d - derivative on 3rd direction
+    D1op = FirstDerivative(
+        (par["nz"], par["ny"], par["nx"]),
+        axis=2,
+        sampling=par["dx"],
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        D1op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        y = D1op * x.ravel()
-        xadj = D1op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    y = D1op * x.ravel()
+    xadj = D1op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
 
 @pytest.mark.parametrize(
@@ -629,7 +629,8 @@ def test_SecondDerivative_centered(par, dtype):
     "par", [(par1), (par2), (par3), (par4), (par1e), (par2e), (par3e), (par4e)]
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_SecondDerivative_forwaback(par, dtype):
+@pytest.mark.parametrize("kind", ["forward", "backward"])
+def test_SecondDerivative_forwaback(par, dtype, kind):
     """Dot-test for SecondDerivative operator (forward and backward stencils).
     Note that the analytical expression cannot be validated in this case
     """
@@ -641,131 +642,130 @@ def test_SecondDerivative_forwaback(par, dtype):
     xx, _ = np.meshgrid(x, y)  # produces arrays of size (ny,nx)
     xxx, _, _ = np.meshgrid(x, y, z)  # produces arrays of size (ny,nx,nz)
 
-    for _ in ("forward", "backward"):
-        # 1d
-        D2op = SecondDerivative(
-            par["nx"],
-            sampling=par["dx"],
-            edge=par["edge"],
-            kind="forward",
-            dtype=dtype,
-        )
-        assert dottest(
-            D2op,
-            par["nx"],
-            par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-        y = D2op * x
-        xadj = D2op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 1d
+    D2op = SecondDerivative(
+        par["nx"],
+        sampling=par["dx"],
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        D2op,
+        par["nx"],
+        par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = D2op * x
+    xadj = D2op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 2d - derivative on 1st direction
-        D2op = SecondDerivative(
-            (par["ny"], par["nx"]),
-            axis=0,
-            sampling=par["dy"],
-            edge=par["edge"],
-            kind="forward",
-            dtype=dtype,
-        )
-        assert dottest(
-            D2op,
-            par["ny"] * par["nx"],
-            par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-        y = D2op * xx.ravel()
-        xadj = D2op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 2d - derivative on 1st direction
+    D2op = SecondDerivative(
+        (par["ny"], par["nx"]),
+        axis=0,
+        sampling=par["dy"],
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        D2op,
+        par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = D2op * xx.ravel()
+    xadj = D2op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 2d - derivative on 2nd direction
-        D2op = SecondDerivative(
-            (par["ny"], par["nx"]),
-            axis=1,
-            sampling=par["dx"],
-            edge=par["edge"],
-            kind="forward",
-            dtype=dtype,
-        )
-        assert dottest(
-            D2op,
-            par["ny"] * par["nx"],
-            par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-        y = D2op * xx.ravel()
-        xadj = D2op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 2d - derivative on 2nd direction
+    D2op = SecondDerivative(
+        (par["ny"], par["nx"]),
+        axis=1,
+        sampling=par["dx"],
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        D2op,
+        par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = D2op * xx.ravel()
+    xadj = D2op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 3d - derivative on 1st direction
-        D2op = SecondDerivative(
-            (par["ny"], par["nx"], par["nz"]),
-            axis=0,
-            sampling=par["dy"],
-            edge=par["edge"],
-            kind="forward",
-            dtype=dtype,
-        )
-        assert dottest(
-            D2op,
-            par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-        y = D2op * xxx.ravel()
-        xadj = D2op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 3d - derivative on 1st direction
+    D2op = SecondDerivative(
+        (par["ny"], par["nx"], par["nz"]),
+        axis=0,
+        sampling=par["dy"],
+        edge=par["edge"],
+        kind="forward",
+        dtype=dtype,
+    )
+    assert dottest(
+        D2op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = D2op * xxx.ravel()
+    xadj = D2op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 3d - derivative on 2nd direction
-        D2op = SecondDerivative(
-            (par["ny"], par["nx"], par["nz"]),
-            axis=1,
-            sampling=par["dx"],
-            edge=par["edge"],
-            kind="forward",
-            dtype=dtype,
-        )
-        assert dottest(
-            D2op,
-            par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-        y = D2op * xxx.ravel()
-        xadj = D2op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 3d - derivative on 2nd direction
+    D2op = SecondDerivative(
+        (par["ny"], par["nx"], par["nz"]),
+        axis=1,
+        sampling=par["dx"],
+        edge=par["edge"],
+        kind="forward",
+        dtype=dtype,
+    )
+    assert dottest(
+        D2op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = D2op * xxx.ravel()
+    xadj = D2op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 3d - derivative on 3rd direction
-        D2op = SecondDerivative(
-            (par["ny"], par["nx"], par["nz"]),
-            axis=2,
-            sampling=par["dz"],
-            edge=par["edge"],
-            kind="forward",
-            dtype=dtype,
-        )
-        assert dottest(
-            D2op,
-            par["nz"] * par["ny"] * par["nx"],
-            par["ny"] * par["nx"] * par["nz"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-        y = D2op * xxx.ravel()
-        xadj = D2op.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 3d - derivative on 3rd direction
+    D2op = SecondDerivative(
+        (par["ny"], par["nx"], par["nz"]),
+        axis=2,
+        sampling=par["dz"],
+        edge=par["edge"],
+        kind="forward",
+        dtype=dtype,
+    )
+    assert dottest(
+        D2op,
+        par["nz"] * par["ny"] * par["nx"],
+        par["ny"] * par["nx"] * par["nz"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = D2op * xxx.ravel()
+    xadj = D2op.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
 
 @pytest.mark.parametrize(
@@ -888,106 +888,106 @@ def test_Laplacian(par, dtype):
     "par", [(par1), (par2), (par3), (par4), (par1e), (par2e), (par3e), (par4e)]
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_Gradient(par, dtype):
+@pytest.mark.parametrize("kind", ["forward", "centered", "backward"])
+def test_Gradient(par, dtype, kind):
     """Dot-test for Gradient operator"""
     np.random.seed(10)
     xx = np.ones((par["ny"], par["nx"]), dtype=dtype)
     xxx = np.ones((par["nz"], par["ny"], par["nx"]), dtype=dtype)
 
-    for kind in ("forward", "centered", "backward"):
-        # 2d
-        Gop = Gradient(
-            (par["ny"], par["nx"]),
-            sampling=(par["dy"], par["dx"]),
-            edge=par["edge"],
-            kind=kind,
-            dtype=dtype,
-        )
-        assert dottest(
-            Gop,
-            2 * par["ny"] * par["nx"],
-            par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-        y = Gop * xx.ravel()
-        xadj = Gop.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 2d
+    Gop = Gradient(
+        (par["ny"], par["nx"]),
+        sampling=(par["dy"], par["dx"]),
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        Gop,
+        2 * par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = Gop * xx.ravel()
+    xadj = Gop.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 3d
-        Gop = Gradient(
-            (par["nz"], par["ny"], par["nx"]),
-            sampling=(par["dz"], par["dy"], par["dx"]),
-            edge=par["edge"],
-            kind=kind,
-            dtype=dtype,
-        )
-        assert dottest(
-            Gop,
-            3 * par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-        y = Gop * xxx.ravel()
-        xadj = Gop.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 3d
+    Gop = Gradient(
+        (par["nz"], par["ny"], par["nx"]),
+        sampling=(par["dz"], par["dy"], par["dx"]),
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        Gop,
+        3 * par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = Gop * xxx.ravel()
+    xadj = Gop.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
 
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par1e), (par2e), (par3e), (par4e)]
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_FirstDirectionalDerivative(par, dtype):
+@pytest.mark.parametrize("kind", ["forward", "centered", "backward"])
+def test_FirstDirectionalDerivative(par, dtype, kind):
     """Dot-test for FirstDirectionalDerivative operator"""
     np.random.seed(10)
     xx = np.ones((par["ny"], par["nx"]), dtype=dtype)
     xxx = np.ones((par["nz"], par["ny"], par["nx"]), dtype=dtype)
 
-    for kind in ("forward", "centered", "backward"):
-        # 2d
-        Fdop = FirstDirectionalDerivative(
-            (par["ny"], par["nx"]),
-            v=(np.sqrt(2.0) / 2.0 * np.ones(2)).astype(dtype),
-            sampling=(par["dy"], par["dx"]),
-            edge=par["edge"],
-            kind=kind,
-            dtype=dtype,
-        )
-        assert dottest(
-            Fdop,
-            par["ny"] * par["nx"],
-            par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-        y = Fdop * xx.ravel()
-        xadj = Fdop.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 2d
+    Fdop = FirstDirectionalDerivative(
+        (par["ny"], par["nx"]),
+        v=(np.sqrt(2.0) / 2.0 * np.ones(2)).astype(dtype),
+        sampling=(par["dy"], par["dx"]),
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        Fdop,
+        par["ny"] * par["nx"],
+        par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = Fdop * xx.ravel()
+    xadj = Fdop.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
-        # 3d
-        Fdop = FirstDirectionalDerivative(
-            (par["nz"], par["ny"], par["nx"]),
-            v=(np.ones(3) / np.sqrt(3)).astype(dtype),
-            sampling=(par["dz"], par["dy"], par["dx"]),
-            edge=par["edge"],
-            kind=kind,
-            dtype=dtype,
-        )
-        assert dottest(
-            Fdop,
-            par["nz"] * par["ny"] * par["nx"],
-            par["nz"] * par["ny"] * par["nx"],
-            rtol=5e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
-        y = Fdop * xxx.ravel()
-        xadj = Fdop.H * y
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 3d
+    Fdop = FirstDirectionalDerivative(
+        (par["nz"], par["ny"], par["nx"]),
+        v=(np.ones(3) / np.sqrt(3)).astype(dtype),
+        sampling=(par["dz"], par["dy"], par["dx"]),
+        edge=par["edge"],
+        kind=kind,
+        dtype=dtype,
+    )
+    assert dottest(
+        Fdop,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = Fdop * xxx.ravel()
+    xadj = Fdop.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
 
 
 @pytest.mark.parametrize(
