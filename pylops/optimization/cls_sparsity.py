@@ -3302,6 +3302,8 @@ class SplitBregman(Solver):
         show: bool = False,
         itershow: tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
+        *,
+        kwargs_solver: dict | None = None,
         **kwargs_lsqr,
     ) -> tuple[NDArray, int, NDArray]:
         r"""Run entire solver
@@ -3375,6 +3377,14 @@ class SplitBregman(Solver):
             three element of the list.
         show_inner : :obj:`bool`, optional
             Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
+        kwargs_solver : :obj:`dict`, optional
+            .. versionadded:: 2.9.0
+
+            Keyword arguments for the inner solver, independent of the outer
+            stopping criteria. For example, ``kwargs_solver={"tol": 1e-14}``
+            sets the inner CGLS tolerance without changing the outer ``tol``.
+            Entries override duplicate values in ``**kwargs_lsqr``. The dictionary
+            is not modified.
         **kwargs_lsqr
             Arbitrary keyword arguments for the solver of the
             :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
@@ -3409,6 +3419,7 @@ class SplitBregman(Solver):
             preallocate=preallocate,
             show=show,
         )
+        kwargs_lsqr = {**kwargs_lsqr, **(kwargs_solver or {})}
         x = self.run(
             x,
             engine=engine,

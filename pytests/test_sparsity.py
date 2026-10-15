@@ -23,7 +23,7 @@ from pylops.basicoperators import (
     VStack,
 )
 from pylops.optimization.callback import CostToInitialCallback
-from pylops.optimization.cls_sparsity import IRLS
+from pylops.optimization.cls_sparsity import IRLS, SplitBregman
 from pylops.optimization.sparsity import fista, irls, ista, omp, spgl1, splitbregman
 
 # currently test spgl1 only if numpy<2.0.0 is installed...
@@ -759,3 +759,135 @@ def test_SplitBregman_lambdaRL1s(par):
         Iop, y, [Dop], lambdaRL1s=[epsRL1], **kwargs_sb, **kwars_solver
     )[0]
     assert_array_almost_equal(xdef, xeps, decimal=12)
+
+
+@pytest.mark.parametrize("solver_api", ["function", "class"])
+@pytest.mark.parametrize("preallocate", [False, True])
+@pytest.mark.parametrize("tight_inner", [False, True])
+def test_SplitBregman_inner_tolerance(solver_api, preallocate, tight_inner):
+    """Allow CGLS accuracy to be configured independently of the outer loop."""
+    npp.random.seed(42)
+    nx = 33
+    x = npp.zeros(nx)
+    x[: nx // 2] = 10
+    x[nx // 2 : 3 * nx // 4] = -5
+    y = x + npp.random.normal(0, 1, nx)
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+    options = dict(
+        niter_outer=2000,
+        niter_inner=5,
+        mu=1.0,
+        epsRL1s=[1.0],
+        tol=1e-10,
+        preallocate=preallocate,
+    )
+    ref, _, _ = splitbregman(
+        Iop, y, [Dop], engine="scipy", iter_lim=20, damp=0, **options
+    )
+    inner_options = dict(tol=1e-14, rtol=0.0, rtol1=0.0)
+    original = inner_options.copy()
+    new_options = dict(kwargs_solver=inner_options) if tight_inner else {}
+    if solver_api == "function":
+        result, _, _ = splitbregman(
+            Iop,
+            y,
+            [Dop],
+            engine="pylops",
+            niter=20,
+            damp=0,
+            **options,
+            **new_options,
+        )
+    else:
+        result, _, _ = SplitBregman(Iop).solve(
+            y,
+            [Dop],
+            engine="pylops",
+            niter=20,
+            damp=0,
+            **options,
+            **new_options,
+        )
+    error = float(npp.max(npp.abs(result - ref)))
+    if tight_inner:
+        assert error < 1e-6
+    else:
+        assert error > 1e-3
+    assert inner_options == original
+
+
+@pytest.mark.parametrize("solver_api", ["function", "class"])
+@pytest.mark.parametrize("engine", ["scipy", "pylops"])
+def test_SplitBregman_inner_options_precedence(solver_api, engine):
+    """Explicit inner options override legacy keywords without mutating either."""
+    nx = 15
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+    y = npp.linspace(-1, 1, nx)
+    count_key = "iter_lim" if engine == "scipy" else "niter"
+    inner_options = {count_key: 20, "damp": 0.0}
+    if engine == "pylops":
+        inner_options.update(tol=1e-14, rtol=0.0, rtol1=0.0)
+    original = inner_options.copy()
+    outer_options = dict(niter_outer=8, niter_inner=2, epsRL1s=[0.2], tol=0.0)
+    legacy_options = {count_key: 0, "damp": 0.5}
+    if solver_api == "function":
+        ref = splitbregman(
+            Iop, y, [Dop], engine=engine, kwargs_solver=inner_options, **outer_options
+        )
+        result = splitbregman(
+            Iop,
+            y,
+            [Dop],
+            engine=engine,
+            kwargs_solver=inner_options,
+            **outer_options,
+            **legacy_options,
+        )
+    else:
+        ref = SplitBregman(Iop).solve(
+            y, [Dop], engine=engine, kwargs_solver=inner_options, **outer_options
+        )
+        result = SplitBregman(Iop).solve(
+            y,
+            [Dop],
+            engine=engine,
+            kwargs_solver=inner_options,
+            **outer_options,
+            **legacy_options,
+        )
+    npp.testing.assert_array_almost_equal(result[0], ref[0], decimal=12)
+    npp.testing.assert_array_almost_equal(result[2], ref[2], decimal=12)
+    assert result[1] == ref[1] == outer_options["niter_outer"]
+    assert inner_options == original
+    assert legacy_options == {count_key: 0, "damp": 0.5}
+
+
+@pytest.mark.parametrize("outer_criterion", ["rtol", "rtol1"])
+def test_SplitBregman_inner_relative_tolerance(outer_criterion):
+    """Keep outer cost callbacks independent of inner CGLS stopping criteria."""
+    Iop = Identity(15)
+    Dop = FirstDerivative(15, edge=True)
+    y = npp.linspace(-1.0, 1.0, 15)
+    costs = []
+    inner_options = dict(niter=20, tol=1e-14, rtol=1e-12, rtol1=1e-12)
+    original = inner_options.copy()
+    _, iterations, cost = splitbregman(
+        Iop,
+        y,
+        [Dop],
+        niter_outer=100,
+        niter_inner=2,
+        epsRL1s=[0.2],
+        tol=0.0,
+        engine="pylops",
+        kwargs_solver=inner_options,
+        callback=lambda x: costs.append(x.copy()),
+        **{outer_criterion: 0.99},
+    )
+    assert 1 <= iterations < 100
+    assert len(costs) == len(cost) == iterations
+    denominator = cost[0] if outer_criterion == "rtol" else npp.linalg.norm(y)
+    assert cost[-1] / denominator < 0.99
+    assert inner_options == original

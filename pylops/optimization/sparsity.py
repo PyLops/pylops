@@ -727,6 +727,8 @@ def splitbregman(
     show_inner: bool = False,
     callback: Callable | None = None,
     preallocate: bool = False,
+    *,
+    kwargs_solver: dict | None = None,
     **kwargs_lsqr,
 ) -> tuple[NDArray, int, NDArray]:
     r"""Split Bregman for mixed L2-L1 norms.
@@ -814,6 +816,14 @@ def splitbregman(
         Pre-allocate all variables used by the solver. Note that if ``y``
         is a JAX array, this option is ignored and variables are not
         pre-allocated since JAX does not support in-place operations.
+    kwargs_solver : :obj:`dict`, optional
+        .. versionadded:: 2.9.0
+
+        Keyword arguments for the inner solver, independent of the outer
+        stopping criteria. For example, ``kwargs_solver={"tol": 1e-14}``
+        sets the inner CGLS tolerance without changing the outer ``tol``.
+        Entries override duplicate values in ``**kwargs_lsqr``. The dictionary
+        is not modified.
     **kwargs_lsqr
         Arbitrary keyword arguments for the solver of the
         :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
@@ -867,6 +877,7 @@ def splitbregman(
         show=show,
         itershow=itershow,
         show_inner=show_inner,
+        kwargs_solver=kwargs_solver,
         **kwargs_lsqr,
     )
     return xinv, itn_out, cost

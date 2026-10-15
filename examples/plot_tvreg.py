@@ -76,6 +76,10 @@ plt.tight_layout()
 
 ###############################################################################
 # Now we impose blockiness in the solution using the Split Bregman solver
+# Inner solver options can also be supplied through ``kwargs_solver``. For
+# example, use ``engine="pylops", kwargs_solver={"niter": 30, "tol": 1e-14}``
+# to tighten CGLS independently of the outer ``tol`` below. With the default
+# SciPy engine, use LSQR options such as ``iter_lim``, ``atol``, and ``btol``.
 Dop = pylops.FirstDerivative(nx, edge=True, kind="backward")
 mu = 0.01
 lamda = 0.3
@@ -92,7 +96,7 @@ xinv = pylops.optimization.sparsity.splitbregman(
     epsRL1s=[lamda],
     tol=1e-4,
     tau=1.0,
-    **dict(iter_lim=30, damp=1e-10)
+    kwargs_solver=dict(iter_lim=30, damp=1e-10),
 )[0]
 
 plt.figure(figsize=(10, 5))
@@ -175,7 +179,7 @@ xinv = pylops.optimization.sparsity.splitbregman(
     tol=1e-4,
     tau=1.0,
     show=False,
-    **dict(iter_lim=5, damp=1e-4)
+    **dict(iter_lim=5, damp=1e-4),
 )[0]
 xinv = np.real(xinv.reshape(ny, nx))
 
