@@ -15,7 +15,8 @@ class MemoizeOperator(LinearOperator):
     and stores the last ``max_neval`` model/data
     vector pairs. Forward and adjoint evaluations are cached separately,
     sharing the same ``max_neval`` limit. An adjoint is not assumed to be
-    the inverse of a forward evaluation.
+    the inverse of a forward evaluation. Cache hits require identical input
+    values and dtype; nearby vectors are evaluated independently.
 
     Parameters
     ----------
@@ -52,7 +53,11 @@ class MemoizeOperator(LinearOperator):
         for (xstored, ystored), is_adjoint in zip(
             self.store, self._store_is_adjoint, strict=True
         ):
-            if not is_adjoint and np.allclose(xstored, x):
+            if (
+                not is_adjoint
+                and xstored.dtype == x.dtype
+                and np.array_equal(xstored, x)
+            ):
                 return ystored
         if len(self.store) + 1 > self.max_neval:
             del self.store[0]  # Delete oldest
@@ -67,7 +72,7 @@ class MemoizeOperator(LinearOperator):
         for (xstored, ystored), is_adjoint in zip(
             self.store, self._store_is_adjoint, strict=True
         ):
-            if is_adjoint and np.allclose(ystored, y):
+            if is_adjoint and ystored.dtype == y.dtype and np.array_equal(ystored, y):
                 return xstored
         if len(self.store) + 1 > self.max_neval:
             del self.store[0]  # Delete oldest

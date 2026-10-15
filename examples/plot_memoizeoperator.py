@@ -29,3 +29,11 @@ np.testing.assert_allclose(memo @ x, y)
 np.testing.assert_allclose(memo.H @ y, z)
 assert memo.neval == 2
 assert len(memo.store) == 2
+
+
+###############################################################################
+# Similar inputs are not interchangeable: small changes must reach the operator.
+x_nearby = x.copy()
+x_nearby[0] += 1e-6
+np.testing.assert_array_equal(memo @ x_nearby, op @ x_nearby)
+assert memo.neval == 3

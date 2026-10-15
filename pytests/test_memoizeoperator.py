@@ -146,3 +146,50 @@ def test_memoize_direction_eviction():
     assert_array_almost_equal(memo @ x, op @ x)
     assert memo.neval == 4
     assert len(memo.store) == 2
+
+
+@pytest.mark.parametrize("adjoint", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_memoize_nearby_inputs(adjoint, dtype):
+    """Nearby vectors are distinct evaluations, even within allclose tolerance."""
+    op = Diagonal(np.array([2.0, 3.0, 4.0], dtype=dtype))
+    memo = MemoizeOperator(op)
+    operator = op.H if adjoint else op
+    cached = memo.H if adjoint else memo
+    x = np.array([1.0, 2.0, 3.0], dtype=dtype)
+    nearby = x.copy()
+    nearby[0] += 1e-6
+    assert np.allclose(x, nearby)
+    cached @ x
+
+    result = cached @ nearby
+
+    np.testing.assert_array_equal(result, operator @ nearby)
+    assert memo.neval == 2
+    np.testing.assert_array_equal(cached @ nearby.copy(), result)
+    assert memo.neval == 2
+
+
+@pytest.mark.parametrize("adjoint", [False, True])
+@pytest.mark.parametrize("complex_values", [False, True])
+def test_memoize_input_dtype(adjoint, complex_values):
+    """Equal values with different precision must preserve output promotion."""
+    low = np.complex64 if complex_values else np.float32
+    high = np.complex128 if complex_values else np.float64
+    matrix = np.array([[2.0, 1.0], [0.0, 3.0]], dtype=low)
+    if complex_values:
+        matrix += 1j
+    op = MatrixMult(matrix, dtype=low)
+    memo = MemoizeOperator(op)
+    operator = op.H if adjoint else op
+    cached = memo.H if adjoint else memo
+    x = np.array([1.0, 2.0], dtype=low)
+    cached @ x
+    promoted = x.astype(high)
+
+    result = cached @ promoted
+    expected = operator @ promoted
+
+    assert result.dtype == expected.dtype
+    np.testing.assert_array_equal(result, expected)
+    assert memo.neval == 2
