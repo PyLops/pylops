@@ -219,7 +219,7 @@ def test_Convolve1D_hstar_contiguous(dims, hlen):
         (par2_1d),
     ],
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("method", methods_1d)
 @pytest.mark.parametrize("hlen", ["short", "long"])
 def test_Convolve1D_1d(par, dtype, method, hlen):
@@ -238,13 +238,17 @@ def test_Convolve1D_1d(par, dtype, method, hlen):
     else:
         nx, x, h, offset = nfilt[0], h1.astype(dtype), spike, nfilt[0] // 2
 
+    if np.issubdtype(dtype, np.complexfloating):
+        h = h + 1j * h
+
     # Operator
     Cop = Convolve1D(nx, h=h, offset=offset, method=method, dtype=dtype)
     assert dottest(
         Cop,
         par["nx"],
         nx,
-        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        rtol=1e-4 if dtype in (np.float32, np.complex64) else 1e-6,
+        complexflag=3 if np.issubdtype(dtype, np.complexfloating) else 0,
         backend=backend,
     )
 
