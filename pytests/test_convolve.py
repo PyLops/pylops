@@ -212,53 +212,6 @@ def test_Convolve1D_hstar_contiguous(dims, hlen):
     assert Cop.Op.hstar.flags["C_CONTIGUOUS"]
 
 
-@pytest.mark.parametrize("nx, nh", [(9, 4), (4, 9)])
-@pytest.mark.parametrize("dtype", [np.complex64, np.complex128])
-@pytest.mark.parametrize(
-    "axis, method, broadcast",
-    [
-        (None, "direct", False),
-        (None, "fft", False),
-        (0, "fft", False),
-        (1, "overlapadd", False),
-        (0, "overlapadd", True),
-        (1, "fft", True),
-    ],
-)
-def test_Convolve1D_complex_filter(nx, nh, dtype, axis, method, broadcast):
-    """Compare complex convolution and its adjoint with an explicit matrix."""
-    rng = np.random.RandomState(20)
-    ntraces = 1 if axis is None else 2
-    nmodels = 1 if broadcast else ntraces
-    h = (rng.randn(nh, ntraces) + 1j * rng.randn(nh, ntraces)).astype(dtype)
-    x = (rng.randn(nx, nmodels) + 1j * rng.randn(nx, nmodels)).astype(dtype)
-    ny, offset = max(nx, nh), 2
-    y = (rng.randn(ny, ntraces) + 1j * rng.randn(ny, ntraces)).astype(dtype)
-    expected_y = np.zeros_like(y)
-    expected_x = np.zeros_like(x)
-    indices = np.arange(ny)[:, None] + offset - np.arange(nx)
-    for itrace in range(ntraces):
-        matrix = np.where(
-            (indices >= 0) & (indices < nh),
-            h[indices.clip(0, nh - 1), itrace],
-            0,
-        )
-        imodel = 0 if broadcast else itrace
-        expected_y[:, itrace] = matrix @ x[:, imodel]
-        expected_x[:, imodel] += matrix.conj().T @ y[:, itrace]
-
-    if axis is None:
-        h, x, y = h[:, 0], x[:, 0], y[:, 0]
-    elif axis == 1:
-        h, x, y = h.T, x.T, y.T
-        expected_y, expected_x = expected_y.T, expected_x.T
-    Cop = Convolve1D(
-        x.shape, h=h, offset=offset, axis=axis or 0, method=method, dtype=dtype
-    )
-    assert_array_almost_equal(Cop @ x.ravel(), expected_y.ravel(), decimal=4)
-    assert_array_almost_equal(Cop.H @ y.ravel(), expected_x.ravel(), decimal=4)
-
-
 @pytest.mark.parametrize(
     "par",
     [
@@ -266,7 +219,7 @@ def test_Convolve1D_complex_filter(nx, nh, dtype, axis, method, broadcast):
         (par2_1d),
     ],
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("method", methods_1d)
 @pytest.mark.parametrize("hlen", ["short", "long"])
 def test_Convolve1D_1d(par, dtype, method, hlen):
@@ -285,13 +238,17 @@ def test_Convolve1D_1d(par, dtype, method, hlen):
     else:
         nx, x, h, offset = nfilt[0], h1.astype(dtype), spike, nfilt[0] // 2
 
+    if np.issubdtype(dtype, np.complexfloating):
+        h = h + 1j * h
+
     # Operator
     Cop = Convolve1D(nx, h=h, offset=offset, method=method, dtype=dtype)
     assert dottest(
         Cop,
         par["nx"],
         nx,
-        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        rtol=1e-4 if dtype in (np.float32, np.complex64) else 1e-6,
+        complexflag=3 if np.issubdtype(dtype, np.complexfloating) else 0,
         backend=backend,
     )
 

@@ -391,7 +391,7 @@ class Convolve1D(LinearOperator):
     In time domain:
 
     .. math::
-        x(t) = \int\limits_{-\infty}^{\infty} h(\tau-t)^* y(\tau) \,\mathrm{d}\tau
+        x(t) = \int\limits_{-\infty}^{\infty} h(\tau)^* y(t+\tau) \,\mathrm{d}\tau
 
     or in frequency domain:
 

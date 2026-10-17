@@ -2,7 +2,6 @@ Changelog
 =========
 
 # 2.8.0
-* Fixed the adjoint of `pylops.signalprocessing.Convolve1D` for complex filters
 * Added `pylops.signalprocessing.UDCT` operator
 * Added `forward`, `adjoint`, and `__repr__` methods to `pylops.TorchOperator`
 * Added `sparse` to `pylops.utils.signalprocessing.convmtx`

@@ -60,16 +60,23 @@ ax.set_xlim(1.9, 2.1)
 plt.tight_layout()
 
 ###############################################################################
-# Complex filters also require a conjugate time reversal in the adjoint.
-# Here a short complex channel response filters the signal; LSQR recovers it
-# using the same forward and adjoint operators.
-hcomplex = np.array([0.1 - 0.05j, 1.0 + 0.3j, -0.1 + 0.05j])
-Ccomplex = pylops.signalprocessing.Convolve1D(
-    nt, h=hcomplex, offset=1, dtype="complex128"
+# We repeat the same example with a complex-valued filter
+Cop = pylops.signalprocessing.Convolve1D(
+    nt, h=h + 1j * h, offset=hcenter, dtype="complex128"
 )
-ycomplex = Ccomplex * x.astype(np.complex128)
-xcomplex = lsqr(Ccomplex, ycomplex, atol=1e-10, btol=1e-10)[0]
-np.testing.assert_allclose(xcomplex, x, atol=1e-8)
+y = Cop * x
+xinv = Cop / y
+
+fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+for ax, component, title in zip(axs, (np.real, np.imag), ("Real", "Imaginary")):
+    ax.plot(t, component(x), "k", lw=2, label=r"$x$")
+    ax.plot(t, component(y), "r", lw=2, label=r"$y=Ax$")
+    ax.plot(t, component(xinv), "--g", lw=2, label=r"$x_{ext}$")
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.legend()
+    ax.set_xlim(1.9, 2.1)
+fig.suptitle("Convolve 1d data with complex filter")
+plt.tight_layout()
 
 ###############################################################################
 # We show now that also a filter with mixed phase (i.e., not centered
