@@ -620,3 +620,70 @@ def test_Convolve3D(par, dtype):
     xadj = Cop.H * y
     assert y.dtype == dtype
     assert xadj.dtype == dtype
+
+
+@pytest.mark.parametrize("par", [(par1_3d), (par2_3d)])
+@pytest.mark.parametrize("axes", [(0, 1, 2), (1, 2, 0), (2, 0, 1), (-1, -3, -2)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+def test_Convolve3D_axes(par, axes, dtype):
+    """Dot-test and modelling with permuted axes, on 3D and 4D models."""
+    np.random.seed(10)
+    h = np.random.normal(0.0, 1.0, nfilt).astype(dtype)
+    if np.issubdtype(dtype, np.complexfloating):
+        h += 1j * np.random.normal(0.0, 1.0, h.shape)
+    permutation = tuple(axis % 3 for axis in axes)
+
+    # 3D on 3D
+    dims = (par["nz"], par["ny"], par["nx"])
+    Cop = ConvolveND(
+        dims,
+        h=h.transpose(permutation),
+        offset=tuple(par["offset"][i] for i in permutation),
+        axes=axes,
+        dtype=dtype,
+    )
+    Cop_ref = ConvolveND(dims, h=h, offset=par["offset"], axes=(0, 1, 2), dtype=dtype)
+    assert dottest(
+        Cop,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        backend=backend,
+        complexflag=3 if np.issubdtype(dtype, np.complexfloating) else 0,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+    )
+    # Forward and adjoint dtype check
+    x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    y = Cop * x
+    xadj = Cop.H * x
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(y, Cop_ref * x, decimal=3)
+    assert_array_almost_equal(xadj, Cop_ref.H * x, decimal=3)
+
+    # 3D on 4D (only modelling)
+    dims = (par["nz"], par["ny"], par["nx"], par["nt"])
+    Cop = ConvolveND(
+        dims,
+        h=h.transpose(permutation),
+        offset=tuple(par["offset"][i] for i in permutation),
+        axes=tuple(axis - 1 if axis < 0 else axis for axis in axes),
+        dtype=dtype,
+    )
+    Cop_ref = ConvolveND(dims, h=h, offset=par["offset"], axes=(0, 1, 2), dtype=dtype)
+    assert dottest(
+        Cop,
+        par["nz"] * par["ny"] * par["nx"] * par["nt"],
+        par["nz"] * par["ny"] * par["nx"] * par["nt"],
+        backend=backend,
+        complexflag=3 if np.issubdtype(dtype, np.complexfloating) else 0,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+    )
+
+    # Forward and adjoint dtype check
+    x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    y = Cop * x
+    xadj = Cop.H * x
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(y, Cop_ref * x, decimal=3)
+    assert_array_almost_equal(xadj, Cop_ref.H * x, decimal=3)

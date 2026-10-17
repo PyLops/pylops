@@ -1,4 +1,5 @@
 import os
+from math import prod
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
@@ -24,6 +25,39 @@ par5 = {"nz": 10, "ny": 30, "nx": 20, "axis": 2}  # even, third direction
 par6 = {"nz": 11, "ny": 51, "nx": 31, "axis": 2}  # odd, third direction
 
 np.random.seed(0)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "dims, nsmooth, axes",
+    [
+        ((7, 9), (3, 5), "default"),
+        ((7, 9, 11), (3, 5, 3), "default"),
+        ((2, 7, 9, 11), (3, 5, 3), "default"),
+        ((7, 9, 11), (3, 5, 3), None),
+        ((7, 9, 11), (3, 5), (2, 0)),
+    ],
+)
+def test_SmoothingND_axes(dims, nsmooth, axes, dtype):
+    """Default and explicit axes give the expected impulse response."""
+    kwargs = {} if axes == "default" else {"axes": axes}
+    op = SmoothingND(nsmooth=nsmooth, dims=dims, dtype=dtype, **kwargs)
+    physical_axes = (
+        tuple(range(len(dims) - len(nsmooth), len(dims)))
+        if axes is None or axes == "default"
+        else axes
+    )
+    center = tuple(d // 2 for d in dims)
+    x = np.zeros(dims, dtype=dtype)
+    x[center] = 1
+    expected = np.zeros_like(x)
+    slices = [slice(c, c + 1) for c in center]
+    for axis, length in zip(physical_axes, nsmooth, strict=True):
+        slices[axis] = slice(center[axis] - length // 2, center[axis] + length // 2 + 1)
+    expected[tuple(slices)] = 1 / np.prod(np.asarray(nsmooth))
+    assert dottest(op, prod(dims), prod(dims), rtol=1e-4, backend=backend)
+    assert_array_almost_equal(op * x, expected, decimal=5)
+    assert_array_almost_equal(op.H * x, expected, decimal=5)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
