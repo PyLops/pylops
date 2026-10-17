@@ -3304,7 +3304,7 @@ class SplitBregman(Solver):
         show_inner: bool = False,
         *,
         kwargs_solver: dict | None = None,
-        **kwargs_lsqr,
+        **kwargs,
     ) -> tuple[NDArray, int, NDArray]:
         r"""Run entire solver
 
@@ -3380,13 +3380,14 @@ class SplitBregman(Solver):
         kwargs_solver : :obj:`dict`, optional
             .. versionadded:: 2.9.0
 
-            Keyword arguments for the inner solver, independent of the outer
-            stopping criteria. For example, ``kwargs_solver={"tol": 1e-14}``
-            sets the inner CGLS tolerance without changing the outer ``tol``.
-            Entries override duplicate values in ``**kwargs_lsqr``. The dictionary
+            Keyword arguments for the inner solver (see ``engine``).
+            Entries override duplicate values in ``**kwargs``. The dictionary
             is not modified.
-        **kwargs_lsqr
-            Arbitrary keyword arguments for the solver of the
+        **kwargs
+            *Deprecated*, will be removed in v3.0.0. Simply kept for
+            back-compatibility with previous implementation.
+
+            Another way to pass keyword arguments for the solver of the
             :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
             (:py:func:`scipy.sparse.linalg.lsqr` or
             :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
@@ -3419,14 +3420,14 @@ class SplitBregman(Solver):
             preallocate=preallocate,
             show=show,
         )
-        kwargs_lsqr = {**kwargs_lsqr, **(kwargs_solver or {})}
+        kwargs_solver = {**kwargs, **(kwargs_solver or {})}
         x = self.run(
             x,
             engine=engine,
             show=show,
             itershow=itershow,
             show_inner=show_inner,
-            **kwargs_lsqr,
+            **kwargs_solver,
         )
         self.finalize(show)
         return x, self.iiter, self.cost
