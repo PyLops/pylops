@@ -38,26 +38,31 @@ np.random.seed(10)
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1)])
-def test_predict_trace(par):
+@pytest.mark.parametrize("slope", [-0.2, 0.0, 0.3])
+def test_predict_trace(par, slope):
     """Dot-test for _predict_trace operator"""
     t = np.arange(par["nt"]) * par["dt"]
-    for slope in [-0.2, 0.0, 0.3]:
-        Fop = FunctionOperator(
-            lambda x, slope=slope: _predict_trace(x, t, par["dt"], par["dx"], slope),
-            lambda x, slope=slope: _predict_trace(
-                x, t, par["dt"], par["dx"], slope, adj=True
-            ),
-            par["nt"],
-            par["nt"],
-        )
-        dottest(Fop, par["nt"], par["nt"])
+    Fop = FunctionOperator(
+        lambda x, slope=slope: _predict_trace(x, t, par["dt"], par["dx"], slope),
+        lambda x, slope=slope: _predict_trace(
+            x, t, par["dt"], par["dx"], slope, adj=True
+        ),
+        par["nt"],
+        par["nt"],
+    )
+    dottest(Fop, par["nt"], par["nt"])
 
 
 @pytest.mark.skipif(
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1)])
-def test_predict(par):
+@pytest.mark.parametrize(
+    "predictor", [_predict_haar, _predict_lin], ids=["haar", "linear"]
+)
+@pytest.mark.parametrize("repeat", [0, 1, 2])
+@pytest.mark.parametrize("backward", [False, True])
+def test_predict(par, predictor, repeat, backward):
     """Dot-test for _predict operator"""
 
     def _predict_reshape(
@@ -73,42 +78,33 @@ def test_predict(par):
             adj=adj,
         )
 
-    for predictor in (_predict_haar, _predict_lin):
-        for repeat in (0, 1, 2):
-            slope = np.random.normal(0, 0.1, (2 ** (repeat + 1) * par["nx"], par["nt"]))
-            for backward in (False, True):
-                Fop = FunctionOperator(
-                    lambda x,
-                    predictor=predictor,
-                    slope=slope,
-                    backward=backward: _predict_reshape(
-                        predictor,
-                        x,
-                        par["nt"],
-                        par["nx"],
-                        par["dt"],
-                        par["dx"],
-                        slope,
-                        backward=backward,
-                    ),
-                    lambda x,
-                    predictor=predictor,
-                    slope=slope,
-                    backward=backward: _predict_reshape(
-                        predictor,
-                        x,
-                        par["nt"],
-                        par["nx"],
-                        par["dt"],
-                        par["dx"],
-                        slope,
-                        backward=backward,
-                        adj=True,
-                    ),
-                    par["nt"] * par["nx"],
-                    par["nt"] * par["nx"],
-                )
-                dottest(Fop, par["nt"] * par["nx"], par["nt"] * par["nx"])
+    slope = np.random.normal(0, 0.1, (2 ** (repeat + 1) * par["nx"], par["nt"]))
+    Fop = FunctionOperator(
+        lambda x, predictor=predictor, slope=slope, backward=backward: _predict_reshape(
+            predictor,
+            x,
+            par["nt"],
+            par["nx"],
+            par["dt"],
+            par["dx"],
+            slope,
+            backward=backward,
+        ),
+        lambda x, predictor=predictor, slope=slope, backward=backward: _predict_reshape(
+            predictor,
+            x,
+            par["nt"],
+            par["nx"],
+            par["dt"],
+            par["dx"],
+            slope,
+            backward=backward,
+            adj=True,
+        ),
+        par["nt"] * par["nx"],
+        par["nt"] * par["nx"],
+    )
+    dottest(Fop, par["nt"] * par["nx"], par["nt"] * par["nx"])
 
 
 @pytest.mark.skipif(
@@ -116,29 +112,29 @@ def test_predict(par):
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_Seislet(par, dtype):
+@pytest.mark.parametrize("kind", ["haar", "linear"])
+def test_Seislet(par, dtype, kind):
     """Dot-test and forward/adjoint/inverse for Seislet"""
     slope = np.random.normal(0, 0.1, (par["nx"], par["nt"])).astype(dtype)
 
-    for kind in ("haar", "linear"):
-        Sop = Seislet(
-            slope,
-            sampling=(par["dx"], par["dt"]),
-            level=par["level"],
-            kind=kind,
-            dtype=dtype,
-        )
-        dottest(
-            Sop,
-            Sop.shape[0],
-            par["nx"] * par["nt"],
-            rtol=1e-3 if dtype == np.float32 else 1e-6,
-        )
+    Sop = Seislet(
+        slope,
+        sampling=(par["dx"], par["dt"]),
+        level=par["level"],
+        kind=kind,
+        dtype=dtype,
+    )
+    dottest(
+        Sop,
+        Sop.shape[0],
+        par["nx"] * par["nt"],
+        rtol=1e-3 if dtype == np.float32 else 1e-6,
+    )
 
-        x = np.random.normal(0, 0.1, par["nx"] * par["nt"]).astype(dtype)
-        y = Sop * x
-        xadj = Sop.H * y
-        xinv = Sop.inverse(y)
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
-        assert_array_almost_equal(x, xinv, decimal=3 if dtype == np.float32 else 6)
+    x = np.random.normal(0, 0.1, par["nx"] * par["nt"]).astype(dtype)
+    y = Sop * x
+    xadj = Sop.H * y
+    xinv = Sop.inverse(y)
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(x, xinv, decimal=3 if dtype == np.float32 else 6)
