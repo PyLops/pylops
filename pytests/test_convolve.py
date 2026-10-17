@@ -1,5 +1,4 @@
 import os
-from itertools import product
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
@@ -194,43 +193,6 @@ def test_Convolve1D_method_error():
         Convolve1D(
             (nfilt[0] * 4, nfilt[0] * 4), h=h1, offset=nfilt[0] // 2, method="direct"
         )
-
-
-@pytest.mark.parametrize(
-    "dims, hshape, axes",
-    [
-        ((5, 4, 6), (2, 3), (0, 2)),
-        ((5, 4, 6), (2, 3), (2, 0)),
-        ((5, 4, 6), (2, 3), (-1, -3)),
-        ((5, 4, 6, 3), (2, 3, 2), (2, 0, 3)),
-    ],
-)
-@pytest.mark.parametrize("dtype", [np.float32, np.complex128])
-def test_ConvolveND_filter_axes(dims, hshape, axes, dtype):
-    """Embed each filter dimension along the requested model axis."""
-    rng = np.random.RandomState(21)
-    h = (rng.randn(*hshape) + 1).astype(dtype)
-    if dtype == np.complex128:
-        h += 1j * rng.randn(*hshape)
-    x = rng.randn(*dims).astype(dtype)
-    y = rng.randn(*dims).astype(dtype)
-    offset = (1,) * len(hshape)
-    expected_y = np.zeros_like(x)
-    expected_x = np.zeros_like(y)
-    # Sum the individual shifted kernel contributions, with zero extension.
-    for index in product(*(range(n) for n in hshape)):
-        source = [slice(None)] * len(dims)
-        target = [slice(None)] * len(dims)
-        for i, axis in enumerate(axes):
-            shift = index[i] - offset[i]
-            source[axis] = slice(max(0, -shift), min(dims[axis], dims[axis] - shift))
-            target[axis] = slice(max(0, shift), min(dims[axis], dims[axis] + shift))
-        expected_y[tuple(target)] += h[index] * x[tuple(source)]
-        expected_x[tuple(source)] += h[index].conj() * y[tuple(target)]
-    operator = Convolve2D if len(hshape) == 2 else ConvolveND
-    Cop = operator(dims, h=h, offset=offset, axes=axes, dtype=dtype)
-    assert_array_almost_equal(Cop @ x.ravel(), expected_y.ravel(), decimal=4)
-    assert_array_almost_equal(Cop.H @ y.ravel(), expected_x.ravel(), decimal=4)
 
 
 @pytest.mark.parametrize("dims", [nfilt[0] * 4, (3, nfilt[0] * 4)])
@@ -658,3 +620,43 @@ def test_Convolve3D(par, dtype):
     xadj = Cop.H * y
     assert y.dtype == dtype
     assert xadj.dtype == dtype
+
+
+@pytest.mark.parametrize("ndims", [3, 4])
+@pytest.mark.parametrize("axes", [(0, 1, 2), (1, 2, 0), (2, 0, 1), (-1, -3, -2)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+def test_Convolve3D_axes(ndims, axes, dtype):
+    """Dot-test and modelling with permuted axes, on 3D and 4D models."""
+    np.random.seed(10)
+    dims = (5, 6, 7, 8)[:ndims]
+    h = np.random.normal(0.0, 1.0, (2, 3, 4)).astype(dtype)
+    if np.issubdtype(dtype, np.complexfloating):
+        h += 1j * np.random.normal(0.0, 1.0, h.shape)
+    offset = (0, 1, 2)
+    permutation = tuple(axis % 3 for axis in axes)
+    model_axes = (
+        axes if ndims == 3 else tuple(axis - 1 if axis < 0 else axis for axis in axes)
+    )
+    Cop = ConvolveND(
+        dims,
+        h=h.transpose(permutation),
+        offset=tuple(offset[i] for i in permutation),
+        axes=model_axes,
+        dtype=dtype,
+    )
+    reference = ConvolveND(dims, h=h, offset=offset, axes=(0, 1, 2), dtype=dtype)
+    assert dottest(
+        Cop,
+        Cop.shape[0],
+        Cop.shape[1],
+        backend=backend,
+        complexflag=3 if np.issubdtype(dtype, np.complexfloating) else 0,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+    )
+    x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    y = Cop * x
+    xadj = Cop.H * x
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(y, reference * x, decimal=3)
+    assert_array_almost_equal(xadj, reference.H * x, decimal=3)

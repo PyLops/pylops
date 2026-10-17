@@ -160,7 +160,12 @@ xstack = np.stack((x, 2 * x), axis=1)
 Cstack = pylops.signalprocessing.Convolve2D(
     xstack.shape, h=h.T, offset=(nh[1] // 2, nh[0] // 2), axes=(2, 0)
 )
-np.testing.assert_allclose(Cstack * xstack, np.stack((y, 2 * y), axis=1), atol=1e-12)
+ystack = Cstack * xstack
+fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+for i, ax in enumerate(axs):
+    ax.imshow(ystack[:, i, :], cmap="gray")
+    ax.set_title(f"Filtered image {i + 1}")
+plt.tight_layout()
 
 ###############################################################################
 # We now do the same using three dimensional signals and

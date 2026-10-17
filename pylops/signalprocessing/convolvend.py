@@ -34,9 +34,8 @@ class ConvolveND(LinearOperator):
     axes : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
-        Axes along which convolution is applied. When the filter has fewer
-        dimensions than the model, filter dimension ``i`` is applied along
-        model axis ``axes[i]``.
+        Axes along which convolution is applied. If ``None``, use the last
+        ``h.ndim`` axes.
     method : :obj:`str`, optional
         Method used to calculate the convolution (``auto``, ``direct`` or ``fft``)
         - see :func:`scipy.signal.convolve` for details.
@@ -80,7 +79,7 @@ class ConvolveND(LinearOperator):
         dims: int | InputDimsLike,
         h: NDArray,
         offset: InputDimsLike | None = None,
-        axes: InputDimsLike = (-2, -1),
+        axes: InputDimsLike | None = None,
         method: Literal["auto", "direct", "fft"] | None = "fft",
         dtype: DTypeLike = "float64",
         name: str = "C",
@@ -89,7 +88,7 @@ class ConvolveND(LinearOperator):
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
         self.axes = (
-            np.arange(len(self.dims))
+            np.arange(len(self.dims) - h.ndim, len(self.dims))
             if axes is None
             else np.array(
                 [get_normalize_axis_index()(ax, len(self.dims)) for ax in axes]
@@ -121,11 +120,12 @@ class ConvolveND(LinearOperator):
         self.nh = self.h.shape
 
         # find out which directions are used for convolution and define offsets
+        self.h = self.h.transpose(tuple(np.argsort(self.axes)))
         if len(self.dims) != len(self.nh):
             dimsh = np.ones(len(self.dims), dtype=int)
             for iax, ax in enumerate(self.axes):
                 dimsh[ax] = self.nh[iax]
-            self.h = self.h.transpose(tuple(np.argsort(self.axes))).reshape(dimsh)
+            self.h = self.h.reshape(dimsh)
 
         # convolve and correlate functions
         self.convolve = get_convolve(h)
