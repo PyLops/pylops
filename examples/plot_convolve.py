@@ -68,7 +68,7 @@ y = Cop * x
 xinv = Cop / y
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-for ax, component, title in zip(axs, (np.real, np.imag), ("Real", "Imaginary")):
+for ax, component, title in zip(axs, (np.real, np.imag), ("Real", "Imaginary"), strict=True):
     ax.plot(t, component(x), "k", lw=2, label=r"$x$")
     ax.plot(t, component(y), "r", lw=2, label=r"$y=Ax$")
     ax.plot(t, component(xinv), "--g", lw=2, label=r"$x_{ext}$")
