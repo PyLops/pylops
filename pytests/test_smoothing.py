@@ -1,4 +1,5 @@
 import os
+from math import prod
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
@@ -54,9 +55,9 @@ def test_SmoothingND_axes(dims, nsmooth, axes, dtype):
     for axis, length in zip(physical_axes, nsmooth, strict=True):
         slices[axis] = slice(center[axis] - length // 2, center[axis] + length // 2 + 1)
     expected[tuple(slices)] = 1 / np.prod(np.asarray(nsmooth))
-    assert dottest(op, rtol=1e-4, backend=backend)
-    assert_array_almost_equal((op @ x.ravel()).reshape(dims), expected, decimal=5)
-    assert_array_almost_equal((op.H @ x.ravel()).reshape(dims), expected, decimal=5)
+    assert dottest(op, prod(dims), prod(dims), rtol=1e-4, backend=backend)
+    assert_array_almost_equal(op * x, expected, decimal=5)
+    assert_array_almost_equal(op.H * x, expected, decimal=5)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
