@@ -306,7 +306,7 @@ class _FFT_fftw(_BaseFFT):
         self.dims_t = dims_t
 
         # define padding(fftw requires the user to provide padded input signal)
-        self.pad = np.zeros((self.ndim, 2), dtype=int)
+        self.pad = np.zeros((self.ndims, 2), dtype=int)
         if self.real:
             if self.nfft % 2:
                 self.pad[self.axis, 1] = (

@@ -56,7 +56,7 @@ class _FFT2D_numpy(_BaseFFTND):
             )
 
         # checks
-        if self.ndim < 2:
+        if self.ndims < 2:
             msg = "FFT2D requires at least two input dimensions"
             raise ValueError(msg)
         if self.naxes != 2:
@@ -174,7 +174,7 @@ class _FFT2D_scipy(_BaseFFTND):
         )
 
         # checks
-        if self.ndim < 2:
+        if self.ndims < 2:
             msg = "FFT2D requires at least two input dimensions"
             raise ValueError(msg)
         if self.naxes != 2:
@@ -284,7 +284,7 @@ class _FFT2D_mklfft(_BaseFFTND):
         )
 
         # checks
-        if self.ndim < 2:
+        if self.ndims < 2:
             msg = "FFT2D requires at least two input dimensions"
             raise ValueError(msg)
         if self.naxes != 2:
