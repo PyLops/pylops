@@ -76,6 +76,8 @@ plt.tight_layout()
 
 ###############################################################################
 # Now we impose blockiness in the solution using the Split Bregman solver
+# Note that inner solver options can be supplied through ``kwargs_solver``.
+# Here, ``iter_lim`` and ``damp`` configure the SciPy LSQR solver.
 Dop = pylops.FirstDerivative(nx, edge=True, kind="backward")
 mu = 0.01
 lamda = 0.3
@@ -92,7 +94,7 @@ xinv = pylops.optimization.sparsity.splitbregman(
     epsRL1s=[lamda],
     tol=1e-4,
     tau=1.0,
-    **dict(iter_lim=30, damp=1e-10)
+    kwargs_solver=dict(iter_lim=30, damp=1e-10),
 )[0]
 
 plt.figure(figsize=(10, 5))
@@ -175,7 +177,7 @@ xinv = pylops.optimization.sparsity.splitbregman(
     tol=1e-4,
     tau=1.0,
     show=False,
-    **dict(iter_lim=5, damp=1e-4)
+    **dict(iter_lim=5, damp=1e-4),
 )[0]
 xinv = np.real(xinv.reshape(ny, nx))
 

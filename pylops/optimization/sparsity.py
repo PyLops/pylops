@@ -727,7 +727,9 @@ def splitbregman(
     show_inner: bool = False,
     callback: Callable | None = None,
     preallocate: bool = False,
-    **kwargs_lsqr,
+    *,
+    kwargs_solver: dict | None = None,
+    **kwargs,
 ) -> tuple[NDArray, int, NDArray]:
     r"""Split Bregman for mixed L2-L1 norms.
 
@@ -814,8 +816,17 @@ def splitbregman(
         Pre-allocate all variables used by the solver. Note that if ``y``
         is a JAX array, this option is ignored and variables are not
         pre-allocated since JAX does not support in-place operations.
-    **kwargs_lsqr
-        Arbitrary keyword arguments for the solver of the
+    kwargs_solver : :obj:`dict`, optional
+        .. versionadded:: 2.9.0
+
+        Keyword arguments for the inner solver (see ``engine``).
+        Entries override duplicate values in ``**kwargs``. The dictionary
+        is not modified.
+    **kwargs
+        *Deprecated*, will be removed in v3.0.0. Simply kept for
+        back-compatibility with previous implementation.
+
+        Another way to pass keyword arguments for the solver of the
         :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
         (:py:func:`scipy.sparse.linalg.lsqr` or
         :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
@@ -867,6 +878,7 @@ def splitbregman(
         show=show,
         itershow=itershow,
         show_inner=show_inner,
-        **kwargs_lsqr,
+        kwargs_solver=kwargs_solver,
+        **kwargs,
     )
     return xinv, itn_out, cost
