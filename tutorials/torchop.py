@@ -177,7 +177,7 @@ axs[1].axis("tight")
 plt.tight_layout()
 
 ###############################################################################
-# ND batches can also have different model and data ranks. Summing each
+# ND batches can also have different numbers of model and data dimensions. Summing each
 # (2, 3) sample produces a (2,) sample; backward spreads the gradient over
 # the summed axis. The batch remains the first axis in both directions.
 Sop = pylops.TorchOperator(
@@ -185,9 +185,14 @@ Sop = pylops.TorchOperator(
 )
 x_nd = torch.arange(12, dtype=torch.double).reshape(2, 2, 3).requires_grad_()
 y_nd = Sop(x_nd)
-torch.testing.assert_close(y_nd, x_nd.sum(dim=-1))
 y_nd.sum().backward()
-torch.testing.assert_close(x_nd.grad, torch.ones_like(x_nd))
+
+fig, axs = plt.subplots(1, 2, figsize=(12, 3))
+axs[0].imshow(y_nd.detach().numpy())
+axs[0].set_title("Forward")
+axs[1].imshow(x_nd.grad[0].numpy())
+axs[1].set_title("Gradient")
+plt.tight_layout()
 
 ###############################################################################
 # Finally, whilst :class:`pylops.TorchOperator` is designed such that
