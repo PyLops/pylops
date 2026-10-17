@@ -14,7 +14,7 @@ else:
 import pytest
 import torch
 
-from pylops import MatrixMult, TorchOperator
+from pylops import MatrixMult, Sum, TorchOperator
 from pylops.utils.backend import to_numpy
 
 par1 = {"ny": 11, "nx": 11}  # square
@@ -146,3 +146,35 @@ def test_TorchOperator_forward_adjoint(par, dtype):
     assert jvtt.dtype == x.dtype
     assert_array_equal(f, ft)
     assert_array_equal(jvt, jvtt)
+
+
+@pytest.mark.parametrize("dims", [(2, 3), (2, 3, 4)])
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+@pytest.mark.parametrize("flatten", [False, True])
+@pytest.mark.parametrize("adjoint", [False, True])
+def test_TorchOperator_batch_changes_rank(dims, dtype, flatten, adjoint):
+    """Preserve values and gradients when batched model/data ranks differ."""
+    op = Sum(dims, axis=-1, forceflat=False, dtype=str(dtype).split(".")[-1])
+    top = TorchOperator(op, batch=True, flatten=flatten)
+    input_dims = op.dimsd if adjoint else op.dims
+    output_dims = op.dims if adjoint else op.dimsd
+    input_shape = (3, int(np.prod(input_dims))) if flatten else (3, *input_dims)
+    values = torch.arange(int(np.prod(input_shape)), dtype=dtype).reshape(input_shape)
+    actual_input = (values / 20).requires_grad_()
+    reference_input = actual_input.detach().clone().requires_grad_()
+    shaped = reference_input.reshape(3, *input_dims)
+    if adjoint:
+        reference = shaped.unsqueeze(-1).expand(3, *output_dims)
+        result = top.adjoint(actual_input)
+    else:
+        reference = shaped.sum(dim=-1)
+        result = top.forward(actual_input)
+    if flatten:
+        reference = reference.reshape(3, -1)
+
+    torch.testing.assert_close(result, reference)
+    assert result.shape == reference.shape
+    weights = torch.arange(1, result.numel() + 1, dtype=dtype).reshape(result.shape)
+    (result * weights).sum().backward()
+    (reference * weights).sum().backward()
+    torch.testing.assert_close(actual_input.grad, reference_input.grad)
