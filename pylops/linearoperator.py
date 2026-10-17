@@ -11,6 +11,7 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Pool
 from multiprocessing.pool import Pool as PoolClass
+from typing import Any
 
 import numpy as np
 import scipy as sp
@@ -1059,7 +1060,7 @@ class LinearOperator(_LinearOperator):
         niter: int | None = None,
         uselobpcg: bool = False,
         backend: Tbackend = "numpy",
-        **kwargs_eig: int | float | str,
+        **kwargs_eig: dict[str, Any],
     ) -> NDArray:
         r"""N-most significant eigenvalues of a linear operator.
 
@@ -1100,9 +1101,12 @@ class LinearOperator(_LinearOperator):
 
             Backend to use (`numpy` or `cupy`)
         **kwargs_eig
-            Arbitrary keyword arguments for :func:`scipy.sparse.linalg.eigs`,
+            Arbitrary keyword arguments for
+            :func:`scipy.linalg.eigvals`,
+            :func:`scipy.sparse.linalg.eigs`,
             :func:`scipy.sparse.linalg.eigsh`, or
-            :func:`scipy.sparse.linalg.lobpcg`
+            :func:`scipy.sparse.linalg.lobpcg` and
+            CuPy equivalents.
 
         Returns
         -------
@@ -1272,7 +1276,7 @@ class LinearOperator(_LinearOperator):
         self,
         uselobpcg: bool = False,
         backend: Tbackend = "numpy",
-        **kwargs_eig: int | float | str,
+        **kwargs_eig: dict[str, Any],
     ) -> NDArray:
         r"""Condition number of linear operator.
 
@@ -1430,7 +1434,7 @@ class LinearOperator(_LinearOperator):
         neval: int | None = None,
         method: str | None = None,
         backend: str = "numpy",
-        **kwargs_trace,
+        **kwargs_trace: dict[str, Any],
     ) -> float:
         r"""Trace of linear operator.
 
