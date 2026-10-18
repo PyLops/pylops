@@ -46,7 +46,6 @@ class TorchOperator:
     flatten : :obj:`bool`, optional
         Model/data sample axes are flattened (``True``) or follow
         ``Op.dims``/``Op.dimsd`` (``False``). The batch axis remains first.
-        The model and data may have different numbers of sample axes.
     device : :obj:`str`, optional
         Device to be used when applying operator (``cpu`` or ``gpu``)
     devicetorch : :obj:`str`, optional
