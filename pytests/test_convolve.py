@@ -20,6 +20,8 @@ from pylops.optimization.basic import lsqr
 from pylops.signalprocessing import Convolve1D, Convolve2D, ConvolveND
 from pylops.utils import dottest
 
+np.random.seed(10)
+
 # filters
 nfilt = (5, 6, 5)
 h1 = triang(nfilt[0], sym=True)
@@ -192,6 +194,43 @@ def test_Convolve1D_method_error():
     with pytest.raises(ValueError, match="`method` must be fft or overlapadd"):
         Convolve1D(
             (nfilt[0] * 4, nfilt[0] * 4), h=h1, offset=nfilt[0] // 2, method="direct"
+        )
+
+
+@pytest.mark.parametrize("par", [(par1_3d), (par2_3d)])
+@pytest.mark.parametrize("axes", [(0, 1), (0, 1, 2, 0)])
+def test_ConvolveND_axes_length_error(par, axes):
+    """Error raised when axes do not match the filter dimensionality."""
+    with pytest.raises(ValueError, match="axes must contain one axis per dimension of h"):
+        ConvolveND(
+            dims=(par["nz"], par["ny"], par["nx"]),
+            h=np.random.normal(size=nfilt),
+            offset=par["offset"],
+            axes=axes,
+        )
+
+
+@pytest.mark.parametrize("par", [(par1_3d), (par2_3d)])
+@pytest.mark.parametrize("axes", [(0, 0, 2), (0, 1, -2)])
+def test_ConvolveND_axes_unique_error(par, axes):
+    """Error raised for repeated axes, including negative aliases."""
+    with pytest.raises(ValueError, match="axes must be unique"):
+        ConvolveND(
+            dims=(par["nz"], par["ny"], par["nx"]),
+            h=np.random.normal(size=nfilt),
+            offset=par["offset"],
+            axes=axes,
+        )
+
+
+@pytest.mark.parametrize("par", [(par1_3d), (par2_3d)])
+@pytest.mark.parametrize("hshape", [nfilt, (1, 1, 1)])
+def test_ConvolveND_shape_error(par, hshape):
+    """Error raised when the filter has more dimensions than the model."""
+    with pytest.raises(ValueError, match="h cannot have more dimensions than dims"):
+        ConvolveND(
+            dims=(par["ny"], par["nx"]),
+            h=np.random.normal(size=hshape),
         )
 
 

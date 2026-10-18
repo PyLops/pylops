@@ -64,6 +64,12 @@ class ConvolveND(LinearOperator):
     shape : :obj:`tuple`
         Operator shape.
 
+    Raises
+    ------
+    ValueError
+        If ``h`` has more dimensions than ``dims``, or ``axes`` does not
+        contain one unique model axis per filter dimension.
+
     Notes
     -----
     The ConvolveND operator applies n-dimensional convolution
@@ -85,6 +91,9 @@ class ConvolveND(LinearOperator):
         name: str = "C",
     ):
         dims = _value_or_sized_to_tuple(dims)
+        if h.ndim > len(dims):
+            msg = "h cannot have more dimensions than dims"
+            raise ValueError(msg)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
         self.axes = (
@@ -94,6 +103,12 @@ class ConvolveND(LinearOperator):
                 [get_normalize_axis_index()(ax, len(self.dims)) for ax in axes]
             )
         )
+        if len(self.axes) != h.ndim:
+            msg = "axes must contain one axis per dimension of h"
+            raise ValueError(msg)
+        if len(set(self.axes)) != len(self.axes):
+            msg = "axes must be unique"
+            raise ValueError(msg)
         self.h = h
         hshape = np.array(self.h.shape)
 
