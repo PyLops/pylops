@@ -727,7 +727,6 @@ def splitbregman(
     show_inner: bool = False,
     callback: Callable | None = None,
     preallocate: bool = False,
-    *,
     kwargs_solver: dict | None = None,
     **kwargs,
 ) -> tuple[NDArray, int, NDArray]:
@@ -819,17 +818,16 @@ def splitbregman(
     kwargs_solver : :obj:`dict`, optional
         .. versionadded:: 2.9.0
 
-        Keyword arguments for the inner solver (see ``engine``).
-        Entries override duplicate values in ``**kwargs``. The dictionary
-        is not modified.
+        Keyword arguments for the solver of the
+        :math:`\mathbf{x}`-subproblem (:py:func:`scipy.sparse.linalg.lsqr` or
+        :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
+        Entries override duplicate values in ``**kwargs``.
     **kwargs
         *Deprecated*, will be removed in v3.0.0. Simply kept for
         back-compatibility with previous implementation.
 
-        Another way to pass keyword arguments for the solver of the
-        :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
-        (:py:func:`scipy.sparse.linalg.lsqr` or
-        :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
+        Another way to pass keyword arguments to the solver of the
+        :math:`\mathbf{x}`-subproblem.
 
     Returns
     -------
