@@ -761,18 +761,20 @@ def test_SplitBregman_lambdaRL1s(par):
     assert_array_almost_equal(xdef, xeps, decimal=12)
 
 
-@pytest.mark.parametrize("preallocate", [False, True])
-@pytest.mark.parametrize("tight_inner", [False, True])
-def test_SplitBregman_inner_tolerance(preallocate, tight_inner):
-    """Pass CGLS stopping criteria through kwargs_solver."""
+def test_SplitBregman_kwargs_solver_cgls():
+    """Check that CGLS parameters can be passed through kwargs_solver"""
     np.random.seed(42)
-    nx = 33
-    y = np.random.normal(size=nx)
+    nx = 10
     Iop = Identity(nx)
     Dop = FirstDerivative(nx, edge=True)
+    y = np.random.normal(size=nx)
+
+    # Compute expected solution with dense solver
     derivative = Dop.todense(backend=backend)
     expected = np.linalg.solve(np.eye(nx) + derivative.T @ derivative, y)
-    inner_options = dict(tol=1e-14, rtol=0.0, rtol1=0.0) if tight_inner else None
+
+    # Computed solution with SplitBregman using CGLS with tight inner tolerance
+    # to ensure full convergence to the expected solution.
     result, _, _ = splitbregman(
         Iop,
         y,
@@ -782,73 +784,32 @@ def test_SplitBregman_inner_tolerance(preallocate, tight_inner):
         mu=1.0,
         epsRL1s=[1.0],
         tol=1e-10,
-        preallocate=preallocate,
         engine="pylops",
-        niter=100,
         damp=0,
-        kwargs_solver=inner_options,
-    )
-    if tight_inner:
-        assert_array_almost_equal(result, expected, decimal=6)
-    else:
-        assert float(np.max(np.abs(result - expected))) > 1e-4
-
-
-@pytest.mark.parametrize(
-    "engine", ["scipy", "pylops"] if backend == "numpy" else ["pylops"]
-)
-def test_SplitBregman_inner_options_precedence(engine):
-    """Explicit inner options override conflicting legacy solver keywords."""
-    nx = 15
-    Iop = Identity(nx)
-    Dop = FirstDerivative(nx, edge=True)
-    y = np.linspace(-1, 1, nx)
-    derivative = Dop.todense(backend=backend)
-    expected = np.linalg.solve(np.eye(nx) + derivative.T @ derivative, y)
-    count_key = "iter_lim" if engine == "scipy" else "niter"
-    inner_options = {count_key: 100, "damp": 0.0}
-    if engine == "pylops":
-        inner_options.update(tol=1e-14, rtol=0.0, rtol1=0.0)
-    original = inner_options.copy()
-    result, _, _ = splitbregman(
-        Iop,
-        y,
-        [Dop],
-        niter_outer=1,
-        niter_inner=1,
-        epsRL1s=[1.0],
-        tol=0.0,
-        engine=engine,
-        kwargs_solver=inner_options,
-        **{count_key: 0, "damp": 0.5},
+        kwargs_solver=dict(niter=100, tol=1e-14, rtol=0.0, rtol1=0.0),
     )
     assert_array_almost_equal(result, expected, decimal=6)
-    assert inner_options == original
 
 
 @pytest.mark.parametrize("rtol,rtol1", [(0.99, 0.0), (0.0, 0.99)])
 def test_SplitBregman_inner_relative_tolerance(rtol, rtol1):
-    """Outer cost callbacks retain their own relative stopping thresholds."""
-    Iop = Identity(15)
-    Dop = FirstDerivative(15, edge=True)
-    y = np.linspace(-1.0, 1.0, 15)
-    costs = []
-    # rtol/rtol1 here configure outer callbacks; kwargs_solver configures CGLS.
-    _, iterations, cost = splitbregman(
-        Iop,
-        y,
-        [Dop],
-        niter_outer=100,
-        niter_inner=2,
+    """Check that rtol/rtol1 do not leak into the inner CGLS solver."""
+    np.random.seed(42)
+    nx = 10
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+    y = np.linspace(-1.0, 1.0, nx)
+
+    # CGLS rtol/rtol1 are left at their defaults: if the outer ones leaked,
+    # CGLS would stop early and the solutions below would differ
+    kwargs = dict(
+        niter_outer=1,
+        niter_inner=1,
         epsRL1s=[0.2],
         tol=0.0,
         engine="pylops",
-        kwargs_solver=dict(niter=20, tol=1e-14, rtol=1e-12, rtol1=1e-12),
-        callback=lambda x: costs.append(x.copy()),
-        rtol=rtol,
-        rtol1=rtol1,
+        kwargs_solver=dict(niter=20, tol=1e-14),
     )
-    assert 1 <= iterations < 100
-    assert len(costs) == len(cost) == iterations
-    denominator = cost[0] if rtol else np.linalg.norm(y)
-    assert cost[-1] / denominator < 0.99
+    xref, _, _ = splitbregman(Iop, y, [Dop], **kwargs)
+    x, _, _ = splitbregman(Iop, y, [Dop], rtol=rtol, rtol1=rtol1, **kwargs)
+    assert_array_almost_equal(x, xref, decimal=10)

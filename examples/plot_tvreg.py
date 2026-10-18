@@ -75,9 +75,9 @@ plt.title("L2 inversion")
 plt.tight_layout()
 
 ###############################################################################
-# Now we impose blockiness in the solution using the Split Bregman solver
-# Note that inner solver options can be supplied through ``kwargs_solver``.
-# Here, ``iter_lim`` and ``damp`` configure the SciPy LSQR solver.
+# Now we impose blockiness in the solution using the Split Bregman solver.
+# Note that ``kwargs_solver`` can be used to supply parameters to the inner
+# solver.
 Dop = pylops.FirstDerivative(nx, edge=True, kind="backward")
 mu = 0.01
 lamda = 0.3
