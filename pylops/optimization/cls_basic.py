@@ -1011,6 +1011,9 @@ class LSQR(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory required by the estimation of the diagonals of
+        the covariance matrix (``calc_var=True``) is not taken into account.
+
         Parameters
         ----------
         show : :obj:`bool`, optional

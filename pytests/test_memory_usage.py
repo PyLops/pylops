@@ -83,6 +83,13 @@ def test_ista_fista():
     assert FISTA(_op(N, M)).memory_usage() == (M + N + 4 * M + N) * NB
 
 
+def test_ista_fista_sop():
+    """Sparsifying transform buffer is added"""
+    SOp = _op(M, 9)
+    assert ISTA(_op(N, M)).memory_usage(SOp=SOp) == (M + N + 3 * M + N + 9) * NB
+    assert FISTA(_op(N, M)).memory_usage(SOp=SOp) == (M + N + 4 * M + N + 9) * NB
+
+
 def test_omp():
     """Check the memory usage estimate of OMP"""
     assert (

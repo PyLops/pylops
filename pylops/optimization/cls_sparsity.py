@@ -1587,6 +1587,7 @@ class ISTA(Solver):
 
     def memory_usage(
         self,
+        SOp: LinearOperator | None = None,
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
@@ -1594,6 +1595,8 @@ class ISTA(Solver):
 
         Parameters
         ----------
+        SOp : :obj:`pylops.LinearOperator`, optional
+            Sparsifying transform (if used in ``setup``)
         show : :obj:`bool`, optional
             Display memory usage
         unit: :obj:`str`, optional
@@ -1614,6 +1617,10 @@ class ISTA(Solver):
 
         # Step (additional variables to those in setup): xold, grad, x_unthesh - res
         memuse += (3 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        # Sparsifying transform: SOpx_unthesh
+        if SOp is not None:
+            memuse += SOp.shape[1] * np.dtype(SOp.dtype).itemsize
 
         if show:
             print(f"ISTA predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -2241,6 +2248,7 @@ class FISTA(ISTA):
 
     def memory_usage(
         self,
+        SOp: LinearOperator | None = None,
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
@@ -2248,6 +2256,8 @@ class FISTA(ISTA):
 
         Parameters
         ----------
+        SOp : :obj:`pylops.LinearOperator`, optional
+            Sparsifying transform (if used in ``setup``)
         show : :obj:`bool`, optional
             Display memory usage
         unit: :obj:`str`, optional
@@ -2268,6 +2278,10 @@ class FISTA(ISTA):
 
         # Step (additional variables to those in setup): xold, grad, x_unthesh, z - res
         memuse += (4 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        # Sparsifying transform: SOpx_unthesh
+        if SOp is not None:
+            memuse += SOp.shape[1] * np.dtype(SOp.dtype).itemsize
 
         if show:
             print(f"FISTA predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
