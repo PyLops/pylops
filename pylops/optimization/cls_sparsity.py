@@ -2941,15 +2941,16 @@ class SplitBregman(Solver):
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
 
-        # Setup: x0 - y - b, d dataregsL1 - dataregsL2
+        # Setup: x0 - y - b, d (L1 regularization) - dataregsL2
         memuse = (
             self.Op.shape[1]
             + self.Op.shape[0]
-            + 3 * np.sum(nopRegsL1)
+            + 2 * np.sum(nopRegsL1)
             + np.sum(nopRegsL2)
         ) * nbytes
 
-        # Step (additional variables to those in setup): dataregs
+        # Step (additional variables to those in setup): d - b temporaries
+        # passed as L1 regularization data (only if preallocate=False)
         memuse += np.sum(nopRegsL1) * nbytes
 
         # Inner solver (CGLS on stacked system: regularized_inversion works

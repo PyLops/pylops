@@ -116,6 +116,6 @@ def test_splitbregman_regs_sum():
     Op = _op(N, M)
     nL1, nL2 = (3, 4), (2, 6)
     solver = SplitBregman(Op)
-    expected = (M + N + 3 * (3 + 4) + (2 + 6) + (3 + 4)) * NB
+    expected = (M + N + 2 * (3 + 4) + (2 + 6) + (3 + 4)) * NB
     expected += (5 * M + 3 * (N + 3 + 4 + 2 + 6)) * NB
     assert solver.memory_usage(nopRegsL1=nL1, nopRegsL2=nL2) == expected
