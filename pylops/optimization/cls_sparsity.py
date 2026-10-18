@@ -378,6 +378,11 @@ class IRLS(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
         Parameters
         ----------
         kind : :obj:`str`, optional
@@ -390,8 +395,8 @@ class IRLS(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -402,13 +407,23 @@ class IRLS(Solver):
         if kind == "datamodel":
             memuse += self.Op.shape[1] * nbytes
 
-        # Step (additional variables to those in setup): rw
+        # Step (additional variables to those in setup): r, rw
+        # and inner solver (CGLS)
         if kind == "data":
-            memuse += self.Op.shape[0] * nbytes
-        elif kind == "model":
-            memuse += self.Op.shape[1] * nbytes
-        elif kind == "datamodel":
             memuse += 2 * self.Op.shape[0] * nbytes
+            # inner solver (regularized_inversion works
+            # on its own copy of y)
+            memuse += (5 * self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
+        elif kind == "model":
+            memuse += (self.Op.shape[0] + self.Op.shape[1]) * nbytes
+            # inner solver on [N x N] system (y is shared with the solver)
+            memuse += 7 * self.Op.shape[0] * nbytes
+        elif kind == "datamodel":
+            nd = self.Op.shape[0] + self.Op.shape[1]
+            memuse += 2 * nd * nbytes
+            # inner solver on [(N+M) x M] system (regularized_inversion
+            # works on its own copy of y)
+            memuse += (5 * self.Op.shape[1] + 3 * nd) * nbytes
 
         if show:
             print(f"IRLS predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -980,13 +995,22 @@ class OMP(Solver):
 
     def memory_usage(
         self,
+        niter_outer: int = 10,
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
         Parameters
         ----------
+        niter_outer : :obj:`int`, optional
+            Number of iterations of outer loop (upper bound of the number
+            of selected columns, which sets the size of the inner solver)
         show : :obj:`bool`, optional
             Display memory usage
         unit: :obj:`str`, optional
@@ -995,8 +1019,8 @@ class OMP(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -1006,7 +1030,10 @@ class OMP(Solver):
         memuse = (2 * self.Op.shape[0]) * nbytes
 
         # Step (additional variables to those in setup): cres, cres_abs
-        memuse += (2 * self.Op.shape[0]) * nbytes
+        memuse += (2 * self.Op.shape[1]) * nbytes
+
+        # Inner solver (CGLS on [N x niter_outer] system, y is shared)
+        memuse += (5 * niter_outer + 2 * self.Op.shape[0]) * nbytes
 
         if show:
             print(f"OMP predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -1560,6 +1587,7 @@ class ISTA(Solver):
 
     def memory_usage(
         self,
+        SOp: LinearOperator | None = None,
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
@@ -1567,6 +1595,8 @@ class ISTA(Solver):
 
         Parameters
         ----------
+        SOp : :obj:`pylops.LinearOperator`, optional
+            Sparsifying transform (if used in ``setup``)
         show : :obj:`bool`, optional
             Display memory usage
         unit: :obj:`str`, optional
@@ -1575,8 +1605,8 @@ class ISTA(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -1587,6 +1617,10 @@ class ISTA(Solver):
 
         # Step (additional variables to those in setup): xold, grad, x_unthesh - res
         memuse += (3 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        # Sparsifying transform: SOpx_unthesh
+        if SOp is not None:
+            memuse += SOp.shape[1] * np.dtype(SOp.dtype).itemsize
 
         if show:
             print(f"ISTA predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -2214,6 +2248,7 @@ class FISTA(ISTA):
 
     def memory_usage(
         self,
+        SOp: LinearOperator | None = None,
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
@@ -2221,6 +2256,8 @@ class FISTA(ISTA):
 
         Parameters
         ----------
+        SOp : :obj:`pylops.LinearOperator`, optional
+            Sparsifying transform (if used in ``setup``)
         show : :obj:`bool`, optional
             Display memory usage
         unit: :obj:`str`, optional
@@ -2229,8 +2266,8 @@ class FISTA(ISTA):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -2241,6 +2278,10 @@ class FISTA(ISTA):
 
         # Step (additional variables to those in setup): xold, grad, x_unthesh, z - res
         memuse += (4 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        # Sparsifying transform: SOpx_unthesh
+        if SOp is not None:
+            memuse += SOp.shape[1] * np.dtype(SOp.dtype).itemsize
 
         if show:
             print(f"FISTA predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -2506,7 +2547,8 @@ class SPGL1(Solver):
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
-        pass
+        msg = "memory_usage is not available for SPGL1 as memory is allocated by the external spgl1 library"
+        raise NotImplementedError(msg)
 
     def setup(
         self,
@@ -2881,6 +2923,11 @@ class SplitBregman(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
         Parameters
         ----------
         nopRegsL1 : :obj:`tuple`, optional
@@ -2895,8 +2942,8 @@ class SplitBregman(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Convert nopRegsL1 and nopRegsL2 if None
@@ -2908,16 +2955,22 @@ class SplitBregman(Solver):
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
 
-        # Setup: x0 - y - b, d dataregsL1 - dataregsL2
+        # Setup: x0 - y - b, d (L1 regularization) - dataregsL2
         memuse = (
             self.Op.shape[1]
             + self.Op.shape[0]
-            + 3 * np.prod(nopRegsL1)
-            + np.prod(nopRegsL2)
+            + 2 * np.sum(nopRegsL1)
+            + np.sum(nopRegsL2)
         ) * nbytes
 
-        # Step (additional variables to those in setup): dataregs
-        memuse += np.prod(nopRegsL1) * nbytes
+        # Step (additional variables to those in setup): d - b temporaries
+        # passed as L1 regularization data (only if preallocate=False)
+        memuse += np.sum(nopRegsL1) * nbytes
+
+        # Inner solver (CGLS on stacked system: regularized_inversion works
+        # on its own copy of the stacked data)
+        ndatatot = self.Op.shape[0] + np.sum(nopRegsL1) + np.sum(nopRegsL2)
+        memuse += (5 * self.Op.shape[1] + 3 * ndatatot) * nbytes
 
         if show:
             print(
