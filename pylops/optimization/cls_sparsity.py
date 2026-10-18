@@ -402,13 +402,13 @@ class IRLS(Solver):
         if kind == "datamodel":
             memuse += self.Op.shape[1] * nbytes
 
-        # Step (additional variables to those in setup): rw
+        # Step (additional variables to those in setup): r, rw
         if kind == "data":
-            memuse += self.Op.shape[0] * nbytes
-        elif kind == "model":
-            memuse += self.Op.shape[1] * nbytes
-        elif kind == "datamodel":
             memuse += 2 * self.Op.shape[0] * nbytes
+        elif kind == "model":
+            memuse += (self.Op.shape[0] + self.Op.shape[1]) * nbytes
+        elif kind == "datamodel":
+            memuse += 2 * (self.Op.shape[0] + self.Op.shape[1]) * nbytes
 
         if show:
             print(f"IRLS predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -1006,7 +1006,7 @@ class OMP(Solver):
         memuse = (2 * self.Op.shape[0]) * nbytes
 
         # Step (additional variables to those in setup): cres, cres_abs
-        memuse += (2 * self.Op.shape[0]) * nbytes
+        memuse += (2 * self.Op.shape[1]) * nbytes
 
         if show:
             print(f"OMP predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -2506,7 +2506,8 @@ class SPGL1(Solver):
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
-        pass
+        msg = "memory_usage is not available for SPGL1 as memory is allocated by the external spgl1 library"
+        raise NotImplementedError(msg)
 
     def setup(
         self,
@@ -2912,12 +2913,12 @@ class SplitBregman(Solver):
         memuse = (
             self.Op.shape[1]
             + self.Op.shape[0]
-            + 3 * np.prod(nopRegsL1)
-            + np.prod(nopRegsL2)
+            + 3 * np.sum(nopRegsL1)
+            + np.sum(nopRegsL2)
         ) * nbytes
 
         # Step (additional variables to those in setup): dataregs
-        memuse += np.prod(nopRegsL1) * nbytes
+        memuse += np.sum(nopRegsL1) * nbytes
 
         if show:
             print(
