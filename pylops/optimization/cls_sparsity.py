@@ -3302,7 +3302,6 @@ class SplitBregman(Solver):
         show: bool = False,
         itershow: tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
-        *,
         kwargs_solver: dict | None = None,
         **kwargs,
     ) -> tuple[NDArray, int, NDArray]:
