@@ -112,8 +112,8 @@ class CG(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -500,8 +500,8 @@ class CGLS(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -1011,6 +1011,9 @@ class LSQR(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory required by the estimation of the diagonals of
+        the covariance matrix (``calc_var=True``) is not taken into account.
+
         Parameters
         ----------
         show : :obj:`bool`, optional
@@ -1021,8 +1024,8 @@ class LSQR(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
