@@ -78,6 +78,7 @@ def test_wrong_level(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SWT_1dsignal(par):
     """Dot-test and inversion for SWT operator for 1d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
     SWTop = SWT(dims=[par["nt"]], axis=0, wavelet="haar", level=3, dtype=par["dtype"])
@@ -109,6 +110,7 @@ def test_SWT_1dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SWT_2dsignal(par):
     """Dot-test and inversion for SWT operator for 2d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
     for axis in [0, 1]:
@@ -151,7 +153,9 @@ def test_SWT_2dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SWT_3dsignal(par):
     """Dot-test and inversion for SWT operator for 3d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
+
     for axis in [0, 1, 2]:
         SWTop = SWT(
             dims=(par["nt"], par["nx"], par["ny"]),
@@ -194,6 +198,7 @@ def test_SWT_3dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SWT2D_2dsignal(par):
     """Dot-test and inversion for SWT2D operator for 2d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
     SWTop = SWT2D(
@@ -231,6 +236,7 @@ def test_SWT2D_2dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SWT2D_3dsignal(par):
     """Dot-test and inversion for SWT operator for 3d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
     for axes in [(0, 1), (0, 2), (1, 2)]:
@@ -275,6 +281,7 @@ def test_SWT2D_3dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SWTND_3dsignal(par):
     """Dot-test and inversion for SWTND operator for 3d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
     SWTop = SWTND(
@@ -314,6 +321,7 @@ def test_SWTND_3dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SWTND_4dsignal(par):
     """Dot-test and inversion for SWTND operator for 4d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
     for axes in [(0, 1, 2), (0, 2, 3), (1, 2, 3), (0, 1, 3), (0, 1, 2, 3)]:
@@ -359,6 +367,8 @@ def test_SWTND_4dsignal(par):
 @pytest.mark.parametrize("wavelet", ["db3", "bior2.2", "rbio3.3"])
 def test_SWTs_wavelets(par, wavelet):
     """Dot-test for SWT, SWT2D and SWTND operators with non-haar wavelets"""
+    np.random.seed(42)
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
     dims = (par["nt"], par["nx"], par["ny"])
 
