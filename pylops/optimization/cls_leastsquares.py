@@ -110,6 +110,11 @@ class NormalEquationsInversion(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.cg` may consume
+        more memory.
+
         Parameters
         ----------
         nopRegs : :obj:`tuple`, optional

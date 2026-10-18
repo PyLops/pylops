@@ -378,6 +378,11 @@ class IRLS(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
         Parameters
         ----------
         kind : :obj:`str`, optional
@@ -403,12 +408,22 @@ class IRLS(Solver):
             memuse += self.Op.shape[1] * nbytes
 
         # Step (additional variables to those in setup): r, rw
+        # and inner solver (CGLS)
         if kind == "data":
             memuse += 2 * self.Op.shape[0] * nbytes
+            # inner solver (regularized_inversion works
+            # on its own copy of y)
+            memuse += (5 * self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
         elif kind == "model":
             memuse += (self.Op.shape[0] + self.Op.shape[1]) * nbytes
+            # inner solver on [N x N] system (y is shared with the solver)
+            memuse += 7 * self.Op.shape[0] * nbytes
         elif kind == "datamodel":
-            memuse += 2 * (self.Op.shape[0] + self.Op.shape[1]) * nbytes
+            nd = self.Op.shape[0] + self.Op.shape[1]
+            memuse += 2 * nd * nbytes
+            # inner solver on [(N+M) x M] system (regularized_inversion
+            # works on its own copy of y)
+            memuse += (5 * self.Op.shape[1] + 3 * nd) * nbytes
 
         if show:
             print(f"IRLS predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -980,13 +995,22 @@ class OMP(Solver):
 
     def memory_usage(
         self,
+        niter_outer: int = 10,
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
         Parameters
         ----------
+        niter_outer : :obj:`int`, optional
+            Number of iterations of outer loop (upper bound of the number
+            of selected columns, which sets the size of the inner solver)
         show : :obj:`bool`, optional
             Display memory usage
         unit: :obj:`str`, optional
@@ -1007,6 +1031,9 @@ class OMP(Solver):
 
         # Step (additional variables to those in setup): cres, cres_abs
         memuse += (2 * self.Op.shape[1]) * nbytes
+
+        # Inner solver (CGLS on [N x niter_outer] system, y is shared)
+        memuse += (5 * niter_outer + 2 * self.Op.shape[0]) * nbytes
 
         if show:
             print(f"OMP predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -2882,6 +2909,11 @@ class SplitBregman(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
         Parameters
         ----------
         nopRegsL1 : :obj:`tuple`, optional
@@ -2919,6 +2951,11 @@ class SplitBregman(Solver):
 
         # Step (additional variables to those in setup): dataregs
         memuse += np.sum(nopRegsL1) * nbytes
+
+        # Inner solver (CGLS on stacked system: regularized_inversion works
+        # on its own copy of the stacked data)
+        ndatatot = self.Op.shape[0] + np.sum(nopRegsL1) + np.sum(nopRegsL2)
+        memuse += (5 * self.Op.shape[1] + 3 * ndatatot) * nbytes
 
         if show:
             print(

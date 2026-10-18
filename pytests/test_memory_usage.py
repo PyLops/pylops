@@ -26,7 +26,9 @@ def _op(n, m):
 
 
 def test_units(capsys):
-    """Return value is always in bytes, printed value follows unit"""
+    """Check that the estimated memory usage is returned
+    in bytes and printed in the requested unit
+    """
     solver = CGLS(_op(N, M))
     memuse = solver.memory_usage(show=True, unit="KB")
     assert memuse == (2 * M + 3 * N + 3 * M) * NB
@@ -34,22 +36,25 @@ def test_units(capsys):
 
 
 def test_cg():
+    """Check the memory usage estimate of CG"""
     solver = CG(_op(M, M))
     assert solver.memory_usage() == (4 * M + 2 * M) * NB
 
 
 def test_cgls():
+    """Check the memory usage estimate of CGLS"""
     solver = CGLS(_op(N, M))
     assert solver.memory_usage() == (2 * M + 3 * N + 3 * M) * NB
 
 
 def test_lsqr():
+    """Check the memory usage estimate of LSQR"""
     solver = LSQR(_op(N, M))
     assert solver.memory_usage() == (4 * M + 2 * N + M) * NB
 
 
 def test_leastsquares_regs_sum():
-    """Regularization sizes are summed (not multiplied)"""
+    """Check the memory usage estimate of LeastSquares with summed regularization sizes"""
     nopRegs = (3, 4)
     Op = _op(N, M)
     assert (
@@ -65,7 +70,7 @@ def test_leastsquares_regs_sum():
 
 
 def test_preconditioned_inversion():
-    """Model-size terms use the size of the preconditioner model"""
+    """Check the memory usage estimate of PreconditionedInversion"""
     Op = _op(N, M)
     P = _op(M, 3)
     solver = PreconditionedInversion(Op)
@@ -73,36 +78,44 @@ def test_preconditioned_inversion():
 
 
 def test_ista_fista():
+    """Check the memory usage estimate of ISTA and FISTA"""
     assert ISTA(_op(N, M)).memory_usage() == (M + N + 3 * M + N) * NB
     assert FISTA(_op(N, M)).memory_usage() == (M + N + 4 * M + N) * NB
 
 
 def test_omp():
-    """Residual correlation (cres) has size of the model"""
-    assert OMP(_op(N, M)).memory_usage() == (2 * N + 2 * M) * NB
+    """Check the memory usage estimate of OMP"""
+    assert (
+        OMP(_op(N, M)).memory_usage(niter_outer=4)
+        == (2 * N + 2 * M + 5 * 4 + 2 * N) * NB
+    )
 
 
 @pytest.mark.parametrize(
     "kind, nel",
     [
-        ("data", N + 2 * N),
-        ("model", N + (N + M)),
-        ("datamodel", (N + M) + 2 * (N + M)),
+        ("data", N + 2 * N + 5 * M + 3 * N),
+        ("model", N + (N + M) + 7 * N),
+        ("datamodel", (N + M) + 2 * (N + M) + 5 * M + 3 * (N + M)),
     ],
 )
 def test_irls(kind, nel):
+    """Check the memory usage estimate of IRLS for three setups"""
     solver = IRLS(_op(N, M))
     assert solver.memory_usage(kind=kind) == nel * NB
 
 
 def test_spgl1_not_implemented():
+    """Check that the memory usage estimate is not available for SPGL1"""
     with pytest.raises(NotImplementedError):
         SPGL1(_op(N, M)).memory_usage()
 
 
 def test_splitbregman_regs_sum():
+    """Check the memory usage estimate of SplitBregman with summed regularization sizes"""
     Op = _op(N, M)
     nL1, nL2 = (3, 4), (2, 6)
     solver = SplitBregman(Op)
     expected = (M + N + 3 * (3 + 4) + (2 + 6) + (3 + 4)) * NB
+    expected += (5 * M + 3 * (N + 3 + 4 + 2 + 6)) * NB
     assert solver.memory_usage(nopRegsL1=nL1, nopRegsL2=nL2) == expected
