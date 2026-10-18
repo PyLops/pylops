@@ -737,3 +737,57 @@ def test_SplitBregman_lambdaRL1s(par):
         Iop, y, [Dop], lambdaRL1s=[epsRL1], **kwargs_sb, **kwars_solver
     )[0]
     assert_array_almost_equal(xdef, xeps, decimal=12)
+
+
+def test_SplitBregman_kwargs_solver_cgls():
+    """Check that CGLS parameters can be passed through kwargs_solver"""
+    np.random.seed(42)
+    nx = 10
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+    y = np.random.normal(size=nx)
+
+    # Compute expected solution with dense solver
+    derivative = Dop.todense(backend=backend)
+    expected = np.linalg.solve(np.eye(nx) + derivative.T @ derivative, y)
+
+    # Computed solution with SplitBregman using CGLS with tight inner tolerance
+    # to ensure full convergence to the expected solution.
+    result, _, _ = splitbregman(
+        Iop,
+        y,
+        [Dop],
+        niter_outer=1,
+        niter_inner=1,
+        mu=1.0,
+        epsRL1s=[1.0],
+        tol=1e-10,
+        engine="pylops",
+        damp=0,
+        kwargs_solver=dict(niter=100, tol=1e-14, rtol=0.0, rtol1=0.0),
+    )
+    assert_array_almost_equal(result, expected, decimal=6)
+
+
+@pytest.mark.parametrize("rtol,rtol1", [(0.99, 0.0), (0.0, 0.99)])
+def test_SplitBregman_inner_relative_tolerance(rtol, rtol1):
+    """Check that rtol/rtol1 do not leak into the inner CGLS solver."""
+    np.random.seed(42)
+    nx = 10
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+    y = np.linspace(-1.0, 1.0, nx)
+
+    # CGLS rtol/rtol1 are left at their defaults: if the outer ones leaked,
+    # CGLS would stop early and the solutions below would differ
+    kwargs = dict(
+        niter_outer=1,
+        niter_inner=1,
+        epsRL1s=[0.2],
+        tol=0.0,
+        engine="pylops",
+        kwargs_solver=dict(niter=20, tol=1e-14),
+    )
+    xref, _, _ = splitbregman(Iop, y, [Dop], **kwargs)
+    x, _, _ = splitbregman(Iop, y, [Dop], rtol=rtol, rtol1=rtol1, **kwargs)
+    assert_array_almost_equal(x, xref, decimal=10)
