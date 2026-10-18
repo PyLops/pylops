@@ -395,8 +395,8 @@ class IRLS(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -1019,8 +1019,8 @@ class OMP(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -1605,8 +1605,8 @@ class ISTA(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -2266,8 +2266,8 @@ class FISTA(ISTA):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -2942,8 +2942,8 @@ class SplitBregman(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Convert nopRegsL1 and nopRegsL2 if None

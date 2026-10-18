@@ -174,6 +174,12 @@ class Solver(metaclass=ABCMeta):
         Note, that the memory usage of the operator itself is not taken into account
         in this estimate.
 
+        The estimate assumes that the dtype of the data and model matches that of
+        the operator.
+
+        The estimate is an upper bound as it accounts for all variables allocated
+        when ``preallocate=True``.
+
         Parameters
         ----------
         show : :obj:`bool`, optional
@@ -184,7 +190,7 @@ class Solver(metaclass=ABCMeta):
 
         Returns
         -------
-        memuse :obj:`float`
+        memuse : :obj:`float`
             Memory usage in bytes
 
         """
