@@ -57,7 +57,36 @@ par3s = {
     "dtype": "float64",
 }  # underdetermined real (fp32)
 
+par_reg_real = {**par1, "order": 2}
+par_reg_complex = {**par1j, "order": 2}
+
 np.random.seed(10)
+
+
+@pytest.mark.parametrize("par", [par_reg_real, par_reg_complex])
+@pytest.mark.parametrize("axis_dtype", ["int64", "float64"])
+def test_Regression_axis_dtype(par, axis_dtype):
+    """Preserve coefficient dtype with integer or real sample positions."""
+    np.random.seed(10)
+    order = par["order"]
+    t = np.arange(par["ny"], dtype=axis_dtype)
+    op = Regression(t, order=order, dtype=par["dtype"])
+    coefficients = (
+        np.random.normal(size=order + 1)
+        + par["imag"] * np.random.normal(size=order + 1)
+    ).astype(par["dtype"])
+    design = np.stack([t.astype(par["dtype"]) ** i for i in range(order + 1)], axis=1)
+    expected = design @ coefficients
+    actual = op @ coefficients
+    assert_array_almost_equal(actual, expected)
+    assert actual.dtype == expected.dtype
+    assert_array_almost_equal(op.apply(t, coefficients), expected)
+    assert_array_equal(op.taxis, t)
+    assert dottest(
+        op, par["ny"], order + 1, complexflag=3 if par["imag"] else 0, backend=backend
+    )
+    recovered = lsqr(op, actual, niter=30, atol=1e-12, btol=1e-12)[0]
+    assert_array_almost_equal(recovered, coefficients, decimal=5)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1s), (par2s)])
