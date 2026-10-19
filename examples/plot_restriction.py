@@ -12,6 +12,7 @@ As explained in the :ref:`sphx_glr_tutorials_solvers.py` tutorial, such
 operators can be used as forward model in an inverse problem aimed at
 interpolate irregularly sampled 1d or 2d signals onto a regular grid.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -91,7 +92,15 @@ plt.plot(isample, ymask, ".g", ms=35, label="available samples")
 plt.plot(iavann, ynn, ".r", ms=25, label="NN interp samples")
 plt.plot(iavali, yli, ".m", ms=20, label="Linear interp samples")
 plt.plot(iavasi, ysi, ".y", ms=15, label="Sinc interp samples")
-plt.plot(iavasi, ysi, "cyan", linestyle="none", marker="D", ms=4, label="Cubic Spline interp samples")
+plt.plot(
+    iavasi,
+    ysi,
+    "cyan",
+    linestyle="none",
+    marker="D",
+    ms=4,
+    label="Cubic Spline interp samples",
+)
 plt.legend(loc="right")
 plt.title("Data restriction")
 
@@ -105,6 +114,15 @@ subax.plot(iavasi, ysi, "cyan", linestyle="none", marker="D", ms=4)
 subax.set_xlim([120, 127])
 subax.set_ylim([-0.5, 0.5])
 plt.tight_layout()
+
+###############################################################################
+# Negative indices follow NumPy's convention. Here the last sample is selected
+# twice, once as ``nt - 1`` and once as ``-1``. The adjoint adds both observations
+# at that location, just as it does for two identical positive indices.
+Rrepeat = pylops.Restriction(nt, [nt - 1, -1], dtype="float64")
+yrepeat = Rrepeat * x
+xrepeat = Rrepeat.H * yrepeat
+print(f"Repeated last sample: {yrepeat}; adjoint sum: {xrepeat[-1]}")
 
 ###############################################################################
 # Finally we show how the :py:class:`pylops.Restriction` is not limited to

@@ -64,8 +64,80 @@ par2j = {
     "inplace": "False",
 }  # complex, out of place
 
+# Cover both precisions and copy modes for negative/positive index aliases.
+par3 = dict(par1, inplace=True)
+par3s = dict(par1s, inplace=True)
+par3j = dict(par1j, inplace=True)
+par3js = dict(par1j, dtype="complex64", inplace=True)
+par4 = dict(par2, inplace=False)
+par4s = dict(par2s, inplace=False)
+par4j = dict(par2j, inplace=False)
+par4js = dict(par2j, dtype="complex64", inplace=False)
+
+np.random.seed(10)
+
+
 # subsampling factor
 perc_subsampling = 0.4
+
+
+@pytest.mark.parametrize(
+    "par", [par3, par3s, par3j, par3js, par4, par4s, par4j, par4js]
+)
+@pytest.mark.parametrize("axis", [0, 1, -1])
+def test_Restriction_mask_repeated_aliases(par, axis):
+    """Reject masks with repeated locations expressed using different indices."""
+    dims = (par["nx"], par["nt"])
+    iava = np.array([dims[axis] - 1, -1])
+    Rop = Restriction(dims, iava, axis=axis, dtype=par["dtype"])
+    x = np.random.normal(size=dims) + par["imag"] * np.random.normal(size=dims)
+    with pytest.raises(ValueError, match="index in iava is repeated"):
+        Rop.mask(x.astype(par["dtype"]))
+
+
+@pytest.mark.parametrize(
+    "par", [par3, par3s, par3j, par3js, par4, par4s, par4j, par4js]
+)
+@pytest.mark.parametrize("axis", [0, 1, -1])
+def test_Restriction_repeated_aliases(par, axis):
+    """Sum every sample at locations shared by negative and positive indices."""
+    dims = (par["nx"], par["nt"])
+    iava = np.array([0, -dims[axis], dims[axis] - 1, -1])
+    Rop = Restriction(dims, iava, axis=axis, inplace=par["inplace"], dtype=par["dtype"])
+    rdtype = np.empty(0, dtype=par["dtype"]).real.dtype
+    assert dottest(
+        Rop,
+        len(iava) * dims[1 - axis % len(dims)],
+        par["nx"] * par["nt"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        rtol=1e-4 if rdtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    assert Rop.repeated
+    assert_array_almost_equal(Rop.iava, iava)
+
+    x = np.random.normal(size=dims) + par["imag"] * np.random.normal(size=dims)
+    x = x.astype(par["dtype"])
+    y = np.random.normal(size=Rop.dimsd) + par["imag"] * np.random.normal(
+        size=Rop.dimsd
+    )
+    y = y.astype(par["dtype"])
+    x_before, y_before = x.copy(), y.copy()
+    expected = np.zeros_like(x)
+    # Add one observation at a time, without fancy-indexed assignment.
+    expected_axis = np.moveaxis(expected, axis, 0)
+    y_axis = np.moveaxis(y, axis, 0)
+    for row, index in enumerate(iava):
+        expected_axis[index] += y_axis[row]
+
+    forward = Rop.matvec(x.ravel()).reshape(Rop.dimsd)
+    adjoint = Rop.rmatvec(y.ravel()).reshape(dims)
+    assert_array_almost_equal(forward, np.take(x, iava, axis=axis))
+    assert_array_almost_equal(adjoint, expected)
+    assert forward.dtype == par["dtype"]
+    assert adjoint.dtype == par["dtype"]
+    assert_array_almost_equal(x, x_before)
+    assert_array_almost_equal(y, y_before)
 
 
 @pytest.mark.parametrize("par", [(par1), (par1s), (par1j), (par2), (par2s), (par2j)])

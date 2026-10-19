@@ -31,7 +31,8 @@ class Restriction(LinearOperator):
     dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
     iava : :obj:`list` or :obj:`numpy.ndarray`
-        Integer indices of available samples for data selection.
+        Integer indices of available samples for data selection. Negative indices
+        count from the end of the selected axis, as in NumPy.
     axis : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
@@ -64,7 +65,8 @@ class Restriction(LinearOperator):
 
         For example, ``y_reshaped = (Op * x.ravel()).reshape(Op.dimsd)``.
     repeated : :obj:`bool`
-        Indicates whether there are repeated indices in ``iava``.
+        Indicates whether multiple indices in ``iava`` select the same location,
+        including negative and positive aliases.
     shape : :obj:`tuple`
         Operator shape.
 
@@ -86,15 +88,16 @@ class Restriction(LinearOperator):
     of the original array at which samples are taken.
 
     Conversely, in adjoint mode the available values in the data vector
-    :math:`\mathbf{y}` are placed at locations
-    :math:`\mathbf{l}=[l_0, l_1,\ldots, l_{M-1}]` in the model vector:
+    :math:`\mathbf{y}` are placed at the corresponding locations in the model
+    vector. Writing each :math:`l_i` as its nonnegative index gives:
 
     .. math::
 
-        x_{l_i} = y_i  \quad \forall i=0,1,\ldots,N-1
+        x_j = \sum_{i: l_i = j} y_i  \quad \forall j=0,1,\ldots,M-1
 
-    and :math:`x_{j}=0` for :math:`j \neq l_i` (i.e., at all other locations in input
-    vector).
+    Thus, repeated sample locations accumulate their contributions, including
+    locations expressed using both negative and positive indices. All other
+    entries in the model vector are zero.
 
     """
 
@@ -137,8 +140,9 @@ class Restriction(LinearOperator):
         self.axis = axis
         self.iava = ncp.asarray(iava)
 
-        # check whether any index in iava is repeated
-        self.repeated = np.unique(self.iava).size != self.iava.size
+        # Compare sample locations rather than their signed representations.
+        locations = ncp.where(self.iava < 0, self.iava + dims[axis], self.iava)
+        self.repeated = np.unique(locations).size != self.iava.size
 
     def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
@@ -208,7 +212,7 @@ class Restriction(LinearOperator):
         else:
             iava = self.iava.copy()
 
-        if np.unique(iava).size != iava.size:
+        if self.repeated:
             msg = "At least one index in iava is repeated, mask is not enabled..."
             raise ValueError(msg)
 
