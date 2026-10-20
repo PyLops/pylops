@@ -31,7 +31,8 @@ class Restriction(LinearOperator):
     dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
     iava : :obj:`list` or :obj:`numpy.ndarray`
-        Integer indices of available samples for data selection.
+        Integer indices of available samples for data selection. Negative indices
+        count from the end of the selected axis, as in NumPy.
     axis : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
@@ -135,7 +136,13 @@ class Restriction(LinearOperator):
 
         self.inplace = inplace
         self.axis = axis
-        self.iava = ncp.asarray(iava)
+
+        # normalize negative indices to positive ones (raises if out of bounds)
+        normalize_axis_index = get_normalize_axis_index()
+        iava = ncp.asarray(iava)
+        self.iava = ncp.asarray(
+            [normalize_axis_index(int(i), dims[axis]) for i in iava], dtype=iava.dtype
+        )
 
         # check whether any index in iava is repeated
         self.repeated = np.unique(self.iava).size != self.iava.size

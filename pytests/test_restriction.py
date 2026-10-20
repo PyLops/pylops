@@ -68,6 +68,15 @@ par2j = {
 perc_subsampling = 0.4
 
 
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_Restriction_iava_out_of_bounds(par):
+    """Check error is raised when iava contains out of bounds indices"""
+    with pytest.raises(IndexError, match="out of bounds"):
+        Restriction(par["nx"], np.array([0, par["nx"]]), dtype=par["dtype"])
+    with pytest.raises(IndexError, match="out of bounds"):
+        Restriction(par["nx"], np.array([-par["nx"] - 1, 0]), dtype=par["dtype"])
+
+
 @pytest.mark.parametrize("par", [(par1), (par1s), (par1j), (par2), (par2s), (par2j)])
 def test_Restriction_1dsignal(par):
     """Dot-test, forward and adjoint for Restriction operator for 1d signal"""
@@ -99,9 +108,11 @@ def test_Restriction_1dsignal(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par1s), (par1j), (par2), (par2s), (par2j)])
-def test_Restriction_1dsignal_repeated(par):
+@pytest.mark.parametrize("negative", [False, True])
+def test_Restriction_1dsignal_repeated(par, negative):
     """Dot-test, forward and adjoint for Restriction operator for 1d signal
-    with repeated incides (adjoint must sum over them)"""
+    with repeated incides, also expressed as negative equivalents
+    (adjoint must sum over them)"""
     np.random.seed(10)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
@@ -111,8 +122,13 @@ def test_Restriction_1dsignal_repeated(par):
     # Force 2 repetitions
     iava[1] = iava[0]
     iava[-1] = iava[-2]
+    if negative:
+        # repetitions expressed with the equivalent negative index
+        iava[1] -= par["nx"]
+        iava[-1] -= par["nx"]
 
     Rop = Restriction(par["nx"], iava, inplace=par["inplace"], dtype=par["dtype"])
+    assert Rop.repeated
     assert dottest(
         Rop,
         Nsub,
