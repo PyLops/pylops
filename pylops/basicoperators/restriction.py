@@ -54,6 +54,11 @@ class Restriction(LinearOperator):
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
 
+    Raises
+    ------
+    IndexError
+        If any index in ``iava`` is out of bounds for the selected axis
+
     Attributes
     ----------
     dims : :obj:`tuple`
@@ -138,14 +143,15 @@ class Restriction(LinearOperator):
         self.axis = axis
 
         # normalize negative indices to positive ones (raises if out of bounds)
-        normalize_axis_index = get_normalize_axis_index()
         iava = ncp.asarray(iava)
-        self.iava = ncp.asarray(
-            [normalize_axis_index(int(i), dims[axis]) for i in iava], dtype=iava.dtype
-        )
+        n = dims[axis]
+        if iava.size > 0 and (int(iava.min()) < -n or int(iava.max()) >= n):
+            msg = f"iava contains indices out of bounds for axis with size {n}"
+            raise IndexError(msg)
+        self.iava = ncp.where(iava < 0, iava + n, iava)
 
         # check whether any index in iava is repeated
-        self.repeated = np.unique(self.iava).size != self.iava.size
+        self.repeated = ncp.unique(self.iava).size != self.iava.size
 
     def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
