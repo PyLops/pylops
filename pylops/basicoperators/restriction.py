@@ -92,7 +92,7 @@ class Restriction(LinearOperator):
 
     .. math::
 
-        x_{l_i} = y_i  \quad \forall i=0,1,\ldots,N-1
+        x_{l_i} += y_i  \quad \forall i=0,1,\ldots,N-1
 
     and :math:`x_{j}=0` for :math:`j \neq l_i` (i.e., at all other locations in input
     vector).
