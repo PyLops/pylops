@@ -215,7 +215,7 @@ class Restriction(LinearOperator):
         else:
             iava = self.iava.copy()
 
-        if np.unique(iava).size != iava.size:
+        if self.repeated:
             msg = "At least one index in iava is repeated, mask is not enabled..."
             raise ValueError(msg)
 
