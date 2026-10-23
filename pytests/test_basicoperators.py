@@ -60,13 +60,17 @@ par3s = {
 np.random.seed(10)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par1s), (par2s)])
-def test_Regression(par):
+@pytest.mark.parametrize(
+    "par", [(par1), (par2), (par3), (par1s), (par2s), (par3s), (par1j), (par2j)]
+)
+@pytest.mark.parametrize("t_dtype", ["int64", "float64"])
+def test_Regression(par, t_dtype):
     """Dot-test, inversion and apply for Regression operator"""
     np.random.seed(10)
+    dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
     order = 4
-    t = np.arange(par["ny"], dtype=par["dtype"])
+    t = np.arange(par["ny"], dtype=t_dtype)
     LRop = Regression(t, order=order, dtype=par["dtype"])
     assert dottest(
         LRop,
@@ -78,11 +82,15 @@ def test_Regression(par):
 
     x = np.array([1.0, 2.0, 0.0, 3.0, -1.0], dtype=par["dtype"])
 
-    # forward vs apply method
+    # forward and adjoint dtypes
     y = LRop * x
+    xadj = LRop.H * y
+    assert y.dtype == np.result_type(par["dtype"], t_dtype)
+    assert xadj.dtype == np.result_type(par["dtype"], t_dtype)
+
+    # forward vs apply method
     y1 = LRop.apply(t, x)
-    assert y.dtype == par["dtype"]
-    assert_array_almost_equal(y, y1, decimal=3)
+    assert_array_almost_equal(y, y1)
 
     # inversion
     xlsqr = lsqr(
@@ -96,15 +104,23 @@ def test_Regression(par):
         conlim=np.inf,
         show=0,
     )[0]
-    assert_array_almost_equal(x, xlsqr, decimal=3)
+    assert_array_almost_equal(
+        x,
+        xlsqr,
+        decimal=6 if dtype == np.float32 else 3,
+    )
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par1s), (par2s)])
-def test_LinearRegression(par):
+@pytest.mark.parametrize(
+    "par", [(par1), (par2), (par3), (par1s), (par2s), (par3s), (par1j), (par2j)]
+)
+@pytest.mark.parametrize("t_dtype", ["int64", "float64"])
+def test_LinearRegression(par, t_dtype):
     """Dot-test and inversion for LinearRegression operator"""
     np.random.seed(10)
+    dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
-    t = np.arange(par["ny"], dtype=par["dtype"])
+    t = np.arange(par["ny"], dtype=t_dtype)
     LRop = LinearRegression(t, dtype=par["dtype"])
     assert dottest(
         LRop,
@@ -116,11 +132,15 @@ def test_LinearRegression(par):
 
     x = np.array([1.0, 2.0], dtype=par["dtype"])
 
-    # forward vs apply method
+    # forward and adjoint dtypes
     y = LRop * x
+    xadj = LRop.H * y
+    assert y.dtype == np.result_type(par["dtype"], t_dtype)
+    assert xadj.dtype == np.result_type(par["dtype"], t_dtype)
+
+    # forward vs apply method
     y1 = LRop.apply(t, x)
-    assert y.dtype == par["dtype"]
-    assert_array_almost_equal(y, y1, decimal=3)
+    assert_array_almost_equal(y, y1)
 
     # inversion
     xlsqr = lsqr(
@@ -134,7 +154,11 @@ def test_LinearRegression(par):
         conlim=np.inf,
         show=0,
     )[0]
-    assert_array_almost_equal(x, xlsqr, decimal=3)
+    assert_array_almost_equal(
+        x,
+        xlsqr,
+        decimal=6 if dtype == np.float32 else 3,
+    )
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1s), (par2s), (par1j), (par2j)])
