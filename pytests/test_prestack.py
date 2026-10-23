@@ -238,7 +238,8 @@ par3b = {
     ],
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_PrestackLinearModelling(par, dtype):
+@pytest.mark.parametrize("explicit", [True, False])
+def test_PrestackLinearModelling(par, dtype, explicit):
     """Dot-test, comparison of dense vs lop implementation and
     inversion for PrestackLinearModelling
     """
@@ -299,33 +300,32 @@ def test_PrestackLinearModelling(par, dtype):
     assert_array_almost_equal(madj, madj_dense, decimal=4)
 
     # Inversion
-    for explicit in [True, False]:
+    dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
+    if not par["simultaneous"]:
+        dict_inv = {}
+    if not explicit:
         dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
-        if not par["simultaneous"]:
-            dict_inv = {}
-        if not explicit:
-            dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
-        if par["epsRL1"] is not None:
-            dict_inv = (
-                dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
-                if backend == "numpy"
-                else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
-            )
-        minv = PrestackInversion(
-            d,
-            theta.astype(dtype),
-            wav.astype(dtype),
-            m0=mback.astype(dtype),
-            explicit=explicit,
-            epsI=par["epsI"],
-            epsR=par["epsR"],
-            epsRL1=par["epsRL1"],
-            simultaneous=par["simultaneous"],
-            kind=par["kind"],
-            **dict_inv,
+    if par["epsRL1"] is not None:
+        dict_inv = (
+            dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+            if backend == "numpy"
+            else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
         )
-        err = 1e-1 if dtype == np.float32 else 5e-2
-        assert np.linalg.norm(m - minv) / np.linalg.norm(minv) < err
+    minv = PrestackInversion(
+        d,
+        theta.astype(dtype),
+        wav.astype(dtype),
+        m0=mback.astype(dtype),
+        explicit=explicit,
+        epsI=par["epsI"],
+        epsR=par["epsR"],
+        epsRL1=par["epsRL1"],
+        simultaneous=par["simultaneous"],
+        kind=par["kind"],
+        **dict_inv,
+    )
+    err = 1e-1 if dtype == np.float32 else 5e-2
+    assert np.linalg.norm(m - minv) / np.linalg.norm(minv) < err
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
@@ -407,7 +407,8 @@ def test_PrestackWaveletModelling(par, dtype):
     "par", [(par1), (par3), (par2s), (par4s), (par1r), (par3r), (par1b), (par3b)]
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_PrestackLinearModelling2d(par, dtype):
+@pytest.mark.parametrize("explicit", [True, False])
+def test_PrestackLinearModelling2d(par, dtype, explicit):
     """Dot-test and inversion for PoststackLinearModelling in 2d"""
     nm = _linearizations[par["linearization"]]
     # Dense
@@ -462,29 +463,28 @@ def test_PrestackLinearModelling2d(par, dtype):
     assert_array_almost_equal(d, d_dense, decimal=4)
 
     # Inversion
-    for explicit in [True, False]:
+    dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
+    if not par["simultaneous"]:
+        dict_inv = {}
+    if not explicit:
         dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
-        if not par["simultaneous"]:
-            dict_inv = {}
-        if not explicit:
-            dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
-        if par["epsRL1"] is not None:
-            dict_inv = (
-                dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
-                if backend == "numpy"
-                else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
-            )
-        minv2d = PrestackInversion(
-            d,
-            theta.astype(dtype),
-            wav.astype(dtype),
-            m0=mback2d.astype(dtype),
-            explicit=explicit,
-            epsI=par["epsI"],
-            epsR=par["epsR"],
-            epsRL1=par["epsRL1"],
-            simultaneous=par["simultaneous"],
-            **dict_inv,
+    if par["epsRL1"] is not None:
+        dict_inv = (
+            dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+            if backend == "numpy"
+            else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
         )
-        err = 1e-1 if dtype == np.float32 else 5e-2
-        assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < err
+    minv2d = PrestackInversion(
+        d,
+        theta.astype(dtype),
+        wav.astype(dtype),
+        m0=mback2d.astype(dtype),
+        explicit=explicit,
+        epsI=par["epsI"],
+        epsR=par["epsR"],
+        epsRL1=par["epsRL1"],
+        simultaneous=par["simultaneous"],
+        **dict_inv,
+    )
+    err = 1e-1 if dtype == np.float32 else 5e-2
+    assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < err

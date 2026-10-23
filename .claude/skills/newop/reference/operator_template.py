@@ -6,8 +6,6 @@ Delete anything that does not apply.
 
 __all__ = ["MyOperator"]
 
-import numpy as np
-
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
 from pylops.utils.backend import get_array_module, to_cupy_conditional
@@ -76,7 +74,7 @@ class MyOperator(LinearOperator):
         dims = param.shape if dims is None else _value_or_sized_to_tuple(dims)
         # dimsd is the shape of the data (output of the forward)
         dimsd = dims
-        super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
+        super().__init__(dtype=dtype, dims=dims, dimsd=dimsd, name=name)
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:

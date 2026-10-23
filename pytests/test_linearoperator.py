@@ -12,6 +12,7 @@ else:
     from numpy.testing import assert_array_almost_equal, assert_array_equal
 
     backend = "numpy"
+import numpy as npp
 import pytest
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
@@ -19,6 +20,7 @@ from scipy.sparse.linalg import LinearOperator as spLinearOperator
 import pylops
 from pylops import LinearOperator
 from pylops.basicoperators import (
+    BlockDiag,
     Diagonal,
     FirstDerivative,
     HStack,
@@ -28,7 +30,9 @@ from pylops.basicoperators import (
     VStack,
     Zero,
 )
+from pylops.signalprocessing import Shift
 from pylops.utils import dottest
+from pylops.utils._internal import _get_dtype
 
 par1 = {"ny": 11, "nx": 11, "imag": 0, "dtype": "float64"}  # square real
 par2 = {"ny": 21, "nx": 11, "imag": 0, "dtype": "float64"}  # overdetermined real
@@ -61,28 +65,29 @@ def test_overloads(par):
 
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
-def test_scaled(par):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_scaled(par, dtype):
     """Verify that _ScaledLinearOperator produces the correct type based
     on its inputs types
     """
-    dtypes = [np.float32, np.float64]
-    for dtype in dtypes:
-        diag = np.arange(par["nx"], dtype=dtype) + par["imag"] * np.arange(
-            par["nx"], dtype=dtype
-        )
-        Dop = Diagonal(diag, dtype=dtype)
-        Sop = 3.0 * Dop
-        S1op = -3.0 * Dop
-        S2op = Dop * 3.0
-        S3op = Dop * -3.0
-        assert Sop.dtype == dtype
-        assert S1op.dtype == dtype
-        assert S2op.dtype == dtype
-        assert S3op.dtype == dtype
+    diag = np.arange(par["nx"], dtype=dtype) + par["imag"] * np.arange(
+        par["nx"], dtype=dtype
+    )
+    Dop = Diagonal(diag, dtype=dtype)
+    Sop = 3.0 * Dop
+    S1op = -3.0 * Dop
+    S2op = Dop * 3.0
+    S3op = Dop * -3.0
+    assert Sop.dtype == dtype
+    assert S1op.dtype == dtype
+    assert S2op.dtype == dtype
+    assert S3op.dtype == dtype
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
-def test_scalar_division(par):
+@pytest.mark.parametrize("stacked", [False, True])
+@pytest.mark.parametrize("scalar", [2, 2.0])
+def test_scalar_division(par, stacked, scalar):
     """Verify that dividing by a scalar scales the operator, like ``Op * (1 / a)``,
     instead of solving ``a = Op x``
     """
@@ -90,17 +95,61 @@ def test_scalar_division(par):
     A = np.random.normal(0, 10, shape) + par["imag"] * np.random.normal(0, 10, shape)
     x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
     Mop = MatrixMult(A, dtype=par["dtype"])
-    # an explicit operator and one that is not
-    for Op in (Mop, VStack([Mop])):
-        for scalar in (2, 2.0):
-            Sop = Op / scalar
-            assert isinstance(Sop, LinearOperator)
-            assert Sop.shape == Op.shape
-            assert_array_almost_equal(Sop @ x, (Op @ x) / 2, decimal=6)
+    # an explicit operator (MatrixMult) and one that is not (VStack)
+    Op = VStack([Mop]) if stacked else Mop
+    Sop = Op / scalar
+    assert isinstance(Sop, LinearOperator)
+    assert Sop.shape == Op.shape
+    assert_array_almost_equal(Sop @ x, (Op @ x) / 2, decimal=6)
 
 
 @pytest.mark.parametrize("par", [(par1), (par1j)])
-def test_scipyop(par):
+def test_dtype_normalization(par):
+    """Verify that dtype is always stored as a numpy dtype (also when
+    provided as a string) and that it is correctly inferred when combining
+    operators
+    """
+    diag = (np.arange(par["nx"]) + par["imag"] * np.arange(par["nx"])).astype(
+        par["dtype"]
+    )
+    Dop = Diagonal(diag, dtype=par["dtype"])
+    assert isinstance(Dop.dtype, npp.dtype)
+    assert Dop.dtype == npp.dtype(par["dtype"])
+
+    # dtype assigned after operator creation
+    D1op = Diagonal(diag, dtype=par["dtype"])
+    D1op.dtype = "complex128"
+    assert isinstance(D1op.dtype, npp.dtype)
+    assert D1op.dtype == npp.dtype("complex128")
+
+    # dtype inference from operators with string dtype (Shift overwrites
+    # its dtype after creation)
+    Sop = Shift(par["nx"], 1.5, real=False, dtype=par["dtype"])
+    assert isinstance(Sop.dtype, npp.dtype)
+    assert _get_dtype([Dop, Sop]) == npp.dtype(par["dtype"])
+    assert _get_dtype([], ["float32", par["dtype"]]) == npp.dtype(par["dtype"])
+    for Op in (HStack([Dop, Sop]), VStack([Dop, Sop]), BlockDiag([Dop, Sop])):
+        assert isinstance(Op.dtype, npp.dtype)
+        assert Op.dtype == npp.dtype(par["dtype"])
+
+
+def test_dtype_default():
+    """Verify that dtype defaults to float64 when not provided (also
+    overwriting a dtype set before calling super().__init__)
+    """
+
+    # dtype not provided
+    Lop = LinearOperator(shape=(10, 20), dtype=None)
+    assert isinstance(Lop.dtype, npp.dtype)
+    assert Lop.dtype == npp.dtype("float64")
+    assert "dtype=float64" in repr(Lop)
+
+    # dtype set to None after operator creation
+    Lop.dtype = None
+    assert Lop.dtype == npp.dtype("float64")
+
+
+def test_scipyop():
     """Verify interaction between pylops and scipy Linear operators"""
 
     class spDiag(spLinearOperator):
@@ -159,41 +208,288 @@ def test_sparse(par):
     assert_array_equal(S.toarray(), D)
 
 
-@pytest.mark.skipif(
-    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
-)
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j)])
-def test_eigs(par):
-    """Eigenvalues and condition number estimate with ARPACK"""
-    # explicit=True
-    diag = np.arange(par["nx"], 0, -1) + par["imag"] * np.arange(par["nx"], 0, -1)
-    Op = MatrixMult(
-        np.vstack((np.diag(diag), np.zeros((par["ny"] - par["nx"], par["nx"]))))
-    )
-    eigs = Op.eigs()
-    assert_array_almost_equal(diag[: eigs.size], eigs, decimal=3)
+def test_eigs_lobpcg_failures(par):
+    """Fail uselobpcg when the operator is not symmetric or
+    when neigs is too large to avoid lobpcg dense solver
+    """
+    nx = 10 * par["nx"]
 
-    cond = Op.cond()
-    assert_array_almost_equal(np.real(cond), par["nx"], decimal=3)
+    # lobpcg cannot be used for non-symmetric explicit operators (also when
+    # all eigenvalues are requested and the dense solver would be used)
+    Op = MatrixMult(np.diag(np.arange(nx, 0.0, -1.0)), dtype=np.dtype(par["dtype"]))
+    for neigs in (2, nx - 1, None):
+        with pytest.raises(ValueError, match="non real-symmetric or complex-hermitian"):
+            Op.eigs(neigs=neigs, symmetric=False, uselobpcg=True, backend=backend)
+
+    # lobpcg cannot be used for non-symmetric linear operators
+    Op = Diagonal(np.arange(nx, 0, -1), dtype=par["dtype"])
+    with pytest.raises(ValueError, match="non real-symmetric or complex-hermitian"):
+        Op.eigs(neigs=2, symmetric=False, uselobpcg=True, backend=backend)
+
+    # lobpcg cannot be used when neigs is too large
+    with pytest.raises(ValueError, match="requires the operator size"):
+        Op.eigs(neigs=nx // 5 + 1, symmetric=True, uselobpcg=True, backend=backend)
+    # constraints reduce the available size
+    with pytest.raises(ValueError, match="number of constraints"):
+        Op.eigs(
+            neigs=nx // 5,
+            symmetric=True,
+            uselobpcg=True,
+            Y=np.eye(nx, 5, dtype=par["dtype"]),
+            backend=backend,
+        )
+
+    # lobpcg size check for non-square operators (based on number of columns)
+    Op = VStack([Op, Zero(par["ny"], nx)])
+    with pytest.raises(ValueError, match="uselobpcg=True requires the operator size"):
+        Op.eigs(neigs=nx // 5 + 1, uselobpcg=True, backend=backend)
+    with pytest.raises(ValueError, match="uselobpcg=True requires the operator size"):
+        Op.eigs(
+            neigs=nx // 5,
+            uselobpcg=True,
+            Y=np.eye(nx, 5, dtype=par["dtype"]),
+            backend=backend,
+        )
+
+
+@pytest.mark.skipif(int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 0, reason="CuPy only")
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_eigs_cupy_nonsymmetric_failures(par):
+    """Fail non-symmetric square operators with CuPy backend"""
+    nx = 10 * par["nx"]
+    diag = np.arange(nx, 0.0, -1.0)
+
+    # explicit=True (limited number of eigenvalues)
+    Op = MatrixMult(np.diag(diag), dtype=np.dtype(par["dtype"]))
+    with pytest.raises(NotImplementedError, match="not available with CuPy"):
+        Op.eigs(neigs=3, symmetric=False, backend="cupy")
+
+    # explicit=False
+    Op = Diagonal(diag, dtype=np.dtype(par["dtype"]))
+    with pytest.raises(NotImplementedError, match="not available with CuPy"):
+        Op.eigs(neigs=3, symmetric=False, backend="cupy")
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+@pytest.mark.parametrize("symmetric", [True, False])
+def test_eigs_square(par, symmetric):
+    """Eigenvalues and conditioning number estimate of square
+    diagonal matrix (note: by construction this is a symmetric
+    matrix with real-valued entries but not hermitian with
+    complex valued-entries)
+    """
+    if symmetric and par["imag"] != 0:
+        pytest.skip(
+            "Skip complex symmetric case: cannot have complex-valued diagonal entries"
+        )
+    if not symmetric and backend == "cupy":
+        pytest.skip("Skip non-symmetric case for CuPy as eigs is missing")
+
+    # increase matrix size to ensure converge of lobpcg dense solver
+    nx = 10 * par["nx"]
+
+    # explicit=True
+    diag = np.arange(nx, 0.0, -1.0) + par["imag"] * np.arange(nx, 0.0, -1.0)
+    Op = MatrixMult(np.diag(diag), dtype=np.dtype(par["dtype"]))
+
+    eigs = Op.eigs(symmetric=symmetric, backend=backend)  # all
+    assert_array_almost_equal(eigs, diag, decimal=3)
+
+    eigs = Op.eigs(neigs=3, symmetric=symmetric, backend=backend)  # top-k
+    assert_array_almost_equal(eigs, diag[:3], decimal=3)
+
+    # neigs equal to size of operator returns all eigenvalues
+    eigs = Op.eigs(neigs=nx, symmetric=symmetric, backend=backend)
+    assert_array_almost_equal(eigs, diag, decimal=3)
+
+    if backend == "numpy":
+        # neigs equal to size of operator minus one (dense solver with
+        # selection based on which for symmetric=False, eigsh for
+        # symmetric=True; CuPy's eigsh does not support which="SM",
+        # which="BE", and sigma)
+        eigs = Op.eigs(neigs=nx - 1, symmetric=symmetric, backend=backend)
+        assert_array_almost_equal(eigs, diag[: nx - 1], decimal=3)
+        eigs = Op.eigs(neigs=nx - 1, symmetric=symmetric, which="SM", backend=backend)
+        assert_array_almost_equal(eigs, diag[1:], decimal=3)
+
+        if symmetric:
+            eigs = Op.eigs(neigs=nx - 1, symmetric=True, sigma=0.0, backend=backend)
+            assert_array_almost_equal(eigs, diag[1:], decimal=3)
+            eigs = Op.eigs(neigs=nx - 1, symmetric=True, which="BE", backend=backend)
+            assert_array_almost_equal(
+                eigs, np.concatenate((diag[: nx // 2], diag[nx // 2 + 1 :])), decimal=3
+            )
+
+        # CuPy cannot compute a single eigenvalue for square, non-symmetric matrix
+        cond = Op.cond(backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    if symmetric:
+        # lobpcg
+        eigs = Op.eigs(
+            neigs=3, symmetric=True, uselobpcg=True, niter=50, backend=backend
+        )
+        assert_array_almost_equal(eigs, diag[:3], decimal=3)
+
+    # explicit=False
+    Op = Diagonal(diag, dtype=np.dtype(par["dtype"]))
+
+    if backend == "numpy":
+        # CuPy cannot compute neigs-2 eigenvalues (seems to be
+        # a bug in CuPy's eigsh)
+        eigs = Op.eigs(symmetric=symmetric, backend=backend)
+        assert eigs.size == nx - 2  # neigs=None is clamped to N-2 (no warning)
+        assert_array_almost_equal(eigs, diag[: eigs.size], decimal=3)
+
+        # neigs too large is clamped to N-1 for real symmetric operators
+        # (eigsh) and N-2 otherwise (eigs) (with warning)
+        neigsmax = nx - 1 if symmetric else nx - 2
+        with pytest.warns(UserWarning, match="exceeds the number of columns"):
+            eigs = Op.eigs(neigs=nx, symmetric=symmetric, backend=backend)
+        assert eigs.size == neigsmax
+        assert_array_almost_equal(eigs, diag[:neigsmax], decimal=3)
+
+        # neigs equal to N-1 is allowed for real symmetric operators (eigsh)
+        if symmetric:
+            eigs = Op.eigs(neigs=nx - 1, symmetric=True, backend=backend)
+            assert eigs.size == nx - 1
+            assert_array_almost_equal(eigs, diag[: nx - 1], decimal=3)
+
+    eigs = Op.eigs(neigs=3, symmetric=symmetric, backend=backend)  # top-k
+    assert_array_almost_equal(eigs, diag[:3], decimal=3)
+
+    if backend == "numpy":
+        cond = Op.cond(backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    if symmetric:
+        # lobpcg
+        eigs1 = Op.eigs(
+            neigs=3, symmetric=True, uselobpcg=True, niter=50, backend=backend
+        )
+        assert_array_almost_equal(eigs1, eigs, decimal=3)
+
+        cond = Op.cond(uselobpcg=True, niter=100, backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1j)])
+@pytest.mark.parametrize("explicit", [True, False])
+def test_eigs_square_hermitian(par, explicit):
+    """Eigenvalues and conditioning number estimate of complex-valued
+    hermitian matrix with known (real-valued) eigenvalues
+    """
+    nx = 5 * par["nx"]
+
+    # hermitian matrix A = U diag(eigs) U^H with U unitary
+    np.random.seed(0)
+    U, _ = np.linalg.qr(
+        np.random.normal(size=(nx, nx)) + 1j * np.random.normal(size=(nx, nx))
+    )
+    eigs_true = np.arange(nx, 0.0, -1.0)
+    A = (U * eigs_true) @ np.conj(U.T)
+    A = (A + np.conj(A.T)) / 2  # remove round-off asymmetry
+    Op = MatrixMult(A, dtype=np.dtype(par["dtype"]))
+    Op.explicit = explicit
+
+    # hermitian solver
+    if explicit:
+        eigs = Op.eigs(symmetric=True, backend=backend)  # all
+        assert_array_almost_equal(eigs, eigs_true, decimal=3)
+
+    eigs = Op.eigs(neigs=3, symmetric=True, backend=backend)  # top-k
+    assert_array_almost_equal(eigs, eigs_true[:3], decimal=3)
+
+    if backend == "numpy":
+        cond = Op.cond(symmetric=True, backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    # lobpcg
+    if backend == "numpy":
+        # CuPy cannot compute 2+ with lobpcg (seems to be
+        # a bug in CuPy's lobpcg)
+        eigs = Op.eigs(
+            neigs=3, symmetric=True, uselobpcg=True, niter=100, backend=backend
+        )
+        assert_array_almost_equal(eigs, eigs_true[:3], decimal=3)
+
+        # CuPy gives wrong answer (seems to be a bug in CuPy's lobpcg)
+        cond = Op.cond(uselobpcg=True, niter=200, backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    # general solver (not available for CuPy)
+    if backend == "numpy":
+        eigs = Op.eigs(neigs=3, symmetric=False, backend=backend)
+        assert_array_almost_equal(np.real(eigs), eigs_true[:3], decimal=3)
+        assert_array_almost_equal(np.imag(eigs), np.zeros(3), decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par2), (par2j)])
+def test_eigs_non_square(par):
+    """Eigenvalues and conditioning number estimate of non-square matrix"""
+
+    ny, nx = par["ny"], par["nx"]
+
+    # explicit=True
+    diag = np.arange(nx, 0.0, -1.0) + par["imag"] * np.arange(nx, 0.0, -1.0)
+    Op = MatrixMult(
+        np.vstack((np.diag(diag), np.zeros((ny - nx, nx)))),
+        dtype=np.dtype(par["dtype"]),
+    )
+
+    eigs = Op.eigs(backend=backend)  # all
+    assert_array_almost_equal(eigs, np.abs(diag)[: eigs.size], decimal=3)
+
+    eigs = Op.eigs(neigs=3, backend=backend)  # top-k
+    assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
+
+    # neigs equal to size of operator minus one
+    if backend == "numpy":
+        # CuPy cannot compute neigs-1 eigenvalues (seems to be
+        # a bug in CuPy's eigsh)
+        eigs = Op.eigs(neigs=nx - 1, backend=backend)
+        assert_array_almost_equal(eigs, np.abs(diag)[: nx - 1], decimal=3)
+
+    # use lobpcg
+    if backend == "numpy":
+        # CuPy cannot compute 2+ with lobpcg (seems to be
+        # a bug in CuPy's lobpcg)
+        eigs = Op.eigs(neigs=2, uselobpcg=True, niter=100, backend=backend)
+        assert_array_almost_equal(eigs, np.abs(diag)[:2], decimal=3)
+
+    if backend == "numpy":
+        cond = Op.cond(backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
     # explicit=False
     Op = Diagonal(diag, dtype=par["dtype"])
-    if par["ny"] > par["nx"]:
-        Op = VStack([Op, Zero(par["ny"] - par["nx"], par["nx"])])
-    eigs = Op.eigs()
-    assert_array_almost_equal(diag[: eigs.size], eigs, decimal=3)
+    Op = VStack([Op, Zero(ny - nx, nx)])
 
-    # uselobpcg cannot be used for square non-symmetric complex matrices
-    if np.iscomplex(Op):
-        eigs1 = Op.eigs(uselobpcg=True)
-        assert_array_almost_equal(eigs, eigs1, decimal=3)
+    if backend == "numpy":
+        # CuPy cannot compute neigs-2 eigenvalues (seems to be
+        # a bug in CuPy's eigsh)
+        eigs = Op.eigs(backend=backend)
+        assert_array_almost_equal(eigs, np.abs(diag)[: eigs.size], decimal=3)
 
-    cond = Op.cond()
-    assert_array_almost_equal(np.real(cond), par["nx"], decimal=3)
+    eigs = Op.eigs(neigs=3, backend=backend)  # top-k
+    assert_array_almost_equal(eigs, np.abs(diag)[:3], decimal=3)
 
-    if np.iscomplex(Op):
-        cond1 = Op.cond(uselobpcg=True, niter=100)
-        assert_array_almost_equal(np.real(cond), np.real(cond1), decimal=3)
+    if backend == "numpy":
+        cond = Op.cond(backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
+
+    # use lobpcg
+    if backend == "numpy":
+        # CuPy cannot compute 2+ with lobpcg (seems to be
+        # a bug in CuPy's lobpcg)
+        eigs = Op.eigs(neigs=2, uselobpcg=True, niter=100, backend=backend)
+        assert_array_almost_equal(eigs, np.abs(diag)[:2], decimal=3)
+
+    if backend == "numpy":
+        # CuPy gives wrong answer (seems to be a bug in CuPy's lobpcg)
+        cond = Op.cond(uselobpcg=True, niter=200, backend=backend)
+        assert_array_almost_equal(np.real(cond), nx, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
@@ -269,7 +565,8 @@ def test_realimag(par):
 
 
 @pytest.mark.parametrize("par", [(par1j)])
-def test_rlinear(par):
+@pytest.mark.parametrize("complexflag", [0, 1, 2, 3])
+def test_rlinear(par, complexflag):
     """R-linear"""
     np.random.seed(123)
     if np.dtype(par["dtype"]).kind == "c":
@@ -299,13 +596,12 @@ def test_rlinear(par):
     assert_array_equal(M @ np.real(x), y_right)
 
     # adjoint (dot product test)
-    for complexflag in range(4):
-        assert dottest(
-            Op_left, par["ny"], par["nx"], complexflag=complexflag, backend=backend
-        )
-        assert dottest(
-            Op_right, par["ny"], par["nx"], complexflag=complexflag, backend=backend
-        )
+    assert dottest(
+        Op_left, par["ny"], par["nx"], complexflag=complexflag, backend=backend
+    )
+    assert dottest(
+        Op_right, par["ny"], par["nx"], complexflag=complexflag, backend=backend
+    )
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
@@ -413,106 +709,106 @@ def test_counts(par):
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
-def test_matmat_multiproc_multithread(par):
+@pytest.mark.parametrize("parallel_kind", ["multiproc", "multithread"])
+def test_matmat_multiproc_multithread(par, parallel_kind):
     """Single and multiprocess/multithreading consistency for matmat/rmatmat"""
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
-    for parallel_kind in ["multiproc", "multithread"]:
-        np.random.seed(0)
-        nproc = 2
+    np.random.seed(0)
+    nproc = 2
 
-        # create pool
-        if parallel_kind == "multiproc":
-            pool = mp.Pool(processes=nproc)
-        else:
-            pool = mt.ThreadPoolExecutor(max_workers=nproc)
+    # create pool
+    if parallel_kind == "multiproc":
+        pool = mp.Pool(processes=nproc)
+    else:
+        pool = mt.ThreadPoolExecutor(max_workers=nproc)
 
-        M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
-            "imag"
-        ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
-        x = np.ones((par["nx"], 4), dtype=dtype) + par["imag"] * np.ones(
-            (par["nx"], 4), dtype=dtype
-        )
-        y = np.ones((par["ny"], 4), dtype=dtype) + par["imag"] * np.ones(
-            (par["ny"], 4), dtype=dtype
-        )
+    M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
+        "imag"
+    ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
+    x = np.ones((par["nx"], 4), dtype=dtype) + par["imag"] * np.ones(
+        (par["nx"], 4), dtype=dtype
+    )
+    y = np.ones((par["ny"], 4), dtype=dtype) + par["imag"] * np.ones(
+        (par["ny"], 4), dtype=dtype
+    )
 
-        Mop = MatrixMult(M, dtype=par["dtype"])
+    Mop = MatrixMult(M, dtype=par["dtype"])
 
-        # forward
-        assert_array_almost_equal(
-            Mop.matmat(x),
-            Mop.matmat(x, pool=pool),
-            decimal=3 if dtype == np.float32 else 8,
-        )
-        # adjoint
-        assert_array_almost_equal(
-            Mop.rmatmat(y),
-            Mop.rmatmat(y, pool=pool),
-            decimal=3 if dtype == np.float32 else 8,
-        )
+    # forward
+    assert_array_almost_equal(
+        Mop.matmat(x),
+        Mop.matmat(x, pool=pool),
+        decimal=3 if dtype == np.float32 else 8,
+    )
+    # adjoint
+    assert_array_almost_equal(
+        Mop.rmatmat(y),
+        Mop.rmatmat(y, pool=pool),
+        decimal=3 if dtype == np.float32 else 8,
+    )
 
-        # close pool
-        if parallel_kind == "multiproc":
-            pool.close()
-            pool.join()
-        else:
-            pool.shutdown()
+    # close pool
+    if parallel_kind == "multiproc":
+        pool.close()
+        pool.join()
+    else:
+        pool.shutdown()
 
 
 @pytest.mark.skipif(
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
-def test_matmat_sparse_multiproc_multithread(par):
+@pytest.mark.parametrize("parallel_kind", ["multiproc", "multithread"])
+def test_matmat_sparse_multiproc_multithread(par, parallel_kind):
     """Single and multiprocess/multithreading consistency for matmat/rmatmat
     with sparse X"""
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
-    for parallel_kind in ["multiproc", "multithread"]:
-        np.random.seed(0)
-        nproc = 2
+    np.random.seed(0)
+    nproc = 2
 
-        # create pool
-        if parallel_kind == "multiproc":
-            pool = mp.Pool(processes=nproc)
-        else:
-            pool = mt.ThreadPoolExecutor(max_workers=nproc)
+    # create pool
+    if parallel_kind == "multiproc":
+        pool = mp.Pool(processes=nproc)
+    else:
+        pool = mt.ThreadPoolExecutor(max_workers=nproc)
 
-        M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
-            "imag"
-        ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
-        x = np.zeros((par["nx"], 4), dtype=dtype) + par["imag"] * np.zeros(
-            (par["nx"], 4), dtype=dtype
-        )
-        y = np.zeros((par["ny"], 4), dtype=dtype) + par["imag"] * np.zeros(
-            (par["ny"], 4), dtype=dtype
-        )
-        for ix in range(par["nx"]):
-            x[ix, np.random.randint(0, 4)] = 1.0 + par["imag"] * 1.0
-        for iy in range(par["ny"]):
-            y[iy, np.random.randint(0, 4)] = 1.0 + par["imag"] * 1.0
-        x = csr_matrix(x)
-        y = csr_matrix(y)
+    M = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype) + par[
+        "imag"
+    ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype(dtype)
+    x = np.zeros((par["nx"], 4), dtype=dtype) + par["imag"] * np.zeros(
+        (par["nx"], 4), dtype=dtype
+    )
+    y = np.zeros((par["ny"], 4), dtype=dtype) + par["imag"] * np.zeros(
+        (par["ny"], 4), dtype=dtype
+    )
+    for ix in range(par["nx"]):
+        x[ix, np.random.randint(0, 4)] = 1.0 + par["imag"] * 1.0
+    for iy in range(par["ny"]):
+        y[iy, np.random.randint(0, 4)] = 1.0 + par["imag"] * 1.0
+    x = csr_matrix(x)
+    y = csr_matrix(y)
 
-        Mop = MatrixMult(M, dtype=par["dtype"])
+    Mop = MatrixMult(M, dtype=par["dtype"])
 
-        # forward
-        assert_array_almost_equal(
-            Mop.matmat(x),
-            Mop.matmat(x, pool=pool),
-            decimal=3 if dtype == np.float32 else 8,
-        )
-        # adjoint
-        assert_array_almost_equal(
-            Mop.rmatmat(y),
-            Mop.rmatmat(y, pool=pool),
-            decimal=3 if dtype == np.float32 else 8,
-        )
+    # forward
+    assert_array_almost_equal(
+        Mop.matmat(x),
+        Mop.matmat(x, pool=pool),
+        decimal=3 if dtype == np.float32 else 8,
+    )
+    # adjoint
+    assert_array_almost_equal(
+        Mop.rmatmat(y),
+        Mop.rmatmat(y, pool=pool),
+        decimal=3 if dtype == np.float32 else 8,
+    )
 
-        # close pool
-        if parallel_kind == "multiproc":
-            pool.close()
-            pool.join()
-        else:
-            pool.shutdown()
+    # close pool
+    if parallel_kind == "multiproc":
+        pool.close()
+        pool.join()
+    else:
+        pool.shutdown()

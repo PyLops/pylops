@@ -172,7 +172,11 @@ class Solver(metaclass=ABCMeta):
         will run out of memory.
 
         Note, that the memory usage of the operator itself is not taken into account
-        in this estimate.
+        in this estimate. Moreover, the estimate assumes that the dtype of the data
+        and model matches that of the operator. Finally, the estimate corresponds to
+        the memory allocated when ``preallocate=True``. When ``preallocate=False``
+        the peak memory is similar, but depends on the temporary variables created
+        at each step.
 
         Parameters
         ----------
@@ -184,7 +188,7 @@ class Solver(metaclass=ABCMeta):
 
         Returns
         -------
-        memuse :obj:`float`
+        memuse : :obj:`float`
             Memory usage in bytes
 
         """

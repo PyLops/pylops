@@ -466,143 +466,141 @@ def test_BlockDiag(par):
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
-def test_VStack_multiproc_multithread(par):
+@pytest.mark.parametrize("parallel_kind", ["multiproc", "multithread"])
+def test_VStack_multiproc_multithread(par, parallel_kind):
     """Single and multiprocess/multithreading consistency for VStack operator"""
-    for parallel_kind in ["multiproc", "multithread"]:
-        np.random.seed(0)
-        nproc = 2
-        G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
-        x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
-        y = np.ones(4 * par["ny"]) + par["imag"] * np.ones(4 * par["ny"])
+    np.random.seed(0)
+    nproc = 2
+    G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
+    x = np.ones(par["nx"]) + par["imag"] * np.ones(par["nx"])
+    y = np.ones(4 * par["ny"]) + par["imag"] * np.ones(4 * par["ny"])
 
-        Vop = VStack([MatrixMult(G, dtype=par["dtype"])] * 4, dtype=par["dtype"])
-        Vmultiop = VStack(
-            [MatrixMult(G, dtype=par["dtype"])] * 4,
-            nproc=nproc,
-            parallel_kind=parallel_kind,
-            dtype=par["dtype"],
-        )
-        assert dottest(
-            Vmultiop,
-            4 * par["ny"],
-            par["nx"],
-            complexflag=0 if par["imag"] == 0 else 3,
-            backend=backend,
-        )
-        # forward
-        assert_array_almost_equal(Vop * x, Vmultiop * x, decimal=4)
-        # adjoint
-        assert_array_almost_equal(Vop.H * y, Vmultiop.H * y, decimal=4)
+    Vop = VStack([MatrixMult(G, dtype=par["dtype"])] * 4, dtype=par["dtype"])
+    Vmultiop = VStack(
+        [MatrixMult(G, dtype=par["dtype"])] * 4,
+        nproc=nproc,
+        parallel_kind=parallel_kind,
+        dtype=par["dtype"],
+    )
+    assert dottest(
+        Vmultiop,
+        4 * par["ny"],
+        par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
+    )
+    # forward
+    assert_array_almost_equal(Vop * x, Vmultiop * x, decimal=4)
+    # adjoint
+    assert_array_almost_equal(Vop.H * y, Vmultiop.H * y, decimal=4)
 
-        # close pool
-        Vmultiop.close()
+    # close pool
+    Vmultiop.close()
 
 
 @pytest.mark.skipif(
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par2), (par2j)])
-def test_HStack_multiproc_multithread(par):
+@pytest.mark.parametrize("parallel_kind", ["multiproc", "multithread"])
+def test_HStack_multiproc_multithread(par, parallel_kind):
     """Single and multiprocess/multithreading consistency for HStack operator"""
-    for parallel_kind in ["multiproc", "multithread"]:
-        np.random.seed(0)
-        nproc = 2
-        G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
-        x = np.ones(4 * par["nx"]) + par["imag"] * np.ones(4 * par["nx"])
-        y = np.ones(par["ny"]) + par["imag"] * np.ones(par["ny"])
+    np.random.seed(0)
+    nproc = 2
+    G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
+    x = np.ones(4 * par["nx"]) + par["imag"] * np.ones(4 * par["nx"])
+    y = np.ones(par["ny"]) + par["imag"] * np.ones(par["ny"])
 
-        Hop = HStack([MatrixMult(G, dtype=par["dtype"])] * 4, dtype=par["dtype"])
-        Hmultiop = HStack(
-            [MatrixMult(G, dtype=par["dtype"])] * 4,
-            nproc=nproc,
-            parallel_kind=parallel_kind,
-            dtype=par["dtype"],
-        )
-        assert dottest(
-            Hmultiop,
-            par["ny"],
-            4 * par["nx"],
-            complexflag=0 if par["imag"] == 0 else 3,
-            backend=backend,
-        )
-        # forward
-        assert_array_almost_equal(Hop * x, Hmultiop * x, decimal=4)
-        # adjoint
-        assert_array_almost_equal(Hop.H * y, Hmultiop.H * y, decimal=4)
+    Hop = HStack([MatrixMult(G, dtype=par["dtype"])] * 4, dtype=par["dtype"])
+    Hmultiop = HStack(
+        [MatrixMult(G, dtype=par["dtype"])] * 4,
+        nproc=nproc,
+        parallel_kind=parallel_kind,
+        dtype=par["dtype"],
+    )
+    assert dottest(
+        Hmultiop,
+        par["ny"],
+        4 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
+    )
+    # forward
+    assert_array_almost_equal(Hop * x, Hmultiop * x, decimal=4)
+    # adjoint
+    assert_array_almost_equal(Hop.H * y, Hmultiop.H * y, decimal=4)
 
-        # close pool
-        Hmultiop.close()
+    # close pool
+    Hmultiop.close()
 
 
 @pytest.mark.skipif(
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
-def test_Block_multiproc_multithread(par):
+@pytest.mark.parametrize("parallel_kind", ["multiproc", "multithread"])
+def test_Block_multiproc_multithread(par, parallel_kind):
     """Single and multiprocess/multithreading consistency for Block operator"""
-    for parallel_kind in ["multiproc", "multithread"]:
-        np.random.seed(0)
-        nproc = 2
-        G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
-        Gvert = [MatrixMult(G, dtype=par["dtype"])] * 2
-        Ghor = [Gvert] * 4
-        x = np.ones(2 * par["nx"]) + par["imag"] * np.ones(2 * par["nx"])
-        y = np.ones(4 * par["ny"]) + par["imag"] * np.ones(4 * par["ny"])
+    np.random.seed(0)
+    nproc = 2
+    G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
+    Gvert = [MatrixMult(G, dtype=par["dtype"])] * 2
+    Ghor = [Gvert] * 4
+    x = np.ones(2 * par["nx"]) + par["imag"] * np.ones(2 * par["nx"])
+    y = np.ones(4 * par["ny"]) + par["imag"] * np.ones(4 * par["ny"])
 
-        Bop = Block(Ghor, dtype=par["dtype"])
-        Bmultiop = Block(
-            Ghor, nproc=nproc, parallel_kind=parallel_kind, dtype=par["dtype"]
-        )
-        assert dottest(
-            Bmultiop,
-            4 * par["ny"],
-            2 * par["nx"],
-            complexflag=0 if par["imag"] == 0 else 3,
-            backend=backend,
-        )
-        # forward
-        assert_array_almost_equal(Bop * x, Bmultiop * x, decimal=3)
-        # adjoint
-        assert_array_almost_equal(Bop.H * y, Bmultiop.H * y, decimal=3)
+    Bop = Block(Ghor, dtype=par["dtype"])
+    Bmultiop = Block(Ghor, nproc=nproc, parallel_kind=parallel_kind, dtype=par["dtype"])
+    assert dottest(
+        Bmultiop,
+        4 * par["ny"],
+        2 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
+    )
+    # forward
+    assert_array_almost_equal(Bop * x, Bmultiop * x, decimal=3)
+    # adjoint
+    assert_array_almost_equal(Bop.H * y, Bmultiop.H * y, decimal=3)
 
-        # close pool
-        Bmultiop.Op.close()
+    # close pool
+    Bmultiop.Op.close()
 
 
 @pytest.mark.skipif(
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
-def test_BlockDiag_multiproc_multithread(par):
+@pytest.mark.parametrize("parallel_kind", ["multiproc", "multithread"])
+def test_BlockDiag_multiproc_multithread(par, parallel_kind):
     """Single and multiprocess/multithreading consistency for BlockDiag operator"""
-    for parallel_kind in ["multiproc", "multithread"]:
-        np.random.seed(0)
-        nproc = 2
-        G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
-        x = np.ones(4 * par["nx"]) + par["imag"] * np.ones(4 * par["nx"])
-        y = np.ones(4 * par["ny"]) + par["imag"] * np.ones(4 * par["ny"])
+    np.random.seed(0)
+    nproc = 2
+    G = np.random.normal(0, 10, (par["ny"], par["nx"])).astype(par["dtype"])
+    x = np.ones(4 * par["nx"]) + par["imag"] * np.ones(4 * par["nx"])
+    y = np.ones(4 * par["ny"]) + par["imag"] * np.ones(4 * par["ny"])
 
-        BDop = BlockDiag([MatrixMult(G, dtype=par["dtype"])] * 4, dtype=par["dtype"])
-        BDmultiop = BlockDiag(
-            [MatrixMult(G, dtype=par["dtype"])] * 4,
-            nproc=nproc,
-            parallel_kind=parallel_kind,
-            dtype=par["dtype"],
-        )
-        assert dottest(
-            BDmultiop,
-            4 * par["ny"],
-            4 * par["nx"],
-            complexflag=0 if par["imag"] == 0 else 3,
-            backend=backend,
-        )
-        # forward
-        assert_array_almost_equal(BDop * x, BDmultiop * x, decimal=4)
-        # adjoint
-        assert_array_almost_equal(BDop.H * y, BDmultiop.H * y, decimal=4)
+    BDop = BlockDiag([MatrixMult(G, dtype=par["dtype"])] * 4, dtype=par["dtype"])
+    BDmultiop = BlockDiag(
+        [MatrixMult(G, dtype=par["dtype"])] * 4,
+        nproc=nproc,
+        parallel_kind=parallel_kind,
+        dtype=par["dtype"],
+    )
+    assert dottest(
+        BDmultiop,
+        4 * par["ny"],
+        4 * par["nx"],
+        complexflag=0 if par["imag"] == 0 else 3,
+        backend=backend,
+    )
+    # forward
+    assert_array_almost_equal(BDop * x, BDmultiop * x, decimal=4)
+    # adjoint
+    assert_array_almost_equal(BDop.H * y, BDmultiop.H * y, decimal=4)
 
-        # close pool
-        BDmultiop.close()
+    # close pool
+    BDmultiop.close()
 
 
 @pytest.mark.parametrize("par", [(par1j), (par2j)])
