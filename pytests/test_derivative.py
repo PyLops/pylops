@@ -782,7 +782,7 @@ def test_Laplacian(par, dtype):
     Dlapop = Laplacian(
         (par["ny"], par["nx"]),
         axes=(0, 1),
-        weights=(1, 1),
+        weights=(1.0, 1.0),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
         dtype=dtype,
@@ -803,7 +803,7 @@ def test_Laplacian(par, dtype):
     Dlapop = Laplacian(
         (par["ny"], par["nx"]),
         axes=(0, 1),
-        weights=(1, 2),
+        weights=(1.0, 2.0),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
         dtype=dtype,
@@ -824,7 +824,7 @@ def test_Laplacian(par, dtype):
     Dlapop = Laplacian(
         (par["nz"], par["ny"], par["nx"]),
         axes=(0, 1),
-        weights=(1, 1),
+        weights=(1.0, 1.0),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
         dtype=dtype,
@@ -845,7 +845,7 @@ def test_Laplacian(par, dtype):
     Dlapop = Laplacian(
         (par["nz"], par["ny"], par["nx"]),
         axes=(0, 1),
-        weights=(1, 1),
+        weights=(1.0, 1.0),
         sampling=(par["dy"], par["dx"]),
         edge=par["edge"],
         dtype=dtype,
@@ -866,7 +866,28 @@ def test_Laplacian(par, dtype):
     Dlapop = Laplacian(
         (par["nz"], par["ny"], par["nx"]),
         axes=(0, 1, 2),
-        weights=(1, 1, 1),
+        weights=(1.0, 1.0, 1.0),
+        sampling=(par["dz"], par["dx"], par["dx"]),
+        edge=par["edge"],
+        dtype=dtype,
+    )
+    assert dottest(
+        Dlapop,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=5e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+    y = Dlapop * xxx.ravel()
+    xadj = Dlapop.H * y
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+
+    # 3d - asymmetrical on all directions
+    Dlapop = Laplacian(
+        (par["nz"], par["ny"], par["nx"]),
+        axes=(0, 1, 2),
+        weights=(2.0, 1.0, 3.0),
         sampling=(par["dz"], par["dx"], par["dx"]),
         edge=par["edge"],
         dtype=dtype,
