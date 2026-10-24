@@ -1,6 +1,13 @@
 Changelog
 =========
 
+# 2.9.0
+* Fixed `pylops.TorchOperator` with `batch=True` for operators whose model and
+  data have different numbers of dimensions (e.g., `pylops.Sum`)
+* Fixed `pylops.TorchOperator` to honour `flatten` also when `batch=False`
+  (inputs of size `Op.dims` now require `flatten=False`) and to return outputs
+  whose shape depends only on `batch` and `flatten`
+
 # 2.8.0
 * Added `pylops.signalprocessing.UDCT` operator
 * Added `forward`, `adjoint`, and `__repr__` methods to `pylops.TorchOperator`
@@ -129,7 +136,6 @@ is now unmantained and merged into `cupy`).
 * Fixed bug in the definition of `nttot` in `pylops.waveeqprocessing.BlendingContinuous`
 * Fixed bug in `pylops.utils.signalprocessing.dip_estimate` (see [Issue #572](https://github.com/PyLops/pylops/issues/572))
 
-
 # 2.2.0
 * Added `pylops.signalprocessing.NonStationaryConvolve3D` operator
 * Added nd-array capabilities to `pylops.basicoperators.Identity` and `pylops.basicoperators.Zero`
@@ -142,7 +148,6 @@ is now unmantained and merged into `cupy`).
 * Modified `pylops.signalprocessing.Convolve1D` to allow both filters that are both shorter and longer of the
   input vector
 * Modified all solvers to use `matvec/rmatvec` instead of `@/.H @` to improve performance
-
 
 # 2.1.0
 * Added `pylops.signalprocessing.DCT`, `pylops.signalprocessing.NonStationaryConvolve1D`,
