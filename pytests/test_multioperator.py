@@ -21,16 +21,23 @@ par1s = {"ny": 11, "nx": 7, "imag": 0, "dtype": "float32"}
 par1j = {"ny": 11, "nx": 7, "imag": 1j, "dtype": "complex128"}
 par1js = {"ny": 11, "nx": 7, "imag": 1j, "dtype": "complex64"}
 
-np.random.seed(0)
+
+@pytest.fixture
+def random_state():
+    state = np.random.get_state()
+    np.random.seed(0)
+    try:
+        yield
+    finally:
+        np.random.set_state(state)
 
 
 @pytest.mark.skipif(backend == "cupy", reason="Thread pools use NumPy arrays")
 @pytest.mark.parametrize("par", [(par1), (par1s), (par1j), (par1js)])
 @pytest.mark.parametrize("stack", [HStack, VStack])
 @pytest.mark.parametrize("initial_nproc", [1, 2])
-def test_MultiOperator_thread_pool_resize(par, stack, initial_nproc):
+def test_MultiOperator_thread_pool_resize(par, stack, initial_nproc, random_state):
     """Dot-test, inversion and serial consistency after starting and resizing threads."""
-    np.random.seed(0)
     matrix = (
         np.random.normal(size=(par["ny"], par["nx"]))
         + par["imag"] * np.random.normal(size=(par["ny"], par["nx"]))
