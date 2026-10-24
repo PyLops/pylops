@@ -89,8 +89,9 @@ class TorchOperator:
         if batch and not flatten:
             # batched and unflattened
             # flatten inputs of size ``[nbatch, *Op.dims]`` (or
-            # ``[nbatch, *Op.dimsd]``), apply matmat (or rmatmat), and reshape
-            # outputs to ``[nbatch, *Op.dimsd]`` (or ``[nbatch, *Op.dims]``)
+            # ``[nbatch, *Op.dimsd]``), transpose, apply matmat (or rmatmat),
+            # transpose back, and reshape outputs to ``[nbatch, *Op.dimsd]``
+            # (or ``[nbatch, *Op.dims]``)
             self.matvec = lambda x: Op.matmat(x.reshape(x.shape[0], -1).T).T.reshape(
                 x.shape[0], *self.dimsd
             )
@@ -99,8 +100,7 @@ class TorchOperator:
             )
         elif batch:
             # batched and flattened
-            # transpose, apply matmat/rmatmat (to keep native sample dimensions flattened),
-            # and tranpose back
+            # transpose, apply matmat (or rmatmat), and transpose back
             self.matvec = lambda x: Op.matmat(x.T).T
             self.rmatvec = lambda x: Op.rmatmat(x.T).T
         elif not flatten:

@@ -45,7 +45,7 @@ def test_TorchOperator_nd_flatten(par):
 
 
 @pytest.mark.skipif(platform.system() == "Darwin", reason="Not OSX enabled")
-@pytest.mark.parametrize("par", [(par1)])
+@pytest.mark.parametrize("par", [(par1), (par2)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("adjoint", [False, True])
 def test_TorchOperator(par, dtype, adjoint):
@@ -88,8 +88,8 @@ def test_TorchOperator(par, dtype, adjoint):
     assert_array_equal(xadj, xadjt)
 
 
-@pytest.mark.skipif(platform.system() == "Darwin", reason="Not OSX enabled")
-@pytest.mark.parametrize("par", [(par1)])
+# @pytest.mark.skipif(platform.system() == "Darwin", reason="Not OSX enabled")
+@pytest.mark.parametrize("par", [(par1), (par2)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("adjoint", [False, True])
 def test_TorchOperator_batch(par, dtype, adjoint):
@@ -117,7 +117,7 @@ def test_TorchOperator_batch(par, dtype, adjoint):
 
 
 @pytest.mark.skipif(platform.system() == "Darwin", reason="Not OSX enabled")
-@pytest.mark.parametrize("par", [(par1)])
+@pytest.mark.parametrize("par", [(par1), (par2)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("adjoint", [False, True])
 def test_TorchOperator_batch_nd(par, dtype, adjoint):
@@ -158,7 +158,7 @@ def test_TorchOperator_batch_nd(par, dtype, adjoint):
 @pytest.mark.parametrize("flatten", [False, True])
 @pytest.mark.parametrize("adjoint", [False, True])
 @pytest.mark.parametrize("forceflat", [None, False, True])
-def test_TorchOperator_changes_rank(
+def test_TorchOperator_different_ndims(
     par,
     dtype,
     batch,
@@ -215,7 +215,7 @@ def test_TorchOperator_changes_rank(
 
 
 @pytest.mark.skipif(platform.system() == "Darwin", reason="Not OSX enabled")
-@pytest.mark.parametrize("par", [(par1)])
+@pytest.mark.parametrize("par", [(par1), (par2)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_TorchOperator_forward_adjoint(par, dtype):
     """Compute gradient of L2 norm (chain of forward and adjoint) and
@@ -232,7 +232,7 @@ def test_TorchOperator_forward_adjoint(par, dtype):
     xt.requires_grad = True
     y = -2 * np.arange(par["ny"], dtype=dtype)
     yt = torch.from_numpy(to_numpy(y)).to(device).view(-1)
-    v = np.random.normal(0.0, 1.0, par["ny"]).astype(dtype)
+    v = np.random.normal(0.0, 1.0, par["nx"]).astype(dtype)
     vt = torch.from_numpy(to_numpy(v)).to(device).view(-1)
 
     # pylops operator
