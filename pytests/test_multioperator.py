@@ -51,7 +51,7 @@ def test_MultiOperator_parallel_kind_readonly(par, Stack):
 @pytest.mark.parametrize("Stack", [HStack, VStack])
 @pytest.mark.parametrize("initial_nproc", [1, 2])
 def test_MultiOperator_thread_pool_resize(par, Stack, initial_nproc):
-    """Dot-test, inversion and serial consistency after starting and resizing threads."""
+    """Forward/adjoint serial consistency after starting and resizing threads."""
     np.random.seed(0)
     G = (
         np.random.normal(size=(par["ny"], par["nx"]))
@@ -74,6 +74,8 @@ def test_MultiOperator_thread_pool_resize(par, Stack, initial_nproc):
 
     for nproc in (2, 1, 3):
         Opthreaded.nproc = nproc
+        if nproc == 1:
+            assert Opthreaded.pool is None
         # forward
         assert_array_almost_equal(Opthreaded * x, Opserial * x, decimal=4)
         # adjoint

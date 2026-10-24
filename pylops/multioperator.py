@@ -23,7 +23,7 @@ class MultiOperator(LinearOperator):
 
     - ``_matvec_serial`` / ``_rmatvec_serial``: serial implementation;
     - ``_matvec_multiproc`` / ``_rmatvec_multiproc``: multiprocess implementation;
-    - ``_matvec_multithread`` / ``_matvec_multithread``: multithreading implementation.
+    - ``_matvec_multithread`` / ``_rmatvec_multithread``: multithreading implementation.
 
     Developers are in charge of implementing these methods for specific operators or
     overwriting ``_matvec``/``_rmatvec`` if not all of the implementations are
@@ -51,6 +51,15 @@ class MultiOperator(LinearOperator):
             self.pool = mt.ThreadPoolExecutor(max_workers=nproc)
             self.lock = threading.Lock()
 
+    def _close_pool(self) -> None:
+        """Close pool of workers for multiprocessing/multithreading"""
+        if self.parallel_kind == "multiproc":
+            self.pool.close()
+            self.pool.join()
+        else:
+            self.pool.shutdown()
+        self.pool = None
+
     def _setup_pool(
         self,
         nproc: int = 1,
@@ -76,11 +85,7 @@ class MultiOperator(LinearOperator):
     @nproc.setter
     def nproc(self, nprocnew: int) -> None:
         if self._nproc > 1 and self.pool is not None:
-            if self.parallel_kind == "multiproc":
-                self.pool.close()
-                self.pool.join()
-            else:
-                self.pool.shutdown()
+            self._close_pool()
         if nprocnew > 1:
             self._start_pool(nprocnew)
         self._nproc = nprocnew
@@ -120,9 +125,4 @@ class MultiOperator(LinearOperator):
         / multithreading.
         """
         if self.pool is not None:
-            if self.parallel_kind == "multiproc":
-                self.pool.close()
-                self.pool.join()
-            else:
-                self.pool.shutdown()
-            self.pool = None
+            self._close_pool()
