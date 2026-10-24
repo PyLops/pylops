@@ -1,6 +1,13 @@
 Changelog
 =========
 
+# 2.9.0
+* Fixed `pylops.TorchOperator` with `batch=True` for operators whose model and
+  data have different numbers of dimensions (e.g., `pylops.Sum`)
+* Fixed `pylops.TorchOperator` to honour `flatten` also when `batch=False`
+  (inputs of size `Op.dims` now require `flatten=False`) and to return outputs
+  whose shape depends only on `batch` and `flatten`
+
 # 2.8.0
 * Added `pylops.signalprocessing.UDCT` operator
 * Added `forward`, `adjoint`, and `__repr__` methods to `pylops.TorchOperator`
