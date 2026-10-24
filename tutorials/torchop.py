@@ -66,7 +66,7 @@ x0 = torch.arange(nx, dtype=torch.double, requires_grad=True)
 A = np.random.normal(0.0, 1.0, (ny, nx))
 At = torch.from_numpy(A)
 Aop = pylops.TorchOperator(pylops.MatrixMult(A))
-y = Aop.apply(torch.sin(x0))
+y = Aop(torch.sin(x0))
 
 # AD
 v = torch.ones(ny, dtype=torch.double)
@@ -133,7 +133,7 @@ Cop = pylops.TorchOperator(pylops.Smoothing2D((5, 5), dims=(32, 32)))
 
 # Forward
 x = torch.randn(1, 4, 32, 32).requires_grad_()
-y = Cop.apply(net(x).view(-1)).reshape(32, 32)
+y = Cop(net(x).view(-1)).reshape(32, 32)
 
 # Backward
 loss = y.sum()
@@ -161,7 +161,7 @@ Cop = pylops.TorchOperator(pylops.Smoothing2D((5, 5), dims=(32, 32)), batch=True
 
 # Forward
 x = torch.randn(3, 4, 32, 32).requires_grad_()
-y = Cop.apply(net(x).reshape(3, 32 * 32)).reshape(3, 32, 32)
+y = Cop(net(x).reshape(3, 32 * 32)).reshape(3, 32, 32)
 
 # Backward
 loss = y.sum()
@@ -177,20 +177,42 @@ axs[1].axis("tight")
 plt.tight_layout()
 
 ###############################################################################
-# ND batches can also have different numbers of model and data dimensions. Summing each
-# (2, 3) sample produces a (2,) sample; backward spreads the gradient over
-# the summed axis. The batch remains the first axis in both directions.
+# Similarly this can be done without flattening the dimensions of the input
+# prior to applying ``Cop``.
+
+x1 = x.detach().clone().requires_grad_()
+Cop = pylops.TorchOperator(
+    pylops.Smoothing2D((5, 5), dims=(32, 32)), batch=True, flatten=False
+)
+
+# Forward
+y1 = Cop(net(x1).squeeze(1)).unsqueeze(1)
+
+# Backward
+loss1 = y1.sum()
+loss1.backward()
+
+print(f"Loss: {loss:.3f}, Loss1: {loss1:.3f}")
+print(f"sum(Grad1 - Grad): {torch.sum(x1.grad - x.grad)}")
+
+###############################################################################
+# N-dimensional batches can also have different numbers of dimensions in
+# the model and data (e.g., for the :class:`pylops.Sum` operator). In
+# this case, backward spreads the gradient over the summed axis. The batch
+# remains the first axis in both directions.
+
 Sop = pylops.TorchOperator(
     pylops.Sum((2, 3), axis=-1, forceflat=False), batch=True, flatten=False
 )
-x_nd = torch.arange(12, dtype=torch.double).reshape(2, 2, 3).requires_grad_()
-y_nd = Sop(x_nd)
-y_nd.sum().backward()
+
+x = torch.arange(12, dtype=torch.double).reshape(2, 2, 3).requires_grad_()
+y = Sop(x)
+y.sum().backward()
 
 fig, axs = plt.subplots(1, 2, figsize=(12, 3))
-axs[0].imshow(y_nd.detach().numpy())
+axs[0].imshow(y.detach().numpy())
 axs[0].set_title("Forward")
-axs[1].imshow(x_nd.grad[0].numpy())
+axs[1].imshow(x.grad[0].numpy())
 axs[1].set_title("Gradient")
 plt.tight_layout()
 
