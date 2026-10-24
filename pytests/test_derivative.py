@@ -20,6 +20,7 @@ from pylops.basicoperators import (
     SecondDerivative,
     SecondDirectionalDerivative,
 )
+from pylops.linearoperator import _ScaledLinearOperator
 from pylops.utils import dottest
 
 par1 = {
@@ -903,6 +904,72 @@ def test_Laplacian(par, dtype):
     xadj = Dlapop.H * y
     assert y.dtype == dtype
     assert xadj.dtype == dtype
+
+
+@pytest.mark.parametrize(
+    "par", [(par1), (par2), (par3), (par4), (par1e), (par2e), (par3e), (par4e)]
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_Laplacian_scaling(par, dtype):
+    """Laplacian operator with scaling matches scaled output of
+    Laplacian operator without scaling"""
+    np.random.seed(10)
+    xx = np.ones((par["ny"], par["nx"]), dtype=dtype)
+    xxx = np.ones((par["nz"], par["ny"], par["nx"]), dtype=dtype)
+
+    # 2d - symmetrical
+    lappar = dict(
+        dims=(par["ny"], par["nx"]),
+        axes=(0, 1),
+        sampling=(par["dy"], par["dx"]),
+        edge=par["edge"],
+        dtype=dtype,
+    )
+    Dlapop_unscaled = Laplacian(
+        weights=(1.0, 1.0),
+        **lappar,
+    )
+    Dlapop_scaled = Laplacian(
+        weights=(2.0, 2.0),
+        **lappar,
+    )
+    # Check that Laplacian with unitary weights is sum of SecondDerivative
+    assert isinstance(Dlapop_unscaled.Op.args[0], SecondDerivative)
+    assert isinstance(Dlapop_unscaled.Op.args[1], SecondDerivative)
+    # Check that Laplacian with non-unitary weights is sum of _ScaledLinearOperator
+    assert isinstance(Dlapop_scaled.Op.args[0], _ScaledLinearOperator)
+    assert isinstance(Dlapop_scaled.Op.args[0], _ScaledLinearOperator)
+    y_unscaled = Dlapop_unscaled * xx
+    y_scaled = Dlapop_scaled * xx
+    xadj_unscaled = Dlapop_unscaled.H * y_unscaled
+    xadj_scaled = Dlapop_scaled.H * y_scaled
+
+    assert_array_equal(y_scaled, 2.0 * y_unscaled)
+    assert_array_equal(xadj_scaled, 2.0 * xadj_unscaled)
+
+    # 3d - symmetrical on all directions
+    lappar = dict(
+        dims=(par["nz"], par["ny"], par["nx"]),
+        axes=(0, 1, 2),
+        sampling=(par["dz"], par["dx"], par["dx"]),
+        edge=par["edge"],
+        dtype=dtype,
+    )
+    Dlapop_unscaled = Laplacian(
+        weights=(1.0, 1.0, 1.0),
+        **lappar,
+    )
+    Dlapop_scaled = Laplacian(
+        weights=(2.0, 2.0, 2.0),
+        **lappar,
+    )
+    y_unscaled = Dlapop_unscaled * xxx
+    y_scaled = Dlapop_scaled * xxx
+    xadj_unscaled = Dlapop_unscaled.H * y_unscaled
+    xadj_scaled = Dlapop_scaled.H * y_scaled
+
+    assert_array_equal(y_scaled, 2.0 * y_unscaled)
+    assert_array_equal(xadj_scaled, 2.0 * xadj_unscaled)
 
 
 @pytest.mark.parametrize(
