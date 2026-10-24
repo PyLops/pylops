@@ -44,7 +44,8 @@ class TorchOperator:
         tensor with batches along the first dimension or a tensor of size equal to
         ``[nbatch, *Op.dims]`` where ``nbatch`` is the size of the batch
     flatten : :obj:`bool`, optional
-        Input is flattened along ``Op.dims`` (``True``) or not (``False``)
+        Model/data sample axes are flattened (``True``) or follow
+        ``Op.dims``/``Op.dimsd`` (``False``). The batch axis remains first.
     device : :obj:`str`, optional
         Device to be used when applying operator (``cpu`` or ``gpu``)
     devicetorch : :obj:`str`, optional
@@ -74,19 +75,27 @@ class TorchOperator:
         self.dtype = np.dtype(Op.dtype)
         self.dims, self.dimsd = Op.dims, Op.dimsd
         self.name = Op.name
-        # define transpose indices to bring batch to last dimension before applying
-        # pylops forward and adjoint (this will call matmat and rmatmat)
+        # define transpose indices to move the batch axis before and after
+        # applying the forward operator (this will call matmat)
         self.transpf = np.roll(np.arange(2 if flatten else len(self.dims) + 1), -1)
-        self.transpb = np.roll(np.arange(2 if flatten else len(self.dims) + 1), 1)
+        self.transpb = np.roll(np.arange(2 if flatten else len(self.dimsd) + 1), 1)
         if not batch:
             self.matvec = lambda x: Op @ x
             self.rmatvec = lambda x: Op.H @ x
+        elif flatten:
+            # Unlike @, matmat/rmatmat keep native sample dimensions flattened.
+            self.matvec = lambda x: Op.matmat(x.T).T
+            self.rmatvec = lambda x: Op.rmatmat(x.T).T
         else:
+            # define transpose indices to move the batch axis before and after
+            # applying the adjoint operator (this will call rmatmat)
+            transpf_adj = np.argsort(self.transpb)
+            transpb_adj = np.argsort(self.transpf)
             self.matvec = lambda x: (Op @ x.transpose(self.transpf)).transpose(
                 self.transpb
             )
-            self.rmatvec = lambda x: (Op.H @ x.transpose(self.transpf)).transpose(
-                self.transpb
+            self.rmatvec = lambda x: (Op.H @ x.transpose(transpf_adj)).transpose(
+                transpb_adj
             )
         self.Top = _TorchOperator.apply
 
