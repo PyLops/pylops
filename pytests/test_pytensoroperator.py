@@ -22,7 +22,7 @@ par1 = {"ny": 11, "nx": 11}  # square
 par2 = {"ny": 21, "nx": 11}  # overdetermined
 
 np.random.seed(0)
-rng = np.random.default_rng()
+rng = np.random.default_rng(0)
 
 
 @pytest.mark.skipif(
