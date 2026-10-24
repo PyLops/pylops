@@ -33,6 +33,9 @@ class MultiOperator(LinearOperator):
           developers and it has to be used as the parent class of any new operator
           with multiprocess/multithreading capabilities developed within PyLops.
 
+          Change ``nproc`` after construction to start, resize or stop the worker
+          pool. The chosen ``parallel_kind`` is retained when changing ``nproc``.
+
     """
 
     def _setup_pool(
@@ -58,6 +61,7 @@ class MultiOperator(LinearOperator):
 
     @property
     def nproc(self) -> int:
+        """Number of workers; assigning it rebuilds or closes the worker pool."""
         return self._nproc
 
     @nproc.setter
@@ -73,6 +77,7 @@ class MultiOperator(LinearOperator):
                 self.pool = mp.Pool(processes=nprocnew)
             else:
                 self.pool = mt.ThreadPoolExecutor(max_workers=nprocnew)
+                self.lock = threading.Lock()
         self._nproc = nprocnew
 
     def _matvec(self, x: NDArray) -> NDArray:
