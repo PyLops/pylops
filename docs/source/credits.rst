@@ -34,3 +34,4 @@
 *  `Yuxi Hong <https://github.com/hongyx11>`_, hongyx11
 *  `Vincent Gao <https://github.com/gaoflow>`_, gaoflow
 *  `Barkure <https://github.com/barkure>`_, barkure
+*  `Ahmet Hakan Bezir <https://github.com/AHMETHAKANBEZIR1>`_, AHMETHAKANBEZIR1
