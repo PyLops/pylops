@@ -11,6 +11,7 @@ Changelog
   and implemented CuPy backend
 * Added CuPy support to `pylops.utils.signalprocessing.slope_estimate`
 * Enabled repeated indices `pylops.Restriction`
+* Fixed starting multithreading from serial mode via `MultiOperator.nproc`
 * Fixed call to `on_end` callback in `pylops.optimization.basesolver.Solver` to pass
   output of step instead of input
 * Fixed handling of `decay` in `pylops.optimization.cls_sparsity.ISTA` and
