@@ -22,7 +22,6 @@ par1 = {"ny": 11, "nx": 11}  # square
 par2 = {"ny": 21, "nx": 11}  # overdetermined
 
 np.random.seed(0)
-# np.random.seed does not seed the independent Generator used for extra dimensions.
 rng = np.random.default_rng(0)
 
 
