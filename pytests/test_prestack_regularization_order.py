@@ -61,7 +61,11 @@ def test_PrestackInversion_l2_model_order(par, explicit, epsI, background):
     )
     weights = np.broadcast_to(weights, shape).ravel()
     matrix = np.vstack(
-        [op.todense(), 0.4 * regularizer.reshape(size, size), np.diag(weights)]
+        [
+            op.todense(backend=backend),
+            0.4 * regularizer.reshape(size, size),
+            np.diag(weights),
+        ]
     )
     rhs = np.concatenate([data.ravel(), np.zeros(2 * size)])
     expected = np.linalg.lstsq(matrix, rhs, rcond=None)[0].reshape(shape)
