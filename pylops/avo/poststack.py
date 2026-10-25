@@ -248,7 +248,8 @@ def PoststackInversion(
     ----------
     data : :obj:`numpy.ndarray`
         Band-limited seismic post-stack data of size
-        :math:`[n_{t_0}\,(\times n_x \times n_y)]`
+        :math:`[n_{t_0}\,(\times n_x \times n_y)]`.
+        The input array is not modified.
     wav : :obj:`numpy.ndarray`
         Wavelet in time domain (must have odd number of elements
         and centered to zero). If 1d, assume stationary wavelet for the entire
@@ -485,6 +486,7 @@ def PoststackInversion(
 
     # compute residual
     if epsR is None:
+        datar = datar.copy()
         datar -= PPop * minv.ravel()
     else:
         datar = data.ravel() - PPop * minv.ravel()

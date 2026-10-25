@@ -381,7 +381,8 @@ def PrestackInversion(
     ----------
     data : :obj:`numpy.ndarray`
         Band-limited seismic post-stack data of size
-        :math:`[(n_\text{lins} \times) \, n_{t_0} \times n_{\theta} \, (\times n_x \times n_y)]`
+        :math:`[(n_\text{lins} \times) \, n_{t_0} \times n_{\theta} \, (\times n_x \times n_y)]`.
+        The input array is not modified.
     theta : :obj:`numpy.ndarray`
         Incident angles in degrees
     wav : :obj:`numpy.ndarray`
@@ -703,6 +704,7 @@ def PrestackInversion(
     # compute residual
     if returnres:
         if epsR is None:
+            datar = datar.copy()
             datar -= PPop * minv.ravel()
         else:
             datar = data.ravel() - PPop * minv.ravel()
