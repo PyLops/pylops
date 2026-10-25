@@ -18,6 +18,7 @@ from pylops import (
     LinearOperator,
     MatrixMult,
     SecondDerivative,
+    Transpose,
     VStack,
 )
 from pylops.avo.avo import AVOLinearModelling, akirichards, fatti, ps
@@ -413,7 +414,9 @@ def PrestackInversion(
         :math:`n_{m}` elements is provided, the regularization term will have
         different strenght for each elastic property
     epsR : :obj:`float`, optional
-        Damping factor for additional Laplacian regularization term
+        Damping factor for additional Laplacian regularization term.
+        Regularization acts on the time and spatial axes of each elastic
+        property in the same way for explicit and chained modelling operators.
     dottest : :obj:`bool`, optional
         Apply dot-test
     returnres : :obj:`bool`, optional
@@ -616,6 +619,11 @@ def PrestackInversion(
                     **kwargs_solver,
                 )[0]
     else:
+        # Regularizers use time-major models; explicit modelling uses property-major.
+        if explicit:
+            Regtransp = Transpose(
+                (nm, nt0, nspatprod), axes=(1, 0, 2), dtype=PPop.dtype
+            )
         # Create Thicknov regularization
         if epsI is not None:
             if isinstance(epsI, (list, tuple)):
@@ -625,6 +633,8 @@ def PrestackInversion(
                 RegI = Diagonal(np.array(epsI), dims=(nt0, nm, nspatprod), axis=1)
             else:
                 RegI = epsI * Identity(nt0 * nm * nspatprod)
+            if explicit:
+                RegI = RegI @ Regtransp
 
         if epsRL1 is None:
             # L2 inversion with spatial regularization
@@ -634,6 +644,8 @@ def PrestackInversion(
                 Regop = Laplacian((nt0, nm, nx), axes=(0, 2), dtype=PPop.dtype)
             else:
                 Regop = Laplacian((nt0, nm, nx, ny), axes=(2, 3), dtype=PPop.dtype)
+            if explicit:
+                Regop = Regop @ Regtransp
             if epsI is None:
                 Regop = (Regop,)
                 epsR = (epsR,)
@@ -659,6 +671,10 @@ def PrestackInversion(
             else:
                 RegL1op = FirstDerivative((nt0, nm, nx, ny), axis=0, dtype=PPop.dtype)
                 RegL2op = Laplacian((nt0, nm, nx, ny), axes=(2, 3), dtype=PPop.dtype)
+            if explicit:
+                RegL1op = RegL1op @ Regtransp
+                if RegL2op is not None:
+                    RegL2op = RegL2op @ Regtransp
             if dims == 1:
                 if epsI is not None:
                     RegL2op = (RegI,)
