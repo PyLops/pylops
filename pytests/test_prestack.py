@@ -2,13 +2,13 @@ import os
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
-    from cupy.testing import assert_array_almost_equal
+    from cupy.testing import assert_array_almost_equal, assert_array_equal
     from cupyx.scipy.signal import filtfilt
 
     backend = "cupy"
 else:
     import numpy as np
-    from numpy.testing import assert_array_almost_equal
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
     from scipy.signal import filtfilt
 
     backend = "numpy"
@@ -311,7 +311,9 @@ def test_PrestackLinearModelling(par, dtype, explicit):
             if backend == "numpy"
             else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
         )
-    minv = PrestackInversion(
+
+    d_orig = d.copy()
+    minv, _ = PrestackInversion(
         d,
         theta.astype(dtype),
         wav.astype(dtype),
@@ -322,10 +324,14 @@ def test_PrestackLinearModelling(par, dtype, explicit):
         epsRL1=par["epsRL1"],
         simultaneous=par["simultaneous"],
         kind=par["kind"],
+        returnres=True,
         **dict_inv,
     )
     err = 1e-1 if dtype == np.float32 else 5e-2
     assert np.linalg.norm(m - minv) / np.linalg.norm(minv) < err
+
+    # Check input data is preserved
+    assert_array_equal(d_orig, d)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
@@ -488,3 +494,95 @@ def test_PrestackLinearModelling2d(par, dtype, explicit):
     )
     err = 1e-1 if dtype == np.float32 else 5e-2
     assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < err
+
+
+@pytest.mark.parametrize("par", [(par1)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_PrestackLinearInversion1d(par, dtype):
+    """Relative 1d inversion with PrestackLinearModelling checking that
+    the input data is preserved
+    """
+    PPop = PrestackLinearModelling(
+        wav.astype(dtype),
+        theta.astype(dtype),
+        vsvp=par["vsvp"]
+        if isinstance(par["vsvp"], float)
+        else par["vsvp"].astype(dtype),
+        nt0=nt0,
+        linearization=par["linearization"],
+        explicit=False,
+        kind=par["kind"],
+    )
+    d = PPop * m.astype(dtype).ravel()
+    d = d.reshape(nt0, ntheta)
+    d_orig = d.copy()
+
+    dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
+    if not par["simultaneous"]:
+        dict_inv = {}
+    if par["epsRL1"] is not None:
+        dict_inv = (
+            dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+            if backend == "numpy"
+            else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
+        )
+
+    _ = PrestackInversion(
+        d,
+        theta.astype(dtype),
+        wav.astype(dtype),
+        m0=None,
+        explicit=False,
+        epsI=par["epsI"],
+        epsR=par["epsR"],
+        epsRL1=par["epsRL1"],
+        simultaneous=par["simultaneous"],
+        kind=par["kind"],
+        returnres=True,
+        **dict_inv,
+    )
+    assert_array_equal(d_orig, d)
+
+
+@pytest.mark.parametrize("par", [(par1), (par3)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_PrestackLinearInversion2d(par, dtype):
+    """Relative 2d inversion with PrestackLinearModelling checking that
+    the input data is preserved
+    """
+    PPop = PrestackLinearModelling(
+        wav.astype(dtype),
+        theta.astype(dtype),
+        vsvp=par["vsvp"]
+        if isinstance(par["vsvp"], float)
+        else par["vsvp"].astype(dtype),
+        nt0=nz,
+        spatdims=(nx,),
+        linearization=par["linearization"],
+        explicit=False,
+    )
+
+    d = (PPop * m2d.astype(dtype).ravel()).reshape(nz, ntheta, nx)
+    d_orig = d.copy()
+
+    dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
+    if par["epsRL1"] is not None:
+        dict_inv = (
+            dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+            if backend == "numpy"
+            else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
+        )
+    _ = PrestackInversion(
+        d,
+        theta.astype(dtype),
+        wav.astype(dtype),
+        m0=mback2d.astype(dtype),
+        explicit=False,
+        epsI=par["epsI"],
+        epsR=par["epsR"],
+        epsRL1=par["epsRL1"],
+        simultaneous=par["simultaneous"],
+        returnres=True,
+        **dict_inv,
+    )
+    assert_array_equal(d_orig, d)

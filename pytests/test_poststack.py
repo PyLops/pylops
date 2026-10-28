@@ -2,13 +2,13 @@ import os
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
-    from cupy.testing import assert_array_almost_equal
+    from cupy.testing import assert_array_almost_equal, assert_array_equal
     from cupyx.scipy.signal import filtfilt
 
     backend = "cupy"
 else:
     import numpy as np
-    from numpy.testing import assert_array_almost_equal
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
     from scipy.signal import filtfilt
 
     backend = "numpy"
@@ -153,7 +153,8 @@ def test_PoststackLinearModelling1d(par, dtype, explicit):
             else dict(damp=0 if par["epsI"] is None else par["epsI"], niter=80)
         )
 
-    minv = PoststackInversion(
+    data_orig = data.copy()
+    minv, _ = PoststackInversion(
         data,
         wav.astype(dtype),
         m0=mback.astype(dtype),
@@ -162,9 +163,12 @@ def test_PoststackLinearModelling1d(par, dtype, explicit):
         epsI=par["epsI"],
         simultaneous=par["simultaneous"],
         **dict_inv,
-    )[0]
+    )
     err = 1e-2 if dtype == np.float32 else 8e-3
     assert np.linalg.norm(m - minv) / np.linalg.norm(m) < err
+
+    # Check input data is preserved
+    assert_array_equal(data_orig, data)
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
@@ -217,7 +221,9 @@ def test_PoststackLinearModelling1d_nonstationary(par, dtype, explicit):
             if backend == "numpy"
             else dict(damp=0 if par["epsI"] is None else par["epsI"], niter=80)
         )
-    minv = PoststackInversion(
+
+    data_orig = data.copy()
+    minv, _ = PoststackInversion(
         data,
         wavs.astype(dtype),
         m0=mback.astype(dtype),
@@ -226,9 +232,12 @@ def test_PoststackLinearModelling1d_nonstationary(par, dtype, explicit):
         epsI=par["epsI"],
         simultaneous=par["simultaneous"],
         **dict_inv,
-    )[0]
+    )
     err = 1e-2 if dtype == np.float32 else 8e-3
     assert np.linalg.norm(m - minv) / np.linalg.norm(m) < err
+
+    # Check input data is preserved
+    assert_array_equal(data_orig, data)
 
 
 @pytest.mark.parametrize(
@@ -296,7 +305,9 @@ def test_PoststackLinearModelling2d(par, dtype, explicit):
             if backend == "numpy"
             else dict(damp=0 if par["epsI"] is None else par["epsI"], niter=10)
         )
-    minv2d = PoststackInversion(
+
+    data_orig = data.copy()
+    minv2d, _ = PoststackInversion(
         data,
         wav.astype(dtype),
         m0=mback2d.astype(dtype),
@@ -306,6 +317,98 @@ def test_PoststackLinearModelling2d(par, dtype, explicit):
         epsRL1=par["epsRL1"],
         simultaneous=par["simultaneous"],
         **dict_inv,
-    )[0]
+    )
     err = 5e-1 if dtype == np.float32 else 1e-1
     assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(m2d) < err
+
+    # Check input data is preserved
+    assert_array_equal(data_orig, data)
+
+
+@pytest.mark.parametrize("par", [(par1)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("explicit", [True, False])
+def test_PoststackInversion1d(par, dtype, explicit):
+    """Relative 1d inversion with PoststackInversion checking that
+    the input data is preserved
+    """
+    PPop = PoststackLinearModelling(wav.astype(dtype), nt0=nt0, explicit=explicit)
+    data = PPop * m.astype(dtype)
+    data_orig = data.copy()
+
+    # Inversion
+    if par["epsR"] is None:
+        dict_inv = (
+            dict()
+            if not explicit
+            else dict(rcond=1e-6)
+            if int(os.environ.get("TEST_CUPY_PYLOPS", 0))
+            else dict(cond=1e-6)
+        )  # to avoid instability (cond for scipy abd rcond for cupy)
+    else:
+        dict_inv = (
+            dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=80)
+            if backend == "numpy"
+            else dict(damp=0 if par["epsI"] is None else par["epsI"], niter=80)
+        )
+
+    _ = PoststackInversion(
+        data,
+        wav.astype(dtype),
+        m0=None,
+        explicit=explicit,
+        epsR=par["epsR"],
+        epsI=par["epsI"],
+        simultaneous=par["simultaneous"],
+        **dict_inv,
+    )
+    assert_array_equal(data_orig, data)
+
+
+@pytest.mark.parametrize("par", [(par1), (par4)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("explicit", [True, False])
+def test_PoststackInversion2d(par, dtype, explicit):
+    """Relative 2d inversion with PoststackInversion checking that
+    the input data is preserved
+    """
+    PPop = PoststackLinearModelling(
+        wav.astype(dtype), nt0=nz, spatdims=nx, explicit=explicit
+    )
+
+    data = PPop * m2d.astype(dtype)
+    data_orig = data.copy()
+
+    if explicit and not par["simultaneous"] and par["epsR"] is None:
+        dict_inv = (
+            dict()
+            if not explicit
+            else dict(rcond=1e-6)
+            if int(os.environ.get("TEST_CUPY_PYLOPS", 0))
+            else dict(cond=1e-6)
+        )  # to avoid instability (cond for scipy abd rcond for cupy)
+    elif explicit and not par["simultaneous"] and par["epsR"] is not None:
+        dict_inv = (
+            dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=10)
+            if backend == "numpy"
+            else dict(damp=0 if par["epsI"] is None else par["epsI"], niter=10)
+        )
+    else:
+        dict_inv = (
+            dict(damp=0 if par["epsI"] is None else par["epsI"], iter_lim=10)
+            if backend == "numpy"
+            else dict(damp=0 if par["epsI"] is None else par["epsI"], niter=10)
+        )
+
+    _ = PoststackInversion(
+        data,
+        wav.astype(dtype),
+        m0=None,
+        explicit=explicit,
+        epsI=par["epsI"],
+        epsR=par["epsR"],
+        epsRL1=par["epsRL1"],
+        simultaneous=par["simultaneous"],
+        **dict_inv,
+    )
+    assert_array_equal(data_orig, data)
