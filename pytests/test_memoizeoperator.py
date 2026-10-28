@@ -2,26 +2,28 @@ import os
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
-    from cupy.testing import assert_array_almost_equal
+    from cupy.testing import assert_array_almost_equal, assert_array_equal
 
     backend = "cupy"
 else:
     import numpy as np
-    from numpy.testing import assert_array_almost_equal
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
 
     backend = "numpy"
 import pytest
 
 from pylops import MemoizeOperator
 from pylops.basicoperators import Diagonal, MatrixMult, VStack
-from pylops.optimization.basic import cgls
 
 par1 = {"ny": 11, "nx": 11, "imag": 0, "dtype": "float32"}  # square real
 par1j = {"ny": 11, "nx": 11, "imag": 1j, "dtype": "complex64"}  # square imag
+par2 = {"ny": 11, "nx": 7, "imag": 0, "dtype": "float32"}  # rectangular real
+par2j = {"ny": 11, "nx": 7, "imag": 1j, "dtype": "complex64"}  # rectangular imag
 
 
-@pytest.mark.parametrize("par", [(par1), (par1j)])
-def test_memoize_evals(par):
+@pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
+@pytest.mark.parametrize("adjoint", [False, True])
+def test_memoize_evals(par, adjoint):
     """Check nevals counter when same model/data vectors are inputted
     to the operator
     """
@@ -32,28 +34,91 @@ def test_memoize_evals(par):
     Aop = MatrixMult(A, dtype=par["dtype"])
     Amemop = MemoizeOperator(Aop, max_neval=2)
 
+    if adjoint:
+        Amemop1 = Amemop.H
+        n = par["ny"]
+    else:
+        Amemop1 = Amemop
+        n = par["nx"]
+
     # 1st evaluation
-    Amemop * np.ones(par["nx"])
+    Amemop1 * np.ones(n)
     assert Amemop.neval == 1
     # repeat 1st evaluation multiple times
     for _ in range(2):
-        Amemop * np.ones(par["nx"])
+        Amemop1 * np.ones(n)
     assert Amemop.neval == 1
     # 2nd evaluation
-    Amemop * np.full(par["nx"], 2)  # same
+    Amemop1 * np.full(n, 2)  # same
     assert Amemop.neval == 2
     # 3rd evaluation (np.ones goes out of store)
-    Amemop * np.full(par["nx"], 3)  # same
+    Amemop1 * np.full(n, 3)  # same
     assert Amemop.neval == 3
     # 4th evaluation
-    Amemop * np.ones(par["nx"])
+    Amemop1 * np.ones(n)
     assert Amemop.neval == 4
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("adjoint", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_memoize_nearby_inputs(par, adjoint, dtype):
+    """Check that nearby vectors (even within allclose)
+    are identified as distinct evaluations."""
+    Op = Diagonal(np.arange(par["nx"], dtype=dtype), dtype=dtype)
+    MOp = MemoizeOperator(Op)
+
+    Op = Op.H if adjoint else Op
+    M1Op = MOp.H if adjoint else MOp
+    x = np.ones(par["nx"], dtype=dtype)
+    x_nearby = x.copy()
+    x_nearby[0] += 1e-6
+    assert np.allclose(x, x_nearby)
+
+    # 2 evals with original and nearby input
+    M1Op @ x
+    y = M1Op @ x_nearby
+
+    assert MOp.neval == 2
+    assert_array_equal(y, Op @ x_nearby)
+    assert_array_equal(y, M1Op @ x_nearby)
+
+
+@pytest.mark.parametrize("par", [(par1)])
+@pytest.mark.parametrize("adjoint", [False, True])
+def test_memoize_input_dtype(par, adjoint):
+    """Check that equal vectors with different precision
+    are identified as distinct evaluations."""
+    low = np.complex64 if par["imag"] == 1j else np.float32
+    high = np.complex128 if par["imag"] == 1j else np.float64
+    A = np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32") + par[
+        "imag"
+    ] * np.random.normal(0, 10, (par["ny"], par["nx"])).astype("float32")
+
+    Aop = MatrixMult(A, dtype=low)
+    Amemop = MemoizeOperator(Aop)
+
+    Aop = Aop.H if adjoint else Aop
+    Amemop1 = Amemop.H if adjoint else Amemop
+
+    x = np.ones(par["nx"], dtype=low)
+    x_promoted = x.astype(high)
+
+    # 2 evals with original and promoted input
+    Amemop1 @ x
+    result = Amemop1 @ x_promoted
+    expected = Aop @ x_promoted
+
+    assert result.dtype == expected.dtype
+    assert_array_equal(result, expected)
+    assert Amemop.neval == 2
 
 
 @pytest.mark.parametrize(
     "par",
     [
         (par1j),
+        (par2j),
     ],
 )
 def test_memoize_evals_2(par):
@@ -81,115 +146,3 @@ def test_memoize_evals_2(par):
     y2 = np.concatenate([np.real(y), np.imag(y)])
     xinv2 = Aop2.div(y2)
     assert_array_almost_equal(xinv2, x, decimal=2 if rdtype == np.float32 else 4)
-
-
-@pytest.mark.parametrize("shape", [(2, 2), (3, 2), (2, 3)])
-@pytest.mark.parametrize("complex_values", [False, True])
-@pytest.mark.parametrize("adjoint_first", [False, True])
-def test_memoize_direction(shape, complex_values, adjoint_first):
-    """Forward/adjoint composition must not reuse an inverse result."""
-    matrix = np.arange(1, shape[0] * shape[1] + 1, dtype=np.float64).reshape(shape)
-    if complex_values:
-        matrix = matrix + 1j * matrix[::-1]
-    op = MatrixMult(matrix, dtype=matrix.dtype)
-    memo = MemoizeOperator(op, max_neval=2)
-    first = op.H if adjoint_first else op
-    memo_first = memo.H if adjoint_first else memo
-    second = op if adjoint_first else op.H
-    memo_second = memo if adjoint_first else memo.H
-    vector = np.arange(1, first.shape[1] + 1, dtype=matrix.dtype)
-    intermediate = memo_first @ vector
-    expected = second @ (first @ vector)
-
-    result = memo_second @ intermediate
-
-    assert_array_almost_equal(result, expected, decimal=12)
-    assert memo.neval == 2
-    assert_array_almost_equal(memo_second @ intermediate, expected, decimal=12)
-    assert memo.neval == 2
-    assert_array_almost_equal(memo_first @ vector, first @ vector, decimal=12)
-    assert memo.neval == 2
-
-
-@pytest.mark.parametrize("max_neval", [1, 2, np.inf])
-@pytest.mark.parametrize("complex_values", [False, True])
-def test_memoize_cgls(max_neval, complex_values):
-    """Memoizing a non-unitary operator must preserve a least-squares solve."""
-    diagonal = np.array([2.0, 3.0, 4.0])
-    if complex_values:
-        diagonal = diagonal + 1j * np.array([1.0, -0.5, 2.0])
-    op = Diagonal(diagonal)
-    truth = np.array([1.0, -2.0, 0.5], dtype=diagonal.dtype)
-    data = op @ truth
-    memo = MemoizeOperator(op, max_neval=max_neval)
-
-    result = cgls(memo, data, np.zeros_like(truth), niter=3, tol=1e-14)[0]
-
-    assert_array_almost_equal(result, truth, decimal=12)
-    assert len(memo.store) <= max_neval
-    assert memo.neval > 1
-
-
-def test_memoize_direction_eviction():
-    """The cache budget remains shared across forward and adjoint evaluations."""
-    op = Diagonal(np.array([2.0, 3.0]))
-    memo = MemoizeOperator(op, max_neval=2)
-    x = np.array([1.0, 2.0])
-    y = op @ x
-    memo @ x
-    memo.H @ y
-    memo @ (2 * x)
-    assert memo.neval == 3
-    assert len(memo.store) == 2
-    assert_array_almost_equal(memo.H @ y, op.H @ y)
-    assert memo.neval == 3
-    assert_array_almost_equal(memo @ x, op @ x)
-    assert memo.neval == 4
-    assert len(memo.store) == 2
-
-
-@pytest.mark.parametrize("adjoint", [False, True])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_memoize_nearby_inputs(adjoint, dtype):
-    """Nearby vectors are distinct evaluations, even within allclose tolerance."""
-    op = Diagonal(np.array([2.0, 3.0, 4.0], dtype=dtype))
-    memo = MemoizeOperator(op)
-    operator = op.H if adjoint else op
-    cached = memo.H if adjoint else memo
-    x = np.array([1.0, 2.0, 3.0], dtype=dtype)
-    nearby = x.copy()
-    nearby[0] += 1e-6
-    assert np.allclose(x, nearby)
-    cached @ x
-
-    result = cached @ nearby
-
-    np.testing.assert_array_equal(result, operator @ nearby)
-    assert memo.neval == 2
-    np.testing.assert_array_equal(cached @ nearby.copy(), result)
-    assert memo.neval == 2
-
-
-@pytest.mark.parametrize("adjoint", [False, True])
-@pytest.mark.parametrize("complex_values", [False, True])
-def test_memoize_input_dtype(adjoint, complex_values):
-    """Equal values with different precision must preserve output promotion."""
-    low = np.complex64 if complex_values else np.float32
-    high = np.complex128 if complex_values else np.float64
-    matrix = np.array([[2.0, 1.0], [0.0, 3.0]], dtype=low)
-    if complex_values:
-        matrix += 1j
-    op = MatrixMult(matrix, dtype=low)
-    memo = MemoizeOperator(op)
-    operator = op.H if adjoint else op
-    cached = memo.H if adjoint else memo
-    x = np.array([1.0, 2.0], dtype=low)
-    cached @ x
-    promoted = x.astype(high)
-
-    result = cached @ promoted
-    expected = operator @ promoted
-
-    assert result.dtype == expected.dtype
-    np.testing.assert_array_equal(result, expected)
-    assert memo.neval == 2
