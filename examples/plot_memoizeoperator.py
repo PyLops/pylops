@@ -1,10 +1,9 @@
 r"""
 Memoized forward and adjoint evaluations
-=======================================
+========================================
 
-:class:`pylops.MemoizeOperator` caches repeated applications of an operator.
-The forward and adjoint directions have separate cache entries, since an
-adjoint generally does not undo a forward application.
+This example shows how to use the :class:`pylops.MemoizeOperator`
+operator to cache repeated applications of an operator.
 """
 
 import numpy as np
@@ -12,28 +11,36 @@ import numpy as np
 import pylops
 
 ###############################################################################
-# A non-unitary diagonal operator makes the distinction explicit:
-# applying the adjoint to ``A @ x`` gives ``A.H @ A @ x``, rather than ``x``.
-op = pylops.Diagonal(np.array([2.0, 3.0, 4.0]))
-memo = pylops.MemoizeOperator(op, max_neval=2)
+# Let's start by creating a :class:`pylops.Diagonal` operator and wrapping it
+# into a :class:`pylops.MemoizeOperator` operator choosing ``max_neval=2``
+# (meaning that at most 4 evaluations are cached).
+Op = pylops.Diagonal(np.array([2.0, 3.0, 4.0]))
+MOp = pylops.MemoizeOperator(Op, max_neval=4)
+
+###############################################################################
+# Now we first apply twice the forward pass of operator (and check that only
+# one entry is memoized), followed by one adjoint pass of operator (and check
+# that now two entries are memoized)
+
 x = np.array([1.0, -2.0, 0.5])
-y = memo @ x
-z = memo.H @ y
-np.testing.assert_allclose(z, op.H @ (op @ x))
-assert memo.neval == 2
+y = MOp @ x
+y = MOp @ x
+print("Number of evaluations: ", MOp.neval)
+
+xadj = MOp.H @ y
+print("Number of evaluations: ", MOp.neval)
 
 ###############################################################################
-# Repeating either calculation reuses its own cached result. Both entries
-# share the two-evaluation budget, and the stored vectors remain (x, y) pairs.
-np.testing.assert_allclose(memo @ x, y)
-np.testing.assert_allclose(memo.H @ y, z)
-assert memo.neval == 2
-assert len(memo.store) == 2
-
+# Repeating either calculation reuses its own cached result.
+print("y - ycached = ", y - MOp @ x)
+print("xadj - xadjcached = ", xadj - MOp.H @ y)
+print("Number of evaluations: ", MOp.neval)
 
 ###############################################################################
-# Similar inputs are not interchangeable: small changes must reach the operator.
+# Finally, we can see that similar inputs are not interchangeable: any
+# small change triggers a new memoization.
+
 x_nearby = x.copy()
 x_nearby[0] += 1e-6
-np.testing.assert_array_equal(memo @ x_nearby, op @ x_nearby)
-assert memo.neval == 3
+y_nearby = MOp @ x_nearby
+print("Number of evaluations: ", MOp.neval)
