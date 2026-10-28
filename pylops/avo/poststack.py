@@ -485,7 +485,8 @@ def PoststackInversion(
 
     # compute residual
     if epsR is None:
-        datar -= PPop * minv.ravel()
+        # not in-place to avoid overwriting data
+        datar = datar - PPop * minv.ravel()
     else:
         datar = data.ravel() - PPop * minv.ravel()
 
