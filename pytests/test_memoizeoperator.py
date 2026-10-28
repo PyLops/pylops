@@ -35,6 +35,7 @@ def test_memoize_evals(par, adjoint):
     Amemop = MemoizeOperator(Aop, max_neval=2)
 
     if adjoint:
+        Aop = Aop.H
         Amemop1 = Amemop.H
         n = par["ny"]
     else:
@@ -42,12 +43,15 @@ def test_memoize_evals(par, adjoint):
         n = par["nx"]
 
     # 1st evaluation
-    Amemop1 * np.ones(n)
+    yref = Aop * np.ones(n)
+    y = Amemop1 * np.ones(n)
     assert Amemop.neval == 1
     # repeat 1st evaluation multiple times
     for _ in range(2):
-        Amemop1 * np.ones(n)
+        y1 = Amemop1 * np.ones(n)
     assert Amemop.neval == 1
+    assert_array_equal(yref, y)
+    assert_array_equal(yref, y1)
     # 2nd evaluation
     Amemop1 * np.full(n, 2)  # same
     assert Amemop.neval == 2
