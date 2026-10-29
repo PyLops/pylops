@@ -11,12 +11,10 @@ class MemoizeOperator(LinearOperator):
     r"""Memoize Operator.
 
     This operator can be used to wrap any PyLops operator and add a memoize
-    functionality
-    and stores the last ``max_neval`` model/data
-    vector pairs. Forward and adjoint evaluations are cached separately,
-    sharing the same ``max_neval`` limit. An adjoint is not assumed to be
-    the inverse of a forward evaluation. Cache hits require identical input
-    values and dtype; nearby vectors are evaluated independently.
+    functionality - i.e., store the last ``max_neval`` model/data
+    vector pairs for forward and adjoint evaluations. Note that cache
+    hits require identical input values and dtype; nearby vectors are
+    evaluated independently.
 
     Parameters
     ----------
