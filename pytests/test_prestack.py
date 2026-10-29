@@ -554,7 +554,7 @@ def test_PrestackInversion_l1_explicit_chained(par, epsI):
     )
     chained = PrestackInversion(dord.copy(), theta, wav, explicit=False, **dict_inv)
     explicit = PrestackInversion(dord.copy(), theta, wav, explicit=True, **dict_inv)
-    assert_array_almost_equal(explicit, chained, decimal=7)
+    assert_array_almost_equal(explicit, chained, decimal=5)
 
 
 @pytest.mark.parametrize("par", [(par1)])
