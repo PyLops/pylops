@@ -414,9 +414,8 @@ def PrestackInversion(
         :math:`n_{m}` elements is provided, the regularization term will have
         different strenght for each elastic property
     epsR : :obj:`float`, optional
-        Damping factor for additional Laplacian regularization term.
-        Regularization acts on the time and spatial axes of each elastic
-        property in the same way for explicit and chained modelling operators.
+        Damping factor for additional Laplacian regularization term
+        acting on the time and spatial axes of each elastic property
     dottest : :obj:`bool`, optional
         Apply dot-test
     returnres : :obj:`bool`, optional
@@ -601,12 +600,6 @@ def PrestackInversion(
                             x0=ncp.zeros(int(PPop_reg.shape[1]), PPop_reg.dtype),
                             **kwargs_solver,
                         )[0]
-            # else:
-            #    # create regularized normal eqs. and solve them simultaneously
-            #    PP = np.dot(PPop.A.T, PPop.A) + epsI * np.eye(nt0*nm)
-            #    datarn = PPop.A.T * datar.reshape(nt0*ntheta, nspatprod)
-            #    PPop_reg = MatrixMult(PP, otherdims=ntheta*nspatprod)
-            #    minv = lstsq(PPop_reg, datarn.ravel(), **kwargs_solver)[0]
         else:
             # solve unregularized normal equations simultaneously with lop
             if ncp == np:
@@ -619,11 +612,11 @@ def PrestackInversion(
                     **kwargs_solver,
                 )[0]
     else:
-        # Regularizers use time-major models; explicit modelling uses property-major.
+        # Regularizers use time-major models, whilst explicit modelling uses
+        # property-major. All problems are setup using the latter convention,
+        # and transposition operators are used to accomodate for the former
         if explicit:
-            Regtransp = Transpose(
-                (nm, nt0, nspatprod), axes=(1, 0, 2), dtype=PPop.dtype
-            )
+            Top = Transpose((nm, nt0, nspatprod), axes=(1, 0, 2), dtype=PPop.dtype)
         # Create Thicknov regularization
         if epsI is not None:
             if isinstance(epsI, (list, tuple)):
@@ -631,10 +624,11 @@ def PrestackInversion(
                     msg = f"epsI must be a scalar or a list of size nm, got {epsI}"
                     raise ValueError(msg)
                 RegI = Diagonal(np.array(epsI), dims=(nt0, nm, nspatprod), axis=1)
+                if explicit:
+                    RegI = RegI @ Top
             else:
+                # scalar damping is invariant to the model ordering
                 RegI = epsI * Identity(nt0 * nm * nspatprod)
-            if explicit:
-                RegI = RegI @ Regtransp
 
         if epsRL1 is None:
             # L2 inversion with spatial regularization
@@ -645,7 +639,7 @@ def PrestackInversion(
             else:
                 Regop = Laplacian((nt0, nm, nx, ny), axes=(2, 3), dtype=PPop.dtype)
             if explicit:
-                Regop = Regop @ Regtransp
+                Regop = Regop @ Top
             if epsI is None:
                 Regop = (Regop,)
                 epsR = (epsR,)
@@ -672,9 +666,9 @@ def PrestackInversion(
                 RegL1op = FirstDerivative((nt0, nm, nx, ny), axis=0, dtype=PPop.dtype)
                 RegL2op = Laplacian((nt0, nm, nx, ny), axes=(2, 3), dtype=PPop.dtype)
             if explicit:
-                RegL1op = RegL1op @ Regtransp
+                RegL1op = RegL1op @ Top
                 if RegL2op is not None:
-                    RegL2op = RegL2op @ Regtransp
+                    RegL2op = RegL2op @ Top
             if dims == 1:
                 if epsI is not None:
                     RegL2op = (RegI,)
