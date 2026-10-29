@@ -556,9 +556,10 @@ def test_PrestackInversion_l1_explicit_chained(par, epsI):
     explicit = PrestackInversion(dord.copy(), theta, wav, explicit=True, **dict_inv)
     assert_array_almost_equal(explicit, chained, decimal=7)
 
+
 @pytest.mark.parametrize("par", [(par1)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_PrestackLinearInversion1d(par, dtype):
+def test_PrestackInversion_relative1d(par, dtype):
     """Relative 1d inversion with PrestackLinearModelling checking that
     the input data is preserved
     """
@@ -606,7 +607,7 @@ def test_PrestackLinearInversion1d(par, dtype):
 
 @pytest.mark.parametrize("par", [(par1), (par3)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_PrestackLinearInversion2d(par, dtype):
+def test_PrestackInversion_relative2d(par, dtype):
     """Relative 2d inversion with PrestackLinearModelling checking that
     the input data is preserved
     """
