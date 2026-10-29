@@ -506,6 +506,8 @@ def test_PrestackLinearModelling2d(par, dtype, explicit):
 @pytest.mark.parametrize("background", [False, True])
 def test_PrestackInversion_l2_explicit_chained(par, epsI, background):
     """Explicit and chained PrestackInversion with L2 regularizers agree"""
+    np.random.seed(10)
+
     shape = (par["nt"], par["nm"], *par["spatdims"])
     PPop = PrestackLinearModelling(
         wav, theta, nt0=par["nt"], spatdims=par["spatdims"] or None
@@ -532,6 +534,8 @@ def test_PrestackInversion_l2_explicit_chained(par, epsI, background):
 @pytest.mark.parametrize("epsI", [0.1, [0.1, 0.2, 0.3]])
 def test_PrestackInversion_l1_explicit_chained(par, epsI):
     """Explicit and chained PrestackInversion with L1 regularizers agree"""
+    np.random.seed(10)
+
     shape = (par["nt"], par["nm"], *par["spatdims"])
     PPop = PrestackLinearModelling(
         wav, theta, nt0=par["nt"], spatdims=par["spatdims"] or None
