@@ -217,6 +217,11 @@ par3b = {
     "kind": "forward",
 }
 
+# small problems (1d, 2d, 3d) to compare explicit and chained regularized inversion
+parord1 = {"nt": 50, "nm": 3, "spatdims": (), "dtype": "float64"}
+parord2 = dict(parord1, spatdims=(4,))
+parord3 = dict(parord1, spatdims=(4, 3))
+
 
 @pytest.mark.parametrize(
     "par",
@@ -488,3 +493,59 @@ def test_PrestackLinearModelling2d(par, dtype, explicit):
     )
     err = 1e-1 if dtype == np.float32 else 5e-2
     assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < err
+
+
+@pytest.mark.parametrize("par", [(parord1), (parord2), (parord3)])
+@pytest.mark.parametrize("epsI", [0.1, [0.1, 0.2, 0.3]])
+@pytest.mark.parametrize("background", [False, True])
+def test_PrestackInversion_l2_explicit_chained(par, epsI, background):
+    """Explicit and chained PrestackInversion with L2 regularizers agree"""
+    shape = (par["nt"], par["nm"], *par["spatdims"])
+    PPop = PrestackLinearModelling(
+        wav, theta, nt0=par["nt"], spatdims=par["spatdims"] or None
+    )
+    nd = par["nt"] * ntheta * int(np.prod(np.array(par["spatdims"] or (1,))))
+    nmod = par["nt"] * par["nm"] * int(np.prod(np.array(par["spatdims"] or (1,))))
+    assert dottest(PPop, nd, nmod, backend=backend)
+
+    mord = np.random.normal(size=shape).astype(par["dtype"])
+    dord = (PPop @ mord.ravel()).reshape(par["nt"], ntheta, *par["spatdims"])
+    m0 = np.random.normal(size=shape).astype(par["dtype"]) if background else None
+    dict_inv = (
+        dict(iter_lim=1000, atol=1e-11, btol=1e-11)
+        if backend == "numpy"
+        else dict(niter=1000, tol=1e-20)
+    )
+    dict_inv = dict(m0=m0, simultaneous=True, epsR=0.4, epsI=epsI, **dict_inv)
+    chained = PrestackInversion(dord.copy(), theta, wav, explicit=False, **dict_inv)
+    explicit = PrestackInversion(dord.copy(), theta, wav, explicit=True, **dict_inv)
+    assert_array_almost_equal(explicit, chained, decimal=7)
+
+
+@pytest.mark.parametrize("par", [(parord1), (parord2), (parord3)])
+@pytest.mark.parametrize("epsI", [0.1, [0.1, 0.2, 0.3]])
+def test_PrestackInversion_l1_explicit_chained(par, epsI):
+    """Explicit and chained PrestackInversion with L1 regularizers agree"""
+    shape = (par["nt"], par["nm"], *par["spatdims"])
+    PPop = PrestackLinearModelling(
+        wav, theta, nt0=par["nt"], spatdims=par["spatdims"] or None
+    )
+    mord = np.random.normal(size=shape).astype(par["dtype"])
+    dord = (PPop @ mord.ravel()).reshape(par["nt"], ntheta, *par["spatdims"])
+    dict_inv = (
+        dict(iter_lim=100, atol=1e-11, btol=1e-11)
+        if backend == "numpy"
+        else dict(niter=100, tol=1e-20)
+    )
+    dict_inv = dict(
+        epsR=0.4,
+        epsI=epsI,
+        epsRL1=0.1,
+        mu=0.1,
+        niter_outer=8,
+        niter_inner=5,
+        **dict_inv,
+    )
+    chained = PrestackInversion(dord.copy(), theta, wav, explicit=False, **dict_inv)
+    explicit = PrestackInversion(dord.copy(), theta, wav, explicit=True, **dict_inv)
+    assert_array_almost_equal(explicit, chained, decimal=7)
