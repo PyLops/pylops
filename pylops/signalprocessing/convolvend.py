@@ -34,7 +34,8 @@ class ConvolveND(LinearOperator):
     axes : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
-        Axes along which convolution is applied
+        Axes along which convolution is applied. If ``None``, use the last
+        ``h.ndim`` axes.
     method : :obj:`str`, optional
         Method used to calculate the convolution (``auto``, ``direct`` or ``fft``)
         - see :func:`scipy.signal.convolve` for details.
@@ -63,6 +64,12 @@ class ConvolveND(LinearOperator):
     shape : :obj:`tuple`
         Operator shape.
 
+    Raises
+    ------
+    ValueError
+        If ``h`` has more dimensions than ``dims``, or ``axes`` does not
+        contain one unique model axis per filter dimension.
+
     Notes
     -----
     The ConvolveND operator applies n-dimensional convolution
@@ -78,21 +85,30 @@ class ConvolveND(LinearOperator):
         dims: int | InputDimsLike,
         h: NDArray,
         offset: InputDimsLike | None = None,
-        axes: InputDimsLike = (-2, -1),
+        axes: InputDimsLike | None = None,
         method: Literal["auto", "direct", "fft"] | None = "fft",
         dtype: DTypeLike = "float64",
         name: str = "C",
     ):
         dims = _value_or_sized_to_tuple(dims)
+        if h.ndim > len(dims):
+            msg = "h cannot have more dimensions than dims"
+            raise ValueError(msg)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dims, name=name)
 
         self.axes = (
-            np.arange(len(self.dims))
+            np.arange(len(self.dims) - h.ndim, len(self.dims))
             if axes is None
             else np.array(
                 [get_normalize_axis_index()(ax, len(self.dims)) for ax in axes]
             )
         )
+        if len(self.axes) != h.ndim:
+            msg = "axes must contain one axis per dimension of h"
+            raise ValueError(msg)
+        if len(set(self.axes)) != len(self.axes):
+            msg = "axes must be unique"
+            raise ValueError(msg)
         self.h = h
         hshape = np.array(self.h.shape)
 
@@ -119,6 +135,7 @@ class ConvolveND(LinearOperator):
         self.nh = self.h.shape
 
         # find out which directions are used for convolution and define offsets
+        self.h = self.h.transpose(tuple(np.argsort(self.axes)))
         if len(self.dims) != len(self.nh):
             dimsh = np.ones(len(self.dims), dtype=int)
             for iax, ax in enumerate(self.axes):
