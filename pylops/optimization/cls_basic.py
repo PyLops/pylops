@@ -872,10 +872,10 @@ class LSQR(Solver):
         called and updated at each call to ``step``.
     arnorm : :obj:`float`
         Estimate of norm of :math:`\cond(\mathbf{Op}^H\mathbf{r}-
-        \epsilon^2\mathbf{x})`. Available only after ``step`` is
+        \epsilon^2(\mathbf{x} - \mathbf{x}_0))`. Available only after ``step`` is
         called for the first time and updated at each subsequent call to ``step``.
     xnorm : :obj:`float`
-        :math:`||\mathbf{x}||_2`. Available only after ``setup`` is
+        :math:`||\mathbf{x} - \mathbf{x}_0||_2`. Available only after ``setup`` is
         called and updated at each call to ``step``.
     u : :obj:`numpy.ndarray`
         Temporary vector of size :math:`[N \times 1]`. Available only after
@@ -920,7 +920,8 @@ class LSQR(Solver):
         :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`. Available only after
         ``setup`` is called and updated at each call to ``step``.
     r2norm : :obj:`float`
-        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  + \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
+        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  + \epsilon^2
+        (\mathbf{x} - \mathbf{x}_0)^T(\mathbf{x} - \mathbf{x}_0)}`.
         Equal to ``r1norm`` if :math:`\epsilon=0`. Available only after
         ``setup`` is called and updated at each call to ``step``.
     cost : :obj:`numpy.ndarray`, optional
@@ -935,7 +936,7 @@ class LSQR(Solver):
 
     .. math::
         J = || \mathbf{y} -  \mathbf{Op}\,\mathbf{x} ||_2^2 +
-        \epsilon^2 || \mathbf{x} ||_2^2
+        \epsilon^2 || \mathbf{x} - \mathbf{x}_0 ||_2^2
 
     where :math:`\epsilon` is the damping coefficient.
 
@@ -1513,7 +1514,7 @@ class LSQR(Solver):
             :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
         r2norm : :obj:`float`
             :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
-            \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
+            \epsilon^2 (\mathbf{x} - \mathbf{x}_0)^T(\mathbf{x} - \mathbf{x}_0)}`.
             Equal to ``r1norm`` if :math:`\epsilon=0`
         anorm : :obj:`float`
             Estimate of Frobenius norm of :math:`\overline{\mathbf{Op}} =
@@ -1522,9 +1523,9 @@ class LSQR(Solver):
             Estimate of :math:`\cond(\overline{\mathbf{Op}})`
         arnorm : :obj:`float`
             Estimate of norm of :math:`\cond(\mathbf{Op}^H\mathbf{r}-
-            \epsilon^2\mathbf{x})`
+            \epsilon^2(\mathbf{x} - \mathbf{x}_0))`
         xnorm : :obj:`float`
-            :math:`||\mathbf{x}||_2`
+            :math:`||\mathbf{x} - \mathbf{x}_0||_2`
         var : :obj:`float`
             Diagonals of :math:`(\mathbf{Op}^H\mathbf{Op})^{-1}` (if ``damp=0``)
             or more generally :math:`(\mathbf{Op}^H\mathbf{Op} +
