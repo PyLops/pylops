@@ -109,6 +109,9 @@ def test_PrestackLinearModelling_angle_wavelets(
             par["nt"] * par["ntheta"] * nspat,
             par["nt"] * 3 * nspat,
             rtol=1e-4 if par["dtype"] == "float32" else 1e-6,
+            # Float32 inner products can nearly cancel even when the forward
+            # and adjoint vectors agree with their independent references.
+            atol=1e-5 if par["dtype"] == "float32" else 1e-21,
             backend=backend,
         )
     model = np.random.normal(size=(par["nt"], 3, nspat)).astype(par["dtype"])
@@ -120,7 +123,7 @@ def test_PrestackLinearModelling_angle_wavelets(
     )
     assert_array_almost_equal(data, dense, decimal=4)
     assert data.dtype == par["dtype"]
-    if linearization == "akirich":
+    if linearization in ("akirich", "fatti"):
         # Independent reflectivity and full-convolution reference. Comparing
         # dense and chained operators alone can miss a shared centering error.
         dm = np.zeros_like(model)
@@ -130,10 +133,15 @@ def test_PrestackLinearModelling_angle_wavelets(
             dm[:-1] = model[1:] - model[:-1]
         angle = np.deg2rad(theta)[None, :, None]
         ratio = vsvp[:, None, None]
+        density = (
+            0.5 - 2 * ratio**2 * np.sin(angle) ** 2
+            if linearization == "akirich"
+            else 0.5 * (4 * ratio**2 * np.sin(angle) ** 2 - np.tan(angle) ** 2)
+        )
         reflectivity = (
             dm[:, 0, None, :] / (2 * np.cos(angle) ** 2)
             - 4 * ratio**2 * np.sin(angle) ** 2 * dm[:, 1, None, :]
-            + (0.5 - 2 * ratio**2 * np.sin(angle) ** 2) * dm[:, 2, None, :]
+            + density * dm[:, 2, None, :]
         )
         expected = np.empty_like(data)
         for j, w in enumerate(wav):
