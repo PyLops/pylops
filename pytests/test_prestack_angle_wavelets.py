@@ -120,6 +120,28 @@ def test_PrestackLinearModelling_angle_wavelets(
     )
     assert_array_almost_equal(data, dense, decimal=4)
     assert data.dtype == par["dtype"]
+    if linearization == "akirich":
+        # Independent reflectivity and full-convolution reference. Comparing
+        # dense and chained operators alone can miss a shared centering error.
+        dm = np.zeros_like(model)
+        if kind == "centered":
+            dm[1:-1] = (model[2:] - model[:-2]) / 2
+        else:
+            dm[:-1] = model[1:] - model[:-1]
+        angle = np.deg2rad(theta)[None, :, None]
+        ratio = vsvp[:, None, None]
+        reflectivity = (
+            dm[:, 0, None, :] / (2 * np.cos(angle) ** 2)
+            - 4 * ratio**2 * np.sin(angle) ** 2 * dm[:, 1, None, :]
+            + (0.5 - 2 * ratio**2 * np.sin(angle) ** 2) * dm[:, 2, None, :]
+        )
+        expected = np.empty_like(data)
+        for j, w in enumerate(wav):
+            center = len(w) // 2
+            for k in range(nspat):
+                full = np.convolve(reflectivity[:, j, k], w, mode="full")
+                expected[:, j, k] = full[center : center + par["nt"]]
+        assert_array_almost_equal(data, expected, decimal=4)
     adj = (operators[0].H * data.ravel()).reshape(par["nt"], 3, nspat)
     dense_adj = (
         (operators[1].H * data.swapaxes(0, 1).ravel())
