@@ -198,6 +198,9 @@ def test_NonStationaryConvolve1D(par, dtype):
         x[par["nx"] // 2] = 1.0
         y = Cop * x
         xadj = Cop.H * y
+        matrix = Cop.todense()
+        assert_array_almost_equal(matrix @ x, y, decimal=5)
+        assert_array_almost_equal(matrix.T.conj() @ y, xadj, decimal=5)
         xlsqr = lsqr(
             Cop,
             y,
