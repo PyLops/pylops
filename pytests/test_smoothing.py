@@ -1,4 +1,5 @@
 import os
+from math import prod
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
@@ -16,8 +17,22 @@ from pylops.basicoperators import Smoothing1D, Smoothing2D, SmoothingND
 from pylops.optimization.basic import lsqr
 from pylops.utils import dottest
 
-par1 = {"nz": 10, "ny": 30, "nx": 20, "axis": 0}  # even, first direction
-par2 = {"nz": 11, "ny": 51, "nx": 31, "axis": 0}  # odd, first direction
+par1 = {  # even, first direction
+    "nt": 2,
+    "nz": 10,
+    "ny": 30,
+    "nx": 20,
+    "axis": 0,
+    "nsmooth": (3, 5, 3),
+}
+par2 = {  # odd, first direction
+    "nt": 3,
+    "nz": 11,
+    "ny": 51,
+    "nx": 31,
+    "axis": 0,
+    "nsmooth": (3, 5, 3),
+}
 par3 = {"nz": 10, "ny": 30, "nx": 20, "axis": 1}  # even, second direction
 par4 = {"nz": 11, "ny": 51, "nx": 31, "axis": 1}  # odd, second direction
 par5 = {"nz": 10, "ny": 30, "nx": 20, "axis": 2}  # even, third direction
@@ -294,3 +309,56 @@ def test_SmoothingND(par, dtype):
         show=0,
     )[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("axes", ["default", None, "permuted"])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_SmoothingND_axes(par, axes, dtype):
+    """Dot-test and analytic impulse response for default and explicit axes."""
+    configurations = [
+        # 2D on 2D
+        ((par["ny"], par["nx"]), par["nsmooth"][:2]),
+        # 3D on 3D
+        ((par["nz"], par["ny"], par["nx"]), par["nsmooth"]),
+        # 3D on 4D (only modelling)
+        ((par["nt"], par["nz"], par["ny"], par["nx"]), par["nsmooth"]),
+        # 2D on 3D (only modelling)
+        ((par["nz"], par["ny"], par["nx"]), par["nsmooth"][:2]),
+    ]
+    for dims, nsmooth in configurations:
+        physical_axes = (
+            tuple((len(dims) - 1 + i) % len(dims) for i in range(len(nsmooth)))
+            if axes == "permuted"
+            else tuple(range(len(dims) - len(nsmooth), len(dims)))
+        )
+        kwargs = {} if axes == "default" else {"axes": None if axes is None else physical_axes}
+        Sop = SmoothingND(nsmooth=nsmooth, dims=dims, dtype=dtype, **kwargs)
+        assert dottest(
+            Sop,
+            prod(dims),
+            prod(dims),
+            rtol=1e-4 if dtype == np.float32 else 1e-6,
+            backend=backend,
+        )
+
+        # Forward and adjoint dtype check
+        center = tuple(d // 2 for d in dims)
+        x = np.zeros(dims, dtype=dtype)
+        x[center] = 1
+        y = Sop * x
+        xadj = Sop.H * x
+        assert y.dtype == dtype
+        assert xadj.dtype == dtype
+
+        # Analytic box response, clipped at the model boundaries
+        expected = np.zeros_like(x)
+        slices = [slice(c, c + 1) for c in center]
+        for axis, length in zip(physical_axes, nsmooth, strict=True):
+            slices[axis] = slice(
+                max(0, center[axis] - length // 2),
+                min(dims[axis], center[axis] + length // 2 + 1),
+            )
+        expected[tuple(slices)] = 1 / prod(nsmooth)
+        assert_array_almost_equal(y, expected, decimal=5)
+        assert_array_almost_equal(xadj, expected, decimal=5)

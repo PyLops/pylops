@@ -20,8 +20,9 @@ class SmoothingND(ConvolveND):
         (must be odd, if even it will be increased by 1).
     dims : :obj:`tuple`
         Number of samples for each dimension
-    axes : :obj:`int`, optional
-        Axes along which model (and data) are smoothed.
+    axes : :obj:`tuple` or :obj:`list`, optional
+        Axes along which model (and data) are smoothed. If omitted, use
+        the last ``len(nsmooth)`` axes.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
@@ -70,7 +71,7 @@ class SmoothingND(ConvolveND):
         self,
         nsmooth: InputDimsLike,
         dims: int | InputDimsLike,
-        axes: InputDimsLike = (-2, -1),
+        axes: InputDimsLike | None = None,
         dtype: DTypeLike = "float64",
         name: str = "S",
     ):
