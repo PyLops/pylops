@@ -29,6 +29,7 @@ In this tutorial we will consider the most simple scenario where we use an
 eikonal solver to compute the Green's functions and show how we can use the
 :py:class:`pylops.waveeqprocessing.LSM` operator to perform LSM.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.sparse.linalg import lsqr
@@ -182,6 +183,65 @@ axs[2].set_title(r"$d_{inv}$")
 axs[2].axis("tight")
 axs[3].imshow(dinv_sparse[ns // 2, :, :300].T, cmap="gray", vmin=-d.max(), vmax=d.max())
 axs[3].set_title(r"$d_{fista}$")
+axs[3].axis("tight")
+plt.tight_layout()
+
+###############################################################################
+# Some acquisitions record only one trace per source-receiver pair instead of
+# every source with every receiver: zero-offset sections (e.g., ground-penetrating
+# radar profiles or stacked seismic sections) and common-offset gathers. In this
+# case, we set ``paired=True``: source ``i`` is combined only with receiver ``i``,
+# and the data have shape :math:`n_s \times n_t`. Here we place a coincident
+# source-receiver pair at every second grid point of the same region as above.
+szo = np.vstack((x[10:-10:2], 10 * np.ones(len(x[10:-10:2]))))
+nzo = szo.shape[1]
+
+lsmzo = pylops.waveeqprocessing.LSM(
+    z,
+    x,
+    t,
+    szo,
+    szo,
+    v0,
+    wav,
+    wavc,
+    mode="analytic",
+    engine="numba",
+    paired=True,
+)
+
+dzo = lsmzo.Demop * refl  # (nzo, nt)
+madjzo = lsmzo.Demop.H * dzo
+minvzo = lsmzo.solve(dzo.ravel(), solver=lsqr, **dict(iter_lim=100))
+minvzo = minvzo.reshape(nx, nz)
+dinvzo = lsmzo.Demop * minvzo
+
+fig, axs = plt.subplots(1, 4, figsize=(12, 4))
+axs[0].imshow(
+    dzo[:, :300].T,
+    cmap="gray",
+    vmin=-dzo.max(),
+    vmax=dzo.max(),
+    extent=(szo[0, 0], szo[0, -1], t[299], t[0]),
+)
+axs[0].set_title(r"$d$ (zero offset)")
+axs[0].set_xlabel("x [m]"), axs[0].set_ylabel("t [s]")
+axs[0].axis("tight")
+axs[1].imshow(madjzo.T, cmap="gray", vmin=-madjzo.max(), vmax=madjzo.max())
+axs[1].set_title(r"$m_{adj}$")
+axs[1].axis("tight")
+axs[2].imshow(minvzo.T, cmap="gray", vmin=-1, vmax=1)
+axs[2].set_title(r"$m_{inv}$")
+axs[2].axis("tight")
+axs[3].imshow(
+    dinvzo[:, :300].T,
+    cmap="gray",
+    vmin=-dzo.max(),
+    vmax=dzo.max(),
+    extent=(szo[0, 0], szo[0, -1], t[299], t[0]),
+)
+axs[3].set_title(r"$d_{inv}$")
+axs[3].set_xlabel("x [m]")
 axs[3].axis("tight")
 plt.tight_layout()
 
