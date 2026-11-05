@@ -19,6 +19,8 @@ from pylops.utils import dottest
 from pylops.utils.wavelets import ricker
 from pylops.waveeqprocessing.kirchhoff import Kirchhoff
 
+np.random.seed(10)
+
 PAR = {
     "ny": 3,
     "nx": 12,
@@ -70,6 +72,170 @@ par3 = {"mode": "byot", "dynamic": False}
 par1d = {"mode": "analytic", "dynamic": True}
 par2d = {"mode": "eikonal", "dynamic": True}
 par3d = {"mode": "byot", "dynamic": True}
+
+# paired=True: one receiver per source, at the source (offset=0) or shifted along x
+# (common offset); "single" selects a single byot traveltime table (one column per pair)
+sxp = npp.linspace(x.min(), x.max() - 2 * PAR["dx"], PAR["nsx"])
+syyp, sxxp = npp.meshgrid(sy, sxp, indexing="ij")
+s2dp = npp.vstack((sxp, 2 * npp.ones(PAR["nsx"])))
+s3dp = npp.vstack((syyp.ravel(), sxxp.ravel(), 2 * npp.ones(PAR["nsx"] * PAR["nsy"])))
+
+par1p = {
+    "mode": "analytic",
+    "dynamic": False,
+    "single": False,
+    "offset": 0,
+    "aperture": None,
+    "angleaperture": 90,
+    "wavfilter": False,
+}
+par2p = {
+    "mode": "eikonal",
+    "dynamic": False,
+    "single": False,
+    "offset": 2,
+    "aperture": 2,
+    "angleaperture": 30,
+    "wavfilter": True,
+}
+par3p = {
+    "mode": "byot",
+    "dynamic": False,
+    "single": False,
+    "offset": 0,
+    "aperture": None,
+    "angleaperture": 90,
+    "wavfilter": False,
+}
+par4p = {
+    "mode": "byot",
+    "dynamic": False,
+    "single": True,
+    "offset": 2,
+    "aperture": None,
+    "angleaperture": 90,
+    "wavfilter": True,
+}
+par1pd = {
+    "mode": "analytic",
+    "dynamic": True,
+    "single": False,
+    "offset": 2,
+    "aperture": 2,
+    "angleaperture": 30,
+    "wavfilter": True,
+}
+par2pd = {
+    "mode": "eikonal",
+    "dynamic": True,
+    "single": False,
+    "offset": 0,
+    "aperture": None,
+    "angleaperture": 90,
+    "wavfilter": False,
+}
+par3pd = {
+    "mode": "byot",
+    "dynamic": True,
+    "single": False,
+    "offset": 2,
+    "aperture": 2,
+    "angleaperture": 30,
+    "wavfilter": False,
+}
+
+
+def _kirchhoff_paired(srcs, recs, par, dtype, paired, engine="numpy"):
+    """Kirchhoff operator for the paired=True tests (all pairs if paired=False)"""
+    ndims = srcs.shape[0]
+    yy = None if ndims == 2 else y
+    shape = (PAR["nx"], PAR["nz"]) if ndims == 2 else (PAR["ny"], PAR["nx"], PAR["nz"])
+    trav, amp = None, None
+    if par["mode"] == "byot":
+        # tables of an analytic operator with the same geometry
+        Aop = Kirchhoff(
+            z,
+            x,
+            t,
+            srcs,
+            recs,
+            v0,
+            wav,
+            wavc,
+            y=yy,
+            dynamic=par["dynamic"],
+            mode="analytic",
+        )
+        trav = (Aop.trav_srcs.astype(dtype), Aop.trav_recs.astype(dtype))
+        if par["dynamic"]:
+            amp = (Aop.amp_srcs.astype(dtype), Aop.amp_recs.astype(dtype))
+        if par["single"] and paired:
+            trav = trav[0] + trav[1]
+        elif par["single"]:
+            trav = (trav[0][:, :, npp.newaxis] + trav[1][:, npp.newaxis, :]).reshape(
+                trav[0].shape[0], -1
+            )
+    return Kirchhoff(
+        z.astype(dtype),
+        x.astype(dtype),
+        t.astype(dtype),
+        srcs.astype(dtype),
+        recs.astype(dtype),
+        v0 * npp.ones(shape, dtype=dtype) if par["mode"] == "eikonal" else v0,
+        wav.astype(dtype),
+        wavc,
+        y=None if yy is None else yy.astype(dtype),
+        mode=par["mode"],
+        wavfilter=par["wavfilter"],
+        dynamic=par["dynamic"],
+        trav=trav,
+        amp=amp,
+        aperture=par["aperture"],
+        angleaperture=par["angleaperture"],
+        engine=engine,
+        dtype=dtype,
+        paired=paired,
+    )
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
+def test_kirchhoff_paired_nsnr():
+    """Check error is raised if paired=True and ns differs from nr"""
+    with pytest.raises(ValueError, match="paired=True requires as many sources"):
+        _ = Kirchhoff(z, x, t, s2d, r2d, v0, wav, wavc, mode="analytic", paired=True)
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
+def test_kirchhoff_paired_single_trav():
+    """Check error is raised if paired=True and a single traveltime table has
+    one column per source-receiver combination instead of one per pair"""
+    trav = npp.zeros((PAR["nx"] * PAR["nz"], PAR["nsx"] * PAR["nsx"]))
+    with pytest.raises(ValueError, match="needs one column per pair"):
+        _ = Kirchhoff(
+            z, x, t, s2dp, s2dp, v0, wav, wavc, mode="byot", trav=trav, paired=True
+        )
+
+
+def test_kirchhoff_paired_cuda():
+    """Check error is raised if paired=True and engine='cuda'"""
+    with pytest.raises(NotImplementedError, match="not implemented for paired=True"):
+        _ = Kirchhoff(
+            z,
+            x,
+            t,
+            s2dp,
+            s2dp,
+            v0,
+            wav,
+            wavc,
+            mode="analytic",
+            engine="cuda",
+            paired=True,
+        )
 
 
 @pytest.mark.skipif(
@@ -489,3 +655,125 @@ def test_kirchhoff3d_trav_vs_travsrcrec(par):
         0, 1, PAR["nry"] * PAR["nrx"] * PAR["nsy"] * PAR["nsx"] * PAR["nt"]
     )
     assert_array_almost_equal(Dop.H @ yy, D1op.H @ yy, decimal=2)
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1,
+    reason="engine='cuda' not available for paired=True",
+)
+@pytest.mark.parametrize(
+    "par", [(par1p), (par2p), (par3p), (par4p), (par1pd), (par2pd), (par3pd)]
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_kirchhoff2d_paired(par, dtype):
+    """Dot-test for Kirchhoff operator with paired=True"""
+    if not skfmm_enabled and par["mode"] == "eikonal":
+        pytest.skip("skfmm not available")
+    r2dp = s2dp + npp.array([[par["offset"]], [0]])
+    Dop = _kirchhoff_paired(s2dp, r2dp, par, dtype, paired=True)
+    assert Dop.dimsd == (PAR["nsx"], PAR["nt"])
+    assert dottest(
+        Dop,
+        PAR["nsx"] * PAR["nt"],
+        PAR["nx"] * PAR["nz"],
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+    )
+
+    if dtype == np.float32 and par["wavfilter"]:
+        pytest.xfail(
+            "wavfilter=True returns float64 data for float32 (also paired=False)"
+        )
+    xx = np.random.normal(0, 1, PAR["nx"] * PAR["nz"]).astype(dtype)
+    yy = Dop * xx
+    xadj = Dop.H * yy
+    assert yy.dtype == dtype
+    assert xadj.dtype == dtype
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1,
+    reason="engine='cuda' not available for paired=True",
+)
+@pytest.mark.parametrize("par", [(par1p), (par2p), (par3p), (par4p), (par1pd)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_kirchhoff3d_paired(par, dtype):
+    """Dot-test for Kirchhoff operator with paired=True"""
+    if not skfmm_enabled and par["mode"] == "eikonal":
+        pytest.skip("skfmm not available")
+    r3dp = s3dp + npp.array([[0], [par["offset"]], [0]])
+    Dop = _kirchhoff_paired(s3dp, r3dp, par, dtype, paired=True)
+    assert Dop.dimsd == (PAR["nsy"] * PAR["nsx"], PAR["nt"])
+    assert dottest(
+        Dop,
+        PAR["nsy"] * PAR["nsx"] * PAR["nt"],
+        PAR["ny"] * PAR["nx"] * PAR["nz"],
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+    )
+
+    if dtype == np.float32 and par["wavfilter"]:
+        pytest.xfail(
+            "wavfilter=True returns float64 data for float32 (also paired=False)"
+        )
+    xx = np.random.normal(0, 1, PAR["ny"] * PAR["nx"] * PAR["nz"]).astype(dtype)
+    yy = Dop * xx
+    xadj = Dop.H * yy
+    assert yy.dtype == dtype
+    assert xadj.dtype == dtype
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1,
+    reason="engine='cuda' not available for paired=True",
+)
+@pytest.mark.parametrize(
+    "par", [(par1p), (par2p), (par3p), (par4p), (par1pd), (par2pd), (par3pd)]
+)
+@pytest.mark.parametrize("engine", ["numpy", "numba"])
+def test_kirchhoff2d_paired_vs_allpairs(par, engine):
+    """Compare 2D Kirchhoff operator forward and adjoint with paired=True and
+    with all source-receiver pairs restricted to the pairs (i, i)"""
+    if not skfmm_enabled and par["mode"] == "eikonal":
+        pytest.skip("skfmm not available")
+    ns = PAR["nsx"]
+    r2dp = s2dp + npp.array([[par["offset"]], [0]])
+    Dop = _kirchhoff_paired(s2dp, r2dp, par, np.float64, paired=True, engine=engine)
+    D1op = _kirchhoff_paired(s2dp, r2dp, par, np.float64, paired=False, engine=engine)
+
+    # forward
+    xx = np.random.normal(0, 1, PAR["nx"] * PAR["nz"])
+    yy1 = (D1op @ xx).reshape(ns, ns, PAR["nt"])[npp.arange(ns), npp.arange(ns)]
+    assert_array_almost_equal(Dop @ xx, yy1.ravel(), decimal=8)
+
+    # adjoint
+    yy = np.random.normal(0, 1, (ns, PAR["nt"]))
+    yy1 = npp.zeros((ns, ns, PAR["nt"]))
+    yy1[npp.arange(ns), npp.arange(ns)] = yy
+    assert_array_almost_equal(Dop.H @ yy.ravel(), D1op.H @ yy1.ravel(), decimal=8)
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1,
+    reason="engine='cuda' not available for paired=True",
+)
+@pytest.mark.parametrize("par", [(par1p), (par2p), (par4p), (par1pd)])
+@pytest.mark.parametrize("engine", ["numpy", "numba"])
+def test_kirchhoff3d_paired_vs_allpairs(par, engine):
+    """Compare 3D Kirchhoff operator forward and adjoint with paired=True and
+    with all source-receiver pairs restricted to the pairs (i, i)"""
+    if not skfmm_enabled and par["mode"] == "eikonal":
+        pytest.skip("skfmm not available")
+    ns = PAR["nsy"] * PAR["nsx"]
+    r3dp = s3dp + npp.array([[0], [par["offset"]], [0]])
+    Dop = _kirchhoff_paired(s3dp, r3dp, par, np.float64, paired=True, engine=engine)
+    D1op = _kirchhoff_paired(s3dp, r3dp, par, np.float64, paired=False, engine=engine)
+
+    # forward
+    xx = np.random.normal(0, 1, PAR["ny"] * PAR["nx"] * PAR["nz"])
+    yy1 = (D1op @ xx).reshape(ns, ns, PAR["nt"])[npp.arange(ns), npp.arange(ns)]
+    assert_array_almost_equal(Dop @ xx, yy1.ravel(), decimal=8)
+
+    # adjoint
+    yy = np.random.normal(0, 1, (ns, PAR["nt"]))
+    yy1 = npp.zeros((ns, ns, PAR["nt"]))
+    yy1[npp.arange(ns), npp.arange(ns)] = yy
+    assert_array_almost_equal(Dop.H @ yy.ravel(), D1op.H @ yy1.ravel(), decimal=8)

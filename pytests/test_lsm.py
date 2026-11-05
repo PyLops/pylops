@@ -50,6 +50,9 @@ ryy, rxx = np.meshgrid(ry, rx, indexing="ij")
 r2d = np.vstack((rx, 2 * np.ones(PAR["nrx"])))
 r3d = np.vstack((ryy.ravel(), rxx.ravel(), 2 * np.ones(PAR["nrx"] * PAR["nry"])))
 
+# zero offset (paired=True): one coincident source-receiver pair at every x
+szo = np.vstack((x, 2 * np.ones(PAR["nx"])))
+
 wav, _, wavc = ricker(t[:21], f0=40)
 
 par1 = {"mode": "analytic", "dynamic": False}
@@ -101,6 +104,46 @@ def test_lsm2d(par):
 
         dinv = lsm.Demop * minv.ravel()
         dinv = dinv.reshape(PAR["nsx"], PAR["nrx"], PAR["nt"])
+
+        assert_array_almost_equal(d / d.max(), dinv / d.max(), decimal=2)
+        assert_array_almost_equal(refl / refl.max(), minv / refl.max(), decimal=1)
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
+@pytest.mark.parametrize("par", [(par1), (par2), (par1d), (par2d)])
+def test_lsm2d_paired(par):
+    """Dot-test and inverse for LSM operator with zero-offset data (paired=True)"""
+    if skfmm_enabled or par["mode"] != "eikonal":
+        vel = v0 * np.ones((PAR["nx"], PAR["nz"]))
+        refl = np.zeros((PAR["nx"], PAR["nz"]))
+        refl[:, PAR["nz"] // 2] = 1
+        refl[:, 3 * PAR["nz"] // 4] = 1
+
+        lsm = LSM(
+            z,
+            x,
+            t,
+            szo,
+            szo,
+            vel if par["mode"] == "eikonal" else v0,
+            wav,
+            wavc,
+            mode=par["mode"],
+            dynamic=par["dynamic"],
+            paired=True,
+            dottest=True,
+        )
+
+        d = lsm.Demop * refl.ravel()
+        d = d.reshape(PAR["nx"], PAR["nt"])
+
+        minv = lsm.solve(d.ravel(), **dict(iter_lim=100, show=True))
+        minv = minv.reshape(PAR["nx"], PAR["nz"])
+
+        dinv = lsm.Demop * minv.ravel()
+        dinv = dinv.reshape(PAR["nx"], PAR["nt"])
 
         assert_array_almost_equal(d / d.max(), dinv / d.max(), decimal=2)
         assert_array_almost_equal(refl / refl.max(), minv / refl.max(), decimal=1)
