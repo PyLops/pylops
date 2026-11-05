@@ -2,6 +2,8 @@ Changelog
 =========
 
 # 2.9.0
+* Added `paired` to `pylops.waveeqprocessing.Kirchhoff` to model one trace per
+  source-receiver pair (e.g., zero-offset and common-offset data)
 * Fixed `pylops.TorchOperator` with `batch=True` for operators whose model and
   data have different numbers of dimensions (e.g., `pylops.Sum`)
 * Fixed `pylops.TorchOperator` to honour `flatten` also when `batch=False`

@@ -4,6 +4,7 @@ __all__ = ["Kirchhoff"]
 import logging
 import os
 import warnings
+from collections.abc import Callable
 from typing import Literal
 
 import numpy as np
@@ -118,6 +119,15 @@ class Kirchhoff(LinearOperator):
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+    paired : :obj:`bool`, optional
+        .. versionadded:: 2.9.0
+
+        Model one trace per source-receiver pair, source ``i`` with receiver ``i``
+        (``True``, e.g. zero-offset or common-offset data; ``srcs`` and ``recs`` must
+        have the same size and data are of size :math:`\lbrack n_s \times n_t \rbrack`),
+        or all :math:`n_s n_r` source-receiver combinations (``False``, default). With
+        ``mode='byot'`` a single traveltime table is then of size
+        :math:`\lbrack (n_y) n_x n_z \times n_s \rbrack`. Not available with ``engine='cuda'``.
 
     Attributes
     ----------
@@ -134,14 +144,14 @@ class Kirchhoff(LinearOperator):
     nt : :obj:`int`
         Number of samples in time axis.
     nsnr : :obj:`int`
-        Number of source-receiver pairs.
+        Number of source-receiver pairs (``ns*nr``, ``ns`` if ``paired=True``).
     ni : :obj:`int`
         Number of image points (``ni=nx*nz`` if ``ndims=2`` and
         ``ni=ny*nx*nz`` if ``ndims=3``).
     six : :obj:`numpy.ndarray`
-        ix locations of sources (1d array of size ``ns*nr``).
+        ix locations of sources (1d array of size ``ns*nr``, ``ns`` if ``paired=True``).
     rix : :obj:`numpy.ndarray`
-        ix locations of receivers (1d array of size ``ns*nr``).
+        ix locations of receivers (1d array of size ``ns*nr``, ``ns`` if ``paired=True``).
     travsrcrec : :obj:`bool`
         Whether separate traveltime tables for sources and receivers are used (``True``)
         or a single traveltime table for source-receiver pairs (``False``).
@@ -270,6 +280,15 @@ class Kirchhoff(LinearOperator):
       directly by user using ``trav`` input parameter. Similarly, in this case one
       can also provide their own amplitude scaling ``amp``.
 
+    By default (``paired=False``), data are modelled for every combination of the
+    :math:`n_s` sources and :math:`n_r` receivers. With ``paired=True``, source ``i``
+    is combined only with receiver ``i`` and the data
+    :math:`d(\mathbf{x_{r,i}}, \mathbf{x_{s,i}}, t)` contain one trace per pair. This is
+    the geometry of zero-offset (:math:`\mathbf{x_{r,i}} = \mathbf{x_{s,i}}`) and
+    common-offset data, such as ground-penetrating radar profiles or stacked sections.
+    The result is identical to modelling all pairs and keeping only the traces
+    :math:`(i, i)`, at a cost proportional to :math:`n_s` instead of :math:`n_s n_r`.
+
     Two aperture limitations have been also implemented as defined by:
 
     * ``aperture``: the maximum allowed aperture is expressed as the ratio of
@@ -325,6 +344,7 @@ class Kirchhoff(LinearOperator):
         engine: Tengine_nnc = "numpy",
         dtype: DTypeLike = "float64",
         name: str = "K",
+        paired: bool = False,
     ) -> None:
         warnings.warn(
             "A new implementation of Kirchhoff is provided in v2.1.0. "
@@ -356,12 +376,20 @@ class Kirchhoff(LinearOperator):
         ) = Kirchhoff._identify_geometry(z, x, srcs, recs, y=y)
         self.dt = t[1] - t[0]
         self.nt = len(t)
+        self.paired = paired
+        if paired and ns != nr:
+            msg = f"paired=True requires as many sources as receivers, got ns={ns} and nr={nr}"
+            raise ValueError(msg)
+        nsnr = ns if paired else ns * nr
 
         # store ix-iy locations of sources and receivers for aperture filter
         self.dynamic = dynamic
         if self.dynamic:
             dx = x[1] - x[0]
-            if self.ndims == 2:
+            if self.ndims == 2 and paired:
+                self.six = ((srcs[0] - x[0]) // dx).astype(int)
+                self.rix = ((recs[0] - x[0]) // dx).astype(int)
+            elif self.ndims == 2:
                 self.six = (
                     np.tile((srcs[0] - x[0]) // dx, (nr, 1)).T.astype(int).ravel()
                 )
@@ -370,8 +398,8 @@ class Kirchhoff(LinearOperator):
                 # TODO: compute 3D indices for aperture filter
                 # currently no aperture filter in 3D... just make indices 0
                 # so check if always passed
-                self.six = np.zeros(nr * ns)
-                self.rix = np.zeros(nr * ns)
+                self.six = np.zeros(nsnr)
+                self.rix = np.zeros(nsnr)
 
         # compute traveltime and distances
         self.travsrcrec = True  # use separate tables for src and rec traveltimes
@@ -409,6 +437,9 @@ class Kirchhoff(LinearOperator):
                 else:
                     self.travsrcrec = False
                     self.trav = trav
+                    if paired and trav is not None and trav.shape[1] != ns:
+                        msg = f"paired=True: a single traveltime table needs one column per pair ({ns}), got {trav.shape[1]}"
+                        raise ValueError(msg)
 
                 if self.dynamic and not self.travsrcrec:
                     msg = "separate traveltime tables for sources and receivers must be provided when selecting mode='dynamic'"
@@ -476,7 +507,7 @@ class Kirchhoff(LinearOperator):
         else:
             self.wav = wav
         self.cop = Convolve1D(
-            (ns * nr, self.nt), h=self.wav, offset=wavcenter, axis=1, dtype=dtype
+            (nsnr, self.nt), h=self.wav, offset=wavcenter, axis=1, dtype=dtype
         )
 
         # create fixed-size aperture taper for all apertures
@@ -513,10 +544,10 @@ class Kirchhoff(LinearOperator):
 
         # dimensions
         self.ns, self.nr = ns, nr
-        self.nsnr = ns * nr
+        self.nsnr = nsnr
         self.ni = np.prod(dims)
         dims = tuple(dims) if self.ndims == 2 else (dims[0] * dims[1], dims[2])
-        dimsd = (ns, nr, self.nt)
+        dimsd = (ns, self.nt) if paired else (ns, nr, self.nt)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
         # save velocity if using dynamic to compute amplitudes
         if self.dynamic:
@@ -1076,10 +1107,305 @@ class Kirchhoff(LinearOperator):
                                 )
         return y
 
+    @staticmethod
+    def _travsrcrec_kirch_matvec_paired(
+        x: NDArray,
+        y: NDArray,
+        ns: int,
+        nr: int,
+        nt: int,
+        ni: int,
+        dt: float,
+        trav_srcs: NDArray,
+        trav_recs: NDArray,
+    ) -> NDArray:
+        for isrc in prange(ns):
+            travisrc = trav_srcs[:, isrc]
+            for irec in range(isrc, isrc + 1):  # paired: receiver isrc only
+                travirec = trav_recs[:, irec]
+                trav = travisrc + travirec
+                itrav = (trav / dt).astype("int32")
+                travd = trav / dt - itrav
+                for ii in range(ni):
+                    itravii = itrav[ii]
+                    travdii = travd[ii]
+                    if 0 <= itravii < nt - 1:
+                        y[isrc, itravii] += x[ii] * (1 - travdii)
+                        y[isrc, itravii + 1] += x[ii] * travdii
+        return y
+
+    @staticmethod
+    def _travsrcrec_kirch_rmatvec_paired(
+        x: NDArray,
+        y: NDArray,
+        ns: int,
+        nr: int,
+        nt: int,
+        ni: int,
+        dt: float,
+        trav_srcs: NDArray,
+        trav_recs: NDArray,
+    ) -> NDArray:
+        for ii in prange(ni):
+            trav_srcsii = trav_srcs[ii]
+            trav_recsii = trav_recs[ii]
+            for isrc in prange(ns):
+                trav_srcii = trav_srcsii[isrc]
+                for irec in range(isrc, isrc + 1):  # paired: receiver isrc only
+                    trav_recii = trav_recsii[irec]
+                    travii = trav_srcii + trav_recii
+                    itravii = int(travii / dt)
+                    travdii = travii / dt - itravii
+                    if 0 <= itravii < nt - 1:
+                        y[ii] += (
+                            x[isrc, itravii] * (1 - travdii)
+                            + x[isrc, itravii + 1] * travdii
+                        )
+        return y
+
+    @staticmethod
+    def _ampsrcrec_kirch_matvec_paired(
+        x: NDArray,
+        y: NDArray,
+        ns: int,
+        nr: int,
+        nt: int,
+        ni: int,
+        dt: float,
+        vel: NDArray,
+        trav_srcs: NDArray,
+        trav_recs: NDArray,
+        amp_srcs: NDArray,
+        amp_recs: NDArray,
+        aperturemin: float,
+        aperturemax: float,
+        aperturetap: NDArray,
+        nz: int,
+        six: NDArray,
+        rix: NDArray,
+        angleaperturemin: float,
+        angleaperturemax: float,
+        angles_srcs: NDArray,
+        angles_recs: NDArray,
+    ) -> NDArray:
+        daperture = aperturemax - aperturemin
+        dangleaperture = angleaperturemax - angleaperturemin
+        for isrc in prange(ns):
+            travisrc = trav_srcs[:, isrc]
+            ampisrc = amp_srcs[:, isrc]
+            angleisrc = angles_srcs[:, isrc]
+            for irec in range(isrc, isrc + 1):  # paired: receiver isrc only
+                travirec = trav_recs[:, irec]
+                trav = travisrc + travirec
+                itrav = (trav / dt).astype("int32")
+                travd = trav / dt - itrav
+                ampirec = amp_recs[:, irec]
+                angleirec = angles_recs[:, irec]
+                sixisrcrec = six[isrc]
+                rixisrcrec = rix[isrc]
+                # compute cosine of half opening angle and total amplitude scaling
+                cosangle = np.cos((angleisrc - angleirec) / 2.0)
+                amp = 2.0 * cosangle * ampisrc * ampirec / vel
+                for ii in range(ni):
+                    itravii = itrav[ii]
+                    travdii = travd[ii]
+                    damp = amp[ii]
+                    # extract source and receiver angle at given image point
+                    angle_src = angleisrc[ii]
+                    angle_rec = angleirec[ii]
+                    abs_angle_src = abs(angle_src)
+                    abs_angle_rec = abs(angle_rec)
+                    # angle apertures checks
+                    aptap = 1.0
+                    if (
+                        abs_angle_src < angleaperturemax
+                        and abs_angle_rec < angleaperturemax
+                    ):
+                        if abs_angle_src >= angleaperturemin:
+                            # extract source angle aperture taper value
+                            aptap = (
+                                aptap
+                                * aperturetap[
+                                    int(
+                                        20
+                                        * (abs_angle_src - angleaperturemin)
+                                        // dangleaperture
+                                    )
+                                ]
+                            )
+                        if abs_angle_rec >= angleaperturemin:
+                            # extract receiver angle aperture taper value
+                            aptap = (
+                                aptap
+                                * aperturetap[
+                                    int(
+                                        20
+                                        * (abs_angle_rec - angleaperturemin)
+                                        // dangleaperture
+                                    )
+                                ]
+                            )
+
+                        # identify z-index of image point
+                        iz = ii % nz
+                        # aperture check
+                        aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1)
+                        if aperture < aperturemax:
+                            if aperture >= aperturemin:
+                                # extract aperture taper value
+                                aptap = (
+                                    aptap
+                                    * aperturetap[
+                                        int(
+                                            20 * ((aperture - aperturemin) // daperture)
+                                        )
+                                    ]
+                                )
+                            # time limit check
+                            if 0 <= itravii < nt - 1:
+                                y[isrc, itravii] += x[ii] * (1 - travdii) * damp * aptap
+                                y[isrc, itravii + 1] += x[ii] * travdii * damp * aptap
+        return y
+
+    @staticmethod
+    def _ampsrcrec_kirch_rmatvec_paired(
+        x: NDArray,
+        y: NDArray,
+        ns: int,
+        nr: int,
+        nt: int,
+        ni: int,
+        dt: float,
+        vel: NDArray,
+        trav_srcs: NDArray,
+        trav_recs: NDArray,
+        amp_srcs: NDArray,
+        amp_recs: NDArray,
+        aperturemin: float,
+        aperturemax: float,
+        aperturetap: NDArray,
+        nz: int,
+        six: NDArray,
+        rix: NDArray,
+        angleaperturemin: float,
+        angleaperturemax: float,
+        angles_srcs: NDArray,
+        angles_recs: NDArray,
+    ) -> NDArray:
+        daperture = aperturemax - aperturemin
+        dangleaperture = angleaperturemax - angleaperturemin
+        for ii in prange(ni):
+            trav_srcsii = trav_srcs[ii]
+            trav_recsii = trav_recs[ii]
+            amp_srcsii = amp_srcs[ii]
+            amp_recsii = amp_recs[ii]
+            velii = vel[ii]
+            angle_srcsii = angles_srcs[ii]
+            angle_recsii = angles_recs[ii]
+            # identify z-index of image point
+            iz = ii % nz
+            for isrc in range(ns):
+                trav_srcii = trav_srcsii[isrc]
+                amp_srcii = amp_srcsii[isrc]
+                angle_src = angle_srcsii[isrc]
+                for irec in range(isrc, isrc + 1):  # paired: receiver isrc only
+                    trav_recii = trav_recsii[irec]
+                    travii = trav_srcii + trav_recii
+                    itravii = int(travii / dt)
+                    travdii = travii / dt - itravii
+                    amp_recii = amp_recsii[irec]
+                    angle_rec = angle_recsii[irec]
+                    sixisrcrec = six[isrc]
+                    rixisrcrec = rix[isrc]
+                    abs_angle_src = abs(angle_src)
+                    abs_angle_rec = abs(angle_rec)
+                    # compute cosine of half opening angle and total amplitude scaling
+                    cosangle = np.cos((angle_src - angle_rec) / 2.0)
+                    damp = 2.0 * cosangle * amp_srcii * amp_recii / velii
+                    # angle apertures checks
+                    aptap = 1.0
+                    if (
+                        abs_angle_src < angleaperturemax
+                        and abs_angle_rec < angleaperturemax
+                    ):
+                        if abs_angle_src >= angleaperturemin:
+                            # extract source angle aperture taper value
+                            aptap = (
+                                aptap
+                                * aperturetap[
+                                    int(
+                                        20
+                                        * (abs_angle_src - angleaperturemin)
+                                        // dangleaperture
+                                    )
+                                ]
+                            )
+                        if abs_angle_rec >= angleaperturemin:
+                            # extract receiver angle aperture taper value
+                            aptap = (
+                                aptap
+                                * aperturetap[
+                                    int(
+                                        20
+                                        * (abs_angle_rec - angleaperturemin)
+                                        // dangleaperture
+                                    )
+                                ]
+                            )
+
+                        # aperture check
+                        aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1)
+                        if aperture < aperturemax:
+                            if aperture >= aperturemin:
+                                # extract aperture taper value
+                                aptap = (
+                                    aptap
+                                    * aperturetap[
+                                        int(
+                                            20 * ((aperture - aperturemin) // daperture)
+                                        )
+                                    ]
+                                )
+                            # time limit check
+                            if 0 <= itravii < nt - 1:
+                                # assign values
+                                y[ii] += (
+                                    (
+                                        x[isrc, itravii] * (1 - travdii)
+                                        + x[isrc, itravii + 1] * travdii
+                                    )
+                                    * damp
+                                    * aptap
+                                )
+        return y
+
     def _register_multiplications(self, engine: Tengine_nnc) -> None:
         if engine not in ["numpy", "numba", "cuda"]:
             msg = f"engine must be numpy or numba or cuda, got {engine}"
             raise ValueError(msg)
+        if self.paired and self.travsrcrec:
+            # one trace per source-receiver pair (a single table already is per pair)
+            if engine == "cuda":
+                msg = "`engine=cuda` not implemented for paired=True"
+                raise NotImplementedError(msg)
+            kernels: tuple[Callable[..., NDArray], Callable[..., NDArray]]
+            if self.dynamic:
+                kernels = (
+                    self._ampsrcrec_kirch_matvec_paired,
+                    self._ampsrcrec_kirch_rmatvec_paired,
+                )
+            else:
+                kernels = (
+                    self._travsrcrec_kirch_matvec_paired,
+                    self._travsrcrec_kirch_rmatvec_paired,
+                )
+            if engine == "numba" and jit_message is None:
+                numba_opts = dict(nopython=True, nogil=True, parallel=parallel)
+                kernels = (jit(**numba_opts)(kernels[0]), jit(**numba_opts)(kernels[1]))
+            elif engine == "numba":
+                logger.warning(jit_message)
+            self._kirch_matvec, self._kirch_rmatvec = kernels
+            return
         if engine == "numba" and jit_message is None:
             numba_opts = dict(
                 nopython=True, nogil=True, parallel=parallel
