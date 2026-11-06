@@ -4,6 +4,7 @@ __all__ = ["Kirchhoff"]
 import logging
 import os
 import warnings
+from functools import partial
 from typing import Literal
 
 import numpy as np
@@ -118,6 +119,15 @@ class Kirchhoff(LinearOperator):
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+    paired : :obj:`bool`, optional
+        .. versionadded:: 2.9.0
+
+        Model one trace per source-receiver pair, source ``i`` with receiver ``i``
+        (``True``, e.g. zero-offset or common-offset data; ``srcs`` and ``recs`` must
+        have the same size and data are of size :math:`\lbrack n_s \times n_t \rbrack`),
+        or all :math:`n_s n_r` source-receiver combinations (``False``, default). With
+        ``mode='byot'`` a single traveltime table is then of size
+        :math:`\lbrack (n_y) n_x n_z \times n_s \rbrack`. Not available with ``engine='cuda'``.
 
     Attributes
     ----------
@@ -134,14 +144,14 @@ class Kirchhoff(LinearOperator):
     nt : :obj:`int`
         Number of samples in time axis.
     nsnr : :obj:`int`
-        Number of source-receiver pairs.
+        Number of source-receiver pairs (``ns*nr``, ``ns`` if ``paired=True``).
     ni : :obj:`int`
         Number of image points (``ni=nx*nz`` if ``ndims=2`` and
         ``ni=ny*nx*nz`` if ``ndims=3``).
     six : :obj:`numpy.ndarray`
-        ix locations of sources (1d array of size ``ns*nr``).
+        ix locations of sources (1d array of size ``ns*nr``, ``ns`` if ``paired=True``).
     rix : :obj:`numpy.ndarray`
-        ix locations of receivers (1d array of size ``ns*nr``).
+        ix locations of receivers (1d array of size ``ns*nr``, ``ns`` if ``paired=True``).
     travsrcrec : :obj:`bool`
         Whether separate traveltime tables for sources and receivers are used (``True``)
         or a single traveltime table for source-receiver pairs (``False``).
@@ -270,6 +280,15 @@ class Kirchhoff(LinearOperator):
       directly by user using ``trav`` input parameter. Similarly, in this case one
       can also provide their own amplitude scaling ``amp``.
 
+    By default (``paired=False``), data are modelled for every combination of the
+    :math:`n_s` sources and :math:`n_r` receivers. With ``paired=True``, source ``i``
+    is combined only with receiver ``i`` and the data
+    :math:`d(\mathbf{x_{r,i}}, \mathbf{x_{s,i}}, t)` contain one trace per pair. This is
+    the geometry of zero-offset (:math:`\mathbf{x_{r,i}} = \mathbf{x_{s,i}}`) and
+    common-offset data, such as ground-penetrating radar profiles or stacked sections.
+    The result is identical to modelling all pairs and keeping only the traces
+    :math:`(i, i)`, at a cost proportional to :math:`n_s` instead of :math:`n_s n_r`.
+
     Two aperture limitations have been also implemented as defined by:
 
     * ``aperture``: the maximum allowed aperture is expressed as the ratio of
@@ -325,6 +344,7 @@ class Kirchhoff(LinearOperator):
         engine: Tengine_nnc = "numpy",
         dtype: DTypeLike = "float64",
         name: str = "K",
+        paired: bool = False,
     ) -> None:
         warnings.warn(
             "A new implementation of Kirchhoff is provided in v2.1.0. "
@@ -356,12 +376,20 @@ class Kirchhoff(LinearOperator):
         ) = Kirchhoff._identify_geometry(z, x, srcs, recs, y=y)
         self.dt = t[1] - t[0]
         self.nt = len(t)
+        self.paired = paired
+        if paired and ns != nr:
+            msg = f"paired=True requires as many sources as receivers, got ns={ns} and nr={nr}"
+            raise ValueError(msg)
+        nsnr = ns if paired else ns * nr
 
         # store ix-iy locations of sources and receivers for aperture filter
         self.dynamic = dynamic
         if self.dynamic:
             dx = x[1] - x[0]
-            if self.ndims == 2:
+            if self.ndims == 2 and paired:
+                self.six = ((srcs[0] - x[0]) // dx).astype(int)
+                self.rix = ((recs[0] - x[0]) // dx).astype(int)
+            elif self.ndims == 2:
                 self.six = (
                     np.tile((srcs[0] - x[0]) // dx, (nr, 1)).T.astype(int).ravel()
                 )
@@ -370,8 +398,8 @@ class Kirchhoff(LinearOperator):
                 # TODO: compute 3D indices for aperture filter
                 # currently no aperture filter in 3D... just make indices 0
                 # so check if always passed
-                self.six = np.zeros(nr * ns)
-                self.rix = np.zeros(nr * ns)
+                self.six = np.zeros(nsnr)
+                self.rix = np.zeros(nsnr)
 
         # compute traveltime and distances
         self.travsrcrec = True  # use separate tables for src and rec traveltimes
@@ -409,6 +437,9 @@ class Kirchhoff(LinearOperator):
                 else:
                     self.travsrcrec = False
                     self.trav = trav
+                    if paired and trav is not None and trav.shape[1] != ns:
+                        msg = f"paired=True: a single traveltime table needs one column per pair ({ns}), got {trav.shape[1]}"
+                        raise ValueError(msg)
 
                 if self.dynamic and not self.travsrcrec:
                     msg = "separate traveltime tables for sources and receivers must be provided when selecting mode='dynamic'"
@@ -476,7 +507,7 @@ class Kirchhoff(LinearOperator):
         else:
             self.wav = wav
         self.cop = Convolve1D(
-            (ns * nr, self.nt), h=self.wav, offset=wavcenter, axis=1, dtype=dtype
+            (nsnr, self.nt), h=self.wav, offset=wavcenter, axis=1, dtype=dtype
         )
 
         # create fixed-size aperture taper for all apertures
@@ -513,10 +544,10 @@ class Kirchhoff(LinearOperator):
 
         # dimensions
         self.ns, self.nr = ns, nr
-        self.nsnr = ns * nr
+        self.nsnr = nsnr
         self.ni = np.prod(dims)
         dims = tuple(dims) if self.ndims == 2 else (dims[0] * dims[1], dims[2])
-        dimsd = (ns, nr, self.nt)
+        dimsd = (ns, self.nt) if paired else (ns, nr, self.nt)
         super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)
         # save velocity if using dynamic to compute amplitudes
         if self.dynamic:
@@ -811,11 +842,14 @@ class Kirchhoff(LinearOperator):
         dt: float,
         trav_srcs: NDArray,
         trav_recs: NDArray,
+        paired: bool = False,
     ) -> NDArray:
+        # paired=True: only receiver isrc for source isrc (one trace per pair)
+        nrs, ipair = (1, 1) if paired else (nr, 0)
         for isrc in prange(ns):
             travisrc = trav_srcs[:, isrc]
-            for irec in range(nr):
-                travirec = trav_recs[:, irec]
+            for irec in range(nrs):
+                travirec = trav_recs[:, irec + ipair * isrc]
                 trav = travisrc + travirec
                 itrav = (trav / dt).astype("int32")
                 travd = trav / dt - itrav
@@ -823,8 +857,8 @@ class Kirchhoff(LinearOperator):
                     itravii = itrav[ii]
                     travdii = travd[ii]
                     if 0 <= itravii < nt - 1:
-                        y[isrc * nr + irec, itravii] += x[ii] * (1 - travdii)
-                        y[isrc * nr + irec, itravii + 1] += x[ii] * travdii
+                        y[isrc * nrs + irec, itravii] += x[ii] * (1 - travdii)
+                        y[isrc * nrs + irec, itravii + 1] += x[ii] * travdii
         return y
 
     @staticmethod
@@ -838,21 +872,24 @@ class Kirchhoff(LinearOperator):
         dt: float,
         trav_srcs: NDArray,
         trav_recs: NDArray,
+        paired: bool = False,
     ) -> NDArray:
+        # paired=True: only receiver isrc for source isrc (one trace per pair)
+        nrs, ipair = (1, 1) if paired else (nr, 0)
         for ii in prange(ni):
             trav_srcsii = trav_srcs[ii]
             trav_recsii = trav_recs[ii]
             for isrc in prange(ns):
                 trav_srcii = trav_srcsii[isrc]
-                for irec in range(nr):
-                    trav_recii = trav_recsii[irec]
+                for irec in range(nrs):
+                    trav_recii = trav_recsii[irec + ipair * isrc]
                     travii = trav_srcii + trav_recii
                     itravii = int(travii / dt)
                     travdii = travii / dt - itravii
                     if 0 <= itravii < nt - 1:
                         y[ii] += (
-                            x[isrc * nr + irec, itravii] * (1 - travdii)
-                            + x[isrc * nr + irec, itravii + 1] * travdii
+                            x[isrc * nrs + irec, itravii] * (1 - travdii)
+                            + x[isrc * nrs + irec, itravii + 1] * travdii
                         )
         return y
 
@@ -880,22 +917,25 @@ class Kirchhoff(LinearOperator):
         angleaperturemax: float,
         angles_srcs: NDArray,
         angles_recs: NDArray,
+        paired: bool = False,
     ) -> NDArray:
+        # paired=True: only receiver isrc for source isrc (one trace per pair)
+        nrs, ipair = (1, 1) if paired else (nr, 0)
         daperture = aperturemax - aperturemin
         dangleaperture = angleaperturemax - angleaperturemin
         for isrc in prange(ns):
             travisrc = trav_srcs[:, isrc]
             ampisrc = amp_srcs[:, isrc]
             angleisrc = angles_srcs[:, isrc]
-            for irec in range(nr):
-                travirec = trav_recs[:, irec]
+            for irec in range(nrs):
+                travirec = trav_recs[:, irec + ipair * isrc]
                 trav = travisrc + travirec
                 itrav = (trav / dt).astype("int32")
                 travd = trav / dt - itrav
-                ampirec = amp_recs[:, irec]
-                angleirec = angles_recs[:, irec]
-                sixisrcrec = six[isrc * nr + irec]
-                rixisrcrec = rix[isrc * nr + irec]
+                ampirec = amp_recs[:, irec + ipair * isrc]
+                angleirec = angles_recs[:, irec + ipair * isrc]
+                sixisrcrec = six[isrc * nrs + irec]
+                rixisrcrec = rix[isrc * nrs + irec]
                 # compute cosine of half opening angle and total amplitude scaling
                 cosangle = np.cos((angleisrc - angleirec) / 2.0)
                 amp = 2.0 * cosangle * ampisrc * ampirec / vel
@@ -956,10 +996,10 @@ class Kirchhoff(LinearOperator):
                                 )
                             # time limit check
                             if 0 <= itravii < nt - 1:
-                                y[isrc * nr + irec, itravii] += (
+                                y[isrc * nrs + irec, itravii] += (
                                     x[ii] * (1 - travdii) * damp * aptap
                                 )
-                                y[isrc * nr + irec, itravii + 1] += (
+                                y[isrc * nrs + irec, itravii + 1] += (
                                     x[ii] * travdii * damp * aptap
                                 )
         return y
@@ -988,7 +1028,10 @@ class Kirchhoff(LinearOperator):
         angleaperturemax: float,
         angles_srcs: NDArray,
         angles_recs: NDArray,
+        paired: bool = False,
     ) -> NDArray:
+        # paired=True: only receiver isrc for source isrc (one trace per pair)
+        nrs, ipair = (1, 1) if paired else (nr, 0)
         daperture = aperturemax - aperturemin
         dangleaperture = angleaperturemax - angleaperturemin
         for ii in prange(ni):
@@ -1005,15 +1048,15 @@ class Kirchhoff(LinearOperator):
                 trav_srcii = trav_srcsii[isrc]
                 amp_srcii = amp_srcsii[isrc]
                 angle_src = angle_srcsii[isrc]
-                for irec in range(nr):
-                    trav_recii = trav_recsii[irec]
+                for irec in range(nrs):
+                    trav_recii = trav_recsii[irec + ipair * isrc]
                     travii = trav_srcii + trav_recii
                     itravii = int(travii / dt)
                     travdii = travii / dt - itravii
-                    amp_recii = amp_recsii[irec]
-                    angle_rec = angle_recsii[irec]
-                    sixisrcrec = six[isrc * nr + irec]
-                    rixisrcrec = rix[isrc * nr + irec]
+                    amp_recii = amp_recsii[irec + ipair * isrc]
+                    angle_rec = angle_recsii[irec + ipair * isrc]
+                    sixisrcrec = six[isrc * nrs + irec]
+                    rixisrcrec = rix[isrc * nrs + irec]
                     abs_angle_src = abs(angle_src)
                     abs_angle_rec = abs(angle_rec)
                     # compute cosine of half opening angle and total amplitude scaling
@@ -1068,8 +1111,8 @@ class Kirchhoff(LinearOperator):
                                 # assign values
                                 y[ii] += (
                                     (
-                                        x[isrc * nr + irec, itravii] * (1 - travdii)
-                                        + x[isrc * nr + irec, itravii + 1] * travdii
+                                        x[isrc * nrs + irec, itravii] * (1 - travdii)
+                                        + x[isrc * nrs + irec, itravii + 1] * travdii
                                     )
                                     * damp
                                     * aptap
@@ -1080,6 +1123,9 @@ class Kirchhoff(LinearOperator):
         if engine not in ["numpy", "numba", "cuda"]:
             msg = f"engine must be numpy or numba or cuda, got {engine}"
             raise ValueError(msg)
+        if self.paired and engine == "cuda":
+            msg = "`engine=cuda` not implemented for paired=True"
+            raise NotImplementedError(msg)
         if engine == "numba" and jit_message is None:
             numba_opts = dict(
                 nopython=True, nogil=True, parallel=parallel
@@ -1119,6 +1165,10 @@ class Kirchhoff(LinearOperator):
             elif not self.travsrcrec:
                 self._kirch_matvec = self._trav_kirch_matvec
                 self._kirch_rmatvec = self._trav_kirch_rmatvec
+        if self.paired and self.travsrcrec:
+            # one trace per source-receiver pair (a single table already is per pair)
+            self._kirch_matvec = partial(self._kirch_matvec, paired=True)
+            self._kirch_rmatvec = partial(self._kirch_rmatvec, paired=True)
 
     @reshaped
     def _matvec(self, x: NDArray) -> NDArray:
