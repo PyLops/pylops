@@ -351,7 +351,7 @@ class Kirchhoff(LinearOperator):
             _,
             _,
             _,
-            _,
+            dsamp,
             _,
         ) = Kirchhoff._identify_geometry(z, x, srcs, recs, y=y)
         self.dt = t[1] - t[0]
@@ -424,10 +424,12 @@ class Kirchhoff(LinearOperator):
                         # compute traveltime gradients at image points
                         trav_srcs_grad = np.gradient(
                             self.trav_srcs.reshape(*dims, ns),
+                            *dsamp,
                             axis=np.arange(self.ndims),
                         )
                         trav_recs_grad = np.gradient(
                             self.trav_recs.reshape(*dims, nr),
+                            *dsamp,
                             axis=np.arange(self.ndims),
                         )
         else:
@@ -502,6 +504,8 @@ class Kirchhoff(LinearOperator):
         )
         if len(self.aperture) == 1:
             self.aperture = np.array([0.8 * self.aperture[0], self.aperture[0]])
+        # Kernels use x indices for offsets and z indices for depths.
+        self._aperture_scale = 1.0 if aperture is None else dsamp[-1] / dsamp[-2]
 
         # define angle aperture
         angleaperture = [0.0, 1000.0] if angleaperture is None else angleaperture
@@ -1138,8 +1142,8 @@ class Kirchhoff(LinearOperator):
                 self.trav_recs,
                 self.amp_srcs,
                 self.amp_recs,
-                self.aperture[0],
-                self.aperture[1],
+                self.aperture[0] * self._aperture_scale,
+                self.aperture[1] * self._aperture_scale,
                 self.aperturetap,
                 self.nz,
                 self.six,
@@ -1188,8 +1192,8 @@ class Kirchhoff(LinearOperator):
                 self.trav_recs,
                 self.amp_srcs,
                 self.amp_recs,
-                self.aperture[0],
-                self.aperture[1],
+                self.aperture[0] * self._aperture_scale,
+                self.aperture[1] * self._aperture_scale,
                 self.aperturetap,
                 self.nz,
                 self.six,
