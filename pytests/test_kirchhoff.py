@@ -219,6 +219,37 @@ def test_traveltime_table():
         assert_array_almost_equal(trav_recs_ana, trav_recs_eik, decimal=2)
 
 
+def test_kirchhoff_unequal_spacing():
+    """Dynamic angles and aperture with different dx and dz"""
+    xs, zs = npp.arange(11) * 10.0, npp.arange(31) * 2.0
+    kwargs = dict(
+        z=zs,
+        x=xs,
+        t=npp.arange(201) * 0.002,
+        srcs=npp.array([[0.0], [0.0]]),
+        recs=npp.array([[100.0], [0.0]]),
+        vel=500.0,
+        wav=npp.ones(1),
+        wavcenter=0,
+        dynamic=True,
+    )
+    ana = Kirchhoff(mode="analytic", **kwargs)
+    byot = Kirchhoff(
+        mode="byot",
+        trav=(ana.trav_srcs, ana.trav_recs),
+        amp=(ana.amp_srcs, ana.amp_recs),
+        **kwargs,
+    )
+    assert_array_almost_equal(byot.angle_srcs, ana.angle_srcs)
+    assert_array_almost_equal(byot.angle_recs, ana.angle_recs)
+
+    # offset / depth = 100 / 52 at this point, outside the aperture
+    refl = npp.zeros((len(xs), len(zs)))
+    refl[5, 25] = 1
+    Kop = Kirchhoff(mode="analytic", aperture=(1.0, 1.1), **kwargs)
+    assert npp.linalg.norm(Kop @ refl.ravel()) == 0
+
+
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par1d), (par2d), (par3d)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_kirchhoff2d(par, dtype):
