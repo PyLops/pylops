@@ -101,12 +101,20 @@ class Kirchhoff(LinearOperator):
         aperture is applied. If tuple, apertures below the first value are
         accepted and those after the second value are rejected. A tapering is implemented
         for those between such values.
+
+        .. note::
+
+            Currently only implemented in 2D mode.
     angleaperture : :obj:`float` or :obj:`tuple`, optional
         .. versionadded:: 2.0.0
 
         Maximum allowed angle (either source or receiver side) in degrees. If ``None``,
         angle aperture limitations are not introduced. See ``aperture`` for implementation
         details regarding scalar and tuple cases.
+
+        .. note::
+
+            Currently only implemented in 2D mode.
     snell : :obj:`float` or :obj:`tuple`, optional
         Deprecated, will be removed in v3.0.0. Simply kept for back-compatibility with previous implementation,
         but effectively not affecting the behaviour of the operator.
@@ -206,6 +214,9 @@ class Kirchhoff(LinearOperator):
         If ``engine="cuda"`` and ``trav`` is provided as a single table
     ValueError
         If ``mode`` is neither ``analytic``, ``eikonal``, or ``byot``.
+    ValueError
+        If the first element of ``z`` is negative (shift the depth axis
+        so that it starts at zero or at a positive depth).
 
     Notes
     -----
@@ -270,7 +281,7 @@ class Kirchhoff(LinearOperator):
       directly by user using ``trav`` input parameter. Similarly, in this case one
       can also provide their own amplitude scaling ``amp``.
 
-    Two aperture limitations have been also implemented as defined by:
+    In 2D mode, two aperture limitations have been also implemented as defined by:
 
     * ``aperture``: the maximum allowed aperture is expressed as the ratio of
       offset over depth. This aperture limitation avoid including grazing angles
@@ -352,8 +363,14 @@ class Kirchhoff(LinearOperator):
             _,
             _,
             dsamp,
-            _,
+            origin,
         ) = Kirchhoff._identify_geometry(z, x, srcs, recs, y=y)
+        if origin[-1] < 0:
+            msg = (
+                "z[0] must be non-negative, shift the depth axis "
+                "so that it starts at z=0 (or at a positive depth)"
+            )
+            raise ValueError(msg)
         self.dt = t[1] - t[0]
         self.nt = len(t)
 
@@ -369,7 +386,7 @@ class Kirchhoff(LinearOperator):
             elif self.ndims == 3:
                 # TODO: compute 3D indices for aperture filter
                 # currently no aperture filter in 3D... just make indices 0
-                # so check if always passed
+                # so check is always passed
                 self.six = np.zeros(nr * ns)
                 self.rix = np.zeros(nr * ns)
 
@@ -420,18 +437,17 @@ class Kirchhoff(LinearOperator):
                         msg = "amp must be provided as a tuple of source and receiver amplitude tables when selecting mode='dynamic'"
                         raise NotImplementedError(msg)
 
-                    if self.travsrcrec:
-                        # compute traveltime gradients at image points
-                        trav_srcs_grad = np.gradient(
-                            self.trav_srcs.reshape(*dims, ns),
-                            *dsamp,
-                            axis=np.arange(self.ndims),
-                        )
-                        trav_recs_grad = np.gradient(
-                            self.trav_recs.reshape(*dims, nr),
-                            *dsamp,
-                            axis=np.arange(self.ndims),
-                        )
+                    # compute traveltime gradients at image points
+                    trav_srcs_grad = np.gradient(
+                        self.trav_srcs.reshape(*dims, ns),
+                        *dsamp,
+                        axis=np.arange(self.ndims),
+                    )
+                    trav_recs_grad = np.gradient(
+                        self.trav_recs.reshape(*dims, nr),
+                        *dsamp,
+                        axis=np.arange(self.ndims),
+                    )
         else:
             msg = f"mode must be either 'analytic', 'eikonal' or 'byot', got {mode}"
             raise ValueError(msg)
@@ -504,8 +520,12 @@ class Kirchhoff(LinearOperator):
         )
         if len(self.aperture) == 1:
             self.aperture = np.array([0.8 * self.aperture[0], self.aperture[0]])
-        # Kernels use x indices for offsets and z indices for depths.
+
+        # define scaling for uneven spacing (dx!=dz) as kernels use
+        # x indices for offsets and z indices for depths.
         self._aperture_scale = 1.0 if aperture is None else dsamp[-1] / dsamp[-2]
+        # define shift to depth for non-zero z-axis origin (in number of samples)
+        self._aperture_zoff = origin[-1] / dsamp[-1]
 
         # define angle aperture
         angleaperture = [0.0, 1000.0] if angleaperture is None else angleaperture
@@ -878,6 +898,7 @@ class Kirchhoff(LinearOperator):
         aperturemax: float,
         aperturetap: NDArray,
         nz: int,
+        zoff: float,
         six: NDArray,
         rix: NDArray,
         angleaperturemin: float,
@@ -946,7 +967,7 @@ class Kirchhoff(LinearOperator):
                         # identify z-index of image point
                         iz = ii % nz
                         # aperture check
-                        aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1)
+                        aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1 + zoff)
                         if aperture < aperturemax:
                             if aperture >= aperturemin:
                                 # extract aperture taper value
@@ -986,6 +1007,7 @@ class Kirchhoff(LinearOperator):
         aperturemax: float,
         aperturetap: NDArray,
         nz: int,
+        zoff: float,
         six: NDArray,
         rix: NDArray,
         angleaperturemin: float,
@@ -1055,7 +1077,7 @@ class Kirchhoff(LinearOperator):
                             )
 
                         # aperture check
-                        aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1)
+                        aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1 + zoff)
                         if aperture < aperturemax:
                             if aperture >= aperturemin:
                                 # extract aperture taper value
@@ -1146,6 +1168,7 @@ class Kirchhoff(LinearOperator):
                 self.aperture[1] * self._aperture_scale,
                 self.aperturetap,
                 self.nz,
+                self._aperture_zoff,
                 self.six,
                 self.rix,
                 self.angleaperture[0],
@@ -1196,6 +1219,7 @@ class Kirchhoff(LinearOperator):
                 self.aperture[1] * self._aperture_scale,
                 self.aperturetap,
                 self.nz,
+                self._aperture_zoff,
                 self.six,
                 self.rix,
                 self.angleaperture[0],

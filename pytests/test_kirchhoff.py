@@ -219,19 +219,20 @@ def test_traveltime_table():
         assert_array_almost_equal(trav_recs_ana, trav_recs_eik, decimal=2)
 
 
-def test_kirchhoff_unequal_spacing():
-    """Dynamic angles and aperture with different dx and dz"""
-    xs, zs = npp.arange(11) * 10.0, npp.arange(31) * 2.0
+@pytest.mark.parametrize("par", [(par1d)])
+def test_kirchhoff_unequal_spacing_angles(par):
+    """Check dynamic angles with different dx and dz are same for
+    analytical and byot traveltime tables"""
     kwargs = dict(
-        z=zs,
-        x=xs,
-        t=npp.arange(201) * 0.002,
-        srcs=npp.array([[0.0], [0.0]]),
-        recs=npp.array([[100.0], [0.0]]),
-        vel=500.0,
-        wav=npp.ones(1),
-        wavcenter=0,
-        dynamic=True,
+        z=z,
+        x=x,
+        t=t,
+        srcs=s2d[:, :1],
+        recs=r2d[:, -1:],
+        vel=v0,
+        wav=wav,
+        wavcenter=wavc,
+        dynamic=par["dynamic"],
     )
     ana = Kirchhoff(mode="analytic", **kwargs)
     byot = Kirchhoff(
@@ -243,11 +244,38 @@ def test_kirchhoff_unequal_spacing():
     assert_array_almost_equal(byot.angle_srcs, ana.angle_srcs)
     assert_array_almost_equal(byot.angle_recs, ana.angle_recs)
 
-    # offset / depth = 100 / 52 at this point, outside the aperture
-    refl = npp.zeros((len(xs), len(zs)))
-    refl[5, 25] = 1
-    Kop = Kirchhoff(mode="analytic", aperture=(1.0, 1.1), **kwargs)
-    assert npp.linalg.norm(Kop @ refl.ravel()) == 0
+
+@pytest.mark.parametrize("par", [(par1d)])
+def test_kirchhoff_unequal_spacing_aperture(par):
+    """Check aperture with different dx and dz (with single scatterer
+    outside of aperture, output should be zero)"""
+    kwargs = dict(
+        z=z,
+        x=x,
+        t=t,
+        srcs=s2d[:, :1],
+        recs=r2d[:, -1:],
+        vel=v0,
+        wav=wav,
+        wavcenter=wavc,
+        dynamic=par["dynamic"],
+    )
+
+    # single scatterer at grid point (ix=nx//2, iz=2)
+    refl = np.zeros((PAR["nx"], PAR["nz"]))
+    refl[PAR["nx"] // 2, 2] = 1
+
+    # operator aperture (offset / depth, scaled by dx / dz) of the scatterer is
+    # 11 / 3 * 1 / 2 ~= 1.83: apertures below / above it give
+    # no output / output
+    aperture_below = (0.2, 0.21)
+    aperture_above = (2.0, 2.1)
+
+    Kop_below = Kirchhoff(mode="analytic", aperture=aperture_below, **kwargs)
+    assert np.linalg.norm(Kop_below @ refl.ravel()) == 0
+
+    Kop_above = Kirchhoff(mode="analytic", aperture=aperture_above, **kwargs)
+    assert np.linalg.norm(Kop_above @ refl.ravel()) != 0
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par1d), (par2d), (par3d)])
