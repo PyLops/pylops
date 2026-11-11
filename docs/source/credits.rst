@@ -35,3 +35,8 @@
 *  `Vincent Gao <https://github.com/gaoflow>`_, gaoflow
 *  `Barkure <https://github.com/barkure>`_, barkure
 *  `Ahmet Hakan Bezir <https://github.com/AHMETHAKANBEZIR1>`_, AHMETHAKANBEZIR1
+*  `Mika Mikasuki <https://github.com/mikamikasuki>`_, mikamikasuki
+*  `Raashish Aggarwal <https://github.com/raashish1601>`_, raashish1601
+*  `Anton Soloviev <https://github.com/AHMETHAKANBEZIR1>`_, antonsoo
+*  `Diadko Shmek <https://github.com/AHMETHAKANBEZIR1>`_, DiadkoShmek
+*  `Don-Yin <https://github.com/AHMETHAKANBEZIR1>`_, Don-Yin
