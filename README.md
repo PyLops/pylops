@@ -187,5 +187,9 @@ A list of video tutorials to learn more about PyLops:
 * Yuxi Hong, hongyx11
 * Vincent Gao, gaoflow
 * Barkure, barkure
-* Barkure, barkure
 * Ahmet Hakan Bezir, AHMETHAKANBEZIR1
+* Mika Mikasuki, mikamikasuki
+* Raashish Aggarwal, raashish1601
+* Anton Soloviev, antonsoo
+* Diadko Shmek, DiadkoShmek
+* Don-Yin, Don-Yin

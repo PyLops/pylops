@@ -3,6 +3,54 @@
 |:newspaper_roll:| Changelog
 ############################
 
+
+Version 2.9.0
+-------------
+
+*Released on: 11/11/2026*
+
+* Added ``lambdaRL1s`` and ``kwargs_solver`` to :py:class:`pylops.optimization.cls_sparsity.SplitBregman` 
+* Added :py:class:`pylops.signalprocessing.Downsample2D` operator
+* Added :py:class:`pylops.signalprocessing.SWT`, :py:class:`pylops.signalprocessing.SWT2D`, 
+  and :py:class:`pylops.signalprocessing.SWTND` operators
+* Added :py:class:`pylops.MultiOperator` with support for multiprocessing/multithreading
+  in linear operators
+* Added support for complex-valued filters in :py:class:`pylops.signalprocessing.Convolve1D` operator
+* Added :py:func:`pylops.signalprocessing.sliding1d.sliding1d_pad_to_next`,
+  :py:func:`pylops.signalprocessing.sliding2d.sliding2d_pad_to_next`,
+  :py:func:`pylops.signalprocessing.sliding3d.sliding3d_pad_to_next`,
+  :py:func:`pylops.signalprocessing.patch2d.patch2d_pad_to_next`,
+  :py:func:`pylops.signalprocessing.patch3d.patch3d_pad_to_next` utility routines
+* Added 3D extension :py:func:`pylops.utils.signalprocessing.slope_estimate`
+* Added support for dividing an operator by a scalar
+* Added CuPy support to :py:func:`pylops.LinearOperator.eigs` and :py:func:`pylops.LinearOperator.cond`
+* Improved handling of dtype in :py:class:`pylops.LinearOperator`
+* Avoid weighting terms in :py:class:`pylops.Laplacian` for ``weight=1``
+* Several improvements and bug fixes to :py:class:`pylops.signalprocessing.Convolve1D`
+* Preserve direction and input identity in :py:class:`pylops.MemoizeOperator` evaluations
+* Fixed ``memory_usage`` estimates for various solvers
+* Fixed behaviour of :py:class:`pylops.optimization.cls_sparsity.SplitBregman` with ``tol=0`` and 
+  aligned documentation to implementation
+* Fixed computation of cost for ND operators in :py:class:`pylops.optimization.cls_sparsity.ISTA`
+  and :py:class:`pylops.optimization.cls_sparsity.FISTA`
+* Fixed :py:class:`pylops.waveeqprocessing.oneway.Deghosting` to work with either sparsity or 
+  restriction and both together
+* Fixed ``aperture`` and ``angleaperture`` of :py:class:`pylops.waveeqprocessing.Kirchhoff` for grids with
+  uneven spatial sampling across directions
+* Fixed :py:class:`pylops.avo.poststack.PoststackInversion` and 
+  :py:class:`pylops.avo.prestack.PrestackInversion` to ensure that ``data`` is never overwritten
+* Fixed ordering of regularization for explicit mode in :py:class:`pylops.avo.prestack.PrestackInversion`
+* Fixed orientation of ``todense`` output in :py:class:`pylops.signalprocessing.NonStationaryFilters1D`
+* Fixed handling of coefficient dtype in :py:class:`pylops.Regression`
+* Fixed handling of negative and out-of-bounds values in ``iava`` in :py:class:`pylops.Restriction`
+* Fixed :py:class:`pylops.TorchOperator` with ``batch=True`` for operators whose model and
+  data have different numbers of dimensions (e.g., :py:class:`pylops.Sum`)
+* Fixed :py:class:`pylops.TorchOperator` to honour ``flatten`` also when ``batch=False``
+  (inputs of size ``Op.dims`` now require ``flatten=False``) and to return outputs
+  whose shape depends only on ``batch`` and ``flatten``
+* Fixed use of DLPack in :py:class:`pylops.TorchOperator` to conform with CuPy new standards
+
+
 Version 2.8.0
 -------------
 
