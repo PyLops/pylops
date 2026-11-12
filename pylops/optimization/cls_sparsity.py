@@ -378,6 +378,11 @@ class IRLS(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
         Parameters
         ----------
         kind : :obj:`str`, optional
@@ -390,8 +395,8 @@ class IRLS(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -402,13 +407,23 @@ class IRLS(Solver):
         if kind == "datamodel":
             memuse += self.Op.shape[1] * nbytes
 
-        # Step (additional variables to those in setup): rw
+        # Step (additional variables to those in setup): r, rw
+        # and inner solver (CGLS)
         if kind == "data":
-            memuse += self.Op.shape[0] * nbytes
-        elif kind == "model":
-            memuse += self.Op.shape[1] * nbytes
-        elif kind == "datamodel":
             memuse += 2 * self.Op.shape[0] * nbytes
+            # inner solver (regularized_inversion works
+            # on its own copy of y)
+            memuse += (5 * self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
+        elif kind == "model":
+            memuse += (self.Op.shape[0] + self.Op.shape[1]) * nbytes
+            # inner solver on [N x N] system (y is shared with the solver)
+            memuse += 7 * self.Op.shape[0] * nbytes
+        elif kind == "datamodel":
+            nd = self.Op.shape[0] + self.Op.shape[1]
+            memuse += 2 * nd * nbytes
+            # inner solver on [(N+M) x M] system (regularized_inversion
+            # works on its own copy of y)
+            memuse += (5 * self.Op.shape[1] + 3 * nd) * nbytes
 
         if show:
             print(f"IRLS predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -980,13 +995,22 @@ class OMP(Solver):
 
     def memory_usage(
         self,
+        niter_outer: int = 10,
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
         Parameters
         ----------
+        niter_outer : :obj:`int`, optional
+            Number of iterations of outer loop (upper bound of the number
+            of selected columns, which sets the size of the inner solver)
         show : :obj:`bool`, optional
             Display memory usage
         unit: :obj:`str`, optional
@@ -995,8 +1019,8 @@ class OMP(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -1006,7 +1030,10 @@ class OMP(Solver):
         memuse = (2 * self.Op.shape[0]) * nbytes
 
         # Step (additional variables to those in setup): cres, cres_abs
-        memuse += (2 * self.Op.shape[0]) * nbytes
+        memuse += (2 * self.Op.shape[1]) * nbytes
+
+        # Inner solver (CGLS on [N x niter_outer] system, y is shared)
+        memuse += (5 * niter_outer + 2 * self.Op.shape[0]) * nbytes
 
         if show:
             print(f"OMP predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -1560,6 +1587,7 @@ class ISTA(Solver):
 
     def memory_usage(
         self,
+        SOp: LinearOperator | None = None,
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
@@ -1567,6 +1595,8 @@ class ISTA(Solver):
 
         Parameters
         ----------
+        SOp : :obj:`pylops.LinearOperator`, optional
+            Sparsifying transform (if used in ``setup``)
         show : :obj:`bool`, optional
             Display memory usage
         unit: :obj:`str`, optional
@@ -1575,8 +1605,8 @@ class ISTA(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -1587,6 +1617,10 @@ class ISTA(Solver):
 
         # Step (additional variables to those in setup): xold, grad, x_unthesh - res
         memuse += (3 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        # Sparsifying transform: SOpx_unthesh
+        if SOp is not None:
+            memuse += SOp.shape[1] * np.dtype(SOp.dtype).itemsize
 
         if show:
             print(f"ISTA predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -2214,6 +2248,7 @@ class FISTA(ISTA):
 
     def memory_usage(
         self,
+        SOp: LinearOperator | None = None,
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
@@ -2221,6 +2256,8 @@ class FISTA(ISTA):
 
         Parameters
         ----------
+        SOp : :obj:`pylops.LinearOperator`, optional
+            Sparsifying transform (if used in ``setup``)
         show : :obj:`bool`, optional
             Display memory usage
         unit: :obj:`str`, optional
@@ -2229,8 +2266,8 @@ class FISTA(ISTA):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -2241,6 +2278,10 @@ class FISTA(ISTA):
 
         # Step (additional variables to those in setup): xold, grad, x_unthesh, z - res
         memuse += (4 * self.Op.shape[1] + self.Op.shape[0]) * nbytes
+
+        # Sparsifying transform: SOpx_unthesh
+        if SOp is not None:
+            memuse += SOp.shape[1] * np.dtype(SOp.dtype).itemsize
 
         if show:
             print(f"FISTA predicted memory usage: {memuse / _units[unit]:.2f} {unit}")
@@ -2367,7 +2408,7 @@ class FISTA(ISTA):
             xupdate = np.linalg.norm(self.xold)
 
         # cost functions
-        costdata = 0.5 * np.linalg.norm(self.y - self.Op @ x) ** 2
+        costdata = 0.5 * np.linalg.norm(self.y - self.Opmatvec(x)) ** 2
         costreg = self.eps * np.linalg.norm(x, ord=1)
         self.cost.append(float(costdata + costreg))
 
@@ -2506,7 +2547,8 @@ class SPGL1(Solver):
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
-        pass
+        msg = "memory_usage is not available for SPGL1 as memory is allocated by the external spgl1 library"
+        raise NotImplementedError(msg)
 
     def setup(
         self,
@@ -2747,16 +2789,20 @@ class SplitBregman(Solver):
         Whether the input data is a JAX array or not.
     nregsL1 : :obj:`int`
         Number of L1 regularization terms.
-    b : :obj:`numpy.ndarray`
-        Bregman update vector.
-    d : :obj:`numpy.ndarray`
-        Shrinked vector.
-    nregsL1 : :obj:`int`
+    b : :obj:`list`
+        Bregman variables (one per :math:`L_1` regularization term).
+    d : :obj:`list`
+        Split variables obtained by shrinkage (one per :math:`L_1`
+        regularization term).
+    nregsL2 : :obj:`int`
         Number of L2 regularization terms.
     Regs : :obj:`list`
         List of L1 and L2 regularization terms.
     epsRs : :obj:`list`
         List of L1 and L2 regularization dampings.
+    threshRL1s : :obj:`list`
+        List of thresholds of the shrinkage steps (one per :math:`L_1`
+        regularization term).
     cost : :obj:`numpy.ndarray`, optional
         History of total cost function through iterations.
     iiter : :obj:`int`
@@ -2775,15 +2821,16 @@ class SplitBregman(Solver):
         J = \frac{\mu}{2} \|\textbf{y} - \textbf{Op}\,\textbf{x} \|_2^2 +
         \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{y}_{\mathbf{R}_{2,i}} -
         \mathbf{R}_{2,i} \textbf{x} \|_2^2 +
-        \sum_i \epsilon_{\mathbf{R}_{1,i}} \| \mathbf{R}_{1,i} \textbf{x} \|_1
+        \sum_i \epsilon_{\mathbf{R}_{1,i}}^2 \| \mathbf{R}_{1,i} \textbf{x} \|_1
 
     where :math:`\mu` is the reconstruction damping, :math:`\epsilon_{\mathbf{R}_{2,i}}`
     are the damping factors used to weight the different :math:`L_2` regularization
     terms of the cost function and :math:`\epsilon_{\mathbf{R}_{1,i}}`
-    are the damping factors used to weight the different :math:`L_1` regularization
-    terms of the cost function.
+    are the damping factors of the different :math:`L_1` regularization
+    terms of the cost function. Note that the effective weight of each
+    :math:`L_1` regularization term is :math:`\epsilon_{\mathbf{R}_{1,i}}^2`.
 
-    The generalized Split-Bergman algorithm [1]_ is used to solve such cost
+    The generalized Split-Bregman algorithm [1]_ is used to solve such cost
     function: the algorithm is composed of a sequence of unconstrained
     inverse problems and Bregman updates.
 
@@ -2794,31 +2841,50 @@ class SplitBregman(Solver):
         J = \frac{\mu}{2} \|\textbf{y} - \textbf{Op}\,\textbf{x}\|_2^2 +
         \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{y}_{\mathbf{R}_{2,i}} -
         \mathbf{R}_{2,i} \textbf{x}\|_2^2 +
-        \sum_i \| \textbf{y}_i \|_1 \quad \text{subject to} \quad
-        \textbf{y}_i = \mathbf{R}_{1,i} \textbf{x} \quad \forall i
+        \sum_i \epsilon_{\mathbf{R}_{1,i}}^2 \| \textbf{d}_i \|_1 \quad \text{subject to} \quad
+        \textbf{d}_i = \mathbf{R}_{1,i} \textbf{x} \quad \forall i
 
     and solved as follows:
 
     .. math::
-        \DeclareMathOperator*{\argmin}{arg\,min}
-        \begin{align}
-        (\textbf{x}^{k+1}, \textbf{y}_i^{k+1}) =
-        \argmin_{\mathbf{x}, \mathbf{y}_i}
-        \|\textbf{y} - \textbf{Op}\,\textbf{x}\|_2^2
-        &+ \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{y}_{\mathbf{R}_{2,i}} -
+        \begin{aligned}
+        (\textbf{x}^{k+1}, \textbf{d}_i^{k+1}) = \operatorname*{arg\,min}_{\mathbf{x}, \mathbf{d}_i}
+        \; & \frac{\mu}{2} \|\textbf{y} - \textbf{Op}\,\textbf{x}\|_2^2 \\
+        & + \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{2,i}} \|\mathbf{y}_{\mathbf{R}_{2,i}} -
         \mathbf{R}_{2,i} \textbf{x}\|_2^2 \\
-        &+ \frac{1}{2}\sum_i \epsilon_{\mathbf{R}_{1,i}} \|\textbf{y}_i -
+        & + \frac{1}{2}\sum_i \lambda_{\mathbf{R}_{1,i}} \|\textbf{d}_i -
         \mathbf{R}_{1,i} \textbf{x} - \textbf{b}_i^k\|_2^2 \\
-        &+ \sum_i \| \textbf{y}_i \|_1
-        \end{align}
+        & + \sum_i \epsilon_{\mathbf{R}_{1,i}}^2 \| \textbf{d}_i \|_1
+        \end{aligned}
 
     .. math::
         \textbf{b}_i^{k+1}=\textbf{b}_i^k +
-        (\mathbf{R}_{1,i} \textbf{x}^{k+1} - \textbf{y}^{k+1})
+        \tau (\mathbf{R}_{1,i} \textbf{x}^{k+1} - \textbf{d}_i^{k+1})
 
-    The :py:func:`scipy.sparse.linalg.lsqr` solver and a fast shrinkage
-    algorithm are used within a inner loop to solve the first step. The entire
-    procedure is repeated ``niter_outer`` times until convergence.
+    where :math:`\textbf{d}_i` are the split variables, :math:`\textbf{b}_i`
+    are the Bregman variables, :math:`\lambda_{\mathbf{R}_{1,i}}` are the
+    weights of the splitting terms, and :math:`\tau` is a scaling factor of the
+    Bregman update (:math:`\tau=1` in the original algorithm [1]_). The
+    weights :math:`\lambda_{\mathbf{R}_{1,i}}` do not change the solution of
+    the problem, but affect the conditioning of the
+    :math:`\textbf{x}`-subproblem and the convergence speed of the algorithm.
+    When not provided, :math:`\lambda_{\mathbf{R}_{1,i}} =
+    \epsilon_{\mathbf{R}_{1,i}}`.
+
+    The first step is solved by alternating ``niter_inner`` times the
+    minimization over :math:`\textbf{x}` and over :math:`\textbf{d}_i`. The
+    :math:`\textbf{x}`-subproblem is an :math:`L_2`-regularized least-squares
+    problem, solved with :py:func:`scipy.sparse.linalg.lsqr`
+    (``engine="scipy"`` and NumPy arrays) or with
+    :py:func:`pylops.optimization.solver.cgls` (``engine="pylops"``, or
+    any other array type, e.g., CuPy or JAX arrays). The
+    :math:`\textbf{d}_i`-subproblems are solved in closed form by soft
+    thresholding :math:`\mathbf{R}_{1,i} \textbf{x}^{k+1} + \textbf{b}_i^k`
+    with threshold :math:`\epsilon_{\mathbf{R}_{1,i}}^2 /
+    \lambda_{\mathbf{R}_{1,i}}`. The entire
+    procedure is repeated ``niter_outer`` times, or until the norm of the
+    difference between the models of two subsequent outer iterations is
+    smaller than ``tol``.
 
     .. [1] Goldstein T. and Osher S., "The Split Bregman Method for
        L1-Regularized Problems", SIAM J. on Scientific Computing, vol. 2(2),
@@ -2831,7 +2897,8 @@ class SplitBregman(Solver):
 
         strpar = (
             f"niter_outer = {self.niter_outer:3d}     niter_inner = {self.niter_inner:3d}   tol = {self.tol:2.2e}\n"
-            f"mu = {self.mu:2.2e}         epsL1 = {self.epsRL1s}\t  epsL2 = {self.epsRL2s}"
+            f"mu = {self.mu:2.2e}         epsL1 = {self.epsRL1s}\t  epsL2 = {self.epsRL2s}\n"
+            f"lambdaL1 = {self.lambdaRL1s}"
         )
         print(strpar)
         print("-" * 65)
@@ -2856,6 +2923,11 @@ class SplitBregman(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.lsqr` may consume
+        more memory.
+
         Parameters
         ----------
         nopRegsL1 : :obj:`tuple`, optional
@@ -2870,8 +2942,8 @@ class SplitBregman(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Convert nopRegsL1 and nopRegsL2 if None
@@ -2883,16 +2955,22 @@ class SplitBregman(Solver):
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
 
-        # Setup: x0 - y - b, d dataregsL1 - dataregsL2
+        # Setup: x0 - y - b, d (L1 regularization) - dataregsL2
         memuse = (
             self.Op.shape[1]
             + self.Op.shape[0]
-            + 3 * np.prod(nopRegsL1)
-            + np.prod(nopRegsL2)
+            + 2 * np.sum(nopRegsL1)
+            + np.sum(nopRegsL2)
         ) * nbytes
 
-        # Step (additional variables to those in setup): dataregs
-        memuse += np.prod(nopRegsL1) * nbytes
+        # Step (additional variables to those in setup): d - b temporaries
+        # passed as L1 regularization data (only if preallocate=False)
+        memuse += np.sum(nopRegsL1) * nbytes
+
+        # Inner solver (CGLS on stacked system: regularized_inversion works
+        # on its own copy of the stacked data)
+        ndatatot = self.Op.shape[0] + np.sum(nopRegsL1) + np.sum(nopRegsL2)
+        memuse += (5 * self.Op.shape[1] + 3 * ndatatot) * nbytes
 
         if show:
             print(
@@ -2913,6 +2991,7 @@ class SplitBregman(Solver):
         mu: float = 1.0,
         epsRL1s: SamplingLike | None = None,
         epsRL2s: SamplingLike | None = None,
+        lambdaRL1s: SamplingLike | None = None,
         tol: float = 1e-10,
         tau: float = 1.0,
         restart: bool = False,
@@ -2945,13 +3024,21 @@ class SplitBregman(Solver):
             of ``RegsL2`` or equal to ``None`` to use a zero data for every
             regularization operator in ``RegsL2``)
         mu : :obj:`float`, optional
-             Data term damping
+            Data term damping
         epsRL1s : :obj:`list`
-             :math:`L_1` Regularization dampings (must have the same number of elements
-             as ``RegsL1``)
+            :math:`L_1` Regularization dampings (must have the same number of elements
+            as ``RegsL1``). Note that the effective weight of each :math:`L_1`
+            regularization term in the cost function is ``epsRL1s[i]**2``
         epsRL2s : :obj:`list`
-             :math:`L_2` Regularization dampings (must have the same number of elements
-             as ``RegsL2``)
+            :math:`L_2` Regularization dampings (must have the same number of elements
+            as ``RegsL2``)
+        lambdaRL1s : :obj:`list`, optional
+            .. versionadded:: 2.9.0
+
+            Weights of the splitting terms (must have the same number of
+            elements as ``RegsL1``). They do not change the solution of the
+            problem, but affect the convergence speed of the algorithm. If
+            ``None``, they are set equal to ``epsRL1s``
         tol : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
             at subsequent iterations is smaller than ``tol``
@@ -2974,7 +3061,7 @@ class SplitBregman(Solver):
         Returns
         -------
         x : :obj:`numpy.ndarray`
-            Initial guess of size :math:`[N \times 1]`
+            Initial guess of size :math:`[M \times 1]`
 
         """
         self.y = y
@@ -2986,6 +3073,7 @@ class SplitBregman(Solver):
         self.mu = mu
         self.epsRL1s = list(epsRL1s) if epsRL1s is not None else []
         self.epsRL2s = list(epsRL2s) if epsRL2s is not None else []
+        self.lambdaRL1s = list(lambdaRL1s) if lambdaRL1s is not None else self.epsRL1s
         self.tol = tol
         self.tau = tau
         self.restart = restart
@@ -2996,6 +3084,20 @@ class SplitBregman(Solver):
 
         # L1 regularizations
         self.nregsL1 = len(RegsL1)
+        if lambdaRL1s is not None:
+            if len(self.lambdaRL1s) != self.nregsL1:
+                msg = (
+                    f"lambdaRL1s must have the same number of elements as RegsL1 "
+                    f"({len(self.lambdaRL1s)} != {self.nregsL1})"
+                )
+                raise ValueError(msg)
+            if any(lambdaRL1 <= 0 for lambdaRL1 in self.lambdaRL1s):
+                msg = "lambdaRL1s must be strictly positive"
+                raise ValueError(msg)
+        self.threshRL1s = [
+            epsRL1 * (epsRL1 / lambdaRL1)
+            for epsRL1, lambdaRL1 in zip(self.epsRL1s, self.lambdaRL1s, strict=True)
+        ]
         self.b = [
             self.ncp.zeros(RegL1.shape[0], dtype=self.Op.dtype) for RegL1 in RegsL1
         ]
@@ -3021,10 +3123,9 @@ class SplitBregman(Solver):
             self.epsRs += [
                 sqrt(epsRL2s[ireg] / 2) / sqrt(mu / 2) for ireg in range(self.nregsL2)
             ]
-        if epsRL1s is not None:
-            self.epsRs += [
-                sqrt(epsRL1s[ireg] / 2) / sqrt(mu / 2) for ireg in range(self.nregsL1)
-            ]
+        self.epsRs += [
+            sqrt(lambdaRL1 / 2) / sqrt(mu / 2) for lambdaRL1 in self.lambdaRL1s
+        ]
 
         self.x0 = x0
         x = self.ncp.zeros(self.Op.shape[1], dtype=self.Op.dtype) if x0 is None else x0
@@ -3049,20 +3150,23 @@ class SplitBregman(Solver):
 
         Parameters
         ----------
-        x : :obj:`list` or :obj:`numpy.ndarray`
-            Current model vector to be updated by a step of OMP
+        x : :obj:`numpy.ndarray`
+            Current model vector to be updated by a step of Split Bregman
         engine : :obj:`str`, optional
-            Solver to use (``scipy`` or ``pylops``)
+            Solver used for the :math:`\mathbf{x}`-subproblem of the Split
+            Bregman algorithm: ``scipy`` for :py:func:`scipy.sparse.linalg.lsqr`
+            or ``pylops`` for :py:func:`pylops.optimization.solver.cgls`.
+            Note that :py:func:`pylops.optimization.solver.cgls` is always
+            used when ``y`` is not a NumPy array (e.g., CuPy or JAX array)
         show : :obj:`bool`, optional
             Display iteration log
         show_inner : :obj:`bool`, optional
-            Display inner iteration logs of lsqr
+            Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
         **kwargs_solver
-            Arbitrary keyword arguments for chosen solver
-            used to solve the first subproblem in the first step of the
-            Split Bregman algorithm (:py:func:`scipy.sparse.linalg.lsqr` and
-            :py:func:`pylops.optimization.solver.cgls` are used as default
-            for numpy and cupy `data`, respectively).
+            Arbitrary keyword arguments for the solver of the
+            :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
+            (:py:func:`scipy.sparse.linalg.lsqr` or
+            :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
 
         Returns
         -------
@@ -3101,14 +3205,15 @@ class SplitBregman(Solver):
             if not self.preallocate:
                 for ireg in range(self.nregsL1):
                     self.d[ireg] = _softthreshold(
-                        self.RegsL1[ireg].matvec(x) + self.b[ireg], self.epsRL1s[ireg]
+                        self.RegsL1[ireg].matvec(x) + self.b[ireg],
+                        self.threshRL1s[ireg],
                     )
             else:
                 for ireg in range(self.nregsL1):
                     self.ncp.add(
                         self.RegsL1[ireg].matvec(x), self.b[ireg], out=self.d[ireg]
                     )
-                    self.d[ireg] = _softthreshold(self.d[ireg], self.epsRL1s[ireg])
+                    self.d[ireg] = _softthreshold(self.d[ireg], self.threshRL1s[ireg])
 
         # Bregman update
         for ireg in range(self.nregsL1):
@@ -3122,15 +3227,15 @@ class SplitBregman(Solver):
             0
             if self.RegsL2 is None
             else [
-                epsRL2 * self.ncp.linalg.norm(dataregL2 - RegL2.matvec(x)) ** 2
+                epsRL2 / 2.0 * self.ncp.linalg.norm(dataregL2 - RegL2.matvec(x)) ** 2
                 for epsRL2, RegL2, dataregL2 in zip(
                     self.epsRL2s, self.RegsL2, self.dataregsL2, strict=True
                 )
             ]
         )
         self.costregL1 = [
-            self.ncp.linalg.norm(RegL1.matvec(x), ord=1)
-            for _, RegL1 in zip(self.epsRL1s, self.RegsL1, strict=True)
+            epsRL1**2 * self.ncp.linalg.norm(RegL1.matvec(x), ord=1)
+            for epsRL1, RegL1 in zip(self.epsRL1s, self.RegsL1, strict=True)
         ]
         self.costtot = (
             self.costdata
@@ -3159,9 +3264,13 @@ class SplitBregman(Solver):
         Parameters
         ----------
         x : :obj:`numpy.ndarray`
-            Current model vector to be updated by multiple steps of IRLS
+            Current model vector to be updated by multiple steps of Split Bregman
         engine : :obj:`str`, optional
-            Solver to use (``scipy`` or ``pylops``)
+            Solver used for the :math:`\mathbf{x}`-subproblem of the Split
+            Bregman algorithm: ``scipy`` for :py:func:`scipy.sparse.linalg.lsqr`
+            or ``pylops`` for :py:func:`pylops.optimization.solver.cgls`.
+            Note that :py:func:`pylops.optimization.solver.cgls` is always
+            used when ``y`` is not a NumPy array (e.g., CuPy or JAX array)
         show : :obj:`bool`, optional
             Display logs
         itershow : :obj:`tuple`, optional
@@ -3169,11 +3278,12 @@ class SplitBregman(Solver):
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
         show_inner : :obj:`bool`, optional
-            Display inner iteration logs of lsqr
+            Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
         **kwargs_lsqr
-            Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-            subproblem in the first step of the Split Bregman algorithm.
+            Arbitrary keyword arguments for the solver of the
+            :math:`\mathbf{x}`-subproblem of the Split Bregman algorithm
+            (:py:func:`scipy.sparse.linalg.lsqr` or
+            :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
 
         Returns
         -------
@@ -3181,10 +3291,8 @@ class SplitBregman(Solver):
             Estimated model of size :math:`[M \times 1]`
 
         """
-        xold = x.copy() + 1.1 * self.tol
-        while (
-            self.ncp.linalg.norm(x - xold) > self.tol and self.iiter < self.niter_outer
-        ):
+        xupdate = np.inf
+        while xupdate > self.tol and self.iiter < self.niter_outer:
             xold = x.copy()
             showstep = (
                 True
@@ -3197,6 +3305,7 @@ class SplitBregman(Solver):
                 else False
             )
             x = self.step(x, engine, showstep, show_inner, **kwargs_lsqr)
+            xupdate = self.ncp.linalg.norm(x - xold)
             self.callback(x)
             # check if any callback has raised a stop flag
             stop = _callback_stop(self.callbacks)
@@ -3237,6 +3346,7 @@ class SplitBregman(Solver):
         mu: float = 1.0,
         epsRL1s: SamplingLike | None = None,
         epsRL2s: SamplingLike | None = None,
+        lambdaRL1s: SamplingLike | None = None,
         tol: float = 1e-10,
         tau: float = 1.0,
         restart: bool = False,
@@ -3245,7 +3355,8 @@ class SplitBregman(Solver):
         show: bool = False,
         itershow: tuple[int, int, int] = (10, 10, 10),
         show_inner: bool = False,
-        **kwargs_lsqr,
+        kwargs_solver: dict | None = None,
+        **kwargs,
     ) -> tuple[NDArray, int, NDArray]:
         r"""Run entire solver
 
@@ -3273,13 +3384,21 @@ class SplitBregman(Solver):
             of ``RegsL2`` or equal to ``None`` to use a zero data for every
             regularization operator in ``RegsL2``)
         mu : :obj:`float`, optional
-             Data term damping
+            Data term damping
         epsRL1s : :obj:`list`
-             :math:`L_1` Regularization dampings (must have the same number of elements
-             as ``RegsL1``)
+            :math:`L_1` Regularization dampings (must have the same number of elements
+            as ``RegsL1``). Note that the effective weight of each :math:`L_1`
+            regularization term in the cost function is ``epsRL1s[i]**2``
         epsRL2s : :obj:`list`
-             :math:`L_2` Regularization dampings (must have the same number of elements
-             as ``RegsL2``)
+            :math:`L_2` Regularization dampings (must have the same number of elements
+            as ``RegsL2``)
+        lambdaRL1s : :obj:`list`, optional
+            .. versionadded:: 2.9.0
+
+            Weights of the splitting terms (must have the same number of
+            elements as ``RegsL1``). They do not change the solution of the
+            problem, but affect the convergence speed of the algorithm. If
+            ``None``, they are set equal to ``epsRL1s``
         tol : :obj:`float`, optional
             Tolerance. Stop outer iterations if difference between inverted model
             at subsequent iterations is smaller than ``tol``
@@ -3291,7 +3410,11 @@ class SplitBregman(Solver):
             Note that when this is set to ``True``, the ``x0`` provided in the setup will
             be used in all iterations.
         engine : :obj:`str`, optional
-            Solver to use (``scipy`` or ``pylops``)
+            Solver used for the :math:`\mathbf{x}`-subproblem of the Split
+            Bregman algorithm: ``scipy`` for :py:func:`scipy.sparse.linalg.lsqr`
+            or ``pylops`` for :py:func:`pylops.optimization.solver.cgls`.
+            Note that :py:func:`pylops.optimization.solver.cgls` is always
+            used when ``y`` is not a NumPy array (e.g., CuPy or JAX array)
         preallocate : :obj:`bool`, optional
             .. versionadded:: 2.6.0
 
@@ -3305,11 +3428,20 @@ class SplitBregman(Solver):
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
         show_inner : :obj:`bool`, optional
-            Display inner iteration logs of lsqr
-        **kwargs_lsqr
-            Arbitrary keyword arguments for
-            :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-            subproblem in the first step of the Split Bregman algorithm.
+            Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
+        kwargs_solver : :obj:`dict`, optional
+            .. versionadded:: 2.9.0
+
+            Keyword arguments for the solver of the
+            :math:`\mathbf{x}`-subproblem (:py:func:`scipy.sparse.linalg.lsqr` or
+            :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
+            Entries override duplicate values in ``**kwargs``.
+        **kwargs
+            *Deprecated*, will be removed in v3.0.0. Simply kept for
+            back-compatibility with previous implementation.
+
+            Another way to pass keyword arguments to the solver of the
+            :math:`\mathbf{x}`-subproblem.
 
         Returns
         -------
@@ -3332,19 +3464,21 @@ class SplitBregman(Solver):
             mu=mu,
             epsRL1s=epsRL1s,
             epsRL2s=epsRL2s,
+            lambdaRL1s=lambdaRL1s,
             tol=tol,
             tau=tau,
             restart=restart,
             preallocate=preallocate,
             show=show,
         )
+        kwargs_solver = {**kwargs, **(kwargs_solver or {})}
         x = self.run(
             x,
             engine=engine,
             show=show,
             itershow=itershow,
             show_inner=show_inner,
-            **kwargs_lsqr,
+            **kwargs_solver,
         )
         self.finalize(show)
         return x, self.iiter, self.cost

@@ -129,6 +129,18 @@ def test_unknown_engine():
 @pytest.mark.skipif(
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
+def test_Radon2D_unknown_kind():
+    """Check error is raised if unknown (and non-callable) kind is passed"""
+    t = np.arange(11, dtype=np.float64) * 0.005
+    h = np.arange(21, dtype=np.float64)
+    px = np.linspace(0, 2e-2, 21, dtype=np.float64)
+    with pytest.raises(NotImplementedError, match="Wrong kind of basis function"):
+        _ = Radon2D(t, h, px, kind="foo")
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
 @pytest.mark.parametrize(
     "par", [(par1), (par2), (par3), (par4), (par5), (par6), (par7), (par8)]
 )
@@ -187,6 +199,33 @@ def test_Radon2D(par, dtype):
 
     xinv, _, _ = fista(Rop, y, niter=30, eps=1e0)
     assert_array_almost_equal(x.ravel(), xinv, decimal=1)
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
+def test_Radon2D_callable_kind():
+    """Dot-test for Radon2D operator when kind is a custom callable"""
+    dt, dh = 0.005, 1
+    t = np.arange(par1["nt"], dtype=np.float64) * dt
+    h = np.arange(par1["nhx"], dtype=np.float64) * dh
+    px = np.linspace(0, par1["pxmax"], par1["npx"], dtype=np.float64)
+
+    def _linear(x, t, px):
+        return t + px * x
+
+    Rop = Radon2D(
+        t,
+        h,
+        px,
+        centeredh=par1["centeredh"],
+        interp=par1["interp"],
+        kind=_linear,
+        onthefly=False,
+        engine="numpy",
+        dtype=np.float64,
+    )
+    assert dottest(Rop, par1["nhx"] * par1["nt"], par1["npx"] * par1["nt"])
 
 
 @pytest.mark.skipif(

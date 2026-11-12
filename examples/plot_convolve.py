@@ -60,6 +60,25 @@ ax.set_xlim(1.9, 2.1)
 plt.tight_layout()
 
 ###############################################################################
+# We repeat the same example with a complex-valued filter
+Cop = pylops.signalprocessing.Convolve1D(
+    nt, h=h + 1j * h, offset=hcenter, dtype="complex128"
+)
+y = Cop * x
+xinv = Cop / y
+
+fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+for ax, component, title in zip(axs, (np.real, np.imag), ("Real", "Imaginary"), strict=True):
+    ax.plot(t, component(x), "k", lw=2, label=r"$x$")
+    ax.plot(t, component(y), "r", lw=2, label=r"$y=Ax$")
+    ax.plot(t, component(xinv), "--g", lw=2, label=r"$x_{ext}$")
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.legend()
+    ax.set_xlim(1.9, 2.1)
+fig.suptitle("Convolve 1d data with complex filter")
+plt.tight_layout()
+
+###############################################################################
 # We show now that also a filter with mixed phase (i.e., not centered
 # around zero) can be applied and inverted for using the
 # :py:class:`pylops.signalprocessing.Convolve1D`

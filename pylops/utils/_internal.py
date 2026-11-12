@@ -1,8 +1,16 @@
-from collections.abc import Sized
+from __future__ import annotations
+
+from collections.abc import Sequence, Sized
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from pylops.utils.typing import ArrayLike, DTypeLike, NDArray
+
+if TYPE_CHECKING:
+    from scipy.sparse.linalg import LinearOperator as spLinearOperator
+
+    from pylops.linearoperator import LinearOperator
 
 
 def _value_or_sized_to_array(value_or_sized, repeat: int = 1) -> NDArray:
@@ -72,3 +80,32 @@ def _raise_on_wrong_dtype(arr: ArrayLike, dtype: DTypeLike, name: str) -> None:
     if not np.issubdtype(arr.dtype, dtype):
         msg = f"Wrong input type for `{name}`. Must be {dtype}, but received to {arr.dtype}."
         raise TypeError(msg)
+
+
+def _get_dtype(
+    operators: Sequence[LinearOperator | spLinearOperator | None],
+    dtypes: Sequence[DTypeLike] | None = None,
+) -> np.dtype:
+    """Infer the dtype resulting from combining operators and additional dtypes.
+
+    Parameters
+    ----------
+    operators : `obj`:`list`
+        Operators whose ``dtype`` attribute is used in the inference (objects
+        that are ``None`` or have no ``dtype`` attribute are skipped).
+    dtypes : `obj`:`list`, optional
+        Additional ``numpy.dtype``-like objects used in the inference.
+
+    Returns
+    -------
+    dtype : `obj`:`numpy.dtype`
+        Resulting dtype, obtained with ``np.result_type`` after casting every
+        input to a ``numpy.dtype`` (e.g., strings like ``"float64"`` are
+        interpreted as dtype names and not as string scalars).
+
+    """
+    dtypes = [] if dtypes is None else list(dtypes)
+    for obj in operators:
+        if obj is not None and hasattr(obj, "dtype"):
+            dtypes.append(obj.dtype)
+    return np.result_type(*[np.dtype(dtype) for dtype in dtypes])

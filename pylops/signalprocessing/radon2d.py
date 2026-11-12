@@ -144,7 +144,7 @@ def Radon2D(
     taxis: NDArray,
     haxis: NDArray,
     pxaxis: NDArray,
-    kind: Literal["linear", "parabolic", "hyperbolic"] = "linear",
+    kind: Literal["linear", "parabolic", "hyperbolic"] | Callable = "linear",
     centeredh: bool = True,
     interp: bool = True,
     onthefly: bool = False,

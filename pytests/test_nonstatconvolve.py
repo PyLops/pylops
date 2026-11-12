@@ -186,6 +186,7 @@ def test_NonStationaryConvolve1D(par, dtype):
             ih=(int(par["nx"] // 4), int(2 * par["nx"] // 4), int(3 * par["nx"] // 4)),
             dtype=dtype,
         )
+        Cdense = Cop.todense()
         assert dottest(
             Cop,
             par["nx"],
@@ -196,6 +197,7 @@ def test_NonStationaryConvolve1D(par, dtype):
 
         x = np.zeros(par["nx"], dtype=dtype)
         x[par["nx"] // 2] = 1.0
+        
         y = Cop * x
         xadj = Cop.H * y
         xlsqr = lsqr(
@@ -211,6 +213,8 @@ def test_NonStationaryConvolve1D(par, dtype):
 
         assert y.dtype == dtype
         assert xadj.dtype == dtype
+        assert_array_almost_equal(Cdense @ x, y, decimal=5)
+        assert_array_almost_equal(Cdense.T.conj() @ y, xadj, decimal=5)
         assert_array_almost_equal(x, xlsqr, decimal=1)
 
     # 1D on 2D

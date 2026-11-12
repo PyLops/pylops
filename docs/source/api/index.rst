@@ -28,6 +28,7 @@ Templates
     LinearOperator
     FunctionOperator
     MemoizeOperator
+    MultiOperator
     PyTensorOperator
     TorchOperator
     JaxOperator
@@ -102,6 +103,7 @@ Signal processing
     Interp
     InterpCubicSpline
     Bilinear
+    Downsample2D
     FFT
     FFT2D
     FFTND
@@ -112,6 +114,9 @@ Signal processing
     DCT
     DTCWT
     Seislet
+    SWT
+    SWT2D
+    SWTND
     UDCT
     Radon2D
     Radon3D

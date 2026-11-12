@@ -219,6 +219,65 @@ def test_traveltime_table():
         assert_array_almost_equal(trav_recs_ana, trav_recs_eik, decimal=2)
 
 
+@pytest.mark.parametrize("par", [(par1d)])
+def test_kirchhoff_unequal_spacing_angles(par):
+    """Check dynamic angles with different dx and dz are same for
+    analytical and byot traveltime tables"""
+    kwargs = dict(
+        z=z,
+        x=x,
+        t=t,
+        srcs=s2d[:, :1],
+        recs=r2d[:, -1:],
+        vel=v0,
+        wav=wav,
+        wavcenter=wavc,
+        dynamic=par["dynamic"],
+    )
+    ana = Kirchhoff(mode="analytic", **kwargs)
+    byot = Kirchhoff(
+        mode="byot",
+        trav=(ana.trav_srcs, ana.trav_recs),
+        amp=(ana.amp_srcs, ana.amp_recs),
+        **kwargs,
+    )
+    assert_array_almost_equal(byot.angle_srcs, ana.angle_srcs)
+    assert_array_almost_equal(byot.angle_recs, ana.angle_recs)
+
+
+@pytest.mark.parametrize("par", [(par1d)])
+def test_kirchhoff_unequal_spacing_aperture(par):
+    """Check aperture with different dx and dz (with single scatterer
+    outside of aperture, output should be zero)"""
+    kwargs = dict(
+        z=z,
+        x=x,
+        t=t,
+        srcs=s2d[:, :1],
+        recs=r2d[:, -1:],
+        vel=v0,
+        wav=wav,
+        wavcenter=wavc,
+        dynamic=par["dynamic"],
+    )
+
+    # single scatterer at grid point (ix=nx//2, iz=2)
+    refl = np.zeros((PAR["nx"], PAR["nz"]))
+    refl[PAR["nx"] // 2, 2] = 1
+
+    # operator aperture (offset / depth, scaled by dx / dz) of the scatterer is
+    # 11 / 3 * 1 / 2 ~= 1.83: apertures below / above it give
+    # no output / output
+    aperture_below = (0.2, 0.21)
+    aperture_above = (2.0, 2.1)
+
+    Kop_below = Kirchhoff(mode="analytic", aperture=aperture_below, **kwargs)
+    assert np.linalg.norm(Kop_below @ refl.ravel()) == 0
+
+    Kop_above = Kirchhoff(mode="analytic", aperture=aperture_above, **kwargs)
+    assert np.linalg.norm(Kop_above @ refl.ravel()) != 0
+
+
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par1d), (par2d), (par3d)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_kirchhoff2d(par, dtype):

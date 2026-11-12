@@ -131,11 +131,13 @@ class Laplacian(LinearOperator):
             dims, axis=axes[0], sampling=sampling[0], edge=edge, kind=kind, dtype=dtype
         )
         dims = l2op.dims
-        l2op *= weights[0]
+        if weights[0] != 1.0:
+            l2op *= weights[0]
         for ax, samp, weight in zip(axes[1:], sampling[1:], weights[1:], strict=True):
             tmpop = SecondDerivative(
                 dims, axis=ax, sampling=samp, edge=edge, kind=kind, dtype=dtype
             )
-            tmpop *= weight
+            if weight != 1.0:
+                tmpop *= weight
             l2op += tmpop
         return l2op

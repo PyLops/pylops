@@ -17,6 +17,7 @@ dependencies:
   - Sphinx
   - numpydoc
   - numba
+  - numba-cuda
   - icc_rt
   - pre-commit
   - autopep8

@@ -16,9 +16,10 @@ from pylops.waveeqprocessing import BlendingContinuous, BlendingGroup, BlendingH
 
 par = {"nt": 101, "ns": 50, "nr": 20}
 
-par1, par2 = par.copy(), par.copy()
+par1, par2, par3 = par.copy(), par.copy(), par.copy()
 par1["dtype"] = np.float64
 par2["dtype"] = np.float32
+par3["dtype"] = "float64"  # default dtype provided as string
 
 d = np.random.normal(0, 1, (par["ns"], par["nr"], par["nt"]))
 dt = 0.004
@@ -59,7 +60,7 @@ def test_Blending_continuous(par):
     assert dadj.dtype == par["dtype"]
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 def test_Blending_group(par):
     """Dot-test for group Blending operator"""
     npp.random.seed(0)
@@ -77,6 +78,8 @@ def test_Blending_group(par):
         group_size=group_size,
         dtype=par["dtype"],
     )
+    assert isinstance(Bop.dtype, npp.dtype)
+    assert Bop.dtype == npp.dtype(par["dtype"])
     assert dottest(
         Bop,
         par["nt"] * n_groups * par["nr"],
@@ -92,7 +95,7 @@ def test_Blending_group(par):
     assert dadj.dtype == par["dtype"]
 
 
-@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("par", [(par1), (par2), (par3)])
 def test_Blending_half(par):
     """Dot-test for half Blending operator"""
     npp.random.seed(0)
@@ -110,6 +113,8 @@ def test_Blending_half(par):
         group_size=group_size,
         dtype=par["dtype"],
     )
+    assert isinstance(Bop.dtype, npp.dtype)
+    assert Bop.dtype == npp.dtype(par["dtype"])
     assert dottest(
         Bop,
         par["nt"] * n_groups * par["nr"],

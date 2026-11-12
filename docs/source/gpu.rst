@@ -226,7 +226,7 @@ GPU with CuPy, and GPU with JAX):
      - GPU/TPU with JAX
    * - :meth:`pylops.LinearOperator.cond`
      - |:white_check_mark:|
-     - |:red_circle:|
+     - |:white_check_mark:|
      - |:red_circle:|
    * - :meth:`pylops.LinearOperator.conj`
      - |:white_check_mark:|
@@ -238,7 +238,7 @@ GPU with CuPy, and GPU with JAX):
      - |:white_check_mark:|
    * - :meth:`pylops.LinearOperator.eigs`
      - |:white_check_mark:|
-     - |:red_circle:|
+     - |:white_check_mark:|
      - |:red_circle:|
    * - :meth:`pylops.LinearOperator.todense`
      - |:white_check_mark:|
@@ -449,11 +449,27 @@ Signal processing:
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
+   * - :class:`pylops.signalprocessing.DWTND`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
    * - :class:`pylops.signalprocessing.DCT`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
    * - :class:`pylops.signalprocessing.Seislet`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.SWT`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.SWT2D`
+     - |:white_check_mark:|
+     - |:red_circle:|
+     - |:red_circle:|
+   * - :class:`pylops.signalprocessing.SWTND`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
@@ -529,39 +545,39 @@ Wave-Equation processing
      - CPU
      - GPU with CuPy
      - GPU/TPU with JAX
-   * - :class:`pylops.avo.avo.PressureToVelocity`
+   * - :class:`pylops.waveeqprocessing.PressureToVelocity`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.UpDownComposition2D`
+   * - :class:`pylops.waveeqprocessing.UpDownComposition2D`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.UpDownComposition3D`
+   * - :class:`pylops.waveeqprocessing.UpDownComposition3D`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.BlendingContinuous`
+   * - :class:`pylops.waveeqprocessing.BlendingContinuous`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.BlendingGroup`
+   * - :class:`pylops.waveeqprocessing.BlendingGroup`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.BlendingHalf`
+   * - :class:`pylops.waveeqprocessing.BlendingHalf`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.MDC`
+   * - :class:`pylops.waveeqprocessing.MDC`
      - |:white_check_mark:|
      - |:white_check_mark:|
      - |:white_check_mark:|
-   * - :class:`pylops.avo.avo.Kirchhoff`
+   * - :class:`pylops.waveeqprocessing.Kirchhoff`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
-   * - :class:`pylops.avo.avo.AcousticWave2D`
+   * - :class:`pylops.waveeqprocessing.AcousticWave2D`
      - |:white_check_mark:|
      - |:red_circle:|
      - |:red_circle:|
@@ -616,12 +632,19 @@ Medical:
 
 .. warning::
 
-   1. The JAX backend of the :class:`pylops.signalprocessing.Convolve1D` operator
+   1. The CuPy backend of :meth:`pylops.LinearOperator.eigs` does not support 
+   non-symmetric operators, since CuPy does not provide an equivalent
+   of :func:`scipy.sparse.linalg.eigs`. A :obj:`NotImplementedError` is raised.
+
+   2. The CuPy backend of :meth:`pylops.LinearOperator.cond` can only be computed 
+   with the ``uselobpcg=True`` option (and therefore for symmetric operators).
+
+   3. The JAX backend of the :class:`pylops.signalprocessing.Convolve1D` operator
    currently works only with 1d-arrays due to a different behaviour of
    :meth:`scipy.signal.convolve` and :meth:`jax.scipy.signal.convolve` with
    nd-arrays.
 
-   2. The JAX backend of the :class:`pylops.avo.prestack.PrestackLinearModelling`
+   4. The JAX backend of the :class:`pylops.avo.prestack.PrestackLinearModelling`
    operator currently works only with ``explicit=True`` due to the same issue as
    in point 1 for the :class:`pylops.signalprocessing.Convolve1D` operator employed
    when ``explicit=False``.

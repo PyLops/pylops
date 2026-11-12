@@ -10,6 +10,8 @@ __all__ = [
 ]
 
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing.pool import Pool
 from typing import Literal
 
 import numpy as np
@@ -75,3 +77,5 @@ Tthreshkind = Literal[
 Tpwdsmoothing = Literal["triangle", "boxcar"]
 Tsampler = Literal["gaussian", "rayleigh", "rademacher", "unitvector"]
 Tsampler2 = Literal["gaussian", "rayleigh", "rademacher"]
+
+Tpool = Pool | ThreadPoolExecutor

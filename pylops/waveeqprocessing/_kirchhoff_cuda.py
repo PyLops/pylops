@@ -108,6 +108,7 @@ class _KirchhoffCudaHelper:
         aperturemax,
         aperturetap,
         nz,
+        zoff,
         six,
         rix,
         angleaperturemin,
@@ -172,7 +173,7 @@ class _KirchhoffCudaHelper:
                         )
 
                     # aperture check
-                    aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1)
+                    aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1 + zoff)
                     if aperture < aperturemax:
                         if aperture >= aperturemin:
                             # extract aperture taper value
@@ -210,6 +211,7 @@ class _KirchhoffCudaHelper:
         aperturemax,
         aperturetap,
         nz,
+        zoff,
         six,
         rix,
         angleaperturemin,
@@ -274,7 +276,7 @@ class _KirchhoffCudaHelper:
                         )
 
                     # aperture check
-                    aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1)
+                    aperture = abs(sixisrcrec - rixisrcrec) / (iz + 1 + zoff)
                     if aperture < aperturemax:
                         if aperture >= aperturemin:
                             # extract aperture taper value
@@ -375,12 +377,13 @@ class _KirchhoffCudaHelper:
         aperturemax_d = np.float32(inputs[13])
         aperturetap_d = to_cupy(inputs[14])
         nz_d = np.int32(inputs[15])
-        six_d = to_cupy(inputs[16])
-        rix_d = to_cupy(inputs[17])
-        angleaperturemin_d = np.float32(inputs[18])
-        angleaperturemax_d = np.float32(inputs[19])
-        angles_srcs_d = to_cupy(inputs[20])
-        angles_recs_d = to_cupy(inputs[21])
+        zoff_d = np.float32(inputs[16])
+        six_d = to_cupy(inputs[17])
+        rix_d = to_cupy(inputs[18])
+        angleaperturemin_d = np.float32(inputs[19])
+        angleaperturemax_d = np.float32(inputs[20])
+        angles_srcs_d = to_cupy(inputs[21])
+        angles_recs_d = to_cupy(inputs[22])
 
         if opt == "_matvec":
             self._ampsrcrec_kirch_matvec_cuda[
@@ -402,6 +405,7 @@ class _KirchhoffCudaHelper:
                 aperturemax_d,
                 aperturetap_d,
                 nz_d,
+                zoff_d,
                 six_d,
                 rix_d,
                 angleaperturemin_d,
@@ -429,6 +433,7 @@ class _KirchhoffCudaHelper:
                 aperturemax_d,
                 aperturetap_d,
                 nz_d,
+                zoff_d,
                 six_d,
                 rix_d,
                 angleaperturemin_d,

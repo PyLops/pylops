@@ -117,7 +117,8 @@ par8 = pytest.param(
 SUBSAMPLING_PERCENTAGE: Final[float] = 0.4
 
 
-def test_sincinterp():
+@pytest.mark.parametrize("tol", [None, 1e-2])
+def test_sincinterp(tol):
     """Check accuracy of sinc interpolation of subsampled version of input
     signal
     """
@@ -142,10 +143,9 @@ def test_sincinterp():
     )
 
     iava = tsub[20:-20] / (dtsub * ntsub)  # exclude edges
-    for tol in [None, 1e-2]:
-        SI1op, iava = Interp(nt, iava, kind="sinc", tol=tol, dtype="float64")
-        y = SI1op * x
-        assert_array_almost_equal(xsub[20:-20], y, decimal=1)
+    SI1op, iava = Interp(nt, iava, kind="sinc", tol=tol, dtype="float64")
+    y = SI1op * x
+    assert_array_almost_equal(xsub[20:-20], y, decimal=1)
 
 
 @pytest.mark.parametrize(

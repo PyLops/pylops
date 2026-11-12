@@ -47,6 +47,40 @@ par4j = {
 np.random.seed(10)
 
 
+def _plane_wave_2d(x, y, f, c, theta):
+    """2D Plane wave modelling"""
+    # Define x-y grid
+    Y, X = np.meshgrid(y, x, indexing="ij")
+
+    # Slowness vector
+    p = (np.cos(np.deg2rad(theta)) / c, np.sin(np.deg2rad(theta)) / c)
+
+    # Construct plane wave
+    pw = np.exp(-1j * (2 * np.pi * f * (-(p[0] * Y + p[1] * X))))
+    pw = np.real(pw)
+
+    return pw
+
+
+def _plane_wave_3d(y, x, z, f, c, theta, phi):
+    """2D Plane wave modelling"""
+    # Define y-x-z grid
+    Y, X, Z = np.meshgrid(y, x, z, indexing="ij")
+
+    # Slowness vector
+    p = (
+        np.sin(np.deg2rad(theta)) * np.cos(np.deg2rad(phi)) / c,
+        np.sin(np.deg2rad(theta)) * np.sin(np.deg2rad(phi)) / c,
+        np.cos(np.deg2rad(theta)) / c,
+    )  # slowness vector
+
+    # Construct plane wave
+    pw = np.exp(-1j * (2 * np.pi * f * (-(p[0] * Y + p[1] * X + p[2] * Z))))
+    pw = np.real(pw)
+
+    return pw
+
+
 @pytest.mark.parametrize("par", [(par1), (par1j), (par2), (par2j)])
 @pytest.mark.parametrize("sparse", [False, True])
 def test_convmtx(par, sparse):
@@ -112,7 +146,65 @@ def test_nonstationary_convmtx(par, sparse):
     assert_array_almost_equal(y, y1, decimal=4)
 
 
-def test_slope_estimation_dips():
+@pytest.mark.parametrize("angle", [-45, -20, 0, 20, 45])
+def test_slope_estimation_analytical_2d(angle):
+    """Slope estimation using the Structure tensor algorithm for
+    2D plane wave - test against analytical solution."""
+
+    # Define x and y axes
+    ox, dx, nx = 0, 5, 101
+    oy, dy, ny = 0, 5, 101
+    x, y = np.arange(nx) * dx + ox, np.arange(ny) * dy + oy
+
+    # Compute plane wave
+    f = 10  # frequency
+    c = 1500  # Velocity
+    pw = _plane_wave_2d(x, y, f, c, angle)
+
+    # Slopes
+    slopes, _ = slope_estimate(
+        pw,
+        smooth=11,
+        eps=0.0,
+        dips=False,
+        anisotropies=False,
+    )
+
+    assert_array_almost_equal(np.median(slopes), np.tan(np.deg2rad(angle)), decimal=2)
+
+
+@pytest.mark.parametrize("angle", [-45, -20, 0, 20, 45])
+def test_slope_estimation_analytical_3d(angle):
+    """Slope estimation using the Structure tensor algorithm for
+    3D plane wave - test against analytical solution."""
+
+    # Define x and y axes
+    oy, dy, ny = 0, 5, 21
+    ox, dx, nx = 0, 5, 51
+    oz, dz, nz = 0, 5, 51
+    y, x, z = np.arange(ny) * dy + oy, np.arange(nx) * dx + ox, np.arange(nz) * dz + oz
+
+    # Compute plane wave
+    f = 10  # frequency
+    c = 1500  # Velocity
+    pw = _plane_wave_3d(y, x, z, f, c, angle, phi=0.0)
+
+    # Slopes
+    slopes, _ = slope_estimate(
+        pw,
+        dy=1.0,
+        smooth=11,
+        eps=0.0,
+        dips=False,
+        anisotropies=False,
+    )
+
+    assert_array_almost_equal(
+        np.median(slopes[1]), np.tan(np.deg2rad(angle)), decimal=2
+    )
+
+
+def test_slope_estimation_reg():
     """Slope estimation using the Structure tensor algorithm should
     apply regularisation (some slopes are set to zero)
     while dips should not use regularisation."""

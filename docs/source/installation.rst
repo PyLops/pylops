@@ -9,7 +9,7 @@ The PyLops project strives to create a library that is easy to install in
 any environment and has a very limited number of dependencies.
 Required dependencies are limited to:
 
-* Python 3.10 or greater
+* Python 3.11 or greater
 * `NumPy <http://www.numpy.org>`_
 * `SciPy <http://www.scipy.org/scipylib/index.html>`_
 
@@ -494,7 +494,7 @@ them as part of the installation process of PyLops provided in the table below.
      - |:red_circle:|
      - `pip install pylops[gpu-cu12]` / `uv add "pylops[gpu-cu12]"`
    * - JAX
-     - :py:class:`pylops.JAXOperator`
+     - :py:class:`pylops.JaxOperator`
      - |:red_circle:|
      - `pip install pylops[deep]` / `uv add "pylops[deep]"` (or GPU equivalents)
 

@@ -1,4 +1,5 @@
 import os
+from copy import copy
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
@@ -13,7 +14,14 @@ else:
 import numpy as npp
 import pytest
 
-from pylops.basicoperators import FirstDerivative, Identity, MatrixMult
+from pylops.basicoperators import (
+    FirstDerivative,
+    Identity,
+    MatrixMult,
+    SecondDerivative,
+    Smoothing2D,
+    VStack,
+)
 from pylops.optimization.callback import CostToInitialCallback
 from pylops.optimization.cls_sparsity import IRLS
 from pylops.optimization.sparsity import fista, irls, ista, omp, spgl1, splitbregman
@@ -100,7 +108,8 @@ def test_IRLS_unknown_kind():
 
 
 @pytest.mark.parametrize("par", [(par3), (par4), (par3j), (par4j)])
-def test_IRLS_data(par):
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_IRLS_data(par, preallocate):
     """Invert problem with outliers using data IRLS"""
     npp.random.seed(10)
     A = npp.random.normal(0, 10, (par["ny"], par["nx"])) + par[
@@ -123,24 +132,24 @@ def test_IRLS_data(par):
     y[par["ny"] - 2] *= 5
 
     # irls inversion
-    for preallocate in [False, True]:
-        xinv = irls(
-            Aop,
-            y,
-            x0=x0,
-            nouter=10,
-            threshR=False,
-            epsR=1e-2,
-            epsI=0,
-            tolIRLS=1e-3,
-            kind="data",
-            preallocate=preallocate,
-        )[0]
-        assert_array_almost_equal(x, xinv, decimal=2)
+    xinv = irls(
+        Aop,
+        y,
+        x0=x0,
+        nouter=10,
+        threshR=False,
+        epsR=1e-2,
+        epsI=0,
+        tolIRLS=1e-3,
+        kind="data",
+        preallocate=preallocate,
+    )[0]
+    assert_array_almost_equal(x, xinv, decimal=2)
 
 
 @pytest.mark.parametrize("par", [(par3), (par4), (par3j), (par4j)])
-def test_IRLS_datamodel(par):
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_IRLS_datamodel(par, preallocate):
     """Invert problem with outliers using data-model IRLS"""
     npp.random.seed(10)
     A = npp.random.normal(0, 10, (par["ny"], par["nx"])) + par[
@@ -167,24 +176,24 @@ def test_IRLS_datamodel(par):
     y[par["ny"] - 2] *= 5
 
     # irls inversion
-    for preallocate in [False, True]:
-        xinv = irls(
-            Aop,
-            y,
-            x0=x0,
-            nouter=10,
-            threshR=False,
-            epsR=1e-2,
-            epsI=0,
-            tolIRLS=1e-3,
-            kind="datamodel",
-            preallocate=preallocate,
-        )[0]
+    xinv = irls(
+        Aop,
+        y,
+        x0=x0,
+        nouter=10,
+        threshR=False,
+        epsR=1e-2,
+        epsI=0,
+        tolIRLS=1e-3,
+        kind="datamodel",
+        preallocate=preallocate,
+    )[0]
     assert_array_almost_equal(x, xinv, decimal=2)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
-def test_IRLS_model(par):
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_IRLS_model(par, preallocate):
     """Invert problem with model IRLS"""
     npp.random.seed(42)
     A = npp.random.randn(par["ny"], par["nx"]) + par["imag"] * npp.random.randn(
@@ -199,11 +208,10 @@ def test_IRLS_model(par):
     y = Aop * x
 
     maxit = 100
-    for preallocate in [False, True]:
-        xinv = irls(
-            Aop, y, nouter=maxit, tolIRLS=1e-3, kind="model", preallocate=preallocate
-        )[0]
-        assert_array_almost_equal(x, xinv, decimal=1)
+    xinv = irls(
+        Aop, y, nouter=maxit, tolIRLS=1e-3, kind="model", preallocate=preallocate
+    )[0]
+    assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
@@ -245,7 +253,8 @@ def test_IRLS_model_stopping(par):
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
-def test_MP(par):
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_MP(par, preallocate):
     """Invert problem with MP"""
     npp.random.seed(42)
     A = npp.random.randn(par["ny"], par["nx"]) + par["imag"] * npp.random.randn(
@@ -261,21 +270,21 @@ def test_MP(par):
 
     sigma = 1e-4
     maxit = 100
-    for preallocate in [False, True]:
-        xinv, _, _ = omp(
-            Aop,
-            y,
-            maxit,
-            niter_inner=0,
-            optimal_coeff=True,
-            sigma=sigma,
-            preallocate=preallocate,
-        )
-        assert_array_almost_equal(x, xinv, decimal=1)
+    xinv, _, _ = omp(
+        Aop,
+        y,
+        maxit,
+        niter_inner=0,
+        optimal_coeff=True,
+        sigma=sigma,
+        preallocate=preallocate,
+    )
+    assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
-def test_OMP(par):
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_OMP(par, preallocate):
     """Invert problem with OMP"""
     npp.random.seed(42)
     A = npp.random.randn(par["ny"], par["nx"]) + par["imag"] * npp.random.randn(
@@ -291,13 +300,13 @@ def test_OMP(par):
 
     sigma = 1e-4
     maxit = 100
-    for preallocate in [False, True]:
-        xinv, _, _ = omp(Aop, y, maxit, sigma=sigma, preallocate=preallocate)
-        assert_array_almost_equal(x, xinv, decimal=1)
+    xinv, _, _ = omp(Aop, y, maxit, sigma=sigma, preallocate=preallocate)
+    assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
-def test_OMP_stopping(par):
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_OMP_stopping(par, preallocate):
     """OMP testing stopping criterion rtol"""
     npp.random.seed(42)
     A = npp.random.randn(par["ny"], par["nx"]) + par["imag"] * npp.random.randn(
@@ -314,19 +323,17 @@ def test_OMP_stopping(par):
     maxit = 100
 
     # test CostToInitialCallback callback
-    for preallocate in [False, True]:
-        rtol = 1e-2
-        _, _, cost = omp(Aop, y, maxit, sigma=0.0, rtol=rtol, preallocate=preallocate)
-        assert cost[-2] / cost[0] >= rtol
-        assert cost[-1] / cost[0] < rtol
+    rtol = 1e-2
+    _, _, cost = omp(Aop, y, maxit, sigma=0.0, rtol=rtol, preallocate=preallocate)
+    assert cost[-2] / cost[0] >= rtol
+    assert cost[-1] / cost[0] < rtol
 
     # test CostToDataCallback callback
-    for preallocate in [False, True]:
-        ynorm = np.linalg.norm(y)
-        rtol = 1e-2
-        _, _, cost = omp(Aop, y, maxit, sigma=0.0, rtol1=rtol, preallocate=preallocate)
-        assert cost[-2] / ynorm >= rtol
-        assert cost[-1] / ynorm < rtol
+    ynorm = np.linalg.norm(y)
+    rtol = 1e-2
+    _, _, cost = omp(Aop, y, maxit, sigma=0.0, rtol1=rtol, preallocate=preallocate)
+    assert cost[-2] / ynorm >= rtol
+    assert cost[-1] / ynorm < rtol
 
 
 def test_ISTA_FISTA_unknown_threshkind():
@@ -336,6 +343,40 @@ def test_ISTA_FISTA_unknown_threshkind():
 
     with pytest.raises(ValueError, match="`threshkind` must be"):
         _ = fista(Identity(5), np.ones(5), 10, threshkind="foo")
+
+
+@pytest.mark.parametrize("dtype", ["float64", "complex128"])
+@pytest.mark.parametrize("preallocate", [False, True])
+@pytest.mark.parametrize("nrhs", [None, 2])
+@pytest.mark.parametrize("solver", [ista, fista])
+def test_ISTA_FISTA_flat_model_nd_data(dtype, preallocate, nrhs, solver):
+    """Check that ista/fista can handle nd data with flat models."""
+    dims = (4, 5)
+    rng = npp.random.default_rng(0)
+    values = rng.standard_normal(dims)
+    if dtype == "complex128":
+        values = values + 1j * rng.standard_normal(dims)
+    values = np.asarray(values, dtype=dtype)
+    smoothing = Smoothing2D((3, 3), dims, dtype=dtype)
+    synthesis = VStack([Identity(dims, dtype=dtype), Identity(dims, dtype=dtype)])
+    op = smoothing @ synthesis.H
+    data = (smoothing @ values).ravel()
+    if nrhs is not None:
+        data = np.column_stack([data, 2 * data])
+
+    result, niter, cost = solver(
+        op, data, niter=3, eps=0.01, alpha=0.1, preallocate=preallocate
+    )
+
+    # Use a shallow operator copy so the original shape metadata stays intact.
+    flat_op = copy(op)
+    flat_op.dimsd = (op.shape[0],)
+    expected, expected_niter, expected_cost = solver(
+        flat_op, data, niter=3, eps=0.01, alpha=0.1, preallocate=preallocate
+    )
+    assert_array_almost_equal(result, expected)
+    assert_array_almost_equal(cost, expected_cost)
+    assert niter == expected_niter == 3
 
 
 def test_ISTA_FISTA_missing_perc():
@@ -348,7 +389,8 @@ def test_ISTA_FISTA_missing_perc():
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
-def test_ISTA_FISTA_alpha_too_high(par):
+@pytest.mark.parametrize("solver", [ista, fista])
+def test_ISTA_FISTA_alpha_too_high(par, solver):
     """Check error is raised or solver is stopped when alpha is chosen
     too high"""
     npp.random.seed(42)
@@ -361,34 +403,41 @@ def test_ISTA_FISTA_alpha_too_high(par):
     x[par["nx"] // 2] = 1.0 + par["imag"] * 1.0
     y = Aop * x
 
-    for solver in [ista, fista]:
-        # check that exception is raised
-        with pytest.raises(ValueError, match="due to residual increasing"):
-            _, _, _ = solver(
-                Aop,
-                y,
-                niter=100,
-                eps=0.1,
-                alpha=1e5,
-                monitorres=True,
-                tol=0,
-            )
-
-        # check that CostNanInfCallback catches cost=np.inf
-        _, _, cost = solver(
+    # check that exception is raised
+    with pytest.raises(ValueError, match="due to residual increasing"):
+        _, _, _ = solver(
             Aop,
             y,
             niter=100,
             eps=0.1,
             alpha=1e5,
+            monitorres=True,
             tol=0,
         )
-        assert np.isinf(cost[-1])
+
+    # check that CostNanInfCallback catches cost=np.inf
+    _, _, cost = solver(
+        Aop,
+        y,
+        niter=100,
+        eps=0.1,
+        alpha=1e5,
+        tol=0,
+    )
+    assert np.isinf(cost[-1])
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
-def test_ISTA_FISTA(par):
+@pytest.mark.parametrize(
+    "threshkind",
+    ["hard", "soft", "half", "hard-percentile", "soft-percentile", "half-percentile"],
+)
+@pytest.mark.parametrize("preallocate", [False, True])
+@pytest.mark.parametrize("solver", [ista, fista])
+def test_ISTA_FISTA(par, threshkind, preallocate, solver):
     """Invert problem with ISTA/FISTA"""
+    if backend != "numpy" and (threshkind == "hard" or "percentile" in threshkind):
+        pytest.skip(f"threshkind={threshkind} only tested with numpy")
     npp.random.seed(42)
     A = npp.random.randn(par["ny"], par["nx"]) + par["imag"] * npp.random.randn(
         par["ny"], par["nx"]
@@ -406,42 +455,31 @@ def test_ISTA_FISTA(par):
     perc = 50 if par["ny"] >= par["nx"] else 30
     maxit = 500
 
-    # Regularization based ISTA and FISTA
-    threshkinds = ["hard", "soft", "half"] if backend == "numpy" else ["soft", "half"]
-    for threshkind in threshkinds:
-        for preallocate in [False, True]:
-            for solver in [ista, fista]:
-                xinv, _, _ = solver(
-                    Aop,
-                    y,
-                    niter=maxit,
-                    eps=eps,
-                    threshkind=threshkind,
-                    tol=0,
-                    preallocate=preallocate,
-                )
-                assert_array_almost_equal(x, xinv, decimal=1)
-
-    # Percentile based ISTA and FISTA
-    if backend == "numpy":
-        for threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]:
-            for preallocate in [False, True]:
-                for solver in [ista, fista]:
-                    xinv, _, _ = solver(
-                        Aop,
-                        y,
-                        niter=maxit,
-                        perc=perc,
-                        threshkind=threshkind,
-                        tol=0,
-                        preallocate=preallocate,
-                    )
-                    assert_array_almost_equal(x, xinv, decimal=1)
+    # Regularization (eps) or percentile (perc) based ISTA and FISTA
+    thresh = dict(perc=perc) if "percentile" in threshkind else dict(eps=eps)
+    xinv, _, _ = solver(
+        Aop,
+        y,
+        niter=maxit,
+        threshkind=threshkind,
+        tol=0,
+        preallocate=preallocate,
+        **thresh,
+    )
+    assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
-def test_ISTA_FISTA_multiplerhs(par):
+@pytest.mark.parametrize(
+    "threshkind",
+    ["hard", "soft", "half", "hard-percentile", "soft-percentile", "half-percentile"],
+)
+@pytest.mark.parametrize("preallocate", [False, True])
+@pytest.mark.parametrize("solver", [ista, fista])
+def test_ISTA_FISTA_multiplerhs(par, threshkind, preallocate, solver):
     """Invert problem with ISTA/FISTA with multiple RHS"""
+    if backend != "numpy" and (threshkind == "hard" or "percentile" in threshkind):
+        pytest.skip(f"threshkind={threshkind} only tested with numpy")
     npp.random.seed(42)
     A = npp.random.randn(par["ny"], par["nx"]) + par["imag"] * npp.random.randn(
         par["ny"], par["nx"]
@@ -460,42 +498,28 @@ def test_ISTA_FISTA_multiplerhs(par):
     perc = 50 if par["ny"] >= par["nx"] else 30
     maxit = 500
 
-    # Regularization based ISTA and FISTA
-    threshkinds = ["hard", "soft", "half"] if backend == "numpy" else ["soft", "half"]
-    for threshkind in threshkinds:
-        for preallocate in [False, True]:
-            for solver in [ista, fista]:
-                xinv, _, _ = solver(
-                    Aop,
-                    y,
-                    niter=maxit,
-                    eps=eps,
-                    threshkind=threshkind,
-                    tol=0,
-                    preallocate=preallocate,
-                )
-                assert_array_almost_equal(x, xinv, decimal=1)
-
-    # Percentile based ISTA and FISTA
-    if backend == "numpy":
-        for threshkind in ["hard-percentile", "soft-percentile", "half-percentile"]:
-            for preallocate in [False, True]:
-                for solver in [ista, fista]:
-                    xinv, _, _ = solver(
-                        Aop,
-                        y,
-                        niter=maxit,
-                        perc=perc,
-                        threshkind=threshkind,
-                        tol=0,
-                        preallocate=preallocate,
-                    )
-                    assert_array_almost_equal(x, xinv, decimal=1)
+    # Regularization (eps) or percentile (perc) based ISTA and FISTA
+    thresh = dict(perc=perc) if "percentile" in threshkind else dict(eps=eps)
+    xinv, _, _ = solver(
+        Aop,
+        y,
+        niter=maxit,
+        threshkind=threshkind,
+        tol=0,
+        preallocate=preallocate,
+        **thresh,
+    )
+    assert_array_almost_equal(x, xinv, decimal=1)
 
 
 @pytest.mark.parametrize("par", [(par1), (par3), (par5), (par1j), (par3j), (par5j)])
-def test_ISTA_FISTA_stopping(par):
+@pytest.mark.parametrize("threshkind", ["hard", "soft", "half"])
+@pytest.mark.parametrize("preallocate", [False, True])
+@pytest.mark.parametrize("solver", [ista, fista])
+def test_ISTA_FISTA_stopping(par, threshkind, preallocate, solver):
     """ISTA/FISTA testing stopping criterion rtol"""
+    if backend != "numpy" and threshkind == "hard":
+        pytest.skip(f"threshkind={threshkind} only tested with numpy")
     npp.random.seed(42)
     A = npp.random.randn(par["ny"], par["nx"]) + par["imag"] * npp.random.randn(
         par["ny"], par["nx"]
@@ -513,22 +537,18 @@ def test_ISTA_FISTA_stopping(par):
     rtol = 5e-1
 
     # Regularization based ISTA and FISTA
-    threshkinds = ["hard", "soft", "half"] if backend == "numpy" else ["soft", "half"]
-    for threshkind in threshkinds:
-        for preallocate in [False, True]:
-            for solver in [ista, fista]:
-                _, _, cost = solver(
-                    Aop,
-                    y,
-                    niter=maxit,
-                    eps=eps,
-                    threshkind=threshkind,
-                    tol=0.0,
-                    rtol=rtol,
-                    preallocate=preallocate,
-                )
-                assert cost[-2] / cost[0] >= rtol
-                assert cost[-1] / cost[0] < rtol
+    _, _, cost = solver(
+        Aop,
+        y,
+        niter=maxit,
+        eps=eps,
+        threshkind=threshkind,
+        tol=0.0,
+        rtol=rtol,
+        preallocate=preallocate,
+    )
+    assert cost[-2] / cost[0] >= rtol
+    assert cost[-1] / cost[0] < rtol
 
 
 @pytest.mark.skipif(
@@ -562,8 +582,23 @@ def test_SPGL1(par):
     assert_array_almost_equal(x, xinv, decimal=1)
 
 
+@pytest.mark.parametrize("par", [(par1)])
+def test_SplitBregman_lambdaRL1s_wrong(par):
+    """Check errors for lambdaRL1s with wrong number of elements or values"""
+    nx = 3 * par["nx"]
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+    y = np.ones(nx)
+
+    with pytest.raises(ValueError, match="same number of elements"):
+        splitbregman(Iop, y, [Dop], epsRL1s=[0.3], lambdaRL1s=[0.3, 0.3])
+    with pytest.raises(ValueError, match="strictly positive"):
+        splitbregman(Iop, y, [Dop], epsRL1s=[0.3], lambdaRL1s=[0.0])
+
+
 @pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
-def test_SplitBregman(par):
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_SplitBregman(par, preallocate):
     """Invert denoise problem with SplitBregman"""
     np.random.seed(42)
     # need enough samples for TV regularization to be effective
@@ -586,20 +621,173 @@ def test_SplitBregman(par):
         dict(iter_lim=5, damp=1e-3) if backend == "numpy" else dict(niter=5, damp=1e-3)
     )
 
-    for preallocate in [False, True]:
-        xinv, _, _ = splitbregman(
-            Iop,
-            y,
-            [Dop],
-            niter_outer=niter_end,
-            niter_inner=niter_in,
-            mu=mu,
-            epsRL1s=[lamda],
-            tol=1e-4,
-            tau=1,
-            x0=x0 if par["x0"] else None,
-            restart=False,
-            preallocate=preallocate,
-            **kwars_solver,
-        )
-        assert (np.linalg.norm(x - xinv) / np.linalg.norm(x)) < 1e-1
+    xinv, _, _ = splitbregman(
+        Iop,
+        y,
+        [Dop],
+        niter_outer=niter_end,
+        niter_inner=niter_in,
+        mu=mu,
+        epsRL1s=[lamda],
+        tol=1e-4,
+        tau=1,
+        x0=x0 if par["x0"] else None,
+        restart=False,
+        preallocate=preallocate,
+        **kwars_solver,
+    )
+    assert (np.linalg.norm(x - xinv) / np.linalg.norm(x)) < 1e-1
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_SplitBregman_tol0(par):
+    """Run SplitBregman with tol=0 and check that all outer iterations are run"""
+    np.random.seed(42)
+    nx = 3 * par["nx"]
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+
+    x = np.zeros(nx)
+    x[: nx // 2] = 10
+    x[nx // 2 : 3 * nx // 4] = -5
+    y = x + np.random.normal(0, 1, nx)
+    niter_end = 10
+
+    kwars_solver = (
+        dict(iter_lim=5, damp=1e-3) if backend == "numpy" else dict(niter=5, damp=1e-3)
+    )
+    xinv, iiter, cost = splitbregman(
+        Iop,
+        y,
+        [Dop],
+        niter_outer=niter_end,
+        niter_inner=3,
+        mu=0.05,
+        epsRL1s=[0.3],
+        tol=0.0,
+        **kwars_solver,
+    )
+    assert iiter == niter_end
+    assert len(cost) == niter_end
+    assert np.linalg.norm(xinv) > 0
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_SplitBregman_cost(par):
+    """Check that SplitBregman cost matches the documented cost function"""
+    np.random.seed(42)
+    nx = 3 * par["nx"]
+    Iop = Identity(nx)
+    D1op = FirstDerivative(nx, edge=True)
+    D2op = SecondDerivative(nx, edge=True)
+
+    x = np.zeros(nx)
+    x[: nx // 2] = 10
+    x[nx // 2 : 3 * nx // 4] = -5
+    y = x + np.random.normal(0, 1, nx)
+    yreg = np.random.normal(0, 1, nx)
+    mu, epsRL1, epsRL2 = 0.5, 0.3, 0.7
+
+    kwars_solver = (
+        dict(iter_lim=5, damp=1e-3) if backend == "numpy" else dict(niter=5, damp=1e-3)
+    )
+    xinv, _, cost = splitbregman(
+        Iop,
+        y,
+        [D1op],
+        RegsL2=[D2op],
+        dataregsL2=[yreg],
+        niter_outer=1,
+        niter_inner=3,
+        mu=mu,
+        epsRL1s=[epsRL1],
+        epsRL2s=[epsRL2],
+        **kwars_solver,
+    )
+    J = (
+        mu / 2 * np.linalg.norm(y - Iop @ xinv) ** 2
+        + epsRL2 / 2 * np.linalg.norm(yreg - D2op @ xinv) ** 2
+        + epsRL1**2 * np.linalg.norm(D1op @ xinv, ord=1)
+    )
+    assert_array_almost_equal(cost[0], J, decimal=6)
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_SplitBregman_lambdaRL1s(par):
+    """Check that lambdaRL1s=None is equivalent to lambdaRL1s=epsRL1s"""
+    np.random.seed(42)
+    nx = 3 * par["nx"]
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+
+    x = np.zeros(nx)
+    x[: nx // 2] = 10
+    x[nx // 2 : 3 * nx // 4] = -5
+    y = x + np.random.normal(0, 1, nx)
+    epsRL1 = 1.0
+
+    kwars_solver = (
+        dict(iter_lim=20, damp=0) if backend == "numpy" else dict(niter=20, damp=0)
+    )
+    kwargs_sb = dict(
+        niter_outer=2000, niter_inner=5, mu=1.0, epsRL1s=[epsRL1], tol=1e-10
+    )
+    xdef = splitbregman(Iop, y, [Dop], **kwargs_sb, **kwars_solver)[0]
+    xeps = splitbregman(
+        Iop, y, [Dop], lambdaRL1s=[epsRL1], **kwargs_sb, **kwars_solver
+    )[0]
+    assert_array_almost_equal(xdef, xeps, decimal=12)
+
+
+def test_SplitBregman_kwargs_solver_cgls():
+    """Check that CGLS parameters can be passed through kwargs_solver"""
+    np.random.seed(42)
+    nx = 10
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+    y = np.random.normal(size=nx)
+
+    # Compute expected solution with dense solver
+    derivative = Dop.todense(backend=backend)
+    expected = np.linalg.solve(np.eye(nx) + derivative.T @ derivative, y)
+
+    # Computed solution with SplitBregman using CGLS with tight inner tolerance
+    # to ensure full convergence to the expected solution.
+    result, _, _ = splitbregman(
+        Iop,
+        y,
+        [Dop],
+        niter_outer=1,
+        niter_inner=1,
+        mu=1.0,
+        epsRL1s=[1.0],
+        tol=1e-10,
+        engine="pylops",
+        damp=0,
+        kwargs_solver=dict(niter=100, tol=1e-14, rtol=0.0, rtol1=0.0),
+    )
+    assert_array_almost_equal(result, expected, decimal=6)
+
+
+@pytest.mark.parametrize("rtol,rtol1", [(0.99, 0.0), (0.0, 0.99)])
+def test_SplitBregman_inner_relative_tolerance(rtol, rtol1):
+    """Check that rtol/rtol1 do not leak into the inner CGLS solver."""
+    np.random.seed(42)
+    nx = 10
+    Iop = Identity(nx)
+    Dop = FirstDerivative(nx, edge=True)
+    y = np.linspace(-1.0, 1.0, nx)
+
+    # CGLS rtol/rtol1 are left at their defaults: if the outer ones leaked,
+    # CGLS would stop early and the solutions below would differ
+    kwargs = dict(
+        niter_outer=1,
+        niter_inner=1,
+        epsRL1s=[0.2],
+        tol=0.0,
+        engine="pylops",
+        kwargs_solver=dict(niter=20, tol=1e-14),
+    )
+    xref, _, _ = splitbregman(Iop, y, [Dop], **kwargs)
+    x, _, _ = splitbregman(Iop, y, [Dop], rtol=rtol, rtol1=rtol1, **kwargs)
+    assert_array_almost_equal(x, xref, decimal=10)

@@ -311,7 +311,8 @@ def ista(
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
     y : :obj:`numpy.ndarray`
-        Data of size :math:`[N \times 1]`
+        Data vector, or matrix with one right-hand side per column.
+        Multidimensional data must be flattened before calling the solver.
     x0 : :obj:`numpy.ndarray`, optional
         Initial guess
     niter : :obj:`int`
@@ -465,7 +466,8 @@ def fista(
     Op : :obj:`pylops.LinearOperator`
         Operator to invert
     y : :obj:`numpy.ndarray`
-        Data
+        Data vector, or matrix with one right-hand side per column.
+        Flatten multidimensional data for a single right-hand side.
     x0 : :obj:`numpy.ndarray`, optional
         Initial guess
     niter : :obj:`int`, optional
@@ -713,6 +715,7 @@ def splitbregman(
     mu: float = 1.0,
     epsRL1s: SamplingLike | None = None,
     epsRL2s: SamplingLike | None = None,
+    lambdaRL1s: SamplingLike | None = None,
     tol: float = 1e-10,
     rtol: float = 0.0,
     rtol1: float = 0.0,
@@ -724,7 +727,8 @@ def splitbregman(
     show_inner: bool = False,
     callback: Callable | None = None,
     preallocate: bool = False,
-    **kwargs_lsqr,
+    kwargs_solver: dict | None = None,
+    **kwargs,
 ) -> tuple[NDArray, int, NDArray]:
     r"""Split Bregman for mixed L2-L1 norms.
 
@@ -743,14 +747,14 @@ def splitbregman(
         :math:`L_1` regularization operators
     x0 : :obj:`numpy.ndarray`, optional
         Initial guess
-    niter_outer : :obj:`int`
+    niter_outer : :obj:`int`, optional
         Number of iterations of outer loop
-    niter_inner : :obj:`int`
+    niter_inner : :obj:`int`, optional
         Number of iterations of inner loop of first step of the Split Bregman
         algorithm. A small number of iterations is generally sufficient and
         for many applications optimal efficiency is obtained when only one
         iteration is performed.
-    RegsL2 : :obj:`list`
+    RegsL2 : :obj:`list`, optional
         Additional :math:`L_2` regularization operators
         (if ``None``, :math:`L_2` regularization is not added to the problem)
     dataregsL2 : :obj:`list`, optional
@@ -758,13 +762,21 @@ def splitbregman(
         of ``RegsL2`` or equal to ``None`` to use a zero data for every
         regularization operator in ``RegsL2``)
     mu : :obj:`float`, optional
-         Data term damping
-    epsRL1s : :obj:`list`
-         :math:`L_1` Regularization dampings (must have the same number of elements
-         as ``RegsL1``)
-    epsRL2s : :obj:`list`
-         :math:`L_2` Regularization dampings (must have the same number of elements
-         as ``RegsL2``)
+        Data term damping
+    epsRL1s : :obj:`list`, optional
+        :math:`L_1` Regularization dampings (must have the same number of elements
+        as ``RegsL1``). Note that the effective weight of each :math:`L_1`
+        regularization term in the cost function is ``epsRL1s[i]**2``
+    epsRL2s : :obj:`list`, optional
+        :math:`L_2` Regularization dampings (must have the same number of elements
+        as ``RegsL2``)
+    lambdaRL1s : :obj:`list`, optional
+        .. versionadded:: 2.9.0
+
+        Weights of the splitting terms (must have the same number of
+        elements as ``RegsL1``). They do not change the solution of the
+        problem, but affect the convergence speed of the algorithm. If
+        ``None``, they are set equal to ``epsRL1s``
     tol : :obj:`float`, optional
         Tolerance. Stop the solver if difference between inverted model
         at subsequent iterations is smaller than ``tol``
@@ -781,28 +793,41 @@ def splitbregman(
         The unconstrained inverse problem in inner loop is initialized with
         the initial guess (``True``) or with the last estimate (``False``)
     engine : :obj:`str`, optional
-        Solver to use (``scipy`` or ``pylops``)
+        Solver used for the :math:`\mathbf{x}`-subproblem of the Split
+        Bregman algorithm: ``scipy`` for :py:func:`scipy.sparse.linalg.lsqr`
+        or ``pylops`` for :py:func:`pylops.optimization.solver.cgls`.
+        Note that :py:func:`pylops.optimization.solver.cgls` is always
+        used when ``y`` is not a NumPy array (e.g., CuPy or JAX array)
     show : :obj:`bool`, optional
         Display iterations log
     itershow : :obj:`tuple`, optional
-            Display set log for the first N1 steps, last N2 steps,
-            and every N3 steps in between where N1, N2, N3 are the
-            three element of the list.
+        Display set log for the first N1 steps, last N2 steps,
+        and every N3 steps in between where N1, N2, N3 are the
+        three element of the list.
     show_inner : :obj:`bool`, optional
-        Display inner iteration logs of lsqr
+        Display iteration logs of the solver of the :math:`\mathbf{x}`-subproblem
     callback : :obj:`callable`, optional
         Function with signature (``callback(x)``) to call after each iteration
         where ``x`` is the current model vector
     preallocate : :obj:`bool`, optional
-            .. versionadded:: 2.6.0
+        .. versionadded:: 2.6.0
 
-            Pre-allocate all variables used by the solver. Note that if ``y``
-            is a JAX array, this option is ignored and variables are not
-            pre-allocated since JAX does not support in-place operations.
-    **kwargs_lsqr
-        Arbitrary keyword arguments for
-        :py:func:`scipy.sparse.linalg.lsqr` solver used to solve the first
-        subproblem in the first step of the Split Bregman algorithm.
+        Pre-allocate all variables used by the solver. Note that if ``y``
+        is a JAX array, this option is ignored and variables are not
+        pre-allocated since JAX does not support in-place operations.
+    kwargs_solver : :obj:`dict`, optional
+        .. versionadded:: 2.9.0
+
+        Keyword arguments for the solver of the
+        :math:`\mathbf{x}`-subproblem (:py:func:`scipy.sparse.linalg.lsqr` or
+        :py:func:`pylops.optimization.solver.cgls`, see ``engine``).
+        Entries override duplicate values in ``**kwargs``.
+    **kwargs
+        *Deprecated*, will be removed in v3.0.0. Simply kept for
+        back-compatibility with previous implementation.
+
+        Another way to pass keyword arguments to the solver of the
+        :math:`\mathbf{x}`-subproblem.
 
     Returns
     -------
@@ -842,6 +867,7 @@ def splitbregman(
         mu=mu,
         epsRL1s=epsRL1s,
         epsRL2s=epsRL2s,
+        lambdaRL1s=lambdaRL1s,
         tol=tol,
         tau=tau,
         restart=restart,
@@ -850,6 +876,7 @@ def splitbregman(
         show=show,
         itershow=itershow,
         show_inner=show_inner,
-        **kwargs_lsqr,
+        kwargs_solver=kwargs_solver,
+        **kwargs,
     )
     return xinv, itn_out, cost

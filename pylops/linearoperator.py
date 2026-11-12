@@ -5,18 +5,22 @@ __all__ = [
     "aslinearoperator",
 ]
 
+import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Pool
+from multiprocessing.pool import Pool as PoolClass
+from typing import Any
 
 import numpy as np
 import scipy as sp
 from numpy.linalg import solve as np_solve
-from scipy.linalg import eigvals, lstsq
+from scipy.linalg import lstsq
 from scipy.linalg import solve as sp_solve
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator as spLinearOperator
 from scipy.sparse.linalg import eigs as sp_eigs
-from scipy.sparse.linalg import eigsh as sp_eigsh
-from scipy.sparse.linalg import lobpcg as sp_lobpcg
 from scipy.sparse.linalg import lsqr, spsolve
 
 # need to check scipy version since the interface submodule changed into
@@ -27,14 +31,28 @@ if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
 else:
     from scipy.sparse._sputils import isintlike, isshape
 
-from collections.abc import Callable, Sequence
-
 from pylops import get_ndarray_multiplication
+from pylops._multioperator import _matvec_rmatvec_map
 from pylops.optimization.basic import cgls
-from pylops.utils.backend import get_array_module, get_module, get_sparse_eye
+from pylops.utils._internal import _get_dtype
+from pylops.utils.backend import (
+    get_array_module,
+    get_eigsh,
+    get_eigvals,
+    get_lobpcg,
+    get_module,
+    get_sparse_eye,
+)
 from pylops.utils.decorators import count
 from pylops.utils.estimators import trace_hutchinson, trace_hutchpp, trace_nahutchpp
-from pylops.utils.typing import DTypeLike, InputDimsLike, NDArray, ShapeLike
+from pylops.utils.typing import (
+    DTypeLike,
+    InputDimsLike,
+    NDArray,
+    ShapeLike,
+    Tbackend,
+    Tpool,
+)
 
 
 class _LinearOperator(ABC):
@@ -70,8 +88,14 @@ class LinearOperator(_LinearOperator):
     ----------
     Op : :obj:`scipy.sparse.linalg.LinearOperator` or :obj:`pylops.linearoperator.LinearOperator`
         Operator. If other arguments are provided, they will overwrite those obtained from ``Op``.
-    dtype : :obj:`str`, optional
-        Type of elements in input array.
+    dtype : :obj:`str` or :obj:`numpy.dtype`, optional
+        Type of elements in input array. Any ``numpy.dtype``-like input
+        (e.g., ``"float64"`` or ``np.float64``) is always cast to a
+        :obj:`numpy.dtype` via ``np.dtype(dtype)``, both at initialization
+        and when ``dtype`` is set afterwards. If ``None``, ``dtype`` is taken
+        from ``Op`` or, if ``Op`` is not provided, defaults to ``numpy.float64``
+        (following ``np.dtype(None)``); the same applies when setting ``dtype``
+        to ``None`` afterwards.
     shape : :obj:`tuple(int, int)`, optional
         Shape of operator. If not provided, obtained from ``dims`` and ``dimsd``.
     dims : :obj:`tuple(int, ..., int)`, optional
@@ -149,8 +173,11 @@ class LinearOperator(_LinearOperator):
             )
             name = getattr(Op, "name", None) if name is None else name
 
-        if dtype is not None:
-            self.dtype = dtype
+        # set dtype to np.float64 when neither Op not dtype is provided
+        # (consistent with np.dtype(None))
+        self.dtype = np.float64 if dtype is None else dtype
+
+        # set other params
         if shape is not None:
             self.shape = shape
         if dims is not None:
@@ -165,11 +192,27 @@ class LinearOperator(_LinearOperator):
             self.forceflat = forceflat
         self.name = name
 
+        # ndim: required by some eigenvalue solvers
+        self.ndim = len(self.shape)
+
         # counters
         self.matvec_count = 0
         self.rmatvec_count = 0
         self.matmat_count = 0
         self.rmatmat_count = 0
+
+    @property
+    def dtype(self) -> np.dtype:
+        return self._dtype
+
+    @dtype.setter
+    def dtype(self, new_dtype: DTypeLike) -> None:
+        # always store a numpy dtype
+        self._dtype = np.dtype(new_dtype)
+
+    @dtype.deleter
+    def dtype(self) -> None:
+        del self._dtype
 
     @property
     def shape(self):
@@ -458,31 +501,129 @@ class LinearOperator(_LinearOperator):
         if self.Op is not None:
             return self.Op._rmatvec(x)
 
-    def _matmat(self, X: NDArray) -> NDArray:
+    def _matmat_serial(self, X: NDArray) -> NDArray:
+        """Matrix-matrix multiplication (serial version)"""
+        ncp = get_array_module(X)
+        if sp.sparse.issparse(X):
+            y = ncp.vstack([self._matvec(col.toarray().reshape(-1)) for col in X.T]).T
+        else:
+            y = ncp.vstack([self._matvec(col.reshape(-1)) for col in X.T]).T
+        return y
+
+    def _matmat_multithread(self, X: NDArray, pool: ThreadPoolExecutor) -> NDArray:
+        """Matrix-matrix multiplication (multithreaded version)"""
+        if sp.sparse.issparse(X):
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._matvec, col.toarray().reshape(-1)) for col in X.T],
+                )
+            )
+        else:
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._matvec, col.reshape(-1)) for col in X.T],
+                )
+            )
+        y = np.vstack(ys).T
+        return y
+
+    def _matmat_multiproc(self, X: NDArray, pool: Pool) -> NDArray:
+        """Matrix-matrix multiplication (multiprocess version)"""
+        if sp.sparse.issparse(X):
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._matvec, col.toarray().reshape(-1)) for col in X.T],
+            )
+        else:
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._matvec, col.reshape(-1)) for col in X.T],
+            )
+        y = np.vstack(ys).T
+        return y
+
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix multiplication handler.
 
         Modified version of scipy _matmat to avoid having trailing dimension
         in col when provided to matvec
         """
+        if pool is None:
+            # serial
+            return self._matmat_serial(X)
+        elif isinstance(pool, ThreadPoolExecutor):
+            # multithread
+            return self._matmat_multithread(X, pool)
+        elif isinstance(pool, PoolClass):
+            # multiprocess
+            return self._matmat_multiproc(X, pool)
+        else:
+            msg = f"Received pool of unsupported type ({type(pool)})"
+            raise NotImplementedError(msg)
+
+    def _rmatmat_serial(self, X: NDArray) -> NDArray:
+        """Matrix-matrix adjoint multiplication (serial version)"""
         ncp = get_array_module(X)
         if sp.sparse.issparse(X):
-            y = ncp.vstack([self.matvec(col.toarray().reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self._rmatvec(col.toarray().reshape(-1)) for col in X.T]).T
         else:
-            y = ncp.vstack([self.matvec(col.reshape(-1)) for col in X.T]).T
+            y = ncp.vstack([self._rmatvec(col.reshape(-1)) for col in X.T]).T
         return y
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
+    def _rmatmat_multithread(self, X: NDArray, pool: ThreadPoolExecutor) -> NDArray:
+        """Matrix-matrix adjoint multiplication (multithreaded version)"""
+        if sp.sparse.issparse(X):
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._rmatvec, col.toarray().reshape(-1)) for col in X.T],
+                )
+            )
+        else:
+            ys = list(
+                pool.map(
+                    lambda args: _matvec_rmatvec_map(*args),
+                    [(self._rmatvec, col.reshape(-1)) for col in X.T],
+                )
+            )
+        y = np.vstack(ys).T
+        return y
+
+    def _rmatmat_multiproc(self, X: NDArray, pool: Pool) -> NDArray:
+        """Matrix-matrix adjoint multiplication (multiprocess version)"""
+        if sp.sparse.issparse(X):
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._rmatvec, col.toarray().reshape(-1)) for col in X.T],
+            )
+        else:
+            ys = pool.starmap(
+                _matvec_rmatvec_map,
+                [(self._rmatvec, col.reshape(-1)) for col in X.T],
+            )
+        y = np.vstack(ys).T
+        return y
+
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix adjoint multiplication handler.
 
         Modified version of scipy _rmatmat to avoid having trailing dimension
         in col when provided to rmatvec
         """
-        ncp = get_array_module(X)
-        if sp.sparse.issparse(X):
-            y = ncp.vstack([self.rmatvec(col.toarray().reshape(-1)) for col in X.T]).T
+        if pool is None:
+            # serial
+            return self._rmatmat_serial(X)
+        elif isinstance(pool, ThreadPoolExecutor):
+            # multithread
+            return self._rmatmat_multithread(X, pool)
+        elif isinstance(pool, PoolClass):
+            # multiprocess
+            return self._rmatmat_multiproc(X, pool)
         else:
-            y = ncp.vstack([self.rmatvec(col.reshape(-1)) for col in X.T]).T
-        return y
+            msg = f"Received pool of unsupported type ({type(pool)})"
+            raise NotImplementedError(msg)
 
     def _adjoint(self) -> LinearOperator:
         Op = _AdjointLinearOperator(self)
@@ -583,7 +724,7 @@ class LinearOperator(_LinearOperator):
         return y
 
     @count(forward=True, matmat=True)
-    def matmat(self, X: NDArray) -> NDArray:
+    def matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix multiplication.
 
         Modified version of scipy matmat which does not consider the case
@@ -594,6 +735,8 @@ class LinearOperator(_LinearOperator):
         ----------
         x : :obj:`numpy.ndarray`
             Input array of shape (N,K)
+        pool : :obj:`multiprocessing.Pool` or :obj:`concurrent.futures.ThreadPoolExecutor` or :obj:`None`
+            Pool of workers used to evaluate the operator on different columns of ``X`` in parallel.
 
         Returns
         -------
@@ -607,11 +750,11 @@ class LinearOperator(_LinearOperator):
         if X.shape[0] != self.shape[1]:
             msg = f"Dimension mismatch: {self.shape}, {X.shape}"
             raise ValueError(msg)
-        Y = self._matmat(X)
+        Y = self._matmat(X, pool=pool)
         return Y
 
     @count(forward=False, matmat=True)
-    def rmatmat(self, X: NDArray) -> NDArray:
+    def rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
         """Matrix-matrix multiplication.
 
         Modified version of scipy rmatmat which does not consider the case
@@ -622,6 +765,8 @@ class LinearOperator(_LinearOperator):
         ----------
         x : :obj:`numpy.ndarray`
             Input array of shape (M,K)
+        pool : :obj:`multiprocessing.Pool` or :obj:`concurrent.futures.ThreadPoolExecutor` or :obj:`None`
+            Pool of workers used to evaluate the operator on different columns of ``X`` in parallel.
 
         Returns
         -------
@@ -633,24 +778,47 @@ class LinearOperator(_LinearOperator):
             msg = f"Expected 2-d ndarray or matrix, not {X.ndim}-d ndarray"
             raise ValueError(msg)
         if X.shape[0] != self.shape[0]:
-            f"Dimension mismatch: {self.shape}, {X.shape}"
+            msg = f"Dimension mismatch: {self.shape}, {X.shape}"
             raise ValueError(msg)
-        Y = self._rmatmat(X)
+        Y = self._rmatmat(X, pool=pool)
         return Y
 
-    def dot(self, x: NDArray) -> NDArray:
-        """Matrix-matrix or matrix-vector multiplication.
+    def dot(self, x: float | NDArray | LinearOperator) -> NDArray | LinearOperator:
+        """Dot-product
+
+        Dot-product between a PyLops operator and a:
+
+        - scalar: returns a scaled operator, i.e., ``alpha * Op``;
+        - 1d- or nd-array: applies the operator to the input and returns
+          an array. A 1d-array of size ``shape[1]`` (or an nd-array of shape
+          ``dims`` when ``dims`` is defined and ``forceflat`` is not set) is
+          treated as a vector and passed to :func:`pylops.LinearOperator.matvec`;
+          a 2d-array of shape ``(shape[1], P)`` (or an nd-array of shape
+          ``(*dims, P)``) is treated as a matrix of ``P`` vectors and passed to
+          :func:`pylops.LinearOperator.matmat`. Arrays with more than 2
+          dimensions are accepted only if nd-array multiplication is enabled
+          via :func:`pylops.set_ndarray_multiplication`, in which case the
+          output is reshaped to ``dimsd`` (or ``(*dimsd, P)``);
+        - linear operator: returns the product of the two
+          operators, i.e., ``Op1 @ Op2``.
 
         Parameters
         ----------
-        x : :obj:`numpy.ndarray`
-            Input array (or matrix)
+        x : :obj:`float`, :obj:`numpy.ndarray` or :obj:`pylops.LinearOperator`
+            Input scalar, array (or matrix) or linear operator
 
         Returns
         -------
-        y : :obj:`numpy.ndarray`
-            Output array (or matrix) that represents
-            the result of applying the linear operator on x.
+        y : :obj:`numpy.ndarray` or :obj:`pylops.LinearOperator`
+            Scaled operator (scalar input), array (or matrix) that represents
+            the result of applying the linear operator on ``x`` (array input),
+            or product operator (operator input).
+
+        Raises
+        ------
+        ValueError
+            If ``x`` is an array with an unsupported shape, or if the two
+            operators have conflicting ``forceflat``.
 
         """
         if isinstance(x, (LinearOperator, spLinearOperator)):
@@ -730,28 +898,38 @@ class LinearOperator(_LinearOperator):
 
     def div(
         self,
-        y: NDArray,
+        y: float | NDArray,
         niter: int = 100,
         densesolver: str = "scipy",
-    ) -> NDArray:
-        r"""Solve the linear problem :math:`\mathbf{y}=\mathbf{A}\mathbf{x}`.
+    ) -> NDArray | LinearOperator:
+        r"""Solve the linear problem or divide by a scalar
 
         Overloading of operator ``/`` to improve expressivity of `Pylops`
         when solving inverse problems.
 
+        Division of a PyLops operator by a:
+
+        - scalar: returns a scaled operator, so ``Op / a`` is the same as
+          ``Op * (1 / a)``.
+        - 1d-array: solves the linear problem
+          :math:`\mathbf{y}=\mathbf{A}\mathbf{x}` and returns the estimated
+          model. Explicit operators are solved with a sparse or dense direct
+          solver, whilst any other operator is solved iteratively;
+
         Parameters
         ----------
-        y : :obj:`numpy.ndarray`
-            Data
+        y : :obj:`float` or :obj:`numpy.ndarray`
+            Scalar or data of size ``shape[0]``.
         niter : :obj:`int`, optional
             Number of iterations (to be used only when ``explicit=False``)
         densesolver : :obj:`str`, optional
-            Use scipy (``scipy``) or numpy (``numpy``) dense solver
+            Use scipy (``scipy``) or numpy (``numpy``) dense solver (to be
+            used only for square explicit operators with dense matrix)
 
         Returns
         -------
-        xest : :obj:`numpy.ndarray`
-            Estimated model
+        xest : :obj:`pylops.LinearOperator` or :obj:`numpy.ndarray`
+            Scaled operator or estimated model.
 
         """
         xest = self.__truediv__(y, niter=niter, densesolver=densesolver)
@@ -759,10 +937,13 @@ class LinearOperator(_LinearOperator):
 
     def __truediv__(
         self,
-        y: NDArray,
+        y: NDArray | float,
         niter: int = 100,
         densesolver: str = "scipy",
-    ) -> NDArray:
+    ) -> NDArray | LinearOperator:
+        if np.isscalar(y):
+            # A scalar divisor scales the operator, symmetric with ``Op * a``
+            return self * (1 / y)
         if self.explicit is True:
             if sp.sparse.issparse(self.A):
                 # use scipy solver for sparse matrices
@@ -901,35 +1082,54 @@ class LinearOperator(_LinearOperator):
         symmetric: bool = False,
         niter: int | None = None,
         uselobpcg: bool = False,
-        **kwargs_eig: int | float | str,
+        backend: Tbackend = "numpy",
+        **kwargs_eig: dict[str, Any],
     ) -> NDArray:
-        r"""Most significant eigenvalues of linear operator.
+        r"""N-most significant eigenvalues of a linear operator.
 
-        Return an estimate of the most significant eigenvalues
+        Return an estimate of the ``neigs`` most significant eigenvalues
         of the linear operator. If the operator has rectangular
-        shape (``shape[0]!=shape[1]``), eigenvalues are first
+        shape (``shape[0] != shape[1]``), eigenvalues are first
         computed for the square operator :math:`\mathbf{A^H}\mathbf{A}`
         and the square-root values are returned.
+
+        .. note::
+            If ``backend="cupy"``, the eigenvalues of a square operator
+            can be computed only when in symmetric (``symmetric=True``),
+            since CuPy does not provide an equivalent
+            of :func:`scipy.sparse.linalg.eigs`. A
+            :obj:`NotImplementedError` is raised.
 
         Parameters
         ----------
         neigs : :obj:`int`
-            Number of eigenvalues to compute (if ``None``, return all). Note
-            that for ``explicit=False``, only :math:`N-1` eigenvalues can be
-            computed where :math:`N` is the size of the operator in the
-            model space
+            Number of eigenvalues to compute. Note that for ``explicit=False``,
+            only :math:`N-1` eigenvalues can be computed for real-valued
+            symmetric or non-square operators, and :math:`N-2` eigenvalues
+            otherwise, where :math:`N` is the size of the operator in the
+            model space. If ``None``, return :math:`N` for explicit case and
+            :math:`N-2` for implicit operators.
         symmetric : :obj:`bool`, optional
-            Operator is symmetric (``True``) or not (``False``). User should
-            set this parameter to ``True`` only when it is guaranteed that the
-            operator is real-symmetric or complex-hermitian matrices
+            Operator is real-symmetric or complex-hermitian (``True``)
+            or not (``False``). User should set this parameter to ``True``
+            only when it is guaranteed that the operator is real-symmetric
+            or complex-hermitian
         niter : :obj:`int`, optional
             Number of iterations for eigenvalue estimation
         uselobpcg : :obj:`bool`, optional
-            Use :func:`scipy.sparse.linalg.lobpcg`
+            Use :func:`scipy.sparse.linalg.lobpcg`. Note that this method
+            is only available for symmetric operators.
+        backend : :obj:`str`, optional
+            .. versionadded:: 2.9.0
+
+            Backend to use (`numpy` or `cupy`)
         **kwargs_eig
-            Arbitrary keyword arguments for :func:`scipy.sparse.linalg.eigs`,
+            Arbitrary keyword arguments for
+            :func:`scipy.linalg.eigvals`,
+            :func:`scipy.sparse.linalg.eigs`,
             :func:`scipy.sparse.linalg.eigsh`, or
-            :func:`scipy.sparse.linalg.lobpcg`
+            :func:`scipy.sparse.linalg.lobpcg` and
+            CuPy equivalents.
 
         Returns
         -------
@@ -940,7 +1140,16 @@ class LinearOperator(_LinearOperator):
         ------
         ValueError
             If ``uselobpcg=True`` for a non-symmetric square matrix with
-            complex type
+            complex type, or if ``uselobpcg=True`` and the size of the operator
+            minus the number of constraints ``Y`` is smaller than 5 times ``neigs``
+            (in which case :func:`scipy.sparse.linalg.lobpcg` would switch to a
+            dense solver)
+        NotImplementedError
+            If ``backend="cupy"`` and ``symmetric=False`` for a square
+            operator for which only a limited number of eigenvalues is
+            requested (``neigs`` smaller than the size of the operator, or
+            ``explicit=False``), as CuPy does not provide an equivalent of
+            :func:`scipy.sparse.linalg.eigs`
 
         Notes
         -----
@@ -953,8 +1162,12 @@ class LinearOperator(_LinearOperator):
         ``symmetric=True`` and the :func:`scipy.sparse.linalg.eigs` method
         is used ``symmetric=False``. However, when the matrix is represented
         explicitly within the linear operator (``explicit=True``) and all the
-        eigenvalues are requested the :func:`scipy.linalg.eigvals` is used
-        instead.
+        eigenvalues are requested (or ``neigs`` is equal to the number of
+        columns of the operator minus one for a square, non-symmetric operator) the
+        :func:`scipy.linalg.eigvals` is used instead. Note that for
+        or a complex-valued operator, when ``neigs`` is equal to the number of
+        columns of the operator minus one, the eigenvalues are selected based on
+        ``which`` and ``sigma`` is ignored.
 
         Finally, when only a limited number of eigenvalues is required,
         it is also possible to explicitly choose to use the
@@ -970,99 +1183,142 @@ class LinearOperator(_LinearOperator):
         .. [1] http://www.caam.rice.edu/software/ARPACK/
 
         """
-        if self.explicit and isinstance(self.A, np.ndarray):
-            if self.shape[0] == self.shape[1]:
-                if neigs is None or neigs == self.shape[1]:
-                    eigenvalues = eigvals(self.A)
-                else:
-                    if not symmetric and np.iscomplexobj(self) and uselobpcg:
-                        msg = (
-                            "Cannot use scipy.sparse.linalg.lobpcg "
-                            "for non-symmetric square matrices of complex type..."
-                        )
-                        raise ValueError(msg)
-                    if symmetric and uselobpcg:
-                        X = np.random.rand(self.shape[0], neigs).astype(self.dtype)
-                        eigenvalues = sp_lobpcg(
-                            self.A, X=X, maxiter=niter, **kwargs_eig
-                        )[0]
-                    elif symmetric:
-                        eigenvalues = sp_eigsh(
-                            self.A, k=neigs, maxiter=niter, **kwargs_eig
-                        )[0]
-                    else:
-                        eigenvalues = sp_eigs(
-                            self.A, k=neigs, maxiter=niter, **kwargs_eig
-                        )[0]
 
+        def _check_lobpcg_size(n: int, neigs: int, Y: NDArray | None = None) -> None:
+            """Check that scipy's lobpcg will iterate rather than use a dense solver
+
+            :func:`scipy.sparse.linalg.lobpcg` falls back to a dense eigensolver
+            (which cannot be applied to PyLops operators) when
+            ``n - sizeY < 5 * neigs``, where ``sizeY`` is the number of
+            constraints (columns of ``Y``, which can be passed via ``kwargs_eig``).
+
+            """
+            sizeY = Y.shape[1] if Y is not None and Y.ndim == 2 else 0
+            if n - sizeY < 5 * neigs:
+                msg = (
+                    f"uselobpcg=True requires the operator size ({n}) minus the "
+                    f"number of constraints ({sizeY}) to be at least 5 times the "
+                    f"number of requested eigenvalues ({neigs}); reduce neigs to "
+                    f"at most {(n - sizeY) // 5} or use uselobpcg=False"
+                )
+                raise ValueError(msg)
+
+        # Check if lobpcgc is feasible, raise error otherwise
+        square = self.shape[0] == self.shape[1]
+        if square and not symmetric and uselobpcg:
+            msg = (
+                "Cannot use scipy.sparse.linalg.lobpcg "
+                "for non real-symmetric or complex-hermitian operators..."
+            )
+            raise ValueError(msg)
+
+        ncp = get_module(backend)
+        explicit = self.explicit and isinstance(self.A, ncp.ndarray)
+        if neigs is None:
+            neigs = self.shape[1] if explicit else self.shape[1] - 2
+        # scipy.sparse.linalg.eigs (also used by eigsh for complex operators)
+        # requires neigs < N - 1, use dense solver instead
+        useeigs = (square and not symmetric) or np.iscomplexobj(
+            np.ones(1, dtype=self.dtype)
+        )
+        # Check if all eigenvalues should be computed
+        alleigs = explicit and (
+            neigs >= self.shape[1] or (useeigs and neigs == self.shape[1] - 1)
+        )
+
+        # Check that the number of eigenvalues requested is not larger
+        # than the number of columns in the operator minus two (eigs) or
+        # minus one (eigsh)
+        neigsmax = self.shape[1] - 2 if useeigs else self.shape[1] - 1
+        if not explicit and neigs > neigsmax:
+            warnings.warn(
+                f"The provided neigs ({neigs}) exceeds the number of columns "
+                f"in the operator minus {self.shape[1] - neigsmax}, "
+                f"reset to {neigsmax}",
+                stacklevel=2,
+            )
+            neigs = neigsmax
+
+        if square:
+            # Square operator
+            Op = self.A if explicit else self
+            if alleigs:
+                # All eigenvalues (only reached for explicit=True)
+                eigenvalues = get_eigvals(ncp.ones(1))(Op)
             else:
-                if neigs is None or neigs == self.shape[1]:
-                    eigenvalues = np.sqrt(eigvals(np.dot(np.conj(self.A.T), self.A)))
-                else:
-                    if uselobpcg:
-                        X = np.random.rand(self.shape[1], neigs).astype(self.dtype)
-                        eigenvalues = np.sqrt(
-                            sp_lobpcg(
-                                np.dot(np.conj(self.A.T), self.A),
-                                X=X,
-                                maxiter=niter,
-                                **kwargs_eig,
-                            )[0]
-                        )
-                    else:
-                        eigenvalues = np.sqrt(
-                            sp_eigsh(
-                                np.dot(np.conj(self.A.T), self.A),
-                                k=neigs,
-                                maxiter=niter,
-                                **kwargs_eig,
-                            )[0]
-                        )
-        else:
-            if neigs is None or neigs >= self.shape[1]:
-                neigs = self.shape[1] - 2
-            if self.shape[0] == self.shape[1]:
-                if not symmetric and np.iscomplexobj(self) and uselobpcg:
-                    msg = (
-                        "Cannot use scipy.sparse.linalg.lobpcg for "
-                        "non symmetric square matrices of complex type..."
-                    )
-                    raise ValueError(msg)
+                # Limited number of eigenvalues
                 if symmetric and uselobpcg:
-                    X = np.random.rand(self.shape[0], neigs).astype(self.dtype)
-                    eigenvalues = sp_lobpcg(self, X=X, maxiter=niter, **kwargs_eig)[0]
+                    if not explicit:
+                        _check_lobpcg_size(self.shape[0], neigs, kwargs_eig.get("Y"))
+                    X = ncp.random.rand(self.shape[0], neigs).astype(self.dtype)
+                    eigenvalues = get_lobpcg(ncp.ones(1))(
+                        Op, X=X, maxiter=niter, **kwargs_eig
+                    )[0]
                 elif symmetric:
-                    eigenvalues = sp_eigsh(self, k=neigs, maxiter=niter, **kwargs_eig)[
-                        0
-                    ]
+                    eigenvalues = get_eigsh(ncp.ones(1))(
+                        Op, k=neigs, maxiter=niter, **kwargs_eig
+                    )[0]
                 else:
-                    eigenvalues = sp_eigs(self, k=neigs, maxiter=niter, **kwargs_eig)[0]
+                    if backend == "cupy":
+                        msg = (
+                            "Eigenvalues of non-symmetric square "
+                            "operators are not available with CuPy backend"
+                        )
+                        raise NotImplementedError(msg)
+                    eigenvalues = sp_eigs(Op, k=neigs, maxiter=niter, **kwargs_eig)[0]
+        else:
+            # Non-square operator (square-root of eigenvalues of A^H A)
+            Op = ncp.dot(ncp.conj(self.A.T), self.A) if explicit else self.H * self
+            if alleigs:
+                # All eigenvalues (only reached for explicit=True)
+                eigenvalues = get_eigvals(ncp.ones(1))(Op)
+            elif uselobpcg:
+                # Limited number of eigenvalues
+                if not explicit:
+                    _check_lobpcg_size(self.shape[1], neigs, kwargs_eig.get("Y"))
+                X = ncp.random.rand(self.shape[1], neigs).astype(self.dtype)
+                eigenvalues = get_lobpcg(ncp.ones(1))(
+                    Op, X=X, maxiter=niter, **kwargs_eig
+                )[0]
             else:
-                if uselobpcg:
-                    X = np.random.rand(self.shape[1], neigs).astype(self.dtype)
-                    eigenvalues = np.sqrt(
-                        sp_lobpcg(self.H * self, X=X, maxiter=niter, **kwargs_eig)[0]
-                    )
-                else:
-                    eigenvalues = np.sqrt(
-                        sp_eigs(self.H * self, k=neigs, maxiter=niter, **kwargs_eig)[0]
-                    )
-        return -np.sort(-eigenvalues)
+                # Limited number of eigenvalues
+                eigenvalues = get_eigsh(ncp.ones(1))(
+                    Op, k=neigs, maxiter=niter, **kwargs_eig
+                )[0]
+            eigenvalues = ncp.sqrt(eigenvalues)
+        if alleigs and neigs == self.shape[1] - 1:
+            # dense solver returns all eigenvalues: select neigs based on which
+            which = kwargs_eig.get("which", "LM")
+            key = {"M": ncp.abs, "R": ncp.real, "A": ncp.real, "I": ncp.imag}[which[1]]
+            key = key(eigenvalues)
+            idx = ncp.argsort(key if which[0] == "S" else -key)[:neigs]
+            eigenvalues = eigenvalues[idx]
+        return -ncp.sort(-eigenvalues)
 
     def cond(
         self,
         uselobpcg: bool = False,
-        **kwargs_eig: int | float | str,
+        backend: Tbackend = "numpy",
+        **kwargs_eig: dict[str, Any],
     ) -> NDArray:
         r"""Condition number of linear operator.
 
         Return an estimate of the condition number of the linear operator as
         the ratio of the largest and lowest estimated eigenvalues.
 
+        .. note::
+            If ``backend="cupy"``, the condition number can only be computed
+            with the ``uselobpcg=True`` option (and therefore for square,
+            symmetric operators only).
+
         Parameters
         ----------
         uselobpcg : :obj:`bool`, optional
             Use :func:`scipy.sparse.linalg.lobpcg` to compute eigenvalues
+        backend : :obj:`str`, optional
+            .. versionadded:: 2.9.0
+
+            Backend to use (`numpy` or `cupy`).
         **kwargs_eig
             Arbitrary keyword arguments for :func:`scipy.sparse.linalg.eigs`,
             :func:`scipy.sparse.linalg.eigsh`, or
@@ -1094,15 +1350,27 @@ class LinearOperator(_LinearOperator):
 
         """
         if not uselobpcg:
-            cond = (
-                self.eigs(neigs=1, which="LM", **kwargs_eig).item()
-                / self.eigs(neigs=1, which="SM", **kwargs_eig).item()
-            )
+            lmax = self.eigs(neigs=1, which="LM", backend=backend, **kwargs_eig).item()
+            lmin = self.eigs(neigs=1, which="SM", backend=backend, **kwargs_eig).item()
+            cond = lmax / lmin
         else:
-            cond = (
-                self.eigs(neigs=1, uselobpcg=True, largest=True, **kwargs_eig).item()
-                / self.eigs(neigs=1, uselobpcg=True, largest=False, **kwargs_eig).item()
-            )
+            lmax = self.eigs(
+                neigs=1,
+                symmetric=True,
+                uselobpcg=True,
+                largest=True,
+                backend=backend,
+                **kwargs_eig,
+            ).item()
+            lmin = self.eigs(
+                neigs=1,
+                symmetric=True,
+                uselobpcg=True,
+                largest=False,
+                backend=backend,
+                **kwargs_eig,
+            ).item()
+            cond = lmax / lmin
 
         return cond
 
@@ -1189,7 +1457,7 @@ class LinearOperator(_LinearOperator):
         neval: int | None = None,
         method: str | None = None,
         backend: str = "numpy",
-        **kwargs_trace,
+        **kwargs_trace: dict[str, Any],
     ) -> float:
         r"""Trace of linear operator.
 
@@ -1268,18 +1536,6 @@ class LinearOperator(_LinearOperator):
         self.rmatmat_count = 0
 
 
-def _get_dtype(
-    operators: Sequence[LinearOperator],
-    dtypes: Sequence[DTypeLike] | None = None,
-) -> DTypeLike:
-    if dtypes is None:
-        dtypes = []
-    for obj in operators:
-        if obj is not None and hasattr(obj, "dtype"):
-            dtypes.append(obj.dtype)
-    return np.result_type(*dtypes)
-
-
 class _ScaledLinearOperator(LinearOperator):
     """Scaled Linear Operator"""
 
@@ -1312,11 +1568,11 @@ class _ScaledLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return np.conj(self.args[1]) * self.args[0].rmatvec(x)
 
-    def _rmatmat(self, x: NDArray) -> NDArray:
-        return np.conj(self.args[1]) * self.args[0].rmatmat(x)
+    def _matmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[1] * self.args[0]._matmat(x, pool=pool)
 
-    def _matmat(self, x: NDArray) -> NDArray:
-        return self.args[1] * self.args[0].matmat(x)
+    def _rmatmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return np.conj(self.args[1]) * self.args[0]._rmatmat(x, pool=pool)
 
     def _adjoint(self) -> LinearOperator:
         A, alpha = self.args
@@ -1400,11 +1656,11 @@ class _AdjointLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return self.A._matvec(x)
 
-    def _matmat(self, X: NDArray) -> NDArray:
-        return self.A._rmatmat(X)
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.A._rmatmat(X, pool=pool)
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
-        return self.A._matmat(X)
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.A._matmat(X, pool=pool)
 
 
 class _TransposedLinearOperator(LinearOperator):
@@ -1422,11 +1678,11 @@ class _TransposedLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return np.conj(self.A._matvec(np.conj(x)))
 
-    def _matmat(self, X: NDArray) -> NDArray:
-        return np.conj(self.A._rmatmat(np.conj(X)))
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return np.conj(self.A._rmatmat(np.conj(X), pool=pool))
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
-        return np.conj(self.A._matmat(np.conj(X)))
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return np.conj(self.A._matmat(np.conj(X), pool=pool))
 
 
 class _ProductLinearOperator(LinearOperator):
@@ -1445,16 +1701,16 @@ class _ProductLinearOperator(LinearOperator):
         self.args = (A, B)
 
     def _matvec(self, x: NDArray) -> NDArray:
-        return self.args[0].matvec(self.args[1].matvec(x))
+        return self.args[0]._matvec(self.args[1]._matvec(x))
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        return self.args[1].rmatvec(self.args[0].rmatvec(x))
+        return self.args[1]._rmatvec(self.args[0]._rmatvec(x))
 
-    def _rmatmat(self, X: NDArray) -> NDArray:
-        return self.args[1].rmatmat(self.args[0].rmatmat(X))
+    def _matmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[0]._matmat(self.args[1]._matmat(X), pool=pool)
 
-    def _matmat(self, X: NDArray) -> NDArray:
-        return self.args[0].matmat(self.args[1].matmat(X))
+    def _rmatmat(self, X: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[1]._rmatmat(self.args[0]._rmatmat(X), pool=pool)
 
     def _adjoint(self):
         A, B = self.args
@@ -1477,16 +1733,16 @@ class _SumLinearOperator(LinearOperator):
         super().__init__(dtype=_get_dtype([A, B]), shape=A.shape)
 
     def _matvec(self, x: NDArray) -> NDArray:
-        return self.args[0].matvec(x) + self.args[1].matvec(x)
+        return self.args[0]._matvec(x) + self.args[1]._matvec(x)
 
     def _rmatvec(self, x: NDArray) -> NDArray:
-        return self.args[0].rmatvec(x) + self.args[1].rmatvec(x)
+        return self.args[0]._rmatvec(x) + self.args[1]._rmatvec(x)
 
-    def _rmatmat(self, x: NDArray) -> NDArray:
-        return self.args[0].rmatmat(x) + self.args[1].rmatmat(x)
+    def _matmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[0]._matmat(x, pool=pool) + self.args[1]._matmat(x, pool=pool)
 
-    def _matmat(self, x: NDArray) -> NDArray:
-        return self.args[0].matmat(x) + self.args[1].matmat(x)
+    def _rmatmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self.args[0]._rmatmat(x, pool=pool) + self.args[1]._rmatmat(x, pool=pool)
 
     def _adjoint(self) -> LinearOperator:
         A, B = self.args
@@ -1508,10 +1764,10 @@ class _PowerLinearOperator(LinearOperator):
         super().__init__(dtype=A.dtype, shape=A.shape)
         self.args = (A, p)
 
-    def _power(self, fun: Callable, x: NDArray) -> NDArray:
+    def _power(self, fun: Callable, x: NDArray, **kwargs) -> NDArray:
         res = x.copy()
         for _ in range(self.args[1]):
-            res = fun(res)
+            res = fun(res, **kwargs)
         return res
 
     def _matvec(self, x: NDArray) -> NDArray:
@@ -1520,11 +1776,11 @@ class _PowerLinearOperator(LinearOperator):
     def _rmatvec(self, x: NDArray) -> NDArray:
         return self._power(self.args[0].rmatvec, x)
 
-    def _rmatmat(self, x: NDArray) -> NDArray:
-        return self._power(self.args[0].rmatmat, x)
+    def _matmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self._power(self.args[0]._matmat, x, pool=pool)
 
-    def _matmat(self, x: NDArray) -> NDArray:
-        return self._power(self.args[0].matmat, x)
+    def _rmatmat(self, x: NDArray, pool: Tpool | None = None) -> NDArray:
+        return self._power(self.args[0]._rmatmat, x, pool=pool)
 
     def _adjoint(self) -> LinearOperator:
         A, p = self.args

@@ -26,7 +26,7 @@ def lint(session):
     )
 
 
-@nox.session(python=["3.10", "3.11", "3.12", "3.13", "3.14"])
+@nox.session(python=["3.11", "3.12", "3.13", "3.14"])
 def tests(session: nox.Session) -> None:
     """
     Run unit tests.
@@ -36,7 +36,7 @@ def tests(session: nox.Session) -> None:
     session.run("pytest", *session.posargs)
 
 
-@nox.session(python=["3.10", "3.11", "3.12", "3.13", "3.14"])
+@nox.session(python=["3.11", "3.12", "3.13", "3.14"])
 def build(session: nox.Session) -> None:
     """
     Build an SDist and wheel.

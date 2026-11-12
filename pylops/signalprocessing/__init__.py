@@ -18,6 +18,7 @@ A list of operators present in pylops.signalprocessing:
     Interp                          Interpolation operator.
     InterpCubicSpline               Cubic Spline Interpolation operator.
     Bilinear                        Bilinear interpolation operator.
+    Downsample2D                    2D downsampling operator.
     FFT                             One dimensional Fast-Fourier Transform.
     FFT2D                           Two dimensional Fast-Fourier Transform.
     FFTND                           N-dimensional Fast-Fourier Transform.
@@ -27,6 +28,9 @@ A list of operators present in pylops.signalprocessing:
     DWTND                           N-dimensional Wavelet operator.
     DCT                             Discrete Cosine Transform.
     DTCWT                           Dual-Tree Complex Wavelet Transform.
+    SWT                             One dimensional Stationary Wavelet operator.
+    SWT2D                           Two dimensional Stationary Wavelet operator.
+    SWTND                           N-dimensional Stationary Wavelet operator.
     UDCT                            Uniform Discrete Curvelet Transform.
     Radon2D	                        Two dimensional Radon transform.
     Radon3D	                        Three dimensional Radon transform.
@@ -59,6 +63,7 @@ from .shift import *
 from .interp import *
 from .interpspline import *
 from .bilinear import *
+from .downsample2d import *
 from .radon2d import *
 from .radon3d import *
 from .fourierradon2d import *
@@ -74,6 +79,9 @@ from .fredholm1 import *
 from .dwt import *
 from .dwt2d import *
 from .dwtnd import *
+from .swt import *
+from .swt2d import *
+from .swtnd import *
 from .seislet import *
 from .dct import *
 from .dtcwt import *
@@ -96,6 +104,7 @@ __all__ = [
     "Interp",
     "InterpCubicSpline",
     "Bilinear",
+    "Downsample2D",
     "Radon2D",
     "Radon3D",
     "FourierRadon2D",
@@ -111,6 +120,9 @@ __all__ = [
     "DWT",
     "DWT2D",
     "DWTND",
+    "SWT",
+    "SWT2D",
+    "SWTND",
     "Seislet",
     "DCT",
     "DTCWT",

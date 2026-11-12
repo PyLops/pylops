@@ -377,14 +377,14 @@ def akirichards(
     where
 
     .. math::
-        \begin{align}
+        \begin{aligned}
         G_1(\theta) &= \frac{1}{2 \cos^2 \theta},\\
         G_2(\theta) &= -4 (V_S/V_P)^2 \sin^2 \theta,\\
          G_3(\theta) &= 0.5 - 2 (V_S/V_P)^2 \sin^2 \theta,\\
          \frac{\Delta V_P}{\overline{V}_P} &= 2 \frac{V_{P,2}-V_{P,1}}{V_{P,2}+V_{P,1}},\\
          \frac{\Delta V_S}{\overline{V}_S} &= 2 \frac{V_{S,2}-V_{S,1}}{V_{S,2}+V_{S,1}}, \\
          \frac{\Delta \rho}{\overline{\rho}} &= 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}.
-        \end{align}
+        \end{aligned}
 
     .. [1] https://wiki.seg.org/wiki/AVO_equations
 
@@ -451,14 +451,14 @@ def fatti(
     where
 
     .. math::
-        \begin{align}
+        \begin{aligned}
         G_1(\theta) &= 0.5 (1 + \tan^2 \theta),\\
         G_2(\theta) &= -4 (V_S/V_P)^2 \sin^2 \theta,\\
         G_3(\theta) &= 0.5 \left(4 (V_S/V_P)^2 \sin^2 \theta - \tan^2 \theta\right),\\
         \frac{\Delta \text{AI}}{\overline{\text{AI}}} &= 2 \frac{\text{AI}_2-\text{AI}_1}{\text{AI}_2+\text{AI}_1},\\
         \frac{\Delta \text{SI}}{\overline{\text{SI}}} &= 2 \frac{\text{SI}_2-\text{SI}_1}{\text{SI}_2+\text{SI}_1},\\
         \frac{\Delta \rho}{\overline{\rho}} &= 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}.
-        \end{align}
+        \end{aligned}
 
     .. [1] https://www.subsurfwiki.org/wiki/Fatti_equation
 
@@ -526,14 +526,14 @@ def ps(
     where
 
     .. math::
-        \begin{align}
+        \begin{aligned}
         G_2(\theta) &=  \frac{\tan \theta}{2} \left\{4 (V_S/V_P)^2 \sin^2 \theta
             - 4(V_S/V_P) \cos \theta \cos \phi \right\},\\
         G_3(\theta) &= - \frac{\tan \theta}{2} \left\{1 - 2 (V_S/V_P)^2 \sin^2 \theta +
         2(V_S/V_P) \cos \theta \cos \phi\right\},\\
         \frac{\Delta V_S}{\overline{V_S}} &= 2 \frac{V_{S,2}-V_{S,1}}{V_{S,2}+V_{S,1}},\\
         \frac{\Delta \rho}{\overline{\rho}} &= 2 \frac{\rho_2-\rho_1}{\rho_2+\rho_1}.
-        \end{align}
+        \end{aligned}
 
     Note that :math:`\theta` is the P-incidence angle whilst :math:`\phi` is
     the S-reflected angle which is computed using Snell's law and the average

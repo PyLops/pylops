@@ -11,6 +11,7 @@ designed to allow a variety of transforms as long as they operate with signals
 that are 2- or 3-dimensional in nature, respectively.
 
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -107,6 +108,47 @@ plt.tight_layout()
 
 ###############################################################################
 # We repeat now the same exercise in 3d
+
+
+def plot_3d(data, par, x, y, t, title):
+    fig, axs = plt.subplots(1, 3, figsize=(12, 5))
+    fig.suptitle(title, fontsize=12, fontweight="bold", y=0.95)
+    axs[0].imshow(
+        data[par["ny"] // 2].T,
+        aspect="auto",
+        interpolation="nearest",
+        vmin=-2,
+        vmax=2,
+        cmap="gray",
+        extent=(x.min(), x.max(), t.max(), t.min()),
+    )
+    axs[0].set_xlabel(r"$x(m)$")
+    axs[0].set_ylabel(r"$t(s)$")
+    axs[1].imshow(
+        data[:, par["nx"] // 2].T,
+        aspect="auto",
+        interpolation="nearest",
+        vmin=-2,
+        vmax=2,
+        cmap="gray",
+        extent=(y.min(), y.max(), t.max(), t.min()),
+    )
+    axs[1].set_xlabel(r"$y(m)$")
+    axs[1].set_ylabel(r"$t(s)$")
+    axs[2].imshow(
+        data[:, :, par["nt"] // 2],
+        aspect="auto",
+        interpolation="nearest",
+        vmin=-2,
+        vmax=2,
+        cmap="gray",
+        extent=(x.min(), x.max(), y.max(), x.min()),
+    )
+    axs[2].set_xlabel(r"$x(m)$")
+    axs[2].set_ylabel(r"$y(m)$")
+    plt.tight_layout()
+
+
 par = {
     "oy": -60,
     "dy": 2,
@@ -134,43 +176,7 @@ wav = pylops.utils.wavelets.ricker(t[:41], f0=par["f0"])[0]
 # Generate model
 _, data = pylops.utils.seismicevents.hyperbolic3d(x, y, t, t0, vrms, vrms, amp, wav)
 
-
-fig, axs = plt.subplots(1, 3, figsize=(12, 5))
-fig.suptitle("Original data", fontsize=12, fontweight="bold", y=0.95)
-axs[0].imshow(
-    data[par["ny"] // 2].T,
-    aspect="auto",
-    interpolation="nearest",
-    vmin=-2,
-    vmax=2,
-    cmap="gray",
-    extent=(x.min(), x.max(), t.max(), t.min()),
-)
-axs[0].set_xlabel(r"$x(m)$")
-axs[0].set_ylabel(r"$t(s)$")
-axs[1].imshow(
-    data[:, par["nx"] // 2].T,
-    aspect="auto",
-    interpolation="nearest",
-    vmin=-2,
-    vmax=2,
-    cmap="gray",
-    extent=(y.min(), y.max(), t.max(), t.min()),
-)
-axs[1].set_xlabel(r"$y(m)$")
-axs[1].set_ylabel(r"$t(s)$")
-axs[2].imshow(
-    data[:, :, par["nt"] // 2],
-    aspect="auto",
-    interpolation="nearest",
-    vmin=-2,
-    vmax=2,
-    cmap="gray",
-    extent=(x.min(), x.max(), y.max(), x.min()),
-)
-axs[2].set_xlabel(r"$x(m)$")
-axs[2].set_ylabel(r"$y(m)$")
-plt.tight_layout()
+plot_3d(data, par, x, y, t, "Original data")
 
 ###############################################################################
 # Let's create now the :py:class:`pylops.signalprocessing.Patch3D` operator
@@ -201,39 +207,76 @@ Patch = pylops.signalprocessing.Patch3D(
 )
 reconstructed_data = np.real(Patch * fftdata)
 
-fig, axs = plt.subplots(1, 3, figsize=(12, 5))
-fig.suptitle("Reconstructed data", fontsize=12, fontweight="bold", y=0.95)
-axs[0].imshow(
-    reconstructed_data[par["ny"] // 2].T,
-    aspect="auto",
-    interpolation="nearest",
-    vmin=-2,
-    vmax=2,
-    cmap="gray",
-    extent=(x.min(), x.max(), t.max(), t.min()),
+plot_3d(reconstructed_data, par, x, y, t, "Reconstructed data")
+
+###############################################################################
+# However, in practice the shapes of data to be patched do not always conform
+# with the patch design, meaning that some of the edges do not fit within the
+# patches. In this case, we will use the
+# :func:`pylops.signalprocessing.patch3d_pad_to_next` method to pad the input
+# before feeding it to the patching operator.
+par = {
+    "oy": -66,
+    "dy": 2,
+    "ny": 66,
+    "ox": -54,
+    "dx": 2,
+    "nx": 54,
+    "ot": 0,
+    "dt": 0.004,
+    "nt": 100,
+    "f0": 20,
+}
+
+v = 1500
+t0 = [0.05, 0.2, 0.3]
+vrms = [500, 700, 1700]
+amp = [1.0, -2, 0.5]
+
+# Create axis
+t, t2, x, y = pylops.utils.seismicevents.makeaxis(par)
+
+# Create wavelet
+wav = pylops.utils.wavelets.ricker(t[:41], f0=par["f0"])[0]
+
+# Generate model
+_, data = pylops.utils.seismicevents.hyperbolic3d(x, y, t, t0, vrms, vrms, amp, wav)
+
+plot_3d(reconstructed_data, par, x, y, t, "Data")
+
+# Patching operator
+dimsd = data.shape
+nwins, dims, mwin_inends, dwin_inends = pylops.signalprocessing.patch3d_design(
+    dimsd, nwin, nover, (128, 128, 65)
 )
-axs[0].set_xlabel(r"$x(m)$")
-axs[0].set_ylabel(r"$t(s)$")
-axs[1].imshow(
-    reconstructed_data[:, par["nx"] // 2].T,
-    aspect="auto",
-    interpolation="nearest",
-    vmin=-2,
-    vmax=2,
-    cmap="gray",
-    extent=(y.min(), y.max(), t.max(), t.min()),
+Patch = pylops.signalprocessing.Patch3D(
+    Op.H, dims, dimsd, nwin, nover, nop, tapertype=None
 )
-axs[1].set_xlabel(r"$y(m)$")
-axs[1].set_ylabel(r"$t(s)$")
-axs[2].imshow(
-    reconstructed_data[:, :, par["nt"] // 2],
-    aspect="auto",
-    interpolation="nearest",
-    vmin=-2,
-    vmax=2,
-    cmap="gray",
-    extent=(x.min(), x.max(), y.max(), x.min()),
+fftdata = Patch.H * data
+
+Patch = pylops.signalprocessing.Patch3D(
+    Op.H, dims, dimsd, nwin, nover, nop, tapertype="hanning"
 )
-axs[2].set_xlabel(r"$x(m)$")
-axs[2].set_ylabel(r"$y(m)$")
-plt.tight_layout()
+reconstructed_data = np.real(Patch * fftdata)
+
+plot_3d(reconstructed_data, par, x, y, t, "Reconstructed data without padding")
+
+# Pad to next
+data_pad, nwins, dims, mwin_inends, dwin_inends = (
+    pylops.signalprocessing.patch3d.patch3d_pad_to_next(
+        data, nwin, nover, (128, 128, 65)
+    )
+)
+
+dimsd_pad = data_pad.shape
+Patch = pylops.signalprocessing.Patch3D(
+    Op.H, dims, dimsd_pad, nwin, nover, nop, tapertype=None
+)
+fftdata = Patch.H * data_pad
+
+Patch = pylops.signalprocessing.Patch3D(
+    Op.H, dims, dimsd_pad, nwin, nover, nop, tapertype="hanning"
+)
+reconstructed_data = np.real(Patch * fftdata)[: dimsd[0], : dimsd[1], : dimsd[2]]
+
+plot_3d(reconstructed_data, par, x, y, t, "Reconstructed data with padding")

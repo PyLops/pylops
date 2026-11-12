@@ -35,7 +35,7 @@ class _TorchOperator(torch.autograd.Function):
             x = x.cpu().detach().numpy()
         else:
             # pass x to cupy using DLPack
-            x = cp.fromDlpack(to_dlpack(x))
+            x = cp.from_dlpack(to_dlpack(x))
 
         # apply forward operator
         y = ctx.forw(x)
@@ -46,7 +46,7 @@ class _TorchOperator(torch.autograd.Function):
             y = torch.from_numpy(y).to(ctx.devicetorch)
         else:
             # move y to torch and device
-            y = from_dlpack(y.toDlpack())
+            y = from_dlpack(y)
         return y
 
     @staticmethod
@@ -56,7 +56,7 @@ class _TorchOperator(torch.autograd.Function):
             y = y.cpu().detach().numpy()
         else:
             # pass x to cupy using DLPack
-            y = cp.fromDlpack(to_dlpack(y))
+            y = cp.from_dlpack(to_dlpack(y))
 
         # apply adjoint operator
         x = ctx.adj(y)
@@ -65,5 +65,5 @@ class _TorchOperator(torch.autograd.Function):
         if ctx.device == "cpu":
             x = torch.from_numpy(x).to(ctx.devicetorch)
         else:
-            x = from_dlpack(x.toDlpack())
+            x = from_dlpack(x)
         return x, None, None, None, None, None
