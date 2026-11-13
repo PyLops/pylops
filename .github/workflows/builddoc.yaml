@@ -27,6 +27,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install dependencies and pylops
-        run: uv sync --locked --extra advanced --extra stat --extra deep --no-default-groups --group doc
+        run: uv sync --locked --extra advanced --extra stat --extra deep --no-default-groups --group doc --group dev
       - name: Build documentation
         run: uv run python -m sphinx -T -b html docs/source docs/build/html

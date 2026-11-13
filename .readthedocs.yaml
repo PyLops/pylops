@@ -22,4 +22,4 @@ build:
       create_environment:
          - uv venv "${READTHEDOCS_VIRTUALENV_PATH}"
       install:
-         - UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv sync --locked  --extra advanced  --extra stat --extra deep --no-default-groups --group doc
+         - UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv sync --locked  --extra advanced  --extra stat --extra deep --no-default-groups --group doc --group dev
