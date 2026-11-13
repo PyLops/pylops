@@ -63,6 +63,18 @@ numpydoc_class_members_toctree = False
 # Examples to skip when building the gallery
 ignore_examples = ["plot_dtcwt", "plot_bayeslinearregr"]
 
+# Which galleries to execute (to debug build failures, e.g. on Read the Docs):
+# PYLOPS_GALLERY=all (default), examples or tutorials. Scripts of the skipped
+# gallery are still rendered, but not executed (no outputs), so links keep working.
+gallery_run = os.environ.get("PYLOPS_GALLERY", "all")
+if gallery_run not in ("all", "examples", "tutorials"):
+    raise ValueError(
+        f"PYLOPS_GALLERY must be 'all', 'examples' or 'tutorials', got {gallery_run!r}"
+    )
+gallery_filename_pattern = (
+    r"\.py" if gallery_run == "all" else rf"/{gallery_run}/.*\.py$"
+)
+
 sphinx_gallery_conf = {
     # Path to examples scripts
     "examples_dirs": [
@@ -71,7 +83,7 @@ sphinx_gallery_conf = {
     ],
     # Path where to save gallery generated examples
     "gallery_dirs": ["gallery", "tutorials"],
-    "filename_pattern": r"\.py",
+    "filename_pattern": gallery_filename_pattern,
     # Examples to skip when building the gallery
     "ignore_pattern": rf"({'|'.join(ignore_examples)})\.py$",
     # Remove the "Download all examples" button from the top level gallery
