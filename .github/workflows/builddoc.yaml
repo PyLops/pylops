@@ -1,0 +1,32 @@
+name: PyLops Documentation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "docs/**"
+      - "examples/**"
+      - "tutorials/**"
+      - "pylops/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/builddoc.yaml"
+
+jobs:
+  doc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Install uv with Python 3.12
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies and pylops
+        run: uv sync --locked --extra advanced --extra stat --extra deep --all-groups
+      - name: Build documentation
+        run: uv run python -m sphinx -T -b html docs/source docs/build/html
