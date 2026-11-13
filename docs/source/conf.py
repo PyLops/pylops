@@ -61,7 +61,12 @@ numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
 
 # Examples to skip when building the gallery
-ignore_examples = ["plot_dtcwt", "plot_bayeslinearregr"]
+ignore_examples = [
+    "plot_dtcwt",
+    "plot_bayeslinearregr",
+    "plot_patching",
+    "plot_fourierradon",
+]
 
 sphinx_gallery_conf = {
     # Path to examples scripts
