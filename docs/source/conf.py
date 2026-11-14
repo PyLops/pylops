@@ -63,7 +63,7 @@ numpydoc_class_members_toctree = False
 # Examples to skip when building the gallery
 ignore_examples = [
     "plot_dtcwt",
-    "plot_slopeest",
+    "plot_pwdslope",
 ]
 
 sphinx_gallery_conf = {
