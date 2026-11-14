@@ -76,9 +76,9 @@ sphinx_gallery_conf = {
     ],
     # Path where to save gallery generated examples
     "gallery_dirs": ["gallery", "tutorials"],
-    # TEMPORARY: do not execute any example/tutorial (debugging RTD build failures)
-    "plot_gallery": False,
-    "filename_pattern": r"\.py",
+    # TEMPORARY: only execute tutorials, examples are rendered without running
+    # (debugging RTD build failures)
+    "filename_pattern": r"/tutorials/.*\.py$",
     # Examples to skip when building the gallery
     "ignore_pattern": rf"({'|'.join(ignore_examples)})\.py$",
     # Remove the "Download all examples" button from the top level gallery
