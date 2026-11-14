@@ -66,6 +66,10 @@ ignore_examples = [
     "plot_bayeslinearregr",
     "plot_patching",
     "plot_fourierradon",
+    "plot_downsample",
+    "plot_memoizeoperator",
+    "plot_slopeest",
+    "plot_pwdslope",
 ]
 
 sphinx_gallery_conf = {
@@ -76,9 +80,7 @@ sphinx_gallery_conf = {
     ],
     # Path where to save gallery generated examples
     "gallery_dirs": ["gallery", "tutorials"],
-    # TEMPORARY: only execute tutorials, examples are rendered without running
-    # (debugging RTD build failures)
-    "filename_pattern": r"/tutorials/.*\.py$",
+    "filename_pattern": r"\.py",
     # Examples to skip when building the gallery
     "ignore_pattern": rf"({'|'.join(ignore_examples)})\.py$",
     # Remove the "Download all examples" button from the top level gallery
