@@ -60,6 +60,18 @@ numpydoc_show_class_members = False
 numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
 
+# Examples to skip when building the gallery
+ignore_examples = [
+    "plot_dtcwt",
+    "plot_bayeslinearregr",
+    "plot_patching",
+    "plot_fourierradon",
+    "plot_downsample",
+    "plot_memoizeoperator",
+    "plot_slopeest",
+    "plot_pwdslope",
+]
+
 sphinx_gallery_conf = {
     # Path to examples scripts
     "examples_dirs": [
@@ -70,7 +82,7 @@ sphinx_gallery_conf = {
     "gallery_dirs": ["gallery", "tutorials"],
     "filename_pattern": r"\.py",
     # Examples to skip when building the gallery
-    "ignore_pattern": r"plot_dtcwt\.py$",
+    "ignore_pattern": rf"({'|'.join(ignore_examples)})\.py$",
     # Remove the "Download all examples" button from the top level gallery
     "download_all_examples": False,
     # Sort gallery example by file name instead of number of lines (default)
