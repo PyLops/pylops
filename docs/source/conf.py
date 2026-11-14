@@ -64,8 +64,6 @@ numpydoc_class_members_toctree = False
 ignore_examples = [
     "plot_dtcwt",
     "plot_bayeslinearregr",
-    "plot_downsample",
-    "plot_memoizeoperator",
     "plot_slopeest",
     "plot_pwdslope",
 ]
