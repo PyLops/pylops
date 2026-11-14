@@ -223,7 +223,7 @@ fig.tight_layout()
 
 ###############################################################################
 # Core samples
-# ------------------
+# ------------
 # The original paper by van Vliet and Verbeek [1]_ also has an example with images
 # of core samples. Since the original paper does not have a scale with which to
 # plot the angles, we have chosen ours it to match their image as closely as
@@ -288,136 +288,6 @@ axs[5].set(title="Anisotropy\n(smooth=4)")
 for ax in axs.ravel():
     ax.axis("off")
 fig.tight_layout()
-
-
-###############################################################################
-# 3D Seismic data
-# ---------------
-# Finally, we consider once again a seismic dataset. However, in this case
-# we create a 3D version of it by linearly shifting traces over the
-# y-direction. We then apply the 3D version of the Structure Tensor algorithm
-# to such a data and display the slopes along the y- and x-directions.
-
-# Input
-inputfile = "../testdata/sigmoid.npz"
-
-sigmoid = np.load(inputfile)["sigmoid"]
-ny, nx, nt = 5, *sigmoid.shape
-dy, dx, dt = 0.008, 0.008, 0.004
-
-# Axes
-y, x, t = np.arange(ny) * dy, np.arange(nx) * dx, np.arange(nt) * dt
-
-# 3D Input
-sigmoid3d = np.zeros((ny, nx, nt), dtype=sigmoid.dtype)
-for i in range(ny):
-    sigmoid3d[i, ...] = np.roll(sigmoid, i // 2, axis=1)
-
-clip = 0.5 * np.max(np.abs(sigmoid3d))
-fig, ax = plt.subplots(1, 2, figsize=(10, 4), sharey=True, width_ratios=(3, 1))
-fig.suptitle("Sigmoid model")
-ax[0].imshow(
-    sigmoid3d[ny // 2].T,
-    aspect="auto",
-    vmin=-clip,
-    vmax=clip,
-    cmap="gray",
-    extent=(x[0], x[-1], t[-1], t[0]),
-)
-ax[0].set_ylabel("Time [s]")
-ax[0].set_xlabel("X [km]")
-im1 = ax[1].imshow(
-    sigmoid3d[:, nx // 2].T,
-    aspect="auto",
-    vmin=-clip,
-    vmax=clip,
-    cmap="gray",
-    extent=(y[0], y[-1], t[-1], t[0]),
-)
-ax[1].set_xlabel("Y [km]")
-fig.tight_layout()
-
-# Slope estimation
-slopes, anisotropies = slope_estimate(
-    sigmoid3d / sigmoid3d.max(),
-    dy=dy,
-    dx=dx,
-    dz=dt,
-    smooth=3,
-    eps=0.0,
-    dips=True,
-    anisotropies=True,
-    batch_size=500_000,
-)
-
-st_slope3d_y, st_slope3d_x = slopes
-st_linearity, st_planarity = anisotropies
-
-# Revert t-axis downward
-st_slope3d_y *= -1
-st_slope3d_x *= -1
-
-# Clip slopes above 80°
-pmax = np.arctan(80 * np.pi / 180)
-st_slope3d_y[st_slope3d_y > pmax] = pmax
-st_slope3d_y[st_slope3d_y < -pmax] = -pmax
-
-st_slope3d_x[st_slope3d_x > pmax] = pmax
-st_slope3d_x[st_slope3d_x < -pmax] = -pmax
-
-# Visualize
-v = 1  # np.max(np.abs(dips))
-clip_sy = min(pmax, np.max(np.abs(st_slope3d_y)))
-clip_sx = min(pmax, np.max(np.abs(st_slope3d_x)))
-
-fig, ax = plt.subplots(1, 2, figsize=(10, 4), sharey=True, width_ratios=(3, 1))
-fig.suptitle("Slopes along x")
-ax[0].imshow(
-    st_slope3d_y[ny // 2].T,
-    aspect="auto",
-    cmap="RdBu_r",
-    vmin=-clip_sy,
-    vmax=clip_sy,
-    extent=(x[0], x[-1], t[-1], t[0]),
-)
-ax[0].set_ylabel("Time [s]")
-ax[0].set_xlabel("X [km]")
-im1 = ax[1].imshow(
-    st_slope3d_y[:, nx // 2].T,
-    aspect="auto",
-    cmap="RdBu_r",
-    vmin=-clip_sy,
-    vmax=clip_sy,
-    extent=(y[0], y[-1], t[-1], t[0]),
-)
-ax[1].set_xlabel("Y [km]")
-create_colorbar(fig, ax[1], im1)
-fig.tight_layout()
-
-fig, ax = plt.subplots(1, 2, figsize=(10, 4), sharey=True, width_ratios=(3, 1))
-fig.suptitle("Slopes along y")
-ax[0].imshow(
-    st_slope3d_x[ny // 2].T,
-    aspect="auto",
-    cmap="RdBu_r",
-    vmin=-clip_sx,
-    vmax=clip_sx,
-    extent=(x[0], x[-1], t[-1], t[0]),
-)
-ax[0].set_ylabel("Time [s]")
-ax[0].set_xlabel("X [km]")
-im1 = ax[1].imshow(
-    st_slope3d_x[:, nx // 2].T,
-    aspect="auto",
-    cmap="RdBu_r",
-    vmin=-clip_sx,
-    vmax=clip_sx,
-    extent=(y[0], y[-1], t[-1], t[0]),
-)
-ax[1].set_xlabel("Y [km]")
-create_colorbar(fig, ax[1], im1)
-fig.tight_layout()
-
 
 ###############################################################################
 # Final considerations
