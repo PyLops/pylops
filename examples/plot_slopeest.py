@@ -302,7 +302,7 @@ fig.tight_layout()
 inputfile = "../testdata/sigmoid.npz"
 
 sigmoid = np.load(inputfile)["sigmoid"]
-ny, nx, nt = 20, *sigmoid.shape
+ny, nx, nt = 5, *sigmoid.shape
 dy, dx, dt = 0.008, 0.008, 0.004
 
 # Axes

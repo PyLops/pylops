@@ -145,7 +145,7 @@ fig.tight_layout()
 # Finally, we show here how the PWD slope estimation and smoothing
 # algorithms can be easily extended to 3D data. We start by generating a 3D synthetic
 # volume composed of 10 adjacent 2D sigmoid slices shifted in depth.
-ny = 20
+ny = 5
 
 sigmoid3d = np.zeros((ny, nz, nx), dtype=sigmoid.dtype)
 for i in range(ny):
