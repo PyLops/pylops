@@ -11,10 +11,13 @@ else:
 
     backend = "numpy"
 import pytest
+from scipy.sparse.linalg import cg as sp_cg
 from scipy.sparse.linalg import lsqr as sp_lsqr
 
-from pylops.basicoperators import MatrixMult
+from pylops.basicoperators import Diagonal, Identity, MatrixMult
 from pylops.optimization.basic import cg, cgls, lsqr
+from pylops.optimization.cls_basic import CG
+from pylops.optimization.leastsquares import normal_equations_inversion
 
 par1 = {
     "ny": 11,
@@ -72,6 +75,157 @@ par4j = {
     "x0": True,
     "dtype": "complex64",
 }  # overdetermined complex, non-zero initial guess
+
+
+par1f = {**par1, "dtype": "float32"}
+par1j128 = {**par1j, "dtype": "complex128"}
+
+np.random.seed(10)
+
+
+@pytest.mark.parametrize("par", [(par1)])
+def test_cg_preconditioner_shape(par):
+    """Reject a preconditioner with incompatible dimensions."""
+    Aop = Identity(par["nx"])
+    M = MatrixMult(np.random.normal(size=(par["nx"] + 1, par["nx"])))
+    with pytest.raises(ValueError, match="M must have shape"):
+        cg(Aop, np.random.normal(size=par["nx"]), M=M)
+
+
+@pytest.mark.parametrize("par", [(par1f), (par1), (par2), (par1j), (par2j), (par1j128)])
+@pytest.mark.parametrize("preallocate", [False, True])
+@pytest.mark.parametrize("damp", [0.0, 0.8])
+def test_cg_preconditioned(par, preallocate, damp):
+    """Preconditioned CG solves the damped system and reports true residuals."""
+    A = np.random.normal(size=(par["nx"], par["nx"])) + par["imag"] * np.random.normal(
+        size=(par["nx"], par["nx"])
+    )
+    A = (A.conj().T @ A + np.eye(par["nx"])).astype(par["dtype"])
+    Aop = MatrixMult(A, dtype=par["dtype"])
+    M = Diagonal(1.0 / (A.diagonal().real + damp), dtype=par["dtype"])
+    x = (
+        np.random.normal(size=par["nx"])
+        + par["imag"] * np.random.normal(size=par["nx"])
+    ).astype(par["dtype"])
+    x0 = np.random.normal(size=par["nx"]).astype(par["dtype"]) if par["x0"] else None
+    y = Aop @ x + damp * x
+    residuals = []
+    xinv, iiter, cost = cg(
+        Aop,
+        y,
+        x0=x0,
+        niter=4 * par["nx"],
+        damp=damp,
+        tol=1e-12,
+        M=M,
+        preallocate=preallocate,
+        callback=lambda value: residuals.append(
+            float(np.linalg.norm(y - Aop @ value - damp * value))
+        ),
+    )
+    assert len(residuals) == iiter
+    assert_array_almost_equal(xinv, x, decimal=4)
+    assert_array_almost_equal(cost[1:], np.asarray(residuals), decimal=3)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par1j), (par2j)])
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_cg_identity_preconditioner(par, preallocate):
+    """An identity preconditioner may return its input without copying it."""
+    A = np.random.normal(size=(par["nx"], par["nx"])) + par["imag"] * np.random.normal(
+        size=(par["nx"], par["nx"])
+    )
+    A = (A.conj().T @ A + np.eye(par["nx"])).astype(par["dtype"])
+    Aop = MatrixMult(A, dtype=par["dtype"])
+    y = np.random.normal(size=par["nx"]) + par["imag"] * np.random.normal(
+        size=par["nx"]
+    )
+    x0 = np.random.normal(size=par["nx"]).astype(par["dtype"]) if par["x0"] else None
+    plain = cg(Aop, y, x0=x0, niter=4, tol=0.0, preallocate=preallocate)
+    preconditioned = cg(
+        Aop,
+        y,
+        x0=x0,
+        niter=4,
+        tol=0.0,
+        M=Identity(par["nx"], dtype=par["dtype"]),
+        preallocate=preallocate,
+    )
+    assert plain[1] == preconditioned[1]
+    assert_array_almost_equal(plain[0], preconditioned[0], decimal=6)
+    assert_array_almost_equal(plain[2], preconditioned[2], decimal=6)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_cg_preconditioned_stopping(par, preallocate):
+    """Small preconditioner scaling must not trigger an early stop."""
+    y = np.random.normal(size=par["nx"])
+    x0 = np.random.normal(size=par["nx"]) if par["x0"] else None
+    Aop = Identity(par["nx"])
+    M = 1e-12 * Aop
+    xinv, iiter, cost = cg(
+        Aop, y, x0=x0, niter=par["nx"], tol=1e-6, M=M, preallocate=preallocate
+    )
+    assert iiter == 1
+    assert_array_almost_equal(xinv, y, decimal=10)
+    assert_array_almost_equal(cost[0], np.linalg.norm(y if x0 is None else y - x0))
+
+
+@pytest.mark.skipif(backend != "numpy", reason="SciPy CG is a NumPy reference")
+@pytest.mark.parametrize("par", [(par1f), (par1), (par2), (par1j), (par2j), (par1j128)])
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_cg_preconditioned_scipy(par, preallocate):
+    """Compare a fixed number of PCG iterations with SciPy."""
+    A = np.random.normal(size=(par["nx"], par["nx"])) + par["imag"] * np.random.normal(
+        size=(par["nx"], par["nx"])
+    )
+    A = (A.conj().T @ A + np.eye(par["nx"])).astype(par["dtype"])
+    Aop = MatrixMult(A, dtype=par["dtype"])
+    M = Diagonal(1.0 / A.diagonal().real, dtype=par["dtype"])
+    y = (
+        np.random.normal(size=par["nx"])
+        + par["imag"] * np.random.normal(size=par["nx"])
+    ).astype(par["dtype"])
+    x0 = np.random.normal(size=par["nx"]).astype(par["dtype"]) if par["x0"] else None
+    expected = sp_cg(Aop, y, x0=x0, M=M, maxiter=3, atol=0.0, rtol=0.0)[0]
+    result = cg(Aop, y, x0=x0, M=M, niter=3, tol=0.0, preallocate=preallocate)[0]
+    assert_array_almost_equal(result, expected, decimal=5)
+
+
+@pytest.mark.parametrize("par", [(par1), (par1j)])
+def test_cg_preconditioned_steps(par):
+    """Manual setup and stepping use the same preconditioner as solve."""
+    A = np.random.normal(size=(par["nx"], par["nx"])) + par["imag"] * np.random.normal(
+        size=(par["nx"], par["nx"])
+    )
+    A = (A.conj().T @ A + np.eye(par["nx"])).astype(par["dtype"])
+    Aop = MatrixMult(A, dtype=par["dtype"])
+    M = Diagonal(1.0 / A.diagonal().real, dtype=par["dtype"])
+    y = (
+        np.random.normal(size=par["nx"])
+        + par["imag"] * np.random.normal(size=par["nx"])
+    ).astype(par["dtype"])
+    solver = CG(Aop)
+    x = solver.setup(y, M=M, tol=0.0)
+    for _ in range(3):
+        x = solver.step(x)
+    expected = cg(Aop, y, M=M, niter=3, tol=0.0)[0]
+    assert_array_almost_equal(x, expected, decimal=7)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
+def test_cg_preconditioned_normal_equations(par):
+    """Normal-equation inversion forwards the inverse preconditioner."""
+    diagonal = np.exp(np.random.normal(size=par["nx"]))
+    Aop = Diagonal(diagonal)
+    M = Diagonal(1.0 / diagonal**2)
+    x = np.random.normal(size=par["nx"])
+    x0 = np.random.normal(size=par["nx"]) if par["x0"] else None
+    xinv = normal_equations_inversion(
+        Aop, Aop @ x, [], x0=x0, engine="pylops", M=M, niter=par["nx"], tol=1e-16
+    )[0]
+    assert_array_almost_equal(xinv, x, decimal=10)
 
 
 @pytest.mark.parametrize(
