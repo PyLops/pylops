@@ -29,7 +29,7 @@ def _cbdecorator(func: Callable, name: str) -> Callable:
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
-        callbacks = getattr(self, "callbacks", None)
+        callbacks = self.callbacks
         if not callbacks or getattr(type(self), name, None) is not wrapper:
             return func(self, *args, **kwargs)
         for cb in callbacks:
