@@ -23,3 +23,6 @@ build:
          - uv venv "${READTHEDOCS_VIRTUALENV_PATH}"
       install:
          - UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv sync --locked  --extra advanced  --extra stat --extra deep --no-default-groups --group doc --group dev
+      build:
+         html:
+            - cd docs/source && python -u -m sphinx -T -b html -d _build/doctrees -D language=en . $READTHEDOCS_OUTPUT/html
