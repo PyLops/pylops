@@ -25,8 +25,4 @@ build:
          - UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv sync --locked  --extra advanced  --extra stat --extra deep --no-default-groups --group doc --group dev
       build:
          html:
-            - >-
-              cd docs/source &&
-              python -u -c 'import faulthandler, runpy; faulthandler.dump_traceback_later(600, exit=True); runpy.run_module("sphinx", run_name="__main__")'
-              -T -b html -d _build/doctrees -D language=en
-              . "$READTHEDOCS_OUTPUT/html"
+            - ulimit -c 0 && cd docs/source && timeout --signal=ABRT --kill-after=10s 600s python -u -X faulthandler -m sphinx -T -b html -d _build/doctrees -D language=en . $READTHEDOCS_OUTPUT/html
