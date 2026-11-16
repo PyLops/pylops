@@ -508,10 +508,11 @@ class CGLS(Solver):
 
         if self.niter is not None:
             strpar = (
-                f"damp = {self.damp:10e}\ttol = {self.tol:10e}\tniter = {self.niter}"
+                f"damp = {np.sqrt(self.damp):10e}\ttol = {self.tol:10e}\t"
+                f"niter = {self.niter}"
             )
         else:
-            strpar = f"damp = {self.damp:10e}\ttol = {self.tol:10e}\t"
+            strpar = f"damp = {np.sqrt(self.damp):10e}\ttol = {self.tol:10e}\t"
         print(strpar)
         print("-" * 65 + "\n")
         if not xcomplex:
@@ -624,13 +625,13 @@ class CGLS(Solver):
             x = x0.copy()
             if not self.preallocate:
                 self.s = self.y - self.Op.matvec(x)
-                self.c = self.Op.rmatvec(self.s) - damp * x
+                self.c = self.Op.rmatvec(self.s) - self.damp * x
             else:
                 self.s = self.ncp.empty_like(self.y)
                 self.ncp.subtract(self.y, self.Op.matvec(x), out=self.s)
                 x1 = self.ncp.empty_like(x)
                 self.c = self.ncp.empty_like(x)
-                self.ncp.multiply(x, damp, out=x1)
+                self.ncp.multiply(x, self.damp, out=x1)
                 self.ncp.subtract(self.Op.rmatvec(self.s), x1, out=self.c)
         self.q = self.Op.matvec(self.c)
         self.kold = self.ncp.abs(self.c.dot(self.c.conj()))
@@ -648,7 +649,7 @@ class CGLS(Solver):
         self.cost1.append(
             float(
                 self.ncp.sqrt(
-                    self.cost[0] ** 2.0 + damp * self.ncp.abs(x.dot(x.conj()))
+                    self.cost[0] ** 2.0 + self.damp * self.ncp.abs(x.dot(x.conj()))
                 )
             )
         )
