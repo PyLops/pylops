@@ -13,8 +13,9 @@ else:
 import pytest
 from scipy.sparse.linalg import lsqr as sp_lsqr
 
-from pylops.basicoperators import MatrixMult
+from pylops.basicoperators import Identity, MatrixMult
 from pylops.optimization.basic import cg, cgls, lsqr
+from pylops.optimization.leastsquares import regularized_inversion
 
 par1 = {
     "ny": 11,
@@ -365,6 +366,59 @@ def test_cgls_stopping(par, preallocate):
     )[-1]
     assert cost[-2] / ynorm >= rtol
     assert cost[-1] / ynorm < rtol
+
+
+@pytest.mark.parametrize(
+    "par", [(par1), (par2), (par3), (par4), (par1j), (par2j), (par3j), (par4j)]
+)
+@pytest.mark.parametrize("preallocate", [False, True])
+def test_cgls_damp(par, preallocate):
+    """CGLS with damping against regularized_inversion with Identity"""
+    np.random.seed(10)
+    dtype = par["dtype"]
+
+    A = (
+        np.random.normal(0, 10, (par["ny"], par["nx"]))
+        + par["imag"] * np.random.normal(0, 10, (par["ny"], par["nx"]))
+    ).astype(dtype)
+    Aop = MatrixMult(A, dtype=dtype)
+    Iop = Identity(par["nx"], dtype=dtype)
+
+    x = (
+        np.random.normal(0, 1, par["nx"])
+        + par["imag"] * np.random.normal(0, 1, par["nx"])
+    ).astype(dtype)
+    if par["x0"]:
+        x0 = (
+            np.random.normal(0, 10, par["nx"])
+            + par["imag"] * np.random.normal(0, 10, par["nx"])
+        ).astype(dtype)
+    else:
+        x0 = None
+
+    y = Aop * x
+
+    damp = 50.0
+    xinv = cgls(
+        Aop,
+        y,
+        x0=x0,
+        niter=par["nx"],
+        damp=damp,
+        tol=0,
+        preallocate=preallocate,
+    )[0]
+    xinv_reg = regularized_inversion(
+        Aop,
+        y,
+        [Iop],
+        x0=x0,
+        epsRs=[damp],
+        engine="pylops",
+        niter=par["nx"],
+        tol=0,
+    )[0]
+    assert_array_almost_equal(xinv, xinv_reg, decimal=4)
 
 
 @pytest.mark.skipif(
