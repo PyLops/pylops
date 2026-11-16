@@ -23,9 +23,3 @@ build:
          - uv venv "${READTHEDOCS_VIRTUALENV_PATH}"
       install:
          - UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv sync --locked  --extra advanced  --extra stat --extra deep --no-default-groups --group doc --group dev
-      pre_build:
-         - getconf _NPROCESSORS_ONLN
-         - if [ -r /sys/fs/cgroup/cpu.max ]; then cat /sys/fs/cgroup/cpu.max; elif [ -r /sys/fs/cgroup/cpu/cpu.cfs_quota_us ]; then cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us /sys/fs/cgroup/cpu/cpu.cfs_period_us; else printf unavailable; fi
-      build:
-         html:
-            - ulimit -c 0 && cd docs/source && timeout --signal=ABRT --kill-after=10s 240s python -u -X faulthandler -m sphinx -T -b html -d _build/doctrees -D language=en . $READTHEDOCS_OUTPUT/html > /tmp/pylops-sphinx.log 2>&1; sphinx_status=$?; cat /tmp/pylops-sphinx.log; exit $sphinx_status
