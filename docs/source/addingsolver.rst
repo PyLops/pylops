@@ -62,7 +62,6 @@ two additional parameters are created that contains the counter of the iteration
     def __init__(self, Op, callbacks=None):
         self.Op = Op
         self.callbacks = callbacks
-        self._registercallbacks()
         self.iiter = 0
         self.tstart = time.time()
 
