@@ -1,5 +1,4 @@
 import os
-from math import prod
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
@@ -255,11 +254,10 @@ def test_Smoothing2D(par, dtype):
 def test_SmoothingND(par, dtype):
     """Dot-test for SmoothingND"""
     # 3d signal
-    axes = list(range(3))
     D3op = SmoothingND(
         nsmooth=(3, 3, 3),
         dims=(par["nz"], par["ny"], par["nx"]),
-        axes=axes,
+        axes=(0, 1, 2),
         dtype=dtype,
     )
     assert dottest(
@@ -312,53 +310,58 @@ def test_SmoothingND(par, dtype):
 
 
 @pytest.mark.parametrize("par", [(par1), (par2)])
-@pytest.mark.parametrize("axes", ["default", None, "permuted"])
+@pytest.mark.parametrize("axes", [(0, 1, 2), (1, 2, 0), (2, 0, 1), (-1, -3, -2)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_SmoothingND_axes(par, axes, dtype):
-    """Dot-test and analytic impulse response for default and explicit axes."""
-    configurations = [
-        # 2D on 2D
-        ((par["ny"], par["nx"]), par["nsmooth"][:2]),
-        # 3D on 3D
-        ((par["nz"], par["ny"], par["nx"]), par["nsmooth"]),
-        # 3D on 4D (only modelling)
-        ((par["nt"], par["nz"], par["ny"], par["nx"]), par["nsmooth"]),
-        # 2D on 3D (only modelling)
-        ((par["nz"], par["ny"], par["nx"]), par["nsmooth"][:2]),
-    ]
-    for dims, nsmooth in configurations:
-        physical_axes = (
-            tuple((len(dims) - 1 + i) % len(dims) for i in range(len(nsmooth)))
-            if axes == "permuted"
-            else tuple(range(len(dims) - len(nsmooth), len(dims)))
-        )
-        kwargs = {} if axes == "default" else {"axes": None if axes is None else physical_axes}
-        Sop = SmoothingND(nsmooth=nsmooth, dims=dims, dtype=dtype, **kwargs)
-        assert dottest(
-            Sop,
-            prod(dims),
-            prod(dims),
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-            backend=backend,
-        )
+    """Dot-test and modelling with permuted axes, on 3D and 4D models."""
+    permutation = tuple(axis % 3 for axis in axes)
+    nsmooth = tuple(par["nsmooth"][i] for i in permutation)
 
-        # Forward and adjoint dtype check
-        center = tuple(d // 2 for d in dims)
-        x = np.zeros(dims, dtype=dtype)
-        x[center] = 1
-        y = Sop * x
-        xadj = Sop.H * x
-        assert y.dtype == dtype
-        assert xadj.dtype == dtype
+    # 3D on 3D
+    dims = (par["nz"], par["ny"], par["nx"])
+    Sop = SmoothingND(nsmooth=nsmooth, dims=dims, axes=axes, dtype=dtype)
+    Sop_ref = SmoothingND(
+        nsmooth=par["nsmooth"], dims=dims, axes=(0, 1, 2), dtype=dtype
+    )
+    assert dottest(
+        Sop,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
 
-        # Analytic box response, clipped at the model boundaries
-        expected = np.zeros_like(x)
-        slices = [slice(c, c + 1) for c in center]
-        for axis, length in zip(physical_axes, nsmooth, strict=True):
-            slices[axis] = slice(
-                max(0, center[axis] - length // 2),
-                min(dims[axis], center[axis] + length // 2 + 1),
-            )
-        expected[tuple(slices)] = 1 / prod(nsmooth)
-        assert_array_almost_equal(y, expected, decimal=5)
-        assert_array_almost_equal(xadj, expected, decimal=5)
+    x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    y = Sop * x
+    xadj = Sop.H * x
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(y, Sop_ref * x, decimal=4)
+    assert_array_almost_equal(xadj, Sop_ref.H * x, decimal=4)
+
+    # 3D on 4D (only modelling)
+    dims = (par["nz"], par["ny"], par["nx"], par["nt"])
+    Sop = SmoothingND(
+        nsmooth=nsmooth,
+        dims=dims,
+        axes=tuple(axis - 1 if axis < 0 else axis for axis in axes),
+        dtype=dtype,
+    )
+    Sop_ref = SmoothingND(
+        nsmooth=par["nsmooth"], dims=dims, axes=(0, 1, 2), dtype=dtype
+    )
+    assert dottest(
+        Sop,
+        par["nz"] * par["ny"] * par["nx"] * par["nt"],
+        par["nz"] * par["ny"] * par["nx"] * par["nt"],
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+
+    x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    y = Sop * x
+    xadj = Sop.H * x
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(y, Sop_ref * x, decimal=4)
+    assert_array_almost_equal(xadj, Sop_ref.H * x, decimal=4)

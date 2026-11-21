@@ -270,17 +270,18 @@ def test_Convolve1D_1d(par, dtype, method, hlen):
     """
     np.random.seed(10)
 
+    # Add imaginary part
+    imag = 1j if np.issubdtype(dtype, np.complexfloating) else 0
+    h = h1 + imag * h1
+
     # Spike train, used as the model for a compact filter and as the filter
     # itself for an extended one (in which case the roles are simply swapped)
     spike = np.zeros(par["nx"], dtype=dtype)
-    spike[par["nx"] // 2] = 1.0
+    spike[par["nx"] // 2] = 1.0 + imag * 1.0
     if hlen == "short":
-        nx, x, h, offset = par["nx"], spike, h1.astype(dtype), par["offset"]
+        nx, x, h, offset = par["nx"], spike, h.astype(dtype), par["offset"]
     else:
-        nx, x, h, offset = nfilt[0], h1.astype(dtype), spike, nfilt[0] // 2
-
-    if np.issubdtype(dtype, np.complexfloating):
-        h = h + 1j * h
+        nx, x, h, offset = nfilt[0], h.astype(dtype), spike, nfilt[0] // 2
 
     # Operator
     Cop = Convolve1D(nx, h=h, offset=offset, method=method, dtype=dtype)
@@ -316,7 +317,7 @@ def test_Convolve1D_1d(par, dtype, method, hlen):
 @pytest.mark.parametrize(
     "par", [(par1_1d), (par2_1d), (par3_1d), (par4_1d), (par5_1d), (par6_1d)]
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("method", methods_nd)
 @pytest.mark.parametrize("hlen", ["short", "long"])
 @pytest.mark.parametrize("hndim", ["1d", "nd"])
@@ -325,12 +326,14 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
     """Dot-test, dtype check and inversion for Convolve1D operator applied to a
     multi-dimensional model, for both compact and extended filters provided
     either as a 1d array or with the same number of dimensions as the model.
+
     The result is compared against the equivalent 1d operator applied to each
     slice along ``axis``. Inversion is only tested for a compact, 1d,
     odd-length filter, as an extended filter leads to a heavily
     overdetermined system.
     """
     np.random.seed(10)
+    imag = 1j if np.issubdtype(dtype, np.complexfloating) else 0
 
     def nsamples(n):
         """Number of samples of the data along ``axis``: an extended filter
@@ -341,14 +344,15 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
         """Make a filter of length ``nheven`` along ``axis``, either as a 1d
         array or with the same number of dimensions as the model"""
         nh = nheven if hlen == "short" else dims[axis] + nheven
-        h = triang(nh, sym=True).astype(dtype)
+        h = triang(nh, sym=True)
+        h = (h + imag * h).astype(dtype)
         return h, (h if hndim == "1d" else _broadcast_filter(h, dims, axis))
 
     def check_inverse(Cop, dims):
         """Recover a smooth box from its convolution with the filter, as done
         for a one-dimensional model in ``test_Convolve1D_1d``"""
         x = np.zeros(dims, dtype=dtype)
-        x[tuple(slice(n // 2 - 3, n // 2 + 3) for n in dims)] = 1.0
+        x[tuple(slice(n // 2 - 3, n // 2 + 3) for n in dims)] = 1.0 + imag * 1.0
         xlsqr = lsqr(
             Cop,
             Cop * x.ravel(),
@@ -385,11 +389,12 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
             Cop,
             nyd * nxd,
             par["ny"] * par["nx"],
-            rtol=1e-2 if dtype == np.float32 else 1e-6,
+            rtol=1e-2 if dtype in (np.float32, np.complex64) else 1e-6,
             backend=backend,
         )
 
         x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+        x = x + imag * x
 
         # Forward and adjoint dtype check
         y = (Cop * x).reshape(Cop.dimsd)
@@ -434,11 +439,14 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
         Cop,
         nzd * nyd * nxd,
         par["nz"] * par["ny"] * par["nx"],
-        rtol=1e-2 if dtype == np.float32 else 1e-6,  # extra loose tolerance for mkl CI
+        rtol=1e-2
+        if dtype in (np.float32, np.complex64)
+        else 1e-6,  # extra loose tolerance for mkl CI
         backend=backend,
     )
 
     x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    x = x + imag * x
 
     # Forward and adjoint dtype check
     y = (Cop * x).reshape(Cop.dimsd)
@@ -452,21 +460,21 @@ def test_Convolve1D_nd(par, dtype, method, hlen, hndim, nheven):
 
 
 @pytest.mark.parametrize("par", [(par1_1d), (par2_1d)])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("method", methods_nd)
 @pytest.mark.parametrize("hlen", ["short", "long"])
 def test_Convolve1D_broadcast(par, dtype, method, hlen):
     """Dot-test and comparison with a VStack of 1d operators for Convolve1D
     applied to a model with a singleton dimension, which the filter broadcasts
     over (e.g. a single wavelet convolved with a set of traces)"""
+    imag = 1j if np.issubdtype(dtype, np.complexfloating) else 0
     np.random.seed(10)
     nx, ntraces = par["nx"], 4
     nh = nfilt[0] if hlen == "short" else nx + nfilt[0]
 
     # One filter per trace, all different
-    hs = np.vstack([triang(nh, sym=True) * (1.0 + i) for i in range(ntraces)]).astype(
-        dtype
-    )
+    hs = np.vstack([triang(nh, sym=True) * (1.0 + i) for i in range(ntraces)])
+    hs = (hs + imag * hs).astype(dtype)
     offset = par["offset"] if hlen == "short" else nx // 2
 
     nxd = nh if hlen == "long" else nx
@@ -477,7 +485,7 @@ def test_Convolve1D_broadcast(par, dtype, method, hlen):
         Cop,
         ntraces * nxd,
         1 * nx,
-        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        rtol=1e-4 if dtype in (np.float32, np.complex64) else 1e-6,
         backend=backend,
     )
 
@@ -495,7 +503,9 @@ def test_Convolve1D_broadcast(par, dtype, method, hlen):
         ]
     )
     x = np.random.normal(0.0, 1.0, nx).astype(dtype)
+    x = x + imag * x
     y = np.random.normal(0.0, 1.0, ntraces * nxd).astype(dtype)
+    y = y + imag * y
     assert_array_almost_equal(Cop * x, Vop * x, decimal=3)
     assert_array_almost_equal(Cop.H * y, Vop.H * y, decimal=3)
 
@@ -503,14 +513,15 @@ def test_Convolve1D_broadcast(par, dtype, method, hlen):
 @pytest.mark.parametrize(
     "par", [(par1_2d), (par2_2d), (par3_2d), (par4_2d), (par5_2d), (par6_2d)]
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_Convolve2D(par, dtype):
     """Dot-test and inversion for Convolve2D operator, on 2D and 3D models."""
+    imag = 1j if np.issubdtype(dtype, np.complexfloating) else 0
     # 2D on 2D
     if par["axis"] == 2:
         Cop = Convolve2D(
             (par["ny"], par["nx"]),
-            h=h2.astype(dtype),
+            h=(h2 + imag * h2).astype(dtype),
             offset=par["offset"],
             dtype=dtype,
         )
@@ -518,7 +529,7 @@ def test_Convolve2D(par, dtype):
             Cop,
             par["ny"] * par["nx"],
             par["ny"] * par["nx"],
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
+            rtol=1e-4 if dtype in (np.float32, np.complex64) else 1e-6,
             backend=backend,
         )
 
@@ -526,7 +537,7 @@ def test_Convolve2D(par, dtype):
         x[
             int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
             int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
-        ] = 1.0
+        ] = 1.0 + imag * 1.0
 
         # Forward and adjoint dtype check
         y = Cop * x
@@ -552,16 +563,16 @@ def test_Convolve2D(par, dtype):
     axes.remove(par["axis"])
     Cop = Convolve2D(
         (par["nz"], par["ny"], par["nx"]),
-        h=h2.astype(dtype),
+        h=(h2 + imag * h2).astype(dtype),
         offset=par["offset"],
         axes=axes,
-        dtype="float64",
+        dtype=dtype,
     )
     assert dottest(
         Cop,
         par["nz"] * par["ny"] * par["nx"],
         par["nz"] * par["ny"] * par["nx"],
-        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        rtol=1e-4 if dtype in (np.float32, np.complex64) else 1e-6,
         backend=backend,
     )
 
@@ -570,7 +581,7 @@ def test_Convolve2D(par, dtype):
         int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
         int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
         int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
-    ] = 1.0
+    ] = 1.0 + imag * 1.0
 
     # Forward and adjoint dtype check
     y = Cop * x
@@ -595,12 +606,13 @@ def test_Convolve2D(par, dtype):
 
 @pytest.mark.parametrize("par", [(par1_2d), (par2_2d)])
 @pytest.mark.parametrize("axes", [(0, 1), (1, 0), (-1, -2)])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
 def test_Convolve2D_axes(par, axes, dtype):
     """Dot-test and modelling with permuted axes, on 2D and 3D models."""
-    h = h2.astype(dtype)
+    imag = 1j if np.issubdtype(dtype, np.complexfloating) else 0
+    h = (h2 + imag * h2).astype(dtype)
     permutation = tuple(axis % 2 for axis in axes)
-    rtol = 1e-4 if dtype == np.float32 else 1e-6
+    rtol = 1e-4 if dtype in (np.float32, np.complex64) else 1e-6
 
     # 2D on 2D
     dims = (par["ny"], par["nx"])
@@ -621,6 +633,7 @@ def test_Convolve2D_axes(par, axes, dtype):
     )
     # Forward and adjoint dtype check
     x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    x = x + imag * x
     y = Cop * x
     xadj = Cop.H * x
     assert y.dtype == dtype
@@ -646,6 +659,7 @@ def test_Convolve2D_axes(par, axes, dtype):
         rtol=rtol,
     )
     x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    x = x + imag * x
     y = Cop * x
     xadj = Cop.H * x
     assert y.dtype == dtype
@@ -655,13 +669,14 @@ def test_Convolve2D_axes(par, axes, dtype):
 
 
 @pytest.mark.parametrize("par", [(par1_3d), (par2_3d)])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_Convolve3D(par, dtype):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_ConvolveND(par, dtype):
     """Dot-test and inversion for ConvolveND operator, on 3D and 4D models."""
+    imag = 1j if np.issubdtype(dtype, np.complexfloating) else 0
     # 3D on 3D
     Cop = ConvolveND(
         (par["nz"], par["ny"], par["nx"]),
-        h=h3.astype(dtype),
+        h=(h3 + imag * h3).astype(dtype),
         offset=par["offset"],
         dtype=dtype,
     )
@@ -669,7 +684,7 @@ def test_Convolve3D(par, dtype):
         Cop,
         par["nz"] * par["ny"] * par["nx"],
         par["nz"] * par["ny"] * par["nx"],
-        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        rtol=1e-4 if dtype in (np.float32, np.complex64) else 1e-6,
         backend=backend,
     )
 
@@ -678,7 +693,7 @@ def test_Convolve3D(par, dtype):
         int(par["nz"] / 2 - 3) : int(par["nz"] / 2 + 3),
         int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
         int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
-    ] = 1.0
+    ] = 1.0 + imag * 1.0
 
     # Forward and adjoint dtype check
     y = Cop * x
@@ -696,7 +711,7 @@ def test_Convolve3D(par, dtype):
     # 3D on 4D (only modelling)
     Cop = ConvolveND(
         (par["nz"], par["ny"], par["nx"], par["nt"]),
-        h=h3.astype(dtype),
+        h=(h3 + imag * h3).astype(dtype),
         offset=par["offset"],
         axes=[0, 1, 2],
         dtype=dtype,
@@ -705,7 +720,7 @@ def test_Convolve3D(par, dtype):
         Cop,
         par["nz"] * par["ny"] * par["nx"] * par["nt"],
         par["nz"] * par["ny"] * par["nx"] * par["nt"],
-        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        rtol=1e-4 if dtype in (np.float32, np.complex64) else 1e-6,
         backend=backend,
     )
 
@@ -716,7 +731,7 @@ def test_Convolve3D(par, dtype):
         int(par["ny"] / 2 - 3) : int(par["ny"] / 2 + 3),
         int(par["nx"] / 2 - 3) : int(par["nx"] / 2 + 3),
         int(par["nt"] / 2 - 3) : int(par["nt"] / 2 + 3),
-    ] = 1.0
+    ] = 1.0 + imag * 1.0
 
     y = Cop * x
     xadj = Cop.H * y
@@ -726,10 +741,11 @@ def test_Convolve3D(par, dtype):
 
 @pytest.mark.parametrize("par", [(par1_3d), (par2_3d)])
 @pytest.mark.parametrize("axes", [(0, 1, 2), (1, 2, 0), (2, 0, 1), (-1, -3, -2)])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_Convolve3D_axes(par, axes, dtype):
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+def test_ConvolveND_axes(par, axes, dtype):
     """Dot-test and modelling with permuted axes, on 3D and 4D models."""
-    h = h3.astype(dtype)
+    imag = 1j if np.issubdtype(dtype, np.complexfloating) else 0
+    h = (h3 + imag * h3).astype(dtype)
     permutation = tuple(axis % 3 for axis in axes)
 
     # 3D on 3D
@@ -747,10 +763,11 @@ def test_Convolve3D_axes(par, axes, dtype):
         par["nz"] * par["ny"] * par["nx"],
         par["nz"] * par["ny"] * par["nx"],
         backend=backend,
-        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        rtol=1e-3 if dtype in (np.float32, np.complex64) else 1e-6,
     )
     # Forward and adjoint dtype check
     x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    x = x + imag * x
     y = Cop * x
     xadj = Cop.H * x
     assert y.dtype == dtype
@@ -773,11 +790,12 @@ def test_Convolve3D_axes(par, axes, dtype):
         par["nz"] * par["ny"] * par["nx"] * par["nt"],
         par["nz"] * par["ny"] * par["nx"] * par["nt"],
         backend=backend,
-        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        rtol=1e-3 if dtype in (np.float32, np.complex64) else 1e-6,
     )
 
     # Forward and adjoint dtype check
     x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    x = x + imag * x
     y = Cop * x
     xadj = Cop.H * x
     assert y.dtype == dtype
