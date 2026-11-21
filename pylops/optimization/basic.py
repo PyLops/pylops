@@ -30,6 +30,7 @@ def cg(
     itershow: tuple[int, int, int] = (10, 10, 10),
     callback: Callable | None = None,
     preallocate: bool = False,
+    M: "LinearOperator | None" = None,
 ) -> tuple[NDArray, int, NDArray]:
     r"""Conjugate gradient
 
@@ -73,6 +74,11 @@ def cg(
 
             Pre-allocate all variables used by the solver
 
+    M : :obj:`pylops.LinearOperator`, optional
+        Fixed Hermitian positive-definite preconditioner of size
+        :math:`[N \times N]`, approximating the inverse of
+        ``Op + damp * I``. Only its ``matvec`` is used.
+
     Returns
     -------
     x : :obj:`numpy.ndarray`
@@ -108,6 +114,7 @@ def cg(
         show=show,
         itershow=itershow,
         preallocate=preallocate,
+        M=M,
     )
     return x, iiter, cost
 

@@ -56,6 +56,9 @@ class CG(Solver):
     kold : :obj:`float`
         Squared norm of the residual at previous iteration. Available
         only after ``setup`` is called and updated at each call to ``step``.
+    rzold : :obj:`float`
+        Inner product of the residual and preconditioned residual at the
+        previous iteration. Available only after ``setup`` is called.
     cost : :obj:`list`
         History of the L2 norm of the residual. Available only after
         ``setup`` is called and updated at each call to ``step``.
@@ -67,7 +70,22 @@ class CG(Solver):
     -----
     Solve the :math:`\mathbf{y} = (\mathbf{Op} + \epsilon\mathbf{I})\,\mathbf{x}` problem
     using conjugate gradient iterations [1]_, where :math:`\epsilon` is the damping
-    coefficient.
+    coefficient. The damped operator must be Hermitian positive definite.
+
+    With a preconditioner ``M``, the search direction starts from
+    :math:`\mathbf{z}_0 = \mathbf{M}\mathbf{r}_0`. The step length and direction
+    update use :math:`\rho_k = \mathbf{r}_k^H\mathbf{z}_k`:
+
+    .. math::
+        \alpha_k = \frac{\rho_k}{\mathbf{c}_k^H(\mathbf{Op}+\epsilon\mathbf{I})\mathbf{c}_k},
+        \qquad
+        \beta_k = \frac{\rho_{k+1}}{\rho_k},
+        \qquad
+        \mathbf{c}_{k+1} = \mathbf{z}_{k+1}+\beta_k\mathbf{c}_k.
+
+    The preconditioner must be a fixed Hermitian positive-definite approximation
+    to the inverse of the damped operator. Residual costs and stopping criteria
+    continue to use the unpreconditioned residual.
 
     .. [1] Hestenes, M R., Stiefel, E., “Methods of Conjugate Gradients for Solving
        Linear Systems”, Journal of Research of the National Bureau of Standards.
@@ -115,6 +133,11 @@ class CG(Solver):
         memuse : :obj:`float`
             Memory usage in bytes
 
+        Notes
+        -----
+        This estimate covers unpreconditioned CG. Storage and work arrays
+        allocated by a preconditioner are not included.
+
         """
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
@@ -139,6 +162,7 @@ class CG(Solver):
         tol: float = 1e-4,
         preallocate: bool = False,
         show: bool = False,
+        M: "LinearOperator | None" = None,
     ) -> NDArray:
         r"""Setup solver
 
@@ -166,12 +190,21 @@ class CG(Solver):
         show : :obj:`bool`, optional
             Display setup log
 
+        M : :obj:`pylops.LinearOperator`, optional
+            Fixed Hermitian positive-definite preconditioner of size
+            :math:`[N \times N]`, approximating the inverse of
+            ``Op + damp * I``. Only its ``matvec`` is used.
+
         Returns
         -------
         x : :obj:`numpy.ndarray`
             Initial guess of size :math:`[N \times 1]`
 
         """
+        if M is not None and M.shape != (self.Op.shape[1], self.Op.shape[1]):
+            msg = "M must have shape (Op.shape[1], Op.shape[1])"
+            raise ValueError(msg)
+        self.M = M
         self.y = y
         self.niter = niter
         self.damp = damp
@@ -198,8 +231,11 @@ class CG(Solver):
                     self.r = self.r - self.damp * x
                 else:
                     self.ncp.subtract(self.r, self.damp * x, out=self.r)
-        self.c = self.r.copy()
+        self.c = self.r.copy() if self.M is None else self.M.matvec(self.r).copy()
         self.kold = self.ncp.abs(self.r.dot(self.r.conj()))
+        self.rzold = (
+            self.kold if self.M is None else self.ncp.abs(self.r.dot(self.c.conj()))
+        )
 
         # initialize other internal variabled
         if self.preallocate:
@@ -236,7 +272,7 @@ class CG(Solver):
         if self.damp != 0.0:
             Opc = Opc + self.damp * self.c
         cOpc = self.ncp.abs(self.c.dot(Opc.conj()))
-        a = self.kold / cOpc
+        a = self.rzold / cOpc
         if not self.preallocate:
             x += a * self.c
             self.r -= a * Opc
@@ -246,13 +282,16 @@ class CG(Solver):
             self.ncp.multiply(Opc, a, out=Opc)
             self.ncp.subtract(self.r, Opc, out=self.r)
         k = self.ncp.abs(self.r.dot(self.r.conj()))
-        b = k / self.kold
+        z = self.r if self.M is None else self.M.matvec(self.r)
+        rz = k if self.M is None else self.ncp.abs(self.r.dot(z.conj()))
+        b = rz / self.rzold
         if not self.preallocate:
-            self.c = self.r + b * self.c
+            self.c = z + b * self.c
         else:
             self.ncp.multiply(self.c, b, out=self.c)
-            self.ncp.add(self.c, self.r, out=self.c)
+            self.ncp.add(self.c, z, out=self.c)
         self.kold = k
+        self.rzold = rz
         self.iiter += 1
         self.cost.append(float(np.sqrt(self.kold)))
         if show:
@@ -336,6 +375,7 @@ class CG(Solver):
         preallocate: bool = False,
         show: bool = False,
         itershow: tuple[int, int, int] = (10, 10, 10),
+        M: "LinearOperator | None" = None,
     ) -> tuple[NDArray, int, NDArray]:
         r"""Run entire solver
 
@@ -366,6 +406,11 @@ class CG(Solver):
             and every N3 steps in between where N1, N2, N3 are the
             three element of the list.
 
+        M : :obj:`pylops.LinearOperator`, optional
+            Fixed Hermitian positive-definite preconditioner of size
+            :math:`[N \times N]`, approximating the inverse of
+            ``Op + damp * I``. Only its ``matvec`` is used.
+
         Returns
         -------
         x : :obj:`numpy.ndarray`
@@ -384,6 +429,7 @@ class CG(Solver):
             tol=tol,
             preallocate=preallocate,
             show=show,
+            M=M,
         )
         x = self.run(x, niter, show=show, itershow=itershow)
         self.finalize(show)

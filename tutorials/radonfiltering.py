@@ -17,6 +17,7 @@ separation. We can thus devise a simple workflow that takes our data as input,
 applies a Radon transform, filters some of the events out and goes back to the
 original domain.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -78,8 +79,14 @@ Rop = pylops.signalprocessing.Radon2D(
 xadj = Rop.H * y
 
 # sparse Radon transform
+# For this nonnegative Radon operator, the product of the largest row and
+# column sums bounds its squared spectral norm. Use the reciprocal as a
+# safe FISTA step without an eigenvalue estimate.
+row_sums = Rop @ np.ones(Rop.shape[1])
+column_sums = Rop.H @ np.ones(Rop.shape[0])
+alpha = 1.0 / (row_sums.max() * column_sums.max())
 xinv, niter, cost = pylops.optimization.sparsity.fista(
-    Rop, y.ravel(), niter=15, eps=1e1
+    Rop, y.ravel(), niter=15, eps=1e1, alpha=alpha
 )
 xinv = xinv.reshape(Rop.dims)
 
