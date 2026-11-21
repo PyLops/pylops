@@ -101,6 +101,39 @@ dPP_dense = dPP_dense.reshape(ntheta, nt0).T
 # noisy data
 dPPn_dense = dPP_dense + np.random.normal(0, 1e-2, dPP_dense.shape)
 
+###############################################################################
+# Partial angle stacks can have different wavelets. Pass one wavelet per angle
+# to model this directly, retaining the same time/angle data arrangement. Here
+# the dominant frequency decreases towards the far angles.
+
+angle_wavelets = [
+    ricker(t0[: ntwav // 2 + 1], frequency)[0]
+    for frequency in np.linspace(25, 15, ntheta)
+]
+PPop_angles = pylops.avo.prestack.PrestackLinearModelling(
+    angle_wavelets, theta, vsvp=vsvp, nt0=nt0
+)
+dPP_angles = (PPop_angles * m.ravel()).reshape(nt0, ntheta)
+
+fig, axs = plt.subplots(1, 2, figsize=(9, 5), sharey=True)
+for ax, gather, title in zip(
+    axs, [dPP, dPP_angles], ["Common wavelet", "Angle-dependent wavelets"], strict=True
+):
+    ax.imshow(
+        gather,
+        cmap="gray",
+        aspect="auto",
+        extent=(thetamin, thetamax, t0[-1], t0[0]),
+    )
+    ax.set_title(title)
+    ax.set_xlabel("Angle (degrees)")
+axs[0].set_ylabel("Time (s)")
+fig.tight_layout()
+
+# The same sequence can be passed to PrestackInversion when inverting these
+# angle-dependent data. A one-dimensional wavelet retains the shared-wavelet
+# behavior used in the remaining examples below.
+
 
 ###############################################################################
 # We can now invert our data and retrieve elastic profiles for both noise-free

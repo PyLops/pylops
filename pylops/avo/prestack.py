@@ -4,8 +4,8 @@ __all__ = [
     "PrestackInversion",
 ]
 
-from collections.abc import Callable
-from typing import Literal
+from collections.abc import Callable, Sequence
+from typing import Literal, cast
 
 import numpy as np
 from scipy.sparse.linalg import lsqr
@@ -17,6 +17,7 @@ from pylops import (
     Laplacian,
     LinearOperator,
     MatrixMult,
+    Pad,
     SecondDerivative,
     Transpose,
     VStack,
@@ -41,7 +42,7 @@ _linearizations = {"akirich": 3, "fatti": 3, "ps": 3}
 
 
 def PrestackLinearModelling(
-    wav: NDArray,
+    wav: NDArray | Sequence[NDArray],
     theta: NDArray,
     vsvp: float | NDArray = 0.5,
     nt0: int = 1,
@@ -65,10 +66,12 @@ def PrestackLinearModelling(
 
     Parameters
     ----------
-    wav : :obj:`numpy.ndarray`
+    wav : :obj:`numpy.ndarray` or :obj:`list` or :obj:`tuple`
         Wavelet in time domain (must had odd number of
         elements and centered to zero). Note that the ``dtype`` of this
-        variable will define that of the operator
+        variable will define that of the operator. A list or tuple provides
+        one one-dimensional wavelet per incident angle, in the same order as
+        ``theta``. Their lengths may differ.
     theta : :obj:`numpy.ndarray`
         Incident angles in degrees. Must have same ``dtype`` of ``wav`` (or
         it will be automatically casted to it)
@@ -109,6 +112,9 @@ def PrestackLinearModelling(
         If ``linearization`` is not an implemented linearization
     NotImplementedError
         If ``kind`` is not ``forward`` nor ``centered``
+    ValueError
+        If a wavelet sequence is empty, does not contain one wavelet per
+        angle, or contains an empty or non-one-dimensional wavelet
 
     Notes
     -----
@@ -118,7 +124,7 @@ def PrestackLinearModelling(
     forward model:
 
     .. math::
-        d(t, \theta) = w(t) * \sum_{i=1}^{n_m} G_i(t, \theta) m_i(t)
+        d(t, \theta) = w(t, \theta) * \sum_{i=1}^{n_m} G_i(t, \theta) m_i(t)
 
     where :math:`w(t)` is the time domain seismic wavelet. In compact form:
 
@@ -130,7 +136,11 @@ def PrestackLinearModelling(
     pre-stack data.
 
     """
-    ncp = get_array_module(wav)
+    multiwav = isinstance(wav, (list, tuple))
+    if multiwav and not wav:
+        msg = "wav must contain one wavelet per incident angle"
+        raise ValueError(msg)
+    ncp = get_array_module(wav[0] if multiwav else wav)
 
     # check kind is correctly selected
     if kind not in ["forward", "centered"]:
@@ -143,6 +153,14 @@ def PrestackLinearModelling(
     vsvp = vsvp if isinstance(vsvp, ncp.ndarray) else vsvp * ncp.ones(nt0, dtype=dtype)
     nt0 = len(vsvp)
     ntheta = len(theta)
+    if multiwav:
+        if len(wav) != ntheta:
+            msg = "wav must contain one wavelet per incident angle"
+            raise ValueError(msg)
+        wav = [ncp.asarray(w) for w in wav]
+        if any(w.ndim != 1 or w.size == 0 for w in wav):
+            msg = "each wavelet must be a nonempty one-dimensional array"
+            raise ValueError(msg)
 
     # organize dimensions
     dims: ShapeLike | None
@@ -191,8 +209,11 @@ def PrestackLinearModelling(
         D = get_block_diag(theta)(*([D] * nG))
 
         # Create wavelet operator
-        C = ncp.asarray(convmtx(wav, nt0, len(wav) // 2)[:nt0])
-        C = [C] * ntheta
+        if multiwav:
+            C = [ncp.asarray(convmtx(w, nt0, len(w) // 2)[:nt0]) for w in wav]
+        else:
+            C = ncp.asarray(convmtx(cast(NDArray, wav), nt0, len(wav) // 2)[:nt0])
+            C = [C] * ntheta
         C = get_block_diag(theta)(*C)
 
         # Combine operators
@@ -201,13 +222,36 @@ def PrestackLinearModelling(
 
     else:
         # Create wavelet operator
-        Cop = Convolve1D(
-            dims,
-            h=wav,
-            offset=len(wav) // 2,
-            axis=0,
-            dtype=dtype,
-        )
+        if multiwav:
+            # Centre each filter before stacking: the filter bank acts along
+            # time without mixing angles or spatial traces.
+            left = max(len(w) // 2 for w in wav)
+            right = max(len(w) - len(w) // 2 - 1 for w in wav)
+            h = ncp.stack(
+                [
+                    ncp.pad(w, (left - len(w) // 2, right - (len(w) - len(w) // 2 - 1)))
+                    for w in wav
+                ],
+                axis=1,
+            ).reshape((left + right + 1, ntheta) + (1,) * (len(dims) - 2))
+            # Convolve1D's long-filter convention changes the output length.
+            # Zero-extension and its adjoint keep the prestack time axis fixed.
+            padding = max(0, h.shape[0] - nt0)
+            cdims = (nt0 + padding,) + dims[1:]
+            Cop = Convolve1D(cdims, h=h, offset=left, axis=0, dtype=dtype)
+            if padding:
+                Pop = Pad(
+                    dims, pad=((0, padding),) + ((0, 0),) * (len(dims) - 1), dtype=dtype
+                )
+                Cop = Pop.H @ Cop @ Pop
+        else:
+            Cop = Convolve1D(
+                dims,
+                h=cast(NDArray, wav),
+                offset=len(wav) // 2,
+                axis=0,
+                dtype=dtype,
+            )
 
         # create AVO operator
         AVOop = AVOLinearModelling(
@@ -356,7 +400,7 @@ def PrestackWaveletModelling(
 def PrestackInversion(
     data: NDArray,
     theta: NDArray,
-    wav: NDArray,
+    wav: NDArray | Sequence[NDArray],
     m0: NDArray | None = None,
     linearization: Tavolinearization | list[Tavolinearization] = "akirich",
     explicit: bool = False,
@@ -385,9 +429,11 @@ def PrestackInversion(
         :math:`[(n_\text{lins} \times) \, n_{t_0} \times n_{\theta} \, (\times n_x \times n_y)]`
     theta : :obj:`numpy.ndarray`
         Incident angles in degrees
-    wav : :obj:`numpy.ndarray`
+    wav : :obj:`numpy.ndarray` or :obj:`list` or :obj:`tuple`
         Wavelet in time domain (must had odd number of elements
-        and centered to zero)
+        and centered to zero). For a single linearization, a list or tuple
+        provides one wavelet per incident angle. For multiple linearizations,
+        provide one wavelet or per-angle wavelet sequence per linearization.
     m0 : :obj:`numpy.ndarray`, optional
         Background model of size :math:`[n_{t_0} \times n_{m}
         \,(\times n_x \times n_y)]`
