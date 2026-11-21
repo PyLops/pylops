@@ -68,7 +68,9 @@ y = Cop * x
 xinv = Cop / y
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
-for ax, component, title in zip(axs, (np.real, np.imag), ("Real", "Imaginary"), strict=True):
+for ax, component, title in zip(
+    axs, (np.real, np.imag), ("Real", "Imaginary"), strict=True
+):
     ax.plot(t, component(x), "k", lw=2, label=r"$x$")
     ax.plot(t, component(y), "r", lw=2, label=r"$y=Ax$")
     ax.plot(t, component(xinv), "--g", lw=2, label=r"$x_{ext}$")
@@ -153,14 +155,14 @@ plt.tight_layout()
 plt.subplots_adjust(top=0.8)
 
 ###############################################################################
-# A stack of images can be filtered along a chosen pair of axes. The dimensions
-# of ``h`` follow the order of ``axes``, so reversing the axes requires
-# transposing the filter and reversing its offsets.
+# Similarly, a stack two dimensional signals can be filtered along a chosen
+# pair of axes. Note that the dimensions of ``h`` follow the order of ``axes``,
+# so reversing the axes requires transposing the filter and reversing its offsets.
 xstack = np.stack((x, 2 * x), axis=1)
-Cstack = pylops.signalprocessing.Convolve2D(
-    xstack.shape, h=h.T, offset=(nh[1] // 2, nh[0] // 2), axes=(2, 0)
+Cop = pylops.signalprocessing.Convolve2D(
+    (nt, 2, nx), h=h.T, offset=(nh[1] // 2, nh[0] // 2), axes=(2, 0)
 )
-ystack = Cstack * xstack
+ystack = Cop * xstack
 fig, axs = plt.subplots(1, 2, figsize=(10, 3))
 for i, ax in enumerate(axs):
     ax.imshow(ystack[:, i, :], cmap="gray")
