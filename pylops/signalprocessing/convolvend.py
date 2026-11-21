@@ -31,11 +31,15 @@ class ConvolveND(LinearOperator):
         nd compact filter to be convolved to input signal
     offset : :obj:`tuple`, optional
         Indices of the center of the compact filter
-    axes : :obj:`int`, optional
+    axes : :obj:`tuple` or :obj:`list`, optional
         .. versionadded:: 2.0.0
 
         Axes along which convolution is applied. If ``None``, use the last
-        ``h.ndim`` axes.
+        ``h.ndim`` axes. Must contain unique axes. Note that i-th dimension
+        of ``h`` (and the i-th entry of ``offset``) is applied along ``axes[i]``;
+        as such, ``axes`` does not need to be sorted: for example, with
+        ``axes=(2, 0)` the first dimension of ``h`` acts along axis 2 and
+        the second dimension of ``h`` along axis 0.
     method : :obj:`str`, optional
         Method used to calculate the convolution (``auto``, ``direct`` or ``fft``)
         - see :func:`scipy.signal.convolve` for details.

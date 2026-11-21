@@ -21,8 +21,12 @@ class SmoothingND(ConvolveND):
     dims : :obj:`tuple`
         Number of samples for each dimension
     axes : :obj:`tuple` or :obj:`list`, optional
-        Axes along which model (and data) are smoothed. If omitted, use
-        the last ``len(nsmooth)`` axes.
+        Axes along which model (and data) are smoothed. If ``None``, use the
+        last two axes. Must contain two unique axes. Note that the i-th entry
+        of ``nsmooth`` is applied along ``axes[i]``; as such, ``axes`` does
+        not need to be sorted: for example, with ``nsmooth=(3, 5)`` and
+        ``axes=(2, 0)`` a window of length 3 is used along axis 2 and of
+        length 5 along axis 0.
     dtype : :obj:`str`, optional
         Type of elements in input array.
 
