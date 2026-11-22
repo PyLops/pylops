@@ -36,6 +36,7 @@ Once again, a two-steps inversion strategy can also be used to deal
 with the case of noisy data.
 
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import filtfilt
@@ -101,7 +102,6 @@ dPP_dense = dPP_dense.reshape(ntheta, nt0).T
 # noisy data
 dPPn_dense = dPP_dense + np.random.normal(0, 1e-2, dPP_dense.shape)
 
-
 ###############################################################################
 # We can now invert our data and retrieve elastic profiles for both noise-free
 # and noisy data using :py:class:`pylops.avo.prestack.PrestackInversion`.
@@ -115,7 +115,7 @@ minv_dense, dPP_dense_res = pylops.avo.prestack.PrestackInversion(
     linearization="akirich",
     explicit=True,
     returnres=True,
-    **dict(cond=1e-10)
+    **dict(cond=1e-10),
 )
 
 # lop
@@ -127,7 +127,7 @@ minv, dPP_res = pylops.avo.prestack.PrestackInversion(
     linearization="akirich",
     explicit=False,
     returnres=True,
-    **dict(damp=1e-10, iter_lim=2000)
+    **dict(damp=1e-10, iter_lim=2000),
 )
 
 # dense noisy
@@ -139,7 +139,7 @@ minv_dense_noise, dPPn_dense_res = pylops.avo.prestack.PrestackInversion(
     linearization="akirich",
     explicit=True,
     returnres=True,
-    **dict(cond=1e-1)
+    **dict(cond=1e-1),
 )
 
 # lop noisy (with vertical smoothing)
@@ -152,7 +152,7 @@ minv_noise, dPPn_res = pylops.avo.prestack.PrestackInversion(
     explicit=False,
     epsR=5e-1,
     returnres=True,
-    **dict(damp=1e-1, iter_lim=100)
+    **dict(damp=1e-1, iter_lim=100),
 )
 
 ###############################################################################
@@ -274,7 +274,7 @@ minvPPSP, dPPPS_res = pylops.avo.prestack.PrestackInversion(
     linearization=["fatti", "ps"],
     epsR=5e-1,
     returnres=True,
-    **dict(damp=1e-1, iter_lim=100)
+    **dict(damp=1e-1, iter_lim=100),
 )
 
 # Data and model
@@ -382,7 +382,7 @@ minv_lop_reg = pylops.avo.prestack.PrestackInversion(
     m0=minv_dense_noisy,
     explicit=False,
     epsR=1e1,
-    **dict(damp=np.sqrt(1e-4), iter_lim=20)
+    **dict(damp=np.sqrt(1e-4), iter_lim=20),
 )
 
 # blockiness promoting inversion with noisy data
@@ -394,7 +394,7 @@ minv_blocky = pylops.avo.prestack.PrestackInversion(
     explicit=False,
     epsR=0.4,
     epsRL1=0.1,
-    **dict(mu=0.1, niter_outer=3, niter_inner=3, iter_lim=5, damp=1e-3)
+    **dict(mu=0.1, niter_outer=3, niter_inner=3, iter_lim=5, damp=1e-3),
 )
 
 

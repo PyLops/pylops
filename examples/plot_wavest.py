@@ -11,6 +11,7 @@ form as:
 where :math:`\mathbf{G}` is an operator that convolves an angle-variant reflectivity series
 with the wavelet :math:`\mathbf{w}` that we aim to retrieve.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import filtfilt
@@ -137,7 +138,7 @@ D2op = pylops.SecondDerivative(ntwav, dtype="float64")
     dn.T.ravel(),
     [D2op],
     epsRs=[np.sqrt(0.1)],
-    **dict(damp=np.sqrt(1e-4), iter_lim=200, show=0)
+    **dict(damp=np.sqrt(1e-4), iter_lim=200, show=0),
 )
 
 ###############################################################################

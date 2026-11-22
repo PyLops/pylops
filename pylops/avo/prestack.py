@@ -67,8 +67,12 @@ def PrestackLinearModelling(
     ----------
     wav : :obj:`numpy.ndarray`
         Wavelet in time domain (must had odd number of
-        elements and centered to zero). Note that the ``dtype`` of this
-        variable will define that of the operator
+        time samples and centered to zero). Note that the ``dtype`` of this
+        variable will define that of the operator.
+
+        Provide a 1d-array of size :math:`n_{wav}` for a single wavelet,
+        or a 2d-array of size :math:`n_{\theta} \times n_{wav}` for one
+        wavelet per incident angle (in the same order as ``theta``)
     theta : :obj:`numpy.ndarray`
         Incident angles in degrees. Must have same ``dtype`` of ``wav`` (or
         it will be automatically casted to it)
@@ -109,6 +113,9 @@ def PrestackLinearModelling(
         If ``linearization`` is not an implemented linearization
     NotImplementedError
         If ``kind`` is not ``forward`` nor ``centered``
+    ValueError
+        If ``wav`` is 2-dimensional and its first dimension differs from
+        the number of angles
 
     Notes
     -----
@@ -118,9 +125,9 @@ def PrestackLinearModelling(
     forward model:
 
     .. math::
-        d(t, \theta) = w(t) * \sum_{i=1}^{n_m} G_i(t, \theta) m_i(t)
+        d(t, \theta) = w(t, \theta) * \sum_{i=1}^{n_m} G_i(t, \theta) m_i(t)
 
-    where :math:`w(t)` is the time domain seismic wavelet. In compact form:
+    where :math:`w(t, \theta)` is the time domain seismic wavelet. In compact form:
 
     .. math::
         \mathbf{d}= \mathbf{G} \mathbf{m}
@@ -132,17 +139,25 @@ def PrestackLinearModelling(
     """
     ncp = get_array_module(wav)
 
-    # check kind is correctly selected
-    if kind not in ["forward", "centered"]:
-        raise NotImplementedError("%s not an available derivative kind..." % kind)
     # define dtype to be used
-    dtype = theta.dtype  # ensure theta.dtype rules that of operator
+    dtype = wav.dtype
+
+    # cast theta to dtype of wav
     theta = theta.astype(dtype)
 
     # create vsvp profile
     vsvp = vsvp if isinstance(vsvp, ncp.ndarray) else vsvp * ncp.ones(nt0, dtype=dtype)
     nt0 = len(vsvp)
     ntheta = len(theta)
+
+    # check kind is correctly selected
+    if kind not in ["forward", "centered"]:
+        raise NotImplementedError("%s not an available derivative kind..." % kind)
+
+    # check wavelet shape
+    if wav.ndim == 2 and wav.shape[0] != ntheta:
+        msg = "first dimension of wav must be equal to the number of angles"
+        raise ValueError(msg)
 
     # organize dimensions
     dims: ShapeLike | None
@@ -191,8 +206,10 @@ def PrestackLinearModelling(
         D = get_block_diag(theta)(*([D] * nG))
 
         # Create wavelet operator
-        C = ncp.asarray(convmtx(wav, nt0, len(wav) // 2)[:nt0])
-        C = [C] * ntheta
+        if wav.ndim == 1:
+            C = [ncp.asarray(convmtx(wav, nt0, len(wav) // 2)[:nt0])] * ntheta
+        else:
+            C = [ncp.asarray(convmtx(w, nt0, wav.shape[1] // 2)[:nt0]) for w in wav]
         C = get_block_diag(theta)(*C)
 
         # Combine operators
@@ -201,13 +218,13 @@ def PrestackLinearModelling(
 
     else:
         # Create wavelet operator
-        Cop = Convolve1D(
-            dims,
-            h=wav,
-            offset=len(wav) // 2,
-            axis=0,
-            dtype=dtype,
-        )
+        nwav = wav.shape[-1]
+        if wav.ndim == 1:
+            h = wav
+        else:
+            # one filter per angle, broadcast over the spatial axes
+            h = wav.T.reshape((nwav, ntheta) + (1,) * (len(dims) - 2))
+        Cop = Convolve1D(dims, h=h, offset=nwav // 2, axis=0, dtype=dtype)
 
         # create AVO operator
         AVOop = AVOLinearModelling(
@@ -387,7 +404,9 @@ def PrestackInversion(
         Incident angles in degrees
     wav : :obj:`numpy.ndarray`
         Wavelet in time domain (must had odd number of elements
-        and centered to zero)
+        and centered to zero). Provide a 1d array for a single wavelet, or a
+        2d array of size :math:`n_{\theta} \times n_{wav}` for one wavelet per
+        incident angle
     m0 : :obj:`numpy.ndarray`, optional
         Background model of size :math:`[n_{t_0} \times n_{m}
         \,(\times n_x \times n_y)]`
