@@ -232,6 +232,8 @@ parwav3 = {"nt": 31, "ntheta": 4, "nwav": 6, "dtype": "float64"}
 @pytest.mark.parametrize("explicit", [False, True])
 def test_PrestackLinearModelling_wavelets_mismatch(par, explicit):
     """Raise if the number of wavelets differs from the number of angles"""
+    np.random.seed(10)
+
     thetaw = np.linspace(5, 40, par["ntheta"], dtype=par["dtype"])
     wavs = np.random.normal(size=(par["ntheta"] - 1, par["nwav"])).astype(par["dtype"])
     with pytest.raises(ValueError, match="number of angles"):
@@ -280,6 +282,8 @@ def test_PrestackLinearModelling(par, dtype, explicit):
         nt0 * ntheta,
         nt0 * _linearizations[par["linearization"]],
         rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
         backend=backend,
     )
 
@@ -300,6 +304,8 @@ def test_PrestackLinearModelling(par, dtype, explicit):
         nt0 * ntheta,
         nt0 * _linearizations[par["linearization"]],
         rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
         backend=backend,
     )
 
@@ -369,6 +375,8 @@ def test_PrestackLinearModelling_wavelets(par, spatdims, nspat, kind, linearizat
     """Dot-test, comparison of dense vs lop implementation and with an
     independent modelling for PrestackLinearModelling with one wavelet per angle
     """
+    np.random.seed(10)
+
     nt, nth, nwav, dtype = par["nt"], par["ntheta"], par["nwav"], par["dtype"]
     nm = _linearizations[linearization]
     thetaw = np.linspace(5, 40, nth, dtype=dtype)
@@ -451,6 +459,8 @@ def test_PrestackLinearModelling2d(par, dtype, explicit):
         nz * ntheta * nx,
         nz * nm * nx,
         rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
         backend=backend,
     )
 
@@ -467,10 +477,12 @@ def test_PrestackLinearModelling2d(par, dtype, explicit):
         explicit=False,
     )
     assert dottest(
-        PPop_dense,
+        PPop,
         nz * ntheta * nx,
         nz * nm * nx,
         rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
         backend=backend,
     )
 
@@ -533,6 +545,8 @@ def test_PrestackWaveletModelling(par, dtype):
         nt0 * ntheta,
         ntwav,
         rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
         backend=backend,
     )
 
@@ -551,6 +565,8 @@ def test_PrestackWaveletModelling(par, dtype):
         nt0 * ntheta,
         ntwav,
         rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
         backend=backend,
     )
 
@@ -746,6 +762,8 @@ def test_PrestackInversion_repeated_wavelets(par, explicit):
     """PrestackInversion with a 1d wavelet and the same wavelet repeated for
     all angles agree
     """
+    np.random.seed(10)
+
     nt, nth, nwav, dtype = par["nt"], par["ntheta"], par["nwav"], par["dtype"]
     thetaw = np.linspace(5, 40, nth, dtype=dtype)
     wavs = np.random.normal(size=nwav).astype(dtype)
