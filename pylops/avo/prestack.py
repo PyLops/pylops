@@ -127,7 +127,7 @@ def PrestackLinearModelling(
     .. math::
         d(t, \theta) = w(t, \theta) * \sum_{i=1}^{n_m} G_i(t, \theta) m_i(t)
 
-    where :math:`w(t)` is the time domain seismic wavelet. In compact form:
+    where :math:`w(t, \theta)` is the time domain seismic wavelet. In compact form:
 
     .. math::
         \mathbf{d}= \mathbf{G} \mathbf{m}

@@ -11,7 +11,6 @@ __all__ = [
 
 
 import numpy as np
-from numpy import cos, sin, tan
 
 from pylops import LinearOperator
 from pylops.utils._internal import _value_or_sized_to_tuple
@@ -77,7 +76,7 @@ def zoeppritz_scattering(
     theta1 = ncp.radians(theta1)
 
     # Set the ray parameter p
-    p = sin(theta1) / vp1
+    p = ncp.sin(theta1) / vp1
 
     # Calculate reflection & transmission angles for Zoeppritz
     theta2 = ncp.arcsin(p * vp0)  # Trans. angle of P-wave
@@ -87,19 +86,19 @@ def zoeppritz_scattering(
     # Matrix form of Zoeppritz equation
     M = ncp.array(
         [
-            [-sin(theta1), -cos(phi1), sin(theta2), cos(phi2)],
-            [cos(theta1), -sin(phi1), cos(theta2), -sin(phi2)],
+            [-ncp.sin(theta1), -ncp.cos(phi1), ncp.sin(theta2), ncp.cos(phi2)],
+            [ncp.cos(theta1), -ncp.sin(phi1), ncp.cos(theta2), -ncp.sin(phi2)],
             [
-                2 * rho1 * vs1 * sin(phi1) * cos(theta1),
-                rho1 * vs1 * (1 - 2 * sin(phi1) ** 2),
-                2 * rho0 * vs0 * sin(phi2) * cos(theta2),
-                rho0 * vs0 * (1 - 2 * sin(phi2) ** 2),
+                2 * rho1 * vs1 * ncp.sin(phi1) * ncp.cos(theta1),
+                rho1 * vs1 * (1 - 2 * ncp.sin(phi1) ** 2),
+                2 * rho0 * vs0 * ncp.sin(phi2) * ncp.cos(theta2),
+                rho0 * vs0 * (1 - 2 * ncp.sin(phi2) ** 2),
             ],
             [
-                -rho1 * vp1 * (1 - 2 * sin(phi1) ** 2),
-                rho1 * vs1 * sin(2 * phi1),
-                rho0 * vp0 * (1 - 2 * sin(phi2) ** 2),
-                -rho0 * vs0 * sin(2 * phi2),
+                -rho1 * vp1 * (1 - 2 * ncp.sin(phi1) ** 2),
+                rho1 * vs1 * ncp.sin(2 * phi1),
+                rho0 * vp0 * (1 - 2 * ncp.sin(phi2) ** 2),
+                -rho0 * vs0 * ncp.sin(2 * phi2),
             ],
         ],
         dtype="float",
@@ -107,19 +106,19 @@ def zoeppritz_scattering(
 
     N = ncp.array(
         [
-            [sin(theta1), cos(phi1), -sin(theta2), -cos(phi2)],
-            [cos(theta1), -sin(phi1), cos(theta2), -sin(phi2)],
+            [ncp.sin(theta1), ncp.cos(phi1), -ncp.sin(theta2), -ncp.cos(phi2)],
+            [ncp.cos(theta1), -ncp.sin(phi1), ncp.cos(theta2), -ncp.sin(phi2)],
             [
-                2 * rho1 * vs1 * sin(phi1) * cos(theta1),
-                rho1 * vs1 * (1 - 2 * sin(phi1) ** 2),
-                2 * rho0 * vs0 * sin(phi2) * cos(theta2),
-                rho0 * vs0 * (1 - 2 * sin(phi2) ** 2),
+                2 * rho1 * vs1 * ncp.sin(phi1) * ncp.cos(theta1),
+                rho1 * vs1 * (1 - 2 * ncp.sin(phi1) ** 2),
+                2 * rho0 * vs0 * ncp.sin(phi2) * ncp.cos(theta2),
+                rho0 * vs0 * (1 - 2 * ncp.sin(phi2) ** 2),
             ],
             [
-                rho1 * vp1 * (1 - 2 * sin(phi1) ** 2),
-                -rho1 * vs1 * sin(2 * phi1),
-                -rho0 * vp0 * (1 - 2 * sin(phi2) ** 2),
-                rho0 * vs0 * sin(2 * phi2),
+                rho1 * vp1 * (1 - 2 * ncp.sin(phi1) ** 2),
+                -rho1 * vs1 * ncp.sin(2 * phi1),
+                -rho0 * vp0 * (1 - 2 * ncp.sin(phi2) ** 2),
+                rho0 * vs0 * ncp.sin(2 * phi2),
             ],
         ],
         dtype="float",
@@ -399,9 +398,9 @@ def akirichards(
     theta = theta[:, ncp.newaxis] if vsvp.size > 1 else theta
     vsvp = vsvp[:, ncp.newaxis].T if vsvp.size > 1 else vsvp
 
-    G1 = 1.0 / (2.0 * cos(theta) ** 2) + 0 * vsvp
+    G1 = 1.0 / (2.0 * ncp.cos(theta) ** 2) + 0 * vsvp
     G2 = -4.0 * vsvp**2 * ncp.sin(theta) ** 2
-    G3 = 0.5 - 2.0 * vsvp**2 * sin(theta) ** 2
+    G3 = 0.5 - 2.0 * vsvp**2 * ncp.sin(theta) ** 2
 
     return G1, G2, G3
 
@@ -477,7 +476,7 @@ def fatti(
 
     G1 = 0.5 * (1 + ncp.tan(theta) ** 2) + 0 * vsvp
     G2 = -4 * vsvp**2 * ncp.sin(theta) ** 2
-    G3 = 0.5 * (4 * vsvp**2 * ncp.sin(theta) ** 2 - tan(theta) ** 2)
+    G3 = 0.5 * (4 * vsvp**2 * ncp.sin(theta) ** 2 - ncp.tan(theta) ** 2)
 
     return G1, G2, G3
 
