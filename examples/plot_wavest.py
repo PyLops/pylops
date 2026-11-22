@@ -1,7 +1,7 @@
 r"""
 Wavelet estimation
 ==================
-This example shows how to use the :py:class:`pylops.avo.prestack.PrestackWaveletModelling` to
+This example shows how to use the :py:class:`pylops.avo.PrestackWaveletModelling` to
 estimate a wavelet from pre-stack seismic data. This problem can be written in mathematical
 form as:
 
@@ -11,6 +11,7 @@ form as:
 where :math:`\mathbf{G}` is an operator that convolves an angle-variant reflectivity series
 with the wavelet :math:`\mathbf{w}` that we aim to retrieve.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import filtfilt
@@ -73,10 +74,10 @@ plt.tight_layout()
 # with a zero-phase as well as a mixed phase wavelet.
 
 # Create operators
-Wavesop = pylops.avo.prestack.PrestackWaveletModelling(
+Wavesop = pylops.avo.PrestackWaveletModelling(
     m, theta, nwav=ntwav, wavc=wavc, vsvp=vsvp, linearization="akirich"
 )
-Wavesop_phase = pylops.avo.prestack.PrestackWaveletModelling(
+Wavesop_phase = pylops.avo.PrestackWaveletModelling(
     m, theta, nwav=ntwav, wavc=wavc, vsvp=vsvp, linearization="akirich"
 )
 
@@ -137,7 +138,7 @@ D2op = pylops.SecondDerivative(ntwav, dtype="float64")
     dn.T.ravel(),
     [D2op],
     epsRs=[np.sqrt(0.1)],
-    **dict(damp=np.sqrt(1e-4), iter_lim=200, show=0)
+    **dict(damp=np.sqrt(1e-4), iter_lim=200, show=0),
 )
 
 ###############################################################################

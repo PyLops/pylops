@@ -162,10 +162,10 @@ Geophysical subsurface characterization
 .. autosummary::
    :toctree: generated/
 
-    avo.AVOLinearModelling
-    poststack.PoststackLinearModelling
-    prestack.PrestackLinearModelling
-    prestack.PrestackWaveletModelling
+    AVOLinearModelling
+    PoststackLinearModelling
+    PrestackLinearModelling
+    PrestackWaveletModelling
 
 
 Medical imaging
