@@ -222,6 +222,21 @@ parord1 = {"nt": 50, "nm": 3, "spatdims": (), "dtype": "float64"}
 parord2 = dict(parord1, spatdims=(4,))
 parord3 = dict(parord1, spatdims=(4, 3))
 
+# small problems with one wavelet per angle (real, fp32/fp64, odd/even nwav)
+parwav1 = {"nt": 31, "ntheta": 4, "nwav": 5, "dtype": "float32"}
+parwav2 = {"nt": 31, "ntheta": 4, "nwav": 11, "dtype": "float64"}
+parwav3 = {"nt": 31, "ntheta": 4, "nwav": 6, "dtype": "float64"}
+
+
+@pytest.mark.parametrize("par", [(parwav1)])
+@pytest.mark.parametrize("explicit", [False, True])
+def test_PrestackLinearModelling_wavelets_mismatch(par, explicit):
+    """Raise if the number of wavelets differs from the number of angles"""
+    thetaw = np.linspace(5, 40, par["ntheta"], dtype=par["dtype"])
+    wavs = np.random.normal(size=(par["ntheta"] - 1, par["nwav"])).astype(par["dtype"])
+    with pytest.raises(ValueError, match="number of angles"):
+        PrestackLinearModelling(wavs, thetaw, nt0=par["nt"], explicit=explicit)
+
 
 @pytest.mark.parametrize(
     "par",
@@ -339,79 +354,76 @@ def test_PrestackLinearModelling(par, dtype, explicit):
     assert_array_equal(d_orig, d)
 
 
-@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_PrestackWaveletModelling(par, dtype):
-    """Dot-test and inversion for PrestackWaveletModelling"""
-    # Operators
-    Wavestop = PrestackWaveletModelling(
-        m.astype(dtype),
-        theta.astype(dtype),
-        nwav=ntwav,
-        wavc=wavc,
-        vsvp=par["vsvp"]
-        if isinstance(par["vsvp"], float)
-        else par["vsvp"].astype(dtype),
-        linearization=par["linearization"],
-    )
-    assert dottest(
-        Wavestop,
-        nt0 * ntheta,
-        ntwav,
-        rtol=1e-3 if dtype == np.float32 else 1e-6,
-        backend=backend,
-    )
+@pytest.mark.parametrize("par", [(parwav1), (parwav2), (parwav3)])
+@pytest.mark.parametrize("spatdims, nspat", [(None, 1), ((2,), 2), ((2, 3), 6)])
+@pytest.mark.parametrize("kind", ["centered", "forward"])
+@pytest.mark.parametrize(
+    "linearization",
+    [
+        "akirich",
+        "fatti",
+        "ps",
+    ],
+)
+def test_PrestackLinearModelling_wavelets(par, spatdims, nspat, kind, linearization):
+    """Dot-test, comparison of dense vs lop implementation and with an
+    independent modelling for PrestackLinearModelling with one wavelet per angle
+    """
+    nt, nth, nwav, dtype = par["nt"], par["ntheta"], par["nwav"], par["dtype"]
+    nm = _linearizations[linearization]
+    thetaw = np.linspace(5, 40, nth, dtype=dtype)
+    wavs = np.random.normal(size=(nth, nwav)).astype(dtype)
+    vsvp = np.linspace(0.4, 0.6, nt, dtype=dtype)
 
-    Wavestop_phase = PrestackWaveletModelling(
-        m.astype(dtype),
-        theta.astype(dtype),
-        nwav=ntwav,
-        wavc=wavc,
-        vsvp=par["vsvp"]
-        if isinstance(par["vsvp"], float)
-        else par["vsvp"].astype(dtype),
-        linearization=par["linearization"],
+    # Dense and linear operator
+    PPop_dense, PPop = (
+        PrestackLinearModelling(
+            wavs,
+            thetaw,
+            vsvp=vsvp,
+            spatdims=spatdims,
+            linearization=linearization,
+            kind=kind,
+            explicit=explicit,
+        )
+        for explicit in (True, False)
     )
-    assert dottest(
-        Wavestop_phase,
-        nt0 * ntheta,
-        ntwav,
-        rtol=1e-3 if dtype == np.float32 else 1e-6,
-        backend=backend,
-    )
+    for Op in (PPop_dense, PPop):
+        assert dottest(
+            Op,
+            nt * nth * nspat,
+            nt * nm * nspat,
+            rtol=1e-4 if dtype == "float32" else 1e-6,
+            backend=backend,
+        )
 
-    # Create data
-    d = (Wavestop * wav).reshape(ntheta, nt0).T
-    d_phase = (Wavestop_phase * wav_phase).reshape(ntheta, nt0).T
+    # Compare data and adjoint
+    mw = np.random.normal(size=(nt, nm, nspat)).astype(dtype)
+    d = (PPop * mw.ravel()).reshape(nt, nth, nspat)
+    d_dense = (
+        (PPop_dense * mw.swapaxes(0, 1).ravel()).reshape(nth, nt, nspat).swapaxes(0, 1)
+    )
+    madj = (PPop.H * d.ravel()).reshape(nt, nm, nspat)
+    madj_dense = (
+        (PPop_dense.H * d.swapaxes(0, 1).ravel()).reshape(nm, nt, nspat).swapaxes(0, 1)
+    )
     assert d.dtype == dtype
-    assert d_phase.dtype == dtype
+    assert d_dense.dtype == dtype
+    assert_array_almost_equal(d, d_dense, decimal=4)
+    assert_array_almost_equal(madj, madj_dense, decimal=3 if dtype == "float32" else 6)
 
-    # Estimate wavelet
-    wav_est = lsqr(
-        Wavestop,
-        d.T.ravel(),
-        x0=np.zeros_like(wav),
-        damp=1e-20,
-        niter=300,
-        atol=0,
-        btol=0,
-        conlim=np.inf,
-        show=0,
-    )[0]
-    wav_phase_est = lsqr(
-        Wavestop_phase,
-        d_phase.T.ravel(),
-        x0=np.zeros_like(wav_phase),
-        damp=1e-20,
-        niter=300,
-        atol=0,
-        btol=0,
-        conlim=np.inf,
-        show=0,
-    )[0]
-
-    assert_array_almost_equal(wav, wav_est, decimal=3)
-    assert_array_almost_equal(wav_phase, wav_phase_est, decimal=3)
+    # Compare with a stack of single-angle operators with their own wavelet
+    for itheta in range(nth):
+        PPop_single = PrestackLinearModelling(
+            wavs[itheta],
+            thetaw[itheta : itheta + 1],
+            vsvp=vsvp,
+            spatdims=spatdims,
+            linearization=linearization,
+            kind=kind,
+        )
+        d_single = (PPop_single * mw.ravel()).reshape(nt, nspat)
+        assert_array_almost_equal(d[:, itheta], d_single, decimal=4)
 
 
 @pytest.mark.parametrize(
@@ -499,6 +511,81 @@ def test_PrestackLinearModelling2d(par, dtype, explicit):
     )
     err = 1e-1 if dtype == np.float32 else 5e-2
     assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < err
+
+
+@pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_PrestackWaveletModelling(par, dtype):
+    """Dot-test and inversion for PrestackWaveletModelling"""
+    # Operators
+    Wavestop = PrestackWaveletModelling(
+        m.astype(dtype),
+        theta.astype(dtype),
+        nwav=ntwav,
+        wavc=wavc,
+        vsvp=par["vsvp"]
+        if isinstance(par["vsvp"], float)
+        else par["vsvp"].astype(dtype),
+        linearization=par["linearization"],
+    )
+    assert dottest(
+        Wavestop,
+        nt0 * ntheta,
+        ntwav,
+        rtol=1e-3 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+
+    Wavestop_phase = PrestackWaveletModelling(
+        m.astype(dtype),
+        theta.astype(dtype),
+        nwav=ntwav,
+        wavc=wavc,
+        vsvp=par["vsvp"]
+        if isinstance(par["vsvp"], float)
+        else par["vsvp"].astype(dtype),
+        linearization=par["linearization"],
+    )
+    assert dottest(
+        Wavestop_phase,
+        nt0 * ntheta,
+        ntwav,
+        rtol=1e-3 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+
+    # Create data
+    d = (Wavestop * wav).reshape(ntheta, nt0).T
+    d_phase = (Wavestop_phase * wav_phase).reshape(ntheta, nt0).T
+    assert d.dtype == dtype
+    assert d_phase.dtype == dtype
+
+    # Estimate wavelet
+    wav_est = lsqr(
+        Wavestop,
+        d.T.ravel(),
+        x0=np.zeros_like(wav),
+        damp=1e-20,
+        niter=300,
+        atol=0,
+        btol=0,
+        conlim=np.inf,
+        show=0,
+    )[0]
+    wav_phase_est = lsqr(
+        Wavestop_phase,
+        d_phase.T.ravel(),
+        x0=np.zeros_like(wav_phase),
+        damp=1e-20,
+        niter=300,
+        atol=0,
+        btol=0,
+        conlim=np.inf,
+        show=0,
+    )[0]
+
+    assert_array_almost_equal(wav, wav_est, decimal=3)
+    assert_array_almost_equal(wav_phase, wav_phase_est, decimal=3)
 
 
 @pytest.mark.parametrize("par", [(parord1), (parord2), (parord3)])
@@ -651,3 +738,24 @@ def test_PrestackInversion_relative2d(par, dtype):
         **dict_inv,
     )
     assert_array_equal(d_orig, d)
+
+
+@pytest.mark.parametrize("par", [(parwav1)])
+@pytest.mark.parametrize("explicit", [True, False])
+def test_PrestackInversion_repeated_wavelets(par, explicit):
+    """PrestackInversion with a 1d wavelet and the same wavelet repeated for
+    all angles agree
+    """
+    nt, nth, nwav, dtype = par["nt"], par["ntheta"], par["nwav"], par["dtype"]
+    thetaw = np.linspace(5, 40, nth, dtype=dtype)
+    wavs = np.random.normal(size=nwav).astype(dtype)
+    wavs2d = np.tile(wavs, (nth, 1))
+
+    PPop = PrestackLinearModelling(wavs, thetaw, nt0=nt)
+    mw = np.random.normal(size=(nt, 3)).astype(dtype)
+    d = (PPop * mw.ravel()).reshape(nt, nth)
+
+    dict_inv = {} if explicit else {"iter_lim" if backend == "numpy" else "niter": 10}
+    minv = PrestackInversion(d.copy(), thetaw, wavs, explicit=explicit, **dict_inv)
+    minv2d = PrestackInversion(d.copy(), thetaw, wavs2d, explicit=explicit, **dict_inv)
+    assert_array_almost_equal(minv, minv2d, decimal=8)
