@@ -2,8 +2,9 @@ r"""
 Pre-stack modelling
 ===================
 This example shows how to create pre-stack angle gathers using
-the :py:class:`pylops.avo.prestack.PrestackLinearModelling` operator.
+the :py:class:`pylops.avo.PrestackLinearModelling` operator.
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
@@ -65,12 +66,12 @@ axs[2].grid()
 # with a zero-phase using both a constant and a depth-variant ``vsvp`` profile
 
 # constant vsvp
-PPop_const = pylops.avo.prestack.PrestackLinearModelling(
+PPop_const = pylops.avo.PrestackLinearModelling(
     wav, theta, vsvp=vsvp, nt0=nt0, linearization="akirich"
 )
 
 # depth-variant vsvp
-PPop_variant = pylops.avo.prestack.PrestackLinearModelling(
+PPop_variant = pylops.avo.PrestackLinearModelling(
     wav, theta, vsvp=vsvp_z, linearization="akirich"
 )
 
@@ -81,7 +82,7 @@ dPP_const = PPop_const * m
 dPP_variant = PPop_variant * m
 
 ###############################################################################
-# Finally we visualize the two datasets
+# Next, we visualize the two datasets
 
 # sphinx_gallery_thumbnail_number = 2
 fig = plt.figure(figsize=(6, 7))
@@ -131,4 +132,53 @@ ax4.plot(theta, dPP_variant[nt0 // 2], "--r", lw=2, label=r"variable $VP/VS$")
 ax4.set(xlabel=r"$\theta$ [°]")
 ax4.set_title("AVO curve at t=%.2f s" % t0[nt0 // 2], fontsize=10)
 ax4.legend()
+plt.tight_layout()
+
+###############################################################################
+# In practical scenarios, to accurately model pre-stack angle gathers, one may
+# need a different wavelet for each angle. This can be achieved by passing a
+# 2d array of wavelets (of size ``ntheta x ntwav``) to the operator. Here the
+# dominant frequency decreases towards the far angles.
+
+angle_wavs = np.vstack(
+    [
+        ricker(t0[: ntwav // 2 + 1], frequency)[0]
+        for frequency in np.linspace(8, 3, ntheta)
+    ]
+)
+PPop_angles = pylops.avo.PrestackLinearModelling(
+    angle_wavs, theta, vsvp=vsvp, nt0=nt0, linearization="akirich"
+)
+dPP_angles = PPop_angles * m
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6, 5), sharey=True)
+im = ax1.imshow(
+    dPP_const,
+    cmap="bwr",
+    extent=(theta[0], theta[-1], t0[-1], t0[0]),
+    vmin=-0.2,
+    vmax=0.2,
+)
+cax = make_axes_locatable(ax1).append_axes("bottom", size="5%", pad=0.6)
+cb = fig.colorbar(im, cax=cax, orientation="horizontal")
+cb.ax.xaxis.set_ticks_position("bottom")
+ax1.set(xlabel=r"$\theta$ [°]", ylabel=r"$t$ [s]")
+ax1.set_title("Data with common wavelet", fontsize=10)
+ax1.axis("tight")
+
+im = ax2.imshow(
+    dPP_angles,
+    cmap="bwr",
+    extent=(theta[0], theta[-1], t0[-1], t0[0]),
+    vmin=-0.2,
+    vmax=0.2,
+)
+cax = make_axes_locatable(ax2).append_axes("bottom", size="5%", pad=0.6)
+cb = fig.colorbar(im, cax=cax, orientation="horizontal")
+cb.ax.xaxis.set_ticks_position("bottom")
+ax2.set(xlabel=r"$\theta$ [°]")
+ax2.set_title("Data with angle-dependent wavelets", fontsize=10)
+ax2.tick_params(labelleft=False)
+ax2.axis("tight")
+
 plt.tight_layout()

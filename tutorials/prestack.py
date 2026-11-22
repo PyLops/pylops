@@ -10,7 +10,7 @@ vital information for more sophisticated geophysical subsurface
 characterization than it would be possible to achieve working with
 post-stack seismic data.
 
-In this tutorial, the :py:class:`pylops.avo.prestack.PrestackLinearModelling`
+In this tutorial, the :py:class:`pylops.avo.PrestackLinearModelling`
 operator is used for modelling of both 1d and 2d synthetic pre-stack seismic
 data using 1d profiles or 2d models of different subsurface elastic parameters
 (P-wave velocity, S-wave velocity, and density) as input.
@@ -31,11 +31,12 @@ where :math:`\mathbf{W}` is a convolution operator, :math:`\mathbf{G}` is
 the AVO modelling operator, :math:`\mathbf{D}` is a block-diagonal
 derivative operator, and :math:`\mathbf{m}` is the input model.
 Subsequently the elastic parameters are estimated via the
-:py:class:`pylops.avo.prestack.PrestackInversion` module.
+:py:class:`pylops.avo.PrestackInversion` module.
 Once again, a two-steps inversion strategy can also be used to deal
 with the case of noisy data.
 
 """
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import filtfilt
@@ -49,7 +50,7 @@ np.random.seed(0)
 ###############################################################################
 # Let's start with a 1d example. A synthetic profile of acoustic impedance
 # is created and data is modelled using both the dense and linear operator
-# version of :py:class:`pylops.avo.prestack.PrestackLinearModelling` operator
+# version of :py:class:`pylops.avo.PrestackLinearModelling` operator
 
 # sphinx_gallery_thumbnail_number = 5
 
@@ -81,12 +82,12 @@ ntwav = 41
 wav = ricker(t0[: ntwav // 2 + 1], 15)[0]
 
 # lop
-PPop = pylops.avo.prestack.PrestackLinearModelling(
+PPop = pylops.avo.PrestackLinearModelling(
     wav, theta, vsvp=vsvp, nt0=nt0, linearization="akirich"
 )
 
 # dense
-PPop_dense = pylops.avo.prestack.PrestackLinearModelling(
+PPop_dense = pylops.avo.PrestackLinearModelling(
     wav, theta, vsvp=vsvp, nt0=nt0, linearization="akirich", explicit=True
 )
 
@@ -102,45 +103,11 @@ dPP_dense = dPP_dense.reshape(ntheta, nt0).T
 dPPn_dense = dPP_dense + np.random.normal(0, 1e-2, dPP_dense.shape)
 
 ###############################################################################
-# Partial angle stacks can have different wavelets. Pass one wavelet per angle
-# to model this directly, retaining the same time/angle data arrangement. Here
-# the dominant frequency decreases towards the far angles.
-
-angle_wavelets = [
-    ricker(t0[: ntwav // 2 + 1], frequency)[0]
-    for frequency in np.linspace(25, 15, ntheta)
-]
-PPop_angles = pylops.avo.prestack.PrestackLinearModelling(
-    angle_wavelets, theta, vsvp=vsvp, nt0=nt0
-)
-dPP_angles = (PPop_angles * m.ravel()).reshape(nt0, ntheta)
-
-fig, axs = plt.subplots(1, 2, figsize=(9, 5), sharey=True)
-for ax, gather, title in zip(
-    axs, [dPP, dPP_angles], ["Common wavelet", "Angle-dependent wavelets"], strict=True
-):
-    ax.imshow(
-        gather,
-        cmap="gray",
-        aspect="auto",
-        extent=(thetamin, thetamax, t0[-1], t0[0]),
-    )
-    ax.set_title(title)
-    ax.set_xlabel("Angle (degrees)")
-axs[0].set_ylabel("Time (s)")
-fig.tight_layout()
-
-# The same sequence can be passed to PrestackInversion when inverting these
-# angle-dependent data. A one-dimensional wavelet retains the shared-wavelet
-# behavior used in the remaining examples below.
-
-
-###############################################################################
 # We can now invert our data and retrieve elastic profiles for both noise-free
-# and noisy data using :py:class:`pylops.avo.prestack.PrestackInversion`.
+# and noisy data using :py:class:`pylops.avo.PrestackInversion`.
 
 # dense
-minv_dense, dPP_dense_res = pylops.avo.prestack.PrestackInversion(
+minv_dense, dPP_dense_res = pylops.avo.PrestackInversion(
     dPP_dense,
     theta,
     wav,
@@ -148,11 +115,11 @@ minv_dense, dPP_dense_res = pylops.avo.prestack.PrestackInversion(
     linearization="akirich",
     explicit=True,
     returnres=True,
-    **dict(cond=1e-10)
+    **dict(cond=1e-10),
 )
 
 # lop
-minv, dPP_res = pylops.avo.prestack.PrestackInversion(
+minv, dPP_res = pylops.avo.PrestackInversion(
     dPP,
     theta,
     wav,
@@ -160,11 +127,11 @@ minv, dPP_res = pylops.avo.prestack.PrestackInversion(
     linearization="akirich",
     explicit=False,
     returnres=True,
-    **dict(damp=1e-10, iter_lim=2000)
+    **dict(damp=1e-10, iter_lim=2000),
 )
 
 # dense noisy
-minv_dense_noise, dPPn_dense_res = pylops.avo.prestack.PrestackInversion(
+minv_dense_noise, dPPn_dense_res = pylops.avo.PrestackInversion(
     dPPn_dense,
     theta,
     wav,
@@ -172,11 +139,11 @@ minv_dense_noise, dPPn_dense_res = pylops.avo.prestack.PrestackInversion(
     linearization="akirich",
     explicit=True,
     returnres=True,
-    **dict(cond=1e-1)
+    **dict(cond=1e-1),
 )
 
 # lop noisy (with vertical smoothing)
-minv_noise, dPPn_res = pylops.avo.prestack.PrestackInversion(
+minv_noise, dPPn_res = pylops.avo.PrestackInversion(
     dPPn_dense,
     theta,
     wav,
@@ -185,7 +152,7 @@ minv_noise, dPPn_res = pylops.avo.prestack.PrestackInversion(
     explicit=False,
     epsR=5e-1,
     returnres=True,
-    **dict(damp=1e-1, iter_lim=100)
+    **dict(damp=1e-1, iter_lim=100),
 )
 
 ###############################################################################
@@ -287,7 +254,7 @@ plt.subplots_adjust(top=0.85)
 # Finally before moving to the 2d example, we consider the case when both PP
 # and PS data are available. A joint PP-PS inversion can be easily solved
 # as follows.
-PSop = pylops.avo.prestack.PrestackLinearModelling(
+PSop = pylops.avo.PrestackLinearModelling(
     2 * wav, theta, vsvp=vsvp, nt0=nt0, linearization="ps"
 )
 PPPSop = pylops.VStack((PPop, PSop))
@@ -299,7 +266,7 @@ dPPPS = dPPPS.reshape(2, nt0, ntheta)
 dPPPSn = dPPPS + np.random.normal(0, 1e-2, dPPPS.shape)
 
 # Invert
-minvPPSP, dPPPS_res = pylops.avo.prestack.PrestackInversion(
+minvPPSP, dPPPS_res = pylops.avo.PrestackInversion(
     dPPPS,
     theta,
     [wav, 2 * wav],
@@ -307,7 +274,7 @@ minvPPSP, dPPPS_res = pylops.avo.prestack.PrestackInversion(
     linearization=["fatti", "ps"],
     epsR=5e-1,
     returnres=True,
-    **dict(damp=1e-1, iter_lim=100)
+    **dict(damp=1e-1, iter_lim=100),
 )
 
 # Data and model
@@ -373,7 +340,7 @@ mback = filtfilt(np.ones(nsmoothz) / float(nsmoothz), 1, m, axis=0)
 mback = filtfilt(np.ones(nsmoothx) / float(nsmoothx), 1, mback, axis=2)
 
 # dense operator
-PPop_dense = pylops.avo.prestack.PrestackLinearModelling(
+PPop_dense = pylops.avo.PrestackLinearModelling(
     wav,
     theta,
     vsvp=vsvp,
@@ -384,7 +351,7 @@ PPop_dense = pylops.avo.prestack.PrestackLinearModelling(
 )
 
 # lop operator
-PPop = pylops.avo.prestack.PrestackLinearModelling(
+PPop = pylops.avo.PrestackLinearModelling(
     wav, theta, vsvp=vsvp, nt0=nz, spatdims=(nx,), linearization="akirich"
 )
 
@@ -398,28 +365,28 @@ dPPn = dPP + np.random.normal(0, 5e-2, dPP.shape)
 # tutorial (see :ref:`sphx_glr_tutorials_poststack.py` for more details).
 
 # dense inversion with noise-free data
-minv_dense = pylops.avo.prestack.PrestackInversion(
+minv_dense = pylops.avo.PrestackInversion(
     dPP, theta, wav, m0=mback, explicit=True, simultaneous=False
 )
 
 # dense inversion with noisy data
-minv_dense_noisy = pylops.avo.prestack.PrestackInversion(
+minv_dense_noisy = pylops.avo.PrestackInversion(
     dPPn, theta, wav, m0=mback, explicit=True, epsI=4e-2, simultaneous=False
 )
 
 # spatially regularized lop inversion with noisy data
-minv_lop_reg = pylops.avo.prestack.PrestackInversion(
+minv_lop_reg = pylops.avo.PrestackInversion(
     dPPn,
     theta,
     wav,
     m0=minv_dense_noisy,
     explicit=False,
     epsR=1e1,
-    **dict(damp=np.sqrt(1e-4), iter_lim=20)
+    **dict(damp=np.sqrt(1e-4), iter_lim=20),
 )
 
 # blockiness promoting inversion with noisy data
-minv_blocky = pylops.avo.prestack.PrestackInversion(
+minv_blocky = pylops.avo.PrestackInversion(
     dPPn,
     theta,
     wav,
@@ -427,7 +394,7 @@ minv_blocky = pylops.avo.prestack.PrestackInversion(
     explicit=False,
     epsR=0.4,
     epsRL1=0.1,
-    **dict(mu=0.1, niter_outer=3, niter_inner=3, iter_lim=5, damp=1e-3)
+    **dict(mu=0.1, niter_outer=3, niter_inner=3, iter_lim=5, damp=1e-3),
 )
 
 
@@ -596,10 +563,10 @@ plt.tight_layout()
 ###############################################################################
 # While the background model ``m0`` has been provided in all the examples so
 # far, it is worth showing that the module
-# :py:class:`pylops.avo.prestack.PrestackInversion` can also produce so-called
+# :py:class:`pylops.avo.PrestackInversion` can also produce so-called
 # relative elastic parameters (i.e., variations from an average medium
 # property) when the background model ``m0`` is not available.
-dminv = pylops.avo.prestack.PrestackInversion(
+dminv = pylops.avo.PrestackInversion(
     dPP, theta, wav, m0=None, explicit=True, simultaneous=False
 )
 
