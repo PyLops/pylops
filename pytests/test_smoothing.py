@@ -16,8 +16,22 @@ from pylops.basicoperators import Smoothing1D, Smoothing2D, SmoothingND
 from pylops.optimization.basic import lsqr
 from pylops.utils import dottest
 
-par1 = {"nz": 10, "ny": 30, "nx": 20, "axis": 0}  # even, first direction
-par2 = {"nz": 11, "ny": 51, "nx": 31, "axis": 0}  # odd, first direction
+par1 = {  # even, first direction
+    "nt": 2,
+    "nz": 10,
+    "ny": 30,
+    "nx": 20,
+    "axis": 0,
+    "nsmooth": (3, 5, 3),
+}
+par2 = {  # odd, first direction
+    "nt": 3,
+    "nz": 11,
+    "ny": 51,
+    "nx": 31,
+    "axis": 0,
+    "nsmooth": (3, 5, 3),
+}
 par3 = {"nz": 10, "ny": 30, "nx": 20, "axis": 1}  # even, second direction
 par4 = {"nz": 11, "ny": 51, "nx": 31, "axis": 1}  # odd, second direction
 par5 = {"nz": 10, "ny": 30, "nx": 20, "axis": 2}  # even, third direction
@@ -240,11 +254,10 @@ def test_Smoothing2D(par, dtype):
 def test_SmoothingND(par, dtype):
     """Dot-test for SmoothingND"""
     # 3d signal
-    axes = list(range(3))
     D3op = SmoothingND(
         nsmooth=(3, 3, 3),
         dims=(par["nz"], par["ny"], par["nx"]),
-        axes=axes,
+        axes=(0, 1, 2),
         dtype=dtype,
     )
     assert dottest(
@@ -294,3 +307,61 @@ def test_SmoothingND(par, dtype):
         show=0,
     )[0]
     assert_array_almost_equal(x, xlsqr, decimal=1)
+
+
+@pytest.mark.parametrize("par", [(par1), (par2)])
+@pytest.mark.parametrize("axes", [(0, 1, 2), (1, 2, 0), (2, 0, 1), (-1, -3, -2)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_SmoothingND_axes(par, axes, dtype):
+    """Dot-test and modelling with permuted axes, on 3D and 4D models."""
+    permutation = tuple(axis % 3 for axis in axes)
+    nsmooth = tuple(par["nsmooth"][i] for i in permutation)
+
+    # 3D on 3D
+    dims = (par["nz"], par["ny"], par["nx"])
+    Sop = SmoothingND(nsmooth=nsmooth, dims=dims, axes=axes, dtype=dtype)
+    Sop_ref = SmoothingND(
+        nsmooth=par["nsmooth"], dims=dims, axes=(0, 1, 2), dtype=dtype
+    )
+    assert dottest(
+        Sop,
+        par["nz"] * par["ny"] * par["nx"],
+        par["nz"] * par["ny"] * par["nx"],
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+
+    x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    y = Sop * x
+    xadj = Sop.H * x
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(y, Sop_ref * x, decimal=4)
+    assert_array_almost_equal(xadj, Sop_ref.H * x, decimal=4)
+
+    # 3D on 4D (only modelling)
+    dims = (par["nz"], par["ny"], par["nx"], par["nt"])
+    Sop = SmoothingND(
+        nsmooth=nsmooth,
+        dims=dims,
+        axes=tuple(axis - 1 if axis < 0 else axis for axis in axes),
+        dtype=dtype,
+    )
+    Sop_ref = SmoothingND(
+        nsmooth=par["nsmooth"], dims=dims, axes=(0, 1, 2), dtype=dtype
+    )
+    assert dottest(
+        Sop,
+        par["nz"] * par["ny"] * par["nx"] * par["nt"],
+        par["nz"] * par["ny"] * par["nx"] * par["nt"],
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+        backend=backend,
+    )
+
+    x = np.random.normal(0.0, 1.0, dims).astype(dtype)
+    y = Sop * x
+    xadj = Sop.H * x
+    assert y.dtype == dtype
+    assert xadj.dtype == dtype
+    assert_array_almost_equal(y, Sop_ref * x, decimal=4)
+    assert_array_almost_equal(xadj, Sop_ref.H * x, decimal=4)
