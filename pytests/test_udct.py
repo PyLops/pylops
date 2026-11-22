@@ -66,3 +66,21 @@ def test_UDCT3D(par, dtype):
 
     y = Uop.H * (Uop * x)
     np.testing.assert_allclose(x, y, rtol=5e-2 if dtype == np.float32 else 1e-6)
+
+
+@pytest.mark.skipif(
+    int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
+)
+def test_UDCT_fft_options():
+    """Dot test for UDCT with explicit fft_engine and fft_workers"""
+    np.random.seed(0)
+    x = np.random.normal(0.0, 1.0, (16, 20))
+    Uop = UDCT(
+        (16, 20),
+        fft_engine="numpy",
+        fft_workers=1,
+        dtype="complex128",
+    )
+    assert dottest(Uop, complexflag=2, rtol=1e-6)
+    y = Uop.H * (Uop * x)
+    np.testing.assert_allclose(x, y, rtol=1e-6)

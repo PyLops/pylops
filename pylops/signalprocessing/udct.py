@@ -57,7 +57,7 @@ class UDCT(LinearOperator):
         "wavelet" creates a single ring-shaped window (bandpass filter only,
         no angular components) at the highest scale with decimation=1.
         Default is "curvelet".
-    transform_kind : {"real", "complex", "monogenic"}, optional
+    transform_kind : {"real", "complex"}, optional
         Type of transform to use:
 
         - "real" (default): Real transform where each band captures both
@@ -65,6 +65,15 @@ class UDCT(LinearOperator):
         - "complex": Complex transform which separates positive and negative
           frequency components into different bands. Each band is scaled by
           :math:`\\sqrt{0.5}`.
+    angular_wedges_config : :obj:`numpy.ndarray`, optional
+        Explicit angular wedge configuration array. If provided, overrides
+        ``num_scales`` and ``wedges_per_direction``.
+    fft_engine : {"scipy", "numpy", "auto", "fftw", "mkl_fft"}, optional
+        FFT implementation to use (requires ``curvelets >= 1.3``).
+        Default is ``None`` (``curvelets`` uses SciPy when installed, else NumPy).
+    fft_workers : int, optional
+        Number of threads for multithreaded FFT engines and window construction
+        (requires ``curvelets >= 1.3``). Default is ``None``.
     dtype : :obj:`str`, optional
         Type of elements in input array.
     name : :obj:`str`, optional
@@ -111,6 +120,9 @@ class UDCT(LinearOperator):
         window_threshold: float = 1e-5,
         high_frequency_mode: Literal["curvelet", "wavelet"] = "curvelet",
         transform_kind: Literal["real", "complex"] = "real",
+        angular_wedges_config: NDArray | None = None,
+        fft_engine: Literal["scipy", "numpy", "auto", "fftw", "mkl_fft"] | None = None,
+        fft_workers: int | None = None,
         dtype: DTypeLike = "complex128",
         name: str = "C",
     ) -> None:
@@ -119,9 +131,16 @@ class UDCT(LinearOperator):
 
         self.dims = _value_or_sized_to_tuple(dims)
 
+        extra_kwargs: dict[str, object] = {}
+        if fft_engine is not None:
+            extra_kwargs["fft_engine"] = fft_engine
+        if fft_workers is not None:
+            extra_kwargs["fft_workers"] = fft_workers
+
         # initialize transform
         self.transform = cUDCT(
             self.dims,
+            angular_wedges_config=angular_wedges_config,
             num_scales=num_scales,
             wedges_per_direction=wedges_per_direction,
             window_overlap=window_overlap,
@@ -129,6 +148,7 @@ class UDCT(LinearOperator):
             window_threshold=window_threshold,
             high_frequency_mode=high_frequency_mode,
             transform_kind=transform_kind,
+            **extra_kwargs,
         )
 
         # identify total size of coefficients
