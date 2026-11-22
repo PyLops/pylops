@@ -164,3 +164,41 @@ html_context = {
     "github_repo": "pylops",
     "github_version": "master",
 }
+
+
+def _resolve_backreferences(app, docname, source):
+    """Point autosummary pages to the sphinx-gallery backreference file in use.
+
+    Sphinx-gallery names backreference files after the *shortest* importable
+    path of an object (e.g., ``pylops.PrestackLinearModelling``), whereas
+    autosummary pages use its canonical path
+    (e.g., ``pylops.avo.prestack.PrestackLinearModelling``). When the canonical
+    file is empty, include the first non-empty file found among the
+    shortened paths instead.
+    """
+    prefix = "api/generated/"
+    if not docname.startswith(prefix):
+        return
+    fullname = docname[len(prefix) :]
+    parts = fullname.split(".")
+    refdir = os.path.join(app.srcdir, prefix, "backreferences")
+
+    def nonempty(name):
+        path = os.path.join(refdir, f"{name}.examples")
+        return os.path.isfile(path) and os.path.getsize(path) > 0
+
+    if nonempty(fullname):
+        return
+    # classes/functions: drop module components one at a time
+    for i in range(len(parts) - 1, 0, -1):
+        cand = ".".join(parts[:i] + parts[-1:])
+        if nonempty(cand):
+            source[0] = source[0].replace(
+                f"backreferences/{fullname}.examples",
+                f"backreferences/{cand}.examples",
+            )
+            return
+
+
+def setup(app):
+    app.connect("source-read", _resolve_backreferences)
