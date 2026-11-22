@@ -2,7 +2,7 @@ r"""
 Pre-stack modelling
 ===================
 This example shows how to create pre-stack angle gathers using
-the :py:class:`pylops.avo.PrestackLinearModelling` operator.
+the :py:class:`pylops.avo.prestack.PrestackLinearModelling` operator.
 """
 
 import matplotlib.pyplot as plt
@@ -66,12 +66,12 @@ axs[2].grid()
 # with a zero-phase using both a constant and a depth-variant ``vsvp`` profile
 
 # constant vsvp
-PPop_const = pylops.avo.PrestackLinearModelling(
+PPop_const = pylops.avo.prestack.PrestackLinearModelling(
     wav, theta, vsvp=vsvp, nt0=nt0, linearization="akirich"
 )
 
 # depth-variant vsvp
-PPop_variant = pylops.avo.PrestackLinearModelling(
+PPop_variant = pylops.avo.prestack.PrestackLinearModelling(
     wav, theta, vsvp=vsvp_z, linearization="akirich"
 )
 
@@ -146,7 +146,7 @@ angle_wavs = np.vstack(
         for frequency in np.linspace(8, 3, ntheta)
     ]
 )
-PPop_angles = pylops.avo.PrestackLinearModelling(
+PPop_angles = pylops.avo.prestack.PrestackLinearModelling(
     angle_wavs, theta, vsvp=vsvp, nt0=nt0, linearization="akirich"
 )
 dPP_angles = PPop_angles * m

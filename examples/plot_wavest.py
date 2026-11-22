@@ -1,7 +1,7 @@
 r"""
 Wavelet estimation
 ==================
-This example shows how to use the :py:class:`pylops.avo.PrestackWaveletModelling` to
+This example shows how to use the :py:class:`pylops.avo.prestack.PrestackWaveletModelling` to
 estimate a wavelet from pre-stack seismic data. This problem can be written in mathematical
 form as:
 
@@ -74,10 +74,10 @@ plt.tight_layout()
 # with a zero-phase as well as a mixed phase wavelet.
 
 # Create operators
-Wavesop = pylops.avo.PrestackWaveletModelling(
+Wavesop = pylops.avo.prestack.PrestackWaveletModelling(
     m, theta, nwav=ntwav, wavc=wavc, vsvp=vsvp, linearization="akirich"
 )
-Wavesop_phase = pylops.avo.PrestackWaveletModelling(
+Wavesop_phase = pylops.avo.prestack.PrestackWaveletModelling(
     m, theta, nwav=ntwav, wavc=wavc, vsvp=vsvp, linearization="akirich"
 )
 
