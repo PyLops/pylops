@@ -24,17 +24,17 @@ def sequential_array(shape):
 )
 @pytest.mark.skipif(int(np_version[0]) >= 2, reason="dtcwt does not support numpy v2")
 @pytest.mark.parametrize("par", [(par1), (par2)])
-def test_dtcwt1D_input1D(par):
+@pytest.mark.parametrize("level", list(range(1, 10)))
+def test_dtcwt1D_input1D(par, level):
     """Test for DTCWT with 1D input"""
 
     t = sequential_array((par["ny"],))
 
-    for level in range(1, 10):
-        Dtcwt = DTCWT(dims=t.shape, level=level, dtype=par["dtype"])
-        x = Dtcwt @ t
-        y = Dtcwt.H @ x
+    Dtcwt = DTCWT(dims=t.shape, level=level, dtype=par["dtype"])
+    x = Dtcwt @ t
+    y = Dtcwt.H @ x
 
-        np.testing.assert_allclose(t, y)
+    np.testing.assert_allclose(t, y)
 
 
 @pytest.mark.skipif(
@@ -42,7 +42,8 @@ def test_dtcwt1D_input1D(par):
 )
 @pytest.mark.skipif(int(np_version[0]) >= 2, reason="dtcwt does not support numpy v2")
 @pytest.mark.parametrize("par", [(par1), (par2)])
-def test_dtcwt1D_input2D(par):
+@pytest.mark.parametrize("level", list(range(1, 10)))
+def test_dtcwt1D_input2D(par, level):
     """Test for DTCWT with 2D input (forward-inverse pair)"""
 
     t = sequential_array(
@@ -52,12 +53,11 @@ def test_dtcwt1D_input2D(par):
         )
     )
 
-    for level in range(1, 10):
-        Dtcwt = DTCWT(dims=t.shape, level=level, dtype=par["dtype"])
-        x = Dtcwt @ t
-        y = Dtcwt.H @ x
+    Dtcwt = DTCWT(dims=t.shape, level=level, dtype=par["dtype"])
+    x = Dtcwt @ t
+    y = Dtcwt.H @ x
 
-        np.testing.assert_allclose(t, y)
+    np.testing.assert_allclose(t, y)
 
 
 @pytest.mark.skipif(
@@ -65,17 +65,17 @@ def test_dtcwt1D_input2D(par):
 )
 @pytest.mark.skipif(int(np_version[0]) >= 2, reason="dtcwt does not support numpy v2")
 @pytest.mark.parametrize("par", [(par1), (par2)])
-def test_dtcwt1D_input3D(par):
+@pytest.mark.parametrize("level", list(range(1, 10)))
+def test_dtcwt1D_input3D(par, level):
     """Test for DTCWT with 3D input (forward-inverse pair)"""
 
     t = sequential_array((par["ny"], par["ny"], par["ny"]))
 
-    for level in range(1, 10):
-        Dtcwt = DTCWT(dims=t.shape, level=level, dtype=par["dtype"])
-        x = Dtcwt @ t
-        y = Dtcwt.H @ x
+    Dtcwt = DTCWT(dims=t.shape, level=level, dtype=par["dtype"])
+    x = Dtcwt @ t
+    y = Dtcwt.H @ x
 
-        np.testing.assert_allclose(t, y)
+    np.testing.assert_allclose(t, y)
 
 
 @pytest.mark.skipif(
@@ -83,10 +83,9 @@ def test_dtcwt1D_input3D(par):
 )
 @pytest.mark.skipif(int(np_version[0]) >= 2, reason="dtcwt does not support numpy v2")
 @pytest.mark.parametrize("par", [(par1), (par2)])
-def test_dtcwt1D_birot(par):
+@pytest.mark.parametrize("biort", ["antonini", "legall", "near_sym_a", "near_sym_b"])
+def test_dtcwt1D_birot(par, biort):
     """Test for DTCWT birot (forward-inverse pair)"""
-
-    birots = ["antonini", "legall", "near_sym_a", "near_sym_b"]
 
     t = sequential_array(
         (
@@ -95,10 +94,8 @@ def test_dtcwt1D_birot(par):
         )
     )
 
-    for _b in birots:
-        print(f"birot {_b}")
-        Dtcwt = DTCWT(dims=t.shape, biort=_b, dtype=par["dtype"])
-        x = Dtcwt @ t
-        y = Dtcwt.H @ x
+    Dtcwt = DTCWT(dims=t.shape, biort=biort, dtype=par["dtype"])
+    x = Dtcwt @ t
+    y = Dtcwt.H @ x
 
-        np.testing.assert_allclose(t, y)
+    np.testing.assert_allclose(t, y)

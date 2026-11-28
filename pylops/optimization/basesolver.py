@@ -4,6 +4,7 @@ import functools
 import time
 import warnings
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from pylops.optimization.callback import Callbacks
@@ -13,6 +14,42 @@ if TYPE_CHECKING:
     from pylops.linearoperator import LinearOperator
 
 _units = {"B": 1, "KB": 1024, "MB": 1024**2, "GB": 1024**3}
+
+
+def _cbdecorator(func: Callable, name: str) -> Callable:
+    """Wrap a solver method so that callbacks are invoked around it.
+
+    The ``on_{name}_begin`` and ``on_{name}_end`` methods of each callback
+    are called before and after ``func``. Callbacks are only invoked by the
+    wrapper that the solver's own class resolves ``name`` to, so that a
+    subclass method calling ``super().{name}(...)`` does not invoke the
+    callbacks twice.
+    """
+    setup = name == "setup"
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        callbacks = self.callbacks
+        if not callbacks or getattr(type(self), name, None) is not wrapper:
+            return func(self, *args, **kwargs)
+        for cb in callbacks:
+            # Call all on_*_begin callbacks
+            getattr(cb, f"on_{name}_begin")(
+                self, kwargs.get("x0", None) if setup else args[0]
+            )  # self is solver, args[0] is x
+        ret = func(self, *args, **kwargs)
+        for cb in callbacks[::-1]:
+            # Call all on_*_end callbacks in reverse order
+            getattr(cb, f"on_{name}_end")(
+                self,
+                kwargs.get("x0", None)
+                if setup
+                else (ret[0] if isinstance(ret, tuple) else ret),
+            )
+        return ret
+
+    wrapper._cbdecorated = True
+    return wrapper
 
 
 class Solver(metaclass=ABCMeta):
@@ -77,7 +114,6 @@ class Solver(metaclass=ABCMeta):
     ) -> None:
         self.Op = Op
         self.callbacks = callbacks
-        self._registercallbacks()
         self.iiter = 0
         self.tstart = time.time()
 
@@ -100,51 +136,22 @@ class Solver(metaclass=ABCMeta):
         )
         print("-" * nbar + "\n")
 
-    def _registercallbacks(self) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         # We want to make sure that the appropriate callbacks are called
         # for each method. Instead of just calling self.step, we want
         # to call self.callbacks[:].on_step_begin, self.step and finally
-        # self.callbacks[::-1].on_step_end, for all callbacks in the list
-        # We can do this in an automated way by decorating all methods
-        def cbdecorator(func, setup=False):  # func will be self.setup, self.step, etc.
-            @functools.wraps(func)
-            def wrapper(*args, **kwargs):
-                if self.callbacks:
-                    for cb in self.callbacks:
-                        # Call all on_*_begin callbacks
-                        if setup:
-                            getattr(cb, f"on_{func.__name__}_begin")(
-                                self, kwargs.get("x0", None)
-                            )  # self is solver, args[0] is x
-                        else:
-                            getattr(cb, f"on_{func.__name__}_begin")(
-                                self, args[0]
-                            )  # self is solver, args[0] is x
-                ret = func(*args, **kwargs)
-                if self.callbacks:
-                    for cb in self.callbacks[::-1]:
-                        # Call all on_*_end callbacks in reverse order
-                        if setup:
-                            getattr(cb, f"on_{func.__name__}_end")(
-                                self, kwargs.get("x0", None)
-                            )
-                        else:
-                            getattr(cb, f"on_{func.__name__}_end")(
-                                self, ret[0] if isinstance(ret, tuple) else ret
-                            )
-                return ret
-
-            return wrapper
-
-        for method in ["setup", "step", "run"]:
-            # Replace each method by its decorator
-            setattr(
-                self,
-                method,
-                cbdecorator(
-                    getattr(self, method), True if method == "setup" else False
-                ),
-            )
+        # self.callbacks[::-1].on_step_end, for all callbacks in the list.
+        # This is done in an automated way by decorating the ``setup``,
+        # ``step`` and ``run`` methods defined by each subclass. The
+        # decoration is applied to the class (not to each instance) so
+        # that no reference cycle between the solver and its methods is
+        # created, and the solver (and its work vectors) can be freed by
+        # reference counting as soon as it goes out of scope.
+        super().__init_subclass__(**kwargs)
+        for method in ("setup", "step", "run"):
+            func = cls.__dict__.get(method)
+            if callable(func) and not getattr(func, "_cbdecorated", False):
+                setattr(cls, method, _cbdecorator(func, method))
 
     def _setpreallocate(self, preallocate: bool) -> None:
         # Check if the solver can work in preallocate mode
@@ -172,7 +179,11 @@ class Solver(metaclass=ABCMeta):
         will run out of memory.
 
         Note, that the memory usage of the operator itself is not taken into account
-        in this estimate.
+        in this estimate. Moreover, the estimate assumes that the dtype of the data
+        and model matches that of the operator. Finally, the estimate corresponds to
+        the memory allocated when ``preallocate=True``. When ``preallocate=False``
+        the peak memory is similar, but depends on the temporary variables created
+        at each step.
 
         Parameters
         ----------
@@ -184,7 +195,7 @@ class Solver(metaclass=ABCMeta):
 
         Returns
         -------
-        memuse :obj:`float`
+        memuse : :obj:`float`
             Memory usage in bytes
 
         """

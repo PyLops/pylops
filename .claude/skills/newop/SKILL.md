@@ -51,9 +51,17 @@ tolerance to make a wrong adjoint pass.
 Use `reference/operator_template.py` as the skeleton. Key rules:
 
 - Inherit from `pylops.LinearOperator` and initialize via
-  `super().__init__(dtype=np.dtype(dtype), dims=dims, dimsd=dimsd, name=name)`.
+  `super().__init__(dtype=dtype, dims=dims, dimsd=dimsd, name=name)`.
+  `dtype` is always cast to a `numpy.dtype` (and defaults to `numpy.float64`)
+  inside `LinearOperator`, so there is no need to wrap it with `np.dtype`.
   Prefer `dims`/`dimsd` over setting `shape` directly; `shape` is derived.
   Set `explicit=True` only when the operator also exposes a dense matrix `A`.
+- Never assign `dtype`, `shape`, `dims`, `dimsd`, `clinear`, `explicit` or
+  `forceflat` on `self` by hand, neither before nor after `super().__init__`:
+  if a normalized value is needed earlier in `__init__`, compute a local variable
+  (e.g., `dims = _value_or_sized_to_tuple(dims)`) and pass it to `super().__init__`,
+  or call `super().__init__` first and then read `self.<attr>`. A `dtype` assigned
+  before `super().__init__` is overwritten by the default.
 - Decorate `_matvec`/`_rmatvec` with `@reshaped` when the operator is
   n-dimensional, so `x` arrives shaped as `dims` (`dimsd` for `_rmatvec`) and the
   return value is flattened for you.

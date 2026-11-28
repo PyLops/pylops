@@ -60,6 +60,11 @@ numpydoc_show_class_members = False
 numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
 
+# Examples to skip when building the gallery
+ignore_examples = [
+    "plot_dtcwt",
+]
+
 sphinx_gallery_conf = {
     # Path to examples scripts
     "examples_dirs": [
@@ -70,7 +75,7 @@ sphinx_gallery_conf = {
     "gallery_dirs": ["gallery", "tutorials"],
     "filename_pattern": r"\.py",
     # Examples to skip when building the gallery
-    "ignore_pattern": r"plot_dtcwt\.py$",
+    "ignore_pattern": rf"({'|'.join(ignore_examples)})\.py$",
     # Remove the "Download all examples" button from the top level gallery
     "download_all_examples": False,
     # Sort gallery example by file name instead of number of lines (default)
@@ -159,3 +164,41 @@ html_context = {
     "github_repo": "pylops",
     "github_version": "master",
 }
+
+
+def _resolve_backreferences(app, docname, source):
+    """Point autosummary pages to the sphinx-gallery backreference file in use.
+
+    Sphinx-gallery names backreference files after the *shortest* importable
+    path of an object (e.g., ``pylops.PrestackLinearModelling``), whereas
+    autosummary pages use its canonical path
+    (e.g., ``pylops.avo.prestack.PrestackLinearModelling``). When the canonical
+    file is empty, include the first non-empty file found among the
+    shortened paths instead.
+    """
+    prefix = "api/generated/"
+    if not docname.startswith(prefix):
+        return
+    fullname = docname[len(prefix) :]
+    parts = fullname.split(".")
+    refdir = os.path.join(app.srcdir, prefix, "backreferences")
+
+    def nonempty(name):
+        path = os.path.join(refdir, f"{name}.examples")
+        return os.path.isfile(path) and os.path.getsize(path) > 0
+
+    if nonempty(fullname):
+        return
+    # classes/functions: drop module components one at a time
+    for i in range(len(parts) - 1, 0, -1):
+        cand = ".".join(parts[:i] + parts[-1:])
+        if nonempty(cand):
+            source[0] = source[0].replace(
+                f"backreferences/{fullname}.examples",
+                f"backreferences/{cand}.examples",
+            )
+            return
+
+
+def setup(app):
+    app.connect("source-read", _resolve_backreferences)

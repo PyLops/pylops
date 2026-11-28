@@ -226,7 +226,7 @@ GPU with CuPy, and GPU with JAX):
      - GPU/TPU with JAX
    * - :meth:`pylops.LinearOperator.cond`
      - |:white_check_mark:|
-     - |:red_circle:|
+     - |:white_check_mark:|
      - |:red_circle:|
    * - :meth:`pylops.LinearOperator.conj`
      - |:white_check_mark:|
@@ -238,7 +238,7 @@ GPU with CuPy, and GPU with JAX):
      - |:white_check_mark:|
    * - :meth:`pylops.LinearOperator.eigs`
      - |:white_check_mark:|
-     - |:red_circle:|
+     - |:white_check_mark:|
      - |:red_circle:|
    * - :meth:`pylops.LinearOperator.todense`
      - |:white_check_mark:|
@@ -632,12 +632,19 @@ Medical:
 
 .. warning::
 
-   1. The JAX backend of the :class:`pylops.signalprocessing.Convolve1D` operator
+   1. The CuPy backend of :meth:`pylops.LinearOperator.eigs` does not support 
+   non-symmetric operators, since CuPy does not provide an equivalent
+   of :func:`scipy.sparse.linalg.eigs`. A :obj:`NotImplementedError` is raised.
+
+   2. The CuPy backend of :meth:`pylops.LinearOperator.cond` can only be computed 
+   with the ``uselobpcg=True`` option (and therefore for symmetric operators).
+
+   3. The JAX backend of the :class:`pylops.signalprocessing.Convolve1D` operator
    currently works only with 1d-arrays due to a different behaviour of
    :meth:`scipy.signal.convolve` and :meth:`jax.scipy.signal.convolve` with
    nd-arrays.
 
-   2. The JAX backend of the :class:`pylops.avo.prestack.PrestackLinearModelling`
+   4. The JAX backend of the :class:`pylops.avo.prestack.PrestackLinearModelling`
    operator currently works only with ``explicit=True`` due to the same issue as
    in point 1 for the :class:`pylops.signalprocessing.Convolve1D` operator employed
    when ``explicit=False``.

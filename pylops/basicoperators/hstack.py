@@ -8,18 +8,17 @@ import scipy as sp
 sp_version = sp.__version__.split(".")
 if int(sp_version[0]) <= 1 and int(sp_version[1]) < 8:
     from scipy.sparse.linalg.interface import LinearOperator as spLinearOperator
-    from scipy.sparse.linalg.interface import _get_dtype
 else:
     from scipy.sparse.linalg._interface import (
         LinearOperator as spLinearOperator,
     )
-    from scipy.sparse.linalg._interface import _get_dtype
 
 from collections.abc import Sequence
 
 from pylops import LinearOperator, MultiOperator
 from pylops._multioperator import _matvec_rmatvec_map, _matvec_rmatvec_map_mt
 from pylops.basicoperators import MatrixMult, Zero
+from pylops.utils._internal import _get_dtype
 from pylops.utils.backend import get_array_module, get_module, inplace_add, inplace_set
 from pylops.utils.typing import NDArray, Tinoutengine, Tparallel_kind
 

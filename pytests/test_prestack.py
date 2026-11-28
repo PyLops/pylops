@@ -2,13 +2,13 @@ import os
 
 if int(os.environ.get("TEST_CUPY_PYLOPS", 0)):
     import cupy as np
-    from cupy.testing import assert_array_almost_equal
+    from cupy.testing import assert_array_almost_equal, assert_array_equal
     from cupyx.scipy.signal import filtfilt
 
     backend = "cupy"
 else:
     import numpy as np
-    from numpy.testing import assert_array_almost_equal
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
     from scipy.signal import filtfilt
 
     backend = "numpy"
@@ -217,6 +217,28 @@ par3b = {
     "kind": "forward",
 }
 
+# small problems (1d, 2d, 3d) to compare explicit and chained regularized inversion
+parord1 = {"nt": 50, "nm": 3, "spatdims": (), "dtype": "float64"}
+parord2 = dict(parord1, spatdims=(4,))
+parord3 = dict(parord1, spatdims=(4, 3))
+
+# small problems with one wavelet per angle (real, fp32/fp64, odd/even nwav)
+parwav1 = {"nt": 31, "ntheta": 4, "nwav": 5, "dtype": "float32"}
+parwav2 = {"nt": 31, "ntheta": 4, "nwav": 11, "dtype": "float64"}
+parwav3 = {"nt": 31, "ntheta": 4, "nwav": 6, "dtype": "float64"}
+
+
+@pytest.mark.parametrize("par", [(parwav1)])
+@pytest.mark.parametrize("explicit", [False, True])
+def test_PrestackLinearModelling_wavelets_mismatch(par, explicit):
+    """Raise if the number of wavelets differs from the number of angles"""
+    np.random.seed(10)
+
+    thetaw = np.linspace(5, 40, par["ntheta"], dtype=par["dtype"])
+    wavs = np.random.normal(size=(par["ntheta"] - 1, par["nwav"])).astype(par["dtype"])
+    with pytest.raises(ValueError, match="number of angles"):
+        PrestackLinearModelling(wavs, thetaw, nt0=par["nt"], explicit=explicit)
+
 
 @pytest.mark.parametrize(
     "par",
@@ -238,7 +260,8 @@ par3b = {
     ],
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_PrestackLinearModelling(par, dtype):
+@pytest.mark.parametrize("explicit", [True, False])
+def test_PrestackLinearModelling(par, dtype, explicit):
     """Dot-test, comparison of dense vs lop implementation and
     inversion for PrestackLinearModelling
     """
@@ -259,6 +282,8 @@ def test_PrestackLinearModelling(par, dtype):
         nt0 * ntheta,
         nt0 * _linearizations[par["linearization"]],
         rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
         backend=backend,
     )
 
@@ -279,6 +304,8 @@ def test_PrestackLinearModelling(par, dtype):
         nt0 * ntheta,
         nt0 * _linearizations[par["linearization"]],
         rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
         backend=backend,
     )
 
@@ -299,33 +326,203 @@ def test_PrestackLinearModelling(par, dtype):
     assert_array_almost_equal(madj, madj_dense, decimal=4)
 
     # Inversion
-    for explicit in [True, False]:
+    dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
+    if not par["simultaneous"]:
+        dict_inv = {}
+    if not explicit:
         dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
-        if not par["simultaneous"]:
-            dict_inv = {}
-        if not explicit:
-            dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
-        if par["epsRL1"] is not None:
-            dict_inv = (
-                dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
-                if backend == "numpy"
-                else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
-            )
-        minv = PrestackInversion(
-            d,
-            theta.astype(dtype),
-            wav.astype(dtype),
-            m0=mback.astype(dtype),
-            explicit=explicit,
-            epsI=par["epsI"],
-            epsR=par["epsR"],
-            epsRL1=par["epsRL1"],
-            simultaneous=par["simultaneous"],
-            kind=par["kind"],
-            **dict_inv,
+    if par["epsRL1"] is not None:
+        dict_inv = (
+            dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+            if backend == "numpy"
+            else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
         )
-        err = 1e-1 if dtype == np.float32 else 5e-2
-        assert np.linalg.norm(m - minv) / np.linalg.norm(minv) < err
+
+    d_orig = d.copy()
+    minv, _ = PrestackInversion(
+        d,
+        theta.astype(dtype),
+        wav.astype(dtype),
+        m0=mback.astype(dtype),
+        explicit=explicit,
+        epsI=par["epsI"],
+        epsR=par["epsR"],
+        epsRL1=par["epsRL1"],
+        simultaneous=par["simultaneous"],
+        kind=par["kind"],
+        returnres=True,
+        **dict_inv,
+    )
+    err = 1e-1 if dtype == np.float32 else 5e-2
+    assert np.linalg.norm(m - minv) / np.linalg.norm(minv) < err
+
+    # Check input data is preserved
+    assert_array_equal(d_orig, d)
+
+
+@pytest.mark.parametrize("par", [(parwav1), (parwav2), (parwav3)])
+@pytest.mark.parametrize("spatdims, nspat", [(None, 1), ((2,), 2), ((2, 3), 6)])
+@pytest.mark.parametrize("kind", ["centered", "forward"])
+@pytest.mark.parametrize(
+    "linearization",
+    [
+        "akirich",
+        "fatti",
+        "ps",
+    ],
+)
+def test_PrestackLinearModelling_wavelets(par, spatdims, nspat, kind, linearization):
+    """Dot-test, comparison of dense vs lop implementation and with an
+    independent modelling for PrestackLinearModelling with one wavelet per angle
+    """
+    np.random.seed(10)
+
+    nt, nth, nwav, dtype = par["nt"], par["ntheta"], par["nwav"], par["dtype"]
+    nm = _linearizations[linearization]
+    thetaw = np.linspace(5, 40, nth, dtype=dtype)
+    wavs = np.random.normal(size=(nth, nwav)).astype(dtype)
+    vsvp = np.linspace(0.4, 0.6, nt, dtype=dtype)
+
+    # Dense and linear operator
+    PPop_dense, PPop = (
+        PrestackLinearModelling(
+            wavs,
+            thetaw,
+            vsvp=vsvp,
+            spatdims=spatdims,
+            linearization=linearization,
+            kind=kind,
+            explicit=explicit,
+        )
+        for explicit in (True, False)
+    )
+    for Op in (PPop_dense, PPop):
+        assert dottest(
+            Op,
+            nt * nth * nspat,
+            nt * nm * nspat,
+            rtol=1e-4 if dtype == "float32" else 1e-6,
+            backend=backend,
+        )
+
+    # Compare data and adjoint
+    mw = np.random.normal(size=(nt, nm, nspat)).astype(dtype)
+    d = (PPop * mw.ravel()).reshape(nt, nth, nspat)
+    d_dense = (
+        (PPop_dense * mw.swapaxes(0, 1).ravel()).reshape(nth, nt, nspat).swapaxes(0, 1)
+    )
+    madj = (PPop.H * d.ravel()).reshape(nt, nm, nspat)
+    madj_dense = (
+        (PPop_dense.H * d.swapaxes(0, 1).ravel()).reshape(nm, nt, nspat).swapaxes(0, 1)
+    )
+    assert d.dtype == dtype
+    assert d_dense.dtype == dtype
+    assert_array_almost_equal(d, d_dense, decimal=4)
+    assert_array_almost_equal(madj, madj_dense, decimal=3 if dtype == "float32" else 6)
+
+    # Compare with a stack of single-angle operators with their own wavelet
+    for itheta in range(nth):
+        PPop_single = PrestackLinearModelling(
+            wavs[itheta],
+            thetaw[itheta : itheta + 1],
+            vsvp=vsvp,
+            spatdims=spatdims,
+            linearization=linearization,
+            kind=kind,
+        )
+        d_single = (PPop_single * mw.ravel()).reshape(nt, nspat)
+        assert_array_almost_equal(d[:, itheta], d_single, decimal=4)
+
+
+@pytest.mark.parametrize(
+    "par", [(par1), (par3), (par2s), (par4s), (par1r), (par3r), (par1b), (par3b)]
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("explicit", [True, False])
+def test_PrestackLinearModelling2d(par, dtype, explicit):
+    """Dot-test and inversion for PoststackLinearModelling in 2d"""
+    nm = _linearizations[par["linearization"]]
+    # Dense
+    PPop_dense = PrestackLinearModelling(
+        wav.astype(dtype),
+        theta.astype(dtype),
+        vsvp=par["vsvp"]
+        if isinstance(par["vsvp"], float)
+        else par["vsvp"].astype(dtype),
+        nt0=nz,
+        spatdims=(nx,),
+        linearization=par["linearization"],
+        explicit=True,
+    )
+    assert dottest(
+        PPop_dense,
+        nz * ntheta * nx,
+        nz * nm * nx,
+        rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
+        backend=backend,
+    )
+
+    # Linear operator
+    PPop = PrestackLinearModelling(
+        wav.astype(dtype),
+        theta.astype(dtype),
+        vsvp=par["vsvp"]
+        if isinstance(par["vsvp"], float)
+        else par["vsvp"].astype(dtype),
+        nt0=nz,
+        spatdims=(nx,),
+        linearization=par["linearization"],
+        explicit=False,
+    )
+    assert dottest(
+        PPop,
+        nz * ntheta * nx,
+        nz * nm * nx,
+        rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
+        backend=backend,
+    )
+
+    # Compare data
+    d = (PPop * m2d.astype(dtype).ravel()).reshape(nz, ntheta, nx)
+    d_dense = (
+        (PPop_dense * m2d.astype(dtype).swapaxes(0, 1).ravel())
+        .reshape(ntheta, nz, nx)
+        .swapaxes(0, 1)
+    )
+    assert d.dtype == dtype
+    assert d_dense.dtype == dtype
+    assert_array_almost_equal(d, d_dense, decimal=4)
+
+    # Inversion
+    dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
+    if not par["simultaneous"]:
+        dict_inv = {}
+    if not explicit:
+        dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
+    if par["epsRL1"] is not None:
+        dict_inv = (
+            dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+            if backend == "numpy"
+            else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
+        )
+    minv2d = PrestackInversion(
+        d,
+        theta.astype(dtype),
+        wav.astype(dtype),
+        m0=mback2d.astype(dtype),
+        explicit=explicit,
+        epsI=par["epsI"],
+        epsR=par["epsR"],
+        epsRL1=par["epsRL1"],
+        simultaneous=par["simultaneous"],
+        **dict_inv,
+    )
+    err = 1e-1 if dtype == np.float32 else 5e-2
+    assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < err
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
@@ -348,6 +545,8 @@ def test_PrestackWaveletModelling(par, dtype):
         nt0 * ntheta,
         ntwav,
         rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
         backend=backend,
     )
 
@@ -366,6 +565,8 @@ def test_PrestackWaveletModelling(par, dtype):
         nt0 * ntheta,
         ntwav,
         rtol=1e-3 if dtype == np.float32 else 1e-6,
+        # float32 inner products can nearly cancel (small |v^H Op u|)
+        atol=1e-4 if dtype == np.float32 else 1e-21,
         backend=backend,
     )
 
@@ -403,34 +604,120 @@ def test_PrestackWaveletModelling(par, dtype):
     assert_array_almost_equal(wav_phase, wav_phase_est, decimal=3)
 
 
-@pytest.mark.parametrize(
-    "par", [(par1), (par3), (par2s), (par4s), (par1r), (par3r), (par1b), (par3b)]
-)
+@pytest.mark.parametrize("par", [(parord1), (parord2), (parord3)])
+@pytest.mark.parametrize("epsI", [0.1, [0.1, 0.2, 0.3]])
+@pytest.mark.parametrize("background", [False, True])
+def test_PrestackInversion_l2_explicit_chained(par, epsI, background):
+    """Explicit and chained PrestackInversion with L2 regularizers agree"""
+    np.random.seed(10)
+
+    shape = (par["nt"], par["nm"], *par["spatdims"])
+    PPop = PrestackLinearModelling(
+        wav, theta, nt0=par["nt"], spatdims=par["spatdims"] or None
+    )
+    nd = par["nt"] * ntheta * int(np.prod(np.array(par["spatdims"] or (1,))))
+    nmod = par["nt"] * par["nm"] * int(np.prod(np.array(par["spatdims"] or (1,))))
+    assert dottest(PPop, nd, nmod, backend=backend)
+
+    mord = np.random.normal(size=shape).astype(par["dtype"])
+    dord = (PPop @ mord.ravel()).reshape(par["nt"], ntheta, *par["spatdims"])
+    m0 = np.random.normal(size=shape).astype(par["dtype"]) if background else None
+    dict_inv = (
+        dict(iter_lim=1000, atol=1e-11, btol=1e-11)
+        if backend == "numpy"
+        else dict(niter=1000, tol=1e-20)
+    )
+    dict_inv = dict(m0=m0, simultaneous=True, epsR=0.4, epsI=epsI, **dict_inv)
+    chained = PrestackInversion(dord.copy(), theta, wav, explicit=False, **dict_inv)
+    explicit = PrestackInversion(dord.copy(), theta, wav, explicit=True, **dict_inv)
+    assert_array_almost_equal(explicit, chained, decimal=7)
+
+
+@pytest.mark.parametrize("par", [(parord1), (parord2), (parord3)])
+@pytest.mark.parametrize("epsI", [0.1, [0.1, 0.2, 0.3]])
+def test_PrestackInversion_l1_explicit_chained(par, epsI):
+    """Explicit and chained PrestackInversion with L1 regularizers agree"""
+    np.random.seed(10)
+
+    shape = (par["nt"], par["nm"], *par["spatdims"])
+    PPop = PrestackLinearModelling(
+        wav, theta, nt0=par["nt"], spatdims=par["spatdims"] or None
+    )
+    mord = np.random.normal(size=shape).astype(par["dtype"])
+    dord = (PPop @ mord.ravel()).reshape(par["nt"], ntheta, *par["spatdims"])
+    dict_inv = (
+        dict(iter_lim=100, atol=1e-11, btol=1e-11)
+        if backend == "numpy"
+        else dict(niter=100, tol=1e-20)
+    )
+    dict_inv = dict(
+        epsR=0.4,
+        epsI=epsI,
+        epsRL1=0.1,
+        mu=0.1,
+        niter_outer=8,
+        niter_inner=5,
+        **dict_inv,
+    )
+    chained = PrestackInversion(dord.copy(), theta, wav, explicit=False, **dict_inv)
+    explicit = PrestackInversion(dord.copy(), theta, wav, explicit=True, **dict_inv)
+    assert_array_almost_equal(explicit, chained, decimal=5)
+
+
+@pytest.mark.parametrize("par", [(par1)])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_PrestackLinearModelling2d(par, dtype):
-    """Dot-test and inversion for PoststackLinearModelling in 2d"""
-    nm = _linearizations[par["linearization"]]
-    # Dense
-    PPop_dense = PrestackLinearModelling(
+def test_PrestackInversion_relative1d(par, dtype):
+    """Relative 1d inversion with PrestackLinearModelling checking that
+    the input data is preserved
+    """
+    PPop = PrestackLinearModelling(
         wav.astype(dtype),
         theta.astype(dtype),
         vsvp=par["vsvp"]
         if isinstance(par["vsvp"], float)
         else par["vsvp"].astype(dtype),
-        nt0=nz,
-        spatdims=(nx,),
+        nt0=nt0,
         linearization=par["linearization"],
-        explicit=True,
+        explicit=False,
+        kind=par["kind"],
     )
-    assert dottest(
-        PPop_dense,
-        nz * ntheta * nx,
-        nz * nm * nx,
-        rtol=1e-3 if dtype == np.float32 else 1e-6,
-        backend=backend,
-    )
+    d = PPop * m.astype(dtype).ravel()
+    d = d.reshape(nt0, ntheta)
+    d_orig = d.copy()
 
-    # Linear operator
+    dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
+    if not par["simultaneous"]:
+        dict_inv = {}
+    if par["epsRL1"] is not None:
+        dict_inv = (
+            dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+            if backend == "numpy"
+            else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
+        )
+
+    _ = PrestackInversion(
+        d,
+        theta.astype(dtype),
+        wav.astype(dtype),
+        m0=None,
+        explicit=False,
+        epsI=par["epsI"],
+        epsR=par["epsR"],
+        epsRL1=par["epsRL1"],
+        simultaneous=par["simultaneous"],
+        kind=par["kind"],
+        returnres=True,
+        **dict_inv,
+    )
+    assert_array_equal(d_orig, d)
+
+
+@pytest.mark.parametrize("par", [(par1), (par3)])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_PrestackInversion_relative2d(par, dtype):
+    """Relative 2d inversion with PrestackLinearModelling checking that
+    the input data is preserved
+    """
     PPop = PrestackLinearModelling(
         wav.astype(dtype),
         theta.astype(dtype),
@@ -442,49 +729,51 @@ def test_PrestackLinearModelling2d(par, dtype):
         linearization=par["linearization"],
         explicit=False,
     )
-    assert dottest(
-        PPop_dense,
-        nz * ntheta * nx,
-        nz * nm * nx,
-        rtol=1e-3 if dtype == np.float32 else 1e-6,
-        backend=backend,
-    )
 
-    # Compare data
     d = (PPop * m2d.astype(dtype).ravel()).reshape(nz, ntheta, nx)
-    d_dense = (
-        (PPop_dense * m2d.astype(dtype).swapaxes(0, 1).ravel())
-        .reshape(ntheta, nz, nx)
-        .swapaxes(0, 1)
-    )
-    assert d.dtype == dtype
-    assert d_dense.dtype == dtype
-    assert_array_almost_equal(d, d_dense, decimal=4)
+    d_orig = d.copy()
 
-    # Inversion
-    for explicit in [True, False]:
-        dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
-        if not par["simultaneous"]:
-            dict_inv = {}
-        if not explicit:
-            dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
-        if par["epsRL1"] is not None:
-            dict_inv = (
-                dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
-                if backend == "numpy"
-                else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
-            )
-        minv2d = PrestackInversion(
-            d,
-            theta.astype(dtype),
-            wav.astype(dtype),
-            m0=mback2d.astype(dtype),
-            explicit=explicit,
-            epsI=par["epsI"],
-            epsR=par["epsR"],
-            epsRL1=par["epsRL1"],
-            simultaneous=par["simultaneous"],
-            **dict_inv,
+    dict_inv = dict(iter_lim=10) if backend == "numpy" else dict(niter=10)
+    if par["epsRL1"] is not None:
+        dict_inv = (
+            dict(mu=0.1, niter_outer=5, niter_inner=5, iter_lim=8)
+            if backend == "numpy"
+            else dict(mu=0.1, niter_outer=5, niter_inner=5, niter=8)
         )
-        err = 1e-1 if dtype == np.float32 else 5e-2
-        assert np.linalg.norm(m2d - minv2d) / np.linalg.norm(minv2d) < err
+    _ = PrestackInversion(
+        d,
+        theta.astype(dtype),
+        wav.astype(dtype),
+        m0=mback2d.astype(dtype),
+        explicit=False,
+        epsI=par["epsI"],
+        epsR=par["epsR"],
+        epsRL1=par["epsRL1"],
+        simultaneous=par["simultaneous"],
+        returnres=True,
+        **dict_inv,
+    )
+    assert_array_equal(d_orig, d)
+
+
+@pytest.mark.parametrize("par", [(parwav1)])
+@pytest.mark.parametrize("explicit", [True, False])
+def test_PrestackInversion_repeated_wavelets(par, explicit):
+    """PrestackInversion with a 1d wavelet and the same wavelet repeated for
+    all angles agree
+    """
+    np.random.seed(10)
+
+    nt, nth, nwav, dtype = par["nt"], par["ntheta"], par["nwav"], par["dtype"]
+    thetaw = np.linspace(5, 40, nth, dtype=dtype)
+    wavs = np.random.normal(size=nwav).astype(dtype)
+    wavs2d = np.tile(wavs, (nth, 1))
+
+    PPop = PrestackLinearModelling(wavs, thetaw, nt0=nt)
+    mw = np.random.normal(size=(nt, 3)).astype(dtype)
+    d = (PPop * mw.ravel()).reshape(nt, nth)
+
+    dict_inv = {} if explicit else {"iter_lim" if backend == "numpy" else "niter": 10}
+    minv = PrestackInversion(d.copy(), thetaw, wavs, explicit=explicit, **dict_inv)
+    minv2d = PrestackInversion(d.copy(), thetaw, wavs2d, explicit=explicit, **dict_inv)
+    assert_array_almost_equal(minv, minv2d, decimal=8)

@@ -94,7 +94,7 @@ class Regression(LinearOperator):
 
     def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
-        y = ncp.zeros_like(self.taxis)
+        y = ncp.zeros_like(self.taxis, dtype=ncp.result_type(self.taxis.dtype, x.dtype))
         for i in range(self.order + 1):
             y += x[i] * self.taxis**i
         return y

@@ -31,7 +31,8 @@ class Restriction(LinearOperator):
     dims : :obj:`list` or :obj:`int`
         Number of samples for each dimension
     iava : :obj:`list` or :obj:`numpy.ndarray`
-        Integer indices of available samples for data selection.
+        Integer indices of available samples for data selection. Negative indices
+        count from the end of the selected axis, as in NumPy.
     axis : :obj:`int`, optional
         .. versionadded:: 2.0.0
 
@@ -52,6 +53,11 @@ class Restriction(LinearOperator):
         .. versionadded:: 2.0.0
 
         Name of operator (to be used by :func:`pylops.utils.describe.describe`)
+
+    Raises
+    ------
+    IndexError
+        If any index in ``iava`` is out of bounds for the selected axis
 
     Attributes
     ----------
@@ -91,7 +97,7 @@ class Restriction(LinearOperator):
 
     .. math::
 
-        x_{l_i} = y_i  \quad \forall i=0,1,\ldots,N-1
+        x_{l_i} += y_i  \quad \forall i=0,1,\ldots,N-1
 
     and :math:`x_{j}=0` for :math:`j \neq l_i` (i.e., at all other locations in input
     vector).
@@ -135,10 +141,17 @@ class Restriction(LinearOperator):
 
         self.inplace = inplace
         self.axis = axis
-        self.iava = ncp.asarray(iava)
+
+        # normalize negative indices to positive ones (raises if out of bounds)
+        iava = ncp.asarray(iava)
+        n = dims[axis]
+        if iava.size > 0 and (int(iava.min()) < -n or int(iava.max()) >= n):
+            msg = f"iava contains indices out of bounds for axis with size {n}"
+            raise IndexError(msg)
+        self.iava = ncp.where(iava < 0, iava + n, iava)
 
         # check whether any index in iava is repeated
-        self.repeated = np.unique(self.iava).size != self.iava.size
+        self.repeated = ncp.unique(self.iava).size != self.iava.size
 
     def _matvec(self, x: NDArray) -> NDArray:
         ncp = get_array_module(x)
@@ -208,7 +221,7 @@ class Restriction(LinearOperator):
         else:
             iava = self.iava.copy()
 
-        if np.unique(iava).size != iava.size:
+        if self.repeated:
             msg = "At least one index in iava is repeated, mask is not enabled..."
             raise ValueError(msg)
 

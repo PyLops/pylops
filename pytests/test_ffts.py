@@ -318,6 +318,33 @@ def test_unknown_engine(par):
         )
 
 
+@pytest.mark.parametrize("engine", ["numpy", "scipy", "fftw", "mkl_fft"])
+@pytest.mark.parametrize("opname", ["FFT", "FFT2D", "FFTND"])
+@pytest.mark.parametrize("scalar", [2, 2.0])
+def test_scalar_division(engine, opname, scalar):
+    """Check that dividing by a scalar scales the operator, like ``Op * (1 / a)``,
+    instead of applying its inverse to the scalar
+    """
+    if engine == "mkl_fft" and not mkl_fft_enabled:
+        pytest.skip("mkl_fft is not installed")
+    if engine == "fftw" and backend == "cupy":
+        pytest.skip("fftw does not work with CuPy arrays")
+    if engine == "scipy" and backend == "cupy":
+        pytest.skip("scipy does not work with CuPy arrays")
+    if engine == "fftw" and opname != "FFT":
+        pytest.skip("FFT2D and FFTND have no fftw engine")
+    if opname == "FFT":
+        Op = FFT(dims=(8,), nfft=8, engine=engine)
+    elif opname == "FFT2D":
+        Op = FFT2D(dims=(4, 6), engine=engine)
+    else:
+        Op = FFTND(dims=(2, 4, 6), engine=engine)
+    x = np.arange(Op.shape[1], dtype=np.float64)
+    Sop = Op / scalar
+    assert Sop.shape == Op.shape
+    assert_array_almost_equal(Sop @ x, (Op @ x) / 2, decimal=10)
+
+
 dtype_precision = [
     (np.float16, 1),
     (np.float32, 4),

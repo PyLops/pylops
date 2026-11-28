@@ -1,15 +1,18 @@
 __all__ = ["power_iteration"]
 
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pylops import LinearOperator
 from pylops.utils.backend import get_module
 from pylops.utils.typing import NDArray, Tbackend
 
+if TYPE_CHECKING:
+    from pylops.linearoperator import LinearOperator
+
 
 def power_iteration(
-    Op: LinearOperator,
+    Op: "LinearOperator",
     niter: int = 10,
     tol: float = 1e-5,
     dtype: str = "float32",

@@ -1,6 +1,48 @@
 Changelog
 =========
 
+# 2.9.0
+* Added `lambdaRL1s` and `kwargs_solver` to `pylops.optimization.cls_sparsity.SplitBregman`
+* Added `pylops.signalprocessing.Downsample2D` operator
+* Added `pylops.signalprocessing.SWT`, `pylops.signalprocessing.SWT2D`,
+  and `pylops.signalprocessing.SWTND` operators
+* Added `pylops.MultiOperator` with support for multiprocessing/multithreading
+  in linear operators
+* Added support for complex-valued filters in `pylops.signalprocessing.Convolve1D` operator
+* Added `pylops.signalprocessing.sliding1d.sliding1d_pad_to_next`,
+  `pylops.signalprocessing.sliding2d.sliding2d_pad_to_next`,
+  `pylops.signalprocessing.sliding3d.sliding3d_pad_to_next`,
+  `pylops.signalprocessing.patch2d.patch2d_pad_to_next`,
+  `pylops.signalprocessing.patch3d.patch3d_pad_to_next` utility routines
+* Added 3D extension `pylops.utils.signalprocessing.slope_estimate`
+* Added support for dividing an operator by a scalar
+* Added CuPy support to `pylops.LinearOperator.eigs` and `pylops.LinearOperator.cond`
+* Improved handling of dtype in `pylops.LinearOperator`
+* Avoid weighting terms in `pylops.Laplacian` for `weight=1`
+* Several improvements and bug fixes to `pylops.signalprocessing.Convolve1D`
+* Preserve direction and input identity in `pylops.MemoizeOperator` evaluations
+* Fixed `memory_usage` estimates for various solvers
+* Fixed behaviour of `pylops.optimization.cls_sparsity.SplitBregman` with `tol=0` and
+  aligned documentation to implementation
+* Fixed computation of cost for ND operators in `pylops.optimization.cls_sparsity.ISTA`
+  and `pylops.optimization.cls_sparsity.FISTA`
+* Fixed `pylops.waveeqprocessing.oneway.Deghosting` to work with either sparsity or
+  restriction and both together
+* Fixed `aperture` and `angleaperture` of `pylops.waveeqprocessing.Kirchhoff` for grids with
+  uneven spatial sampling across directions
+* Fixed `pylops.avo.poststack.PoststackInversion` and `pylops.avo.prestack.PrestackInversion` to ensure that
+  `data` is never overwritten
+* Fixed ordering of regularization for explicit mode in `pylops.avo.prestack.PrestackInversion`
+* Fixed orientation of `todense` output in `pylops.signalprocessing.NonStationaryFilters1D`
+* Fixed handling of coefficient dtype in `pylops.Regression`
+* Fixed handling of negative and out-of-bounds values in `iava` in `pylops.Restriction`
+* Fixed `pylops.TorchOperator` with `batch=True` for operators whose model and
+  data have different numbers of dimensions (e.g., `pylops.Sum`)
+* Fixed `pylops.TorchOperator` to honour `flatten` also when `batch=False`
+  (inputs of size `Op.dims` now require `flatten=False`) and to return outputs
+  whose shape depends only on `batch` and `flatten`
+* Fixed use of DLPack in `pylops.TorchOperator` to conform with CuPy new standards
+
 # 2.8.0
 * Added `pylops.signalprocessing.UDCT` operator
 * Added `forward`, `adjoint`, and `__repr__` methods to `pylops.TorchOperator`
@@ -129,7 +171,6 @@ is now unmantained and merged into `cupy`).
 * Fixed bug in the definition of `nttot` in `pylops.waveeqprocessing.BlendingContinuous`
 * Fixed bug in `pylops.utils.signalprocessing.dip_estimate` (see [Issue #572](https://github.com/PyLops/pylops/issues/572))
 
-
 # 2.2.0
 * Added `pylops.signalprocessing.NonStationaryConvolve3D` operator
 * Added nd-array capabilities to `pylops.basicoperators.Identity` and `pylops.basicoperators.Zero`
@@ -142,7 +183,6 @@ is now unmantained and merged into `cupy`).
 * Modified `pylops.signalprocessing.Convolve1D` to allow both filters that are both shorter and longer of the
   input vector
 * Modified all solvers to use `matvec/rmatvec` instead of `@/.H @` to improve performance
-
 
 # 2.1.0
 * Added `pylops.signalprocessing.DCT`, `pylops.signalprocessing.NonStationaryConvolve1D`,
@@ -323,7 +363,7 @@ To aid users in navigating the breaking changes, we provide the following docume
 # 1.13.0
 * Added ``pylops.signalprocessing.Sliding1D`` and
   ``pylops.signalprocessing.Patch2D`` operators
-* Added ``pylops.basicoperators.MemoizeOperator`` operator
+* Added ``pylops.MemoizeOperator`` operator
 * Added decay and analysis option in ``pylops.optimization.sparsity.ISTA`` and
   ``pylops.optimization.sparsity.FISTA`` solvers
 * Added `toreal` and `toimag` methods to ``pylops.LinearOperator``

@@ -46,36 +46,32 @@ Initialization (``__init__``)
 =============================
 
 We then need to create the ``__init__`` where the input parameters are passed and saved as members of our class.
-While the input parameters change from operator to operator, it is always required to create three members:
+While the input parameters change from operator to operator, every operator is required to have three members:
 
-- ``dtype``: data type object (of type :obj:`str` or :obj:`numpy.dtype`) of the model and data;
+- ``dtype``: data type of the model and data. It can be provided as any :obj:`numpy.dtype`-like object
+  (e.g., ``"float64"`` or ``np.float64``) and it is always stored as a :obj:`numpy.dtype`. If not provided,
+  it defaults to ``numpy.float64``;
 - ``shape``: a tuple containing the dimensions of the operator in the data and model space;
 - ``explicit``: a boolean (``True`` or ``False``) identifying if the operator can be inverted by a direct solver or
   requires an iterative solver. This member is ``True`` if the operator has also a member ``A`` that contains
   the matrix to be inverted like for example in the :py:class:`pylops.MatrixMult` operator, and it will be
   ``False`` otherwise.
 
-In this specific case, we have another member called ``d`` which is equal to the input vector containing the diagonal
-elements of the matrix we want to multiply to the model and data.
+These members must be assigned by invoking the ``__init__`` method of the parent :py:class:`pylops.LinearOperator`
+class via ``super``. 
+
+In this specific case, we also have another member called ``d`` which is equal to the input vector containing the 
+diagonal elements of the matrix we want to multiply to the model and data:
 
 .. code-block:: python
 
-    def __init__(self, d, dtype=None):
+    def __init__(self, d, dtype="float64"):
         self.d = d.ravel()
-        self.shape = (len(self.d), len(self.d))
-        self.dtype = np.dtype(dtype)
-        self.explicit = False
+        super().__init__(dtype=dtype, shape=(len(self.d), len(self.d)))
 
-Alternatively, since version ``v2.0.0``, the recommended way of initializing operators derived from the base
-:py:class:`pylops.LinearOperator` class is to invoke ``super`` to assign the required attributes:
-
-.. code-block:: python
-
-    def __init__(self, d, dtype=None):
-        self.d = d.ravel()
-        super().__init__(dtype=np.dtype(dtype), shape=(len(self.d), len(self.d)))
-
-In this case, there is no need to declare ``explicit`` as it already defaults to ``False``.
+Note that there is no need to declare ``explicit`` as it already defaults to ``False``. Moreover, these members
+should always be passed to ``super().__init__`` instead of being assigned directly: for example, a ``dtype``
+assigned before calling ``super().__init__`` is overwritten by its default value (``numpy.float64``).
 
 Moreover, since version ``v2.0.0``, every :py:class:`pylops.LinearOperator` class is imbued with ``dims``,
 ``dimsd``, and ``clinear`` in addition to the required ``dtype``, ``shape``, and ``explicit``. Note that

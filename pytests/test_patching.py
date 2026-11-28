@@ -141,20 +141,20 @@ par6 = {
         (par1),
     ],
 )
-def test_patch2d_pad_to_next(par):
+@pytest.mark.parametrize("pad0", [0, 1, 5, 10, 19])
+@pytest.mark.parametrize("pad1", [0, 1, 5, 10, 19])
+def test_patch2d_pad_to_next(par, pad0, pad1):
     """Check pad_to_next returns padded input that is fully covered
     by patches"""
-    for pad0 in range(0, 20):
-        for pad1 in range(0, 20):
-            inpt = np.ones((par["npy"] + pad0, par["npx"] + pad1))
-            inpt_pad, _, _, _, dwin_inends = patch2d_pad_to_next(
-                inpt,
-                (par["nwiny"], par["nwinx"]),
-                (par["novery"], par["noverx"]),
-                (par["ny"], par["nx"]),
-            )
-            assert inpt_pad.shape[0] == dwin_inends[0][1][-1]
-            assert inpt_pad.shape[1] == dwin_inends[1][1][-1]
+    inpt = np.ones((par["npy"] + pad0, par["npx"] + pad1))
+    inpt_pad, _, _, _, dwin_inends = patch2d_pad_to_next(
+        inpt,
+        (par["nwiny"], par["nwinx"]),
+        (par["novery"], par["noverx"]),
+        (par["ny"], par["nx"]),
+    )
+    assert inpt_pad.shape[0] == dwin_inends[0][1][-1]
+    assert inpt_pad.shape[1] == dwin_inends[1][1][-1]
 
 
 @pytest.mark.parametrize(
@@ -163,24 +163,22 @@ def test_patch2d_pad_to_next(par):
         (par1),
     ],
 )
-def test_patch3d_pad_to_next(par):
+@pytest.mark.parametrize("pad0", [0, 1, 5, 10, 19])
+@pytest.mark.parametrize("pad1", [0, 1, 5, 10, 19])
+@pytest.mark.parametrize("pad2", [0, 1, 5, 10, 19])
+def test_patch3d_pad_to_next(par, pad0, pad1, pad2):
     """Check pad_to_next returns padded input that is fully covered
     by patches"""
-    for pad0 in range(0, 20):
-        for pad1 in range(0, 20):
-            for pad2 in range(0, 20):
-                inpt = np.ones(
-                    (par["npy"] + pad0, par["npx"] + pad1, par["npt"] + pad2)
-                )
-                inpt_pad, _, _, _, dwin_inends = patch3d_pad_to_next(
-                    inpt,
-                    (par["nwiny"], par["nwinx"], par["nwint"]),
-                    (par["novery"], par["noverx"], par["novert"]),
-                    (par["ny"], par["nx"], par["nt"]),
-                )
-                assert inpt_pad.shape[0] == dwin_inends[0][1][-1]
-                assert inpt_pad.shape[1] == dwin_inends[1][1][-1]
-                assert inpt_pad.shape[2] == dwin_inends[2][1][-1]
+    inpt = np.ones((par["npy"] + pad0, par["npx"] + pad1, par["npt"] + pad2))
+    inpt_pad, _, _, _, dwin_inends = patch3d_pad_to_next(
+        inpt,
+        (par["nwiny"], par["nwinx"], par["nwint"]),
+        (par["novery"], par["noverx"], par["novert"]),
+        (par["ny"], par["nx"], par["nt"]),
+    )
+    assert inpt_pad.shape[0] == dwin_inends[0][1][-1]
+    assert inpt_pad.shape[1] == dwin_inends[1][1][-1]
+    assert inpt_pad.shape[2] == dwin_inends[2][1][-1]
 
 
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4), (par5), (par6)])

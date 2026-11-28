@@ -78,6 +78,7 @@ def test_wrong_level(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SWT_1dsignal(par):
     """Dot-test and inversion for SWT operator for 1d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
     SWTop = SWT(dims=[par["nt"]], axis=0, wavelet="haar", level=3, dtype=par["dtype"])
@@ -107,85 +108,79 @@ def test_SWT_1dsignal(par):
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
-def test_SWT_2dsignal(par):
+@pytest.mark.parametrize("axis", [0, 1])
+def test_SWT_2dsignal(par, axis):
     """Dot-test and inversion for SWT operator for 2d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
-    for axis in [0, 1]:
-        SWTop = SWT(
-            dims=(par["nt"], par["nx"]),
-            axis=axis,
-            wavelet="haar",
-            level=3,
-            dtype=par["dtype"],
-        )
-        x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"])).astype(dtype) + par[
-            "imag"
-        ] * np.random.normal(0.0, 1.0, (par["nt"], par["nx"])).astype(dtype)
+    SWTop = SWT(
+        dims=(par["nt"], par["nx"]),
+        axis=axis,
+        wavelet="haar",
+        level=3,
+        dtype=par["dtype"],
+    )
+    x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"])).astype(dtype) + par[
+        "imag"
+    ] * np.random.normal(0.0, 1.0, (par["nt"], par["nx"])).astype(dtype)
 
-        assert dottest(
-            SWTop,
-            SWTop.shape[0],
-            SWTop.shape[1],
-            complexflag=0 if par["imag"] == 0 else 3,
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-        )
+    assert dottest(
+        SWTop,
+        SWTop.shape[0],
+        SWTop.shape[1],
+        complexflag=0 if par["imag"] == 0 else 3,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+    )
 
-        y = SWTop * x.ravel()
-        xadj = SWTop.H * y  # adjoint is same as inverse for swt
-        assert y.dtype == par["dtype"]
-        assert xadj.dtype == par["dtype"]
+    y = SWTop * x.ravel()
+    xadj = SWTop.H * y  # adjoint is same as inverse for swt
+    assert y.dtype == par["dtype"]
+    assert xadj.dtype == par["dtype"]
 
-        xinv = lsqr(SWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
-        assert_array_almost_equal(
-            x.ravel(), xadj, decimal=4 if dtype == np.float32 else 8
-        )
-        assert_array_almost_equal(
-            x.ravel(), xinv, decimal=4 if dtype == np.float32 else 8
-        )
+    xinv = lsqr(SWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    assert_array_almost_equal(x.ravel(), xadj, decimal=4 if dtype == np.float32 else 8)
+    assert_array_almost_equal(x.ravel(), xinv, decimal=4 if dtype == np.float32 else 8)
 
 
 @pytest.mark.skipif(
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
-def test_SWT_3dsignal(par):
+@pytest.mark.parametrize("axis", [0, 1, 2])
+def test_SWT_3dsignal(par, axis):
     """Dot-test and inversion for SWT operator for 3d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
-    for axis in [0, 1, 2]:
-        SWTop = SWT(
-            dims=(par["nt"], par["nx"], par["ny"]),
-            axis=axis,
-            wavelet="haar",
-            level=3,
-            dtype=par["dtype"],
-        )
-        x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"])).astype(
-            dtype
-        ) + par["imag"] * np.random.normal(
-            0.0, 1.0, (par["nt"], par["nx"], par["ny"])
-        ).astype(dtype)
+    SWTop = SWT(
+        dims=(par["nt"], par["nx"], par["ny"]),
+        axis=axis,
+        wavelet="haar",
+        level=3,
+        dtype=par["dtype"],
+    )
+    x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"])).astype(
+        dtype
+    ) + par["imag"] * np.random.normal(
+        0.0, 1.0, (par["nt"], par["nx"], par["ny"])
+    ).astype(dtype)
 
-        assert dottest(
-            SWTop,
-            SWTop.shape[0],
-            SWTop.shape[1],
-            complexflag=0 if par["imag"] == 0 else 3,
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-        )
+    assert dottest(
+        SWTop,
+        SWTop.shape[0],
+        SWTop.shape[1],
+        complexflag=0 if par["imag"] == 0 else 3,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+    )
 
-        y = SWTop * x.ravel()
-        xadj = SWTop.H * y  # adjoint is same as inverse for swt
-        assert y.dtype == par["dtype"]
-        assert xadj.dtype == par["dtype"]
+    y = SWTop * x.ravel()
+    xadj = SWTop.H * y  # adjoint is same as inverse for swt
+    assert y.dtype == par["dtype"]
+    assert xadj.dtype == par["dtype"]
 
-        xinv = lsqr(SWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
-        assert_array_almost_equal(
-            x.ravel(), xadj, decimal=4 if dtype == np.float32 else 8
-        )
-        assert_array_almost_equal(
-            x.ravel(), xinv, decimal=4 if dtype == np.float32 else 8
-        )
+    xinv = lsqr(SWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    assert_array_almost_equal(x.ravel(), xadj, decimal=4 if dtype == np.float32 else 8)
+    assert_array_almost_equal(x.ravel(), xinv, decimal=4 if dtype == np.float32 else 8)
 
 
 @pytest.mark.skipif(
@@ -194,6 +189,7 @@ def test_SWT_3dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SWT2D_2dsignal(par):
     """Dot-test and inversion for SWT2D operator for 2d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
     SWTop = SWT2D(
@@ -229,44 +225,41 @@ def test_SWT2D_2dsignal(par):
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
-def test_SWT2D_3dsignal(par):
+@pytest.mark.parametrize("axes", [(0, 1), (0, 2), (1, 2)])
+def test_SWT2D_3dsignal(par, axes):
     """Dot-test and inversion for SWT operator for 3d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
-    for axes in [(0, 1), (0, 2), (1, 2)]:
-        SWTop = SWT2D(
-            dims=(par["nt"], par["nx"], par["ny"]),
-            axes=axes,
-            wavelet="haar",
-            level=3,
-            dtype=par["dtype"],
-        )
-        x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"])).astype(
-            dtype
-        ) + par["imag"] * np.random.normal(
-            0.0, 1.0, (par["nt"], par["nx"], par["ny"])
-        ).astype(dtype)
+    SWTop = SWT2D(
+        dims=(par["nt"], par["nx"], par["ny"]),
+        axes=axes,
+        wavelet="haar",
+        level=3,
+        dtype=par["dtype"],
+    )
+    x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"])).astype(
+        dtype
+    ) + par["imag"] * np.random.normal(
+        0.0, 1.0, (par["nt"], par["nx"], par["ny"])
+    ).astype(dtype)
 
-        assert dottest(
-            SWTop,
-            SWTop.shape[0],
-            SWTop.shape[1],
-            complexflag=0 if par["imag"] == 0 else 3,
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-        )
+    assert dottest(
+        SWTop,
+        SWTop.shape[0],
+        SWTop.shape[1],
+        complexflag=0 if par["imag"] == 0 else 3,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+    )
 
-        y = SWTop * x.ravel()
-        xadj = SWTop.H * y  # adjoint is same as inverse for swt
-        assert y.dtype == par["dtype"]
-        assert xadj.dtype == par["dtype"]
+    y = SWTop * x.ravel()
+    xadj = SWTop.H * y  # adjoint is same as inverse for swt
+    assert y.dtype == par["dtype"]
+    assert xadj.dtype == par["dtype"]
 
-        xinv = lsqr(SWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
-        assert_array_almost_equal(
-            x.ravel(), xadj, decimal=4 if dtype == np.float32 else 8
-        )
-        assert_array_almost_equal(
-            x.ravel(), xinv, decimal=4 if dtype == np.float32 else 8
-        )
+    xinv = lsqr(SWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    assert_array_almost_equal(x.ravel(), xadj, decimal=4 if dtype == np.float32 else 8)
+    assert_array_almost_equal(x.ravel(), xinv, decimal=4 if dtype == np.float32 else 8)
 
 
 @pytest.mark.skipif(
@@ -275,6 +268,7 @@ def test_SWT2D_3dsignal(par):
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 def test_SWTND_3dsignal(par):
     """Dot-test and inversion for SWTND operator for 3d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
     SWTop = SWTND(
@@ -312,44 +306,43 @@ def test_SWTND_3dsignal(par):
     int(os.environ.get("TEST_CUPY_PYLOPS", 0)) == 1, reason="Not CuPy enabled"
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
-def test_SWTND_4dsignal(par):
+@pytest.mark.parametrize(
+    "axes", [(0, 1, 2), (0, 2, 3), (1, 2, 3), (0, 1, 3), (0, 1, 2, 3)]
+)
+def test_SWTND_4dsignal(par, axes):
     """Dot-test and inversion for SWTND operator for 4d signal"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
 
-    for axes in [(0, 1, 2), (0, 2, 3), (1, 2, 3), (0, 1, 3), (0, 1, 2, 3)]:
-        SWTop = SWTND(
-            dims=(par["nt"], par["nx"], par["ny"], par["nz"]),
-            axes=axes,
-            wavelet="haar",
-            level=3,
-            dtype=par["dtype"],
-        )
-        x = np.random.normal(
-            0.0, 1.0, (par["nt"], par["nx"], par["ny"], par["nz"])
-        ).astype(dtype) + par["imag"] * np.random.normal(
-            0.0, 1.0, (par["nt"], par["nx"], par["ny"], par["nz"])
-        ).astype(dtype)
+    SWTop = SWTND(
+        dims=(par["nt"], par["nx"], par["ny"], par["nz"]),
+        axes=axes,
+        wavelet="haar",
+        level=3,
+        dtype=par["dtype"],
+    )
+    x = np.random.normal(0.0, 1.0, (par["nt"], par["nx"], par["ny"], par["nz"])).astype(
+        dtype
+    ) + par["imag"] * np.random.normal(
+        0.0, 1.0, (par["nt"], par["nx"], par["ny"], par["nz"])
+    ).astype(dtype)
 
-        assert dottest(
-            SWTop,
-            SWTop.shape[0],
-            SWTop.shape[1],
-            complexflag=0 if par["imag"] == 0 else 3,
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
-        )
+    assert dottest(
+        SWTop,
+        SWTop.shape[0],
+        SWTop.shape[1],
+        complexflag=0 if par["imag"] == 0 else 3,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+    )
 
-        y = SWTop * x.ravel()
-        xadj = SWTop.H * y  # adjoint is same as inverse for swt
-        assert y.dtype == par["dtype"]
-        assert xadj.dtype == par["dtype"]
+    y = SWTop * x.ravel()
+    xadj = SWTop.H * y  # adjoint is same as inverse for swt
+    assert y.dtype == par["dtype"]
+    assert xadj.dtype == par["dtype"]
 
-        xinv = lsqr(SWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
-        assert_array_almost_equal(
-            x.ravel(), xadj, decimal=4 if dtype == np.float32 else 8
-        )
-        assert_array_almost_equal(
-            x.ravel(), xinv, decimal=4 if dtype == np.float32 else 8
-        )
+    xinv = lsqr(SWTop, y, damp=1e-10, iter_lim=10, atol=1e-8, btol=1e-8, show=0)[0]
+    assert_array_almost_equal(x.ravel(), xadj, decimal=4 if dtype == np.float32 else 8)
+    assert_array_almost_equal(x.ravel(), xinv, decimal=4 if dtype == np.float32 else 8)
 
 
 @pytest.mark.skipif(
@@ -357,20 +350,27 @@ def test_SWTND_4dsignal(par):
 )
 @pytest.mark.parametrize("par", [(par1), (par2), (par3), (par4)])
 @pytest.mark.parametrize("wavelet", ["db3", "bior2.2", "rbio3.3"])
-def test_SWTs_wavelets(par, wavelet):
+@pytest.mark.parametrize("kind", ["SWT", "SWT2D", "SWTND"])
+def test_SWTs_wavelets(par, wavelet, kind):
     """Dot-test for SWT, SWT2D and SWTND operators with non-haar wavelets"""
+    np.random.seed(42)
     dtype = np.empty(0, dtype=par["dtype"]).real.dtype
     dims = (par["nt"], par["nx"], par["ny"])
 
-    for SWTop in [
-        SWT(dims=dims, axis=1, wavelet=wavelet, level=2, dtype=par["dtype"]),
-        SWT2D(dims=dims, axes=(0, 2), wavelet=wavelet, level=2, dtype=par["dtype"]),
-        SWTND(dims=dims, axes=(0, 1, 2), wavelet=wavelet, level=2, dtype=par["dtype"]),
-    ]:
-        assert dottest(
-            SWTop,
-            SWTop.shape[0],
-            SWTop.shape[1],
-            complexflag=0 if par["imag"] == 0 else 3,
-            rtol=1e-4 if dtype == np.float32 else 1e-6,
+    if kind == "SWT":
+        SWTop = SWT(dims=dims, axis=1, wavelet=wavelet, level=2, dtype=par["dtype"])
+    elif kind == "SWT2D":
+        SWTop = SWT2D(
+            dims=dims, axes=(0, 2), wavelet=wavelet, level=2, dtype=par["dtype"]
         )
+    else:
+        SWTop = SWTND(
+            dims=dims, axes=(0, 1, 2), wavelet=wavelet, level=2, dtype=par["dtype"]
+        )
+    assert dottest(
+        SWTop,
+        SWTop.shape[0],
+        SWTop.shape[1],
+        complexflag=0 if par["imag"] == 0 else 3,
+        rtol=1e-4 if dtype == np.float32 else 1e-6,
+    )

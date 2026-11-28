@@ -227,7 +227,8 @@ class NonStationaryConvolve1D(LinearOperator):
             ]
         )
         H = H[:, int(self.hsize // 2) : -int(self.hsize // 2) - 1]
-        return H
+        # Each shifted filter is an impulse response and therefore a column.
+        return H.T
 
 
 class NonStationaryFilters1D(LinearOperator):

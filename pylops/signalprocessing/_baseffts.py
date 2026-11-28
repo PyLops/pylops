@@ -42,11 +42,11 @@ class _BaseFFT(LinearOperator):
         dims = _value_or_sized_to_array(dims)
         _raise_on_wrong_dtype(dims, np.integer, "dims")
 
-        self.ndim = len(dims)
+        self.ndims = len(dims)
 
         axes = _value_or_sized_to_array(axis)
         _raise_on_wrong_dtype(axes, np.integer, "axis")
-        self.axis = get_normalize_axis_index()(axes[0], self.ndim)
+        self.axis = get_normalize_axis_index()(axes[0], self.ndims)
 
         if nfft is None:
             self.nfft = dims[self.axis]
@@ -63,7 +63,7 @@ class _BaseFFT(LinearOperator):
         self.doifftpad = False
         if self.nfft < dims[self.axis]:
             self.doifftpad = True
-            self.ifftpad = [(0, 0)] * self.ndim
+            self.ifftpad = [(0, 0)] * self.ndims
             self.ifftpad[self.axis] = (0, dims[self.axis] - self.nfft)
             warnings.warn(
                 f"nfft={self.nfft} has been selected to be smaller than the size of "
@@ -148,11 +148,11 @@ class _BaseFFTND(LinearOperator):
         dims = _value_or_sized_to_array(dims)
         _raise_on_wrong_dtype(dims, np.integer, "dims")
 
-        self.ndim = len(dims)
+        self.ndims = len(dims)
 
         axes = _value_or_sized_to_array(axes)
         _raise_on_wrong_dtype(axes, np.integer, "axes")
-        self.axes = np.array([get_normalize_axis_index()(d, self.ndim) for d in axes])
+        self.axes = np.array([get_normalize_axis_index()(d, self.ndims) for d in axes])
         self.naxes = len(self.axes)
         if self.naxes != len(np.unique(self.axes)):
             warnings.warn(
@@ -210,7 +210,7 @@ class _BaseFFTND(LinearOperator):
         ]
         self.doifftpad = any(nfftshort)
         if self.doifftpad:
-            self.ifftpad = [(0, 0)] * self.ndim
+            self.ifftpad = [(0, 0)] * self.ndims
             for idir, (direction, nfshort) in enumerate(
                 zip(self.axes, nfftshort, strict=True)
             ):

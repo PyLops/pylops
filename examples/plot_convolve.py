@@ -60,6 +60,27 @@ ax.set_xlim(1.9, 2.1)
 plt.tight_layout()
 
 ###############################################################################
+# We repeat the same example with a complex-valued filter
+Cop = pylops.signalprocessing.Convolve1D(
+    nt, h=h + 1j * h, offset=hcenter, dtype="complex128"
+)
+y = Cop * x
+xinv = Cop / y
+
+fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+for ax, component, title in zip(
+    axs, (np.real, np.imag), ("Real", "Imaginary"), strict=True
+):
+    ax.plot(t, component(x), "k", lw=2, label=r"$x$")
+    ax.plot(t, component(y), "r", lw=2, label=r"$y=Ax$")
+    ax.plot(t, component(xinv), "--g", lw=2, label=r"$x_{ext}$")
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.legend()
+    ax.set_xlim(1.9, 2.1)
+fig.suptitle("Convolve 1d data with complex filter")
+plt.tight_layout()
+
+###############################################################################
 # We show now that also a filter with mixed phase (i.e., not centered
 # around zero) can be applied and inverted for using the
 # :py:class:`pylops.signalprocessing.Convolve1D`
@@ -132,6 +153,21 @@ ax[1].legend()
 ax[1].set_xlim(10, 40)
 plt.tight_layout()
 plt.subplots_adjust(top=0.8)
+
+###############################################################################
+# Similarly, a stack two dimensional signals can be filtered along a chosen
+# pair of axes. Note that the dimensions of ``h`` follow the order of ``axes``,
+# so reversing the axes requires transposing the filter and reversing its offsets.
+xstack = np.stack((x, 2 * x), axis=1)
+Cop = pylops.signalprocessing.Convolve2D(
+    (nt, 2, nx), h=h.T, offset=(nh[1] // 2, nh[0] // 2), axes=(2, 0)
+)
+ystack = Cop * xstack
+fig, axs = plt.subplots(1, 2, figsize=(10, 3))
+for i, ax in enumerate(axs):
+    ax.imshow(ystack[:, i, :], cmap="gray")
+    ax.set_title(f"Filtered image {i + 1}")
+plt.tight_layout()
 
 ###############################################################################
 # We now do the same using three dimensional signals and

@@ -110,6 +110,11 @@ class NormalEquationsInversion(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory usage is computed assuming that
+        ``engine="pylops"`` is used. When ``engine="scipy"`` is
+        used instead, :func:`scipy.sparse.linalg.cg` may consume
+        more memory.
+
         Parameters
         ----------
         nopRegs : :obj:`tuple`, optional
@@ -122,8 +127,8 @@ class NormalEquationsInversion(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Convert nopRegs if None
@@ -135,11 +140,12 @@ class NormalEquationsInversion(Solver):
 
         # Setup: y_normal, data_regs (temporary as these are
         # later projected and summed to y_normal)
-        memuse = (self.Op.shape[1] + np.prod(nopRegs)) * nbytes
+        memuse = (self.Op.shape[1] + np.sum(nopRegs)) * nbytes
 
-        # Run (additional variables to those in setup): Setup and Step
-        # of CG solver on normal equations
-        memuse += (self.Op.shape[1] + 3 * self.Op.shape[1]) * nbytes
+        # Run (additional variables to those in setup): setup and step
+        # of CG solver on normal equations (y_normal is the data of the
+        # CG solver and is already counted in the setup)
+        memuse += (3 * self.Op.shape[1]) * nbytes
         memuse += (2 * self.Op.shape[1]) * nbytes
 
         if show:
@@ -549,8 +555,8 @@ class RegularizedInversion(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Convert nopRegs if None
@@ -560,15 +566,18 @@ class RegularizedInversion(Solver):
         # Get number of bytes of dtype used in the solver
         nbytes = np.dtype(self.Op.dtype).itemsize
 
+        # Total data size (data and regularization data)
+        ndatatot = self.Op.shape[0] + np.sum(nopRegs)
+
         # Setup: datatot
-        ndatatot = self.Op.shape[0] + np.prod(nopRegs)
         memuse = ndatatot * nbytes
 
-        # Run (additional variables to those in setup): Setup and Step
-        # of PyLops CGLS solver on augumented equations. Note that when
-        # engine="scipy", the SciPy LSQR solver is used instead (which
-        # may consume more memory).
-        memuse += (2 * self.Op.shape[1] + 3 * ndatatot) * nbytes
+        # Run (additional variables to those in setup): setup and step
+        # of PyLops CGLS solver on augumented equations (datatot is the
+        # data of the CGLS solver and is already counted in the setup).
+        # Note that when engine="scipy", the SciPy LSQR solver is used
+        # instead (which may consume more memory).
+        memuse += (2 * self.Op.shape[1] + 2 * ndatatot) * nbytes
         memuse += (3 * self.Op.shape[1]) * nbytes
 
         if show:
@@ -856,6 +865,7 @@ class PreconditionedInversion(Solver):
 
     def memory_usage(
         self,
+        P: "LinearOperator",
         show: bool = False,
         unit: Tmemunit = "B",
     ) -> float:
@@ -868,6 +878,8 @@ class PreconditionedInversion(Solver):
 
         Parameters
         ----------
+        P : :obj:`pylops.LinearOperator`
+            Preconditioner
         show : :obj:`bool`, optional
             Display memory usage
         unit: :obj:`str`, optional
@@ -876,8 +888,8 @@ class PreconditionedInversion(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -886,12 +898,13 @@ class PreconditionedInversion(Solver):
         # Setup: y
         memuse = self.Op.shape[0] * nbytes
 
-        # Run (additional variables to those in setup): Setup and Step
-        # of PyLops CGLS solver on augumented equations. Note that when
-        # engine="scipy", the SciPy LSQR solver is used instead (which
-        # may consume more memory).
-        memuse += (2 * self.Op.shape[1] + 3 * self.Op.shape[0]) * nbytes
-        memuse += (3 * self.Op.shape[1]) * nbytes
+        # Run (additional variables to those in setup): setup and step of
+        # PyLops CGLS solver on the preconditioned operator (of size
+        # [N x P.shape[1]]). y is the data of the CGLS solver and is already
+        # counted in the setup. Note that when engine="scipy", the SciPy
+        # LSQR solver is used instead (which may consume more memory).
+        memuse += (2 * P.shape[1] + 2 * self.Op.shape[0]) * nbytes
+        memuse += (3 * P.shape[1]) * nbytes
 
         if show:
             print(

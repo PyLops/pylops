@@ -112,8 +112,8 @@ class CG(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -462,10 +462,11 @@ class CGLS(Solver):
 
         if self.niter is not None:
             strpar = (
-                f"damp = {self.damp:10e}\ttol = {self.tol:10e}\tniter = {self.niter}"
+                f"damp = {np.sqrt(self.damp):10e}\ttol = {self.tol:10e}\t"
+                f"niter = {self.niter}"
             )
         else:
-            strpar = f"damp = {self.damp:10e}\ttol = {self.tol:10e}\t"
+            strpar = f"damp = {np.sqrt(self.damp):10e}\ttol = {self.tol:10e}\t"
         print(strpar)
         print("-" * 65 + "\n")
         if not xcomplex:
@@ -500,8 +501,8 @@ class CGLS(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -578,13 +579,13 @@ class CGLS(Solver):
             x = x0.copy()
             if not self.preallocate:
                 self.s = self.y - self.Op.matvec(x)
-                self.c = self.Op.rmatvec(self.s) - damp * x
+                self.c = self.Op.rmatvec(self.s) - self.damp * x
             else:
                 self.s = self.ncp.empty_like(self.y)
                 self.ncp.subtract(self.y, self.Op.matvec(x), out=self.s)
                 x1 = self.ncp.empty_like(x)
                 self.c = self.ncp.empty_like(x)
-                self.ncp.multiply(x, damp, out=x1)
+                self.ncp.multiply(x, self.damp, out=x1)
                 self.ncp.subtract(self.Op.rmatvec(self.s), x1, out=self.c)
         self.q = self.Op.matvec(self.c)
         self.kold = self.ncp.abs(self.c.dot(self.c.conj()))
@@ -602,7 +603,7 @@ class CGLS(Solver):
         self.cost1.append(
             float(
                 self.ncp.sqrt(
-                    self.cost[0] ** 2.0 + damp * self.ncp.abs(x.dot(x.conj()))
+                    self.cost[0] ** 2.0 + self.damp * self.ncp.abs(x.dot(x.conj()))
                 )
             )
         )
@@ -872,10 +873,10 @@ class LSQR(Solver):
         called and updated at each call to ``step``.
     arnorm : :obj:`float`
         Estimate of norm of :math:`\cond(\mathbf{Op}^H\mathbf{r}-
-        \epsilon^2\mathbf{x})`. Available only after ``step`` is
+        \epsilon^2(\mathbf{x} - \mathbf{x}_0))`. Available only after ``step`` is
         called for the first time and updated at each subsequent call to ``step``.
     xnorm : :obj:`float`
-        :math:`||\mathbf{x}||_2`. Available only after ``setup`` is
+        :math:`||\mathbf{x} - \mathbf{x}_0||_2`. Available only after ``setup`` is
         called and updated at each call to ``step``.
     u : :obj:`numpy.ndarray`
         Temporary vector of size :math:`[N \times 1]`. Available only after
@@ -920,7 +921,8 @@ class LSQR(Solver):
         :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`. Available only after
         ``setup`` is called and updated at each call to ``step``.
     r2norm : :obj:`float`
-        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  + \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
+        :math:`\sqrt{\mathbf{r}^T\mathbf{r}  + \epsilon^2
+        (\mathbf{x} - \mathbf{x}_0)^T(\mathbf{x} - \mathbf{x}_0)}`.
         Equal to ``r1norm`` if :math:`\epsilon=0`. Available only after
         ``setup`` is called and updated at each call to ``step``.
     cost : :obj:`numpy.ndarray`, optional
@@ -935,7 +937,7 @@ class LSQR(Solver):
 
     .. math::
         J = || \mathbf{y} -  \mathbf{Op}\,\mathbf{x} ||_2^2 +
-        \epsilon^2 || \mathbf{x} ||_2^2
+        \epsilon^2 || \mathbf{x} - \mathbf{x}_0 ||_2^2
 
     where :math:`\epsilon` is the damping coefficient.
 
@@ -1011,6 +1013,9 @@ class LSQR(Solver):
     ) -> float:
         """Compute memory usage of the solver
 
+        .. note:: The memory required by the estimation of the diagonals of
+        the covariance matrix (``calc_var=True``) is not taken into account.
+
         Parameters
         ----------
         show : :obj:`bool`, optional
@@ -1021,8 +1026,8 @@ class LSQR(Solver):
 
         Returns
         -------
-        memuse :obj:`float`
-            Memory usage in Bytes
+        memuse : :obj:`float`
+            Memory usage in bytes
 
         """
         # Get number of bytes of dtype used in the solver
@@ -1510,7 +1515,7 @@ class LSQR(Solver):
             :math:`\mathbf{r} = \mathbf{y} - \mathbf{Op}\,\mathbf{x}`
         r2norm : :obj:`float`
             :math:`\sqrt{\mathbf{r}^T\mathbf{r}  +
-            \epsilon^2 \mathbf{x}^T\mathbf{x}}`.
+            \epsilon^2 (\mathbf{x} - \mathbf{x}_0)^T(\mathbf{x} - \mathbf{x}_0)}`.
             Equal to ``r1norm`` if :math:`\epsilon=0`
         anorm : :obj:`float`
             Estimate of Frobenius norm of :math:`\overline{\mathbf{Op}} =
@@ -1519,9 +1524,9 @@ class LSQR(Solver):
             Estimate of :math:`\cond(\overline{\mathbf{Op}})`
         arnorm : :obj:`float`
             Estimate of norm of :math:`\cond(\mathbf{Op}^H\mathbf{r}-
-            \epsilon^2\mathbf{x})`
+            \epsilon^2(\mathbf{x} - \mathbf{x}_0))`
         xnorm : :obj:`float`
-            :math:`||\mathbf{x}||_2`
+            :math:`||\mathbf{x} - \mathbf{x}_0||_2`
         var : :obj:`float`
             Diagonals of :math:`(\mathbf{Op}^H\mathbf{Op})^{-1}` (if ``damp=0``)
             or more generally :math:`(\mathbf{Op}^H\mathbf{Op} +

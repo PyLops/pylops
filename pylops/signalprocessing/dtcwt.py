@@ -109,10 +109,9 @@ class DTCWT(LinearOperator):
         if dtcwt_message is not None:
             raise NotImplementedError(dtcwt_message)
 
-        dims = _value_or_sized_to_tuple(dims)
-        self.ndim = len(dims)
         self.axis = axis
 
+        dims = _value_or_sized_to_tuple(dims)
         self.otherdims = int(np.prod(dims) / dims[self.axis])
         self.dims_swapped = list(dims)
         self.dims_swapped[0], self.dims_swapped[self.axis] = (

@@ -24,6 +24,7 @@ Subsequently the acoustic impedance model is estimated via the
 inversion strategy is finally presented to deal with the case of noisy data.
 
 """
+
 import matplotlib.pyplot as plt
 
 # sphinx_gallery_thumbnail_number = 4
@@ -91,7 +92,7 @@ minv = pylops.avo.poststack.PoststackInversion(
     m0=mback,
     explicit=False,
     simultaneous=False,
-    **dict(iter_lim=2000)
+    **dict(iter_lim=2000),
 )[0]
 
 # solve noisy
@@ -232,7 +233,7 @@ minv_lop_reg = pylops.avo.poststack.PoststackInversion(
     m0=minv_dense_noisy,
     explicit=False,
     epsR=5e1,
-    **dict(damp=np.sqrt(1e-4), iter_lim=80)
+    **dict(damp=np.sqrt(1e-4), iter_lim=80),
 )[0]
 
 # blockiness promoting inversion with noisy data
@@ -243,7 +244,7 @@ minv_lop_blocky = pylops.avo.poststack.PoststackInversion(
     explicit=False,
     epsR=[0.4],
     epsRL1=[0.1],
-    **dict(mu=0.1, niter_outer=5, niter_inner=10, iter_lim=5, damp=1e-3)
+    **dict(mu=0.1, niter_outer=5, niter_inner=10, iter_lim=5, damp=1e-3),
 )[0]
 
 fig, axs = plt.subplots(2, 4, figsize=(15, 9))

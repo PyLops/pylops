@@ -12,7 +12,7 @@ have been implemented for such a class and will allow summing, subtracting,
 chaining, etc. multiple operators in very easy and expressive way.
 
 Finally, we will consider a scenario where the input and output vectors of an
-operator are naturally represented by nd-arrays. Since pylops V2, we can both
+operator are naturally represented by nd-arrays. Since PyLops V2, we can both
 pass to the operator a flattened array (original behaviour) as well as the
 nd-array with shape `dims` (new behaviour); according to input, the output
 will be either a vector or a nd-array with shape `dimsd`.
@@ -260,14 +260,34 @@ print(f"Adjoint evaluations: {Dop.rmatvec_count}")
 
 
 ########################################################################
-# Finally, let's consider a case where the :py:class:`pylops.basicoperators.Diagonal`
-# operator acts on one dimension of a 2d-array. We will see how in this case the forward
-# and adjoint passes can be applied on the flattened array as well as on the 2d-array directly
+# Whilst so far, PyLops operators have been always applied to 1d-arrays,
+# it is also possible to apply them to 2d-arrays. In this case,
+# the operator is repeatedly applied along the last axis of the array and
+# the output is a 2d-array with the same shape as the input.
+########################################################################
 
-m, n = 10, 5
+p = 3
+X = np.ones((n, p))
+
+Y = Dop @ X  # or Dop.matmat
+Xadj = Dop.H @ Y  # or Dop.rmatmat
+
+print(f"Y shape = {Y.shape}")
+print(f"Xadj shape {Xadj.shape}")
+
+########################################################################
+# Finally, let's consider a case where the :py:class:`pylops.Diagonal`
+# operator acts on one dimension of a 2d-array. We will see how in this
+# case the forward and adjoint passes can be applied on the flattened
+# array as well as on the 2d-array directly.
+
+m, n, p = 10, 5, 3
 d = np.arange(n) + 1.0
-x = np.ones((m, n))
 Dop = pylops.Diagonal(d, dims=(m, n), axis=-1)
+print(f"Dop: dims = {Dop.dims}, dimsd = {Dop.dimsd}")
+
+# Single input
+x = np.ones((m, n))
 
 yflat = Dop @ x.ravel()
 y = Dop @ x
@@ -277,6 +297,18 @@ xadj = Dop.H @ y
 
 print(f"yflat shape = {yflat.shape}, y shape = {y.shape}")
 print(f"xadjflat shape = {xadjflat.shape}, xadj shape = {xadj.shape}")
+
+# Multiple inputs
+X = np.ones((m, n, p))
+
+Yflat = Dop @ X.reshape(m * n, p)
+Y = Dop @ X
+
+Xadjflat = Dop.H @ Yflat
+Xadj = Dop.H @ Y
+
+print(f"Yflat shape = {Yflat.shape}, Y shape = {Y.shape}")
+print(f"Xadjflat shape = {Xadjflat.shape}, Xadj shape = {Xadj.shape}")
 
 ###############################################################################
 # This first tutorial is completed. You have seen the basic operations that
